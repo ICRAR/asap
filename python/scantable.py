@@ -756,9 +756,9 @@ class scantable(sdtable):
             scanav:   True (default) averages each scan separately
                       False averages all scans together,
             weight:   Weighting scheme. 'none', 'var' (1/var(spec)
-                      weighted), 'tsys' (1/Tsys**2 weighted), or 'tint'
-                      (integration time weighted).  The default is
-                      'tint'
+                      weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
+                      (integration time weighted) or 'tintsys' (Tint/Tsys**2).
+                      The default is 'tint'
         Example:
             # time average the scantable without using a mask
             newscan = scan.average_time()            
