@@ -35,7 +35,12 @@ class ASAPlot:
 	the panel layout; refer to the doctext for set_panels().
 	"""
 	self.window = Tk.Tk()
-	
+        self.is_dead = False
+        def dest_callback():
+            self.is_dead = True
+            self.window.destroy()
+        
+        self.window.protocol("WM_DELETE_WINDOW", dest_callback)	
 	self.frame1 = Tk.Frame(self.window, relief=Tk.RIDGE, borderwidth=4)
 	self.frame1.pack(fill=Tk.BOTH)
 
