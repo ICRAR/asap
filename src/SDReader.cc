@@ -61,7 +61,6 @@ void SDReader::reset() {
 void SDReader::open(const std::string& filename) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
-  //Int    nChan, nIF, nPol;
   String inName(filename);
   String format;
   Vector<Bool> beams;
@@ -76,7 +75,6 @@ void SDReader::open(const std::string& filename) {
     cerr << "Spectral data absent." << endl;
     return;
   }
-
   nBeam_ = beams.nelements();
   // Get basic parameters.
   header_ = SDHeader();
@@ -112,6 +110,8 @@ void SDReader::open(const std::string& filename) {
   Vector<Bool> IFsel(nIF_,True);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
   table_->putSDHeader(header_);
+  frequencies_.setRefFrame(header_.freqref);
+  frequencies_.setEquinox(header_.equinox);
 }
 
 int SDReader::read(const std::vector<int>& seq) {
@@ -132,9 +132,8 @@ int SDReader::read(const std::vector<int>& seq) {
   uInt n = seq.size();
 
   uInt stepsize = header_.nif*header_.nbeam;
-  cerr << "SDReader stepsize = " << stepsize << endl;
+  //cerr << "SDReader stepsize = " << stepsize << endl;
   uInt seqi = 0;
-  //SDFrequencyTable sdft();
   Bool getAll = False;
   if (seq[n-1] == -1) getAll = True;
   while ( (cursor_ <= seq[n-1]) || getAll) {
@@ -160,11 +159,12 @@ int SDReader::read(const std::vector<int>& seq) {
 	  // EOF.
 	  if (row < stepsize-1) cerr << "incomplete integration data." << endl;
 	  cerr << "EOF" << endl;
+	  table_->putSDFreqTable(frequencies_);
 	  return status;
 	}
       }      
       // if in the given list
-      if (cursor_ == seq[seqi]) {
+      if (cursor_ == seq[seqi] || getAll) {
 	// add integration cycle
 	if (row==0) {
 	  //add invariant info: scanNo, mjd, interval, fieldName,
@@ -178,23 +178,24 @@ int SDReader::read(const std::vector<int>& seq) {
 	// add specific info
 	// IFno beamNo are 1-relative
 	// refPix = nChan/2+1 in  Integer arith.!	
-	//uInt refPix = header_.nchan/2+1; 
-	//uInt frqslot = sdft.addFrequency(refPix, refFreq, freqInc);
+	Int refPix = header_.nchan/2+1; 
+	Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
+	sc.setFrequencyMap(frqslot,IFno-1);
 
 	sc.scanid = scanNo;
-	//sc.setFrequencyMap(frqslot,IFno-1);
 	sc.setSpectrum(spectra, beamNo-1, IFno-1);
 	sc.setFlags(flagtra,  beamNo-1, IFno-1);
 	sc.setTsys(tsys, beamNo-1, IFno-1);
 	//sc.addPointing(direction, beamNo-1);
       }
     }
-    if (cursor_ == seq[seqi]) {
+    if (cursor_ == seq[seqi] || getAll) {
       // insert container into table/list
       table_->putSDContainer(sc);
       seqi++;// next in list
     }
     cursor_++;// increment position in file
   }
+  table_->putSDFreqTable(frequencies_);
   return status;
 }

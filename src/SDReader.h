@@ -74,6 +74,7 @@ private:
   Int nBeam_,nIF_,nPol_,nChan_;
   PKSreader* reader_;  
   SDHeader header_;
+  SDFrequencyTable frequencies_;
   CountedPtr<SDMemTable> table_;
   String filename_;
   uInt cursor_;
