@@ -350,6 +350,18 @@ class scantable(sdtable):
         self._setcoordinfo(inf)
         if self._p: self.plot()
 
+    def set_doppler(self, doppler='RADIO'):
+        """
+        Set the doppler for all following operations on this scantable.
+        Parameters:
+            doppler:    One of 'RADIO', 'OPTICAL', 'Z', 'BETA', 'GAMMA'
+        """
+
+        inf = list(self._getcoordinfo())
+        inf[2] = doppler
+        self._setcoordinfo(inf)
+        if self._p: self.plot()
+
     def set_freqframe(self, frame=None):
         """
         Set the frame type of the Spectral Axis.

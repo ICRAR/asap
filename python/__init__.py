@@ -252,11 +252,12 @@ def commands():
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
             get_unit        - get the currnt unit
-            set_unit        - set the unit to be used from this point on
+            set_unit        - set the abcissa unit to be used from this point on
             get_abcissa     - get the abcissa values and name for a given
                               row (time)
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
+            set_doppler     - set the doppler to be used from this point on
             set_instrument  - set the instrument name
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
