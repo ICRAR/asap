@@ -266,8 +266,6 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
      fqIDCol.attach(tabIn, "FREQID");
      scanIDCol.attach(tabIn, "SCANID");
 
-// Find list of start/end rows for each scan
-
 // Loop over rows in Table
 
      const uInt nRows = in[iTab]->nRow();
@@ -1832,7 +1830,7 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
          itData.next();
          itMask.next();
       }
-   } else if (wtType==TSYS) {
+   } else if (wtType==TSYS || wtType==TINTSYS) {
 
 // We are going to average the data, weighted by 1/Tsys**2 for each pol, beam and IF.
 // So therefore we need to iterate through by spectrum (axis 3).  Although
@@ -1842,12 +1840,13 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 // 
       VectorIterator<Float> itData(valuesIn, axis);
       ReadOnlyVectorIterator<Float> itTSys(tSys, axis);
-      Float fac = 1.0;
       IPosition pos(nAxesSub,0);  
 //
+      Float fac = 1.0;
+      if (wtType==TINTSYS) fac *= interval;
       while (!itData.pastEnd()) {
          Float t = itTSys.vector()[0];
-         fac = 1.0/t/t;
+         fac *= 1.0/t/t;
 
 // Scale data
 
@@ -1914,9 +1913,10 @@ void SDMath::normalize(MaskedArray<Float>& sum,
          itData.vector() /= sumSq(pos2);
          itData.next();
       }
-   } else if (wtType==TSYS) {
+   } else if (wtType==TSYS || wtType==TINTSYS) {
    
-// Normalize each spectrum by sum(1/Tsys**2) where the pseudo
+// Normalize each spectrum by sum(1/Tsys**2) (TSYS) or
+// sum(Tint/Tsys**2) (TINTSYS) where the pseudo
 // replication over channel for Tsys has been dropped.
 
       Array<Float>& data = sum.getRWArray();
@@ -1973,6 +1973,9 @@ void SDMath::convertWeightString(WeightType& wtType, const String& weightStr,
   } else if (tStr.contains(String("VAR"))) {
      wtType = VAR;
      msg = String("Weighting type selected : Variance");
+  } else if (tStr.contains(String("TINTSYS"))) {
+       wtType = TINTSYS;
+       msg = String("Weighting type selected : Tint&Tsys");
   } else if (tStr.contains(String("TINT"))) {
      wtType = TINT;
      msg = String("Weighting type selected : Tint");

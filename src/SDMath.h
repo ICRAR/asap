@@ -135,7 +135,7 @@ class SDMath {
 
 // Weighting type for time averaging
 
-  enum WeightType {NONE,VAR,TSYS,TINT};
+  enum WeightType {NONE=0,VAR,TSYS,TINT,TINTSYS,nWeightTypes};
 
 // Function to use accumulate data during time averaging
 
