@@ -39,15 +39,19 @@ def average_time(*args, **kwargs):
             return
     return scantable(_av(lst, mask, scanAv, weight))
 
-def quotient(source, reference):
+def quotient(source, reference, preserve=True):
     """
-    Return the quotient of a 'source' scan and a 'reference' scan
+    Return the quotient of a 'source' (signal) scan and a 'reference' scan
     Parameters:
         source:        the 'on' scan
         reference:     the 'off' scan
+        preserve:      you can preserve (default) the continuum or 
+                       remove it.  The equations used are 
+                          preserve - Output = Tref * (sig/ref) - Tref
+                          remove   - Output = Tref * (sig/ref) - Tsig
     """
     from asap._asap import quotient as _quot
-    return scantable(_quot(source, reference))
+    return scantable(_quot(source, reference, preserve))
 
 def b_operate(left, right, op='add'):
     """
