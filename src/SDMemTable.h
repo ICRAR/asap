@@ -205,8 +205,9 @@ public:
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
   casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow,
-						  casa::Bool useSelection = 
-						  casa::False) const;
+		                                  casa::Bool useSelection = 
+						  casa::False, casa::Bool
+                                                  toStokes=casa::False) const;
 
   // Return SC, setting only the basic construction state (i.e.
   // no conversion or velocity or rest frequency state).
@@ -276,7 +277,7 @@ private:
   casa::ArrayColumn<casa::uChar> flagsCol_;
   casa::ArrayColumn<casa::uInt> freqidCol_, restfreqidCol_;
   casa::ArrayColumn<casa::String> histCol_;
-  casa::ArrayColumn<casa::Float> stokesCol_;
+  casa::ROArrayColumn<casa::Float> stokesCol_;
 };
 
 }// namespace

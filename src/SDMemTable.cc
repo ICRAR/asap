@@ -708,12 +708,16 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
   }
 }
 */
-MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
-                                                Bool useSelection) const 
+MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection,
+                                                Bool toStokes) const 
 {
   Array<Float> arr;
   Array<uChar> farr;
-  specCol_.get(whichRow, arr);
+  if (toStokes) {
+     stokesCol_.get(whichRow, arr);
+  } else {
+     specCol_.get(whichRow, arr);
+  }
   flagsCol_.get(whichRow, farr);
   Array<Bool> barr(farr.shape());
   convertArray(barr, farr);
