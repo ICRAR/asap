@@ -42,21 +42,23 @@ class SDMemTable;
 
 namespace SDMath {
   //public:
-  casa::CountedPtr<SDMemTable> average(const casa::CountedPtr<SDMemTable>& in);
   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
+
   void multiplyInSitu(SDMemTable* in, casa::Float factor);
 
   casa::CountedPtr<SDMemTable> multiply(const casa::CountedPtr<SDMemTable>& in, 
 				  casa::Float factor);
+
   casa::CountedPtr<SDMemTable> add(const casa::CountedPtr<SDMemTable>& in, 
 			     casa::Float offset);
   
   casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
 
-  casa::CountedPtr<SDMemTable> 
-  averages(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
-	   const casa::Vector<casa::Bool>& mask);
+  casa::CountedPtr<SDMemTable>
+  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
+           const casa::Vector<casa::Bool>& mask,
+           bool scanAverage, const std::string& weightStr);
 
   casa::CountedPtr<SDMemTable> 
   averagePol(const casa::CountedPtr<SDMemTable>& in, const casa::Vector<casa::Bool>& mask);
@@ -69,8 +71,20 @@ namespace SDMath {
 
 // private (not actually...)
 
-  float theStatistic(const std::string& which,  const casa::MaskedArray<casa::Float>& data);
-  
+  enum weightType {NONE,VAR,TSYS};
+
+  void fillSDC (SDContainer& sc, const casa::Array<casa::Bool>& mask,
+                const casa::Array<casa::Float>& data,
+                const casa::Array<casa::Float>& tSys,
+                casa::Int scanID, casa::Double timeStamp,
+                casa::Double interval, const casa::String& sourceName,
+                const casa::Vector<casa::uInt>& freqID);
+   void normalize (casa::MaskedArray<casa::Float>& data,
+                   const casa::Array<casa::Float>& sumSq,
+                   const casa::Array<casa::Float>& nPts,
+                   weightType wtType, casa::Int axis, casa::Int nAxes);
+
+
 };
 
 } // namespace

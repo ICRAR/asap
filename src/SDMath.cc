@@ -63,79 +63,308 @@ using namespace casa;
 using namespace asap;
 //using namespace asap::SDMath;
 
-CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
+CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in,
+                                        const Vector<Bool>& mask, bool scanAv,
+                                        const std::string& weightStr)
 //
-// Average all rows in Table in time
+// Weighted averaging of spectra from one or more Tables.
 //
 {
-  Table t = in->table();
-  ROArrayColumn<Float> tsys(t, "TSYS");
-  ROScalarColumn<Double> mjd(t, "TIME");
-  ROScalarColumn<String> srcn(t, "SRCNAME");
-  ROScalarColumn<Double> integr(t, "INTERVAL");
-  ROArrayColumn<uInt> freqidc(t, "FREQID");
-  IPosition ip = in->rowAsMaskedArray(0).shape();
-  Array<Float> outarr(ip); outarr =0.0;
-  Array<Float> narr(ip);narr = 0.0;
-  Array<Float> narrinc(ip);narrinc = 1.0;
-
-  Array<Float> tsarr(tsys.shape(0));
-  Array<Float> outtsarr(tsys.shape(0));
-  outtsarr =0.0;
-  tsys.get(0, tsarr);// this is probably unneccessary as tsys should
-  Double tme = 0.0;
-  Double inttime = 0.0;
-
-// Loop over rows
-
-  for (uInt i=0; i < t.nrow(); i++) {
-
-// Get data and accumulate sums
-
-    MaskedArray<Float> marr(in->rowAsMaskedArray(i));
-    outarr += marr;
-    MaskedArray<Float> n(narrinc,marr.getMask());
-    narr += n;
-
-// Accumulkate Tsys
-
-    tsys.get(i, tsarr);// this is probably unneccessary as tsys should
-    outtsarr += tsarr; // be constant
-    Double tmp;
-    mjd.get(i,tmp);
-    tme += tmp;// average time
-    integr.get(i,tmp);
-    inttime += tmp;
+  weightType wtType = NONE;
+  String tStr(weightStr);
+  tStr.upcase();
+  if (tStr.contains(String("NONE"))) {
+     wtType = NONE;
+  } else if (tStr.contains(String("VAR"))) {
+     wtType = VAR;
+  } else if (tStr.contains(String("TSYS"))) {
+     wtType = TSYS;
+     throw (AipsError("T_sys weighting not yet implemented"));
+  } else {
+    throw (AipsError("Unrecognized weighting type"));
   }
 
-// Average
+// Create output Table by cloning from the first table
 
-  MaskedArray<Float> nma(narr,(narr > Float(0)));
-  outarr /= nma;
+  SDMemTable* pTabOut = new SDMemTable(*in[0],True);
 
-// Create container and put 
+// Setup
 
-  Array<Bool> outflagsb = !(nma.getMask());
-  Array<uChar> outflags(outflagsb.shape());
-  convertArray(outflags,outflagsb);
-  SDContainer sc = in->getSDContainer();
-  Int n = t.nrow();
-  outtsarr /= Float(n);
-  sc.timestamp = tme/Double(n);
-  sc.interval = inttime;
-  String tstr; srcn.getScalar(0,tstr);// get sourcename of "mid" point
-  sc.sourcename = tstr;
-  Vector<uInt> tvec;
-  freqidc.get(0,tvec);
-  sc.putFreqMap(tvec);
-  sc.putTsys(outtsarr);
-  sc.scanid = 0;
-  sc.putSpectrum(outarr);
-  sc.putFlags(outflags);
-  SDMemTable* sdmt = new SDMemTable(*in,True);
-  sdmt->putSDContainer(sc);
-  return CountedPtr<SDMemTable>(sdmt);
+  const uInt axis = 3;                                     // Spectral axis
+  IPosition shp = in[0]->rowAsMaskedArray(0).shape();      // Must not change
+  Array<Float> arr(shp);
+  Array<Bool> barr(shp);
+  const Bool useMask = (mask.nelements() == shp(axis));
+
+// Columns from Tables
+
+  ROArrayColumn<Float> tSysCol;
+  ROScalarColumn<Double> mjdCol;
+  ROScalarColumn<String> srcNameCol;
+  ROScalarColumn<Double> intCol;
+  ROArrayColumn<uInt> fqIDCol;
+
+// Create accumulation MaskedArray. We accumulate for each channel,if,pol,beam
+// Note that the mask of the accumulation array will ALWAYS remain ALL True.
+// The MA is only used so that when data which is masked Bad is added to it,
+// that data does not contribute.
+
+  Array<Float> zero(shp);
+  zero=0.0;
+  Array<Bool> good(shp);
+  good = True;
+  MaskedArray<Float> sum(zero,good);
+
+// Counter arrays
+
+  Array<Float> nPts(shp);             // Number of points
+  nPts = 0.0;
+  Array<Float> nInc(shp);             // Increment
+  nInc = 1.0;
+
+// Create accumulation Array for variance. We accumulate for
+// each if,pol,beam, but average over channel.  So we need
+// a shape with one less axis dropping channels.
+
+  const uInt nAxesSub = shp.nelements() - 1;
+  IPosition shp2(nAxesSub);
+  for (uInt i=0,j=0; i<(nAxesSub+1); i++) {
+     if (i!=axis) {
+       shp2(j) = shp(i);
+       j++;
+     }
+  }
+  Array<Float> sumSq(shp2);
+  sumSq = 0.0;
+  IPosition pos2(nAxesSub,0);                        // For indexing
+
+// Time-related accumulators
+
+  Double time;
+  Double timeSum = 0.0;
+  Double intSum = 0.0;
+  Double interval = 0.0;
+
+// To get the right shape for the Tsys accumulator we need to
+// access a column from the first table.  The shape of this
+// array must not change
+
+  Array<Float> tSysSum;
+  {
+    const Table& tabIn = in[0]->table();
+    tSysCol.attach(tabIn,"TSYS");
+    tSysSum.resize(tSysCol.shape(0));
+  }
+  tSysSum =0.0;
+  Array<Float> tSys;
+
+// Scan and row tracking
+
+  Int oldScanID = 0;
+  Int outScanID = 0;
+  Int scanID = 0;
+  Int rowStart = 0;
+  Int nAccum = 0;
+  Int tableStart = 0;
+
+// Source and FreqID
+
+  String sourceName, oldSourceName, sourceNameStart;
+  Vector<uInt> freqID, freqIDStart, oldFreqID;
+
+// Loop over tables
+
+  Float fac = 1.0;
+  const uInt nTables = in.nelements();
+  for (uInt iTab=0; iTab<nTables; iTab++) {
+
+// Attach columns to Table
+
+     const Table& tabIn = in[iTab]->table();
+     tSysCol.attach(tabIn, "TSYS");
+     mjdCol.attach(tabIn, "TIME");
+     srcNameCol.attach(tabIn, "SRCNAME");
+     intCol.attach(tabIn, "INTERVAL");
+     fqIDCol.attach(tabIn, "FREQID");
+
+// Loop over rows in Table
+
+     const uInt nRows = in[iTab]->nRow();
+     for (uInt iRow=0; iRow<nRows; iRow++) {
+
+// Check conformance
+
+        IPosition shp2 = in[iTab]->rowAsMaskedArray(iRow).shape();
+        if (!shp.isEqual(shp2)) {
+           throw (AipsError("Shapes for all rows must be the same"));
+        }
+
+// If we are not doing scan averages, make checks for source and
+// frequency setup and warn if averaging across them
+
+// Get copy of Scan Container for this row
+
+        SDContainer sc = in[iTab]->getSDContainer(iRow);
+        scanID = sc.scanid;
+
+// Get quantities from columns
+
+        srcNameCol.getScalar(iRow, sourceName);
+        mjdCol.get(iRow, time);
+        tSysCol.get(iRow, tSys);
+        intCol.get(iRow, interval);
+        fqIDCol.get(iRow, freqID);
+
+// Initialize first source and freqID
+
+        if (iRow==0 && iTab==0) {
+          sourceNameStart = sourceName;
+          freqIDStart = freqID;
+        }
+
+// If we are doing scan averages, see if we are at the end of an
+// accumulation period (scan).  We must check soutce names too,
+// since we might have two tables with one scan each but different
+// source names; we shouldn't average different sources together
+
+        if (scanAv && ( (scanID != oldScanID)  ||
+                        (iRow==0 && iTab>0 && sourceName!=oldSourceName))) {
+
+// Normalize data in 'sum' accumulation array according to weighting scheme
+
+           normalize (sum, sumSq, nPts, wtType, axis, nAxesSub);
+
+// Fill scan container. The source and freqID come from the
+// first row of the first table that went into this average (
+// should be the same for all rows in the scan average)
+
+           Float nR(nAccum);
+           fillSDC (sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+                    timeSum/nR, intSum, sourceNameStart, freqIDStart);
+
+// Write container out to Table
+
+           pTabOut->putSDContainer(sc);
+
+// Reset accumulators
+
+           sum = 0.0;
+           sumSq = 0.0;
+           nAccum = 0;
+//
+           tSysSum =0.0;
+           timeSum = 0.0;
+           intSum = 0.0;
+
+// Increment
+
+           rowStart = iRow;              // First row for next accumulation
+           tableStart = iTab;            // First table for next accumulation
+           sourceNameStart = sourceName; // First source name for next accumulation
+           freqIDStart = freqID;         // First FreqID for next accumulation
+//
+           oldScanID = scanID;
+           outScanID += 1;               // Scan ID for next accumulation period
+        }
+
+// Accumulation step. First get data and deconstruct
+
+        MaskedArray<Float> dataIn(in[iTab]->rowAsMaskedArray(iRow));
+        Array<Float>& valuesIn = dataIn.getRWArray();           // writable reference
+        const Array<Bool>& maskIn = dataIn.getMask();          // RO reference
+//
+        if (wtType==NONE) {
+           const MaskedArray<Float> n(nInc,dataIn.getMask());
+           nPts += n;                               // Only accumulates where mask==T
+        } else if (wtType==VAR) {
+
+// We are going to average the data, weighted by the noise for each pol, beam and IF.
+// So therefore we need to iterate through by spectrum (axis 3)
+
+           VectorIterator<Float> itData(valuesIn, axis);
+           ReadOnlyVectorIterator<Bool> itMask(maskIn, axis);
+           while (!itData.pastEnd()) {
+
+// Make MaskedArray of Vector, optionally apply OTF mask, and find scaling factor
+
+             if (useMask) {
+                MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
+                fac = 1.0/variance(tmp);
+             } else {
+                MaskedArray<Float> tmp(itData.vector(),itMask.vector());
+                fac = 1.0/variance(tmp);
+             }
+
+// Scale data
+
+             itData.vector() *= fac;     // Writes back into 'dataIn'
+//
+// Accumulate variance per if/pol/beam averaged over spectrum
+// This method to get pos2 from itData.pos() is only valid
+// because the spectral axis is the last one (so we can just
+// copy the first nAXesSub positions out)
+
+             pos2 = itData.pos().getFirst(nAxesSub);
+             sumSq(pos2) += fac;
+//
+             itData.next();
+             itMask.next();
+           }
+        } else if (wtType==TSYS) {
+        }
+
+// Accumulate sum of (possibly scaled) data
+
+       sum += dataIn;
+
+// Accumulate Tsys, time, and interval
+
+       tSysSum += tSys;
+       timeSum += time;
+       intSum += interval;
+
+// Number of rows in accumulation
+
+       nAccum += 1;
+       oldSourceName = sourceName;
+       oldFreqID = freqID;
+    }
+  }
+
+// OK at this point we have accumulation data which is either
+//   - accumulated from all tables into one row
+// or
+//   - accumulated from the last scan average
+//
+// Normalize data in 'sum' accumulation array according to weighting scheme
+
+  normalize (sum, sumSq, nPts, wtType, axis, nAxesSub);
+
+// Create and fill container.  The container we clone will be from
+// the last Table and the first row that went into the current
+// accumulation.  It probably doesn't matter that much really...
+
+  Float nR(nAccum);
+  SDContainer sc = in[tableStart]->getSDContainer(rowStart);
+  fillSDC (sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+           timeSum/nR, intSum, sourceNameStart, freqIDStart);
+//
+  pTabOut->putSDContainer(sc);
+/*
+   cout << endl;
+   cout << "Last accumulation for output scan ID " << outScanID << endl;
+   cout << "   The first row in this accumulation is " << rowStart << endl;
+   cout << "   The number of rows accumulated is " << nAccum << endl;
+   cout << "   The first table in this accumulation is " << tableStart << endl;
+   cout << "   The first source in this accumulation is " << sourceNameStart << endl;
+   cout << "   The first freqID in this accumulation is " << freqIDStart << endl;
+   cout  << "   Average time stamp = " << timeSum/nR << endl;
+   cout << "   Integrated time = " << intSum << endl;
+*/
+  return CountedPtr<SDMemTable>(pTabOut);
 }
+
+
 
 CountedPtr<SDMemTable>
 SDMath::quotient(const CountedPtr<SDMemTable>& on,
@@ -302,131 +531,6 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in)
 }
 
 
-
-CountedPtr<SDMemTable> SDMath::averages(const Block<CountedPtr<SDMemTable> >& in,
-                                        const Vector<Bool>& mask) 
-//
-// Noise weighted averaging of spectra from many Tables.  Tables can have different
-// number of rows.  
-//
-{
-
-// Setup
-
-  const uInt axis = 3;                                 // Spectral axis
-  IPosition shp = in[0]->rowAsMaskedArray(0).shape();
-  Array<Float> arr(shp);
-  Array<Bool> barr(shp);
-  Double sumInterval = 0.0;
-  const Bool useMask = (mask.nelements() == shp(axis));
-
-// Create data accumulation MaskedArray. We accumulate for each
-// channel,if,pol,beam
-
-  Array<Float> zero(shp); zero=0.0;
-  Array<Bool> good(shp); good = True;
-  MaskedArray<Float> sum(zero,good);
-
-// Create accumulation Array for variance. We accumulate for 
-// each if,pol,beam, but average over channel
-
-  const uInt nAxesSub = shp.nelements() - 1;
-  IPosition shp2(nAxesSub);
-  for (uInt i=0,j=0; i<(nAxesSub+1); i++) {
-     if (i!=axis) {
-       shp2(j) = shp(i);
-       j++;
-     }
-  }
-  Array<Float> sumSq(shp2);
-  sumSq = 0.0;
-  IPosition pos2(nAxesSub,0);                        // FOr indexing
-//  
-  Float fac = 1.0;
-  const uInt nTables = in.nelements();
-  for (uInt iTab=0; iTab<nTables; iTab++) {
-     const uInt nRows = in[iTab]->nRow();
-     sumInterval += nRows * in[iTab]->getInterval();   // Sum of time intervals
-//
-     for (uInt iRow=0; iRow<nRows; iRow++) {
-
-// Check conforms
-
-        IPosition shp2 = in[iTab]->rowAsMaskedArray(iRow).shape();
-        if (!shp.isEqual(shp2)) {
-           throw (AipsError("Shapes for all rows must be the same"));
-        }
-
-// Get data and deconstruct
- 
-        MaskedArray<Float> marr(in[iTab]->rowAsMaskedArray(iRow));
-        Array<Float>& arr = marr.getRWArray();                     // writable reference
-        const Array<Bool>& barr = marr.getMask();                  // RO reference
-
-// We are going to average the data, weighted by the noise for each
-// pol, beam and IF. So therefore we need to iterate through by 
-// spectra (axis 3)
-
-        VectorIterator<Float> itData(arr, axis);
-        ReadOnlyVectorIterator<Bool> itMask(barr, axis);
-        while (!itData.pastEnd()) {
-
-// Make MaskedArray of Vector, optionally apply OTF mask, and find scaling factor 
-
-          if (useMask) {
-             MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
-             fac = 1.0/variance(tmp);
-          } else {
-             MaskedArray<Float> tmp(itData.vector(),itMask.vector());
-             fac = 1.0/variance(tmp);
-          }
-
-// Scale data
-
-          itData.vector() *= fac;
-
-// Accumulate variance per if/pol/beam averaged over spectrum
-// This method to get pos2 from itData.pos() is only valid
-// because the spectral axis is the last one (so we can just
-// copy the first nAXesSub positions out)
-
-          pos2 = itData.pos().getFirst(nAxesSub);
-          sumSq(pos2) += fac;
-//
-          itData.next();
-          itMask.next();
-        }    
-
-// Accumulate sums
-
-       sum += marr;
-    }
-  }
-
-// Normalize by the sum of the 1/var.  
-
-  Array<Float>& data = sum.getRWArray();    
-  VectorIterator<Float> itData(data, axis);
-  while (!itData.pastEnd()) {
-     pos2 = itData.pos().getFirst(nAxesSub);           // See comments above
-     itData.vector() /= sumSq(pos2);
-     itData.next();
-  }    
-
-// Create and fill output
-
-  Array<uChar> outflags(shp);
-  convertArray(outflags,!(sum.getMask()));
-//
-  SDContainer sc = in[0]->getSDContainer();     // CLone from first container of first Table
-  sc.putSpectrum(data);
-  sc.putFlags(outflags);
-  sc.interval = sumInterval;
-//
-  SDMemTable* sdmt = new SDMemTable(*in[0],True);  // CLone from first Table
-  sdmt->putSDContainer(sc);
-  return CountedPtr<SDMemTable>(sdmt);
-}
 
 
 CountedPtr<SDMemTable>
@@ -654,37 +758,67 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
 
 // Get statistic
 
-     result[ii] = SDMath::theStatistic(which, tmp);
+     result[ii] = mathutil::statistics(which, tmp);
   }
 //
   return result;
 }
 
-
-float SDMath::theStatistic(const std::string& which,  const casa::MaskedArray<Float>& data)
+void SDMath::fillSDC (SDContainer& sc,
+                      const Array<Bool>& mask,
+                      const Array<Float>& data,
+                      const Array<Float>& tSys,
+                      Int scanID, Double timeStamp,
+                      Double interval, const String& sourceName,
+                      const Vector<uInt>& freqID)
 {
-   String str(which);
-   str.upcase();
-   if (str.contains(String("MIN"))) {
-      return min(data);
-   } else if (str.contains(String("MAX"))) {
-      return max(data);
-   } else if (str.contains(String("SUMSQ"))) {
-      return sumsquares(data);
-   } else if (str.contains(String("SUM"))) {
-      return sum(data);
-   } else if (str.contains(String("MEAN"))) {
-      return mean(data);
-   } else if (str.contains(String("VAR"))) {
-      return variance(data);
-   } else if (str.contains(String("STDDEV"))) {
-      return stddev(data);
-   } else if (str.contains(String("AVDEV"))) {
-      return avdev(data);
-   } else if (str.contains(String("RMS"))) {
-      uInt n = data.nelementsValid();
-      return sqrt(sumsquares(data)/n);
-   } else if (str.contains(String("MED"))) {
-      return median(data);
+  sc.putSpectrum(data);
+//
+  Array<uChar> outflags(mask.shape());
+  convertArray(outflags,!mask);
+  sc.putFlags(outflags);
+//
+  sc.putTsys(tSys);
+
+// Time things
+
+  sc.timestamp = timeStamp;
+  sc.interval = interval;
+  sc.scanid = scanID;
+//
+  sc.sourcename = sourceName;
+  sc.putFreqMap(freqID);
+}
+
+void SDMath::normalize (MaskedArray<Float>& sum,
+                        const Array<Float>& sumSq,
+                        const Array<Float>& nPts,
+                        weightType wtType, Int axis,
+                        Int nAxesSub)
+{
+   IPosition pos2(nAxesSub,0);
+//
+   if (wtType==NONE) {
+
+// We just average by the number of points accumulated.
+// We need to make a MA out of nPts so that no divide by
+// zeros occur
+
+      MaskedArray<Float> t(nPts, (nPts>Float(0.0)));
+      sum /= t;
+   } else if (wtType==VAR) {
+
+// Normalize each spectrum by sum(1/var) where the variance
+// is worked out for each spectrum
+
+      Array<Float>& data = sum.getRWArray();
+      VectorIterator<Float> itData(data, axis);
+      while (!itData.pastEnd()) {
+         pos2 = itData.pos().getFirst(nAxesSub);
+         itData.vector() /= sumSq(pos2);
+         itData.next();
+      }
+   } else if (wtType==TSYS) {
    }
 }
+
