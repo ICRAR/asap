@@ -80,6 +80,7 @@ void python_SDMemTable() {
     .def("setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
+    .def("set_instrument", &SDMemTableWrapper::setInstrument)
     .def("_flag", &SDMemTableWrapper::flag,
          (boost::python::arg("whichRow")=-1) )
     .def("_save",  &SDMemTableWrapper::makePersistent)
