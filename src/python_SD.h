@@ -31,14 +31,17 @@
 #ifndef _PYTHON_SD_H
 #define _PYTHON_SD_H
 
+class AipsError;
+
 namespace asap {
   namespace python {
-
+    void translate_ex(AipsError const& e);
     void python_SDMemTable();
     void python_SDReader();
     void python_SDWriter();
     void python_SDMath();
-    
+    void python_SDFitter();
+
   } // python
 } //asap
 
