@@ -166,6 +166,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   ROScalarColumn<String> srcNameCol;
   ROScalarColumn<Double> intCol;
   ROArrayColumn<uInt> fqIDCol;
+  ROScalarColumn<Int> scanIDCol;
 
 // Create accumulation MaskedArray. We accumulate for each channel,if,pol,beam
 // Note that the mask of the accumulation array will ALWAYS remain ALL True.
@@ -251,6 +252,9 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
      srcNameCol.attach(tabIn, "SRCNAME");
      intCol.attach(tabIn, "INTERVAL");
      fqIDCol.attach(tabIn, "FREQID");
+     scanIDCol.attach(tabIn, "SCANID");
+
+// Find list of start/end rows for each scan
 
 // Loop over rows in Table
 
@@ -267,10 +271,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // If we are not doing scan averages, make checks for source and
 // frequency setup and warn if averaging across them
 
-// Get copy of Scan Container for this row
-
-        SDContainer sc = in[iTab]->getSDContainer(iRow);
-        scanID = sc.scanid;
+        scanIDCol.getScalar(iRow, scanID);
 
 // Get quantities from columns
 
@@ -299,17 +300,21 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
            normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
 
+// Get ScanContainer for the first row of this averaged Scan
+
+           SDContainer scOut = in[iTab]->getSDContainer(rowStart);
+
 // Fill scan container. The source and freqID come from the
 // first row of the first table that went into this average (
 // should be the same for all rows in the scan average)
 
            Float nR(nAccum);
-           fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+           fillSDC(scOut, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
                     timeSum/nR, intSum, sourceNameStart, freqIDStart);
 
 // Write container out to Table
 
-           pTabOut->putSDContainer(sc);
+           pTabOut->putSDContainer(scOut);
 
 // Reset accumulators
 
@@ -350,6 +355,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 //   - accumulated from the last scan average
 //
 // Normalize data in 'sum' accumulation array according to weighting scheme
+
   normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
 
 // Create and fill container.  The container we clone will be from
@@ -357,10 +363,10 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // accumulation.  It probably doesn't matter that much really...
 
   Float nR(nAccum);
-  SDContainer sc = in[tableStart]->getSDContainer(rowStart);
-  fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+  SDContainer scOut = in[tableStart]->getSDContainer(rowStart);
+  fillSDC(scOut, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
            timeSum/nR, intSum, sourceNameStart, freqIDStart);
-  pTabOut->putSDContainer(sc);
+  pTabOut->putSDContainer(scOut);
   pTabOut->resetCursor();
 //
   return CountedPtr<SDMemTable>(pTabOut);
