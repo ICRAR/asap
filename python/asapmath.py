@@ -196,6 +196,22 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=
         _gainEl(scan, poly, filename, method, allaxes)
         return
         
+def align(scan, insitu=None):
+    """
+        scan:        a scantable
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+    """
+    if insitu is None: insitu = rcParams['insitu']
+    if not insitu:
+        from asap._asap import align as _align
+        return scantable(_align(scan))
+    else:
+        from asap._asap import align_insitu as _align
+        _align(scan)
+        return
+        
 def opacity(scan, tau, insitu=None, allaxes=None):
     """
     Return a scan after applying an opacity correction.
