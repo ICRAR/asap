@@ -104,7 +104,8 @@ template Vector<Float>::Vector(const vector<float> &);
 template Vector<Double>::Vector(const vector<double> &);
 template void Array<float>::tovector(vector<float> &) const;
 template void Array<Bool>::tovector(vector<bool> &) const;
-template void Array<double>::tovector(vector<double> &) const;
+template void Array<Double>::tovector(vector<double> &) const;
+template void Array<Int>::tovector(vector<int> &) const;
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
 template class FrequencyAligner<Float>;
@@ -112,7 +113,6 @@ template class InterpolateArray1D<Double, Float>;
 template Int binarySearchBrackets<Vector<Double>,Double>(Bool &, Vector<Double> const &, Double const &, uInt, Int);
 template class BaseMappedArrayEngine<Float, Float>;
 
-//
 #include "MathUtils2.cc"
 #include "SDPol2.cc"
 namespace mathutil {
