@@ -50,12 +50,13 @@ namespace asap {
 class SDReader {
 public:
   SDReader();
-  SDReader(const std::string& filename, int whichIF=-1,
-          int whichBeam=-1);
+  SDReader(const std::string& filename, const std::string& unit, 
+           int whichIF=-1, int whichBeam=-1);
   SDReader(casa::CountedPtr<SDMemTable> tbl);
   virtual ~SDReader();
 
   void open(const std::string& filename,
+            const std::string& unit,
             int whichIF=-1,
             int whichBeam=-1);
   void close();

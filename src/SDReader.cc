@@ -31,6 +31,7 @@
 #include <casa/Exceptions.h>
 #include <casa/OS/Path.h>
 #include <casa/OS/File.h>
+#include <casa/Quanta/Unit.h>
 #include <atnf/PKSIO/PKSreader.h>
 
 #include "SDReader.h"
@@ -44,11 +45,12 @@ SDReader::SDReader() :
   table_(new SDMemTable()) {
   cursor_ = 0;
 }
-SDReader::SDReader(const std::string& filename, int whichIF, int whichBeam) :
+SDReader::SDReader(const std::string& filename, const std::string& unit,
+                   int whichIF, int whichBeam) :
   reader_(0),
   table_(new SDMemTable()) {
   cursor_ = 0;
-  open(filename, whichIF, whichBeam);
+  open(filename, unit, whichIF, whichBeam);
 }
 
 SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
@@ -85,7 +87,8 @@ void SDReader::close() {
 
 
 
-void SDReader::open(const std::string& filename, int whichIF, int whichBeam) {
+void SDReader::open(const std::string& filename, const std::string& unit, 
+                    int whichIF, int whichBeam) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
 //
@@ -145,13 +148,24 @@ void SDReader::open(const std::string& filename, int whichIF, int whichBeam) {
 //
 // Determine Telescope and set units...
 
-  Bool throwIt = False;
-  Instrument inst = SDMemTable::convertInstrument (header_.antennaname, throwIt);
-  header_.fluxunit = "Jy";
-  if (inst==ATMOPRA || inst==TIDBINBILLA) {
-     header_.fluxunit = "K";
-  }
-  cerr << "Assuming brightness units are " << header_.fluxunit << endl;
+  String sUnit(unit);
+  if (sUnit.empty()) {
+     Bool throwIt = False;
+     Instrument inst = SDMemTable::convertInstrument (header_.antennaname, throwIt);
+     header_.fluxunit = "Jy";
+     if (inst==ATMOPRA || inst==TIDBINBILLA) {
+        header_.fluxunit = "K";
+     }
+     cerr << "Assuming brightness unit is " << header_.fluxunit << endl;
+   } else {
+      Unit u(sUnit);
+      if (u==Unit("Jy") || u==Unit("K")) {
+         header_.fluxunit = unit;
+         cerr << "Setting brightness unit to " << header_.fluxunit << endl;
+      } else {
+         throw(AipsError("Specified brightness unit is illegal - must be consistent with Jy or K"));
+      }
+   }
 //
   header_.nif = nIF_;
   header_.epoch = "UTC";
