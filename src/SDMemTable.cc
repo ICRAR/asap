@@ -306,10 +306,14 @@ bool SDMemTable::setMask(std::vector<int> whichChans)
   return true;
 }
 
-std::vector<bool> SDMemTable::getMask(Int whichRow) const {
+std::vector<bool> SDMemTable::getMask(Int whichRow) const 
+{
+
   std::vector<bool> mask;
+//
   Array<uChar> arr;
   flagsCol_.get(whichRow, arr);
+//
   ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
   ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
@@ -428,28 +432,6 @@ std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow, Bool doRR) cons
   IPosition vecShape(1,shape(asap::ChanAxis));
   Vector<Float> outV = out.reform(vecShape);
   return convertVector(outV);
-}
-
-std::vector<float> SDMemTable::getFloatSpectrum (const Array<Float>& arr) const
-//
-// Get spectrum at cursor location
-//
-{
-
-// Iterate and extract
-
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
-  aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
-  aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
-  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
-//
-  std::vector<float> spectrum;
-  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
-    spectrum.push_back(*i);
-  }
-  return spectrum;
 }
 
 
@@ -637,12 +619,16 @@ void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow)
     throw(AipsError("Attempting to set spectrum with incorrect length."));
   }
 
+// Setup accessors
+
   ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
-  aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
+  aa0.reset(aa0.begin(uInt(beamSel_)));                   // Beam selection
   ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
-  aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
+  aa1.reset(aa1.begin(uInt(IFSel_)));                     // IF selection
   ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
-  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+  aa2.reset(aa2.begin(uInt(polSel_)));                    // Pol selection
+
+// Iterate
 
   std::vector<float>::iterator it = spectrum.begin();
   for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
@@ -708,8 +694,8 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
   }
 }
 */
-MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection,
-                                                Bool toStokes) const 
+
+MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool toStokes) const 
 {
 
 // Get flags
@@ -717,62 +703,23 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection
   Array<uChar> farr;
   flagsCol_.get(whichRow, farr);
 
-// Get data and convert mask
+// Get data and convert mask to Bool
 
   Array<Float> arr;
   Array<Bool> mask;
-  uInt polSel = polSel_;
   if (toStokes) {
      stokesCol_.get(whichRow, arr);
 //
      Array<Bool> tMask(farr.shape());
      convertArray(tMask, farr);
      mask = SDPolUtil::stokesMask (tMask, True);
-//
-     IPosition shape = arr.shape();
-     uInt nPol = shape(asap::PolAxis);
-     if (nPol<=2) polSel = 0;             // XX and XX,YY -> I
   } else {
      specCol_.get(whichRow, arr);
      mask.resize(farr.shape());
      convertArray(mask, farr);
   }
 //
-  MaskedArray<Float> marr;
-  if (useSelection) {
-    ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
-    aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-    ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
-    aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-    ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
-    aa2.reset(aa2.begin(uInt(polSel)));// go to pol
-
-    ArrayAccessor<Bool, Axis<asap::BeamAxis> > baa0(mask);
-    baa0.reset(baa0.begin(uInt(beamSel_)));//go to beam
-    ArrayAccessor<Bool, Axis<asap::IFAxis> > baa1(baa0);
-    baa1.reset(baa1.begin(uInt(IFSel_)));// go to IF
-    ArrayAccessor<Bool, Axis<asap::PolAxis> > baa2(baa1);
-    baa2.reset(baa2.begin(uInt(polSel)));// go to pol
-
-    Vector<Float> a(arr.shape()(3));
-    Vector<Bool> b(mask.shape()(3));
-    ArrayAccessor<Float, Axis<asap::BeamAxis> > a0(a);
-    ArrayAccessor<Bool, Axis<asap::BeamAxis> > b0(b);
-
-    ArrayAccessor<Bool, Axis<asap::ChanAxis> > j(baa2);
-    for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); 
-	 i != i.end(); ++i) {
-      (*a0) = (*i);
-      (*b0) = !(*j);
-      j++;
-      a0++;
-      b0++;
-    }
-    marr.setData(a,b);
-  } else {
-    marr.setData(arr,!mask);
-  }
-  return marr;
+  return MaskedArray<Float>(arr,!mask);
 }
 
 Float SDMemTable::getTsys(Int whichRow) const
@@ -1705,5 +1652,30 @@ std::vector<float> SDMemTable::convertVector (const Vector<Float>& in) const
       out[i] = in[i];
    }
    return out;
+}
+
+
+std::vector<float> SDMemTable::getFloatSpectrum (const Array<Float>& arr) const
+//
+// Get spectrum at cursor location
+//
+{
+
+// Setup accessors
+
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
+  aa0.reset(aa0.begin(uInt(beamSel_)));                    // Beam selection
+
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
+  aa1.reset(aa1.begin(uInt(IFSel_)));                      // IF selection
+
+  ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
+  aa2.reset(aa2.begin(uInt(polSel_)));                     // Pol selection
+//
+  std::vector<float> spectrum;
+  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
+    spectrum.push_back(*i);
+  }
+  return spectrum;
 }
 
