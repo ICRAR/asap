@@ -32,6 +32,8 @@
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorSTLIterator.h>
+#include <casa/Arrays/MaskArrMath.h>
+#include <casa/BasicSL/String.h>
 
 #include "MathUtils.h"
 
@@ -89,3 +91,33 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
     ++outmit;
   }
 }
+
+
+float mathutil::statistics (const std::string& which,  const MaskedArray<Float>& data)
+{
+   String str(which);
+   str.upcase();
+   if (str.contains(String("MIN"))) {
+      return min(data); 
+   } else if (str.contains(String("MAX"))) {
+      return max(data);
+   } else if (str.contains(String("SUMSQ"))) {
+      return sumsquares(data);
+   } else if (str.contains(String("SUM"))) {
+      return sum(data);
+   } else if (str.contains(String("MEAN"))) {
+      return mean(data);
+   } else if (str.contains(String("VAR"))) {
+      return variance(data); 
+   } else if (str.contains(String("STDDEV"))) {
+      return stddev(data);
+   } else if (str.contains(String("AVDEV"))) {
+      return avdev(data);
+   } else if (str.contains(String("RMS"))) {
+      uInt n = data.nelementsValid();
+      return sqrt(sumsquares(data)/n);
+   } else if (str.contains(String("MED"))) {
+      return median(data);
+   }
+}
+  

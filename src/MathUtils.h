@@ -41,6 +41,7 @@ void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask,
 	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask, 
 	     casa::Bool relaxed=False, casa::Bool ignoreOther=False);
 
+float statistics (const std::string& which,  const casa::MaskedArray<casa::Float>& data);
 };
 
 #endif
