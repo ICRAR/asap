@@ -8,7 +8,7 @@ class scantable(sdtable):
         The ASAP container for scans
     """
     
-    def __init__(self, filename):
+    def __init__(self, filename, unit=None):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
@@ -20,6 +20,10 @@ class scantable(sdtable):
                          or
                          [advanced] a reference to an existing
                          scantable
+           unit:         brightness unit; must be consistent with K or Jy.
+                         Over-rides the default selected by the reader
+                         (input rpfits/sdfits/ms) or replaces the value
+                         in existing scantables
         """
         self._vb = rcParams['verbose']
         self._p = None
@@ -27,6 +31,9 @@ class scantable(sdtable):
         import stat
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
+            if unit is not None:
+                print 'Setting brightness unit to ', unit
+                sdtable.set_fluxunit(unit)                       
         else:
             try:
                 mode = st(filename)[stat.ST_MODE]
@@ -37,6 +44,9 @@ class scantable(sdtable):
                 # crude check if asap table
                 if stat.S_ISREG(st(filename+'/table.info')[stat.ST_MODE]):
                     sdtable.__init__(self, filename)
+                    if unit is not None:
+                        print 'Setting brightness unit to ', unit
+                        self.set_fluxunit(unit)                       
                 else:
                     print 'The given file is not a valid asap table'
                     return
@@ -44,7 +54,11 @@ class scantable(sdtable):
                 autoav = rcParams['scantable.autoaverage']
 
                 from asap._asap import sdreader
-                r = sdreader(filename,-1,-1)
+                ifSel = -1
+                beamSel = -1
+                if unit is None:
+                    unit = ""
+                r = sdreader(filename,unit,ifSel,beamSel)
                 print 'Importing data...'
                 r.read([-1])
                 tbl = r.getdata()
