@@ -82,7 +82,7 @@ public:
 
   // returns the index into the table
   // this creates a new one or returns an existing one
-  casa::Int addFrequency(casa::Int refPix, casa::Double refVal, 
+  casa::Int addFrequency(casa::Double refPix, casa::Double refVal, 
 			 casa::Double inc);
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
@@ -94,11 +94,11 @@ public:
 private:
   casa::Int nFreq_;
   casa::Vector<casa::Double> refPix_;
-  casa::Vector<casa::Double> refVal_;
-  casa::Vector<casa::Double> increment_;
+  casa::Vector<casa::Double> refVal_;           // Hz
+  casa::Vector<casa::Double> increment_         // Hz
   casa::Float equinox_;
   casa::String refFrame_;
-  casa::Vector<casa::Double> restFreqs_;
+  casa::Vector<casa::Double> restFreqs_;        // Hz
   casa::String restFreqUnit_;
 };
 
