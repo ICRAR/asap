@@ -73,12 +73,17 @@ class SDAttr {
    casa::Vector<casa::Float> JyPerK (Instrument instr, const casa::MEpoch& dateObs, 
                                      const casa::Vector<casa::Float>& freqs) const;
 
-// Factor to convert K -> Jy. Provide aperture efficiency and dish geometric diameter (m)
-   static casa::Float findJyPerKFac (casa::Float etaAp, casa::Float D);
-
 // Gain Elevation polynomial correction coefficients (elevation in degrees)
 // Returns length 0 if not known.
    casa::Vector<casa::Float> gainElevationPoly (Instrument instr) const;
+
+
+// Helper function to check instrument (antenna) name and give enum
+  static Instrument convertInstrument(const casa::String& instrument, 
+                                      casa::Bool throwIt);
+
+// Helper function.  Finds factor to convert K -> Jy. Provide aperture efficiency and dish geometric diameter (m)
+   static casa::Float findJyPerK (casa::Float etaAp, casa::Float D);
 
  private:
 

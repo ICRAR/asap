@@ -164,6 +164,7 @@ Vector<Float> SDAttr::apertureEfficiency (Instrument inst, const MEpoch& dateObs
         {
             facs = interp (freqs/1.0e9f, TidEtaApX_, TidEtaApY_);
         }
+        break;
       default:
         {
            cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
@@ -184,14 +185,14 @@ Vector<Float> SDAttr::JyPerK (Instrument inst, const MEpoch& dateObs, const Vect
 
    Vector<Float> facs(freqs.nelements(),1.0);
    for (uInt i=0; i<freqs.nelements(); i++) {
-      facs(i) = SDAttr::findJyPerKFac (etaAp(i), D);
+      facs(i) = SDAttr::findJyPerK (etaAp(i), D);
    }
 //
    return facs;
 }
 
 
-Float SDAttr::findJyPerKFac (Float etaAp, Float D)
+Float SDAttr::findJyPerK (Float etaAp, Float D)
 //
 // Converts K -> Jy
 // D in m
@@ -292,3 +293,35 @@ void SDAttr::initData ()
    TidGainElPoly_(1) = 2.87243e-2;
    TidGainElPoly_(2) = -3.219093e-4;
 }
+
+
+Instrument SDAttr::convertInstrument(const String& instrument,
+                                     Bool throwIt)
+{
+   String t(instrument);
+   t.upcase();
+
+   // The strings are what SDReader returns, after cunning interrogation
+   // of station names... :-(
+   Instrument inst = asap::UNKNOWN;
+   if (t==String("DSS-43")) {
+      inst = TIDBINBILLA;
+   } else if (t==String("ATPKSMB")) {
+      inst = ATPKSMB;
+   } else if (t==String("ATPKSHOH")) {
+      inst = ATPKSHOH;
+   } else if (t==String("ATMOPRA")) {
+      inst = ATMOPRA;
+   } else if (t==String("CEDUNA")) {
+      inst = CEDUNA;
+   } else if (t==String("HOBART")) {
+      inst = HOBART;
+   } else {
+     if (throwIt) {
+       throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
+     }
+   }
+   return inst;
+}
+
+
