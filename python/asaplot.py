@@ -6,7 +6,7 @@ import sys
 from re import match
 import Tkinter as Tk
 
-print "Importing matplotlib with TkAgg backend."
+#print "Importing matplotlib with TkAgg backend."
 import matplotlib
 matplotlib.use("TkAgg")
 

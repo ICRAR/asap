@@ -1,4 +1,5 @@
 from asap._asap import sdtable
+from asap import rcParams
 from numarray import ones,zeros
 import sys
 
@@ -20,35 +21,44 @@ class scantable(sdtable):
                          [advanced] a reference to an existing
                          scantable
         """
-        self._vb = True
+        self._vb = rcParams['verbose']
         self._p = None
         from os import stat as st
         import stat
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
         else:
-            mode = st(filename)[stat.ST_MODE]
+            try:
+                mode = st(filename)[stat.ST_MODE]
+            except OSError:
+                print "File not found"
+                return
             if stat.S_ISDIR(mode):
                 # crude check if asap table
                 if stat.S_ISREG(st(filename+'/table.info')[stat.ST_MODE]):
                     sdtable.__init__(self, filename)
                 else:
                     print 'The given file is not a valid asap table'
-            else:            
+                    return
+            else:
+                autoav = rcParams['scantable.autoaverage']
+
                 from asap._asap import sdreader
                 r = sdreader(filename)
                 print 'Importing data...'
                 r.read([-1])
                 tbl = r.getdata()
-                
-                from asap._asap import average
-                tmp = tuple([tbl])
-                print 'Auto averging integrations...'
-                tbl2 = average(tmp,(),True,'none')
-                sdtable.__init__(self,tbl2)
-                del r,tbl
+                if autoav:
+                    from asap._asap import average
+                    tmp = tuple([tbl])
+                    print 'Auto averaging integrations...'
+                    tbl2 = average(tmp,(),True,'none')
+                    sdtable.__init__(self,tbl2)
+                    del r,tbl
+                else:
+                    sdtable.__init__(self,tbl)
 
-    def save(self, name="", format='ASAP'):
+    def save(self, name="", format=None):
         """
         Store the scantable on disk. This can be a asap file or SDFITS/MS2.
         Parameters:
@@ -59,11 +69,13 @@ class scantable(sdtable):
                                        'SDFITS' (save as SDFITS file)
                                        'FITS' (saves each row as a FITS Image) 
                                        'ASCII' (saves as ascii text file)
-                                       'MS2' (saves as an aips++ MeasurementSet V2)
+                                       'MS2' (saves as an aips++
+                                              MeasurementSet V2)
         Example:
             scan.save('myscan.asap')
             scan.save('myscan.sdfits','SDFITS')
         """
+        if format is None: format = rcParams['scantable.save']
         if format == 'ASAP':
             self._save(name)
         else:
@@ -71,17 +83,6 @@ class scantable(sdtable):
             w = _sw(format)
             w.write(self, name)
         return
-
-    def _verbose(self, *args):
-        """
-        Set the verbose level True or False, to indicate if output
-        should be printed as well as returned.
-        """
-        if len(args) == 0:
-            return self._vb
-        elif type(args[0]) is bool:
-            self._vb = args[0]
-            return
 
     def copy(self):
         """
@@ -165,11 +166,11 @@ class scantable(sdtable):
             print "--------------------------------------------------"
             print " Cursor selection"
             print "--------------------------------------------------"
-            out = 'Beam=%d IF=%d Pol=%d '% (i,j,k)
+            out = 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
             print out
         return i,j,k
 
-    def stats(self, stat='stddev', mask=None, all=True):
+    def stats(self, stat='stddev', mask=None, all=None):
         """
         Determine the specified statistic of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
@@ -179,14 +180,15 @@ class scantable(sdtable):
                      'var', 'stddev', 'avdev', 'rms', 'median'
             mask:    an optional mask specifying where the statistic
                      should be determined.
-            all:     optional flag to show all (default) or a selected
-                     spectrum of Beam/IF/Pol
+            all:     optional flag to show all (default or .asaprc) or a
+                     cursor selected spectrum of Beam/IF/Pol
 
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100,200],[500,600])
             scan.stats(stat='mean', mask=m)
         """
+        if all is None: all = rcParams['scantable.allaxes']
         from asap._asap import stats as _stats
         if mask == None:
             mask = ones(self.nchan())
@@ -209,7 +211,6 @@ class scantable(sdtable):
                             tmp.append(statval)
                             out += '= %3.3f\n' % (statval[l])
                 out += "--------------------------------------------------\n"
-
             if self._vb:
                 print "--------------------------------------------------"
                 print " ",stat
@@ -231,6 +232,7 @@ class scantable(sdtable):
                 if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
                 out += '= %3.3f\n' % (statval[l])
                 out +=  "--------------------------------------------------\n"
+
             if self._vb:
                 print "--------------------------------------------------"
                 print " ",stat
@@ -238,7 +240,7 @@ class scantable(sdtable):
                 print out
             return statval
 
-    def stddev(self,mask=None, all=True):
+    def stddev(self,mask=None, all=None):
         """
         Determine the standard deviation of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
@@ -246,17 +248,19 @@ class scantable(sdtable):
         Parameters:
             mask:    an optional mask specifying where the standard
                      deviation should be determined.
-            all:     optional flag to show all or a selected
-                     spectrum of Beam/IF/Pol
+            all:     optional flag to show all or a cursor selected
+                     spectrum of Beam/IF/Pol. Default is all or taken
+                     from .asaprc
 
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100,200],[500,600])
             scan.stddev(mask=m)
         """
+        if all is None: all = rcParams['scantable.allaxes']
         return self.stats(stat='stddev',mask=mask, all=all);
 
-    def get_tsys(self, all=True):
+    def get_tsys(self, all=None):
         """
         Return the System temperatures.
         Parameters:
@@ -267,6 +271,7 @@ class scantable(sdtable):
         Returns:
             a list of Tsys values.
         """
+        if all is None: all = rcParams['scantable.allaxes']
         if all:
             out = ''
             tmp = []
@@ -286,7 +291,6 @@ class scantable(sdtable):
                             tmp.append(ts)
                             out += '= %3.3f\n' % (ts[l])
                 out+= "--------------------------------------------------\n"
-
             if self._vb:
                 print "--------------------------------------------------"
                 print " Tsys"
@@ -307,7 +311,6 @@ class scantable(sdtable):
                 if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
                 out += '= %3.3f\n' % (ts[l])
                 out += "--------------------------------------------------\n"
-
             if self._vb:
                 print "--------------------------------------------------"
                 print " Tsys"
@@ -344,7 +347,7 @@ class scantable(sdtable):
         self._setcoordinfo(inf)
         if self._p: self.plot()
 
-    def set_freqframe(self, frame='LSRK'):
+    def set_freqframe(self, frame=None):
         """
         Set the frame type of the Spectral Axis.
         Parameters:
@@ -352,6 +355,7 @@ class scantable(sdtable):
         Examples:
             scan.set_freqframe('BARY')
         """
+        if not frame: frame = rcParams['scantable.freqframe']
         valid = ['REST','TOPO','LSRD','LSRK','BARY', \
                    'GEO','GALACTO','LGROUP','CMB']
         if frame in valid:
@@ -378,7 +382,8 @@ class scantable(sdtable):
         Get the abcissa in the current coordinate setup for the currently
         selected Beam/IF/Pol
         Parameters:
-            none
+            rowno:    an optional row number in the scantable. Default is the
+                      first row, i.e. rowno=0
         Returns:
             The abcissa values and it's format string.
         """
@@ -500,11 +505,11 @@ class scantable(sdtable):
             npan = self.nrow()
             self._p.set_panels(rows=npan)
         xlab,ylab,tlab = None,None,None
-        vb = self._verbose()
-        self._verbose(False)
-        sel = self.get_selection()
+        self._vb = False
+        sel = self.get_selection()        
         for i in range(npan):
-            self._p.subplot(i)
+            if npan > 1:
+                self._p.subplot(i)
             for j in range(validcol[col]):
                 x = None
                 y = None
@@ -539,5 +544,5 @@ class scantable(sdtable):
             self._p.set_axes('title',tlab)
         self._p.release()
         self.set_selection(sel[0],sel[1],sel[2])
-        self._verbose(vb)
+        self._vb = rcParams['verbose']
         return

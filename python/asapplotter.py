@@ -1,17 +1,17 @@
 from asap.asaplot import ASAPlot
+from asap import rcParams
 
 class asapplotter:
+    """
+    The ASAP plotter.
+    By default the plotter is set up to plot polarisations
+    'colour stacked' and scantables across panels.
+    The defaul plotter is called 'plotter'.
+    Note:
+        Currenly it only plots 'spectra' not Tsys or
+        other variables.
+    """
     def __init__(self):
-        """
-        The ASAP plotter.
-        By default the plotter is set up to plot polarisations
-        'colour stacked' and scantables across panels.
-        The defaul plotter is called 'plotter'.
-        Note:
-            Currenly it only plots 'spectra' not Tsys or
-            other variables.
-        
-        """
         self._plotter = ASAPlot()
 
         self._tdict = {'Time':'t','time':'t','t':'t','T':'t'}
@@ -32,11 +32,12 @@ class asapplotter:
                        self._idict,self._pdict,
                        self._sdict]
         self._panels = 's'
-        self._stacking = 'p'
+        self._stacking = rcParams['plotter.stacking']
         self._autoplot = False
         self._minmax = None
         self._data = None
         self._lmap = []
+        self._title = None
 
     def _translate(self, name):
         for d in self._dicts:
@@ -96,12 +97,18 @@ class asapplotter:
                 x = None
                 y = None
                 m = None
-                tlab = scan._getsourcename(i)
+                if not self._title:
+                    tlab = scan._getsourcename(i)                    
+                else:
+                    if len(self._title) == n:
+                        tlab = self._title[i]
+                    else:
+                        tlab = scan._getsourcename(i)                   
                 x,xlab = scan.get_abcissa(i)
                 y = scan.getspectrum(i)
                 ylab = 'Flux ('+scan.get_fluxunit()+')'
                 m = scan.getmask(i)
-                if len(self._lmap) > 0:
+                if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[j]
                 else:
                     llab = self._ldict.get(colmode)+' '+str(j)
@@ -137,7 +144,9 @@ class asapplotter:
                 x = None
                 y = None
                 m = None
-                tlab = scan._getsourcename()
+                tlab = self._title
+                if not self._title:
+                    tlab = scan._getsourcename()
                 x,xlab = scan.get_abcissa()
                 y = scan.getspectrum()
                 ylab = 'Flux ('+scan.get_fluxunit()+')'
@@ -193,11 +202,20 @@ class asapplotter:
                 ylab = 'Flux ('+scan.get_fluxunit()+')'
                 m = scan.getmask(k)
                 if colmode == 's' or colmode == 't':
-                    tlab = self._ldict.get(self._panels)+' '+str(i)
+                    if not self._title:
+                        tlab = self._ldict.get(self._panels)+' '+str(i)
+                    else:
+                        if len(self.title) == n:
+                            tlab = self._title[i]
+                        else:
+                            tlab = self._ldict.get(self._panels)+' '+str(i)
                     llab = scan._getsourcename(k)
                 else:
-                    tlab = scan._getsourcename(k)
-                    if len(self._lmap) > 0:
+                    if self._title and len(self._title) > 0:
+                        tlab = self._title[k]
+                    else:
+                        tlab = scan._getsourcename(k)
+                    if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[j]
                     else:
                         llab = self._ldict.get(colmode)+' '+str(j)
@@ -213,7 +231,7 @@ class asapplotter:
         return
 
 
-    def set_mode(self, stacking='pol', panelling='scan'):
+    def set_mode(self, stacking=None, panelling=None):
         """
         Parameters:
             stacking:     tell the plotter which variable to plot
@@ -230,21 +248,30 @@ class asapplotter:
         """
         if not self.set_panels(panelling):
             print "Invalid mode"
+            return
         if not self.set_stacking(stacking):
             print "Invalid mode"
+            return
+        if self._data: self.plot()
         return
 
-    def set_panels(self, what='scan'):        
+    def set_panels(self, what=None):        
+        if not what:
+             what = rcParams['plotter.panelling']
         md = self._translate(what)
         if md:
-            self._panels = md        
+            self._panels = md
+            self._title = None
             return True
         return False
 
-    def set_stacking(self, what='pol'):        
+    def set_stacking(self, what=None):  
+        if not what:
+             what = rcParams['plotter.stacking']        
         md = self._translate(what)
         if md:
             self._stacking = md
+            self._lmap = None
             return True
         return False
 
@@ -260,15 +287,13 @@ class asapplotter:
         """
         if start is None and end is None:
             self._minmax = None
-            if self._data is not None:
-                self.plot()
+            if self._data: self.plot()
         else:
             self._minmax = [start,end]
-            if self._data is not None:
-                self.plot()
+            if self._data: self.plot()
         return
     
-    def set_legend_map(self,mp=[]):
+    def set_legend_map(self, mp=[]):
         """
         Specify a mapping for the legend instead of using the default
         indices:
@@ -285,6 +310,13 @@ class asapplotter:
              plotter.plot()
         """
         self._lmap = mp
-        
+        if self._data: self.plot()
+        return
+
+    def set_title(self, title=None):
+        self._title = title
+        if self._data: self.plot()
+        return
+
 if __name__ == '__main__':
     plotter = asapplotter()

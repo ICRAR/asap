@@ -2,15 +2,186 @@
 This is the ATNF Single Dish Analysis package.
 
 """
-#import _asap
-#from asaplot import ASAPlot
+import os,sys
+
+def validate_bool(b):
+    'Convert b to a boolean or raise'
+    bl = b.lower()
+    if bl in ('f', 'no', 'false', '0', 0): return False
+    elif bl in ('t', 'yes', 'true', '1', 1): return True
+    else:
+        raise ValueError('Could not convert "%s" to boolean' % b)
+
+def validate_int(s):
+    'convert s to int or raise'
+    try: return int(s)
+    except ValueError:
+        raise ValueError('Could not convert "%s" to int' % s)
+
+def asap_fname():
+    """
+    Return the path to the rc file
+
+    Search order:
+
+     * current working dir
+     * environ var ASAPRC
+     * HOME/.matplotlibrc
+     
+    """
+
+    fname = os.path.join( os.getcwd(), '.asaprc')
+    if os.path.exists(fname): return fname
+
+    if os.environ.has_key('ASAPRC'):
+        path =  os.environ['ASAPRC']
+        if os.path.exists(path):
+            fname = os.path.join(path, '.asaprc')
+            if os.path.exists(fname):
+                return fname
+
+    if os.environ.has_key('HOME'):
+        home =  os.environ['HOME']
+        fname = os.path.join(home, '.asaprc')
+        if os.path.exists(fname):
+            return fname
+    return None
+        
+
+defaultParams = {
+    # general
+    'verbose'             : [True, validate_bool],
+    'useplotter'          : [True, validate_bool],
+
+    # plotting
+    'plotter.stacking'    : ['p', str],
+    'plotter.panelling'   : ['s', str],
+
+    # scantable
+    'scantable.save'      : ['ASAP', str],
+    'scantable.autoaverage'      : [True, validate_bool],
+    'scantable.freqframe' : ['LSRK', str],  #default frequency frame
+    'scantable.allaxes'   : [True, validate_bool],  # apply action to all axes
+    'scantable.plotter'   : [True, validate_bool], # use internal plotter
+
+    # math
+    'math.insitu'         : [False, validate_bool],
+
+    # fitter
+    'fitter.polyorder'    : [0, validate_int],
+    'fitter.ncomponents'  : [1, validate_int]
+    }
+
+def rc_params():
+    'Return the default params updated from the values in the rc file'
+    
+    fname = asap_fname()
+    
+    if fname is None or not os.path.exists(fname):
+        message = 'could not find rc file; returning defaults'
+        ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
+        #print message
+        return ret
+        
+    cnt = 0
+    for line in file(fname):
+        cnt +=1
+        line = line.strip()
+        if not len(line): continue
+        if line.startswith('#'): continue
+        tup = line.split(':',1)
+        if len(tup) !=2:
+            print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            continue
+        
+        key, val = tup
+        key = key.strip()
+        if not defaultParams.has_key(key):
+            print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            continue
+        
+        default, converter =  defaultParams[key]
+
+        ind = val.find('#')
+        if ind>=0: val = val[:ind]   # ignore trailing comments
+        val = val.strip()
+        try: cval = converter(val)   # try to convert to proper type or raise
+        except Exception, msg:
+            print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
+            continue
+        else:
+            # Alles Klar, update dict
+            defaultParams[key][0] = cval
+
+    # strip the conveter funcs and return
+    ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
+    verbose.report('loaded rc file %s'%fname)
+
+    return ret
+
+
+# this is the instance used by the asap classes
+rcParams = rc_params() 
+
+rcParamsDefault = dict(rcParams.items()) # a copy
+
+def rc(group, **kwargs):
+    """
+    Set the current rc params.  Group is the grouping for the rc, eg
+    for lines.linewidth the group is 'lines', for axes.facecolor, the
+    group is 'axes', and so on.  kwargs is a list of attribute
+    name/value pairs, eg
+
+      rc('lines', linewidth=2, color='r')
+
+    sets the current rc params and is equivalent to
+    
+      rcParams['lines.linewidth'] = 2
+      rcParams['lines.color'] = 'r'
+
+
+    Note you can use python's kwargs dictionary facility to store
+    dictionaries of default parameters.  Eg, you can customize the
+    font rc as follows
+
+      font = {'family' : 'monospace',
+              'weight' : 'bold',
+              'size'   : 'larger',
+             }
+
+      rc('font', **font)  # pass in the font dict as kwargs
+
+    This enables you to easily switch between several configurations.
+    Use rcdefaults to restore the default rc params after changes.
+    """
+
+    aliases = {
+        }
+    
+    for k,v in kwargs.items():
+        name = aliases.get(k) or k
+        key = '%s.%s' % (group, name)
+        if not rcParams.has_key(key):
+            raise KeyError('Unrecognized key "%s" for group "%s" and name "%s"' % (key, group, name))
+        
+        rcParams[key] = v
+
+
+def rcdefaults():
+    """
+    Restore the default rc params - the ones that were created at
+    asap load time
+    """
+    rcParams.update(rcParamsDefault)
+
 from asapfitter import *
 from asapreader import reader
 from asapmath import *
 from scantable import *
-print "Initialising plotter..."
-from asapplotter import *
-plotter = asapplotter()
+if rcParams['useplotter']:
+    print "Initialising plotter..."
+    from asapplotter import *
+    plotter = asapplotter()
 #from numarray ones,zeros
 
 __date__ = '$Date$'
