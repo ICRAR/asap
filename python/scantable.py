@@ -56,7 +56,7 @@ class scantable(sdtable):
                 beamSel = -1
                 if unit is None:
                     unit = ""
-                r = sdreader(filename,unit,ifSel,beamSel)
+                r = sdreader(filename,ifSel,beamSel)
                 print 'Importing data...'
                 r.read([-1])
                 tbl = r.getdata()
