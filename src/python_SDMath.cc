@@ -63,7 +63,7 @@ namespace asap {
 
   namespace python {
     void python_SDMath() {
-      def("b_operate", &SDMathWrapper::simpleBinaryOperate);
+      def("b_operate", &SDMathWrapper::binaryOperate);
 //
       def("quotient", &SDMathWrapper::quotient);
 //
