@@ -87,9 +87,9 @@ namespace SDMathWrapper {
                                   const std::string& fileName, 
                                   const std::string& method, bool doAll);
 
-// Apply velocity alignment
-  void velocityAlignmentInSitu (SDMemTableWrapper& in, const std::string& refTime);
-  SDMemTableWrapper velocityAlignment(const SDMemTableWrapper& in, const std::string& refTime);
+// Apply frequency alignment
+  void frequencyAlignmentInSitu (SDMemTableWrapper& in, const std::string& refTime);
+  SDMemTableWrapper frequencyAlignment(const SDMemTableWrapper& in, const std::string& refTime);
 
 // Apply opacity correction
   void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
