@@ -262,6 +262,7 @@ def commands():
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
+            lines           - print list of known spectral lines
             flag_spectrum   - flag a whole Beam/IF/Pol
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
