@@ -30,8 +30,12 @@ class asapplotter:
         self._dicts = [self._tdict,self._bdict,
                        self._idict,self._pdict,
                        self._sdict]
-        self._panels = rcParams['plotter.panelling']
-        self._stacking = rcParams['plotter.stacking']
+        self._panelling = None
+        self._stacking = None
+        self.set_panelling()
+        self.set_stacking()
+        print rcParams
+        print self._panelling, self._stacking
         self._rows = None
         self._cols = None
         self._autoplot = False
@@ -76,14 +80,14 @@ class asapplotter:
             else:
                 self._data = list(args)
                 self.set_cursor(refresh=False)
-        if self._panels == 't':
+        if self._panelling == 't':
             maxrows = 9
             if self._data[0].nrow() > maxrows:
                 print "Scan to be plotted contains more than %d rows.\n" \
                       "Selecting first %d rows..." % (maxrows,maxrows)
                 self._cursor["t"] = range(maxrows)
             self._plot_time(self._data[0], self._stacking)
-        elif self._panels == 's':
+        elif self._panelling == 's':
             self._plot_scans(self._data, self._stacking)
         else:
             self._plot_other(self._data, self._stacking)
@@ -207,10 +211,10 @@ class asapplotter:
         if n > 1:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
-                self._plotter.set_panels(rows=self._rows,cols=self._cols,
+                self._plotter.set_panel(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                self._plotter.set_panels(rows=n,cols=0,nplots=n)
+                self._plotter.set_panel(rows=n,cols=0,nplots=n)
         for scan in scans:
             self._plotter.palette(1)
             if n > 1:
@@ -281,7 +285,7 @@ class asapplotter:
         return
     
     def _plot_other(self,scans,colmode):
-        if colmode == self._panels:
+        if colmode == self._panelling:
             return
         cdict = {'b':'scan.setbeam(i)',
                  'i':'scan.setif(i)',
@@ -292,7 +296,7 @@ class asapplotter:
                   's': 'scans',
                   't': 'self._cursor["t"]'}
         scan = scans[0]
-        n = eval(self._cdict.get(self._panels))
+        n = eval(self._cdict.get(self._panelling))
         ncol=1
         if self._stacking is not None:            
             ncol = eval(self._cdict.get(colmode))
@@ -304,25 +308,25 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        panels = self._cursor[self._panels]        
+        panels = self._cursor[self._panelling]        
         for i in panels:
             self._plotter.palette(1)
             polmode = "raw"
-            ii = self._cursor[self._panels].index(i)
+            ii = self._cursor[self._panelling].index(i)
             if n>1:
                 self._plotter.subplot(ii)
-            if self._panels == "p":
+            if self._panelling == "p":
                 polmode = self._polmode[ii]
-                eval(cdict.get(self._panels))
+                eval(cdict.get(self._panelling))
             else:
-                eval(cdict.get(self._panels))
+                eval(cdict.get(self._panelling))
             colvals = eval(cdict2.get(colmode))
             for j in colvals:
                 rowsel = self._cursor["t"][0]
                 jj = colvals.index(j)
                 savei = i
                 for k in cdict.keys():
-                    if k != self._panels:
+                    if k != self._panelling:
                         sel = eval(cdict2.get(k))
                         i = sel[0]
                         if k == "p":
@@ -365,13 +369,13 @@ class asapplotter:
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
                     else:                        
-                        tlab = self._ldict.get(self._panels)+' '+str(i)
+                        tlab = self._ldict.get(self._panelling)+' '+str(i)
                     llab = scan._getsourcename(rowsel)
                 else:
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
                     else:
-                        tlab = self._ldict.get(self._panels)+' '+str(i)
+                        tlab = self._ldict.get(self._panelling)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[jj]
                     else:
@@ -386,7 +390,7 @@ class asapplotter:
                                 llab = scan._getpolarizationlabel(1,0,0)
                         else:
                             llab = self._ldict.get(colmode)+' '+str(j)
-                if self._panels == 'p':
+                if self._panelling == 'p':
                     if polmode == "stokes":
                         tlab = scan._getpolarizationlabel(0,1,0)
                     elif polmode == "stokes2":
@@ -423,7 +427,7 @@ class asapplotter:
                  'scan' 'Scan' 's':     Scans
                  'time' 'Time' 't':     Times
         """
-        if not self.set_panels(panelling):
+        if not self.set_panelling(panelling):
             print "Invalid mode"
             return
         if not self.set_stacking(stacking):
@@ -432,12 +436,13 @@ class asapplotter:
         if self._data: self.plot()
         return
 
-    def set_panels(self, what=None):
-        if not what:
-             what = rcParams['plotter.panelling']
-        md = self._translate(what)
+    def set_panelling(self, what=None):
+        mode = what
+        if mode is None:
+             mode = rcParams['plotter.panelling']
+        md = self._translate(mode)
         if md:
-            self._panels = md
+            self._panelling = md
             self._title = None
             return True
         return False
@@ -459,9 +464,10 @@ class asapplotter:
         return
 
     def set_stacking(self, what=None):  
-        if not what:
-             what = rcParams['plotter.stacking']        
-        md = self._translate(what)
+        mode = what
+        if mode is None:            
+             mode = rcParams['plotter.stacking']        
+        md = self._translate(mode)
         if md:
             self._stacking = md
             self._lmap = None
@@ -574,7 +580,7 @@ class asapplotter:
             self._cursor["t"] = range(n)
         else:
             for i in row:
-                if 0 > i >= n:
+                if i < 0 or i >= n:
                     print "Row index '%d' out of range" % i
                     return
             self._cursor["t"] = row
@@ -584,7 +590,7 @@ class asapplotter:
             self._cursor["b"] = range(n)
         else:
             for i in beam:
-                if 0 > i >= n:
+                if i < 0 or  i >= n:
                     print "Beam index '%d' out of range" % i
                     return            
             self._cursor["b"] = beam
@@ -594,7 +600,7 @@ class asapplotter:
             self._cursor["i"] = range(n)
         else:
             for i in IF:
-                if 0 > i >= n:
+                if i < 0 or i >= n:
                     print "IF index '%d' out of range" %i
                     return            
             self._cursor["i"] = IF            
