@@ -41,6 +41,8 @@
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/MaskArrLogi.h>
+#include <casa/Containers/Block.h>
+#include <casa/Quanta/QC.h>
 #include <casa/Utilities/Assert.h>
 #include <casa/Exceptions.h>
 
@@ -56,6 +58,7 @@
 #include <coordinates/Coordinates/SpectralCoordinate.h>
 #include <coordinates/Coordinates/CoordinateSystem.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
+#include <coordinates/Coordinates/VelocityAligner.h>
 
 #include "MathUtils.h"
 #include "Definitions.h"
@@ -93,10 +96,12 @@ SDMath::~SDMath()
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
 				       const std::string& weightStr)
+//Bool alignVelocity)
 //
 // Weighted averaging of spectra from one or more Tables.
 //
 {
+   Bool alignVelocity = False;
 
 // Convert weight type
   
@@ -109,11 +114,10 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // Setup
 
-  const uInt axis = asap::ChanAxis;                      // Spectral axis
   IPosition shp = in[0]->rowAsMaskedArray(0).shape();      // Must not change
   Array<Float> arr(shp);
   Array<Bool> barr(shp);
-  const Bool useMask = (mask.nelements() == shp(axis));
+  const Bool useMask = (mask.nelements() == shp(asap::ChanAxis));
 
 // Columns from Tables
 
@@ -148,7 +152,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   const uInt nAxesSub = shp.nelements() - 1;
   IPosition shp2(nAxesSub);
   for (uInt i=0,j=0; i<(nAxesSub+1); i++) {
-     if (i!=axis) {
+     if (i!=asap::ChanAxis) {
        shp2(j) = shp(i);
        j++;
      }
@@ -191,11 +195,48 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   String sourceName, oldSourceName, sourceNameStart;
   Vector<uInt> freqID, freqIDStart, oldFreqID;
 
+// Velocity Aligner. We need an aligner for each Direction and FreqID
+// combination.  I don't think there is anyway to know how many
+// directions there are.
+// For now, assume all Tables have the same Frequency Table
+
+/*
+  {
+     MEpoch::Ref timeRef(MEpoch::UTC);              // Should be in header
+     MDirection::Types dirRef(MDirection::J2000);   // Should be in header
+//
+     SDHeader sh = in[0].getSDHeader();
+     const uInt nChan = sh.nchan;
+//
+     const SDFrequencyTable freqTab = in[0]->getSDFreqTable();
+     const uInt nFreqID = freqTab.length();
+     PtrBlock<const VelocityAligner<Float>* > vA(nFreqID);
+
+// Get first time from first table
+
+     const Table& tabIn0 = in[0]->table();
+     mjdCol.attach(tabIn0, "TIME");
+     Double dTmp;
+     mjdCol.get(0, dTmp);
+     MVEpoch tmp2(Quantum<Double>(dTmp, Unit(String("d"))));
+     MEpoch epoch(tmp2, timeRef);
+//
+     for (uInt freqID=0; freqID<nFreqID; freqID++) {
+        SpectralCoordinate sC = in[0]->getCoordinate(freqID);
+        vA[freqID] = new VelocityAligner<Float>(sC, nChan, epoch, const MDirection& dir, 
+                                                const MPosition& pos, const String& velUnit, 
+                                                MDoppler::Types velType, MFrequency::Types velFreqSystem)
+     }
+  }
+*/
+
 // Loop over tables
 
   Float fac = 1.0;
   const uInt nTables = in.nelements();
   for (uInt iTab=0; iTab<nTables; iTab++) {
+
+// Should check that the frequency tables don't change if doing VelocityAlignment
 
 // Attach columns to Table
 
@@ -251,7 +292,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // Normalize data in 'sum' accumulation array according to weighting scheme
 
-           normalize(sum, sumSq, nPts, wtType, axis, nAxesSub);
+           normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
 
 // Fill scan container. The source and freqID come from the
 // first row of the first table that went into this average (
@@ -274,7 +315,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
            tSysSum =0.0;
            timeSum = 0.0;
            intSum = 0.0;
-	   nPts = 0.0; // reset this too!!!
+	   nPts = 0.0;
 
 // Increment
 
@@ -291,7 +332,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // Accumulate
 
         accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, 
-                    tSys, nInc, mask, time, interval, in, iTab, iRow, axis, 
+                    tSys, nInc, mask, time, interval, in, iTab, iRow, asap::ChanAxis, 
                     nAxesSub, useMask, wtType);
 //
        oldSourceName = sourceName;
@@ -305,7 +346,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 //   - accumulated from the last scan average
 //
 // Normalize data in 'sum' accumulation array according to weighting scheme
-  normalize(sum, sumSq, nPts, wtType, axis, nAxesSub);
+  normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
 
 // Create and fill container.  The container we clone will be from
 // the last Table and the first row that went into the current
@@ -315,19 +356,8 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   SDContainer sc = in[tableStart]->getSDContainer(rowStart);
   fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
            timeSum/nR, intSum, sourceNameStart, freqIDStart);
-//
   pTabOut->putSDContainer(sc);
-/*
-   cout << endl;
-   cout << "Last accumulation for output scan ID " << outScanID << endl;
-   cout << "   The first row in this accumulation is " << rowStart << endl;
-   cout << "   The number of rows accumulated is " << nAccum << endl;
-   cout << "   The first table in this accumulation is " << tableStart << endl;
-   cout << "   The first source in this accumulation is " << sourceNameStart << endl;
-   cout << "   The first freqID in this accumulation is " << freqIDStart << endl;
-   cout  << "   Average time stamp = " << timeSum/nR << endl;
-   cout << "   Integrated time = " << intSum << endl;
-*/
+//
   return CountedPtr<SDMemTable>(pTabOut);
 }
 
@@ -479,7 +509,6 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 
 // Loop over rows and bin along channel axis
   
-  const uInt axis = asap::ChanAxis;
   for (uInt i=0; i < in.nRow(); ++i) {
     SDContainer sc = in.getSDContainer(i);
 //
@@ -489,7 +518,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 
     MaskedArray<Float> marr(in.rowAsMaskedArray(i));
     MaskedArray<Float> marrout;
-    LatticeUtilities::bin(marrout, marr, axis, width);
+    LatticeUtilities::bin(marrout, marr, asap::ChanAxis, width);
 
 // Put back the binned data and flags
 
@@ -504,7 +533,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
     MaskedArray<Float> tSysIn(tSys, allGood, True);
 //
     MaskedArray<Float> tSysOut;    
-    LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
+    LatticeUtilities::bin(tSysOut, tSysIn, asap::ChanAxis, width);
     sc.putTsys(tSysOut.getArray());
 //
     pTabOut->putSDContainer(sc);
@@ -765,7 +794,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 // those pointed at by the current selection cursor
 
     if (doAll) {
-       uInt axis = 3;
+       uInt axis = asap::ChanAxis;
        VectorIterator<Float> itValues(valuesIn, axis);
        VectorIterator<Bool> itMask(maskIn, axis);
        while (!itValues.pastEnd()) {
@@ -820,6 +849,101 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 }
 
 
+SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool doAll)
+// 
+// As it is, this function could be implemented with 'simpleOperate'
+// However, I anticipate that eventually we will look the conversion
+// values up in a Table and apply them in a frequency dependent way,
+// so I have implemented it fully here
+//
+{
+  SDHeader sh = in.getSDHeader();
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+
+// FInd out how to convert values into Jy and K (e.g. units might be mJy or mK)
+// Also automatically find out what we are converting to according to the
+// flux unit
+
+  Unit fluxUnit(sh.fluxunit); 
+  Unit K(String("K"));
+  Unit JY(String("Jy"));
+//
+  Bool toKelvin = True;
+  Double inFac = 1.0;
+  if (fluxUnit==JY) {
+     cerr << "Converting to K" << endl;
+//
+     Quantum<Double> t(1.0,fluxUnit);
+     Quantum<Double> t2 = t.get(JY);
+     inFac = (t2 / t).getValue();
+//
+     toKelvin = True;
+     sh.fluxunit = "K";
+  } else if (fluxUnit==K) {
+     cerr << "Converting to Jy" << endl;
+//
+     Quantum<Double> t(1.0,fluxUnit);
+     Quantum<Double> t2 = t.get(K);
+     inFac = (t2 / t).getValue();
+//
+     toKelvin = False;
+     sh.fluxunit = "Jy";
+  } else {
+     throw AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K");
+  }
+  pTabOut->putSDHeader(sh);
+
+// Compute conversion factor. 'a' and 'eta' are really frequency, time and  
+// telescope dependent and should be looked// up in a table
+
+  Float factor = 2.0 * inFac * 1.0e-7 * 1.0e26 * QC::k.getValue(Unit(String("erg/K"))) / a / eta;
+  if (toKelvin) {
+    factor = 1.0 / factor;
+  }
+  cerr << "Applying conversion factor = " << factor << endl;
+
+// For operations only on specified cursor location
+
+  IPosition start, end;
+  getCursorLocation(start, end, in);
+
+// Loop over rows and apply factor to spectra
+  
+  const uInt axis = asap::ChanAxis;
+  for (uInt i=0; i < in.nRow(); ++i) {
+
+// Get data
+
+    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
+    const Array<Bool>& maskIn = dataIn.getMask();  
+
+// Need to apply correct conversion factor (frequency and time dependent)
+// which should be sourced from a Table. For now we just apply the given 
+// factor to everything
+
+    if (doAll) {
+       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
+       while (!itValues.pastEnd()) {
+          itValues.vector() *= factor;                            // Writes back into dataIn
+//
+          itValues.next();
+       }
+    } else {
+       Array<Float> valuesIn2 = valuesIn(start,end);
+       valuesIn2 *= factor;
+       valuesIn(start,end) = valuesIn2;
+    }
+
+// Write out
+
+    SDContainer sc = in.getSDContainer(i);
+    putDataInSDC(sc, valuesIn, maskIn);
+//
+    pTabOut->putSDContainer(sc);
+  }
+  return pTabOut;
+}
 
 
 

@@ -64,6 +64,7 @@ class SDMath {
    casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                                          const casa::Vector<casa::Bool>& mask,
                                          casa::Bool scanAverage, const std::string& weightStr);
+//                                         casa::Bool alignVelocity);
 
 // Statistics
    std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
@@ -75,6 +76,10 @@ class SDMath {
 // Smooth
    SDMemTable* smooth (const SDMemTable& in, const casa::String& kernel,
                        casa::Float width, casa::Bool doAll);
+
+// Flux conversion between Jansky and Kelvin
+   SDMemTable* convertFlux (const SDMemTable& in, casa::Float area, 
+                            casa::Float eta, casa::Bool doAll);
 
 // Simple mathematical operations.  what=0 (mul) or 1 (add)
    SDMemTable* simpleOperate(const SDMemTable& in, casa::Float offset, 
