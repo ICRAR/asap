@@ -77,7 +77,7 @@ public:
 			 casa::Double inc);
 //  
   casa::Int length() const { return nFreq_;}          // # of stored Frequencies
-  void setLength(casa::Int length) {nFreq_ = length;}
+  void setLength(casa::uInt length) {nFreq_ = length;}
 
 // Get attributes
   casa::Double referencePixel(casa::uInt which) const { return refPix_[which];}
@@ -85,12 +85,15 @@ public:
   casa::Double increment(casa::uInt which) const { return increment_[which];}
   casa::Float equinox() const { return equinox_; }
   casa::String refFrame() const { return refFrame_; }
+//
   void restFrequencies(casa::Vector<casa::Double>& rfs, 
 		       casa::String& rfunit ) const ;
 
 // Set attributes
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
+//
+  void deleteRestFrequencies () {restFreqs_.resize(0);}
   casa::uInt addRestFrequency(casa::Double);
   void setRestFrequencyUnit(const casa::String& theunit) {restFreqUnit_ = theunit;}
 

@@ -794,16 +794,6 @@ Int SDMemTable::nCoordinates() const
   return table_.keywordSet().asTable("FREQUENCIES").nrow();
 }
 
-void SDMemTable::setRestFreqs(std::vector<double> freqs, 
-			      const std::string& theunit)
-{
-  Vector<Double> tvec(freqs);
-  Quantum<Vector<Double> > q(tvec, String(theunit));
-  tvec.resize();
-  tvec = q.getValue("Hz");
-  Table t = table_.keywordSet().asTable("FREQUENCIES");
-  t.rwKeywordSet().define("RESTFREQS",tvec);
-}
 
 std::vector<double> SDMemTable::getRestFreqs() const
 {
@@ -1335,20 +1325,44 @@ Instrument SDMemTable::convertInstrument(const String& instrument,
    return inst;
 }
 
-casa::Bool SDMemTable::selectRestFreq (casa::Double restFreq, const String& unit,
-                                       const casa::String& source,
-                                       casa::Int whichIF)
+casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, const String& sUnit,
+                                     const casa::String& source,
+                                     casa::Int whichIF)
 {
    const Int nIFs = nIF();
    if (whichIF>=nIFs) {
       throw(AipsError("Illegal IF index"));
    }
 
-// Find rest frequency.  Add it if necessary
+// If multiple restfreqs, must be length nIF. In this
+// case we will just replace the rest frequencies
+// 
 
+   const uInt nRestFreqs = restFreqs.nelements();
+   Unit unit(sUnit);
+   Int idx = -1;
    SDFrequencyTable sdft = getSDFreqTable();
-   Quantum<Double> rf(restFreq, Unit(unit));
-   uInt idx = sdft.addRestFrequency(rf.getValue("Hz"));
+
+   if (nRestFreqs>1) {
+
+// Replace restFreqs, one per IF
+
+      if (nRestFreqs != nIFs) {
+         throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
+      }
+//
+      sdft.deleteRestFrequencies();
+      for (uInt i=0; i<nRestFreqs; i++) {
+         Quantum<Double> rf(restFreqs[i], unit);
+         sdft.addRestFrequency(rf.getValue("Hz"));
+      }
+   } else {
+
+// Add new rest freq
+
+      Quantum<Double> rf(restFreqs[0], unit);
+      idx = sdft.addRestFrequency(rf.getValue("Hz"));
+   }
 
 // Replace
 
@@ -1361,12 +1375,23 @@ casa::Bool SDMemTable::selectRestFreq (casa::Double restFreq, const String& unit
       for (uInt i=0; i<nRow; i++) {
          srcnCol_.get(i, srcName);
          restfreqidCol_.get(i,restFreqIDs);       
-//
-         if (empty || source==srcName) {
-            if (whichIF<0) {
-               restFreqIDs = idx;
-            } else {              
-               restFreqIDs(whichIF) = idx;
+// 
+         if (idx==-1) {
+
+// Replace vector of restFreqs; one per IF. 
+// No selection possible
+
+            for (uInt i=0; i<nIFs; i++) restFreqIDs[i] = i;
+         } else {
+
+// Set RestFreqID for selected data
+
+            if (empty || source==srcName) {
+               if (whichIF<0) {
+                  restFreqIDs = idx;
+               } else {              
+                  restFreqIDs[whichIF] = idx;
+               }
             }
          }
 //

@@ -114,16 +114,13 @@ public:
   double getInterval(casa::Int whichRow=0) const;
 
   virtual void setSpectrum(std::vector<float> spectrum, int whichRow=0);
-  virtual void setRestFreqs(std::vector<double> freqs, 
-			    const std::string& theunit);
   virtual void setCoordInfo(std::vector<string> theinfo);
 
-// Select RestFreqID.  FInds the restFreq ID for specified restFreq,
-// and updates RESTFREQID column of table for specified IF index
-// (-1 means all IFs) and source combination
-  virtual casa::Bool selectRestFreq (casa::Double restFreq, const casa::String& unit,
-                                     const casa::String& source,
-                                     casa::Int whichIF=-1);
+// Set RestFreqID.  source="" and IF=-1 means select all
+  virtual casa::Bool setRestFreqs (const casa::Vector<casa::Double>& restFreqs, 
+                                   const casa::String& unit,
+                                   const casa::String& source,
+                                   casa::Int whichIF=-1);
 
 // Get/Set flux unit
   std::string getFluxUnit() const;
