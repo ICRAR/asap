@@ -43,11 +43,11 @@ SDReader::SDReader() :
   table_(new SDMemTable()) {
   cursor_ = 0;
 }
-SDReader::SDReader(const std::string& filename) :
+SDReader::SDReader(const std::string& filename, int whichIF, int whichBeam) :
   reader_(0),
   table_(new SDMemTable()) {
   cursor_ = 0;
-  open(filename);
+  open(filename, whichIF, whichBeam);
 }
 
 SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
@@ -77,11 +77,14 @@ void SDReader::reset() {
   table_->putSDHeader(header_);
 }
 
+
 void SDReader::close() {
   cerr << "disabled" << endl;
 }
 
-void SDReader::open(const std::string& filename) {
+
+
+void SDReader::open(const std::string& filename, int whichIF, int whichBeam) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
 //
@@ -94,7 +97,9 @@ void SDReader::open(const std::string& filename) {
      throw(AipsError("File does not exist"));
   }
   filename_ = inName;
-//
+
+// Create reader and fill in values for arguments
+
   String format;
   Vector<Bool> beams;
   if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
@@ -136,15 +141,45 @@ void SDReader::open(const std::string& filename) {
       "setting # of IFs = 1 " << endl;
     nIF_ = 1;
   }
+//
   header_.nif = nIF_;
   header_.fluxunit = "K";
   header_.epoch = "UTC";
+
   // Apply selection criteria.
-  Vector<Int> start(nIF_, 1);
-  Vector<Int> end(nIF_, 0);
+
   Vector<Int> ref;
   Vector<Bool> beamSel(nBeam_,True);
   Vector<Bool> IFsel(nIF_,True);
+//
+  ifOffset_ = 0;
+  if (whichIF>=0) {
+    if (whichIF>=0 && whichIF<nIF_) {
+       IFsel = False;
+       IFsel(whichIF) = True;
+       header_.nif = 1;
+       nIF_ = 1;
+       ifOffset_ = whichIF;
+    } else {
+       throw(AipsError("Illegal IF selection"));
+    }
+  }
+//
+  beamOffset_ = 0;
+  if (whichBeam>=0) {
+     if (whichBeam>=0 && whichBeam<nBeam_) {
+        beamSel = False;
+        beamSel(whichBeam) = True;
+        header_.nbeam = 1;
+        nBeam_ = 1;
+        beamOffset_ = whichBeam;
+     } else {
+       throw(AipsError("Illegal Beam selection"));
+     }
+  }
+//
+  Vector<Int> start(nIF_, 1);
+  Vector<Int> end(nIF_, 0);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
   table_->putSDHeader(header_);
   frequencies_.setRefFrame(header_.freqref);
@@ -189,6 +224,12 @@ int SDReader::read(const std::vector<int>& seq) {
                              beamNo, direction, scanRate,
                              tsys, sigma, calFctr, baseLin, baseSub,
                              spectra, flagtra, xCalFctr, xPol);
+
+// Make sure beam/IF numbers are 0-relative 
+
+      beamNo = beamNo - beamOffset_ - 1;      
+      IFno = IFno - ifOffset_ - 1;
+//
       if (status) {
         if (status == -1) {
           // EOF.
@@ -215,21 +256,22 @@ int SDReader::read(const std::vector<int>& seq) {
 	  sc.elevation = elevation;
         }
         // add specific info
-        // IFno beamNo are 1-relative
         // refPix = nChan/2+1 in  Integer arith.!
         Int refPix = header_.nchan/2+1;
-        Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
-	frequencies_.addRestFrequency(restFreq);
-        sc.setFrequencyMap(frqslot,IFno-1);
+        uInt frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
+	uInt restFrqSlot = frequencies_.addRestFrequency(restFreq);
+//   
+        sc.setFrequencyMap(frqslot,IFno);
+        sc.setRestFrequencyMap(restFrqSlot,IFno);
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
 	sc.parangle = parAngle;
 	sc.refbeam = refBeam;
         sc.scanid = scanNo-1;//make it 0-based
-        sc.setSpectrum(spectra, beamNo-1, IFno-1);
-        sc.setFlags(flagtra,  beamNo-1, IFno-1);
-        sc.setTsys(tsys, beamNo-1, IFno-1);
-        sc.setDirection(direction, beamNo-1);
+        sc.setSpectrum(spectra, beamNo, IFno);
+        sc.setFlags(flagtra,  beamNo, IFno);
+        sc.setTsys(tsys, beamNo, IFno);
+        sc.setDirection(direction, beamNo);
       }
     }
     if (cursor_ == seq[seqi] || getAll) {
