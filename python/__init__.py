@@ -218,6 +218,8 @@ def commands():
             set_unit        - set the units to be used from this point on
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
+            set_instrument  - set the instrument name
+            set_fluxunit    - set the brightness flux unit
             create_mask     - return an mask in the current unit
                               for the given region. The specified regions
                               are NOT masked
@@ -234,11 +236,15 @@ def commands():
                               all polarisations will contain the
                               averaged spectrum.
         quotient            - return the on/off quotient
+        b_operate           - simple mathematical operations on two scan tables
         scale               - returns a scan scaled by a given factor
         add                 - returns a scan with given value added 
         bin                 - return a scan with binned channels
         smooth              - return the spectrally smoothed scan
         poly_baseline       - fit a polynomial baseline to all Beams/IFs/Pols
+        gain_el             - apply gain-elevation correction
+        opacity             - apply opacity correction
+        convert_flux        - convert to and from Jy and Kelvin brightness units
 
         fitter
             auto_fit        - return a scan where the function is
