@@ -85,7 +85,7 @@ SDMemTable::SDMemTable(const std::string& name) :
   polSel_(0)
 {
   Table tab(name);
-  uInt version;
+  Int version;
   tab.keywordSet().get("VERSION", version);
   if (version != version_) {
     throw(AipsError("Unsupported version of ASAP file."));
