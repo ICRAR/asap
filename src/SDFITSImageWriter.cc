@@ -55,7 +55,7 @@
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
 
-#include "Definitions.h"
+#include "SDDefs.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 

@@ -36,7 +36,7 @@
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Quanta/MVTime.h>
 
-#include "Definitions.h"
+#include "SDDefs.h"
 #include "SDContainer.h"
 
 using namespace casa;

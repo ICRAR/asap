@@ -56,7 +56,7 @@
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <casa/Quanta/MVTime.h>
 
-#include "Definitions.h"
+#include "SDDefs.h"
 #include "SDMemTable.h"
 #include "SDContainer.h"
 
