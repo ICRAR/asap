@@ -49,6 +49,7 @@
 #include <aips/Tables/ArrayColumn.h>
 #include <aips/Tables/TableRecord.h>
 #include <aips/Measures/MFrequency.h>
+#include <aips/Measures/MeasTable.h>
 #include <aips/Quanta/MVTime.h>
 
 #include "SDMemTable.h"
@@ -116,6 +117,7 @@ void SDMemTable::setup() {
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));  
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));  
   td.addColumn(ArrayColumnDesc<uInt>("FREQID"));
+  td.addColumn(ArrayColumnDesc<Double>("DIRECTION"));
   // Now create a new table from the description.
 
   SetupNewTable aNewTab("dummy", td, Table::New);
@@ -233,6 +235,7 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
 
 std::vector<double> SDMemTable::getAbscissa(Int whichRow, 
 					    const std::string& whichUnit,
+					    const std::string& whichFrame,
 					    double restfreq) {
   std::vector<double> absc(nChan());
   Vector<Double> absc1(nChan()); 
@@ -248,6 +251,41 @@ std::vector<double> SDMemTable::getAbscissa(Int whichRow,
     u = String(whichUnit);
   }
   SpectralCoordinate spc = getCoordinate(specidx);
+  Table t = table_.keywordSet().asTable("FREQUENCIES");
+  String rf;
+  t.keywordSet().get("REFFRAME",rf);
+  MDirection::Types mdr;
+  MDirection::getType(mdr, rf);    
+  ROArrayColumn<Double> dir(table_, "DIRECTION");
+  Array<Double> posit;
+  dir.get(whichRow,posit);
+  Vector<Double> wpos(2);
+  wpos[0] = posit(IPosition(2,beamSel_,0));
+  wpos[1] = posit(IPosition(2,beamSel_,1));
+  Quantum<Double> lon(wpos[0],Unit(String("rad")));
+  Quantum<Double> lat(wpos[1],Unit(String("rad")));
+  MDirection direct(lon, lat, mdr);
+  ROScalarColumn<Double> tme(table_, "TIME");
+  Double obstime;
+  tme.get(whichRow,obstime);
+  Quantum<Double> tm(obstime, Unit(String("d")));
+  MVEpoch tm2(tm);
+  MEpoch epoch(tm2);
+
+  Vector<Double> antpos;
+  table_.keywordSet().get("AntennaPosition", antpos);
+  //MPosition pos;
+  MVPosition mvpos(antpos(0),antpos(1),antpos(2));
+  MPosition pos(mvpos);
+  //MeasTable::Observatory(pos, String("ATCA"));
+
+  MFrequency::Types mtype;
+  if (!MFrequency::getType(mtype, whichFrame)) {
+    cerr << "Frequency type unknown assuming TOPO" << endl;
+    mtype = MFrequency::TOPO;
+  }
+  spc.setReferenceConversion(mtype,epoch,pos,direct);  
+
   if ( u == Unit("km/s") ) {
     if (Double(restfreq) >  Double(0.000001)) {
       cerr << "converting to velocities"<< endl;
@@ -393,6 +431,7 @@ SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx)  const {
     cerr << "SDMemTable::getCoordinate - whichIdx out of range" << endl;
     return SpectralCoordinate();
   }
+  
   Double rp,rv,inc;
   String rf;
   ROScalarColumn<Double> rpc(t, "REFPIX");
@@ -470,6 +509,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ScalarColumn<Int> scan(table_, "SCANID");
   ScalarColumn<Double> integr(table_, "INTERVAL");
   ArrayColumn<uInt> freqid(table_, "FREQID");
+  ArrayColumn<Double> dir(table_, "DIRECTION");
 
   uInt rno = table_.nrow();
   table_.addRow();
@@ -482,6 +522,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   scan.put(rno, sdc.scanid);
   integr.put(rno, sdc.interval);
   freqid.put(rno, sdc.getFreqMap());
+  dir.put(rno, sdc.getDirection());
   
   return true;
 }
@@ -495,6 +536,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   ROScalarColumn<Int> scan(table_, "SCANID");
   ROScalarColumn<Double> integr(table_, "INTERVAL");
   ROArrayColumn<uInt> freqid(table_, "FREQID");
+  ROArrayColumn<Double> dir(table_, "DIRECTION");
 
   SDContainer sdc(nBeam(),nIF(),nPol(),nChan());
   mjd.get(whichRow, sdc.timestamp);
@@ -505,6 +547,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   Array<Float> tsys;
   Array<uChar> flagtrum;
   Vector<uInt> fmap;
+  Array<Double> direction;
   spec.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
   flags.get(whichRow, flagtrum);
@@ -513,8 +556,11 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   sdc.putTsys(tsys);
   freqid.get(whichRow, fmap);
   sdc.putFreqMap(fmap);
+  dir.get(whichRow, direction);
+  sdc.putDirection(direction);
   return sdc;
 }
+
 bool SDMemTable::putSDHeader(const SDHeader& sdh) {
   table_.lock();
   table_.rwKeywordSet().define("nIF", sdh.nif);

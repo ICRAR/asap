@@ -137,6 +137,7 @@ public:
 
   std::vector<double> getAbscissa(int whichRow, 
 				  const std::string& whichUnit="GHz",
+				  const std::string& whichFrame="TOPO",
 				  double restfreq=0.0);
 private:
   // set up table structure
