@@ -29,6 +29,7 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
+
 #include <aips/iostream.h>
 #include <aips/Arrays/Array.h>
 #include <aips/Arrays/ArrayMath.h>
@@ -59,7 +60,7 @@ SDMemTable::SDMemTable(const std::string& name) :
   setup();
 }
 
-SDMemTable::SDMemTable(const SDMemTable& other) {
+SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
   this->IFSel_= other.IFSel_;
   this->beamSel_= other.beamSel_;
   this->polSel_= other.polSel_;
@@ -67,7 +68,13 @@ SDMemTable::SDMemTable(const SDMemTable& other) {
   this->name_ = String("dummy");
   this->table_ = other.table_.copyToMemoryTable(String("dummy"));
   // clear all rows()
-  this->table_.removeRow(this->table_.rowNumbers());
+  if (clear) {
+    this->table_.removeRow(this->table_.rowNumbers());
+  } else {
+    this->IFSel_ = other.IFSel_;
+    this->beamSel_ = other.beamSel_;
+    this->polSel_ = other.polSel_;
+  }
 }
 
 SDMemTable::SDMemTable(const Table& tab, Int scanID) :
@@ -100,6 +107,7 @@ void SDMemTable::setup() {
   td.addColumn(ArrayColumnDesc<uChar>("FLAGTRA"));
   td.addColumn(ArrayColumnDesc<Float>("TSYS"));  
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));  
+  td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));  
   // Now create a new table from the description.
   SetupNewTable aNewTab(name_, td, Table::New);
   table_ = Table(aNewTab, Table::Memory, 0);  
@@ -146,18 +154,47 @@ bool SDMemTable::setPol(Int whichPol) {
     //return false;
 }
 
-bool SDMemTable::setChannels(const std::vector<int>& whichChans) {
-  //std::vector<bool>::iterator it;
-  //std::fill(chanMask_.begin(), chanMask_.end(), false);
-  //for (it = whichChans.begin(); it != whichChans.end(); it++) {
-  //chanMask_[*it] = true;
-  //}
-  cout << "SDMemTable::setChannels() disabled" << endl;
+bool SDMemTable::setMask(const std::vector<int>& whichChans) {
+  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
+  
+  std::vector<int>::iterator it;
+  uInt n = spec.shape(0)(3);
+  chanMask_.resize(n,true);
+  for (it = whichChans.begin(); it != whichChans.end(); it++) {
+    if (*it < n)
+      chanMask_[*it] = false;
+  }
   return true;
 }
 
-std::vector<bool> SDMemTable::getMask() const {
-  return chanMask_;
+std::vector<bool> SDMemTable::getMask(Int whichRow) const {
+  std::vector<bool> mask;
+  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
+  Array<uChar> arr;
+  spec.get(whichRow, arr);
+  ArrayAccessor<uChar, Axis<0> > aa0(arr);
+  aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
+  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
+  ArrayAccessor<uChar, Axis<2> > aa2(aa1);
+  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+
+  Bool useUserMask = ( chanMask_.size() == arr.shape()(3) );
+
+  std::vector<bool> tmp;
+  tmp = chanMask_; // WHY the fxxx do I have to make a copy here
+  std::vector<bool>::iterator miter;
+  miter = tmp.begin();
+
+  for (ArrayAccessor<uChar, Axis<3> > i(aa2); i != i.end(); ++i) {
+    bool out =!static_cast<bool>(*i);
+    if (useUserMask) {
+      out = out && (*miter);
+      miter++;
+    }
+    mask.push_back(out);
+  }  
+  return mask;
 }
 std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
 
@@ -169,28 +206,58 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
   ArrayAccessor<Float, Axis<1> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  for (ArrayAccessor<Float, Axis<2> > i(aa1); i != i.end(); ++i) {
-    ArrayAccessor<Float, Axis<3> > aa2(i);
-    aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
-    spectrum.push_back(*aa2);
+  ArrayAccessor<Float, Axis<2> > aa2(aa1);
+  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+  for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+    spectrum.push_back(*i);
   }
   return spectrum;
 }
 
-MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow) {
+MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
+						Bool useSelection) {
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   ROArrayColumn<uChar> flag(table_, "FLAGTRA");
   Array<uChar> farr;
   spec.get(whichRow, arr);
   flag.get(whichRow, farr);
-  IPosition test(4,0,0,100,0);
   Array<Bool> barr(farr.shape());convertArray(barr, farr);
   MaskedArray<Float> marr;
-  marr.setData(arr,!barr);
+  if (useSelection) {
+    ArrayAccessor<Float, Axis<0> > aa0(arr);
+    aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
+    ArrayAccessor<Float, Axis<1> > aa1(aa0);
+    aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
+    ArrayAccessor<Float, Axis<2> > aa2(aa1);
+    aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+    
+    ArrayAccessor<Bool, Axis<0> > baa0(barr);
+    baa0.reset(baa0.begin(uInt(beamSel_)));//go to beam
+    ArrayAccessor<Bool, Axis<1> > baa1(baa0);
+    baa1.reset(baa1.begin(uInt(IFSel_)));// go to IF
+    ArrayAccessor<Bool, Axis<2> > baa2(baa1);
+    baa2.reset(baa2.begin(uInt(polSel_)));// go to pol
+
+    Vector<Float> a(arr.shape()(3));
+    Vector<Bool> b(barr.shape()(3));
+    ArrayAccessor<Float, Axis<0> > a0(a);
+    ArrayAccessor<Bool, Axis<0> > b0(b);
+
+    ArrayAccessor<Bool, Axis<3> > j(baa2);
+    for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+      (*a0) = (*i);
+      (*b0) = !(*j);
+      j++;
+      a0++;
+      b0++;
+    }
+    marr.setData(a,b);
+  } else {
+    marr.setData(arr,!barr);
+  }
   return marr;
 }
-
 
 Float SDMemTable::getTsys(Int whichRow) const {
   ROArrayColumn<Float> ts(table_, "TSYS");
@@ -198,7 +265,7 @@ Float SDMemTable::getTsys(Int whichRow) const {
   ts.get(whichRow, arr);
   Float out;
   IPosition ip(arr.shape());
-  ip(0) = beamSel_;ip(1) = IFSel_;ip(2)=0;ip(3) = polSel_;
+  ip(0) = beamSel_;ip(1) = IFSel_;ip(2) = polSel_;ip(3)=0;
   out = arr(ip);
   return out;
 }
@@ -210,6 +277,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ArrayColumn<uChar> flags(table_, "FLAGTRA");
   ArrayColumn<Float> ts(table_, "TSYS");
   ScalarColumn<Int> scan(table_, "SCANID");
+  ScalarColumn<Double> integr(table_, "INTERVAL");
 
   uInt rno = table_.nrow();
   table_.addRow();
@@ -220,6 +288,8 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   flags.put(rno, sdc.getFlags());
   ts.put(rno, sdc.getTsys());
   scan.put(rno, sdc.scanid);
+  integr.put(rno, sdc.interval);
+  
   return true;
 }
 void SDMemTable::makePersistent(const std::string& filename) {
@@ -240,10 +310,30 @@ void SDMemTable::summary() const {
       srcs.getScalar(i,name);
       previous = current;     
       count++;
-      cout << count << "\t" << name << endl;
+      cout << count << "\t" 
+	   << name 
+	   << endl;
     }
   }
   cout << "Table contains " << table_.nrow() << "integrations." << endl;
   cout << "in " << count << "scans." << endl;
 }
-
+/*
+void maskChannels(const std::vector<Int>& whichChans ) {
+  
+  std::vector<int>::iterator it;
+  ArrayAccessor<uChar, Axis<2> > j(flags_);
+  for (it = whichChans.begin(); it != whichChans.end(); it++) {
+    j.reset(j.begin(uInt(*it)));
+    for (ArrayAccessor<uChar, Axis<0> > i(j); i != i.end(); ++i) {
+      for (ArrayAccessor<uChar, Axis<1> > ii(i); ii != ii.end(); ++ii) {
+	for (ArrayAccessor<uChar, Axis<3> > iii(ii); 
+	     iii != iii.end(); ++iii) {   
+	  (*iii) = 
+	}
+      }
+    }
+  }
+  
+}
+*/

@@ -37,14 +37,26 @@
 
 using namespace atnf_sd;
 
-SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nChan, uInt nPol) 
+SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan) 
   : nBeam_(nBeam),
-  nIF_(nIF),
-  nChan_(nChan),
-  nPol_(nPol),
-  spectrum_(IPosition(4,nBeam,nIF,nChan,nPol)),
-  flags_(IPosition(4,nBeam,nIF,nChan,nPol)),
-  tsys_(IPosition(4,nBeam,nIF,nChan,nPol)) {
+    nIF_(nIF),
+    nPol_(nPol),
+    nChan_(nChan),
+    spectrum_(IPosition(4,nBeam,nIF,nPol,nChan)),
+    flags_(IPosition(4,nBeam,nIF,nPol,nChan)),
+    tsys_(IPosition(4,nBeam,nIF,nPol,nChan)) {
+  uChar x = 0;
+  flags_ = ~x;
+}
+
+SDContainer::SDContainer(IPosition shp) 
+  : nBeam_(shp(0)),
+    nIF_(shp(1)),
+    nPol_(shp(2)),
+    nChan_(shp(3)),
+    spectrum_(shp),
+    flags_(shp),
+    tsys_(shp) {
   uChar x = 0;
   flags_ = ~x;
 }
@@ -71,27 +83,20 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   aa1.reset(aa1.begin(whichIF));
   
   //Vector<Float> pols(nPol);
-  ArrayAccessor<Float, Axis<0> > j(spec);
+  ArrayAccessor<Float, Axis<1> > j(spec);
   IPosition shp0 = spectrum_.shape();
   IPosition shp1 = spec.shape();
-  if ( (shp0(2) != shp1(0)) || (shp0(3) != shp1(1)) ) {
+  if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
     cerr << "Arrays not conformant" << endl;      
     return False;
   }
-  //uInt chani = 0;
-  //uInt poli = 0;
   // assert dimensions are the same....
   for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {
-    //pols = spec.row(chani);    
-    ArrayAccessor<Float, Axis<1> > jj(j);
+    ArrayAccessor<Float, Axis<0> > jj(j);
     for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
-      //(*ii) = pols[poli];      
       (*ii) = (*jj);
-      //poli++;
       jj++;
     }
-    //poli = 0;
-    //chani++;
     j++;
   }
   // unset flags for this spectrum, they might be set again by the
@@ -112,23 +117,24 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flag,
   ArrayAccessor<uChar, Axis<1> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   
-  ArrayAccessor<uChar, Axis<0> > j(flag);
+  ArrayAccessor<uChar, Axis<1> > j(flag);
   IPosition shp0 = flags_.shape();
   IPosition shp1 = flag.shape();
-  if ( (shp0(2) != shp1(0)) || (shp0(3) != shp1(1)) ) {
+  if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
     cerr << "Arrays not conformant" << endl;      
     return False;
   }
 
   // assert dimensions are the same....
   for (ArrayAccessor<uChar, Axis<2> > i(aa1);i != i.end(); ++i) {
-    ArrayAccessor<uChar, Axis<1> > jj(j);
+    ArrayAccessor<uChar, Axis<0> > jj(j);
     for (ArrayAccessor<uChar, Axis<3> > ii(i);ii != ii.end(); ++ii) {
       (*ii) = (*jj);
       jj++;
     }
     j++;
   }
+  return True;
 }
 
 Bool SDContainer::setTsys(const Vector<Float>& tsys,
@@ -138,13 +144,9 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   ArrayAccessor<Float, Axis<1> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   // assert dimensions are the same....
-  uInt idx = 0;
-
-
-  for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {    
-    idx = 0;
+  for (ArrayAccessor<Float, Axis<3> > i(aa1);i != i.end(); ++i) {    
     ArrayAccessor<Float, Axis<0> > j(tsys);
-    for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
+    for (ArrayAccessor<Float, Axis<2> > ii(i);ii != ii.end(); ++ii) {
       (*ii) = (*j);
       j++;
     }

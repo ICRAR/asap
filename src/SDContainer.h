@@ -63,7 +63,8 @@ private:
 class SDContainer {
 
 public:
-  SDContainer(uInt nBeam, uInt nIF, uInt nChan, uInt nPol);
+  SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan);
+  SDContainer(IPosition shp);
 
   virtual ~SDContainer();
 
@@ -93,12 +94,12 @@ public:
   uInt scanid;
   
 private:
-  uInt nBeam_,nIF_,nChan_,nPol_;
+  uInt nBeam_,nIF_,nPol_,nChan_;
 
-  // (nBeam,nIF,nChannel,nPol)
+  // (nBeam,nIF,nPol,nChannel)
   Array<Float>    spectrum_;  
   Array<uChar>    flags_;
-  // (nBeam,nIF,[nChannel],nPol) Tsys is not really a function of
+  // (nBeam,nIF,nPol,[nChannel]) Tsys is not really a function of
   // channel, but this makes it easier to work with at the expense of
   // a little memory
   Array<Float>    tsys_;

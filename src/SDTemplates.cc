@@ -54,5 +54,5 @@ template LogicalArray operator==(Array<Float> const &, Float const &);
 template LogicalArray operator>(Array<Float> const &, Float const &);
 template LogicalArray operator>=(Array<Float> const &, Float const &);
 template Array<Float>& operator/=(Array<Float>&, MaskedArray<Float> const&);
-//template Array<Float> const& operator*=(Array<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> const& operator*=(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> operator-(MaskedArray<Float> const&, MaskedArray<Float> const&);

@@ -60,7 +60,12 @@ public:
   float getTsys(int whichRow) {return table_->getTsys(whichRow);}
   double getTime(int whichRow) {return table_->getTime(whichRow);}
 
-  std::vector<bool> getMask() const { return table_->getMask(); }
+  std::vector<bool> getMask(int whichRow) const { 
+    return table_->getMask(whichRow); 
+  }
+  bool setMask(const std::vector<int> mvals) const { 
+    return table_->setMask(mvals); 
+  }
 
   std::string getSourceName(int whichRow) {
     return table_->getSourceName(whichRow);
@@ -109,6 +114,10 @@ public:
 			     const SDMemTableWrapper& off) {
     return SDMemTableWrapper(SDMath::quotient(on.getCP(),
 					     off.getCP()));
+  }
+  SDMemTableWrapper multiply(const SDMemTableWrapper& in,
+			     Float factor) {
+    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
 };
 

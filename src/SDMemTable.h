@@ -50,7 +50,7 @@ class SDFrequencyTable;
 class SDMemTable {
 public:
   SDMemTable(const std::string& name= "SDInputTable.tbl");
-  SDMemTable(const SDMemTable& other);
+  SDMemTable(const SDMemTable& other, Bool clear=False);
 
   SDMemTable(const Table& tab, Int scanID);
   virtual ~SDMemTable();
@@ -59,9 +59,10 @@ public:
   virtual bool putSDFreqTable(const SDFrequencyTable& sdft) {;}
   
   virtual std::vector<float> getSpectrum(Int whichRow) const;
-  virtual std::vector<bool> getMask() const;
+  virtual std::vector<bool> getMask(Int whichRow) const;
   
-  MaskedArray<Float> rowAsMaskedArray(uInt whichRow);
+  MaskedArray<Float> rowAsMaskedArray(uInt whichRow,
+				      Bool useSelection = False);
 
   virtual Float getTsys(Int whichRow) const;
   virtual Double getTime(Int whichRow) const ;
@@ -76,7 +77,7 @@ public:
   virtual Int getPol() { return polSel_; }   
 
   //sets the mask
-  virtual bool setChannels(const std::vector<int>& whichChans);
+  virtual bool setMask(const std::vector<int>& whichChans);
   
   virtual void summary() const;
   

@@ -31,7 +31,7 @@
 #include <vector>
 
 #include <boost/python.hpp>
-
+#include <boost/python/args.hpp>
 #include "SDMemTableWrapper.h"
 
 using namespace boost::python;
@@ -45,16 +45,18 @@ void python_SDMemTable() {
     .def( init < SDMemTableWrapper, int > () )
     .def("getscan", &SDMemTableWrapper::getScan)
     .def("getspectrum", &SDMemTableWrapper::getSpectrum)
-    //.def("getmask", &SDMemTableWrapper::getMask)
+    .def("getmask", &SDMemTableWrapper::getMask)
     .def("gettsys", &SDMemTableWrapper::getTsys)
     .def("getsourcename", &SDMemTableWrapper::getSourceName)
     .def("gettime", &SDMemTableWrapper::getTime)
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
     .def("getpol", &SDMemTableWrapper::getPol)
-    .def("setif", &SDMemTableWrapper::setIF)
+    .def("setif", &SDMemTableWrapper::setIF,
+	 (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)
     .def("setpol", &SDMemTableWrapper::setPol)
+    .def("setmask", &SDMemTableWrapper::setMask)
     .def("makepersistent",  &SDMemTableWrapper::makePersistent)
     .def("summary",  &SDMemTableWrapper::summary)
     .def("name",  &SDMemTableWrapper::name)

@@ -62,18 +62,7 @@ struct SDHeader {
   Double reffreq;
   Double bandwidth;
   Double utc;
-  void print() {
-    cout << "Observer: " << this->observer << endl 
-	 << "Project: " << this->project << endl
-	 << "Obstype: " << this->obstype << endl
-	 << "Antenna: " << this->antennaname << endl
-	 << "Ant. Position: " << this->antennaposition << endl
-	 << "Equinox: " << this->equinox << endl
-	 << "Freq. ref.: " << this->freqref << endl
-	 << "Ref. frequency: " << this->reffreq << endl
-	 << "Bandwidth: "  << this->bandwidth << endl
-	 << "Time (utc): " << setprecision(10) << this->utc << endl;
-  };
+  void print() const ;
 };
 
 class SDReader {
@@ -99,7 +88,7 @@ public:
 protected:
 
 private:
-  Int nBeam_,nIF_,nChan_,nPol_;
+  Int nBeam_,nIF_,nPol_,nChan_;
   Bool getHeader();
   PKSreader* reader_;  
   SDHeader header_;
