@@ -44,52 +44,28 @@ namespace asap {
 namespace SDMathWrapper {
 
 // Quotient
-
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
-                             const SDMemTableWrapper& off) {
-    return SDMemTableWrapper(SDMath::quotient(on.getCP(),
-                                             off.getCP()));
-  }
+                            const SDMemTableWrapper& off);
 
 // Multiply
 
-  void scaleInSitu(SDMemTableWrapper& in, casa::Float factor, casa::Bool all)
-  {
-    SDMath::multiplyInSitu(in.getPtr(),factor, all);
-  }
+  void scaleInSitu(SDMemTableWrapper& in, casa::Float factor, casa::Bool all);
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
-                          casa::Float factor, casa::Bool all)
-  {
-    return SDMemTableWrapper(SDMath::multiply(in.getCP(), factor, all));
-  }
+                          casa::Float factor, casa::Bool all);
 
 // Add
 
-  void addInSitu(SDMemTableWrapper& in, casa::Float offset, casa::Bool all)
-  {
-    SDMath::addInSitu(in.getPtr(), offset, all);
-  }
-  SDMemTableWrapper add(const SDMemTableWrapper& in, casa::Float offset, casa::Bool all) 
-  {
-    return SDMemTableWrapper(SDMath::add(in.getCP(), offset, all));
-  }
+  void addInSitu(SDMemTableWrapper& in, casa::Float offset, casa::Bool all);
+  SDMemTableWrapper add(const SDMemTableWrapper& in, casa::Float offset, casa::Bool all);
 
 // Hanning
 
-  SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
-    return SDMemTableWrapper(SDMath::hanning(in.getCP()));
-  }
+  SDMemTableWrapper hanning(const SDMemTableWrapper& in);
 
 // Bin up
 
-  void binInSitu (SDMemTableWrapper& in, int width) 
-  {
-    SDMath::binInSitu (in.getPtr(), width);
-  }
-  SDMemTableWrapper bin(const SDMemTableWrapper& in, int width) 
-  {
-    return SDMemTableWrapper(SDMath::bin(in.getCP(), width));
-  }
+  void binInSitu (SDMemTableWrapper& in, int width);
+  SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
 // Average in time
 
@@ -99,23 +75,14 @@ namespace SDMathWrapper {
 
 // Average polarizations
 
-  void averagePolInSitu (SDMemTableWrapper& in,  const std::vector<bool>& mask) 
-  {
-    SDMemTable* sdmt = in.getPtr();
-    SDMath::averagePolInSitu(in.getPtr(), mask);
-  }
-  SDMemTableWrapper averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask)
-  {
-    return SDMemTableWrapper(SDMath::averagePol(in.getCP(), mask));
-  }
+  void averagePolInSitu (SDMemTableWrapper& in,  const std::vector<bool>& mask);
+  SDMemTableWrapper averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask);
 
 // Statistics
 
   std::vector<float> statistic(const SDMemTableWrapper& in,
-            const std::vector<bool>& mask, const std::string& which) {
-    return SDMath::statistic(in.getCP(), mask, which);
-  }
-
+                               const std::vector<bool>& mask, 
+                               const std::string& which);
 };
 
 } // namespace

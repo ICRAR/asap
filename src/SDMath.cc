@@ -368,38 +368,6 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-void SDMath::multiplyInSitu(SDMemTable* pIn, Float factor, Bool doAll)
-{
-  const uInt what = 0;
-  SDMemTable* pOut = localOperate (*pIn, factor, doAll, what);
-  *pIn = *pOut;
-   delete pOut;
-}  
-
-
-CountedPtr<SDMemTable>
-SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor, Bool doAll)
-{
-  const uInt what = 0;
-  return CountedPtr<SDMemTable>(localOperate (*in, factor, doAll, what));
-}
-
-
-void SDMath::addInSitu (SDMemTable* pIn, Float offset, Bool doAll)
-{
-  const uInt what = 1;
-  SDMemTable* pOut = localOperate (*pIn, offset, doAll, what);
-  *pIn = *pOut;
-   delete pOut;
-}  
-
-
-CountedPtr<SDMemTable>
-SDMath::add(const CountedPtr<SDMemTable>& in, Float offset, Bool doAll)
-{
-  const uInt what = 1;
-  return CountedPtr<SDMemTable>(localOperate(*in, offset, doAll, what));
-}
 
 
 CountedPtr<SDMemTable>
@@ -445,36 +413,6 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in)
     sdmt->putSDContainer(sc);
   }
   return CountedPtr<SDMemTable>(sdmt);
-}
-
-void SDMath::averagePolInSitu (SDMemTable* pIn, const Vector<Bool>& mask)
-{
-  SDMemTable* pOut = localAveragePol (*pIn, mask);
-  *pIn = *pOut;
-   delete pOut;
-}  
-
-
-CountedPtr<SDMemTable> SDMath::averagePol (const CountedPtr<SDMemTable>& in, 
-                                           const Vector<Bool>& mask)
-{
-  return CountedPtr<SDMemTable>(localAveragePol(*in, mask));
-}
-
-
-void SDMath::binInSitu (SDMemTable* pIn, int width)
-{
-  const uInt what = 1;
-  SDMemTable* pOut = localBin (*pIn, Int(width));
-  *pIn = *pOut;
-   delete pOut;
-}  
-
-
-CountedPtr<SDMemTable> SDMath::bin (const CountedPtr<SDMemTable>& in, int width)
-{
-  const uInt what = 1;
-  return CountedPtr<SDMemTable>(localBin(*in, Int(width)));
 }
 
 
@@ -529,6 +467,269 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
 //
   return result;
 }
+
+
+SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
+{
+  SDHeader sh = in.getSDHeader();
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+
+// Bin up SpectralCoordinates
+
+  IPosition factors(1);
+  factors(0) = width;
+  for (uInt j=0; j<in.nCoordinates(); ++j) {
+    CoordinateSystem cSys;
+    cSys.addCoordinate(in.getCoordinate(j));
+    CoordinateSystem cSysBin = 
+      CoordinateUtil::makeBinnedCoordinateSystem (factors, cSys, False);
+//
+    SpectralCoordinate sCBin = cSysBin.spectralCoordinate(0);
+    pTabOut->setCoordinate(sCBin, j);
+  }
+
+// Use RebinLattice to find shape
+
+  IPosition shapeIn(1,sh.nchan);
+  IPosition shapeOut = RebinLattice<Float>::rebinShape (shapeIn, factors);
+  sh.nchan = shapeOut(0);
+  pTabOut->putSDHeader(sh);
+
+
+// Loop over rows and bin along channel axis
+  
+  const uInt axis = 3;
+  for (uInt i=0; i < in.nRow(); ++i) {
+    SDContainer sc = in.getSDContainer(i);
+//
+    Array<Float> tSys(sc.getTsys());                           // Get it out before sc changes shape
+
+// Bin up spectrum
+
+    MaskedArray<Float> marr(in.rowAsMaskedArray(i));
+    MaskedArray<Float> marrout;
+    LatticeUtilities::bin(marrout, marr, axis, width);
+
+// Put back the binned data and flags
+
+    IPosition ip2 = marrout.shape();
+    sc.resize(ip2);
+//
+    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
+
+// Bin up Tsys.  
+
+    Array<Bool> allGood(tSys.shape(),True);
+    MaskedArray<Float> tSysIn(tSys, allGood, True);
+//
+    MaskedArray<Float> tSysOut;    
+    LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
+    sc.putTsys(tSysOut.getArray());
+//
+    pTabOut->putSDContainer(sc);
+  }
+  return pTabOut;
+}
+
+SDMemTable* SDMath::simpleOperate (const SDMemTable& in, Float val, Bool doAll,
+                                   uInt what)
+//
+// what = 0   Multiply
+//        1   Add
+{
+   SDMemTable* pOut = new SDMemTable(in,False);
+   const Table& tOut = pOut->table();
+   ArrayColumn<Float> spec(tOut,"SPECTRA");  
+//
+   if (doAll) {
+      for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Get
+
+         MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
+
+// Operate
+
+         if (what==0) {
+            marr *= val;
+         } else if (what==1) {
+            marr += val;
+         }
+
+// Put
+
+         spec.put(i, marr.getArray());
+      }
+   } else {
+
+// Get cursor location
+
+      IPosition start, end;
+      getCursorLocation (start, end, in);
+//
+      for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Get
+
+         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
+
+// Modify. More work than we would like to deal with the mask
+
+         Array<Float>& values = dataIn.getRWArray();
+         Array<Bool> mask(dataIn.getMask());
+//
+         Array<Float> values2 = values(start,end);
+         Array<Bool> mask2 = mask(start,end);
+         MaskedArray<Float> t(values2,mask2);
+         if (what==0) {
+            t *= val;
+         } else if (what==1) {
+            t += val;
+         }
+         values(start, end) = t.getArray();     // Write back into 'dataIn'
+
+// Put
+         spec.put(i, dataIn.getArray());
+      }
+   }
+//
+   return pOut;
+}
+
+
+
+SDMemTable* SDMath::averagePol (const SDMemTable& in, const Vector<Bool>& mask)
+//
+// Average all polarizations together, weighted by variance
+//
+{
+//   WeightType wtType = NONE;
+//   convertWeightString (wtType, weight);
+
+   const uInt nRows = in.nRow();
+   const uInt polAxis = 2;                     // Polarization axis
+   const uInt chanAxis = 3;                    // Spectrum axis
+
+// Create output Table and reshape number of polarizations
+
+  Bool clear=True;
+  SDMemTable* pTabOut = new SDMemTable(in, clear);
+  SDHeader header = pTabOut->getSDHeader();
+  header.npol = 1;
+  pTabOut->putSDHeader(header);
+
+// Shape of input and output data 
+
+  const IPosition& shapeIn = in.rowAsMaskedArray(0u, False).shape();
+  IPosition shapeOut(shapeIn);
+  shapeOut(polAxis) = 1;                          // Average all polarizations
+//
+  const uInt nChan = shapeIn(chanAxis);
+  const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
+  IPosition start(4), end(4);
+
+// Output arrays
+
+  Array<Float> outData(shapeOut, 0.0);
+  Array<Bool> outMask(shapeOut, True);
+  const IPosition axes(2, 2, 3);              // pol-channel plane
+// 
+  const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
+
+// Loop over rows
+
+   for (uInt iRow=0; iRow<nRows; iRow++) {
+
+// Get data for this row
+
+      MaskedArray<Float> marr(in.rowAsMaskedArray(iRow));
+      Array<Float>& arr = marr.getRWArray();
+      const Array<Bool>& barr = marr.getMask();
+
+// Make iterators to iterate by pol-channel planes
+
+      ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
+      ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
+
+// Accumulations
+
+      Float fac = 1.0;
+      Vector<Float> vecSum(nChan,0.0);
+
+// Iterate through data by pol-channel planes
+
+      while (!itDataPlane.pastEnd()) {
+
+// Iterate through plane by polarization  and accumulate Vectors
+
+        Vector<Float> t1(nChan); t1 = 0.0;
+        Vector<Bool> t2(nChan); t2 = True;
+        MaskedArray<Float> vecSum(t1,t2);
+        Float varSum = 0.0;
+        {
+           ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
+           ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+           while (!itDataVec.pastEnd()) {     
+
+// Create MA of data & mask (optionally including OTF mask) and  get variance 
+
+              if (useMask) {
+                 const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
+                 fac = 1.0 / variance(spec);
+              } else {
+                 const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
+                 fac = 1.0 / variance(spec);
+              }
+
+// Normalize spectrum (without OTF mask) and accumulate
+
+              const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
+              vecSum += spec;
+              varSum += fac;
+
+// Next
+
+              itDataVec.next();
+              itMaskVec.next();
+           }
+        }
+
+// Normalize summed spectrum
+
+        vecSum /= varSum;
+
+// FInd position in input data array.  We are iterating by pol-channel
+// plane so all that will change is beam and IF and that's what we want.
+
+        IPosition pos = itDataPlane.pos();
+
+// Write out data. This is a bit messy. We have to reform the Vector 
+// accumulator into an Array of shape (1,1,1,nChan)
+
+        start = pos;
+        end = pos; 
+        end(chanAxis) = nChan-1;
+        outData(start,end) = vecSum.getArray().reform(vecShapeOut);
+        outMask(start,end) = vecSum.getMask().reform(vecShapeOut);
+
+// Step to next beam/IF combination
+
+        itDataPlane.next();
+        itMaskPlane.next();
+      }
+
+// Generate output container and write it to output table
+
+      SDContainer sc = in.getSDContainer();
+      sc.resize(shapeOut);
+//
+      putDataInSDC (sc, outData, outMask);
+      pTabOut->putSDContainer(sc);
+   }
+//
+  return pTabOut;
+}
+
 
 
 
@@ -665,70 +866,6 @@ void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
    nAccum += 1;
 }
 
-SDMemTable* SDMath::localOperate (const SDMemTable& in, Float val, Bool doAll,
-                                  uInt what)
-//
-// what = 0   Multiply
-//        1   Add
-{
-   SDMemTable* pOut = new SDMemTable(in,False);
-   const Table& tOut = pOut->table();
-   ArrayColumn<Float> spec(tOut,"SPECTRA");  
-//
-   if (doAll) {
-      for (uInt i=0; i < tOut.nrow(); i++) {
-
-// Get
-
-         MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
-
-// Operate
-
-         if (what==0) {
-            marr *= val;
-         } else if (what==1) {
-            marr += val;
-         }
-
-// Put
-
-         spec.put(i, marr.getArray());
-      }
-   } else {
-
-// Get cursor location
-
-      IPosition start, end;
-      getCursorLocation (start, end, in);
-//
-      for (uInt i=0; i < tOut.nrow(); i++) {
-
-// Get
-
-         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
-
-// Modify. More work than we would like to deal with the mask
-
-         Array<Float>& values = dataIn.getRWArray();
-         Array<Bool> mask(dataIn.getMask());
-//
-         Array<Float> values2 = values(start,end);
-         Array<Bool> mask2 = mask(start,end);
-         MaskedArray<Float> t(values2,mask2);
-         if (what==0) {
-            t *= val;
-         } else if (what==1) {
-            t += val;
-         }
-         values(start, end) = t.getArray();     // Write back into 'dataIn'
-
-// Put
-         spec.put(i, dataIn.getArray());
-      }
-   }
-//
-   return pOut;
-}
 
 
 
@@ -779,201 +916,6 @@ void SDMath::putDataInSDC (SDContainer& sc, const Array<Float>& data,
     Array<uChar> outflags(data.shape());
     convertArray(outflags,!mask);
     sc.putFlags(outflags);
-}
-
-
-SDMemTable* SDMath::localAveragePol(const SDMemTable& in, const Vector<Bool>& mask)
-//
-// Average all polarizations together, weighted by variance
-//
-{
-//   WeightType wtType = NONE;
-//   convertWeightString (wtType, weight);
-
-   const uInt nRows = in.nRow();
-   const uInt polAxis = 2;                     // Polarization axis
-   const uInt chanAxis = 3;                    // Spectrum axis
-
-// Create output Table and reshape number of polarizations
-
-  Bool clear=True;
-  SDMemTable* pTabOut = new SDMemTable(in, clear);
-  SDHeader header = pTabOut->getSDHeader();
-  header.npol = 1;
-  pTabOut->putSDHeader(header);
-
-// Shape of input and output data 
-
-  const IPosition& shapeIn = in.rowAsMaskedArray(0u, False).shape();
-  IPosition shapeOut(shapeIn);
-  shapeOut(polAxis) = 1;                          // Average all polarizations
-//
-  const uInt nChan = shapeIn(chanAxis);
-  const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
-  IPosition start(4), end(4);
-
-// Output arrays
-
-  Array<Float> outData(shapeOut, 0.0);
-  Array<Bool> outMask(shapeOut, True);
-  const IPosition axes(2, 2, 3);              // pol-channel plane
-// 
-  const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
-
-// Loop over rows
-
-   for (uInt iRow=0; iRow<nRows; iRow++) {
-
-// Get data for this row
-
-      MaskedArray<Float> marr(in.rowAsMaskedArray(iRow));
-      Array<Float>& arr = marr.getRWArray();
-      const Array<Bool>& barr = marr.getMask();
-
-// Make iterators to iterate by pol-channel planes
-
-      ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
-      ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
-
-// Accumulations
-
-      Float fac = 1.0;
-      Vector<Float> vecSum(nChan,0.0);
-
-// Iterate through data by pol-channel planes
-
-      while (!itDataPlane.pastEnd()) {
-
-// Iterate through plane by polarization  and accumulate Vectors
-
-        Vector<Float> t1(nChan); t1 = 0.0;
-        Vector<Bool> t2(nChan); t2 = True;
-        MaskedArray<Float> vecSum(t1,t2);
-        Float varSum = 0.0;
-        {
-           ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
-           ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
-           while (!itDataVec.pastEnd()) {     
-
-// Create MA of data & mask (optionally including OTF mask) and  get variance 
-
-              if (useMask) {
-                 const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
-              } else {
-                 const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
-              }
-
-// Normalize spectrum (without OTF mask) and accumulate
-
-              const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
-              vecSum += spec;
-              varSum += fac;
-
-// Next
-
-              itDataVec.next();
-              itMaskVec.next();
-           }
-        }
-
-// Normalize summed spectrum
-
-        vecSum /= varSum;
-
-// FInd position in input data array.  We are iterating by pol-channel
-// plane so all that will change is beam and IF and that's what we want.
-
-        IPosition pos = itDataPlane.pos();
-
-// Write out data. This is a bit messy. We have to reform the Vector 
-// accumulator into an Array of shape (1,1,1,nChan)
-
-        start = pos;
-        end = pos; 
-        end(chanAxis) = nChan-1;
-        outData(start,end) = vecSum.getArray().reform(vecShapeOut);
-        outMask(start,end) = vecSum.getMask().reform(vecShapeOut);
-
-// Step to next beam/IF combination
-
-        itDataPlane.next();
-        itMaskPlane.next();
-      }
-
-// Generate output container and write it to output table
-
-      SDContainer sc = in.getSDContainer();
-      sc.resize(shapeOut);
-//
-      putDataInSDC (sc, outData, outMask);
-      pTabOut->putSDContainer(sc);
-   }
-//
-  return pTabOut;
-}
-
-SDMemTable* SDMath::localBin (const SDMemTable& in, Int width)
-{
-  SDHeader sh = in.getSDHeader();
-  SDMemTable* pTabOut = new SDMemTable(in, True);
-
-// Bin up SpectralCoordinates
-
-  IPosition factors(1);
-  factors(0) = width;
-  for (uInt j=0; j<in.nCoordinates(); ++j) {
-    CoordinateSystem cSys;
-    cSys.addCoordinate(in.getCoordinate(j));
-    CoordinateSystem cSysBin = 
-      CoordinateUtil::makeBinnedCoordinateSystem (factors, cSys, False);
-//
-    SpectralCoordinate sCBin = cSysBin.spectralCoordinate(0);
-    pTabOut->setCoordinate(sCBin, j);
-  }
-
-// Use RebinLattice to find shape
-
-  IPosition shapeIn(1,sh.nchan);
-  IPosition shapeOut = RebinLattice<Float>::rebinShape (shapeIn, factors);
-  sh.nchan = shapeOut(0);
-  pTabOut->putSDHeader(sh);
-
-
-// Loop over rows and bin along channel axis
-  
-  const uInt axis = 3;
-  for (uInt i=0; i < in.nRow(); ++i) {
-    SDContainer sc = in.getSDContainer(i);
-//
-    Array<Float> tSys(sc.getTsys());                           // Get it out before sc changes shape
-
-// Bin up spectrum
-
-    MaskedArray<Float> marr(in.rowAsMaskedArray(i));
-    MaskedArray<Float> marrout;
-    LatticeUtilities::bin(marrout, marr, axis, width);
-
-// Put back the binned data and flags
-
-    IPosition ip2 = marrout.shape();
-    sc.resize(ip2);
-//
-    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
-
-// Bin up Tsys.  
-
-    Array<Bool> allGood(tSys.shape(),True);
-    MaskedArray<Float> tSysIn(tSys, allGood, True);
-//
-    MaskedArray<Float> tSysOut;    
-    LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
-    sc.putTsys(tSysOut.getArray());
-//
-    pTabOut->putSDContainer(sc);
-  }
-  return pTabOut;
 }
 
 

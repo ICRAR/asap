@@ -47,26 +47,9 @@ namespace SDMath {
   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
 
-// Multiply
-
-  void multiplyInSitu(SDMemTable* in, casa::Float factor, casa::Bool all);
-  casa::CountedPtr<SDMemTable> multiply(const casa::CountedPtr<SDMemTable>& in, 
-                                        casa::Float factor, casa::Bool all);
-
-// Addition
-
-  void addInSitu (SDMemTable* in, casa::Float offset, casa::Bool all);
-  casa::CountedPtr<SDMemTable> add(const casa::CountedPtr<SDMemTable>& in, 
-                                   casa::Float offset, casa::Bool all);
-
 //  Hanning
 
   casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
-
-// Bin up
-
-  void binInSitu (SDMemTable* in, casa::Int width);
-  casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, casa::Int width);
 
 // Average in time
 
@@ -74,16 +57,26 @@ namespace SDMath {
                                          const casa::Vector<casa::Bool>& mask,
                                          bool scanAverage, const std::string& weightStr);
 
-// Average polarizations
-
-  void averagePolInSitu (SDMemTable* in, const casa::Vector<casa::Bool>& mask);
-  casa::CountedPtr<SDMemTable> averagePol(const casa::CountedPtr<SDMemTable>& in, 
-                                          const casa::Vector<casa::Bool>& mask);
-
 // Statistics
 
   std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
    		                const std::vector<bool>& mask, const std::string& which);
+
+
+// Simple mathematical operations.  what=0 (mul) or 1 (add)
+
+  SDMemTable* simpleOperate (const SDMemTable& in, casa::Float offset, 
+                            casa::Bool doAll, casa::uInt what);
+
+// Average polarizations
+
+  SDMemTable* averagePol (const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
+
+// Bin up spectra
+
+  SDMemTable* bin (const SDMemTable& in, casa::Int width);
+
+
 
 // private like functions (this is not a class so can't make them private)
 
@@ -122,11 +115,6 @@ namespace SDMath {
                   const casa::Array<casa::Float>& nPts,
                   WeightType wtType, casa::Int axis, casa::Int nAxes);
 
-// Functions for simple mathematical operations.  what=0 (mul) or 1 (add)
-
-  SDMemTable* localOperate (const SDMemTable& in, casa::Float offset, 
-                            casa::Bool doAll, casa::uInt what);
-
 // Function to get the current cursor location
    void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
                            const SDMemTable& in);
@@ -135,18 +123,6 @@ namespace SDMath {
 
    void convertWeightString (WeightType& wt, const std::string& weightStr);
 
-// Function for simple mathematical operations.  what=0 (mul) or 1 (add)
-
-  SDMemTable* localOperate (const SDMemTable& in, casa::Float offset, 
-                            casa::Bool doAll, casa::uInt what);
-
-// Function to average polarizations
-
-  SDMemTable* localAveragePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
-
-// Function to bin up spectra
-
-  SDMemTable* localBin (const SDMemTable& in, casa::Int width);
 };
 
 } // namespace
