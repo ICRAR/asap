@@ -9,7 +9,7 @@ def average_time(*args, **kwargs):
     Example:
         # return a time averaged scan from scana and scanb
         # without using a mask
-        scanav = average_scans(scana,scanb)
+        scanav = average_time(scana,scanb)
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
         scanav = average_time(scan)
