@@ -166,11 +166,14 @@ class scantable(sdtable):
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
-            from os.path import expandvars
+            from os.path import expandvars, isfile
             filename = expandvars(filename)
-            data = open(filename, 'w')
-            data.write(info)
-            data.close()
+            if isfile(filename):
+                data = open(filename, 'w')
+                data.write(info)
+                data.close()
+            else:
+                print "Illegal file name '%s'." % (filename)
         print info
 
     def set_cursor(self, thebeam=0,theif=0,thepol=0):
