@@ -292,7 +292,11 @@ int SDReader::read(const std::vector<int>& seq) {
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
 	sc.parangle = parAngle;
-	sc.refbeam = refBeam-1;//make it 0-based; -1 if nbeams == 1
+	sc.refbeam = -1; //nbeams == 1
+	if (nBeam_ > 1) // circumvent a bug "asap0000" in read which
+			// returns a random refbema number on multiple
+			// reads
+	  sc.refbeam = refBeam-1;//make it 0-based;
         sc.scanid = scanNo-1;//make it 0-based
         if (haveXPol_) {
            sc.setSpectrum(spectra, xPol, beamNo, IFno);
