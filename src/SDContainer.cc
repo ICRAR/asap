@@ -224,9 +224,9 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 
 
 
-Bool SDContainer::setFlags (const Matrix<uChar>& flags,
-                            uInt whichBeam, uInt whichIF,
-                            Bool hasXPol)
+Bool SDContainer::setFlags(const Matrix<uChar>& flags,
+			   uInt whichBeam, uInt whichIF,
+			   Bool hasXPol)
 //
 // flags is [nChan,nPol] 
 // flags_ is [,,,nChan]
@@ -477,10 +477,16 @@ Bool SDContainer::putHistory(const Vector<String>& hist)
   return True;
 }
 
-void SDContainer::setSlice (IPosition& start, IPosition& end,
-                            const IPosition& shpIn, const IPosition& shpOut,
-                            uInt whichBeam, uInt whichIF, Bool tSys,
-                            Bool xPol) const
+Bool SDContainer::putFitMap(const Array<Int>& arr) {
+  fitIDMap_.resize();
+  fitIDMap_ = arr;
+  return True;
+}
+
+void SDContainer::setSlice(IPosition& start, IPosition& end,
+			   const IPosition& shpIn, const IPosition& shpOut,
+			   uInt whichBeam, uInt whichIF, Bool tSys,
+			   Bool xPol) const
 //
 // tSYs
 //   shpIn [nPol]
@@ -501,15 +507,16 @@ void SDContainer::setSlice (IPosition& start, IPosition& end,
      AlwaysAssert(shpOut(asap::PolAxis)==shpIn(1)+pOff,AipsError);   // pol
   }
 //
-  setSlice (start, end, shpOut, whichBeam, whichIF);
+  setSlice(start, end, shpOut, whichBeam, whichIF);
 }
 
 
-void SDContainer::setSlice (IPosition& start, IPosition& end, const IPosition& shape, 
-                            uInt whichBeam, uInt whichIF) const
+void SDContainer::setSlice(IPosition& start, IPosition& end, 
+			   const IPosition& shape, 
+			   uInt whichBeam, uInt whichIF) const
 {
   AlwaysAssert(asap::nAxes==4,AipsError);
-//
+  //
   start.resize(asap::nAxes);
   start = 0;
   start(asap::BeamAxis) = whichBeam;
@@ -574,12 +581,61 @@ void SDFrequencyTable::restFrequencies(Vector<Double>& rfs,
   rfunit = restFreqUnit_;
 }
 
+// SDFitTable
+
+
+const Vector<Double>& SDFitTable::getFitParameters(uInt whichRow) const
+{
+  if (whichRow <= n_)
+    return fitParms_[whichRow];
+}
+
+const Vector<Bool>& SDFitTable::getFitParameterMask(uInt whichRow) const
+{
+  if (whichRow <= n_)
+    return parMask_[whichRow];
+}
+
+const Vector<Int>& SDFitTable::getFitComponents(uInt whichRow) const
+{
+  if (whichRow <= n_)
+    return fitComps_[whichRow];
+}
+
+const Vector<String>& SDFitTable::getFitFunctions(uInt whichRow) const
+{
+  if (whichRow <= n_)
+    return fitFuncs_[whichRow];
+}
+
+void SDFitTable::putFitParameters(uInt whichRow, const Vector<Double>& arr)
+{
+  if (whichRow <= n_)
+    fitParms_[whichRow] = arr;
+}
+
+void SDFitTable::putFitParameterMask(uInt whichRow, const Vector<Bool>& arr)
+{
+  if (whichRow <= n_)
+    parMask_[whichRow] = arr;
+}
+
+void SDFitTable::putFitComponents(uInt whichRow, const Vector<Int>& arr)
+{
+  if (whichRow <= n_)
+    fitComps_[whichRow] = arr;
+}
+void SDFitTable::putFitFunctions(uInt whichRow, const Vector<String>& arr)
+{
+  if (whichRow <= n_)
+    fitFuncs_[whichRow] = arr;
+}
 
 
 // SDDataDesc
 
-uInt SDDataDesc::addEntry (const String& source, uInt ID, 
-                           const MDirection& dir, uInt secID)
+uInt SDDataDesc::addEntry(const String& source, uInt ID, 
+			  const MDirection& dir, uInt secID)
 {
 
 // See if already exists
@@ -617,3 +673,4 @@ void SDDataDesc::summary() const
       }
    }
 }
+

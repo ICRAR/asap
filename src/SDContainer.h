@@ -72,30 +72,32 @@ public:
   SDFrequencyTable() : nFreq_(0) {;}
   virtual ~SDFrequencyTable() {;}
 
-// Add a new entry or match an existing one. Returns the index into the table
+  // Add a new entry or match an existing one. Returns the index into
+  // the table
   casa::uInt addFrequency(casa::Double refPix, casa::Double refVal, 
-			 casa::Double inc);
-//  
-  casa::Int length() const { return nFreq_;}          // # of stored Frequencies
+			  casa::Double inc);
+
+  casa::Int length() const { return nFreq_;}  // # of stored Frequencies
   void setLength(casa::uInt length) {nFreq_ = length;}
 
-// Get attributes
+  // Get attributes
   casa::Double referencePixel(casa::uInt which) const { return refPix_[which];}
   casa::Double referenceValue(casa::uInt which) const { return refVal_[which];}
   casa::Double increment(casa::uInt which) const { return increment_[which];}
   casa::Float equinox() const { return equinox_; }
   casa::String refFrame() const { return refFrame_; }
-//
+  
   void restFrequencies(casa::Vector<casa::Double>& rfs, 
 		       casa::String& rfunit ) const ;
 
-// Set attributes
+  // Set attributes
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
-//
-  void deleteRestFrequencies () {restFreqs_.resize(0);}
+
+  void deleteRestFrequencies() {restFreqs_.resize(0);}
   casa::uInt addRestFrequency(casa::Double);
-  void setRestFrequencyUnit(const casa::String& theunit) {restFreqUnit_ = theunit;}
+  void setRestFrequencyUnit(const casa::String& theunit) 
+  { restFreqUnit_ = theunit;}
 
 private:
   casa::uInt nFreq_;
@@ -161,11 +163,17 @@ public:
   const casa::Array<casa::Double>& getDirection() const { return direction_; }
 
   const casa::Vector<casa::uInt>& getFreqMap() const { return freqidx_; }
-  const casa::Vector<casa::uInt>& getRestFreqMap() const { return restfreqidx_; }
+  const casa::Vector<casa::uInt>& getRestFreqMap() const 
+  { return restfreqidx_; }
   
   const casa::Vector<casa::String>& getHistory() const { return history_; }
   casa::Bool putHistory(const casa::Vector<casa::String>& hist);
   casa::Bool appendHistory(const casa::String& hist);
+
+  casa::Bool putFitMap(const casa::Array<casa::Int>& arr);
+
+  const casa::Array<casa::Int>& getFitMap() const { return fitIDMap_; }
+
 
   casa::Double timestamp;
   //Double bandwidth;
@@ -186,6 +194,7 @@ private:
   // (nBeam,nIF,nPol,nChannel)
   casa::Array<casa::Float>    spectrum_;  
   casa::Array<casa::uChar>    flags_;
+
   // (nBeam,nIF,nPol,[nChannel]) Tsys is not really a function of
   // channel, but this makes it easier to work with at the expense of
   // a little memory
@@ -194,18 +203,22 @@ private:
 
   //(nIF) indx into "global" frequency table
   casa::Vector<casa::uInt>    freqidx_;
+
  // (nIF) indx into "global" rest frequency table
   casa::Vector<casa::uInt>    restfreqidx_;
+
   //(nBeam,2) maybe use Measures here...
   casa::Array<casa::Double>   direction_;
   casa::Vector<casa::String> history_;
-  void setSlice (casa::IPosition& start, casa::IPosition& end,
-                 const casa::IPosition& shpIn, const casa::IPosition& shpOut,
-                 casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol,
-                 casa::Bool xPol) const;
-  void setSlice (casa::IPosition& start, casa::IPosition& end,
-                 const casa::IPosition& shape, 
-                 casa::uInt whichBeam, casa::uInt whichIF) const;
+  casa::Array<casa::Int> fitIDMap_;
+
+  void setSlice(casa::IPosition& start, casa::IPosition& end,
+		const casa::IPosition& shpIn, const casa::IPosition& shpOut,
+		casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol,
+		casa::Bool xPol) const;
+  void setSlice(casa::IPosition& start, casa::IPosition& end,
+		const casa::IPosition& shape, 
+		casa::uInt whichBeam, casa::uInt whichIF) const;
 };
 
 
@@ -214,27 +227,27 @@ class SDDataDesc {
 
 public:
 
-// COnstructor
+  // Constructor
   SDDataDesc() : n_(0) {;}
   ~SDDataDesc() {;}
 
-// Add an entry if source name and Integer ID (can be anything you like, such 
-// as FreqID) are unique.  You can add secondary entries direction
-// and another integer index which are just stored along with the
-// the primary entries
-  casa::uInt addEntry (const casa::String& source, casa::uInt ID,
-                       const casa::MDirection& secDir, casa::uInt secID);
+  // Add an entry if source name and Integer ID (can be anything you
+  // like, such as FreqID) are unique.  You can add secondary entries
+  // direction and another integer index which are just stored along
+  // with the the primary entries
+  casa::uInt addEntry(const casa::String& source, casa::uInt ID,
+		      const casa::MDirection& secDir, casa::uInt secID);
 
-// Number of entries
+  // Number of entries
   casa::Int length() const { return n_;}
-
-// Get attributes
-  casa::String source (casa::uInt which) const {return source_[which];}
+  
+  // Get attributes
+  casa::String source(casa::uInt which) const {return source_[which];}
   casa::uInt ID(casa::uInt which) const {return ID_[which];}
   casa::uInt secID(casa::uInt which) const {return secID_[which];}
-  casa::MDirection secDir (casa::uInt which) const {return secDir_[which];}
-
-// Summary
+  casa::MDirection secDir(casa::uInt which) const {return secDir_[which];}
+  
+  // Summary
   void summary() const;
 
 private:
@@ -242,8 +255,41 @@ private:
   casa::Vector<casa::String> source_;
   casa::Vector<casa::uInt> ID_, secID_;
   casa::Block<casa::MDirection> secDir_;
-//
+
   SDDataDesc(const SDDataDesc& other);
+
+};
+
+class SDFitTable {
+public:
+  // Create a FitTable with "n" rows
+  SDFitTable(casa::uInt n=0) : n_(n) {;};
+  
+  casa::uInt length() const { return n_; };
+  const casa::Vector<casa::Double>& getFitParameters(casa::uInt which) const;
+  const casa::Vector<casa::Bool>& getFitParameterMask(casa::uInt which) const;
+  const casa::Vector<casa::String>& getFitFunctions(casa::uInt which) const;
+  const casa::Vector<casa::Int>& getFitComponents(casa::uInt which) const;
+
+  void putFitParameters(casa::uInt whichRow, 
+			const casa::Vector<casa::Double>& arr);
+  void putFitParameterMask(casa::uInt whichRow,
+			   const casa::Vector<casa::Bool>& arr);
+  void putFitFunctions(casa::uInt whichRow, 
+		       const casa::Vector<casa::String>& arr);
+  void putFitComponents(casa::uInt whichRow, 
+			const casa::Vector<casa::Int>& arr);
+
+private:
+  
+  casa::uInt n_;
+  casa::Vector<casa::Vector<casa::Double> > fitParms_;
+  // (npars,nrows)
+  casa::Vector<casa::Vector<casa::Bool> > parMask_;
+  // the fit function names (nnames,nrows)
+  casa::Vector<casa::Vector<casa::String> > fitFuncs_;
+  // the number of components of the function (ncomps, nrows)
+  casa::Vector<casa::Vector<casa::Int> > fitComps_;
 
 };
 
