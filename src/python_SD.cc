@@ -37,11 +37,11 @@
 
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(atnf_sd) {
-  atnf_sd::python::python_SDMemTable();
-  atnf_sd::python::python_SDReader();
-  atnf_sd::python::python_SDWriter();
-  atnf_sd::python::python_SDMath();
+BOOST_PYTHON_MODULE(asap) {
+  asap::python::python_SDMemTable();
+  asap::python::python_SDReader();
+  asap::python::python_SDWriter();
+  asap::python::python_SDMath();
 
   std_vector_to_tuple < int > ();
   from_python_sequence < std::vector < int >,  

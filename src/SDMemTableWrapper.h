@@ -36,7 +36,7 @@
 
 #include "SDMemTable.h"
 
-namespace atnf_sd {
+namespace asap {
 
 class SDMemTableWrapper {
 

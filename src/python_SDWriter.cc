@@ -34,7 +34,7 @@
 
 using namespace boost::python;
 
-namespace atnf_sd {
+namespace asap {
   namespace python  {
 
 void python_SDWriter() {
@@ -48,4 +48,4 @@ void python_SDWriter() {
 };
 
   } // namespace python
-} // namespace atnf_sd
+} // namespace asap

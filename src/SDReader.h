@@ -45,7 +45,7 @@
 
 class PKSreader;
 
-namespace atnf_sd {
+namespace asap {
 
 class SDReader {
 public:

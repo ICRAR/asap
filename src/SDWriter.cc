@@ -43,7 +43,7 @@
 #include "SDMemTable.h"
 #include "SDWriter.h"
 
-using namespace atnf_sd;
+using namespace asap;
 
 //--------------------------------------------------------- SDWriter::SDWriter
 

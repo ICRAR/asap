@@ -42,7 +42,7 @@
 
 #include <coordinates/Coordinates/SpectralCoordinate.h>
 
-namespace atnf_sd {
+namespace asap {
 
 class SDContainer;
 class SDHeader;

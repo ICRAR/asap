@@ -32,7 +32,7 @@
 
 #include "SDReader.h"
 
-using namespace atnf_sd;
+using namespace asap;
 
 SDReader::SDReader() :
   reader_(0),

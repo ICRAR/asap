@@ -60,8 +60,8 @@
 
 #include "SDMath.h"
 
-using namespace atnf_sd;
-//using namespace atnf_sd::SDMath;
+using namespace asap;
+//using namespace asap::SDMath;
 
 CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) {
   Table t = in->table();

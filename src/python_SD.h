@@ -31,7 +31,7 @@
 #ifndef _PYTHON_SD_H
 #define _PYTHON_SD_H
 
-namespace atnf_sd {
+namespace asap {
   namespace python {
 
     void python_SDMemTable();
@@ -40,6 +40,6 @@ namespace atnf_sd {
     void python_SDMath();
     
   } // python
-} //atnf_sd
+} //asap
 
 #endif

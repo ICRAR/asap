@@ -34,13 +34,13 @@
 
 using namespace boost::python;
 
-namespace atnf_sd {
+namespace asap {
   namespace SDMathWrapper {
     SDMemTableWrapper SDMathWrapper::averages(boost::python::tuple tp,
 					      const std::vector<bool>& mask) {
       int n;
       n = extract<int>(tp.attr("__len__")());
-      Block<CountedPtr<atnf_sd::SDMemTable> > b(n);
+      Block<CountedPtr<asap::SDMemTable> > b(n);
       for (int i=0;i< n;++i) {
 	SDMemTableWrapper sdmw = 
 	  extract<SDMemTableWrapper>( tp.attr("__getitem__")(i) );
@@ -66,5 +66,5 @@ namespace atnf_sd {
     };
     
   } // python
-} // atnf_sd
+} // asap
 

@@ -1,4 +1,4 @@
-TARGET   := ../lib/atnf_sd.so
+TARGET   := ../lib/asap.so
 
 CXX      := g++-3.2.3
 CXXFLAGS := -O -fPIC

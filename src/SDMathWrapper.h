@@ -39,7 +39,7 @@
 #include "SDMemTableWrapper.h"
 #include "SDMath.h"
 
-namespace atnf_sd {
+namespace asap {
 
 namespace SDMathWrapper {
   SDMemTableWrapper average(const SDMemTableWrapper& sdt) {

@@ -36,7 +36,7 @@
 #include <casa/Utilities/Copy.cc>
 #include "SDMemTable.h"
 
-namespace atnf_sd {
+namespace asap {
   template class CountedConstPtr<SDMemTable>;
   template class CountedPtr<SDMemTable>;
   template class PtrRep<SDMemTable>;
@@ -44,9 +44,9 @@ namespace atnf_sd {
   template class SimpleCountedPtr<SDMemTable>;
   template class Block<CountedPtr<SDMemTable> >;
 }
-template void objcopy(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable> const *, uInt);
-template void objmove(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable> const *, uInt);
-template void objset(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable>, uInt);
+template void objcopy(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable> const *, uInt);
+template void objmove(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable> const *, uInt);
+template void objset(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable>, uInt);
 
 #include <casa/Arrays/ArrayLogical.cc>
 #include <casa/Arrays/ArrayMath.cc>

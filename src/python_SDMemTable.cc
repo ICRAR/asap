@@ -36,7 +36,7 @@
 
 using namespace boost::python;
 
-namespace atnf_sd {
+namespace asap {
   namespace python {
 
 void python_SDMemTable() {
@@ -81,4 +81,4 @@ void python_SDMemTable() {
 };
 
   } // python
-} // atnf_sd
+} // asap

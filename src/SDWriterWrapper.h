@@ -37,7 +37,7 @@
 #include "SDMemTableWrapper.h"
 #include "SDWriter.h"
 
-namespace atnf_sd {
+namespace asap {
 
 class SDWriterWrapper : public SDWriter {
 public:
@@ -48,5 +48,5 @@ public:
   }
 };
 
-} // namespace atnf_sd
+} // namespace asap
 #endif

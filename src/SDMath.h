@@ -35,7 +35,7 @@
 #include <vector>
 #include <casa/Utilities/CountedPtr.h>
 
-namespace atnf_sd {
+namespace asap {
 
 class SDMemTable;
 

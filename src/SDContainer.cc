@@ -36,7 +36,7 @@
 
 #include "SDContainer.h"
 
-using namespace atnf_sd;
+using namespace asap;
 
 void SDHeader::print() const {
   MVTime mvt(this->utc);

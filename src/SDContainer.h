@@ -40,7 +40,7 @@
 
 template<class T> class Matrix;
 
-namespace atnf_sd {
+namespace asap {
 
 
 struct SDHeader {

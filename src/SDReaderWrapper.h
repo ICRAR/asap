@@ -37,7 +37,7 @@
 #include "SDMemTableWrapper.h"
 #include "SDReader.h"
 
-namespace atnf_sd {
+namespace asap {
 
 class SDReaderWrapper : public SDReader {
 public:

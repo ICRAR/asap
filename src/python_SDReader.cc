@@ -34,7 +34,7 @@
 
 using namespace boost::python;
 
-namespace atnf_sd {
+namespace asap {
   namespace python {
 
     void python_SDReader() {
@@ -49,5 +49,5 @@ namespace atnf_sd {
     };
 
   } //namespace python 
-} // namespace atnf_sd
+} // namespace asap
 

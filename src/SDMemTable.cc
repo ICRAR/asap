@@ -55,7 +55,7 @@
 #include "SDMemTable.h"
 #include "SDContainer.h"
 
-using namespace atnf_sd;
+using namespace asap;
 
 SDMemTable::SDMemTable() :
   IFSel_(0),
