@@ -1,0 +1,9 @@
+This directory contains ASAP defects
+====================================
+
+Each defect gets a defect number assigned and a file is created in the
+directory containing the traffic on the defect.
+
+The bug number is soley determined by the last entry in this directory.
+
+MM20050315
