@@ -8,7 +8,7 @@ r.open('/u/mmarquar/zorro/singledish/data/2001-09-01_0332_P363.rpf')
 integrations = range(110)
 r.read(integrations)
 # get the data out of  the reader
-scans = r.gettable()
+scans = r.getdata()
 # close the reader
 r = None
 
