@@ -711,16 +711,33 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
 MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection,
                                                 Bool toStokes) const 
 {
-  Array<Float> arr;
+
+// Get flags
+
   Array<uChar> farr;
+  flagsCol_.get(whichRow, farr);
+
+// Get data and convert mask
+
+  Array<Float> arr;
+  Array<Bool> mask;
+  uInt polSel = polSel_;
   if (toStokes) {
      stokesCol_.get(whichRow, arr);
+//
+     Array<Bool> tMask(farr.shape());
+     convertArray(tMask, farr);
+     mask = SDPolUtil::stokesMask (tMask, True);
+//
+     IPosition shape = arr.shape();
+     uInt nPol = shape(asap::PolAxis);
+     if (nPol<=2) polSel = 0;             // XX and XX,YY -> I
   } else {
      specCol_.get(whichRow, arr);
+     mask.resize(farr.shape());
+     convertArray(mask, farr);
   }
-  flagsCol_.get(whichRow, farr);
-  Array<Bool> barr(farr.shape());
-  convertArray(barr, farr);
+//
   MaskedArray<Float> marr;
   if (useSelection) {
     ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
@@ -728,17 +745,17 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection
     ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
     aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
     ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
-    aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+    aa2.reset(aa2.begin(uInt(polSel)));// go to pol
 
-    ArrayAccessor<Bool, Axis<asap::BeamAxis> > baa0(barr);
+    ArrayAccessor<Bool, Axis<asap::BeamAxis> > baa0(mask);
     baa0.reset(baa0.begin(uInt(beamSel_)));//go to beam
     ArrayAccessor<Bool, Axis<asap::IFAxis> > baa1(baa0);
     baa1.reset(baa1.begin(uInt(IFSel_)));// go to IF
     ArrayAccessor<Bool, Axis<asap::PolAxis> > baa2(baa1);
-    baa2.reset(baa2.begin(uInt(polSel_)));// go to pol
+    baa2.reset(baa2.begin(uInt(polSel)));// go to pol
 
     Vector<Float> a(arr.shape()(3));
-    Vector<Bool> b(barr.shape()(3));
+    Vector<Bool> b(mask.shape()(3));
     ArrayAccessor<Float, Axis<asap::BeamAxis> > a0(a);
     ArrayAccessor<Bool, Axis<asap::BeamAxis> > b0(b);
 
@@ -753,7 +770,7 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, Bool useSelection
     }
     marr.setData(a,b);
   } else {
-    marr.setData(arr,!barr);
+    marr.setData(arr,!mask);
   }
   return marr;
 }

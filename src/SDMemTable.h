@@ -110,7 +110,7 @@ public:
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
 
-  // Get RR or LL at cursor location (not polSel_)
+  // Get RR or LL at cursor location (except not polSel_)
   virtual std::vector<float> getCircularSpectrum(casa::Int whichRow=0, 
                                                  casa::Bool rr=casa::True) const;
 
