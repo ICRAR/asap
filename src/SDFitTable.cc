@@ -35,7 +35,7 @@
 using namespace casa;
 using namespace asap;
 
-SDFitTable::SDFitTable(const SDFitTable& other) {
+SDFitTable::SDFitTable(const SDFitTable& other) {  
   if (other.length() > 0) {
     this->nfits_ = other.nfits_;
     this->pars_ = other.pars_;
@@ -43,7 +43,9 @@ SDFitTable::SDFitTable(const SDFitTable& other) {
     this->funcs_ = other.funcs_;
     this->comps_ = other.comps_;
     this->frameinfo_ = other.frameinfo_;
-  }    
+  } else {
+    this->nfits_ = 0;
+  }
 }
 
 
