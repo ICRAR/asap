@@ -2,7 +2,7 @@
 //# SDMemTable.h: A MemoryTable container for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMEMTABLE_H
-#define _SDMEMTABLE_H
+#ifndef SDMEMTABLE_H
+#define SDMEMTABLE_H
 
 // STL
 #include <string>
@@ -58,11 +58,11 @@ public:
 
   // Copy Construct a SDMemTable, if clear==True only header and
   // skeleton are copied, otherwise the whole table is copied.
-  SDMemTable(const SDMemTable& other, Bool clear=False);
+  SDMemTable(const SDMemTable& other, casa::Bool clear);
 
   // Copy Construct a SDMemTable, give a scanid constraint
   // see also getScan()
-  SDMemTable(const Table& tab, const std::string& expr);
+  SDMemTable(const casa::Table& tab, const std::string& expr);
 
   virtual ~SDMemTable();
 
@@ -72,32 +72,34 @@ public:
   bool putSDFreqTable(const SDFrequencyTable& sdft);
 
   //get the dat wrapped up in a meta container
-  SDContainer getSDContainer(uInt whichRow=0) const;
+  SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
   SDFrequencyTable getSDFreqTable() const;
   // get spectrum,mask and tsys for the given row, at the selected
   // cursor - all as stl vectors
-  virtual std::vector<float> getSpectrum(Int whichRow=0) const;
-  virtual std::vector<bool> getMask(Int whichRow=0) const;
+  virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
+  virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
 
-  virtual Float getTsys(Int whichRow=0) const;
+  virtual casa::Float getTsys(casa::Int whichRow=0) const;
   // get all as aips++ Vectors
-  virtual void getSpectrum(Vector<Float>& spectrum, Int whichRow=0);
+  virtual void getSpectrum(casa::Vector<casa::Float>& spectrum, 
+			   casa::Int whichRow=0);
 
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
 
   // get info for current row
-  std::string getTime(Int whichRow=0) const ;
-  std::string getSourceName(Int whichRow=0) const;
-  double getInterval(Int whichRow=0) const;
+  std::string getTime(casa::Int whichRow=0) const ;
+  std::string getSourceName(casa::Int whichRow=0) const;
+  double getInterval(casa::Int whichRow=0) const;
 
   virtual void setSpectrum(std::vector<float> spectrum, int whichRow=0);
-  virtual void setRestFreqs(std::vector<double> freqs, const std::string& theunit);
+  virtual void setRestFreqs(std::vector<double> freqs, 
+			    const std::string& theunit);
   virtual void setCoordInfo(std::vector<string> theinfo);
   // set the current value
-  virtual bool setIF(Int whichIF=0);
-  virtual bool setBeam(Int whichBeam=0);
-  virtual bool setPol(Int whichPol=0);
+  virtual bool setIF(casa::Int whichIF=0);
+  virtual bool setBeam(casa::Int whichBeam=0);
+  virtual bool setPol(casa::Int whichPol=0);
 
   //sets the user mask applied to all spectra
   virtual bool setMask(std::vector<int> whichChans);
@@ -105,13 +107,13 @@ public:
   virtual void flag(int whichRow);
 
   // return the currently selected values
-  virtual Int getIF() { return IFSel_; }
-  virtual Int getBeam() { return beamSel_; }
-  virtual Int getPol() { return polSel_; }
+  virtual casa::Int getIF() { return IFSel_; }
+  virtual casa::Int getBeam() { return beamSel_; }
+  virtual casa::Int getPol() { return polSel_; }
   virtual std::vector<string> getCoordInfo() const;
 
   // number of scans in table
-  virtual Int nScan() const;
+  virtual casa::Int nScan() const;
 
   // print a summary to stdout
   virtual std::string summary();
@@ -120,44 +122,45 @@ public:
   void makePersistent(const std::string& filename);
 
   // get a new SDMemTable containing all rows with the same give SCANID
-  SDMemTable getScan(Int scanID);
+  SDMemTable getScan(casa::Int scanID);
   SDMemTable getSource(const std::string& source);
 
-  const TableRecord& getHeader() const {return table_.keywordSet();}
+  const casa::TableRecord& getHeader() const {return table_.keywordSet();}
   // get a handle to the "raw" aips++ table
-  const Table& table() { return table_; }
+  const casa::Table& table() { return table_; }
 
   // return the number of values
-  Int nBeam() const;
-  Int nIF() const;
-  Int nPol() const;
-  Int nChan() const;
+  casa::Int nBeam() const;
+  casa::Int nIF() const;
+  casa::Int nPol() const;
+  casa::Int nChan() const;
 
   // return the number of rows (integrations) in the table
-  Int nRow() const { return table_.nrow(); }
+  casa::Int nRow() const { return table_.nrow(); }
 
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
-  MaskedArray<Float> rowAsMaskedArray(uInt whichRow,
-                                      Bool useSelection = False);
+  casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow,
+						  casa::Bool useSelection = casa::False);
 
-  SpectralCoordinate getCoordinate(uInt whichIdx) const;
-  Bool setCoordinate(const SpectralCoordinate& speccord, uInt whichIdx);
+  casa::SpectralCoordinate getCoordinate(casa::uInt whichIdx) const;
+  casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord, 
+			   casa::uInt whichIdx);
 
-  Int nCoordinates() const;
+  casa::Int nCoordinates() const;
 
   std::vector<double> getAbscissa(int whichRow=0);
-  std::string getAbscissaString(Int whichRow=0);
+  std::string getAbscissaString(casa::Int whichRow=0);
 
 private:
   // utility func for nice printout
-  String formatSec(Double x);
+  casa::String formatSec(casa::Double x);
   void setup();
   // the current cursor into the array
-  Int IFSel_,beamSel_,polSel_;
+  casa::Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;
   // the underlying memory table
-  Table table_;
+  casa::Table table_;
 };
 
 }// namespace

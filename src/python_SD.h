@@ -2,7 +2,7 @@
 //# python_SD.h: python module for single dish package
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,14 +28,14 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef _PYTHON_SD_H
-#define _PYTHON_SD_H
+#ifndef PYTHON_SD_H
+#define PYTHON_SD_H
 
-class AipsError;
+class casa::AipsError;
 
 namespace asap {
   namespace python {
-    void translate_ex(AipsError const& e);
+    void translate_ex(const casa::AipsError& e);
     void python_SDMemTable();
     void python_SDReader();
     void python_SDWriter();

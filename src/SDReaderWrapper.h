@@ -2,7 +2,7 @@
 //# SDReaderWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDREADERWRAPPER_H
-#define _SDREADERWRAPPER_H
+#ifndef SDREADERWRAPPER_H
+#define SDREADERWRAPPER_H
 
 #include <vector>
 #include <string>

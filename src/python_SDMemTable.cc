@@ -2,7 +2,7 @@
 //# python_SDMemTable.cc: python exposure of c++ SDMemTable class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -32,6 +32,7 @@
 
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
+
 #include "SDMemTableWrapper.h"
 
 using namespace boost::python;

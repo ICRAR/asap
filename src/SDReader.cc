@@ -2,7 +2,7 @@
 //# SDReader.cc: A class to read single dish spectra from SDFITS, RPFITS
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,10 +28,12 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#include <atnf/PKSIO/PKSreader.h>
 #include <casa/Exceptions.h>
+#include <atnf/PKSIO/PKSreader.h>
+
 #include "SDReader.h"
 
+using namespace casa;
 using namespace asap;
 
 SDReader::SDReader() :

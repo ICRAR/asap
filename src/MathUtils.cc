@@ -2,7 +2,7 @@
 //# MathUtilities.cc: General math operations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -29,11 +29,17 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
+#include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorSTLIterator.h>
 
+#include "MathUtils.h"
+
+using namespace casa;
+//using namespace asap;
+
 template <class T>
-void hanning(Vector<T>& out, Vector<Bool>& outmask, 
+void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask, 
 	     const Vector<T>& in, const Vector<Bool>& mask, 
 	     Bool relaxed, Bool ignoreOther) {
 

@@ -2,7 +2,7 @@
 //# python_SDWriter.cc: Python binding to C++ SDWriter class.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Mark Calabretta, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free

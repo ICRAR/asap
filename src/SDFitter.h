@@ -2,7 +2,7 @@
 //# SDFitter.h: A Fitter class for spectra
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -67,20 +67,20 @@ public:
     //std::vector<float> getEstimate() const;
 private:
     void clear();
-    Vector<Float> x_;
-    Vector<Float> y_;
-    Vector<Bool> m_;
-    PtrBlock<Function<Float>* > funcs_;
-    CompoundFunction<Float> cfunc_;
+    casa::Vector<casa::Float> x_;
+    casa::Vector<casa::Float> y_;
+    casa::Vector<casa::Bool> m_;
+    casa::PtrBlock<casa::Function<casa::Float>* > funcs_;
+    casa::CompoundFunction<casa::Float> cfunc_;
     //Bool estimateSet_;
-    Float chisquared_;
-    Vector<Float> parameters_;
-    Vector<Bool> fixedpar_;
+    casa::Float chisquared_;
+    casa::Vector<casa::Float> parameters_;
+    casa::Vector<casa::Bool> fixedpar_;
 
-    Vector<Float> error_;
-    Vector<Float> thefit_;
-    Vector<Float> residual_;
-    Vector<Float> estimate_;
+    casa::Vector<casa::Float> error_;
+    casa::Vector<casa::Float> thefit_;
+    casa::Vector<casa::Float> residual_;
+    casa::Vector<casa::Float> estimate_;
 };
 
 } // namespace

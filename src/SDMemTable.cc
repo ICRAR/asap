@@ -2,7 +2,7 @@
 //# SDMemTable.cc: A MemoryTable container for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -29,7 +29,7 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
-
+#include <casa/aips.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
 #include <casa/Arrays/Array.h>
@@ -56,6 +56,7 @@
 #include "SDMemTable.h"
 #include "SDContainer.h"
 
+using namespace casa;
 using namespace asap;
 
 SDMemTable::SDMemTable() :
@@ -368,7 +369,7 @@ std::vector<double> SDMemTable::getAbscissa(Int whichRow) {
     t.keywordSet().get("RESTFREQS",rstf);
     if (rstf.nelements() > 0) {
       if (rstf.nelements() >= nIF())
-	spc.selectRestFrequency(uInt(IFSel_));
+        spc.selectRestFrequency(uInt(IFSel_));
       spc.setVelocity(u.getName());
       Vector<Double> wrld;
       spc.pixelToVelocity(wrld,absc1);

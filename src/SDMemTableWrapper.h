@@ -2,7 +2,7 @@
 //# SDMemTableWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMEMTABLEWRAPPER_H
-#define _SDMEMTABLEWRAPPER_H
+#ifndef SDMEMTABLEWRAPPER_H
+#define SDMEMTABLEWRAPPER_H
 
 #include <vector>
 #include <string>
@@ -46,7 +46,7 @@ public:
   SDMemTableWrapper() :
     table_(new SDMemTable()) {;}
 
-  SDMemTableWrapper(CountedPtr<SDMemTable> cp) : table_(cp) {;}
+  SDMemTableWrapper(casa::CountedPtr<SDMemTable> cp) : table_(cp) {;}
   //SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
   SDMemTableWrapper(const SDMemTableWrapper& mt) :
     table_(mt.getCP()) {;}
@@ -56,17 +56,17 @@ public:
 
   SDMemTableWrapper copy() {
     //CountedPtr<SDMemTable> cp = new SDMemTable(*this, False);
-    return SDMemTableWrapper(new SDMemTable(*(this->getCP()), False));
+    return SDMemTableWrapper(new SDMemTable(*(this->getCP()), casa::False));
   }
 
   SDMemTableWrapper getScan(int scan) {
-    String cond("SELECT * from $1 WHERE SCANID == ");
-    cond += String::toString(scan);
+    casa::String cond("SELECT * from $1 WHERE SCANID == ");
+    cond += casa::String::toString(scan);
     return SDMemTableWrapper(*this, cond);
   }
 
   SDMemTableWrapper getSource(const std::string& source) {
-    String cond("SELECT * from $1 WHERE SRCNAME == '");
+    casa::String cond("SELECT * from $1 WHERE SRCNAME == '");
     cond += source;cond += "'";
     return SDMemTableWrapper(*this, cond);
   }
@@ -136,11 +136,11 @@ public:
     return table_->getCoordInfo();
   }
 
-  CountedPtr<SDMemTable> getCP() const {return table_;}
+  casa::CountedPtr<SDMemTable> getCP() const {return table_;}
   std::string summary() { return table_->summary(); }
 
 private:
-  CountedPtr<SDMemTable> table_;
+  casa::CountedPtr<SDMemTable> table_;
 };
 
 } // namespace

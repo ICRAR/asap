@@ -2,7 +2,7 @@
 //# SDWriter.cc: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Mark Calabretta, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -43,14 +43,14 @@
 #include "SDMemTable.h"
 #include "SDWriter.h"
 
+using namespace casa;
 using namespace asap;
 
 //--------------------------------------------------------- SDWriter::SDWriter
 
 // Default constructor.
 
-SDWriter::SDWriter(
-        const std::string &format)
+SDWriter::SDWriter(const std::string &format)
 {
   cFormat = format;
 

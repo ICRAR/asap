@@ -2,7 +2,7 @@
 //# SDMath.cc: A collection of single dish mathematical operations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -41,6 +41,7 @@
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/MaskArrLogi.h>
+#include <casa/Arrays/VectorIter.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
@@ -60,6 +61,7 @@
 
 #include "SDMath.h"
 
+using namespace casa;
 using namespace asap;
 //using namespace asap::SDMath;
 
@@ -191,84 +193,39 @@ SDMath::add(const CountedPtr<SDMemTable>& in, Float offset) {
 }
 
 
+// Start NEBK
+// SHow how to do above with VectorIterator
 
-bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data,
-                const Vector<Bool>& mask,
-                const std::string& fitexpr) {
+//   uInt axis = 3;
+//   VectorIterator<Float> itData(arr, axis);
+//   ReadOnlyVectorIterator<Bool> itMask(barr, axis);
+//   Vector<Float> outv;
+//   while (!itData.pastEnd()) {
+//     SDMath::fit(outv, itData.vector(), itMask.vector()&&inmask, fitexpr);   // Should have function
+//     itData.vector() = outv;                                                 // to do in situ
+// //
+//     SDMath::fit(itData.vector(), itData.vector(), itMask.vector()&&inmask, fitexpr);   // Or maybe this works
+// //
+//     itData.next();
+//     itMask.next();
+//   }
 
-  LinearFit<Float> fitter;
-  Vector<Float> x(data.nelements());
-  indgen(x);
-  CompiledFunction<AutoDiff<Float> > fn;
-  fn.setFunction(String(fitexpr));
-  fitter.setFunction(fn);
-  Vector<Float> out,out1;
-  out = fitter.fit(x,data,&mask);
-  thefit = data;
-  fitter.residual(thefit, x);
-  cout << "Parameter solution = " << out << endl;
-  return True;
-}
-
-CountedPtr<SDMemTable>
-SDMath::baseline(const CountedPtr<SDMemTable>& in,
-                 const std::string& fitexpr,
-                 const std::vector<bool>& mask) {
-
-  IPosition ip = in->rowAsMaskedArray(0).shape();
-  SDContainer sc = in->getSDContainer();
-  String sname(in->getSourceName());
-  String stim(in->getTime());
-  cout << "Fitting: " << String(fitexpr) << " to "
-       << sname << " [" << stim << "]" << ":" <<endl;
-  MaskedArray<Float> marr(in->rowAsMaskedArray(0));
-  Vector<Bool> inmask(mask);
-  Array<Float> arr = marr.getArray();
-  Array<Bool> barr = marr.getMask();
-  for (uInt i=0; i<in->nBeam();++i) {
-    for (uInt j=0; j<in->nIF();++j) {
-      for (uInt k=0; k<in->nPol();++k) {
-        IPosition start(4,i,j,k,0);
-        IPosition end(4,i,j,k,in->nChan()-1);
-        Array<Float> subArr(arr(start,end));
-        Array<Bool> subMask(barr(start,end));
-        Vector<Float> outv;
-        Vector<Float> v(subArr.nonDegenerate());
-        Vector<Bool> m(subMask.nonDegenerate());
-        cout << "\t Polarisation " << k << "\t";
-        SDMath::fit(outv, v, m&&inmask, fitexpr);
-        ArrayAccessor<Float, Axis<0> > aa0(outv);
-        for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
-          (*aa) = (*aa0);
-          aa0++;
-        }
-      }
-    }
-  }
-  Array<uChar> outflags(barr.shape());
-  convertArray(outflags,!barr);
-  sc.putSpectrum(arr);
-  sc.putFlags(outflags);
-  SDMemTable* sdmt = new SDMemTable(*in,True);
-  sdmt->putSDContainer(sc);
-  return CountedPtr<SDMemTable>(sdmt);
-}
-
+// End NEBK
 
 CountedPtr<SDMemTable>
 SDMath::hanning(const CountedPtr<SDMemTable>& in) {
-
+  
   //IPosition ip = in->rowAsMaskedArray(0).shape();
   SDMemTable* sdmt = new SDMemTable(*in,True);
   for (uInt ri=0; ri < in->nRow(); ++ri) {
-
+    
     MaskedArray<Float> marr(in->rowAsMaskedArray(ri));
 
     Array<Float> arr = marr.getArray();
     Array<Bool> barr = marr.getMask();
     for (uInt i=0; i<in->nBeam();++i) {
         for (uInt j=0; j<in->nIF();++j) {
-        for (uInt k=0; k<in->nPol();++k) {
+	  for (uInt k=0; k<in->nPol();++k) {
             IPosition start(4,i,j,k,0);
             IPosition end(4,i,j,k,in->nChan()-1);
             Array<Float> subArr(arr(start,end));
@@ -277,20 +234,40 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in) {
             Vector<Bool> outm;
             Vector<Float> v(subArr.nonDegenerate());
             Vector<Bool> m(subMask.nonDegenerate());
-            ::hanning(outv,outm,v,m);
+            mathutil::hanning(outv,outm,v,m);
             ArrayAccessor<Float, Axis<0> > aa0(outv);
             ArrayAccessor<Bool, Axis<0> > ba0(outm);
             ArrayAccessor<Bool, Axis<3> > ba(subMask);
-            for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
-            (*aa) = (*aa0);
-            (*ba) = (*ba0);
-            aa0++;
-            ba0++;
-            ba++;
+            for (ArrayAccessor<Float, Axis<3> > aa(subArr); 
+		 aa != aa.end();++aa) {
+	      (*aa) = (*aa0);
+	      (*ba) = (*ba0);
+	      aa0++;
+	      ba0++;
+	      ba++;
             }
-        }
+	  }
         }
     }
+    //
+    
+//     uInt axis = 3;
+//     VectorIterator<Float> itData(arr, axis);
+//     VectorIterator<Bool> itMask(barr, axis);
+//     Vector<Float> outv;
+//     Vector<Bool> outm;
+//     while (!itData.pastEnd()) {
+//       ::hanning(outv, outm, itData.vector(), itMask.vector());
+//       itData.vector() = outv;                                                 
+//       itMask.vector() = outm;
+//       //
+//       itData.next();
+//       itMask.next();
+//    }
+    
+    // End NEBK
+    
+    //
     Array<uChar> outflags(barr.shape());
     convertArray(outflags,!barr);
     SDContainer sc = in->getSDContainer(ri);
@@ -402,7 +379,7 @@ SDMath::averagePol(const CountedPtr<SDMemTable>& in,
       outmarr /= stdevsqsum;
       Array<Float> tarr(outmarr.getArray());
       Array<Bool> tbarr(outmarr.getMask());
-      // write averaged pol into all pols - fix up to refrom array
+      // write averaged pol into all pols - fix up to reform array
       for (uInt k=0; k<in->nPol();++k) {
         IPosition start(4,i,j,k,0);
         IPosition end(4,i,j,k,n-1);

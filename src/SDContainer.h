@@ -2,7 +2,7 @@
 //# SDContainer.h: A container class for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDCONTAINER_H
-#define _SDCONTAINER_H
+#ifndef SDCONTAINER_H
+#define SDCONTAINER_H
 
 #include <vector>
 
@@ -38,26 +38,26 @@
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/Vector.h>
 
-template<class T> class Matrix;
+template<class T> class casa::Matrix;
 
 namespace asap {
 
 
 struct SDHeader {
-  Int nchan;
-  Int npol;
-  Int nif;
-  Int nbeam;
-  String observer;
-  String project;
-  String obstype;
-  String antennaname;
-  Vector<Double> antennaposition;
-  Float equinox;
-  String freqref;
-  Double reffreq;
-  Double bandwidth;
-  Double utc;
+  casa::Int nchan;
+  casa::Int npol;
+  casa::Int nif;
+  casa::Int nbeam;
+  casa::String observer;
+  casa::String project;
+  casa::String obstype;
+  casa::String antennaname;
+  casa::Vector<casa::Double> antennaposition;
+  casa::Float equinox;
+  casa::String freqref;
+  casa::Double reffreq;
+  casa::Double bandwidth;
+  casa::Double utc;
   void print() const ;
 };
 
@@ -68,99 +68,105 @@ public:
   SDFrequencyTable() : nFreq_(0) {;}
   virtual ~SDFrequencyTable() {;}
   
-  Int length() const { return nFreq_;};// # of stored Frequencies
+  casa::Int length() const { return nFreq_;};// # of stored Frequencies
 
-  Double referencePixel(uInt which) const { return refPix_[which];}
-  Double referenceValue(uInt which) const { return refVal_[which];}
-  Double increment(uInt which) const { return increment_[which];}
-  Float equinox() const { return equinox_; }
-  String refFrame() const { return refFrame_; }
+  casa::Double referencePixel(casa::uInt which) const { return refPix_[which];}
+  casa::Double referenceValue(casa::uInt which) const { return refVal_[which];}
+  casa::Double increment(casa::uInt which) const { return increment_[which];}
+  casa::Float equinox() const { return equinox_; }
+  casa::String refFrame() const { return refFrame_; }
 
   // returns the index into the table
   // this creates a new one or returns an existing one
-  Int addFrequency(Int refPix, Double refVal, Double inc);
-  void setEquinox(Float eq) { equinox_ = eq; }
-  void setRefFrame(const String& reff) { refFrame_ = reff; }
+  casa::Int addFrequency(casa::Int refPix, casa::Double refVal, 
+			 casa::Double inc);
+  void setEquinox(casa::Float eq) { equinox_ = eq; }
+  void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
   
 private:
-  Int nFreq_;
-  Vector<Double> refPix_;
-  Vector<Double> refVal_;
-  Vector<Double> increment_;
-  Float equinox_;
-  String refFrame_;
+  casa::Int nFreq_;
+  casa::Vector<casa::Double> refPix_;
+  casa::Vector<casa::Double> refVal_;
+  casa::Vector<casa::Double> increment_;
+  casa::Float equinox_;
+  casa::String refFrame_;
 };
 
 
 class SDContainer {
 
 public:
-  SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan);
-  SDContainer(IPosition shp);
+  SDContainer(casa::uInt nBeam, casa::uInt nIF, casa::uInt nPol, 
+	      casa::uInt nChan);
+  SDContainer(casa::IPosition shp);
 
   virtual ~SDContainer();
 
-  Bool resize(IPosition shp);
+  casa::Bool resize(casa::IPosition shp);
 
-  Bool setSpectrum(const Matrix<Float>& spec,
-		   uInt whichBeam, uInt whichIF);
-  Bool putSpectrum(const Array<Float>& spec);
+  casa::Bool setSpectrum(const casa::Matrix<casa::Float>& spec,
+		   casa::uInt whichBeam, casa::uInt whichIF);
+  casa::Bool putSpectrum(const casa::Array<casa::Float>& spec);
 
-  Bool setFlags(const Matrix<uChar>& flgs,
-		uInt whichBeam, uInt whichIF);
-  Bool putFlags(const Array<uChar>& spec);
+  casa::Bool setFlags(const casa::Matrix<casa::uChar>& flgs,
+		      casa::uInt whichBeam, casa::uInt whichIF);
+  casa::Bool putFlags(const casa::Array<casa::uChar>& spec);
 
-  Bool setTsys(const Vector<Float>& ts, 
-	       uInt whichBeam, uInt whichIF);
-  Bool putTsys(const Array<Float>& spec);
+  casa::Bool setTsys(const casa::Vector<casa::Float>& ts, 
+	       casa::uInt whichBeam, casa::uInt whichIF);
+  casa::Bool putTsys(const casa::Array<casa::Float>& spec);
 
-  Bool setDirection(const Vector<Double>& point, uInt whichBeam);
-  Bool putDirection(const Array<Double>& dir);
+  casa::Bool setDirection(const casa::Vector<casa::Double>& point, 
+			  casa::uInt whichBeam);
+  casa::Bool putDirection(const casa::Array<casa::Double>& dir);
 
-  Bool setFrequencyMap(uInt freqslot, uInt whichIF);
-  Bool putFreqMap(const Vector<uInt>& freqs);
+  casa::Bool setFrequencyMap(casa::uInt freqslot, casa::uInt whichIF);
+  casa::Bool putFreqMap(const casa::Vector<casa::uInt>& freqs);
   
-  Array<Float> getSpectrum(uInt whichBeam, uInt whichIF) const;
-  Array<uChar> getFlags(uInt whichBeam, uInt whichIF) const;
-  Array<Float> getTsys(uInt whichBeam, uInt whichIF) const;
-  Array<Double> getDirection(uInt whichBeam) const;
+  casa::Array<casa::Float> getSpectrum(casa::uInt whichBeam, 
+				       casa::uInt whichIF) const;
+  casa::Array<casa::uChar> getFlags(casa::uInt whichBeam, 
+				    casa::uInt whichIF) const;
+  casa::Array<casa::Float> getTsys(casa::uInt whichBeam, 
+				   casa::uInt whichIF) const;
+  casa::Array<casa::Double> getDirection(casa::uInt whichBeam) const;
 
-  const Array<Float>& getSpectrum() const { return spectrum_; }
-  const Array<uChar>& getFlags() const { return flags_; }
-  const Array<Float>& getTsys() const { return tsys_; }
-  const Array<Double>& getDirection() const { return direction_; }
+  const casa::Array<casa::Float>& getSpectrum() const { return spectrum_; }
+  const casa::Array<casa::uChar>& getFlags() const { return flags_; }
+  const casa::Array<casa::Float>& getTsys() const { return tsys_; }
+  const casa::Array<casa::Double>& getDirection() const { return direction_; }
 
-  const Vector<uInt>& getFreqMap() const { return freqidx_; }
+  const casa::Vector<casa::uInt>& getFreqMap() const { return freqidx_; }
   
-  Double timestamp;
+  casa::Double timestamp;
   //Double bandwidth;
-  String sourcename;
-  String fieldname;
-  Double interval;
-  Int scanid;
-  Vector<Float> tcal;
-  String tcaltime;
-  Float azimuth;
-  Float elevation;
-  Float parangle;
-  Int refbeam;
+  casa::String sourcename;
+  casa::String fieldname;
+  casa::Double interval;
+  casa::Int scanid;
+  casa::Vector<casa::Float> tcal;
+  casa::String tcaltime;
+  casa::Float azimuth;
+  casa::Float elevation;
+  casa::Float parangle;
+  casa::Int refbeam;
 
 private:
-  uInt nBeam_,nIF_,nPol_,nChan_;
+  casa::uInt nBeam_,nIF_,nPol_,nChan_;
 
   // (nBeam,nIF,nPol,nChannel)
-  Array<Float>    spectrum_;  
-  Array<uChar>    flags_;
+  casa::Array<casa::Float>    spectrum_;  
+  casa::Array<casa::uChar>    flags_;
   // (nBeam,nIF,nPol,[nChannel]) Tsys is not really a function of
   // channel, but this makes it easier to work with at the expense of
   // a little memory
-  Array<Float>    tsys_;
-  Array<Float>    tcal_;
+  casa::Array<casa::Float>    tsys_;
+  casa::Array<casa::Float>    tcal_;
 
   //(nIF) indx into "global" frequency table
-  Vector<uInt>            freqidx_;
+  casa::Vector<casa::uInt>    freqidx_;
   //(nBeam,2) maybe use Measures here...
-  Array<Double>  direction_;
+  casa::Array<casa::Double>   direction_;
 
 };
 

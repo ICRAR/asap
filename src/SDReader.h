@@ -2,7 +2,7 @@
 //# SDReader.h: A class to read single dish spectra from SDFITS, RPFITS
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDREADER_H
-#define _SDREADER_H
+#ifndef SDREADER_H
+#define SDREADER_H
 
 #include <vector>
 #include <string>
@@ -51,14 +51,14 @@ class SDReader {
 public:
   SDReader();
   SDReader(const std::string& filename);
-  SDReader(CountedPtr<SDMemTable> tbl);
+  SDReader(casa::CountedPtr<SDMemTable> tbl);
   virtual ~SDReader();
 
   void open(const std::string& filename);
   void close();
   int read(const std::vector<int>& seq);
 
-  CountedPtr<SDMemTable> getTable() const { return table_;}
+  casa::CountedPtr<SDMemTable> getTable() const { return table_;}
 
   void reset();
 
@@ -72,14 +72,14 @@ public:
 protected:
 
 private:
-  Int nBeam_,nIF_,nPol_,nChan_;
+  casa::Int nBeam_,nIF_,nPol_,nChan_;
   PKSreader* reader_;  
   SDHeader header_;
   SDFrequencyTable frequencies_;
-  CountedPtr<SDMemTable> table_;
-  String filename_;
-  uInt cursor_;
-  Double timestamp_;
+  casa::CountedPtr<SDMemTable> table_;
+  casa::String filename_;
+  casa::uInt cursor_;
+  casa::Double timestamp_;
 };
 
 }// namespace

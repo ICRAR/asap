@@ -2,7 +2,7 @@
 //# SDWriterWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,22 +28,23 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDWRITERWRAPPER_H
-#define _SDWRITERWRAPPER_H
+#ifndef SDWRITERWRAPPER_H
+#define SDWRITERWRAPPER_H
 
 #include <vector>
 #include <string>
 
-#include "SDMemTableWrapper.h"
 #include "SDWriter.h"
 
 namespace asap {
+
+class SDMemTableWrapper;
 
 class SDWriterWrapper : public SDWriter {
 public:
   SDWriterWrapper(const string &format = "SDFITS") : SDWriter(format) {;}
 
-  Int write(const SDMemTableWrapper &table, const string &filename) {
+  casa::Int write(const SDMemTableWrapper &table, const string &filename) {
     return SDWriter::write(table.getCP(), filename);
   }
 };

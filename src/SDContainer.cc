@@ -2,7 +2,7 @@
 //# SDContainer.cc: A container class for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,15 +28,17 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+#include <casa/aips.h>
 #include <casa/Exceptions.h>
 #include <tables/Tables/Table.h>
 #include <casa/Arrays/IPosition.h>
-#include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Quanta/MVTime.h>
 
 #include "SDContainer.h"
 
+using namespace casa;
 using namespace asap;
 
 void SDHeader::print() const {
@@ -194,7 +196,8 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   }
 }
 
-Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const {
+Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const 
+{
   Matrix<Float> spectra(nChan_, nPol_);
 
   // Beam.
@@ -227,6 +230,7 @@ Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const {
 
   return spectra.copy();
 }
+
 
 Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
 {

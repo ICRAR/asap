@@ -2,7 +2,7 @@
 //# MathUtilities.h: General math operations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,15 +28,19 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _MATHUTILS_H
-#define _MATHUTILS_H
+#ifndef MATHUTILS_H
+#define MATHUTILS_H
 
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 
+namespace mathutil {
+
 template <class T>
-void hanning(Vector<T>& out, Vector<Bool>& outmask, 
-	     const Vector<T>& in, const Vector<Bool>& mask, 
-	     Bool relaxed=False, Bool ignoreOther=False);
+void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask, 
+	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask, 
+	     casa::Bool relaxed=False, casa::Bool ignoreOther=False);
+
+};
 
 #endif

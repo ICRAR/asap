@@ -2,7 +2,7 @@
 //# SDMath.h: A collection of single dish mathematical operations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMATH_H
-#define _SDMATH_H
+#ifndef SDMATH_H
+#define SDMATH_H
 
 #include <string>
 #include <vector>
@@ -41,36 +41,30 @@ class SDMemTable;
 
 namespace SDMath {
   //public:
-  CountedPtr<SDMemTable> average(const CountedPtr<SDMemTable>& in);
-  CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
-					 const CountedPtr<SDMemTable>& off);
-  CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
-				  Float factor);
-  CountedPtr<SDMemTable> add(const CountedPtr<SDMemTable>& in, 
-			     Float offset);
+  casa::CountedPtr<SDMemTable> average(const casa::CountedPtr<SDMemTable>& in);
+  casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
+					 const casa::CountedPtr<SDMemTable>& off);
+  casa::CountedPtr<SDMemTable> multiply(const casa::CountedPtr<SDMemTable>& in, 
+				  casa::Float factor);
+  casa::CountedPtr<SDMemTable> add(const casa::CountedPtr<SDMemTable>& in, 
+			     casa::Float offset);
   
-  CountedPtr<SDMemTable> baseline(const CountedPtr<SDMemTable>& in,
-					 const std::string& fitexpr,
-					 const std::vector<bool>& mask);
-  CountedPtr<SDMemTable> hanning(const CountedPtr<SDMemTable>& in);
+  casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
 
-  CountedPtr<SDMemTable> 
-  averages(const Block<CountedPtr<SDMemTable> >& in,
-	   const Vector<Bool>& mask);
+  casa::CountedPtr<SDMemTable> 
+  averages(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
+	   const casa::Vector<casa::Bool>& mask);
 
-  CountedPtr<SDMemTable> 
-  averagePol(const CountedPtr<SDMemTable>& in, const Vector<Bool>& mask);
+  casa::CountedPtr<SDMemTable> 
+  averagePol(const casa::CountedPtr<SDMemTable>& in, const casa::Vector<casa::Bool>& mask);
 
-  Float rms(const CountedPtr<SDMemTable>& in, 
+  casa::Float rms(const casa::CountedPtr<SDMemTable>& in, 
 		   const std::vector<bool>& mask);
   
-  CountedPtr<SDMemTable> bin(const CountedPtr<SDMemTable>& in, 
-			     Int width);
-  
-  bool fit(Vector<Float>& thefit, const Vector<Float>& data, 
-		  const Vector<Bool>& mask, const std::string& fitexpr);
-  
+  casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, 
+			     casa::Int width);
 };
+
 } // namespace
 
 #endif

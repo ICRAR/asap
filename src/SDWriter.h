@@ -2,7 +2,7 @@
 //# SDWriter.h: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Mark Calabretta, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef _SDWRITER_H
-#define _SDWRITER_H
+#ifndef SDWRITER_H
+#define SDWRITER_H
 
 #include <string>
 
@@ -48,8 +48,8 @@ public:
   SDWriter(const string &format = "SDFITS");
   ~SDWriter();
 
-  Int setFormat(const string &format = "SDFITS");
-  Int write(const CountedPtr<SDMemTable> table,
+  casa::Int setFormat(const string &format = "SDFITS");
+  casa::Int write(const casa::CountedPtr<SDMemTable> table,
             const string &filename);
 
 private:

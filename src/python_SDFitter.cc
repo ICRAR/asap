@@ -2,7 +2,7 @@
 //# python_SDFitter.cc: python exposure of c++ SDFitter class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -42,8 +42,7 @@ namespace asap {
         .def( init <> () )
         .def("setexpression", &SDFitter::setExpression)
         .def("setdata", &SDFitter::setData)
-        .def("getresidual", &SDFitter::getResidual)//,
-             //(boost::python::arg("which")=-1) )
+        .def("getresidual", &SDFitter::getResidual)
         .def("getfit", &SDFitter::getFit)
         .def("getfixedparameters", &SDFitter::getFixedParameters)
         .def("setfixedparameters", &SDFitter::setFixedParameters)

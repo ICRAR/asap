@@ -2,7 +2,7 @@
 //# python_SD.cc: python module for single dish package
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -30,16 +30,19 @@
 //#---------------------------------------------------------------------------
 #include <string>
 #include <vector>
+
 #include <boost/python.hpp>
 #include <boost/python/pyconversions.h>
 #include <boost/python/exception_translator.hpp>
-#include <casa/Exceptions.h>
+
+#include <casa/aips.h>
+#include <casa/Exceptions/Error.h>
 
 #include "python_SD.h"
 
 namespace asap {
   namespace python {
-void translate_ex(AipsError const& e)
+void translate_ex(const casa::AipsError& e)
 {
   // Use the Python 'C' API to set up an exception object
   PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -56,7 +59,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_SDMath();
   asap::python::python_SDFitter();
 
-  register_exception_translator<AipsError>(&asap::python::translate_ex);
+  register_exception_translator<casa::AipsError>(&asap::python::translate_ex);
 
   std_vector_to_tuple < int > ();
   from_python_sequence < std::vector < int >,

@@ -2,7 +2,7 @@
 //# SDMathWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMATHWRAPPER_H
-#define _SDMATHWRAPPER_H
+#ifndef SDMATHWRAPPER_H
+#define SDMATHWRAPPER_H
 
 #include <vector>
 #include <string>
@@ -53,23 +53,17 @@ namespace SDMathWrapper {
   }
 
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
-                             Float factor) {
+                             casa::Float factor) {
     return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
 
   SDMemTableWrapper add(const SDMemTableWrapper& in,
-			Float offset) {
+			casa::Float offset) {
     return SDMemTableWrapper(SDMath::add(in.getCP(), offset));
   }
 
   SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
     return SDMemTableWrapper(SDMath::hanning(in.getCP()));
-  }
-
-  SDMemTableWrapper baseline(const SDMemTableWrapper& in,
-                             const std::string& fitexpr,
-                             const std::vector<bool>& mask) {
-    return SDMath::baseline(in.getCP(), fitexpr, mask);
   }
 
   SDMemTableWrapper averages(boost::python::tuple tpl,

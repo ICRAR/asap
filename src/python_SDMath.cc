@@ -2,7 +2,7 @@
 //# python_SDMath.cc: python exposure of c++ SDMath class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
-//# Malte Marquarding, ATNF
+//# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
 //# under the terms of the GNU General Public License as published by the Free
@@ -30,8 +30,13 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
+#include <casa/aips.h>
+#include <casa/Containers/Block.h>
+#include <casa/Utilities/CountedPtr.cc>
+
 #include "SDMathWrapper.h"
 
+using namespace casa;
 using namespace boost::python;
 
 namespace asap {
@@ -58,7 +63,6 @@ namespace asap {
       def("quotient", &SDMathWrapper::quotient);
       def("scale", &SDMathWrapper::scale);
       def("add", &SDMathWrapper::add);
-      def("baseline", &SDMathWrapper::baseline);
       def("hanning", &SDMathWrapper::hanning);
       def("averages", &SDMathWrapper::averages);
       def("averagepol", &SDMathWrapper::averagePol);
