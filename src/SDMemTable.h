@@ -78,6 +78,9 @@ public:
   //get the data wrapped up in a meta container
   SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
+
+  // Get SD Frequency table.  Note that this function is largely
+  // unimplemented.  Only the number of freqIDs is filled in presently.
   SDFrequencyTable getSDFreqTable() const;
   // get spectrum,mask and tsys for the given row, at the selected
   // cursor - all as stl vectors

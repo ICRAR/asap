@@ -1254,9 +1254,12 @@ Instrument SDMemTable::convertInstrument (const String& instrument,
 {
    String t(instrument);
    t.upcase();
-//
+
+// The strings are what SDReader returns, after cunning interrogation
+// of station names... :-(
+
    Instrument inst = asap::UNKNOWN;
-   if (t==String("DSS-43")) {
+   if (t==String("DSS-43")) {                
       inst = TIDBINBILLA;
    } else if (t==String("ATPKSMB")) {
       inst = ATPKSMB;
