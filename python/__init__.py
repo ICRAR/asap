@@ -52,6 +52,7 @@ defaultParams = {
     # general
     'verbose'             : [True, validate_bool],
     'useplotter'          : [True, validate_bool],
+    'insitu'              : [False, validate_bool],
 
     # plotting
     'plotter.stacking'    : ['p', str],
@@ -64,14 +65,48 @@ defaultParams = {
     'scantable.allaxes'   : [True, validate_bool],  # apply action to all axes
     'scantable.plotter'   : [True, validate_bool], # use internal plotter
 
-    # math
-    'math.insitu'         : [False, validate_bool],
-
     # fitter
-    'fitter.polyorder'    : [0, validate_int],
-    'fitter.ncomponents'  : [1, validate_int]
     }
 
+def list_rcparameters():
+    
+    print """
+    # general
+    # print verbose output
+    'verbose'                    : True
+
+    # preload a default plotter
+    'useplotter'                 : True
+
+    # apply operations on the input scantable or return new one
+    'insitu'                     : False
+    
+    # plotting
+    # default mode for colour stacking
+    'plotter.stacking'           : 'Pol'
+
+    # default mode for panelling
+    'plotter.panelling'          : 'scan'
+
+    # scantable
+    # default ouput format when saving
+    'scantable.save'             : 'ASAP'
+    # auto averaging on read
+    'scantable.autoaverage'      : True
+
+    # default frequency frame to set when function
+    # scantable.set_freqfrmae is called
+    'scantable.freqframe'        : 'LSRK'
+
+    # apply action to all axes not just the cursor location
+    'scantable.allaxes'          : True 
+
+    # use internal plotter
+    'scantable.plotter'          : True
+
+    # Fitter    
+    """
+    
 def rc_params():
     'Return the default params updated from the values in the rc file'
     
@@ -115,7 +150,7 @@ def rc_params():
 
     # strip the conveter funcs and return
     ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
-    verbose.report('loaded rc file %s'%fname)
+    print 'Using rc file %s'%fname
 
     return ret
 
@@ -180,12 +215,11 @@ from asapmath import *
 from scantable import *
 if rcParams['useplotter']:
     print "Initialising plotter..."
-    from asapplotter import *
-    plotter = asapplotter()
-#from numarray ones,zeros
+    import asapplotter 
+    plotter = asapplotter.asapplotter()
 
 __date__ = '$Date$'
-__version__  = '0.1a'
+__version__  = '0.2a'
 
 def list_scans(t = scantable):
     import sys, types
@@ -207,23 +241,29 @@ def commands():
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
             summary         - print info about the scantable contents
-            set_selection   - set a specific Beam/IF/Pol for furthrt use
-            get_selection   - print out the current selection
+            set_cursor      - set a specific Beam/IF/Pol 'cursor' for
+                              further use
+            get_cursor      - print out the current cursor position
             stats           - get specified statistic of the spectra in
                               the scantable
             stddev          - get the standard deviation of the spectra
                               in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
-            set_unit        - set the units to be used from this point on
+            get_unit        - get the currnt unit
+            set_unit        - set the unit to be used from this point on
+            get_abcissa     - get the abcissa values and name for a given
+                              row (time)
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
             set_instrument  - set the instrument name
+            get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
             create_mask     - return an mask in the current unit
                               for the given region. The specified regions
                               are NOT masked
-            set_restfreqs   - give a list of rest frequencies
+            get_restfreqs   - get the current list of rest frequencies
+            set_restfreqs   - set a list of rest frequencies
             flag_spectrum   - flag a whole Beam/IF/Pol
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
@@ -236,7 +276,8 @@ def commands():
                               all polarisations will contain the
                               averaged spectrum.
         quotient            - return the on/off quotient
-        b_operate           - simple mathematical operations on two scan tables
+        simple_math         - simple mathematical operations on two scantables,
+                              'add', 'sub', 'mul', 'div'
         scale               - returns a scan scaled by a given factor
         add                 - returns a scan with given value added 
         bin                 - return a scan with binned channels
@@ -244,7 +285,8 @@ def commands():
         poly_baseline       - fit a polynomial baseline to all Beams/IFs/Pols
         gain_el             - apply gain-elevation correction
         opacity             - apply opacity correction
-        convert_flux        - convert to and from Jy and Kelvin brightness units
+        convert_flux        - convert to and from Jy and Kelvin brightness
+                              units
 
         fitter
             auto_fit        - return a scan where the function is
@@ -266,7 +308,10 @@ def commands():
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
             set_range       - set the abcissa 'zoom' range
-            set_legend_map  - specify user labels for the legend indeces
+            set_legend      - specify user labels for the legend indeces
+            set_title       - specify user labels for the panel indeces
+            set_ordinate    - specify a user label for the ordinate
+            set_abcissa     - specify a user label for the abcissa
             
     [Reading files]
         reader              - access rpfits/sdfits files
@@ -282,6 +327,8 @@ def commands():
                               range(3) = [0,1,2], range(2,5) = [2,3,4]
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
+        list_rcparameters   - print out a list of possible values to be
+                              put into .asaprc
     Note:
         How to use this with help:
                                          # function 'summary'
