@@ -44,7 +44,9 @@ def commands():
             set_unit        - set the units to be used from this point on
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
-            create_mask     - return a mask in thecurrent unit
+            create_mask     - return an mask in the current unit
+                              for the given region. The specified regions
+                              are NOT masked
             set_restfreqs   - give a list of rest frequencies
             flag_spectrum   - flag a whole Beam/IF/Pol
             save            - save the scantable to disk as either 'ASAP'
