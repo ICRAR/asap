@@ -28,10 +28,14 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+#include <vector>
+
 #include <aips/aips.h>
 #include <aips/Utilities/String.h>
 #include <aips/Arrays/IPosition.h>
 #include <aips/Arrays/Array.h>
+#include <aips/Arrays/ArrayAccessor.h>
+#include <aips/Arrays/Slice.h>
 #include <aips/Arrays/ArrayMath.h>
 #include <aips/Arrays/ArrayLogical.h>
 #include <aips/Arrays/MaskedArray.h>
@@ -42,6 +46,13 @@
 #include <aips/Tables/ScalarColumn.h>
 #include <aips/Tables/ArrayColumn.h>
 
+#include <aips/Fitting.h>
+#include <trial/Fitting/LinearFit.h>
+#include <trial/Functionals/CompiledFunction.h>
+#include <aips/Mathematics/AutoDiff.h>
+#include <aips/Mathematics/AutoDiffMath.h>
+
+#include "MathUtils.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 
@@ -55,6 +66,7 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   ROScalarColumn<Double> mjd(t, "TIME");
   ROScalarColumn<String> srcn(t, "SRCNAME");
   ROScalarColumn<Double> integr(t, "INTERVAL");
+  ROArrayColumn<uInt> freqidc(t, "FREQID");
   IPosition ip = in->rowAsMaskedArray(0).shape();
   Array<Float> outarr(ip); outarr =0.0;
   Array<Float> narr(ip);narr = 0.0;
@@ -94,6 +106,10 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   sc.interval =inttime;
   String tstr; srcn.getScalar(0,tstr);// get sourcename of "mid" point
   sc.sourcename = tstr;
+  Vector<uInt> tvec;
+  freqidc.get(0,tvec);
+  sc.putFreqMap(tvec);
+  sc.scanid = 0;
   sc.putSpectrum(outarr);
   sc.putFlags(outflags);  
   SDMemTable* sdmt = new SDMemTable(*in,True);
@@ -111,6 +127,8 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   ROScalarColumn<Double> mjd(ton, "TIME");
   ROScalarColumn<Double> integr(ton, "INTERVAL");
   ROScalarColumn<String> srcn(ton, "SRCNAME");
+  ROArrayColumn<uInt> freqidc(ton, "FREQID");
+
   MaskedArray<Float> mon(on->rowAsMaskedArray(0));
   MaskedArray<Float> moff(off->rowAsMaskedArray(0));
   IPosition ipon = mon.shape();
@@ -136,6 +154,10 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   sc.timestamp = tme;
   integr.getScalar(0,tme);
   sc.interval = tme;
+  Vector<uInt> tvec;
+  freqidc.get(0,tvec);
+  sc.putFreqMap(tvec);
+  sc.scanid = 0;
   sc.putSpectrum(out);
   sc.putFlags(outflags);  
   SDMemTable* sdmt = new SDMemTable(*on, True);
@@ -157,6 +179,73 @@ SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   }
   return CountedPtr<SDMemTable>(sdmt);
 }
+static std::vector<float> SDMath::baseline(const CountedPtr<SDMemTable>& in,
+					   const std::string& fitexpr) {
+  cout << "Fitting: " << fitexpr << endl;
+  Table t = in->table();
+  LinearFit<Float> fitter;
+  Vector<Float> y;
+  in->getSpectrum(y, 0);
+  Vector<Bool> m;
+  in->getMask(m, 0);
+  Vector<Float> x(y.nelements());
+  indgen(x);
+  CompiledFunction<AutoDiff<Float> > fn;
+  fn.setFunction(String(fitexpr));
+  fitter.setFunction(fn);
+  Vector<Float> out,out1;
+  out = fitter.fit(x,y,&m);
+  out1 = y;
+  fitter.residual(out1,x);
+  cout << "solution =" << out << endl;
+  std::vector<float> fitted; 
+  out1.tovector(fitted);
+  return fitted;
+}
+
+
+static CountedPtr<SDMemTable> 
+SDMath::hanning(const CountedPtr<SDMemTable>& in) {
+  IPosition ip = in->rowAsMaskedArray(0).shape();
+  MaskedArray<Float> marr(in->rowAsMaskedArray(0));
+
+  Array<Float> arr = marr.getArray();
+  Array<Bool> barr = marr.getMask();
+  for (uInt i=0; i<in->nBeam();++i) {
+    for (uInt j=0; j<in->nIF();++j) {
+      for (uInt k=0; k<in->nPol();++k) {
+	IPosition start(4,i,j,k,0);
+	IPosition end(4,i,j,k,in->nChan()-1);
+	Array<Float> subArr(arr(start,end));
+	Array<Bool> subMask(barr(start,end));
+	Vector<Float> outv;
+	Vector<Bool> outm;
+	Vector<Float> v(subArr.nonDegenerate());
+	Vector<Bool> m(subMask.nonDegenerate());
+	::hanning(outv,outm,v,m);
+	ArrayAccessor<Float, Axis<0> > aa0(outv);	
+	ArrayAccessor<Bool, Axis<0> > ba0(outm);	
+	ArrayAccessor<Bool, Axis<3> > ba(subMask);	
+	for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
+	  (*aa) = (*aa0);
+	  (*ba) = (*ba0);
+	  aa0++;
+	  ba0++;
+	  ba++;
+	}
+      }
+    }
+  }
+  Array<uChar> outflags(barr.shape());
+  convertArray(outflags,!barr);
+  SDContainer sc = in->getSDContainer();
+  sc.putSpectrum(arr);
+  sc.putFlags(outflags);
+  SDMemTable* sdmt = new SDMemTable(*in,True);
+  sdmt->putSDContainer(sc);
+  return CountedPtr<SDMemTable>(sdmt);
+}
+
 /*
 static Float SDMath::rms(const SDMemTable& in, uInt whichRow) {
   Table t = in.table();  

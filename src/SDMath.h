@@ -31,6 +31,8 @@
 #ifndef _SDMATH_H_
 #define _SDMATH_H_
 
+#include <string>
+#include <vector>
 #include <aips/Utilities/CountedPtr.h>
 
 namespace atnf_sd {
@@ -45,9 +47,11 @@ public:
   static CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
 					 Float factor);
   
+  static std::vector<float> baseline(const CountedPtr<SDMemTable>& in,
+				     const std::string& fitexpr );
+  static CountedPtr<SDMemTable> hanning(const CountedPtr<SDMemTable>& in);
   
 };
-
 } // namespace
 
 #endif
