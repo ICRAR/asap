@@ -61,7 +61,6 @@ void python_SDMemTable() {
          (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)
     .def("setpol", &SDMemTableWrapper::setPol)
-    .def("_rotate_xyphase", &SDMemTableWrapper::rotateXYPhase)
     .def("_setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)

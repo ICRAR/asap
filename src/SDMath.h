@@ -124,6 +124,10 @@ class SDMath {
    SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask,
                           const casa::String& wtStr) const;
 
+// Rotate XY phase
+   void rotateXYPhase (SDMemTable& in, casa::Float value, casa::Bool doAll);
+
+
  private:
 
 // Weighting type for time averaging

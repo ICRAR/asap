@@ -93,6 +93,9 @@ namespace SDMathWrapper {
   SDMemTableWrapper frequencyAlignment(const SDMemTableWrapper& in, const std::string& refTime,
                                        const std::string& method, bool perFreqID);
 
+// XY Phase rotation
+  void rotateXYPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll);
+
 // Apply opacity correction
   void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
   SDMemTableWrapper opacity (const SDMemTableWrapper& in, float tau, bool doAll);

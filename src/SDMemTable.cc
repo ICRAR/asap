@@ -65,6 +65,7 @@
 #include "SDPol.h"
 
 
+
 using namespace casa;
 using namespace asap;
 
@@ -1669,48 +1670,6 @@ void SDMemTable::renumber()
   }
 }
 
-
-void SDMemTable::rotateXYPhase (Float value, Bool doAll)
-  // phase in degrees
-  // Applies to all Beams and IFs
-  // Might want to optionally select on Beam/IF
-{
-  if (nPol() != 4) {
-    throw(AipsError("You must have 4 polarizations to run this function"));
-  }
-  
-  IPosition start(asap::nAxes,0);
-  IPosition end(asap::nAxes);
-  
-  uInt nRow = specCol_.nrow();
-  Array<Float> data;
-  for (uInt i=0; i<nRow;++i) {
-    specCol_.get(i,data);
-    IPosition shape = data.shape();
-    
-    // Set slice
-    if (!doAll) {
-      setCursorSlice (start, end, shape);
-    } else {
-      end = shape-1;
-    }
-
-    // Get polarization slice references
-    start(asap::PolAxis) = 2;
-    end(asap::PolAxis) = 2;
-    Array<Float> C3 = data(start,end);
-    
-    start(asap::PolAxis) = 3;
-    end(asap::PolAxis) = 3;
-    Array<Float> C4 = data(start,end);
-    
-    // Rotate
-    SDPolUtil::rotateXYPhase(C3, C4, value);
-    
-    // Put
-    specCol_.put(i,data);
-  }
-}
 
 void SDMemTable::setCursorSlice(IPosition& start, IPosition& end,
 				const IPosition& shape) const

@@ -100,6 +100,8 @@ namespace asap {
       def("resample_insitu", &SDMathWrapper::resampleInSitu);
 //
       def("stats", &SDMathWrapper::statistic);
+// 
+      def ("rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
     };
 
   } // python

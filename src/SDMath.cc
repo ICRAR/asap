@@ -82,6 +82,7 @@
 #include "SDMemTable.h"
 
 #include "SDMath.h"
+#include "SDPol.h"
 
 using namespace casa;
 using namespace asap;
@@ -1212,6 +1213,56 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
   return pTabOut;
 }
 
+
+void SDMath::rotateXYPhase (SDMemTable& in, Float value, Bool doAll)
+//
+// phase in degrees
+// Applies to all Beams and IFs
+// Might want to optionally select on Beam/IF
+//
+{
+   if (in.nPol() != 4) {
+      throw(AipsError("You must have 4 polarizations to run this function"));
+   }
+//    
+   const Table& tabIn = in.table();
+   ArrayColumn<Float> specCol(tabIn,"SPECTRA");  
+   IPosition start(asap::nAxes,0);
+   IPosition end(asap::nAxes);
+
+// Set cursor slice. Assumes shape the same for all rows
+ 
+   setCursorSlice (start, end, doAll, in);
+   IPosition start3(start);
+   start3(asap::PolAxis) = 2;                 // Real(XY)
+   IPosition end3(end);
+   end3(asap::PolAxis) = 2;   
+//
+   IPosition start4(start);
+   start4(asap::PolAxis) = 3;                 // Imag (XY)
+   IPosition end4(end);
+   end4(asap::PolAxis) = 3;
+//  
+   uInt nRow = in.nRow();
+   Array<Float> data;
+   for (uInt i=0; i<nRow;++i) {
+      specCol.get(i,data);
+      IPosition shape = data.shape();
+ 
+// Get polarization slice references
+  
+      Array<Float> C3 = data(start3,end3);
+      Array<Float> C4 = data(start4,end4);
+    
+// Rotate
+ 
+      SDPolUtil::rotateXYPhase(C3, C4, value);
+   
+// Put
+    
+      specCol.put(i,data);
+   }
+}     
 
 
 

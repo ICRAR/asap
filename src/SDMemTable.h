@@ -236,9 +236,6 @@ public:
 // Get global antenna position
   casa::MPosition getAntennaPosition() const;
 
-// Rotate phase of XY correlation by specified value (degrees)
-  void rotateXYPhase (casa::Float angle, casa::Bool doAll);
-
 // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument,
 				      casa::Bool throwIt);

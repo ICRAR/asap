@@ -81,7 +81,6 @@ SDMemTableWrapper SDMathWrapper::scale(const SDMemTableWrapper& in,
 }
 
 
-
 void SDMathWrapper::addInSitu(SDMemTableWrapper& in, float offset, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
@@ -270,6 +269,16 @@ SDMemTableWrapper SDMathWrapper::frequencyAlignment (const SDMemTableWrapper& in
   return CountedPtr<SDMemTable>(sdm.frequencyAlignment(*pIn, String(refTime), 
                                                        String(method), Bool(perFreqID)));
 }
+
+void SDMathWrapper::rotateXYPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  sdm.rotateXYPhase(*pIn, Float(angle), Bool(doAll));
+}
+
+
+
 
 void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)
 {

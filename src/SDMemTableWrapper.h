@@ -204,10 +204,6 @@ public:
     table_->addFit(casa::uInt(whichRow), p2,m2,f2,c2);
   }
 
-  void rotateXYPhase (float value, bool doAll) {
-      table_->rotateXYPhase(value, doAll);
-  }
-
 private:
   casa::CountedPtr<SDMemTable> table_;
 };
