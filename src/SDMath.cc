@@ -149,7 +149,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // Convert weight type
   
   WeightType wtType = NONE;
-  convertWeightString(wtType, weightStr);
+  convertWeightString(wtType, weightStr, True);
 
 // Create output Table by cloning from the first table
 
@@ -218,15 +218,20 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // To get the right shape for the Tsys accumulator we need to
 // access a column from the first table.  The shape of this
-// array must not change
+// array must not change.  Note however that since the TSysSqSum
+// array is used in a normalization process, and that I ignore the
+// channel axis replication of values for now, it loses a dimension
 
-  Array<Float> tSysSum;
+  Array<Float> tSysSum, tSysSqSum;
   {
     const Table& tabIn = in[0]->table();
     tSysCol.attach(tabIn,"TSYS");
     tSysSum.resize(tSysCol.shape(0));
+//
+    tSysSqSum.resize(shp2);
   }
   tSysSum =0.0;
+  tSysSqSum = 0.0;
   Array<Float> tSys;
 
 // Scan and row tracking
@@ -305,7 +310,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // Normalize data in 'sum' accumulation array according to weighting scheme
 
-           normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
+           normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, asap::ChanAxis, nAxesSub);
 
 // Get ScanContainer for the first row of this averaged Scan
 
@@ -330,6 +335,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
            nAccum = 0;
 //
            tSysSum =0.0;
+           tSysSqSum =0.0;
            timeSum = 0.0;
            intSum = 0.0;
 	   nPts = 0.0;
@@ -347,9 +353,9 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // Accumulate
 
-        accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, 
-                    tSys, nInc, mask, time, interval, in, iTab, iRow, asap::ChanAxis, 
-                    nAxesSub, useMask, wtType);
+        accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, tSysSqSum,
+                   tSys, nInc, mask, time, interval, in, iTab, iRow, asap::ChanAxis, 
+                   nAxesSub, useMask, wtType);
 //
        oldSourceName = sourceName;
        oldFreqID = freqID;
@@ -363,7 +369,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 //
 // Normalize data in 'sum' accumulation array according to weighting scheme
 
-  normalize(sum, sumSq, nPts, wtType, asap::ChanAxis, nAxesSub);
+  normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, asap::ChanAxis, nAxesSub);
 
 // Create and fill container.  The container we clone will be from
 // the last Table and the first row that went into the current
@@ -806,7 +812,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 //
 {
    WeightType wtType = NONE;
-   convertWeightString(wtType, weightStr);
+   convertWeightString(wtType, weightStr, False);
 
    const uInt nRows = in.nRow();
 
@@ -1231,12 +1237,18 @@ SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll) const
 void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
 //
 // phase in degrees
-// Applies to all Beams and IFs
-// Might want to optionally select on Beam/IF
+// assumes linear correlations
 //
 {
    if (in.nPol() != 4) {
       throw(AipsError("You must have 4 polarizations to run this function"));
+   }
+//
+   SDHeader sh = in.getSDHeader();
+   Instrument inst = SDAttr::convertInstrument (sh.antennaname, False);
+   SDAttr sdAtt;
+   if (sdAtt.feedPolType(inst) != LINEAR) {
+      throw(AipsError("Only linear polarizations are supported"));
    }
 //    
    const Table& tabIn = in.table();
@@ -1283,12 +1295,18 @@ void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
 void SDMath::rotateLinPolPhase(SDMemTable& in, Float value, Bool doAll)
 //
 // phase in degrees
-// Applies to all Beams and IFs
-// Might want to optionally select on Beam/IF
+// assumes linear correlations
 //
 {
    if (in.nPol() != 4) {
       throw(AipsError("You must have 4 polarizations to run this function"));
+   }
+//
+   SDHeader sh = in.getSDHeader();
+   Instrument inst = SDAttr::convertInstrument (sh.antennaname, False);
+   SDAttr sdAtt;
+   if (sdAtt.feedPolType(inst) != LINEAR) {
+      throw(AipsError("Only linear polarizations are supported"));
    }
 //    
    const Table& tabIn = in.table();
@@ -1699,42 +1717,10 @@ void SDMath::fillSDC(SDContainer& sc,
   sc.putFreqMap(freqID);
 }
 
-void SDMath::normalize(MaskedArray<Float>& sum,
-                        const Array<Float>& sumSq,
-                        const Array<Float>& nPts,
-                        WeightType wtType, Int axis,
-                        Int nAxesSub) const
-{
-   IPosition pos2(nAxesSub,0);
-//
-   if (wtType==NONE) {
-
-// We just average by the number of points accumulated.
-// We need to make a MA out of nPts so that no divide by
-// zeros occur
-
-      MaskedArray<Float> t(nPts, (nPts>Float(0.0)));
-      sum /= t;
-   } else if (wtType==VAR) {
-
-// Normalize each spectrum by sum(1/var) where the variance
-// is worked out for each spectrum
-
-      Array<Float>& data = sum.getRWArray();
-      VectorIterator<Float> itData(data, axis);
-      while (!itData.pastEnd()) {
-         pos2 = itData.pos().getFirst(nAxesSub);
-         itData.vector() /= sumSq(pos2);
-         itData.next();
-      }
-   } else if (wtType==TSYS) {
-   }
-}
-
-
 void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 			MaskedArray<Float>& sum, Array<Float>& sumSq, 
 			Array<Float>& nPts, Array<Float>& tSysSum, 
+                        Array<Float>& tSysSqSum,
 			const Array<Float>& tSys, const Array<Float>& nInc, 
 			const Vector<Bool>& mask, Double time, Double interval,
 			const Block<CountedPtr<SDMemTable> >& in,
@@ -1752,6 +1738,12 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
    if (wtType==NONE) {
       const MaskedArray<Float> n(nInc,dataIn.getMask());
       nPts += n;                               // Only accumulates where mask==T
+   } else if (wtType==TINT) {
+
+// We are weighting the data by integration time.
+
+     valuesIn *= Float(interval);
+
    } else if (wtType==VAR) {
 
 // We are going to average the data, weighted by the noise for each pol, beam and IF.
@@ -1766,30 +1758,61 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 
 // Make MaskedArray of Vector, optionally apply OTF mask, and find scaling factor
 
-        if (useMask) {
-           MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
-           fac = 1.0/variance(tmp);
-        } else {
-           MaskedArray<Float> tmp(itData.vector(),itMask.vector());
-           fac = 1.0/variance(tmp);
-        }
+         if (useMask) {
+            MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
+            fac = 1.0/variance(tmp);
+         } else {
+            MaskedArray<Float> tmp(itData.vector(),itMask.vector());
+            fac = 1.0/variance(tmp);
+         }
 
 // Scale data
 
-        itData.vector() *= fac;     // Writes back into 'dataIn'
+         itData.vector() *= fac;     // Writes back into 'dataIn'
 //
 // Accumulate variance per if/pol/beam averaged over spectrum
 // This method to get pos2 from itData.pos() is only valid
 // because the spectral axis is the last one (so we can just
 // copy the first nAXesSub positions out)
 
-        pos = itData.pos().getFirst(nAxesSub);
-        sumSq(pos) += fac;
+         pos = itData.pos().getFirst(nAxesSub);
+         sumSq(pos) += fac;
 //
-        itData.next();
-        itMask.next();
+         itData.next();
+         itMask.next();
       }
    } else if (wtType==TSYS) {
+
+// We are going to average the data, weighted by 1/Tsys**2 for each pol, beam and IF.
+// So therefore we need to iterate through by spectrum (axis 3).  Although
+// Tsys is stored as a vector of length nChan, the values are replicated.
+// We will take a short cut and just use the value from the first channel
+// for now.
+// 
+      VectorIterator<Float> itData(valuesIn, axis);
+      ReadOnlyVectorIterator<Float> itTSys(tSys, axis);
+      Float fac = 1.0;
+      IPosition pos(nAxesSub,0);  
+//
+      while (!itData.pastEnd()) {
+         Float t = itTSys.vector()[0];
+         fac = 1.0/t/t;
+
+// Scale data
+
+         itData.vector() *= fac;     // Writes back into 'dataIn'
+//
+// Accumulate Tsys  per if/pol/beam averaged over spectrum
+// This method to get pos2 from itData.pos() is only valid
+// because the spectral axis is the last one (so we can just
+// copy the first nAXesSub positions out)
+
+         pos = itData.pos().getFirst(nAxesSub);
+         tSysSqSum(pos) += fac;
+//
+         itData.next();
+         itTSys.next();
+      }
    }
 
 // Accumulate sum of (possibly scaled) data
@@ -1803,6 +1826,59 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
    intSum += interval;
    nAccum += 1;
 }
+
+
+void SDMath::normalize(MaskedArray<Float>& sum,
+                       const Array<Float>& sumSq,
+                       const Array<Float>& tSysSqSum,
+                       const Array<Float>& nPts,
+                       Double intSum,
+                       WeightType wtType, Int axis,
+                       Int nAxesSub) const
+{
+   IPosition pos2(nAxesSub,0);
+//
+   if (wtType==NONE) {
+
+// We just average by the number of points accumulated.
+// We need to make a MA out of nPts so that no divide by
+// zeros occur
+
+      MaskedArray<Float> t(nPts, (nPts>Float(0.0)));
+      sum /= t;
+   } else if (wtType==TINT) {
+
+// Average by sum of Tint
+
+      sum /= Float(intSum);
+   } else if (wtType==VAR) {
+
+// Normalize each spectrum by sum(1/var) where the variance
+// is worked out for each spectrum
+
+      Array<Float>& data = sum.getRWArray();
+      VectorIterator<Float> itData(data, axis);
+      while (!itData.pastEnd()) {
+         pos2 = itData.pos().getFirst(nAxesSub);
+         itData.vector() /= sumSq(pos2);
+         itData.next();
+      }
+   } else if (wtType==TSYS) {
+   
+// Normalize each spectrum by sum(1/Tsys**2) where the pseudo
+// replication over channel for Tsys has been dropped.
+
+      Array<Float>& data = sum.getRWArray();
+      VectorIterator<Float> itData(data, axis);
+      while (!itData.pastEnd()) {
+         pos2 = itData.pos().getFirst(nAxesSub);
+         itData.vector() /= tSysSqSum(pos2);
+         itData.next();
+      }
+   }
+}
+
+
 
 
 void SDMath::setCursorSlice (IPosition& start, IPosition& end, Bool doAll, const SDMemTable& in) const
@@ -1834,20 +1910,30 @@ void SDMath::setCursorSlice (IPosition& start, IPosition& end, Bool doAll, const
 }
 
 
-void SDMath::convertWeightString(WeightType& wtType, const String& weightStr) const
+void SDMath::convertWeightString(WeightType& wtType, const String& weightStr,
+                                 Bool listType) const
 {
   String tStr(weightStr);
   tStr.upcase();
+  String msg;
   if (tStr.contains(String("NONE"))) {
      wtType = NONE;
+     msg = String("Weighting type selected : None");
   } else if (tStr.contains(String("VAR"))) {
      wtType = VAR;
+     msg = String("Weighting type selected : Variance");
+  } else if (tStr.contains(String("TINT"))) {
+     wtType = TINT;
+     msg = String("Weighting type selected : Tnt");
   } else if (tStr.contains(String("TSYS"))) {
      wtType = TSYS;
-     throw(AipsError("T_sys weighting not yet implemented"));
+     msg = String("Weighting type selected : Tsys");
   } else {
-    throw(AipsError("Unrecognized weighting type"));
+     msg = String("Weighting type selected : None");
+     throw(AipsError("Unrecognized weighting type"));
   }
+//
+  if (listType) cout << msg << endl;
 }
 
 

@@ -135,13 +135,14 @@ class SDMath {
 
 // Weighting type for time averaging
 
-  enum WeightType {NONE,VAR,TSYS};
+  enum WeightType {NONE,VAR,TSYS,TINT};
 
 // Function to use accumulate data during time averaging
 
   void accumulate (casa::Double& timeSum, casa::Double& intSum, casa::Int& nAccum,
                    casa::MaskedArray<casa::Float>& sum, casa::Array<casa::Float>& sumSq,
                    casa::Array<casa::Float>& nPts, casa::Array<casa::Float>& tSysSum,
+		   casa::Array<casa::Float>& tSysSqSum,
                    const casa::Array<casa::Float>& tSys,  const casa::Array<casa::Float>& nInc,
                    const casa::Vector<casa::Bool>& mask, casa::Double time, casa::Double interval,
                    const casa::Block<casa::CountedPtr<SDMemTable> >& in,
@@ -154,7 +155,8 @@ class SDMath {
 
 // Convert weight string to enum value
 
-   void convertWeightString (WeightType& wt, const casa::String& weightStr) const;
+   void convertWeightString (WeightType& wt, const casa::String& weightStr,
+                             casa::Bool listType) const;
 
 // Convert interpolation type string
 //   void convertInterpString(casa::Int& type, const casa::String& interp) const;
@@ -232,7 +234,9 @@ class SDMath {
 
   void normalize (casa::MaskedArray<casa::Float>& data,
                   const casa::Array<casa::Float>& sumSq,
+                  const casa::Array<casa::Float>& tSysSumSq,
                   const casa::Array<casa::Float>& nPts,
+                  casa::Double intSum,
                   WeightType wtType, casa::Int axis, casa::Int nAxes) const;
 
 // Put the data and mask into the SDContainer
