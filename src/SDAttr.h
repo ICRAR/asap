@@ -77,6 +77,8 @@ class SDAttr {
 // Returns length 0 if not known.
    casa::Vector<casa::Float> gainElevationPoly (Instrument instr) const;
 
+// Find feed polarization type of feeds. In future this needs to come from the data themselves
+   FeedPolType feedPolType (Instrument) const;
 
 // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument, 
@@ -84,6 +86,7 @@ class SDAttr {
 
 // Helper function.  Finds factor to convert K -> Jy. Provide aperture efficiency and dish geometric diameter (m)
    static casa::Float findJyPerK (casa::Float etaAp, casa::Float D);
+
 
  private:
 

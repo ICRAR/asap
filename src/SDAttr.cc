@@ -223,6 +223,31 @@ Vector<Float> SDAttr::gainElevationPoly (Instrument inst) const
    }
 }
 
+FeedPolType SDAttr::feedPolType (Instrument inst) const
+{
+   FeedPolType type = UNKNOWNFEED;
+   switch (inst) {
+      case ATMOPRA:
+      case ATPKSMB:
+      case ATPKSHOH:
+        {
+           type = LINEAR;
+        }
+        break;
+      case TIDBINBILLA:
+        {
+           type = CIRCULAR;
+        }
+        break;
+      default:
+        {
+           type = UNKNOWNFEED;
+        }
+   }
+   return type;
+}
+
+
 
 
 
@@ -303,7 +328,7 @@ Instrument SDAttr::convertInstrument(const String& instrument,
 
    // The strings are what SDReader returns, after cunning interrogation
    // of station names... :-(
-   Instrument inst = asap::UNKNOWN;
+   Instrument inst = asap::UNKNOWNINST;
    if (t==String("DSS-43")) {
       inst = TIDBINBILLA;
    } else if (t==String("ATPKSMB")) {
