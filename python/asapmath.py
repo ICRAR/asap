@@ -88,6 +88,27 @@ def add(scan, offset, insitu=False, all=True):
         _add(scan, offset, all)
         return
         
+def convertflux(scan, area, eta=1.0, insitu=False, all=True):
+    """
+    Return a scan where all spectra are converted to either Jansky or Kelvin
+        depending upon the flux units of the scan table.
+    Parameters:
+        scan:        a scantable
+        area:        the illuminated area of the telescope (m**2)
+        eta:         The efficiency of the telescope (default 1.0)        
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the conversion is done in-situ
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
+    """
+    if not insitu:
+        from asap._asap import convertflux as _convert
+        return scantable(_convert(scan, area, eta, all))
+    else:
+        from asap._asap import convertflux_insitu as _convert
+        _convert(scan, area, eta, all)
+        return
+        
 def bin(scan, width=5, insitu=False):
     """
     Return a scan where all spectra have been binned up
