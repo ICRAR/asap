@@ -6,7 +6,6 @@ class asapplotter:
     The ASAP plotter.
     By default the plotter is set up to plot polarisations
     'colour stacked' and scantables across panels.
-    The defaul plotter is called 'plotter'.
     Note:
         Currenly it only plots 'spectra' not Tsys or
         other variables.
@@ -33,6 +32,8 @@ class asapplotter:
                        self._sdict]
         self._panels = 's'
         self._stacking = rcParams['plotter.stacking']
+        self._rows = None
+        self._cols = None
         self._autoplot = False
         self._minmax = None
         self._data = None
@@ -89,10 +90,15 @@ class asapplotter:
             ncol = eval(self._cdict.get(colmode))
         self._plotter.set_panels()
         if n > 1:
-            self._plotter.set_panels(rows=n)
+            if self._rows and self._cols:
+                n = min(n,self._rows*self._cols)
+                self._plotter.set_panels(rows=self._rows,cols=self._cols,
+                                         nplots=n)
+            else:
+                self._plotter.set_panels(rows=n,cols=0)
         for i in range(n):
             if n > 1:
-                self._plotter.palette(0)
+                self._plotter.palette(1)
                 self._plotter.subplot(i)
             for j in range(ncol):
                 eval(cdict.get(colmode))
@@ -139,7 +145,12 @@ class asapplotter:
             ncol = eval(self._cdict.get(colmode))
         self._plotter.set_panels()
         if n > 1:
-            self._plotter.set_panels(rows=n)
+            if self._rows and self._cols:
+                n = min(n,self._rows*self._cols)
+                self._plotter.set_panels(rows=self._rows,cols=self._cols,
+                                         nplots=n)
+            else:
+                self._plotter.set_panels(rows=n,cols=0)
         i = 0
         for scan in scans:
             if n > 1:
@@ -189,7 +200,12 @@ class asapplotter:
             ncol = eval(self._cdict.get(colmode))
         self._plotter.set_panels()
         if n > 1:
-            self._plotter.set_panels(rows=n)
+            if self._rows and self._cols:
+                n = min(n,self._rows*self._cols)
+                self._plotter.set_panels(rows=self._rows,cols=self._cols,
+                                         nplots=n)
+            else:
+                self._plotter.set_panels(rows=n,cols=0)
         for i in range(n):
             if n>1:
                 self._plotter.subplot(i)
@@ -247,6 +263,7 @@ class asapplotter:
 
     def set_mode(self, stacking=None, panelling=None):
         """
+        Set the plots look and feel, i.e. what you want to see on the plot.
         Parameters:
             stacking:     tell the plotter which variable to plot
                           as line colour overlays (default 'pol')
@@ -269,7 +286,9 @@ class asapplotter:
         if self._data: self.plot()
         return
 
-    def set_panels(self, what=None):        
+    def set_panels(self, what=None):
+        """        
+        """
         if not what:
              what = rcParams['plotter.panelling']
         md = self._translate(what)
@@ -278,6 +297,22 @@ class asapplotter:
             self._title = None
             return True
         return False
+
+    def set_layout(self,rows=None,cols=None):
+        """
+        Set the multi-panel layout, i.e. how many rows and columns plots
+        are visible.
+        Parameters:
+             rows:   The number of rows of plots
+             cols:   The number of columns of plots
+        Note:
+             If no argument is given, the potter reverts to its auto-plot
+             behaviour.
+        """
+        self._rows = rows
+        self._cols = cols
+        if self._data: self.plot()
+        return
 
     def set_stacking(self, what=None):  
         if not what:
@@ -342,7 +377,18 @@ class asapplotter:
         if self._data: self.plot()
         return
 
-        
+    def save(self, filename=None):
+        """
+        Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
+        Parameters:
+             filename:    The name of the output file. This is optional
+                          and autodetects the image format from the file
+                          suffix. If non filename is specified a file
+                          called 'yyyymmdd_hhmmss.png' is created in the
+                          current directory.
+        """
+        self._plotter.save(filename)
+        return
 
 if __name__ == '__main__':
     plotter = asapplotter()
