@@ -102,6 +102,10 @@ public:
   // 'getLinear', getStokesSpectrum is 'getStokes' and
   // getCircularSpectrum is 'getCircular'
 
+  // Get length of STokes spectrum. XX & YY -> I
+  // Anything else the length stays the same.
+  int stokesLength() const;
+
   // Get specific Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
   // (determined by the polSel cursor location 0->3)
   // If the latter, you can add a PA offset (degrees)
@@ -109,9 +113,15 @@ public:
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
 
+  // Returns String for selected Stokes (polSel_)
+  std::string getStokesSpectrumLabel (casa::Bool doPol) const;
+
   // Get RR or LL at cursor location (except not polSel_)
   virtual std::vector<float> getCircularSpectrum(casa::Int whichRow=0, 
                                                  casa::Bool rr=casa::True) const;
+
+  // Get circular label
+  std::string getCircularSpectrumLabel (casa::Bool rr=casa::True) const;
 
   // Get all Stokes at the specified Beam/IF cursor location (ignoring
   // the internal cursor).  -1 means all on that axis.  Really, this function

@@ -369,6 +369,13 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const
   return getFloatSpectrum(arr);
 }
 
+
+int SDMemTable::stokesLength() const
+{
+   return stokesCol_.shape(0).nelements();        // All rows same shape
+}
+
+
 std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, 
 						 Float paOffset) const 
 //
@@ -420,6 +427,58 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol,
   }
 }
 
+std::string SDMemTable::getStokesSpectrumLabel (Bool doPol) const
+//
+// Gets STokes label depending on cursor polSel location
+//  doPol=False  : I,Q,U,V
+//  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
+//
+{
+  AlwaysAssert(asap::nAxes==4,AipsError);
+  if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
+     throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
+  }
+//
+   Stokes::StokesTypes type = Stokes::Undefined;
+   switch (polSel_) {
+      case 0:
+        {
+           type = Stokes::I;
+        }
+        break;
+      case 1:
+        {
+           if (doPol) {
+              type = Stokes::Plinear;
+           } else {
+              type = Stokes::Q;
+           }
+        }
+      case 2:
+        {
+           if (doPol) {
+              type = Stokes::Pangle;
+           } else {
+              type = Stokes::U;
+           }
+        }
+        break;
+      case 3:
+        {
+           type = Stokes::V;
+        }
+        break;
+      default:
+        {
+            throw(AipsError("Unknown Stokes type"));
+        }
+   }
+//
+   return SDPolUtil::stokesString(type);
+}
+
+
+
 std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow, 
 						   Bool doRR) const 
   // Gets
@@ -457,6 +516,27 @@ std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow,
 
   return stlout;
 }
+
+
+std::string SDMemTable::getCircularSpectrumLabel (Bool doRR) const
+//
+// Gets Circular label 
+//
+{
+   Stokes::StokesTypes type = Stokes::Undefined;
+   if (doRR) {
+      type = Stokes::RR;
+   } else {
+      type = Stokes::LL;
+   }
+//
+   return SDPolUtil::stokesString(type);
+}
+
+
+
+
+
 
 Array<Float> SDMemTable::getStokesSpectrum(Int whichRow, Int iBeam, Int iIF) const
 {
