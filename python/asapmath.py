@@ -126,14 +126,19 @@ def add(scan, offset, insitu=None, allaxes=None):
         _add(scan, offset, allaxes)
         return
         
-def convert_flux(scan, area, eta=1.0, insitu=None, allaxes=None):
+def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None, allaxes=None):
     """
     Return a scan where all spectra are converted to either Jansky or Kelvin
-        depending upon the flux units of the scan table.
+        depending upon the flux units of the scan table.  By default the
+        function tries to look the values up internally. If it can't find
+        them (or if you want to over-ride), you must specify EITHER jyperk
+        OR eta (and D which it will try to look up also if you don't
+        set it).  jyperk takes precedence if you set both.
     Parameters:
         scan:        a scantable
-        area:        the illuminated area of the telescope (m**2)
-        eta:         The efficiency of the telescope (default 1.0)        
+        jyperk:      the Jy / K conversion factor
+        eta:         the aperture efficiency  
+        d:           the geomtric diameter (metres)
         insitu:      if False a new scantable is returned.
                      Otherwise, the scaling is done in-situ
                      The default is taken from .asaprc (False)
@@ -143,12 +148,15 @@ def convert_flux(scan, area, eta=1.0, insitu=None, allaxes=None):
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
+    if jyperk is None: jyperk = -1.0
+    if d is None: d = -1.0
+    if eta is None: eta = -1.0
     if not insitu:
         from asap._asap import convertflux as _convert
-        return scantable(_convert(scan, area, eta, allaxes))
+        return scantable(_convert(scan, d, eta, jyperk, allaxes))
     else:
         from asap._asap import convertflux_insitu as _convert
-        _convert(scan, area, eta, allaxes)
+        _convert(scan, d, eta, jyperk, allaxes)
         return
 
 def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=None):
