@@ -1102,7 +1102,7 @@ class scantable(sdtable):
                         The default is taken from .asaprc (False)
 
         Example:
-            sc2=auto_poly_baseline(order=7)
+            scan2=scan.auto_poly_baseline(order=7)
         """
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
@@ -1111,8 +1111,8 @@ class scantable(sdtable):
         from asap import _is_sequence_or_number as _is_valid
         
         if not _is_valid(edge, int):
-            print "Parameter 'edge' as to be an integer or a pair of integers"
-            return
+            raise RuntimeError, "Parameter 'edge' has to be an integer or a \
+            pair of integers specified as a tuple"
         
         # setup fitter
         f = fitter()

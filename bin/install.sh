@@ -11,7 +11,7 @@ if [ x"$NARRABRI_ASAP" = xyes ];
 then
     ASAPDIR='/DATA/KAPUTAR_2/vor010/ASAP/site-packages/asap'
     SRCDIR='/DATA/KAPUTAR_2/vor010/ASAP/asap'
-    BINDIR='/DATA/KAPUTAR_2/vor010/ASAP/'
+    BINDIR='/DATA/KAPUTAR_2/vor010/ASAP/executables'
 else
     ASAPDIR='/usr/local/lib/python2.3/site-packages/asap'
     SRCDIR='/u/mar637/asap'

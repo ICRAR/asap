@@ -14,7 +14,7 @@ class linefinder:
           print fl.get_ranges(False)
        else:
           print "No lines found!"
-       sc2=poly_baseline(sc,fl.get_mask(),7)
+       sc2=sc.poly_baseline(fl.get_mask(),7)
     
     The algorithm involves a simple threshold criterion. The line is
     considered to be detected if a specified number of consequtive
@@ -78,14 +78,20 @@ class linefinder:
         """
 	if not scan:
 	   raise RuntimeError, 'Please give a correct scan'
+        from asap import _is_sequence_or_number as _is_valid
+
+        if not _is_valid(edge, int):
+           raise RuntimeError, "Parameter 'edge' as to be an integer or \
+           a pair of integers"
+
 	if len(edge)>2:
 	   raise RuntimeError, "The edge parameter should have two \
            or less elements"
 	if mask is None:
 	    from numarray import ones
-	    self.finder.setscan(scan,ones(scan.nchan()),edge)
+	    self.finder.setscan(scan,ones(scan.nchan()),tuple(edge))
 	else:    
-	    self.finder.setscan(scan,mask,edge)
+	    self.finder.setscan(scan,mask,tuple(edge))
 	return 
     def find_lines(self,nRow=0):
 	"""
@@ -120,4 +126,3 @@ class linefinder:
 	    return self.finder.getlineranges()
 	else:
 	    return self.finder.getlinerangesinchannels()
-

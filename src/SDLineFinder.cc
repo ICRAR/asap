@@ -627,9 +627,7 @@ void SDLineFinder::setScan(const SDMemTableWrapper &in_scan,
   try {
        scan=in_scan.getCP();
        AlwaysAssert(!scan.null(),AipsError);
-       if (scan->nRow()!=1)
-           throw AipsError("SDLineFinder::setScan - in_scan contains more than 1 row."
-	                   "Choose one first.");       
+
        mask=in_mask;
        if (mask.nelements()!=scan->nChan())
            throw AipsError("SDLineFinder::setScan - in_scan and in_mask have different"
