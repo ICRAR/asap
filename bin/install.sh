@@ -14,7 +14,7 @@ pydir='python'
 # where the library modules is
 libdir='lib'
 # the python files to install
-srcfiles="__init__.py asaprc.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapplotter.py"
+srcfiles="__init__.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapplotter.py"
 # the libraries to install
 libfiles='_asap.so'
 
@@ -49,6 +49,7 @@ for f in ${libfiles}
 do
     cp -f ${SRCDIR}/${libdir}/${f} ${ASAPDIR}/
 done
+chmod -R g+w ${ASAPDIR}
 echo "Successfully installed the asap module into ${ASAPDIR}"
 
 
