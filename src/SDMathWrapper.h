@@ -55,9 +55,9 @@ namespace SDMathWrapper {
   void addInSitu(SDMemTableWrapper& in, float offset, bool doAall);
   SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
-// Hanning
-  void hanningInSitu (SDMemTableWrapper& in, bool doAll);
-  SDMemTableWrapper hanning(const SDMemTableWrapper& in, bool doAll);
+// Smooth
+  void smoothInSitu (SDMemTableWrapper& in, const std::string& kernel, float width, bool doAll);
+  SDMemTableWrapper smooth (const SDMemTableWrapper& in, const std::string& kernel, float width, bool doAll);
 
 // Bin up
   void binInSitu (SDMemTableWrapper& in, int width);
