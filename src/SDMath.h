@@ -39,34 +39,33 @@ namespace atnf_sd {
 
 class SDMemTable;
 
-class SDMath {
-public:
-  static CountedPtr<SDMemTable> average(const CountedPtr<SDMemTable>& in);
-  static CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
+namespace SDMath {
+  //public:
+  CountedPtr<SDMemTable> average(const CountedPtr<SDMemTable>& in);
+  CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
 					 const CountedPtr<SDMemTable>& off);
-  static CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
+  CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
 					 Float factor);
   
-  static CountedPtr<SDMemTable> baseline(const CountedPtr<SDMemTable>& in,
+  CountedPtr<SDMemTable> baseline(const CountedPtr<SDMemTable>& in,
 					 const std::string& fitexpr,
 					 const std::vector<bool>& mask);
-  static CountedPtr<SDMemTable> hanning(const CountedPtr<SDMemTable>& in);
+  CountedPtr<SDMemTable> hanning(const CountedPtr<SDMemTable>& in);
 
-  static CountedPtr<SDMemTable> 
+  CountedPtr<SDMemTable> 
   averages(const Block<CountedPtr<SDMemTable> >& in,
 	   const Vector<Bool>& mask);
 
-  static CountedPtr<SDMemTable> 
+  CountedPtr<SDMemTable> 
   averagePol(const CountedPtr<SDMemTable>& in, const Vector<Bool>& mask);
 
-  static Float rms(const CountedPtr<SDMemTable>& in, 
+  Float rms(const CountedPtr<SDMemTable>& in, 
 		   const std::vector<bool>& mask);
   
-  static CountedPtr<SDMemTable> bin(const CountedPtr<SDMemTable>& in, 
-  				    Int width);
+  CountedPtr<SDMemTable> bin(const CountedPtr<SDMemTable>& in, 
+			     Int width);
   
-private:
-  static bool fit(Vector<Float>& thefit, const Vector<Float>& data, 
+  bool fit(Vector<Float>& thefit, const Vector<Float>& data, 
 		  const Vector<Bool>& mask, const std::string& fitexpr);
   
 };

@@ -61,8 +61,9 @@
 #include "SDMath.h"
 
 using namespace atnf_sd;
+//using namespace atnf_sd::SDMath;
 
-static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) {
+CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) {
   Table t = in->table();
   ROArrayColumn<Float> tsys(t, "TSYS");  
   ROScalarColumn<Double> mjd(t, "TIME");
@@ -121,7 +122,7 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::quotient(const CountedPtr<SDMemTable>& on, 
 		 const CountedPtr<SDMemTable>& off) {
   
@@ -159,7 +160,7 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   SDMemTable* sdmt = new SDMemTable(*in);
   Table t = sdmt->table();
@@ -174,9 +175,9 @@ SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-static bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data, 
-		      const Vector<Bool>& mask,
-		      const std::string& fitexpr) {
+bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data, 
+		const Vector<Bool>& mask,
+		const std::string& fitexpr) {
 
   LinearFit<Float> fitter;
   Vector<Float> x(data.nelements());
@@ -192,7 +193,7 @@ static bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data,
   return True;
 }
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::baseline(const CountedPtr<SDMemTable>& in, 
 		 const std::string& fitexpr,
 		 const std::vector<bool>& mask) {
@@ -237,7 +238,7 @@ SDMath::baseline(const CountedPtr<SDMemTable>& in,
 }
 
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::hanning(const CountedPtr<SDMemTable>& in) {
 
   IPosition ip = in->rowAsMaskedArray(0).shape();
@@ -280,7 +281,7 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in) {
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::averages(const Block<CountedPtr<SDMemTable> >& in,
 		 const Vector<Bool>& mask) {
   IPosition ip = in[0]->rowAsMaskedArray(0).shape();
@@ -347,7 +348,7 @@ SDMath::averages(const Block<CountedPtr<SDMemTable> >& in,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-static CountedPtr<SDMemTable> 
+CountedPtr<SDMemTable> 
 SDMath::averagePol(const CountedPtr<SDMemTable>& in, 
 		   const Vector<Bool>& mask) {
   MaskedArray<Float> marr(in->rowAsMaskedArray(0));  
@@ -411,7 +412,7 @@ SDMath::averagePol(const CountedPtr<SDMemTable>& in,
 }
 
 
-static Float SDMath::rms(const CountedPtr<SDMemTable>& in,
+Float SDMath::rms(const CountedPtr<SDMemTable>& in,
 			 const std::vector<bool>& mask) {
   Float rmsval;
   Vector<Bool> msk(mask);
@@ -440,7 +441,7 @@ static Float SDMath::rms(const CountedPtr<SDMemTable>& in,
   return rmsval;
 }
 
-static CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in, 
+CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in, 
 					  Int width) {
   
   MaskedArray<Float> marr(in->rowAsMaskedArray(0)); 
