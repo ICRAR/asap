@@ -40,6 +40,7 @@
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/BasicMath/Math.h>
 #include <casa/Quanta/MVAngle.h>
 
 #include <tables/Tables/TableParse.h>
@@ -60,6 +61,7 @@
 #include "SDMemTable.h"
 #include "SDContainer.h"
 #include "MathUtils.h"
+#include "SDPol.h"
 
 
 using namespace casa;
@@ -163,6 +165,7 @@ void SDMemTable::setup()
   td.addColumn(ArrayColumnDesc<Float>("SPECTRA"));
   td.addColumn(ArrayColumnDesc<uChar>("FLAGTRA"));
   td.addColumn(ArrayColumnDesc<Float>("TSYS"));
+  td.addColumn(ArrayColumnDesc<Float>("STOKES"));
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));
   td.addColumn(ArrayColumnDesc<uInt>("FREQID"));
@@ -177,11 +180,24 @@ void SDMemTable::setup()
   td.addColumn(ScalarColumnDesc<Int>("REFBEAM"));
   td.addColumn(ArrayColumnDesc<String>("HISTORY"));
 
-  // Now create a new table from the description.
+  // Now create Table SetUp from the description.
 
   SetupNewTable aNewTab("dummy", td, Table::New);
+
+// Bind the Stokes Virtual machine to the STOKES column
+// Because we don't know how many polarizations will
+// be in the data at this point, we must bind the
+// Virtual Engine regardless.  The STOKES column won't
+// be accessed if not appropriate (nPol=4)
+
+   SDStokesEngine stokesEngine(String("STOKES"), String("SPECTRA"));
+   aNewTab.bindColumn ("STOKES", stokesEngine);
+
+// Create Table
+
   table_ = Table(aNewTab, Table::Memory, 0);
 }
+
 
 void SDMemTable::attach()
 {
@@ -190,6 +206,7 @@ void SDMemTable::attach()
   specCol_.attach(table_, "SPECTRA");
   flagsCol_.attach(table_, "FLAGTRA");
   tsCol_.attach(table_, "TSYS");
+  stokesCol_.attach(table_, "STOKES");
   scanCol_.attach(table_, "SCANID");
   integrCol_.attach(table_, "INTERVAL");
   freqidCol_.attach(table_, "FREQID");
@@ -317,22 +334,82 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   }
   return mask;
 }
+
+
+
 std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
 {
-  std::vector<float> spectrum;
   Array<Float> arr;
   specCol_.get(whichRow, arr);
+//
+  return getFloatSpectrum (arr);
+}
+
+std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const 
+//
+// Gets
+//  doPol=False  : I,Q,U,V
+//  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
+//
+{
+  if (nPol()!=4) {
+     throw (AipsError("You must have 4 polarizations to get the Stokes parameters"));
+  }
+  Array<Float> arr;
+  stokesCol_.get(whichRow, arr);
+//
+  if (doPol && (polSel_==1 || polSel_==2)) {
+     const IPosition& shape = arr.shape();
+     IPosition start(asap::nAxes,0);
+     IPosition end(shape-1);
+//
+     start(asap::PolAxis) = 1;                       // Q
+     end (asap::PolAxis) = 1;
+     Array<Float> Q = arr(start,end);
+//
+     start(asap::PolAxis) = 2;                       // U
+     end (asap::PolAxis) = 2;
+     Array<Float> U = arr(start,end);
+//
+     Array<Float> out;
+     if (polSel_==1) {                                        // P
+        out = SDPolUtil::polarizedIntensity(Q,U);
+     } else if (polSel_==2) {                                 // P.A.
+        out = SDPolUtil::positionAngle(Q,U);
+     }
+//
+     IPosition vecShape(1,shape(asap::ChanAxis));
+     Vector<Float> outV = out.reform(vecShape);
+     std::vector<float> spectrum(out.nelements());
+     for (uInt i=0; i<out.nelements(); i++) {
+        spectrum[i] = outV[i];
+     }
+     return spectrum;
+  } else {
+     return getFloatSpectrum (arr);
+  }
+}
+
+std::vector<float> SDMemTable::getFloatSpectrum (const Array<Float>& arr) const
+{
+
+// Iterate and extract
+
   ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
   ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
   ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+//
+  std::vector<float> spectrum;
   for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     spectrum.push_back(*i);
   }
   return spectrum;
 }
+
+
 std::vector<string> SDMemTable::getCoordInfo() const
 {
   String un;
@@ -536,6 +613,9 @@ void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const
 {
   Array<Float> arr;
   specCol_.get(whichRow, arr);
+
+// Iterate and extract
+
   spectrum.resize(arr.shape()(3));
   ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
@@ -543,13 +623,15 @@ void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
   ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
-
+//
   ArrayAccessor<Float, Axis<asap::BeamAxis> > va(spectrum);
   for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     (*va) = (*i);
     va++;
   }
 }
+
+
 /*
 void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
   Array<uChar> arr;
@@ -590,7 +672,8 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
   Array<uChar> farr;
   specCol_.get(whichRow, arr);
   flagsCol_.get(whichRow, farr);
-  Array<Bool> barr(farr.shape());convertArray(barr, farr);
+  Array<Bool> barr(farr.shape());
+  convertArray(barr, farr);
   MaskedArray<Float> marr;
   if (useSelection) {
     ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
@@ -633,8 +716,13 @@ Float SDMemTable::getTsys(Int whichRow) const
   Array<Float> arr;
   tsCol_.get(whichRow, arr);
   Float out;
+//
   IPosition ip(arr.shape());
-  ip(0) = beamSel_;ip(1) = IFSel_;ip(2) = polSel_;ip(3)=0;
+  ip(asap::BeamAxis) = beamSel_;
+  ip(asap::IFAxis) = IFSel_;
+  ip(asap::PolAxis) = polSel_;
+  ip(asap::ChanAxis)=0;               // First channel only
+//
   out = arr(ip);
   return out;
 }
@@ -1475,3 +1563,41 @@ void SDMemTable::renumber()
   }
 }
 
+
+void SDMemTable::rotateXYPhase (Float value) 
+//
+// phase in degrees
+//
+{
+   if (nPol() != 4) {
+      throw(AipsError("You must have 4 polarizations to run this function"));
+   }
+//
+   IPosition start(asap::nAxes,0);
+   IPosition end(asap::nAxes);
+//
+   uInt nRow = specCol_.nrow();
+   Array<Float> data;
+   for (uInt i=0; i<nRow;++i) {
+      specCol_.get(i,data);
+      end = data.shape()-1;
+
+// Get polarization slice references
+
+      start(asap::PolAxis) = 2;
+      end(asap::PolAxis) = 2;
+      Array<Float> C3 = data(start,end);
+//
+      start(asap::PolAxis) = 3;
+      end(asap::PolAxis) = 3;
+      Array<Float> C4 = data(start,end);
+
+// Rotate
+
+      SDPolUtil::rotateXYPhase(C3, C4, value);
+
+// Put
+
+      specCol_.put(i,data);
+   }
+}

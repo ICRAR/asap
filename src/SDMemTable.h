@@ -93,13 +93,15 @@ public:
   // cursor - all as stl vectors
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
   virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
+  virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
+                                               casa::Bool doPol=casa::False) const;
 
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
   // get all as aips++ Vectors
   virtual void getSpectrum(casa::Vector<casa::Float>& spectrum, 
 			   casa::Int whichRow=0) const;
-
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
+
   std::vector<double> getRestFreqs() const;
   
   // get info for current row  
@@ -217,6 +219,9 @@ public:
 // Get global antenna position
   casa::MPosition getAntennaPosition() const;
 
+// Rotate phase of XY correlation by specified value (degrees)
+  void rotateXYPhase (casa::Float angle);
+
 // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument,
 				      casa::Bool throwIt);
@@ -225,6 +230,7 @@ private:
   // utility func for nice printout
   casa::String formatSec(casa::Double x) const;
   casa::String formatDirection(const casa::MDirection& md) const;
+  std::vector<float> getFloatSpectrum (const casa::Array<casa::Float>& arr) const;
   void setup();
   void attach();
   void renumber();
@@ -244,6 +250,7 @@ private:
   casa::ArrayColumn<casa::uChar> flagsCol_;
   casa::ArrayColumn<casa::uInt> freqidCol_, restfreqidCol_;
   casa::ArrayColumn<casa::String> histCol_;
+  casa::ArrayColumn<casa::Float> stokesCol_;
 };
 
 }// namespace
