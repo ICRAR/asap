@@ -62,6 +62,7 @@
 #include "SDContainer.h"
 #include "MathUtils.h"
 #include "SDPol.h"
+#include "SDAttr.h"
 
 #include "SDMemTable.h"
 
@@ -1358,7 +1359,7 @@ void SDMemTable::setFluxUnit(const std::string& unit)
 void SDMemTable::setInstrument(const std::string& name)
 {
   Bool throwIt = True;
-  Instrument ins = convertInstrument(name, throwIt);
+  Instrument ins = SDAttr::convertInstrument(name, throwIt);
   String nameU(name);
   nameU.upcase();
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
@@ -1579,35 +1580,6 @@ MEpoch::Types SDMemTable::getTimeReference() const
   return met;
 }
 
-
-Instrument SDMemTable::convertInstrument(const String& instrument,
-					 Bool throwIt)
-{
-   String t(instrument);
-   t.upcase();
-
-   // The strings are what SDReader returns, after cunning interrogation
-   // of station names... :-(
-   Instrument inst = asap::UNKNOWN;
-   if (t==String("DSS-43")) {                
-      inst = TIDBINBILLA;
-   } else if (t==String("ATPKSMB")) {
-      inst = ATPKSMB;
-   } else if (t==String("ATPKSHOH")) {
-      inst = ATPKSHOH;
-   } else if (t==String("ATMOPRA")) {
-      inst = ATMOPRA;
-   } else if (t==String("CEDUNA")) {
-      inst = CEDUNA;
-   } else if (t==String("HOBART")) {
-      inst = HOBART;
-   } else {
-     if (throwIt) {
-       throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
-     }
-   }
-   return inst;
-}
 
 Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn, 
 			      const String& sUnit,

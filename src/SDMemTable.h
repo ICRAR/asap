@@ -247,10 +247,6 @@ public:
 // Get global antenna position
   casa::MPosition getAntennaPosition() const;
 
-// Helper function to check instrument (antenna) name and give enum
-  static Instrument convertInstrument(const casa::String& instrument,
-				      casa::Bool throwIt);
-  
   bool putSDFitTable(const SDFitTable& sdft);
   SDFitTable getSDFitTable() const;
   SDFitTable getSDFitTable(casa::uInt whichRow) const;
