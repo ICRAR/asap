@@ -292,6 +292,7 @@ def commands():
         opacity             - apply opacity correction
         convert_flux        - convert to and from Jy and Kelvin brightness
                               units
+        freq_align          - align spectra in frequency frame
         rotate_xyphase      - rotate XY phase of cross correlation
 
         fitter
