@@ -212,7 +212,7 @@ class scantable(sdtable):
             print out
         return i,j,k
 
-    def stats(self, stat='stddev', mask=None, all=None):
+    def stats(self, stat='stddev', mask=None, allaxes=None):
         """
         Determine the specified statistic of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
@@ -222,22 +222,23 @@ class scantable(sdtable):
                      'var', 'stddev', 'avdev', 'rms', 'median'
             mask:    an optional mask specifying where the statistic
                      should be determined.
-            all:     if true show all (default or .asaprc) rather
-                     that the cursor selected spectrum of Beam/IF/Pol
-
+            allaxes: if True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only.
+                     The default is taken from .asaprc (True if none)
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100,200],[500,600])
             scan.stats(stat='mean', mask=m)
         """
-        if all is None: all = rcParams['scantable.allaxes']
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
         from asap._asap import stats as _stats
         from numarray import array,zeros,Float
         if mask == None:
             mask = ones(self.nchan())
         axes = ['Beam','IF','Pol','Time']
 
-        if all:
+        beamSel,IFSel,polSel = (self.getbeam(),self.getif(),self.getpol())
+        if allaxes:
             n = self.nbeam()*self.nif()*self.npol()*self.nrow()
             shp = [self.nbeam(),self.nif(),self.npol(),self.nrow()]
             arr = array(zeros(n),shape=shp,type=Float)
@@ -253,18 +254,20 @@ class scantable(sdtable):
             tm = [self._gettime(val) for val in range(self.nrow())]
             if self._vb:
                 self._print_values(retval,stat,tm)
+            self.setbeam(beamSel)
+            self.setif(IFSel)
+            self.setpol(polSel)
             return retval
 
         else:
-            i,j,k = (self.getbeam(),self.getif(),self.getpol())
             statval = _stats(self,mask,stat,-1)
             out = ''
             for l in range(self.nrow()):
                 tm = self._gettime(l)
                 out += 'Time[%s]:\n' % (tm)
-                if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
-                if self.nif() > 1: out +=  ' IF[%d] ' % (j)
-                if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
+                if self.nbeam() > 1: out +=  ' Beam[%d] ' % (beamSel)
+                if self.nif() > 1: out +=  ' IF[%d] ' % (IFSel)
+                if self.npol() > 1: out +=  ' Pol[%d] ' % (polSel)
                 out += '= %3.3f\n' % (statval[l])
                 out +=  "--------------------------------------------------\n"
 
@@ -276,7 +279,7 @@ class scantable(sdtable):
             retval = {'axes': axes, 'data': array(statval), 'cursor':(i,j,k)}
             return retval
 
-    def stddev(self,mask=None, all=None):
+    def stddev(self,mask=None, allaxes=None):
         """
         Determine the standard deviation of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
@@ -284,7 +287,7 @@ class scantable(sdtable):
         Parameters:
             mask:    an optional mask specifying where the standard
                      deviation should be determined.
-            all:     optional flag to show all or a cursor selected
+            allaxes: optional flag to show all or a cursor selected
                      spectrum of Beam/IF/Pol. Default is all or taken
                      from .asaprc
 
@@ -293,25 +296,24 @@ class scantable(sdtable):
             msk = scan.create_mask([100,200],[500,600])
             scan.stddev(mask=m)
         """
-        if all is None: all = rcParams['scantable.allaxes']
-        return self.stats(stat='stddev',mask=mask, all=all);
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        return self.stats(stat='stddev',mask=mask, allaxes=allaxes);
 
-    def get_tsys(self, all=None):
+    def get_tsys(self, allaxes=None):
         """
         Return the System temperatures.
         Parameters:
-            all:    optional parameter to get the Tsys values for all
-                    Beams/IFs/Pols (default) or just the one selected
-                    with scantable.set_cursor()
-                    [True or False]
+           allaxes:     if True apply to all spectra. Otherwise
+                        apply only to the selected (beam/pol/if)spectra only.
+                        The default is taken from .asaprc (True if none)
         Returns:
             a list of Tsys values.
         """
-        if all is None: all = rcParams['scantable.allaxes']
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
         from numarray import array,zeros,Float
         axes = ['Beam','IF','Pol','Time']
 
-        if all:
+        if allaxes:
             n = self.nbeam()*self.nif()*self.npol()*self.nrow()
             shp = [self.nbeam(),self.nif(),self.npol(),self.nrow()]
             arr = array(zeros(n),shape=shp,type=Float)
@@ -584,20 +586,21 @@ class scantable(sdtable):
             print "Please specify a valid (Beam/IF/Pol)"
         return
 
-    def rotate_xyphase (self, angle, all=None):
+    def rotate_xyphase (self, angle, allaxes=None):
         """
         Rotate the phase of the XY correlation.  This is done in situ
         in the data.  So if you call this function more than once
         then each call rotates the phase further.       
         Parameters:
             angle:   The angle (degrees) to rotate (add) by.
-            all:     if true operate on all axes (default or .asaprc) rather
-                     than the cursor selected spectrum of Beam/IF
+            allaxes: If True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only.
+                     The default is taken from .asaprc (True if none)
         Examples:
             scan.rotate_xyphase(2.3)
         """
-        if all is None: all = rcParams['scantable.allaxes']
-        sdtable._rotate_xyphase(self, angle, all)
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        sdtable._rotate_xyphase(self, angle, allaxes)
             
     def plot(self, what='spectrum',col='Pol', panel=None):
         """
