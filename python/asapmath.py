@@ -30,13 +30,20 @@ def average_time(*args, **kwargs):
     mask = ()
     if kwargs.has_key('mask'):
         mask = kwargs.get('mask')
+    varlist = vars()
     lst = tuple(args)
+    del varlist["kwargs"]
+    varlist["args"] = "%d scantables" % len(lst)
+    # need special formatting her for history...
+    
     from asap._asap import average as _av
     for s in lst:
         if not isinstance(s,scantable):
             print "Please give a list of scantables"
             return
-    return scantable(_av(lst, mask, scanAv, weight))
+    s = scantable(_av(lst, mask, scanAv, weight))
+    s._add_history("average_time",varlist)
+    return s
 
 def quotient(source, reference, preserve=True):
     """
@@ -68,11 +75,14 @@ def simple_math(left, right, op='add', tsys=True):
         tsys:          if True (default) then apply the operation to Tsys
                        as well as the data
     """
+    varlist = vars()
     if not isinstance(left,scantable) and not isinstance(right,scantable):
         print "Please provide two scantables as input"
         return
     from asap._asap import b_operate as _bop
-    return scantable(_bop(left, right, op, tsys))
+    s = scantable(_bop(left, right, op, tsys))
+    s._add_history("simple_math", varlist)
+    return s
 
 def scale(scan, factor, insitu=None, allaxes=None, tsys=True):
     """
@@ -91,15 +101,18 @@ def scale(scan, factor, insitu=None, allaxes=None, tsys=True):
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if not insitu:
         from asap._asap import scale as _scale
-        return scantable(_scale(scan, factor, allaxes, tsys))
+        s = scantable(_scale(scan, factor, allaxes, tsys))
+        s._add_history("scale",varlist)
+        return s
     else:
         from asap._asap import scale_insitu as _scale
         _scale(scan, factor, allaxes, tsys)
+        scan._add_history("scale",varlist)
         return
         
-
 def add(scan, offset, insitu=None, allaxes=None):
     """
     Return a scan where all spectra have the offset added
@@ -123,7 +136,8 @@ def add(scan, offset, insitu=None, allaxes=None):
         _add(scan, offset, allaxes)
         return
         
-def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None, allaxes=None):
+def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None,
+                 allaxes=None):
     """
     Return a scan where all spectra are converted to either Jansky or Kelvin
         depending upon the flux units of the scan table.  By default the
@@ -145,15 +159,19 @@ def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None, allaxes=None)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if jyperk is None: jyperk = -1.0
     if d is None: d = -1.0
     if eta is None: eta = -1.0
     if not insitu:
         from asap._asap import convertflux as _convert
-        return scantable(_convert(scan, d, eta, jyperk, allaxes))
+        s = scantable(_convert(scan, d, eta, jyperk, allaxes))
+        s._add_history("convert_flux", varlist)
+        return s
     else:
         from asap._asap import convertflux_insitu as _convert
         _convert(scan, d, eta, jyperk, allaxes)
+        scan._add_history("convert_flux", varlist)
         return
 
 def gain_el(scan, poly=None, filename="", method="linear",
@@ -199,17 +217,21 @@ def gain_el(scan, poly=None, filename="", method="linear",
                      The default is taken from .asaprc (True if none)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if poly is None:
        poly = ()
-    if insitu is None: insitu = rcParams['insitu']
     from os.path import expandvars
     filename = expandvars(filename)
     if not insitu:
         from asap._asap import gainel as _gainEl
-        return scantable(_gainEl(scan, poly, filename, method, allaxes))
+        s = scantable(_gainEl(scan, poly, filename, method, allaxes))
+        s._add_history("gain_el", varlist)
+        return s
     else:
         from asap._asap import gainel_insitu as _gainEl
         _gainEl(scan, poly, filename, method, allaxes)
+        scan._add_history("gain_el", varlist)
         return
         
 def freq_align(scan, reftime=None, method='cubic', perif=False, insitu=None):
@@ -228,15 +250,19 @@ def freq_align(scan, reftime=None, method='cubic', perif=False, insitu=None):
                      Otherwise, the scaling is done in-situ
                      The default is taken from .asaprc (False)
     """
-    if reftime is None: reftime = ''
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
+    if reftime is None: reftime = ''
     perfreqid = not perif
     if not insitu:
         from asap._asap import freq_align as _align
-        return scantable(_align(scan, reftime, method, perfreqid))
+        s = scantable(_align(scan, reftime, method, perfreqid))
+        s._add_history("freq_align", varlist)
+        return s
     else:
         from asap._asap import freq_align_insitu as _align
         _align(scan, reftime, method, perfreqid)
+        scan._add_history("freq_align", varlist)
         return
         
 def opacity(scan, tau, insitu=None, allaxes=None):
@@ -256,12 +282,16 @@ def opacity(scan, tau, insitu=None, allaxes=None):
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if not insitu:
         from asap._asap import opacity as _opacity
-        return scantable(_opacity(scan, tau, allaxes))
+        s = scantable(_opacity(scan, tau, allaxes))
+        s._add_history("opacity", varlist)
+        return s
     else:
         from asap._asap import opacity_insitu as _opacity
         _opacity(scan, tau, allaxes)
+        scan._add_history("opacity", varlist)
         return
         
 def bin(scan, width=5, insitu=None):
@@ -273,12 +303,16 @@ def bin(scan, width=5, insitu=None):
                      The default is taken from .asaprc (False)
     """
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if not insitu:
         from asap._asap import bin as _bin
-        return scantable(_bin(scan, width))
+        s = scantable(_bin(scan, width))
+        s._add_history("bin",varlist)
+        return s
     else:
         from asap._asap import bin_insitu as _bin
         _bin(scan, width)
+        scan._add_history("bin",varlist)
         return
 
 def resample(scan, width=5, method='cubic', insitu=None):
@@ -292,12 +326,16 @@ def resample(scan, width=5, method='cubic', insitu=None):
                      The default is taken from .asaprc (False)
     """
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if not insitu:
         from asap._asap import resample as _resample
-        return scantable(_resample(scan, method, width))
+        s = scantable(_resample(scan, method, width))
+        s._add_history("resample",varlist)
+        return s
     else:
         from asap._asap import resample_insitu as _resample
         _resample(scan, method, width)
+        scan._add_history("resample",varlist)
         return
 
 def average_pol(scan, mask=None, weight='none', insitu=None):
@@ -317,15 +355,20 @@ def average_pol(scan, mask=None, weight='none', insitu=None):
     Example:
         polav = average_pols(myscan)
     """
+    if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
+
     if mask is None:
         mask = ()
-    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import averagepol as _avpol
-        return scantable(_avpol(scan, mask, weight))
+        s = scantable(_avpol(scan, mask, weight))
+        s._add_history("average_pol",varlist)
+        return s
     else:
         from asap._asap import averagepol_insitu as _avpol
         _avpol(scan, mask, weight)
+        scan._add_history("average_pol",varlist)
         return
     
 def smooth(scan, kernel="hanning", width=5.0, insitu=None, allaxes=None):
@@ -351,12 +394,16 @@ def smooth(scan, kernel="hanning", width=5.0, insitu=None, allaxes=None):
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     if not insitu:
         from asap._asap import smooth as _smooth
-        return scantable(_smooth(scan,kernel,width,allaxes))
+        s = scantable(_smooth(scan,kernel,width,allaxes))
+        s._add_history("smooth", varlist)
+        return s
     else:
         from asap._asap import smooth_insitu as _smooth
         _smooth(scan,kernel,width,allaxes)
+        scan._add_history("smooth", varlist)
         return
     
 def poly_baseline(scan, mask=None, order=0, insitu=None):
@@ -374,6 +421,8 @@ def poly_baseline(scan, mask=None, order=0, insitu=None):
         # not using a mask
         bscan = poly_baseline(scan, order=3)
     """
+    if insitu is None: insitu = rcParams['insitu']
+    varlist = vars()
     from asap.asapfitter import fitter
     if mask is None:
         from numarray import ones
@@ -383,9 +432,10 @@ def poly_baseline(scan, mask=None, order=0, insitu=None):
     f.set_scan(scan, mask)
     f.set_function(poly=order)    
     sf = f.auto_fit(insitu)
+    sf._add_history("poly_baseline", varlist)
     return sf
 
-def rotate_xyphase (scan, angle, allaxes=None):
+def rotate_xyphase(scan, angle, allaxes=None):
     """
     Rotate the phase of the XY correlation.  This is always done in situ
     in the data.  So if you call this function more than once
@@ -399,7 +449,8 @@ def rotate_xyphase (scan, angle, allaxes=None):
         rotate_xyphase(scan, 2.3)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    varlist = vars()
     from asap._asap import rotate_xyphase as _rotate_xyphase
     _rotate_xyphase(scan, angle, allaxes)
+    s._add_history("rotate_xyphase", varlist)
     return
-

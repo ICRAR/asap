@@ -26,13 +26,13 @@ class scantable(sdtable):
                          Over-rides the default selected by the reader
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
-        """
+        """        
+        if average is None or type(average) is not bool:
+            average = rcParams['scantable.autoaverage']            
+
         varlist = vars()
         self._vb = rcParams['verbose']
         self._p = None
-        
-        if average is None or type(average) is not bool:
-            autoav = rcParams['scantable.autoaverage']            
 
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
@@ -63,11 +63,11 @@ class scantable(sdtable):
                 tbl = r._getdata()
                 if unit is not None:
                     tbl.set_fluxunit(unit)
-                if autoav:
-                    from asap._asap import average
+                if average:
+                    from asap._asap import average as _av
                     tmp = tuple([tbl])
                     print 'Auto averaging integrations...'
-                    tbl2 = average(tmp,(),True,'none')
+                    tbl2 = _av(tmp,(),True,'none')
                     sdtable.__init__(self,tbl2)
                     del r,tbl
                 else:
@@ -80,8 +80,8 @@ class scantable(sdtable):
         Image FITS or MS2 format.
         Parameters:
             name:        the name of the outputfile. For format="FITS" this
-                         is the directory file name into which all the files will
-                         be written (default is 'asap_FITS')
+                         is the directory file name into which all the files
+                         will be written (default is 'asap_FITS')
             format:      an optional file format. Default is ASAP.
                          Allowed are - 'ASAP' (save as ASAP [aips++] Table),
                                        'SDFITS' (save as SDFITS file)
@@ -89,7 +89,9 @@ class scantable(sdtable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
-            stokes:      Convert to Stokes parameters.  Default is False.
+            stokes:      Convert to Stokes parameters (only available
+                         currently with FITS and ASCII formats.
+                         Default is False.
             overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
                          without writing the output. USE WITH CARE.
@@ -710,16 +712,19 @@ class scantable(sdtable):
         hist = list(self._gethistory())
         print "-"*80
         for h in hist:
-            items = h.split("##")
-            date = items[0]
-            func = items[1]
-            items = items[2:]
-            print date            
-            print "Function: %s\n  Parameters:" % (func)
-            for i in items:
-                s = i.split("=")
-                print "   %s: %s" % (s[0],s[1])
-            print "-"*80
+            if h.startswith("---"):
+                print h
+            else:
+                items = h.split("##")
+                date = items[0]
+                func = items[1]
+                items = items[2:]
+                print date            
+                print "Function: %s\n  Parameters:" % (func)
+                for i in items:
+                    s = i.split("=")
+                    print "   %s = %s" % (s[0],s[1])
+                print "-"*80
         return
 
     def _add_history(self, funcname, parameters):
