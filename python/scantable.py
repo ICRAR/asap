@@ -50,7 +50,6 @@ class scantable(sdtable):
             self._vb = args[0]
             return
 
-
     def copy(self):
         """
         Return a copy of this scantable.
@@ -108,7 +107,7 @@ class scantable(sdtable):
             thebeam,theif,thepol:    a number
         Example:
             scan.set_selection(0,0,1)
-            pol1rms = scan.rms(all=False) # returns rms for beam=0
+            pol1sig = scan.stats(all=False) # returns std dev for beam=0
                                          # if=0, pol=1
         """
         self.setbeam(thebeam)
@@ -134,13 +133,15 @@ class scantable(sdtable):
             print out
         return i,j,k
 
-    def rms(self,mask=None, all=True):
+    def stats(self, stat='stddev', mask=None, all=True):
         """
-        Determine the root mean square of the current beam/if/pol
+        Determine the specified statistic of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
         channels should be excluded.
         Parameters:
-            mask:    an optional mask specifying where the rms
+            stat:    'min', 'max', 'sumsq', 'sum', 'mean'
+                     'var', 'stddev', 'avdev', 'rms', 'median'
+            mask:    an optional mask specifying where the statistic
                      should be determined.
             all:     optional flag to show all or a selected
                      spectrum of Beam/IF/Pol
@@ -148,9 +149,9 @@ class scantable(sdtable):
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100,200],[500,600])
-            scan.rms(mask=m)
+            scan.stats(stat='mean', mask=m)
         """
-        from asap._asap import rms as _rms
+        from asap._asap import stats as _stats
         if mask == None:
             mask = ones(self.nchan())
         if all:
@@ -162,22 +163,40 @@ class scantable(sdtable):
                     self.setif(j)
                     for k in range(self.npol()):
                         self.setpol(k)
-                        rmsval = _rms(self,mask)
-                        tmp.append(rmsval)
-                        out += 'Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,rmsval)
-            if self._vb:
-                print out
+                        statVal = _stats(self,mask,stat)
+                        tmp.append(statVal)
+#                        out += 'Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,statVal)
+#            if self._vb:
+#                print out
             return tmp
 
         else:
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
-            rmsval = _rms(self,mask)
-            out = 'Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,rmsval)
-            if self._vb:
-                print out
-            return rmsval
+            statVal = _stats(self,mask,stat)
+#            out = 'Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,statVal)
+#            if self._vb:
+#                print out
+            return statVal
+
+    def stddev(self,mask=None, all=True):
+        """
+        Determine the standard deviation of the current beam/if/pol
+        Takes a 'mask' as an optional parameter to specify which
+        channels should be excluded.
+        Parameters:
+            mask:    an optional mask specifying where the standard
+                     deviation should be determined.
+            all:     optional flag to show all or a selected
+                     spectrum of Beam/IF/Pol
+
+        Example:
+            scan.set_unit('channel')
+            msk = scan.create_mask([100,200],[500,600])
+            scan.stddev(mask=m)
+        """
+        return self.stats(stat='stddev',mask=mask, all=all);
 
     def get_tsys(self, all=True):
         """
@@ -372,8 +391,7 @@ class scantable(sdtable):
         Plot Tsys vs Time
         Parameters:
             what:     a choice of 'spectrum' (default) or 'tsys'
-            col:      which out of Beams, IFs, Pols (default)
-                      should be colour stacked
+            col:      which out of Beams/IFs/Pols should be colour stacked
             panel:    set up multiple panels, currently not working.
         """
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
