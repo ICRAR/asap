@@ -227,7 +227,7 @@ class fitter:
         if not self._p:
             from asap.asaplot import ASAPlot
             self._p = ASAPlot()
-        if self._.is_dead:
+        if self._p.is_dead:
             from asap.asaplot import ASAPlot
             self._p = ASAPlot()
         self._p.clear()
