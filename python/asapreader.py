@@ -18,14 +18,20 @@ class reader(sdreader):
         del r          # destroys the reader
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename,theif=None,thebeam=None):
         """
         Parameters:
             filename:    the name of an rpfits/sdfits/ms file on disk
+            theif:       select a specific IF (default is all)
+            thebeam:     select a specific beam (default is all)
         Example:
-            r = reader('/tmp/2001-09-01_0332_P363.rpf')
+            r = reader('/tmp/2001-09-01_0332_P363.rpf', theif=2)
         """
-        sdreader.__init__(self, filename)
+        if theif is None:
+            theif = -1
+        if thebeam is None:
+            thebeam = -1
+        sdreader.__init__(self, filename, theif, thebeam)
 
     def read(self,integrations=None):
         """
