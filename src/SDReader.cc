@@ -30,6 +30,7 @@
 //#---------------------------------------------------------------------------
 #include <casa/Exceptions.h>
 #include <casa/OS/Path.h>
+#include <casa/OS/File.h>
 #include <atnf/PKSIO/PKSreader.h>
 
 #include "SDReader.h"
@@ -87,6 +88,11 @@ void SDReader::open(const std::string& filename) {
   String inName(filename);
   Path path(inName);
   inName = path.expandedName();
+//
+  File file(inName);
+  if (!file.exists()) {
+     throw(AipsError("File does not exist"));
+  }
   filename_ = inName;
 //
   String format;
