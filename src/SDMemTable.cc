@@ -92,7 +92,6 @@ SDMemTable::SDMemTable(const std::string& name) :
     throw(AipsError("Unsupported version of ASAP file."));
   }
   table_ = tab.copyToMemoryTable("dummy");
-  //cerr << "hello from C SDMemTable @ " << this << endl;
   attach();
 }
 
@@ -115,7 +114,6 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
   }
 
   attach();
-  //cerr << "hello from CC SDMemTable @ " << this << endl;
 }
 
 SDMemTable::SDMemTable(const Table& tab, const std::string& exprs) :
@@ -377,65 +375,65 @@ int SDMemTable::nStokes() const
 }
 
 
-std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const
-//
-// Gets one STokes parameter depending on cursor polSel location
-//  doPol=False  : I,Q,U,V
-//  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
-//
+std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, 
+						 Bool doPol) const
+  //
+  // Gets one STokes parameter depending on cursor polSel location
+  //  doPol=False  : I,Q,U,V
+  //  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
+  //
 {
   AlwaysAssert(asap::nAxes==4,AipsError);
   if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
-     throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
+    throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
   }
-
-// For full conversion we are only supporting linears at the moment
-
+  
+  // For full conversion we are only supporting linears at the moment
+  
   if (nPol() > 2) {
-     String antName;
-     table_.keywordSet().get("AntennaName", antName);
-     Instrument inst = SDAttr::convertInstrument (antName, True);
-     SDAttr sdAtt;
-     if (sdAtt.feedPolType(inst) != LINEAR) {
-       throw(AipsError("Only linear polarizations are supported"));
-     }
+    String antName;
+    table_.keywordSet().get("AntennaName", antName);
+    Instrument inst = SDAttr::convertInstrument (antName, True);
+    SDAttr sdAtt;
+    if (sdAtt.feedPolType(inst) != LINEAR) {
+      throw(AipsError("Only linear polarizations are supported"));
+    }
   }
-//
+
   Array<Float> arr;
   stokesCol_.get(whichRow, arr);
-//
+  
   if (doPol && (polSel_==1 || polSel_==2)) {       //   Q,U --> P, P.A.
-
-// Set current cursor location
-
-     const IPosition& shape = arr.shape();
-     IPosition start, end;
-     getCursorSlice(start, end, shape);
-
-// Get Q and U slices
-
-     Array<Float> Q = SDPolUtil::getStokesSlice(arr,start,end,"Q");
-     Array<Float> U = SDPolUtil::getStokesSlice(arr,start,end,"U");
-
-// Compute output 
-
-     Array<Float> out;
-     if (polSel_==1) {                                        // P
-        out = SDPolUtil::polarizedIntensity(Q,U);
-     } else if (polSel_==2) {                                 // P.A.
-        out = SDPolUtil::positionAngle(Q,U);
-     }
-
-     // Copy to output
-
-     IPosition vecShape(1,shape(asap::ChanAxis));
-     Vector<Float> outV = out.reform(vecShape);
-     std::vector<float> stlout;
-     outV.tovector(stlout);
-     return stlout;
-
-  } else {
-
+    
+    // Set current cursor location
+    
+    const IPosition& shape = arr.shape();
+    IPosition start, end;
+    getCursorSlice(start, end, shape);
+    
+    // Get Q and U slices
+    
+    Array<Float> Q = SDPolUtil::getStokesSlice(arr,start,end,"Q");
+    Array<Float> U = SDPolUtil::getStokesSlice(arr,start,end,"U");
+    
+    // Compute output 
+    
+    Array<Float> out;
+    if (polSel_==1) {                                        // P
+      out = SDPolUtil::polarizedIntensity(Q,U);
+    } else if (polSel_==2) {                                 // P.A.
+      out = SDPolUtil::positionAngle(Q,U);
+    }
+    
+    // Copy to output
+    
+    IPosition vecShape(1,shape(asap::ChanAxis));
+    Vector<Float> outV = out.reform(vecShape);
+    std::vector<float> stlout;
+    outV.tovector(stlout);
+    return stlout;
+    
+  } else {    
     // Selects at the cursor location
     return getFloatSpectrum(arr);
   }
@@ -1084,6 +1082,8 @@ SDFitTable SDMemTable::getSDFitTable() const
 }
 
 SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
+  const Table& t = table_.keywordSet().asTable("FITS");
+  if (t.nrow() == 0 || whichRow >= t.nrow()) return SDFitTable();
   Array<Int> fitid;
   fitCol_.get(whichRow, fitid);
   if (fitid.nelements() == 0) return SDFitTable();
@@ -1095,7 +1095,6 @@ SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
   // reform the output array slice to be of dim=1
   Vector<Int> tmp = (fitid(start, end)).reform(IPosition(1,shp[3]));
 
-  const Table& t = table_.keywordSet().asTable("FITS");
   Vector<Double> parms;
   Vector<Bool> parmask;
   Vector<String> funcs;
@@ -1106,7 +1105,6 @@ SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
   ROArrayColumn<Int> compsCol(t, "COMPONENTS");
   ROArrayColumn<String> funcsCol(t, "FUNCTIONS");
   ROArrayColumn<String> finfoCol(t, "FRAMEINFO");
-  if (t.nrow() == 0) return SDFitTable();
   SDFitTable sdft;
   Int k=-1;
   for (uInt i=0; i< tmp.nelements(); ++i) {

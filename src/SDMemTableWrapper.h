@@ -84,23 +84,25 @@ public:
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }
-//
-  std::vector<float> getStokesSpectrum(int whichRow=0, bool linPol=false) const {
+
+  std::vector<float> getStokesSpectrum(int whichRow=0, 
+				       bool linPol=false) const {
     return table_->getStokesSpectrum(whichRow, linPol);
   }
 
-  std::vector<float> stokesToPolSpectrum (int whichRow, bool linear,
-					  int polIdx) const {
+  std::vector<float> stokesToPolSpectrum(int whichRow, bool linear,
+					 int polIdx) const {
     return table_->stokesToPolSpectrum(whichRow, linear, polIdx);
   }
 
-//  std::string getPolarizationLabel (bool linear, bool stokes, bool linPol, int polIdx) const {
-// Boost fails with 4 arguments.
-  std::string getPolarizationLabel (bool linear, bool stokes, bool linPol) const {
-     int polIdx = -1;
-     return table_->getPolarizationLabel (linear, stokes, linPol, polIdx);
+  //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
+  // Boost fails with 4 arguments.
+  std::string getPolarizationLabel(bool linear, bool stokes, 
+				   bool linPol) const {
+    int polIdx = -1;
+    return table_->getPolarizationLabel(linear, stokes, linPol, polIdx);
   }
-//
+
   std::vector<double> getAbcissa(int whichRow=0) const {
     return table_->getAbcissa(whichRow);
   }
