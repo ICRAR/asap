@@ -112,7 +112,7 @@ public:
   Double timestamp;
   String sourcename;
   Double interval;
-  uInt scanid;
+  Int scanid;
   
 private:
   uInt nBeam_,nIF_,nPol_,nChan_;
