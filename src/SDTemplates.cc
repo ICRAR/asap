@@ -68,6 +68,7 @@ template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable>
 #include <scimath/Mathematics/AutoDiff.h>
 #include <scimath/Mathematics/AutoDiffMath.h>
 #include <scimath/Mathematics/InterpolateArray1D.cc>
+#include <tables/Tables/BaseMappedArrayEngine.cc>
 
 template void convertArray<Bool, uChar>(Array<Bool> &, Array<uChar> const &);
 template void convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
@@ -102,6 +103,8 @@ template class PtrHolder<Lattice<Float> >;
 template class FrequencyAligner<Float>;
 template class InterpolateArray1D<Double, Float>;
 template Int binarySearchBrackets<Vector<Double>,Double>(Bool &, Vector<Double> const &, Double const &, uInt, Int);
+template class BaseMappedArrayEngine<Float, Float>;
+
 //
 #include "MathUtils2.cc"
 namespace mathutil {
