@@ -41,6 +41,7 @@
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/MaskArrLogi.h>
+#include <casa/BasicMath/Math.h>
 #include <casa/Containers/Block.h>
 #include <casa/Quanta/QC.h>
 #include <casa/Utilities/Assert.h>
@@ -49,6 +50,7 @@
 #include <scimath/Mathematics/VectorKernel.h>
 #include <scimath/Mathematics/Convolver.h>
 #include <scimath/Mathematics/InterpolateArray1D.h>
+#include <scimath/Functionals/Polynomial.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
@@ -97,7 +99,7 @@ SDMath::~SDMath()
 
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
-				       const String& weightStr)
+				       const String& weightStr) const
 //Bool alignVelocity)
 //
 // Weighted averaging of spectra from one or more Tables.
@@ -364,27 +366,24 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 
 
-CountedPtr<SDMemTable>
-SDMath::quotient(const CountedPtr<SDMemTable>& on,
-		 const CountedPtr<SDMemTable>& off) 
+CountedPtr<SDMemTable> SDMath::quotient(const CountedPtr<SDMemTable>& on,
+                                        const CountedPtr<SDMemTable>& off,
+                                        Bool preserveContinuum)  const
 {
-//
-// Compute quotient spectrum
-//
-  const uInt nRows = on->nRow();
-  if (off->nRow() != nRows) {
-     throw (AipsError("Input Scan Tables must have the same number of rows"));
+  const uInt nRowOn = on->nRow();
+  const uInt nRowOff = off->nRow();
+  Bool ok = (nRowOff==1&&nRowOn>0) ||
+            (nRowOn>0&&nRowOn==nRowOff);
+  if (!ok) {
+     throw (AipsError("The reference Scan Table can have one row or the same number of rows as the source Scan Table"));
   }
 
 // Input Tables and columns
 
-  Table ton = on->table();
-  Table toff = off->table();
-  ROArrayColumn<Float> tsys(toff, "TSYS");
-  ROScalarColumn<Double> mjd(ton, "TIME");
-  ROScalarColumn<Double> integr(ton, "INTERVAL");
-  ROScalarColumn<String> srcn(ton, "SRCNAME");
-  ROArrayColumn<uInt> freqidc(ton, "FREQID");
+  Table tabOn = on->table();
+  Table tabOff = off->table();
+  ROArrayColumn<Float> tSysOn(tabOn, "TSYS");
+  ROArrayColumn<Float> tSysOff(tabOff, "TSYS");
 
 // Output Table cloned from input
 
@@ -392,33 +391,151 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 // Loop over rows
 
-  for (uInt i=0; i<nRows; i++) {
-     MaskedArray<Float> mon(on->rowAsMaskedArray(i));
-     MaskedArray<Float> moff(off->rowAsMaskedArray(i));
-     IPosition ipon = mon.shape();
-     IPosition ipoff = moff.shape();
+  MaskedArray<Float>* pMOff = new MaskedArray<Float>(off->rowAsMaskedArray(0));
+  IPosition shpOff = pMOff->shape();
 //
-     Array<Float> tsarr;  
-     tsys.get(i, tsarr);
-     if (ipon != ipoff && ipon != tsarr.shape()) {
-       throw(AipsError("on/off not conformant"));
+  Array<Float> tSysOnArr, tSysOffArr;
+  tSysOn.get(0, tSysOnArr);
+  tSysOff.get(0, tSysOffArr);
+//
+  for (uInt i=0; i<nRowOn; i++) {
+     MaskedArray<Float> mOn(on->rowAsMaskedArray(i));
+     IPosition shpOn = mOn.shape(); 
+//
+     if (nRowOff>1) {
+        delete pMOff;
+        pMOff = new MaskedArray<Float>(off->rowAsMaskedArray(i));
+        shpOff = pMOff->shape();
+        if (!shpOn.isEqual(shpOff)) {
+           throw(AipsError("on/off data are not conformant"));
+        }
+//
+        tSysOff.get(i, tSysOffArr);
+        tSysOn.get(i, tSysOnArr);
+        if (!tSysOnArr.shape().isEqual(tSysOffArr.shape())) {
+           throw(AipsError("on/off Tsys data are not conformant"));
+        }
+//
+        if (!shpOn.isEqual(tSysOnArr.shape())) {
+           throw(AipsError("Correlation and Tsys data are not conformant"));
+        }
      }
 
 // Compute quotient
 
-     MaskedArray<Float> tmp = (mon-moff);
+     MaskedArray<Float> tmp = (mOn-*pMOff);
      Array<Float> out(tmp.getArray());
-     out /= moff;
-     out *= tsarr;
-     Array<Bool> outflagsb = mon.getMask() && moff.getMask();
+     out /= *pMOff;
+     out *= tSysOffArr;
+
+//     MaskedArray<Float> tmp2 = (tSysOnArr * mOn / *pMOff) - tSysOffArr;
+
 
 // Fill container for this row
 
      SDContainer sc = on->getSDContainer(i);
 //
-     putDataInSDC(sc, out, outflagsb);
-     sc.putTsys(tsarr);
+     putDataInSDC(sc, out, tmp.getMask());
+     sc.putTsys(tSysOffArr);
      sc.scanid = i;
+
+// Put new row in output Table
+ 
+     pTabOut->putSDContainer(sc);
+  }
+  if (pMOff) delete pMOff;
+//
+  return CountedPtr<SDMemTable>(pTabOut);
+}
+
+
+CountedPtr<SDMemTable> SDMath::simpleBinaryOperate (const CountedPtr<SDMemTable>& left,
+                                                    const CountedPtr<SDMemTable>& right,
+                                                    const String& op)  const
+//
+// Simple binary Table operators. add, subtract, multiply, divide (what=0,1,2,3)
+//
+{
+
+// CHeck operator
+
+  String op2(op);
+  op2.upcase();
+  uInt what = 0;
+  if (op2=="ADD") {
+     what = 0;
+  } else if (op2=="SUB") {
+     what = 1;
+  } else if (op2=="MUL") {
+     what = 2;
+  } else if (op2=="DIV") {
+     what = 3;
+  } else {
+    throw AipsError("Unrecognized operation");
+  }
+
+// Check rows
+
+  const uInt nRows = left->nRow();
+  if (right->nRow() != nRows) {
+     throw (AipsError("Input Scan Tables must have the same number of rows"));
+  }
+
+// Input Tables and columns
+
+  const Table& tLeft = left->table();
+  const Table& tRight = right->table();
+//
+  ROArrayColumn<Float> tSysLeft(tLeft, "TSYS");
+  ROArrayColumn<Float> tSysRight(tRight, "TSYS");
+
+// Output Table cloned from input
+
+  SDMemTable* pTabOut = new SDMemTable(*left, True);
+
+// Loop over rows
+
+  for (uInt i=0; i<nRows; i++) {
+
+// Get data 
+     MaskedArray<Float> mLeft(left->rowAsMaskedArray(i));
+     MaskedArray<Float> mRight(right->rowAsMaskedArray(i));
+//
+     IPosition shpLeft = mLeft.shape();
+     IPosition shpRight = mRight.shape();
+     if (!shpLeft.isEqual(shpRight)) {
+       throw(AipsError("left/right Scan Tables are not conformant"));
+     }
+
+// Get TSys
+
+     Array<Float> tSysLeftArr, tSysRightArr;
+     tSysLeft.get(i, tSysLeftArr);
+     tSysRight.get(i, tSysRightArr);
+
+// Make container
+
+     SDContainer sc = left->getSDContainer(i);
+
+// Operate on data and TSys
+
+     if (what==0) {                               
+        MaskedArray<Float> tmp = mLeft + mRight;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        sc.putTsys(tSysLeftArr+tSysRightArr);
+     } else if (what==1) {
+        MaskedArray<Float> tmp = mLeft - mRight;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        sc.putTsys(tSysLeftArr-tSysRightArr);
+     } else if (what==2) {
+        MaskedArray<Float> tmp = mLeft * mRight;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        sc.putTsys(tSysLeftArr*tSysRightArr);
+     } else if (what==3) {
+        MaskedArray<Float> tmp = mLeft / mRight;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        sc.putTsys(tSysLeftArr/tSysRightArr);
+     }
 
 // Put new row in output Table
 
@@ -431,16 +548,14 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 
 std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
-				     const std::vector<bool>& mask,
-				     const String& which)
+				     const Vector<Bool>& mask,
+				     const String& which, Int row) const
 //
 // Perhaps iteration over pol/beam/if should be in here
 // and inside the nrow iteration ?
 //
 {
   const uInt nRow = in->nRow();
-  std::vector<float> result(nRow);
-  Vector<Bool> msk(mask);
 
 // Specify cursor location
 
@@ -449,8 +564,17 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 
 // Loop over rows
 
-  const uInt nEl = msk.nelements();
-  for (uInt ii=0; ii < in->nRow(); ++ii) {
+  const uInt nEl = mask.nelements();
+  uInt iStart = 0;
+  uInt iEnd = in->nRow()-1;
+//  
+  if (row>=0) {
+     iStart = row;
+     iEnd = row;
+  }
+//
+  std::vector<float> result(iEnd-iStart+1);
+  for (uInt ii=iStart; ii <= iEnd; ++ii) {
 
 // Get row and deconstruct
 
@@ -467,21 +591,21 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 
      MaskedArray<Float> tmp;
      if (m.nelements()==nEl) {
-       tmp.setData(v,m&&msk);
+       tmp.setData(v,m&&mask);
      } else {
        tmp.setData(v,m);
      }
 
 // Get statistic
 
-     result[ii] = mathutil::statistics(which, tmp);
+     result[ii-iStart] = mathutil::statistics(which, tmp);
   }
 //
   return result;
 }
 
 
-SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
+SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
 {
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
@@ -543,7 +667,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 }
 
 SDMemTable* SDMath::simpleOperate(const SDMemTable& in, Float val, Bool doAll,
-				  uInt what)
+				  uInt what) const
 //
 // what = 0   Multiply
 //        1   Add
@@ -609,7 +733,7 @@ SDMemTable* SDMath::simpleOperate(const SDMemTable& in, Float val, Bool doAll,
 
 
 
-SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask)
+SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) const
 //
 // Average all polarizations together, weighted by variance
 //
@@ -744,7 +868,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask)
 
 SDMemTable* SDMath::smooth(const SDMemTable& in, 
 			   const casa::String& kernelType,
-			   casa::Float width, Bool doAll)
+			   casa::Float width, Bool doAll) const
 {
 
 // Number of channels
@@ -850,7 +974,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 }
 
 
-SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool doAll)
+SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool doAll) const
 // 
 // As it is, this function could be implemented with 'simpleOperate'
 // However, I anticipate that eventually we will look the conversion
@@ -897,7 +1021,8 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
 // Compute conversion factor. 'a' and 'eta' are really frequency, time and  
 // telescope dependent and should be looked// up in a table
 
-  Float factor = 2.0 * inFac * 1.0e-7 * 1.0e26 * QC::k.getValue(Unit(String("erg/K"))) / a / eta;
+  Float factor = 2.0 * inFac * 1.0e-7 * 1.0e26 * 
+                 QC::k.getValue(Unit(String("erg/K"))) / a / eta;
   if (toKelvin) {
     factor = 1.0 / factor;
   }
@@ -948,27 +1073,125 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
 
 
 
-SDMemTable* SDMath::gainElevation (const SDMemTable& in, const String& fileName,
-                                   const String& methodStr, Bool doAll)
+SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& coeffs,
+                                   const String& fileName,
+                                   const String& methodStr, Bool doAll) const
 {
+
+// Get header and clone output table
+
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
-  const uInt nRow = in.nRow();
 
-// Get elevation from SDMemTable data
+// Get elevation data from SDMemTable and convert to degrees
 
   const Table& tab = in.table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
-  Vector<Float> xOut = elev.getColumn();
-  xOut *= Float(180 / C::pi);
+  Vector<Float> x = elev.getColumn();
+  x *= Float(180 / C::pi);
 //
-  String col0("ELEVATION");
-  String col1("FACTOR");
+  const uInt nC = coeffs.nelements();
+  if (fileName.length()>0 && nC>0) {
+     throw AipsError("You must choose either polynomial coefficients or an ascii file, not both");
+  }
+
+// Correct
+
+  if (nC>0 || fileName.length()==0) {
+
+// Find instrument
+
+     Bool throwIt = True;
+     Instrument inst = SDMemTable::convertInstrument (sh.antennaname, throwIt);
+     
+// Set polynomial
+
+     Polynomial<Float>* pPoly = 0;
+     Vector<Float> coeff;
+     String msg;
+     if (nC>0) {
+        pPoly = new Polynomial<Float>(nC);
+        coeff = coeffs;
+        msg = String("user");
+     } else {
+        if (inst==PKSMULTIBEAM) {
+        } else if (inst==PKSSINGLEBEAM) {
+        } else if (inst==TIDBINBILLA) {
+           pPoly = new Polynomial<Float>(3);
+           coeff.resize(3);
+           coeff(0) = 3.58788e-1;
+           coeff(1) = 2.87243e-2;
+           coeff(2) = -3.219093e-4;
+        } else if (inst==MOPRA) {
+        }
+        msg = String("built in");
+     }
 //
-  return correctFromAsciiTable (pTabOut, in, fileName, col0, col1, methodStr, doAll, xOut);
+     if (coeff.nelements()>0) {
+        pPoly->setCoefficients(coeff);
+     } else {
+        throw AipsError("There is no known gain-el polynomial known for this instrument");
+     }
+//
+     cerr << "Making polynomial correction with " << msg << " coefficients" << endl;
+     const uInt nRow = in.nRow();
+     Vector<Float> factor(nRow);
+     for (uInt i=0; i<nRow; i++) {
+        factor[i] = (*pPoly)(x[i]);
+     }
+     delete pPoly;
+//
+     correctFromVector (pTabOut, in, doAll, factor);
+  } else {
+
+// Indicate which columns to read from ascii file
+
+     String col0("ELEVATION");
+     String col1("FACTOR");
+
+// Read and correct
+
+     cerr << "Making correction from ascii Table" << endl;
+     correctFromAsciiTable (pTabOut, in, fileName, col0, col1, 
+                            methodStr, doAll, x);
+   }
+//
+   return pTabOut;
 }
 
  
+
+SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
+{
+
+// Get header and clone output table
+
+  SDHeader sh = in.getSDHeader();
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+
+// Get elevation data from SDMemTable and convert to degrees
+
+  const Table& tab = in.table();
+  ROScalarColumn<Float> elev(tab, "ELEVATION");
+  Vector<Float> zDist = elev.getColumn();
+  zDist = Float(C::pi_2) - zDist;
+
+// Generate correction factor
+
+  const uInt nRow = in.nRow();
+  Vector<Float> factor(nRow);
+  Vector<Float> factor2(nRow);
+  for (uInt i=0; i<nRow; i++) {
+     factor[i] = exp(tau)/cos(zDist[i]);
+  }
+
+// Correct
+
+  correctFromVector (pTabOut, in, doAll, factor);
+//
+  return pTabOut;
+}
+
 
 
 
@@ -1182,25 +1405,26 @@ Table SDMath::readAsciiFile (const String& fileName) const
 }
 
 
-SDMemTable* SDMath::correctFromAsciiTable(SDMemTable* pTabOut,
-                                          const SDMemTable& in, const String& fileName,
-                                          const String& col0, const String& col1,
-                                          const String& methodStr, Bool doAll,
-                                          const Vector<Float>& xOut)
+
+void SDMath::correctFromAsciiTable(SDMemTable* pTabOut,
+                                   const SDMemTable& in, const String& fileName,
+                                   const String& col0, const String& col1,
+                                   const String& methodStr, Bool doAll,
+                                   const Vector<Float>& xOut) const
 {
 
 // Read gain-elevation ascii file data into a Table.
 
-  Table tTable = readAsciiFile (fileName);
-//  tTable.markForDelete();
+  Table geTable = readAsciiFile (fileName);
 //
-  return correctFromTable (pTabOut, in, tTable, col0, col1, methodStr, doAll, xOut);
+  correctFromTable (pTabOut, in, geTable, col0, col1, methodStr, doAll, xOut);
 }
 
-SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, const Table& tTable,
-                                     const String& col0, const String& col1,
-                                     const String& methodStr, Bool doAll,
-                                     const Vector<Float>& xOut)
+void SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
+                              const Table& tTable, const String& col0, 
+                              const String& col1,
+                              const String& methodStr, Bool doAll,
+                              const Vector<Float>& xOut) const
 {
 
 // Get data from Table
@@ -1221,7 +1445,15 @@ SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
    InterpolateArray1D<Float,Float>::interpolate(yOut, maskOut, xOut, 
                                                 xIn, yIn, maskIn, method,
                                                 True, True);
+// Apply 
 
+   correctFromVector (pTabOut, in, doAll, yOut);
+}
+
+
+void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in, 
+                                Bool doAll, const Vector<Float>& factor) const
+{
 // For operations only on specified cursor location
 
   IPosition start, end;
@@ -1235,7 +1467,7 @@ SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
 // Get data
 
     MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
-    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
+    Array<Float>& valuesIn = dataIn.getRWArray();  
     const Array<Bool>& maskIn = dataIn.getMask();  
 
 // Apply factor
@@ -1243,13 +1475,12 @@ SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
     if (doAll) {
        VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
        while (!itValues.pastEnd()) {
-          itValues.vector() *= yOut(i);                    // Writes back into dataIn
-//
+          itValues.vector() *= factor(i);
           itValues.next();
        }
     } else {
        Array<Float> valuesIn2 = valuesIn(start,end);
-       valuesIn2 *= yOut(i);
+       valuesIn2 *= factor(i);
        valuesIn(start,end) = valuesIn2;
     }
 
@@ -1260,7 +1491,6 @@ SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
 //
     pTabOut->putSDContainer(sc);
   }
-//  
-  return pTabOut;
 }
+
 
