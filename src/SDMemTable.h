@@ -93,7 +93,7 @@ public:
 
   virtual void setSpectrum(std::vector<float> spectrum, int whichRow=0);
   virtual void setRestFreqs(std::vector<double> freqs, const std::string& theunit);
-
+  virtual void setCoordInfo(std::vector<string> theinfo);
   // set the current value
   virtual bool setIF(Int whichIF=0);
   virtual bool setBeam(Int whichBeam=0);
@@ -108,12 +108,13 @@ public:
   virtual Int getIF() { return IFSel_; }
   virtual Int getBeam() { return beamSel_; }
   virtual Int getPol() { return polSel_; }
+  virtual std::vector<string> getCoordInfo() const;
 
   // number of scans in table
   virtual Int nScan() const;
 
   // print a summary to stdout
-  virtual std::string summary() const;
+  virtual std::string summary();
 
   // write to disk as aips++ table
   void makePersistent(const std::string& filename);
@@ -145,12 +146,12 @@ public:
 
   Int nCoordinates() const;
 
-  std::vector<double> getAbscissa(int whichRow,
-                                  const std::string& whichUnit="GHz",
-                                  const std::string& whichFrame="TOPO",
-                                  double restfreq=0.0);
+  std::vector<double> getAbscissa(int whichRow=0);
+  std::string getAbscissaString(Int whichRow=0);
+
 private:
-  // set up table structure
+  // utility func for nice printout
+  String formatSec(Double x);
   void setup();
   // the current cursor into the array
   Int IFSel_,beamSel_,polSel_;

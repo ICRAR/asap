@@ -75,11 +75,11 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
-  std::vector<double> getAbscissa(int whichRow,
-                                  const std::string& unit = "GHz",
-                                  const std::string& frame = "TOPO",
-                                  double restfreq=0.0) const {
-    return table_->getAbscissa(whichRow,unit,frame,restfreq);
+  std::vector<double> getAbscissa(int whichRow=0) const {
+    return table_->getAbscissa(whichRow);
+  }
+  std::string getAbscissaString(int whichRow=0) const {
+    return table_->getAbscissaString(whichRow);
   }
 
   float getTsys(int whichRow=0) {return table_->getTsys(whichRow);}
@@ -128,6 +128,12 @@ public:
 
   void setRestFreqs(std::vector<double> freqs, const std::string& theunit) {
     table_->setRestFreqs(freqs, theunit);
+  }
+  void setCoordInfo(std::vector<string> theinfo) {
+    table_->setCoordInfo(theinfo);
+  }
+  std::vector<string> getCoordInfo() const {
+    return table_->getCoordInfo();
   }
 
   CountedPtr<SDMemTable> getCP() const {return table_;}
