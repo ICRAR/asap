@@ -741,10 +741,11 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, uInt restFreqI
 
 // Set reference frame conversion  (requires row)
 
-  MDirection direct = getDirection(whichRow);
+  MDirection dir = getDirection(whichRow);
   MEpoch epoch = getEpoch(whichRow);
   MPosition pos = getAntennaPosition();
-  if (!spec.setReferenceConversion(mtype,epoch,pos,direct)) {
+//
+  if (!spec.setReferenceConversion(mtype,epoch,pos,dir)) {
     throw(AipsError("Couldn't convert frequency frame."));
   }
 
@@ -1325,13 +1326,43 @@ Instrument SDMemTable::convertInstrument(const String& instrument,
    return inst;
 }
 
-casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, const String& sUnit,
-                                     const casa::String& source,
-                                     casa::Int whichIF)
+Bool SDMemTable::setRestFreqs (const Vector<Double>& restFreqsIn, 
+                                     const String& sUnit,
+                                     const vector<string>& lines,
+                                     const String& source,
+                                     Int whichIF)
 {
    const Int nIFs = nIF();
    if (whichIF>=nIFs) {
       throw(AipsError("Illegal IF index"));
+   }
+
+// FInd vector of restfrequencies
+// Double takes precedence over String
+
+   Unit unit;
+   Vector<Double> restFreqs;
+   if (restFreqsIn.nelements()>0) {
+      restFreqs.resize(restFreqsIn.nelements());
+      restFreqs = restFreqsIn;
+      unit = Unit(sUnit);
+   } else if (lines.size()>0) {
+      const uInt nLines = lines.size();
+      unit = Unit("Hz");
+      restFreqs.resize(nLines);
+      MFrequency lineFreq;
+      for (uInt i=0; i<nLines; i++) {
+         String tS(lines[i]);
+         tS.upcase();
+         if (MeasTable::Line(lineFreq, tS)) {
+            restFreqs[i] = lineFreq.getValue().getValue();          // Hz
+         } else {
+            String s = String(lines[i]) + String(" is an unrecognized spectral line");
+            throw(AipsError(s));
+         }
+      }
+   } else {
+      throw(AipsError("You have not specified any rest frequencies or lines"));
    }
 
 // If multiple restfreqs, must be length nIF. In this
@@ -1339,7 +1370,6 @@ casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, cons
 // 
 
    const uInt nRestFreqs = restFreqs.nelements();
-   Unit unit(sUnit);
    Int idx = -1;
    SDFrequencyTable sdft = getSDFreqTable();
 
@@ -1407,6 +1437,22 @@ casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, cons
    return ok;
 }
 
+void SDMemTable::spectralLines () const
+{
+   Vector<String> lines = MeasTable::Lines();
+   MFrequency lineFreq;
+   Double freq;
+//
+   cerr.flags(std::ios_base::left);
+   cerr << "Line      Frequency (Hz)" << endl;
+   cerr << "-----------------------" << endl;
+   for (uInt i=0; i<lines.nelements(); i++) {
+     MeasTable::Line(lineFreq, lines[i]);
+     freq = lineFreq.getValue().getValue();          // Hz
+//
+     cerr << setw(11) << lines[i] << setprecision(10) << freq << endl;
+   }
+}
 
 void SDMemTable::renumber()
 {

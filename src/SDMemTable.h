@@ -119,8 +119,12 @@ public:
 // Set RestFreqID.  source="" and IF=-1 means select all
   virtual casa::Bool setRestFreqs (const casa::Vector<casa::Double>& restFreqs, 
                                    const casa::String& unit,
+                                   const std::vector<std::string>& lines,
                                    const casa::String& source,
                                    casa::Int whichIF=-1);
+
+// List lines
+   void spectralLines() const;
 
 // Get/Set flux unit
   std::string getFluxUnit() const;

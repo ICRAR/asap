@@ -50,6 +50,7 @@ void python_SDMemTable() {
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
     .def("getpol", &SDMemTableWrapper::getPol)
+    .def("_lines", &SDMemTableWrapper::spectralLines)
     .def("nif", &SDMemTableWrapper::nIF)
     .def("nbeam", &SDMemTableWrapper::nBeam)
     .def("npol", &SDMemTableWrapper::nPol)

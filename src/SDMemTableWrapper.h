@@ -144,13 +144,17 @@ public:
     table_->makePersistent(fname);
   }
 
-  bool setRestFreqs (const std::vector<double>& restfreqs, const std::string& unit, 
-                     const std::string& source, int whichIF) {
+  bool setRestFreqs(const std::vector<double>& restfreqs, 
+                    const std::string& unit, 
+                    const std::vector<std::string>& lines,
+                    const std::string& source, int whichIF) {
     casa::Vector<casa::Double> restFreqs2(restfreqs);
     return table_->setRestFreqs(restFreqs2, casa::String(unit),
-                                casa::String(source),
+                                lines, casa::String(source),
                                 casa::Int(whichIF));
   }
+
+  void spectralLines() const {table_->spectralLines();}
 
   std::vector<double> getRestFreqs() {
     return table_->getRestFreqs();
