@@ -93,6 +93,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    ROArrayColumn<Double> dirCol(tab, String("DIRECTION"));
    ROScalarColumn<Double> timeCol(tab, "TIME");
    ROArrayColumn<uInt> freqidCol(tab, "FREQID");
+   ROArrayColumn<uInt> restfreqidCol(tab, "RESTFREQID");
    ROScalarColumn<String> srcCol(tab, "SRCNAME");
 
 // Output Image Shape; spectral axis to be updated
@@ -173,7 +174,12 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
          Vector<uInt> iTmp;
          freqidCol.get(iRow, iTmp);
-         SpectralCoordinate sC = sdTable.getSpectralCoordinate(iTmp(pos(ifAxis)), iRow);
+         uInt freqID = iTmp(pos(ifAxis));
+//
+         restfreqidCol.get(iRow, iTmp);
+         uInt restFreqID = iTmp(pos(ifAxis));
+//
+         SpectralCoordinate sC = sdTable.getSpectralCoordinate(freqID, restFreqID, iRow);
 
 // Form DirectionCoordinate
  
