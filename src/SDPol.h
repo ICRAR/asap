@@ -115,6 +115,9 @@ public:
     // (or added to DataManReg.cc).
     static void registerClass();
 
+    // Non writable
+    virtual casa::Bool isWritable () const {return casa::False;}
+
 private:
     // Copy constructor is only used by clone().
     // (so it is made private).
@@ -146,15 +149,11 @@ private:
     void computeOnGet (casa::Array<casa::Float>& array,
     		     const casa::Array<casa::Float>& target);
 
-    // Set shapes
-    virtual void setShape (casa::uInt rownr, const casa::IPosition& outputShape);
-    virtual void setShapeColumn (const casa::IPosition& outputShape);
+    // Get shape
     virtual casa::IPosition shape (casa::uInt rownr);
 
-    // Convert input/output shapes
-    casa::IPosition findInputShape (const casa::IPosition& outputShape) const;
+    // Convert input to output (virtual) shape
     casa::IPosition findOutputShape (const casa::IPosition& inputShape) const;
-
 
 
 public:

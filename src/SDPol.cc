@@ -137,8 +137,7 @@ Bool SDStokesEngine::canAccessArrayColumnCells (Bool& reask) const
 
 void SDStokesEngine::getArray (uInt rownr, Array<Float>& output)
 {
-    IPosition inputShape = findInputShape (output.shape());
-    Array<Float> input(inputShape);  
+    Array<Float> input;
     roColumn().get(rownr, input);
 //
     computeOnGet (output, input);
@@ -151,16 +150,7 @@ void SDStokesEngine::putArray (uInt rownr, const Array<Float>& input)
 
 
 
-void SDStokesEngine::setShape (uInt rownr, const IPosition& outputShape)   
-{   
-    BaseMappedArrayEngine<Float,Float>::setShape (rownr, findInputShape(outputShape));
-}
-  
-void SDStokesEngine::setShapeColumn (const IPosition& outputShape)
-{
-    BaseMappedArrayEngine<Float,Float>::setShapeColumn (findInputShape(outputShape));
-}
-      
+
     
 IPosition SDStokesEngine::shape (uInt rownr)
 {
@@ -182,12 +172,13 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
 // Checks
 
    const uInt nDim = input.ndim();
-   DebugAssert(nDim==4,AipsError);
-   DebugAssert(array.ndim()==4,AipsError);
+   AlwaysAssert(nDim==4,AipsError);
+   AlwaysAssert(output.ndim()==4,AipsError);
+//
    const IPosition inputShape = input.shape();
    const uInt polAxis = asap::PolAxis;
    const uInt nPol = inputShape(polAxis);
-   DebugAssert(nPol==1 || nPol==2 || nPol==3, AipsError);
+   AlwaysAssert(nPol==1 || nPol==2 || nPol==3, AipsError);
 
 // The silly Array slice operator does not give me back
 // a const reference so have to caste it away
@@ -246,24 +237,6 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
 }
 
 
-
-IPosition SDStokesEngine::findInputShape (const IPosition& outputShape) const
-//
-// Don't know how to handle the degeneracy that both
-// XX    -> I
-// XX,YY -> I
-// 
-{
-   uInt axis = asap::PolAxis;
-   uInt nPol = outputShape(axis);
-   IPosition inputShape = outputShape;
-   if (nPol==1) {
-      inputShape(axis) = 2;            // XX YY -> I
-   } else if (nPol==4) {
-      inputShape(axis) = 4;            // XX YY R(XY) I(XY) -> I Q U V
-   }
-   return inputShape;
-}
 
 IPosition SDStokesEngine::findOutputShape (const IPosition& inputShape) const
 {
