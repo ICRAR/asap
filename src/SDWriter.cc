@@ -1,4 +1,4 @@
- //#---------------------------------------------------------------------------
+//#---------------------------------------------------------------------------
 //# SDWriter.cc: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
@@ -32,9 +32,11 @@
 #include <string>
 
 #include <casa/aips.h>
-#include <casa/Arrays.h>
+#include <casa/Arrays/Array.h>
+#include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/Complex.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <casa/Utilities/Assert.h>
 
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
@@ -42,11 +44,14 @@
 #include <tables/Tables/ArrayColumn.h>
 
 
+
+
 #include "SDContainer.h"
 #include "SDMemTable.h"
 #include "SDWriter.h"
 #include "SDFITSImageWriter.h"
 #include "SDAsciiWriter.h"
+#include "SDPol.h"
 
 using namespace casa;
 using namespace asap;
@@ -146,9 +151,6 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
   SDHeader hdr = in->getSDHeader();
   const Int nPol  = hdr.npol;
   const Int nChan = hdr.nchan;
-  if (toStokes) {
-     cerr << "Stokes conversion not yet available with SDFITS or MS" << endl;
-  }
 
 // Get Freq table
 
@@ -181,7 +183,11 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
   Int scanNo = -1;
   Int cycleNo;
   Double mjd0 = 0.0;
-
+//
+  Array<Float> spectra, tSys, stokes;
+  Array<uChar> flags;
+  Bool doLinear = True;
+//
   Int count = 0;
   for (Int iRow = 0; iRow < in->nRow(); iRow++) {
     // Extract the next integration from the table.
@@ -197,11 +203,23 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
     // Get FreqID vector
     freqIDCol.get(iRow, freqIDs);
 
+    // Get Stokes array (all beams/IFs/Stokes).  Its not in SDContainer
+    if (toStokes) {
+       stokes = in->getStokesSpectrum(iRow,-1,-1);
+    }
+
+    IPosition start(asap::nAxes,0);
+    IPosition end(stokes.shape()-1);
+
     // Write it out beam by beam.
     for (Int iBeam = 0; iBeam < hdr.nbeam; iBeam++) {
+       start(asap::BeamAxis) = iBeam;
+       end(asap::BeamAxis) = iBeam;
 
       // Write it out IF by IF.
       for (Int iIF = 0; iIF < hdr.nif; iIF++) {
+        start(asap::IFAxis) = iIF;
+        end(asap::IFAxis) = iIF;
         uInt freqID = freqIDs(iIF);
 
         // None of these are stored in SDMemTable by SDReader.
@@ -241,6 +259,27 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
         Matrix<Float>   baseSub(nPol,9, 0.0f);
         Complex         xCalFctr;
         Vector<Complex> xPol;
+
+// Get data.  
+
+        if (toStokes) {
+
+// Big pain in the ass because
+//  1) Stokes vector may have less polarizations than input
+//  2) Stokes column virtual and not in SDContainer
+//  3) Tsys and FLags already selected for IF and Beam 
+//  3) Have to flip order
+
+           Array<Float> t = sd.getTsys(iBeam,iIF);
+           tSys = SDPolUtil::computeStokesTSysForWriter (t, doLinear);
+           Array<uChar> t2 = sd.getFlags(iBeam,iIF);
+           flags = SDPolUtil::computeStokesFlagsForWriter (t2, doLinear);
+           spectra = SDPolUtil::extractStokesForWriter (stokes,start,end);
+        } else {
+           tSys = sd.getTsys(iBeam,iIF);
+           flags = sd.getFlags(iBeam,iIF);
+           spectra = sd.getSpectrum(iBeam,iIF);        
+        }
 //
         if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
                                     sd.interval, sd.fieldname, sd.sourcename,
@@ -254,10 +293,9 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
                                     sd.refbeam, iBeam+1,
                                     sd.getDirection(iBeam),
                                     scanRate,
-                                    sd.getTsys(iBeam, iIF), sigma, calFctr,
+                                    tSys, sigma, calFctr,
                                     baseLin, baseSub,
-                                    sd.getSpectrum(iBeam, iIF),
-                                    sd.getFlags(iBeam, iIF),
+                                    spectra, flags,
                                     xCalFctr, xPol)) {
           cerr << "Error writing output file." << endl;
           return 1;
@@ -273,3 +311,5 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
 
   return 0;
 }
+
+
