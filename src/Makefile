@@ -43,6 +43,7 @@ OBJECTS   := MathUtils.o \
              SDMath.o \
              SDFitter.o \
              SDTemplates.o \
+             SDMathWrapper.o \
              python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
