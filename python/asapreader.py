@@ -18,20 +18,25 @@ class reader(sdreader):
         del r          # destroys the reader
     """
 
-    def __init__(self, filename,theif=None,thebeam=None):
+    def __init__(self, filename,unit=None, theif=None, thebeam=None):
         """
         Parameters:
             filename:    the name of an rpfits/sdfits/ms file on disk
+            unit:        brightness unit; must be consistent with K or Jy.
+                         The default is that a unit is set depending on
+                         the telescope.  Setting this over-rides that choice.
             theif:       select a specific IF (default is all)
             thebeam:     select a specific beam (default is all)
         Example:
             r = reader('/tmp/2001-09-01_0332_P363.rpf', theif=2)
         """
+        if unit is None:
+            unit = ""
         if theif is None:
             theif = -1
         if thebeam is None:
             thebeam = -1
-        sdreader.__init__(self, filename, theif, thebeam)
+        sdreader.__init__(self, filename, unit, theif, thebeam)
 
     def read(self,integrations=None):
         """
