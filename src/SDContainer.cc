@@ -28,16 +28,20 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+
 #include <casa/aips.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
 #include <casa/Exceptions.h>
+#include <casa/Utilities/Assert.h>
 #include <tables/Tables/Table.h>
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/VectorIter.h>
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/Quanta/MVTime.h>
+
 
 
 #include "SDDefs.h"
@@ -123,83 +127,103 @@ Bool SDContainer::putTsys(const Array<Float>& tsys) {
 }
 
 Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
-			      uInt whichBeam, uInt whichIF) {
+			      uInt whichBeam, uInt whichIF) 
+//
+// spec is [nChan,nPol] 
+// spectrum_ is [,,,nChan]
+// How annoying.
+//
+{
 
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(spectrum_);
-  aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
-  aa1.reset(aa1.begin(whichIF));
-  
-  //Vector<Float> pols(nPol);
-  ArrayAccessor<Float, Axis<asap::IFAxis> > j(spec);
-  IPosition shp0 = spectrum_.shape();
-  IPosition shp1 = spec.shape();
-  if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
-    throw(AipsError("Arrays not conformant"));
-    return False;
+// Get slice and check dim
+
+  IPosition start, end;
+  setSlice (start, end, spec.shape(), spectrum_.shape(),
+            whichBeam, whichIF, False);
+
+// Get a reference to the Pol/Chan slice we are interested in
+
+  Array<Float> subArr = spectrum_(start,end);
+
+// Iterate through it and fill
+
+  ReadOnlyVectorIterator<Float> inIt(spec,0);
+  VectorIterator<Float> outIt(subArr,asap::ChanAxis);
+  while (!inIt.pastEnd()) {
+     outIt.vector() = inIt.vector();
+//
+     inIt.next();
+     outIt.next();
   }
-  // assert dimensions are the same....
-  for (ArrayAccessor<Float, Axis<asap::PolAxis> > i(aa1);i != i.end(); ++i) {
-    ArrayAccessor<Float, Axis<asap::BeamAxis> > jj(j);
-    for (ArrayAccessor<Float, Axis<asap::ChanAxis> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = (*jj);
-      jj++;
-    }
-    j++;
-  }
+
   // unset flags for this spectrum, they might be set again by the
   // setFlags method
 
-  IPosition shp = flags_.shape();
-  IPosition start(4,whichBeam,whichIF,0,0);
-  IPosition end(4,whichBeam,whichIF,shp(2)-1,shp(3)-1);
   Array<uChar> arr(flags_(start,end));
   arr = uChar(0);
 //
   return True;
 }
 
-Bool SDContainer::setFlags(const Matrix<uChar>& flag,
-			   uInt whichBeam, uInt whichIF) {
 
-  ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(flags_);
-  aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
-  aa1.reset(aa1.begin(whichIF));
-  
-  ArrayAccessor<uChar, Axis<asap::IFAxis> > j(flag);
-  IPosition shp0 = flags_.shape();
-  IPosition shp1 = flag.shape();
-  if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
-    cerr << "Arrays not conformant" << endl;      
-    return False;
-  }
+Bool SDContainer::setFlags (const Matrix<uChar>& flags,
+                            uInt whichBeam, uInt whichIF) 
+//
+// flags is [nChan,nPol] 
+// flags_ is [,,,nChan]
+// How annoying.
+//
+{
+// Get slice and check dim
 
-  // assert dimensions are the same....
-  for (ArrayAccessor<uChar, Axis<asap::PolAxis> > i(aa1);i != i.end(); ++i) {
-    ArrayAccessor<uChar, Axis<asap::BeamAxis> > jj(j);
-    for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = (*jj);
-      jj++;
-    }
-    j++;
+  IPosition start, end;
+  setSlice (start, end, flags.shape(), flags_.shape(),
+            whichBeam, whichIF, False);
+
+// Get a reference to the Pol/Chan slice we are interested in
+
+  Array<uChar> subArr = flags_(start,end);
+
+// Iterate through it and fill
+
+  ReadOnlyVectorIterator<uChar> inIt(flags,0);
+  VectorIterator<uChar> outIt(subArr,asap::ChanAxis);
+  while (!inIt.pastEnd()) {
+     outIt.vector() = inIt.vector();
+//
+     inIt.next();
+     outIt.next();
   }
+//
   return True;
 }
 
+
 Bool SDContainer::setTsys(const Vector<Float>& tsys,
-			  uInt whichBeam, uInt whichIF) {
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(tsys_);
-  aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
-  aa1.reset(aa1.begin(whichIF));
-  // assert dimensions are the same....
-  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa1);i != i.end(); ++i) {    
-    ArrayAccessor<Float, Axis<asap::BeamAxis> > j(tsys);
-    for (ArrayAccessor<Float, Axis<asap::PolAxis> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = (*j);
-      j++;
-    }
+			  uInt whichBeam, uInt whichIF) 
+//
+// Tsys does not depend upon channel but is replicated
+// for simplicity of use
+//
+{
+
+// Get slice and check dim
+
+  IPosition start, end;
+  setSlice (start, end, tsys.shape(), tsys_.shape(),
+            whichBeam, whichIF, True);
+
+// Get a reference to the Pol/Chan slice we are interested in
+
+  Array<Float> subArr = tsys_(start,end);
+
+// Iterate through it and fill
+
+  VectorIterator<Float> outIt(subArr,asap::ChanAxis);
+  uInt i=0;
+  while (!outIt.pastEnd()) {
+     outIt.vector() = tsys(i++);
+     outIt.next();
   }
 }
 
@@ -360,6 +384,40 @@ Bool SDContainer::putHistory(const Vector<String>& hist)
   return True;
 }
 
+void SDContainer::setSlice (IPosition& start, IPosition& end,
+                            const IPosition& shpIn, const IPosition& shpOut,
+                            uInt whichBeam, uInt whichIF, Bool tSys) const
+//
+// tSYs
+//   shpIn [nPol]
+// else
+//   shpIn [nCHan,nPol]
+//
+{
+  AlwaysAssert(asap::nAxes==4,AipsError);
+  if (tSys) {
+     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(0),AipsError);     // pol
+  } else {
+     AlwaysAssert(shpOut(asap::ChanAxis)==shpIn(0),AipsError);    // chan
+     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(1),AipsError);     // pol
+  }
+//
+  start.resize(asap::nAxes);
+  start = 0;
+  start(asap::BeamAxis) = whichBeam;
+  start(asap::IFAxis) = whichIF;
+//
+  end.resize(asap::nAxes);
+  end = shpOut-1;
+  end(asap::BeamAxis) = whichBeam;
+  end(asap::IFAxis) = whichIF;
+}
+
+
+
+// SDFrequenctTable
+
+
 Int SDFrequencyTable::addFrequency(Double refPix, Double refVal, Double inc) {
   Int idx = -1;
   Bool addit = False;
@@ -414,6 +472,9 @@ void SDFrequencyTable::restFrequencies(Vector<Double>& rfs,
 }
 
 
+
+// SDDataDesc
+
 uInt SDDataDesc::addEntry (const String& source, uInt freqID, const MDirection& dir)
 {
 
@@ -449,4 +510,5 @@ void SDDataDesc::summary() const
       cerr << setw(11) << source_(i) << freqID_(i) << endl;
    }
 }
+
 

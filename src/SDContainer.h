@@ -185,7 +185,9 @@ private:
   //(nBeam,2) maybe use Measures here...
   casa::Array<casa::Double>   direction_;
   casa::Vector<casa::String> history_;
-
+  void setSlice (casa::IPosition& start, casa::IPosition& end,
+                 const casa::IPosition& shpIn, const casa::IPosition& shpOut,
+                 casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol) const;
 };
 
 
@@ -220,8 +222,8 @@ private:
   casa::Block<casa::MDirection> dir_;
 //
   SDDataDesc(const SDDataDesc& other);
-};
 
+};
 
 } // namespace
 #endif
