@@ -364,14 +364,7 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
   Double obstime;
   tme.get(whichRow,obstime);
   MVEpoch tm2(Quantum<Double>(obstime, Unit(String("d"))));
-  MEpoch::Types met;
-  String ep;
-  table_.keywordSet().get("Epoch",ep);
-  if (!MEpoch::getType(met, ep)) {
-    cerr << "Epoch type uknown - using UTC" << endl;
-    met = MEpoch::UTC;
-  }
-
+  MEpoch::Types met = getTimeReference();
   MEpoch epoch(tm2, met);
 
   Vector<Double> antpos;
@@ -607,16 +600,7 @@ Float SDMemTable::getTsys(Int whichRow) const
 
 MDirection SDMemTable::getDirection(Int whichRow) const
 {
-  Float eq;
-  table_.keywordSet().get("Equinox",eq);
-  std::map<float,string> mp;
-  mp[2000.0] = "J2000";
-  mp[1950.0] = "B1950";
-  MDirection::Types mdr;
-  if (!MDirection::getType(mdr, mp[eq])) {
-    mdr = MDirection::J2000;
-    cerr  << "Unknown equinox using J2000" << endl;
-  }
+  MDirection::Types mdr = getDirectionReference();
   ROArrayColumn<Double> dir(table_, "DIRECTION");
   Array<Double> posit;
   dir.get(whichRow,posit);
@@ -1061,3 +1045,33 @@ void SDMemTable::flag(int whichRow)
 
   spec.put(whichRow, arr);
 }
+
+MDirection::Types SDMemTable::getDirectionReference () const
+{  
+  Float eq;
+  table_.keywordSet().get("Equinox",eq);
+  std::map<float,string> mp;
+  mp[2000.0] = "J2000";
+  mp[1950.0] = "B1950";
+  MDirection::Types mdr;
+  if (!MDirection::getType(mdr, mp[eq])) {   
+    mdr = MDirection::J2000;
+    cerr  << "Unknown equinox using J2000" << endl;
+  }
+//
+  return mdr;
+}
+
+MEpoch::Types SDMemTable::getTimeReference () const
+{
+  MEpoch::Types met;
+  String ep;
+  table_.keywordSet().get("Epoch",ep);
+  if (!MEpoch::getType(met, ep)) {
+    cerr << "Epoch type uknown - using UTC" << endl;
+    met = MEpoch::UTC;
+  }
+//
+  return met;
+}
+

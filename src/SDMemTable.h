@@ -161,8 +161,15 @@ public:
 
   std::vector<double> getAbcissa(int whichRow=0) const;
   std::string getAbcissaString(casa::Int whichRow=0) const;
-  
+
+// Get MDirection for this row
   casa::MDirection getDirection(casa::Int whichRow=0) const; 
+
+// Get gloabl Direction reference 
+  casa::MDirection::Types getDirectionReference () const;
+
+// Get global Time reference
+  casa::MEpoch::Types getTimeReference () const;
 
 private:
   // utility func for nice printout
