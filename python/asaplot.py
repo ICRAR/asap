@@ -30,6 +30,9 @@ class ASAPlot:
     def __init__(self, rows=1, cols=0, title='', size=(8,6), buffering=False):
 	"""
 	Create a new instance of the ASAPlot plotting class.
+
+	If rows < 1 then a separate call to set_panels() is required to define
+	the panel layout; refer to the doctext for set_panels().
 	"""
 	self.window = Tk.Tk()
 	
@@ -100,6 +103,35 @@ class ASAPlot:
 	Get the current default line attributes.
 	"""
 	return self.attributes
+
+
+    def hist(self, x=None, y=None, fmt=None):
+	"""
+	Plot a histogram.  N.B. the x values refer to the start of the
+	histogram bin.
+
+	fmt is the line style as in plot().
+	"""
+
+	if x is None:
+	    if y is None: return
+	    x = range(0,len(y))
+
+	if len(x) != len(y):
+	    return
+
+	l2 = 2*len(x)
+	x2 = range(0,l2)
+	y2 = range(0,l2)
+
+	for i in range(0,l2):
+	    x2[i] = x[i/2]
+
+	y2[0] = 0
+	for i in range(1,l2):
+	    y2[i] = y[(i-1)/2]
+
+	self.plot(x2, y2, fmt)
 
 
     def hold(self, hold=True):
@@ -229,6 +261,7 @@ class ASAPlot:
 
 	# Add to an existing line?
 	if add is None or len(self.lines) < add < 0:
+	    # Don't add.
 	    self.lines.append(line)
 	    i = len(self.lines) - 1
 	else:
@@ -405,7 +438,7 @@ class ASAPlot:
 					    cols, n+1)
 	    self.subplots[i]['lines'] = []
 
-	    if i == 0: self.subplot()
+	    if i == 0: self.subplot(0)
 
 	else:
 	    self.subplots = []
@@ -415,7 +448,7 @@ class ASAPlot:
 						cols, i+1)
 		self.subplots[i]['lines'] = []
 
-	    self.subplot()
+	    self.subplot(0)
 
 
     def set_title(self, title=None):
@@ -456,16 +489,22 @@ class ASAPlot:
 	    self.canvas.show()
 
 
-    def subplot(self, i=0):
+    def subplot(self, i=None, inc=None):
 	"""
 	Set the subplot to the 0-relative panel number as defined by one or
 	more invokations of set_panels().
 	"""
 	l = len(self.subplots)
 	if l:
-	    i = i%l
-	    self.axes  = self.subplots[i]['axes']
-	    self.lines = self.subplots[i]['lines']
+	    if i is not None:
+	        self.i = i
+
+	    if inc is not None:
+	        self.i += inc
+
+	    self.i %= l
+	    self.axes  = self.subplots[self.i]['axes']
+	    self.lines = self.subplots[self.i]['lines']
 
 
     def terminate(self):
