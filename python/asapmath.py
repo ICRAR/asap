@@ -128,7 +128,7 @@ def hanning(scan):
     
 def poly_baseline(scan, mask=None, order=0):
     """
-    Return a scan which has been baselined by a polynomial.
+    Return a scan which has been baselined (all rows) by a polynomial. 
     Parameters:
         scan:    a scantable
         mask:    an optional mask
