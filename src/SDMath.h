@@ -33,6 +33,7 @@
 
 #include <string>
 #include <vector>
+#include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 
 namespace asap {
@@ -58,11 +59,16 @@ namespace SDMath {
   casa::CountedPtr<SDMemTable> 
   averagePol(const casa::CountedPtr<SDMemTable>& in, const casa::Vector<casa::Bool>& mask);
 
-  casa::Float rms(const casa::CountedPtr<SDMemTable>& in, 
-		   const std::vector<bool>& mask);
+  std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
+   		                const std::vector<bool>& mask, const std::string& which);
   
   casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, 
 			     casa::Int width);
+
+// private (not actually...)
+
+  float theStatistic(const std::string& which,  const casa::MaskedArray<casa::Float>& data);
+  
 };
 
 } // namespace
