@@ -67,7 +67,7 @@ namespace asap {
       def("averages", &SDMathWrapper::averages);
       def("averagepol", &SDMathWrapper::averagePol);
       def("bin", &SDMathWrapper::bin);
-      def("rms", &SDMathWrapper::rms);
+      def("stats", &SDMathWrapper::statistic);
     };
 
   } // python
