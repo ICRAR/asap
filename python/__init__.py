@@ -4,7 +4,7 @@ This is the ATNF Single Dish Analysis package.
 """
 import os,sys
 
-def validate_bool(b):
+def _validate_bool(b):
     'Convert b to a boolean or raise'
     bl = b.lower()
     if bl in ('f', 'no', 'false', '0', 0): return False
@@ -12,13 +12,13 @@ def validate_bool(b):
     else:
         raise ValueError('Could not convert "%s" to boolean' % b)
 
-def validate_int(s):
+def _validate_int(s):
     'convert s to int or raise'
     try: return int(s)
     except ValueError:
         raise ValueError('Could not convert "%s" to int' % s)
 
-def asap_fname():
+def _asap_fname():
     """
     Return the path to the rc file
 
@@ -50,9 +50,9 @@ def asap_fname():
 
 defaultParams = {
     # general
-    'verbose'             : [True, validate_bool],
-    'useplotter'          : [True, validate_bool],
-    'insitu'              : [False, validate_bool],
+    'verbose'             : [True, _validate_bool],
+    'useplotter'          : [True, _validate_bool],
+    'insitu'              : [False, _validate_bool],
     
     # plotting
     'plotter.stacking'    : ['p', str],
@@ -60,11 +60,11 @@ defaultParams = {
     
     # scantable
     'scantable.save'      : ['ASAP', str],
-    'scantable.autoaverage'      : [True, validate_bool],
+    'scantable.autoaverage'      : [True, _validate_bool],
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
-    'scantable.allaxes'   : [True, validate_bool],  # apply action to all axes
-    'scantable.plotter'   : [True, validate_bool], # use internal plotter
-    'scantable.verbosesummary'   : [False, validate_bool]
+    'scantable.allaxes'   : [True, _validate_bool],  # apply action to all axes
+    'scantable.plotter'   : [True, _validate_bool], # use internal plotter
+    'scantable.verbosesummary'   : [False, _validate_bool]
 
     # fitter
     }
@@ -114,7 +114,7 @@ def list_rcparameters():
 def rc_params():
     'Return the default params updated from the values in the rc file'
     
-    fname = asap_fname()
+    fname = _asap_fname()
     
     if fname is None or not os.path.exists(fname):
         message = 'could not find rc file; returning defaults'
@@ -198,6 +198,17 @@ def rcdefaults():
     """
     rcParams.update(rcParamsDefault)
 
+
+def _is_sequence_or_number(param, ptype=int):
+    if isinstance(param,tuple) or isinstance(param,list):
+        out = True
+        for p in param:
+            out &= isinstance(p,ptype)
+        return out
+    elif isinstance(param, ptype):
+        return True
+    return False
+
 from asapfitter import *
 from asapreader import reader
 from asapmath import *
@@ -220,7 +231,7 @@ if rcParams['useplotter']:
 
 
 __date__ = '$Date$'
-__version__  = '0.2'
+__version__  = '0.9'
 
 def list_scans(t = scantable):
     import sys, types
@@ -252,7 +263,8 @@ def commands():
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
             get_unit        - get the currnt unit
-            set_unit        - set the abcissa unit to be used from this point on
+            set_unit        - set the abcissa unit to be used from this
+                              point on
             get_abcissa     - get the abcissa values and name for a given
                               row (time)
             set_freqframe   - set the frame info for the Spectral Axis
@@ -272,30 +284,36 @@ def commands():
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             history         - print the history of the scantable
-    [Math]
-        average_time       - return the (weighted) time average of a scan 
-                             or a list of scans
-        average_pol         - average the polarisations together.
+
+            average_time    - return the (weighted) time average of a scan 
+                              or a list of scans
+            average_pol     - average the polarisations together.
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
-        quotient            - return the on/off quotient
-        simple_math         - simple mathematical operations on two scantables,
-                              'add', 'sub', 'mul', 'div'
-        scale               - return a scan scaled by a given factor
-        add                 - return a scan with given value added 
-        bin                 - return a scan with binned channels
-        resample            - return a scan with resampled channels
-        smooth              - return the spectrally smoothed scan
-        poly_baseline       - fit a polynomial baseline to all Beams/IFs/Pols
-        auto_poly_baseline  - automatically fit a polynomial baseline 
-        gain_el             - apply gain-elevation correction
-        opacity             - apply opacity correction
-        convert_flux        - convert to and from Jy and Kelvin brightness
+            quotient        - return the on/off quotient
+            scale           - return a scan scaled by a given factor
+            add             - return a scan with given value added 
+            bin             - return a scan with binned channels
+            resample        - return a scan with resampled channels
+            smooth          - return the spectrally smoothed scan
+            poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
+            gain_el         - apply gain-elevation correction
+            opacity         - apply opacity correction
+            convert_flux    - convert to and from Jy and Kelvin brightness
                               units
-        freq_align          - align spectra in frequency frame
-        rotate_xyphase      - rotate XY phase of cross correlation
+            freq_align      - align spectra in frequency frame
+            rotate_xyphase  - rotate XY phase of cross correlation
+            rotate_linpolphase - rotate the phase of the complex
+                                 polarization O=Q+iU correlation
+     [Math] Mainly functions which operate on more than one scantable
 
+            average_time    - return the (weighted) time average 
+                              of a list of scans
+            quotient        - return the on/off quotient
+            simple_math     - simple mathematical operations on two scantables,
+                              'add', 'sub', 'mul', 'div'
+     [Fitting]
         fitter
             auto_fit        - return a scan where the function is
                               applied to all Beams/IFs/Pols.
@@ -307,7 +325,11 @@ def commands():
             set_function    - set the fitting function
             set_parameters  - set the parameters for the function(s), and
                               set if they should be held fixed during fitting
+            set_gauss_parameters - same as above but specialised for individual
+                                   gaussian components
             get_parameters  - get the fitted parameters
+            plot            - plot the resulting fit and/or components and
+                              residual
     [Plotter]
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'

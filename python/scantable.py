@@ -65,13 +65,13 @@ class scantable(sdtable):
                     tbl.set_fluxunit(unit)
                 if average:
                     from asap._asap import average as _av
-                    tmp = tuple([tbl])
                     print 'Auto averaging integrations...'
-                    tbl2 = _av(tmp,(),True,'none')
+                    tbl2 = _av((tbl,),(),True,'none')
                     sdtable.__init__(self,tbl2)
-                    del r,tbl
+                    del tbl2
                 else:
                     sdtable.__init__(self,tbl)
+                del r,tbl
                 self._add_history("scantable", varlist)
 
     def save(self, name=None, format=None, stokes=False, overwrite=False):
@@ -137,10 +137,16 @@ class scantable(sdtable):
         Return a specific scan (by scanno) or collection of scans (by
         source name) in a new scantable.
         Parameters:
-            scanid:    a scanno or a source name
+            scanid:    a (list of) scanno or a source name, unix-style
+                       patterns are accepted for source name matching, e.g.
+                       '*_R' gets all 'ref scans
         Example:
-            scan.get_scan('323p459')
-            # gets all scans containing the source '323p459'
+            # get all scans containing the source '323p459'
+            newscan = scan.get_scan('323p459')
+            # get all 'off' scans
+            refscans = scan.get_scan('*_R')
+            # get a susbset of scans by scanno (as listed in scan.summary())
+            newscan = scan.get_scan([0,2,7,10])
         """
         if scanid is None:
             print "Please specify a scan no or name to retrieve from the scantable"
@@ -480,6 +486,9 @@ class scantable(sdtable):
             invert:     optional argument. If specified as True,
                         return an inverted mask, i.e. the regions
                         specified are EXCLUDED
+            row:        create the mask using the specified row for
+                        unit conversions, default is row=0
+                        only necessary if frequency varies over rows.
         Example:
             scan.set_unit('channel')
 
@@ -494,13 +503,15 @@ class scantable(sdtable):
             # and 800 and 900 in the unit 'channel'
            
         """
-        varlist = vars()
+        row = 0
+        if kwargs.has_key("row"):
+            row = kwargs.get("row")
+        data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
         if self._vb:
             if u == "": u = "channel"
             print "The current mask window unit is", u
         n = self.nchan()
-        data = self._getabcissa()
         msk = zeros(n)
         for window in args:
             if (len(window) != 2 or window[0] > window[1] ):
@@ -512,8 +523,7 @@ class scantable(sdtable):
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
                 from numarray import logical_not
-                msk = logical_not(msk)
-        self._add_history("create_mask", varlist)
+                msk = logical_not(msk)            
         return msk
     
     def get_restfreqs(self):
@@ -729,6 +739,624 @@ class scantable(sdtable):
                 print "-"*80
         return
 
+    #
+    # Maths business
+    #
+
+    def average_time(self, mask=None, scanav=True, weight=None):
+        """
+        Return the (time) average of a scan, or apply it 'insitu'.
+        Note:
+            in channels only
+            The cursor of the output scan is set to 0.
+        Parameters:
+            one scan or comma separated  scans
+            mask:     an optional mask (only used for 'var' and 'tsys'
+                      weighting)
+            scanav:   True (default) averages each scan separately
+                      False averages all scans together,
+            weight:   Weighting scheme. 'none' (default), 'var' (variance
+                      weighted), 'tsys'
+
+        Example:
+            # time average the scantable without using a mask
+            newscan = scan.average_time()            
+        """
+        varlist = vars()
+        if weight is None: weight = 'none'
+        if mask is None: mask = ()
+        from asap._asap import average as _av        
+        s = scantable(_av((self,), mask, scanav, weight))
+        s._add_history("average_time",varlist)
+        return s
+        
+    def convert_flux(self, jyperk=None, eta=None, d=None, insitu=None,
+                     allaxes=None):
+        """
+        Return a scan where all spectra are converted to either
+        Jansky or Kelvin depending upon the flux units of the scan table.
+        By default the function tries to look the values up internally.
+        If it can't find them (or if you want to over-ride), you must
+        specify EITHER jyperk OR eta (and D which it will try to look up
+        also if you don't set it). jyperk takes precedence if you set both.
+        Parameters:
+            jyperk:      the Jy / K conversion factor
+            eta:         the aperture efficiency
+            d:           the geomtric diameter (metres)
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+            allaxes:         if True apply to all spectra. Otherwise
+                         apply only to the selected (beam/pol/if)spectra only
+                         The default is taken from .asaprc (True if none)
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if jyperk is None: jyperk = -1.0
+        if d is None: d = -1.0
+        if eta is None: eta = -1.0
+        if not insitu:
+            from asap._asap import convertflux as _convert
+            s = scantable(_convert(self, d, eta, jyperk, allaxes))
+            s._add_history("convert_flux", varlist)
+            return s
+        else:
+            from asap._asap import convertflux_insitu as _convert
+            _convert(self, d, eta, jyperk, allaxes)
+            self._add_history("convert_flux", varlist)
+            return
+
+    def gain_el(self, poly=None, filename="", method="linear",
+                insitu=None, allaxes=None):
+        """
+        Return a scan after applying a gain-elevation correction.
+        The correction can be made via either a polynomial or a
+        table-based interpolation (and extrapolation if necessary).
+        You specify polynomial coefficients, an ascii table or neither.
+        If you specify neither, then a polynomial correction will be made
+        with built in coefficients known for certain telescopes (an error
+        will occur if the instrument is not known).
+        The data and Tsys are *divided* by the scaling factors.
+        Parameters:
+            poly:        Polynomial coefficients (default None) to compute a
+                         gain-elevation correction as a function of
+                         elevation (in degrees).
+            filename:    The name of an ascii file holding correction factors.
+                         The first row of the ascii file must give the column
+                         names and these MUST include columns
+                         "ELEVATION" (degrees) and "FACTOR" (multiply data
+                         by this) somewhere.
+                         The second row must give the data type of the
+                         column. Use 'R' for Real and 'I' for Integer.
+                         An example file would be
+                         (actual factors are arbitrary) :
+
+                         TIME ELEVATION FACTOR
+                         R R R
+                         0.1 0 0.8
+                         0.2 20 0.85
+                         0.3 40 0.9
+                         0.4 60 0.85
+                         0.5 80 0.8
+                         0.6 90 0.75
+            method:      Interpolation method when correcting from a table.
+                         Values are  "nearest", "linear" (default), "cubic"
+                         and "spline"
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+            allaxes:     If True apply to all spectra. Otherwise
+                         apply only to the selected (beam/pol/if) spectra only
+                         The default is taken from .asaprc (True if none)
+        """
+
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if poly is None:
+           poly = ()
+        from os.path import expandvars
+        filename = expandvars(filename)
+        if not insitu:
+            from asap._asap import gainel as _gainEl
+            s = scantable(_gainEl(self, poly, filename, method, allaxes))
+            s._add_history("gain_el", varlist)
+            return s
+        else:
+            from asap._asap import gainel_insitu as _gainEl
+            _gainEl(self, poly, filename, method, allaxes)
+            self._add_history("gain_el", varlist)
+            return
+    
+    def freq_align(self, reftime=None, method='cubic', perif=False,
+                   insitu=None):
+        """
+        Return a scan where all rows have been aligned in frequency/velocity.
+        The alignment frequency frame (e.g. LSRK) is that set by function
+        set_freqframe.
+        Parameters:
+            reftime:     reference time to align at. By default, the time of
+                         the first row of data is used.
+            method:      Interpolation method for regridding the spectra.
+                         Choose from "nearest", "linear", "cubic" (default)
+                         and "spline"
+            perif:       Generate aligners per freqID (no doppler tracking) or
+                         per IF (scan-based doppler tracking)
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if reftime is None: reftime = ''
+        perfreqid = not perif
+        if not insitu:
+            from asap._asap import freq_align as _align
+            s = scantable(_align(self, reftime, method, perfreqid))
+            s._add_history("freq_align", varlist)
+            return s
+        else:
+            from asap._asap import freq_align_insitu as _align
+            _align(self, reftime, method, perfreqid)
+            self._add_history("freq_align", varlist)
+            return
+
+    def opacity(self, tau, insitu=None, allaxes=None):
+        """
+        Apply an opacity correction. The data
+        and Tsys are multiplied by the correction factor.
+        Parameters:
+            tau:         Opacity from which the correction factor is
+                         exp(tau*ZD)
+                         where ZD is the zenith-distance
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+            allaxes:     if True apply to all spectra. Otherwise
+                         apply only to the selected (beam/pol/if)spectra only
+                         The default is taken from .asaprc (True if none)
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import opacity as _opacity
+            s = scantable(_opacity(self, tau, allaxes))
+            s._add_history("opacity", varlist)
+            return s
+        else:
+            from asap._asap import opacity_insitu as _opacity
+            _opacity(self, tau, allaxes)
+            self._add_history("opacity", varlist)
+            return
+
+    def bin(self, width=5, insitu=None):
+        """
+        Return a scan where all spectra have been binned up.
+            width:       The bin width (default=5) in pixels
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import bin as _bin
+            s = scantable(_bin(self, width))
+            s._add_history("bin",varlist)
+            return s
+        else:
+            from asap._asap import bin_insitu as _bin
+            _bin(self, width)
+            self._add_history("bin",varlist)
+            return
+
+    
+    def resample(self, width=5, method='cubic', insitu=None):
+        """
+        Return a scan where all spectra have been binned up
+            width:       The bin width (default=5) in pixels
+            method:      Interpolation method when correcting from a table.
+                         Values are  "nearest", "linear", "cubic" (default)
+                         and "spline"
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import resample as _resample
+            s = scantable(_resample(self, method, width))
+            s._add_history("resample",varlist)
+            return s
+        else:
+            from asap._asap import resample_insitu as _resample
+            _resample(self, method, width)
+            self._add_history("resample",varlist)
+            return
+
+    def average_pol(self, mask=None, weight='none', insitu=None):
+        """
+        Average the Polarisations together.
+        The polarisation cursor of the output scan is set to 0
+        Parameters:
+            scan:        The scantable
+            mask:        An optional mask defining the region, where the
+                         averaging will be applied. The output will have all
+                         specified points masked.
+            weight:      Weighting scheme. 'none' (default), or
+                         'var' (variance weighted)
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+        Example:
+            polav = average_pols(myscan)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+
+        if mask is None:
+            mask = ()
+        if not insitu:
+            from asap._asap import averagepol as _avpol
+            s = scantable(_avpol(self, mask, weight))
+            s._add_history("average_pol",varlist)
+            return s
+        else:
+            from asap._asap import averagepol_insitu as _avpol
+            _avpol(self, mask, weight)
+            self._add_history("average_pol",varlist)
+            return
+
+    def smooth(self, kernel="hanning", width=5.0, insitu=None, allaxes=None):
+        """
+        Smooth the spectrum by the specified kernel (conserving flux).
+        Parameters:
+            scan:       The input scan
+            kernel:     The type of smoothing kernel. Select from
+                        'hanning' (default), 'gaussian' and 'boxcar'.
+                        The first three characters are sufficient.
+            width:      The width of the kernel in pixels. For hanning this is
+                        ignored otherwise it defauls to 5 pixels.
+                        For 'gaussian' it is the Full Width Half
+                        Maximum. For 'boxcar' it is the full width.
+            insitu:     if False a new scantable is returned.
+                        Otherwise, the scaling is done in-situ
+                        The default is taken from .asaprc (False)
+            allaxes:    If True (default) apply to all spectra. Otherwise
+                        apply only to the selected (beam/pol/if)spectra only
+                        The default is taken from .asaprc (True if none)
+        Example:
+             none
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import smooth as _smooth
+            s = scantable(_smooth(self,kernel,width,allaxes))
+            s._add_history("smooth", varlist)
+            return s
+        else:
+            from asap._asap import smooth_insitu as _smooth
+            _smooth(self,kernel,width,allaxes)
+            self._add_history("smooth", varlist)
+            return
+
+    def poly_baseline(self, mask=None, order=0, insitu=None):
+        """
+        Return a scan which has been baselined (all rows) by a polynomial.
+        Parameters:
+            scan:    a scantable
+            mask:    an optional mask
+            order:   the order of the polynomial (default is 0)
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+        Example:
+            # return a scan baselined by a third order polynomial,
+            # not using a mask
+            bscan = scan.poly_baseline(order=3)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if mask is None:
+            from numarray import ones
+            mask = list(ones(scan.nchan()))
+        from asap.asapfitter import fitter
+        f = fitter()
+        f._verbose(True)
+        f.set_scan(self, mask)
+        f.set_function(poly=order)
+        sf = f.auto_fit(insitu)
+        if insitu:
+            self._add_history("poly_baseline", varlist)
+            return
+        else:
+            sf._add_history("poly_baseline", varlist)
+            return sf
+
+    def auto_poly_baseline(self, mask=None, edge=(0,0), order=0,
+                           threshold=3,insitu=None):
+        """
+        Return a scan which has been baselined (all rows) by a polynomial.
+        Spectral lines are detected first using linefinder and masked out
+        to avoid them affecting the baseline solution.
+
+        Parameters:
+            scan:    a scantable
+            mask:       an optional mask retreived from scantable
+            edge:       an optional number of channel to drop at
+                        the edge of spectrum. If only one value is
+                        specified, the same number will be dropped from
+                        both sides of the spectrum. Default is to keep
+                        all channels
+            order:      the order of the polynomial (default is 0)
+            threshold:  the threshold used by line finder. It is better to
+                        keep it large as only strong lines affect the
+                        baseline solution.
+            insitu:     if False a new scantable is returned.
+                        Otherwise, the scaling is done in-situ
+                        The default is taken from .asaprc (False)
+
+        Example:
+            sc2=auto_poly_baseline(order=7)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        from asap.asapfitter import fitter
+        from asap.asaplinefind import linefinder
+        from asap import _is_sequence_or_number as _is_valid
+        
+        if not _is_valid(edge, int):
+            print "Parameter 'edge' as to be an integer or a pair of integers"
+            return
+        
+        # setup fitter
+        f = fitter()
+        f._verbose(True)
+        f.set_function(poly=order)
+
+        # setup line finder
+        fl=linefinder()
+        fl.set_options(threshold=threshold)
+
+        if not insitu:
+            workscan=self.copy()
+        else:
+            workscan=self
+
+        vb=workscan._vb
+        # remember the verbose parameter and selection
+        workscan._vb=False
+        sel=workscan.get_cursor()
+        rows=range(workscan.nrow())
+        for i in range(workscan.nbeam()):
+            workscan.setbeam(i)
+            for j in range(workscan.nif()):
+                workscan.setif(j)
+                for k in range(workscan.npol()):
+                    workscan.setpol(k)
+                    if f._vb:
+                       print "Processing:"
+                       print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    for iRow in rows:
+                       fl.set_scan(workscan,mask,edge)
+                       fl.find_lines(iRow)
+                       f.set_scan(workscan, fl.get_mask())
+                       f.x=workscan._getabcissa(iRow)
+                       f.y=workscan._getspectrum(iRow)
+                       f.data=None
+                       f.fit()
+                       x=f.get_parameters()
+                       workscan._setspectrum(f.fitter.getresidual(),iRow)
+        workscan.set_cursor(sel[0],sel[1],sel[2])
+        workscan._vb = vb
+        if not insitu:
+           return workscan
+
+    def rotate_linpolphase(self, angle, allaxes=None):
+        """
+        Rotate the phase of the complex polarization O=Q+iU correlation.  
+        This is always done in situ in the raw data.  So if you call this 
+        function more than once then each call rotates the phase further.
+        Parameters:
+            angle:   The angle (degrees) to rotate (add) by.
+            allaxes: If True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only.
+                     The default is taken from .asaprc (True if none)
+        Examples:
+            scan.rotate_linpolphase(2.3)
+    """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        varlist = vars()
+        from asap._asap import _rotate_linpolphase as _rotate
+        _rotate(self, angle, allaxes)
+        self._add_history("rotate_linpolphase", varlist)
+        return
+    
+
+    def rotate_xyphase(self, angle, allaxes=None):
+        """
+        Rotate the phase of the XY correlation.  This is always done in situ
+        in the data.  So if you call this function more than once
+        then each call rotates the phase further.
+        Parameters:
+            angle:   The angle (degrees) to rotate (add) by.
+            allaxes: If True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only.
+                     The default is taken from .asaprc (True if none)
+        Examples:
+            scan.rotate_xyphase(2.3)
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        varlist = vars()
+        from asap._asap import rotate_xyphase as _rotate_xyphase
+        _rotate_xyphase(self, angle, allaxes)
+        self._add_history("rotate_xyphase", varlist)
+        return
+
+
+    def add(self, offset, insitu=None, allaxes=None):
+        """
+        Return a scan where all spectra have the offset added
+        Parameters:
+            offset:      the offset
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+            allaxes:     if True apply to all spectra. Otherwise
+                         apply only to the selected (beam/pol/if)spectra only
+                         The default is taken from .asaprc (True if none)
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import add as _add
+            s = scantable(_add(self, offset, allaxes))
+            s._add_history("add",varlist)
+            return s
+        else:
+            from asap._asap import add_insitu as _add
+            _add(self, offset, allaxes)
+            self._add_history("add",varlist)
+            return
+
+    def scale(self, factor, insitu=None, allaxes=None, tsys=True):
+        """
+        Return a scan where all spectra are scaled by the give 'factor'
+        Parameters:
+            factor:      the scaling factor
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the scaling is done in-situ
+                         The default is taken from .asaprc (False)
+            allaxes:     if True apply to all spectra. Otherwise
+                         apply only to the selected (beam/pol/if)spectra only.
+                         The default is taken from .asaprc (True if none)
+            tsys:        if True (default) then apply the operation to Tsys
+                         as well as the data
+        """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        if not insitu:
+            from asap._asap import scale as _scale
+            s = scantable(_scale(self, factor, allaxes, tsys))
+            s._add_history("scale",varlist)
+            return s
+        else:
+            from asap._asap import scale_insitu as _scale
+            _scale(self, factor, allaxes, tsys)
+            self._add_history("scale",varlist)
+            return
+
+
+    def quotient(self, other, isreference=True, preserve=True):
+        """
+        Return the quotient of a 'source' (signal) scan and a 'reference' scan.
+        The reference can have just one row, even if the signal has many.
+        Otherwise they must have the same number of rows.
+        The cursor of the output scan is set to 0
+        Parameters:
+            source:         the 'other' scan
+            isreference:    if the 'other' scan is the reference (default)
+                            or source
+            preserve:       you can preserve (default) the continuum or 
+                            remove it.  The equations used are 
+                            preserve - Output = Tref * (sig/ref) - Tref
+                            remove   - Output = Tref * (sig/ref) - Tsig
+        Example:
+            # src is a scantable for an 'on' scan, ref for an 'off' scantable
+            q1 = src.quotient(ref)
+            q2 = ref.quotient(src, isreference=False)
+            # gives the same result
+        """
+        from asap._asap import quotient as _quot
+        if isreference:
+            return scantable(_quot(self, other, preserve))
+        else:
+            return scantable(_quot(other, self, preserve))
+
+    def __add__(self, other):
+        varlist = vars()
+        s = None
+        if isinstance(other, scantable):
+            from asap._asap import b_operate as _bop            
+            s = scantable(_bop(self, other, 'add', True))
+        elif isinstance(other, float):
+            from asap._asap import add as _add
+            s = scantable(_add(self, other, True))
+        else:
+            print "Other input is not a scantable or float value"
+            return
+        s._add_history("operator +", varlist)
+        return s
+
+
+    def __sub__(self, other):
+        """
+        implicit on all axes and on Tsys
+        """
+        varlist = vars()
+        s = None
+        if isinstance(other, scantable):
+            from asap._asap import b_operate as _bop            
+            s = scantable(_bop(self, other, 'sub', True))
+        elif isinstance(other, float):
+            from asap._asap import add as _add
+            s = scantable(_add(self, -other, True))
+        else:
+            print "Other input is not a scantable or float value"
+            return
+        s._add_history("operator -", varlist)
+        return s
+    
+    def __mul__(self, other):
+        """
+        implicit on all axes and on Tsys
+        """
+        varlist = vars()
+        s = None
+        if isinstance(other, scantable):
+            from asap._asap import b_operate as _bop            
+            s = scantable(_bop(self, other, 'mul', True))
+        elif isinstance(other, float):
+            if other == 0.0:
+                print "Multiplying by zero is not recommended."
+                return
+            from asap._asap import scale as _sca
+            s = scantable(_sca(self, other, True))
+        else:
+            print "Other input is not a scantable or float value"
+            return
+        s._add_history("operator *", varlist)
+        return s
+    
+
+    def __div__(self, other):
+        """
+        implicit on all axes and on Tsys
+        """
+        varlist = vars()
+        s = None
+        if isinstance(other, scantable):
+            from asap._asap import b_operate as _bop            
+            s = scantable(_bop(self, other, 'div', True))
+        elif isinstance(other, float):
+            if other == 0.0:
+                print "Dividing by zero is not recommended"
+                return
+            from asap._asap import scale as _sca
+            s = scantable(_sca(self, 1.0/other, True))
+        else:
+            print "Other input is not a scantable or float value"
+            return
+        s._add_history("operator /", varlist)
+        return s
+
     def _add_history(self, funcname, parameters):
         # create date
         sep = "##"
@@ -745,16 +1373,22 @@ class scantable(sdtable):
                     if isinstance(v2,scantable):
                         hist += 'scantable'
                     elif k2 == 'mask':
-                        hist += str(self._zip_mask(v2))
+                        if isinstance(v2,list) or isinstance(v2,tuple):
+                            hist += str(self._zip_mask(v2))
+                        else:
+                            hist += str(v2)
                     else:
-                        hist += str(v2)                    
+                        hist += str(v2)
             else:
                 hist += k
                 hist += "="
                 if isinstance(v,scantable):
                     hist += 'scantable'
                 elif k == 'mask':
-                    hist += str(self._zip_mask(v))
+                    if isinstance(v,list) or isinstance(v,tuple):
+                        hist += str(self._zip_mask(v))
+                    else:
+                        hist += str(v)
                 else:
                     hist += str(v)
             hist += sep
@@ -773,5 +1407,5 @@ class scantable(sdtable):
             else:
                 j = len(mask)                
             segments.append([i,j])
-            i = j
+            i = j        
         return segments
