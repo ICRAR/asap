@@ -188,7 +188,6 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 // spec is [nChan,nPol] 
 // spectrum_ is [,,,nChan]
 // How annoying.
-// nPol==2 
 {
 
 // Get slice and check dim
@@ -229,10 +228,11 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flags,
 			   Bool hasXPol)
 //
 // flags is [nChan,nPol] 
-// flags_ is [,,,nChan]
-// How annoying.
-// there are no separate flags for XY so make
-// them up from X and Y
+// flags_ is [nBeam,nIF,nPol,nChan]
+//
+// Note that there are no separate flags for the XY cross polarization so we make
+// them up from the X and Y which is all the silly code below.  This means
+// that nPol==2 on input but 4 on output
 //
 {
   if (hasXPol) AlwaysAssert(nPol_==4,AipsError);
@@ -270,14 +270,23 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flags,
               for (uInt i=0; i<maskPol01.nelements(); i++) maskPol01[i] = maskPol0[i]&maskPol1[i];
            }
         }
-//
         inIt.next();
      } else if (pos(asap::PolAxis)==2) {
-        outIt.vector() = maskPol01;
+        if (hasXPol) {
+           outIt.vector() = maskPol01;
+        } else {
+           outIt.vector() = inIt.vector();
+           inIt.next();
+        }
+
      } else if (pos(asap::PolAxis)==3) { 
-        outIt.vector() = maskPol01;
+        if (hasXPol) {
+           outIt.vector() = maskPol01;
+        } else {
+           outIt.vector() = inIt.vector();
+           inIt.next();
+        }
      }
-//
      outIt.next();
   }
 //
@@ -289,6 +298,7 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
 			  uInt whichBeam, uInt whichIF,
                           Bool hasXpol)
 //
+// TSys shape is [nPol]
 // Tsys does not depend upon channel but is replicated
 // for simplicity of use.
 // There is no Tsys measurement for the cross polarization
@@ -316,7 +326,11 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
      if (pos(asap::PolAxis)<2) {
        outIt.vector() = tsys(i++);
      } else {
-       outIt.vector() = sqrt(tsys[0]*tsys[1]);
+       if (hasXpol) {
+          outIt.vector() = sqrt(tsys[0]*tsys[1]);
+       } else {
+          outIt.vector() = tsys(i++);
+       }
      }
 //
      outIt.next();
@@ -384,7 +398,7 @@ Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF)
 Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) 
 //
 // Input  [nBeam,nIF,nPol,nChan]
-// Output [nPol]   (drop channel dependency and select first value)
+// Output [nPol]   (drop channel dependency and select first value only)
 // 
 {
 // Get reference to slice and check dim
