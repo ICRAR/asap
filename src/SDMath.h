@@ -53,6 +53,9 @@ class SDMath {
 // Assignment  (copy semantics)
    SDMath &operator=(const SDMath& other);
 
+// Destructor
+   ~SDMath();
+
 // Quotient
    casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
