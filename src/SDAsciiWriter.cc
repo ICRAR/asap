@@ -68,7 +68,7 @@ SDAsciiWriter::~SDAsciiWriter()
 {;}
 
 
-Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
+Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Bool toStokes)
 {
 
 // Get global Header from Table
@@ -111,7 +111,7 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
 
 // Get data
 
-      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow));
+      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,False,toStokes));
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
 
@@ -179,24 +179,6 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
    return True;
 }
 
-
-Int SDAsciiWriter::convertStokes(Int val)
-{
-   Stokes::StokesTypes stokes = Stokes::RR;
-   if (val==0) {
-      stokes = Stokes::RR;
-   } else if (val==1) {
-      stokes = Stokes::LL;
-   } else if (val==2) {
-      stokes = Stokes::RL;
-   } else if (val==3) {
-      stokes = Stokes::LR;
-   } else {
-      stokes = Stokes::Undefined;
-   }
-//
-   return Int(stokes);
-}
 
 
 String SDAsciiWriter::formatDirection(const Vector<Double>& lonLat)

@@ -48,10 +48,10 @@ public:
 
 // Write out lots of FITS images, one per row, beam, IF and polarization
   casa::Bool write(const SDMemTable& table, const casa::String& rootName,
-                   casa::Bool verbose=casa::True);
+                   casa::Bool toStokes, casa::Bool verbose=casa::True);
 
 private:
-   casa::Int convertStokes(casa::Int val);
+   casa::Int convertStokes(casa::Int val, casa::Bool toStokes, casa::Bool linear) const;
 };
 
 }// namespace

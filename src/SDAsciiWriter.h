@@ -49,7 +49,7 @@ public:
   ~SDAsciiWriter();
 
 // Write out ascii table
-  casa::Bool write(const SDMemTable& table, const casa::String& name);
+  casa::Bool write(const SDMemTable& table, const casa::String& name, casa::Bool toStokes);
 
 private:
    casa::Int convertStokes(casa::Int val);

@@ -51,6 +51,7 @@
 #include <lattices/Lattices/ArrayLattice.h>
 
 #include <measures/Measures/MEpoch.h>
+#include <measures/Measures/Stokes.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
@@ -59,6 +60,7 @@
 #include "SDDefs.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
+#include "SDPol.h"
 
 using namespace casa;
 using namespace asap;
@@ -72,7 +74,8 @@ SDFITSImageWriter::~SDFITSImageWriter()
 
 
 Bool SDFITSImageWriter::write(const SDMemTable& sdTable, 
-                              const String& dirName, Bool verbose)
+                              const String& dirName, Bool toStokes,
+                              Bool verbose)
 {
 
 // Get global Header from Table
@@ -130,6 +133,10 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    Vector<Double> incLonLat(2,0.0);
    Vector<Double> refPixLonLat(2,0.0);
 
+// Do we have linear or circular ?  No way to know yet...
+
+   Bool linear = True;
+
 // Loop over rows
 
    uInt maxMem = 128;
@@ -146,9 +153,9 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    const uInt nRows = sdTable.nRow();
    for (uInt iRow=0; iRow<nRows; iRow++) {
 
-// Get data
+// Get data converted to Stokes
 
-      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow));
+      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,False,toStokes));
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
       const IPosition& shapeIn = dataIn.shape();
@@ -195,9 +202,11 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
                                incLonLat[0], incLonLat[1], xForm, 
                                refPixLonLat[0], refPixLonLat[1]);
 
-// Form Stokes Coordinate (no true Stokes info yet);
+// Form Stokes Coordinate (Stokes info still sketchy);
 
-         whichStokes(0) = convertStokes(pos(stokesAxis));
+         Stokes::StokesTypes stokes = SDPolUtil::convertStokes(pos(stokesAxis), toStokes, linear);
+         String stokesName = Stokes::name(stokes);
+         whichStokes(0) = Int(stokes);
          StokesCoordinate stC(whichStokes);
 
 // Create CoordinateSystem
@@ -225,7 +234,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
          ostringstream oss;
          oss << "row" << iRow << "_beam" << pos(0) << "_if" 
-	     << pos(1) << "_pol" << pos(2) << "_" << srcCol(iRow) << ".fits";
+	     << pos(1) << "_" << stokesName  << "_" << srcCol(iRow) << ".fits";
          String tS(oss);
          String fileName = dirName2 + String("/") + tS;
          if (verbose) cout << "Writing row " << iRow 
@@ -255,20 +264,3 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 }
 
 
-Int SDFITSImageWriter::convertStokes(Int val)
-{
-   Stokes::StokesTypes stokes = Stokes::RR;
-   if (val==0) {
-      stokes = Stokes::XX;
-   } else if (val==1) {
-      stokes = Stokes::YY;
-   } else if (val==2) {
-      stokes = Stokes::XY;
-   } else if (val==3) {
-      stokes = Stokes::YX;
-   } else {
-      stokes = Stokes::Undefined;
-   }
-//
-   return Int(stokes);
-}
