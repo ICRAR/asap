@@ -8,8 +8,8 @@ def average_time(*args, **kwargs):
     Parameters:
         one scan or comma separated  scans
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
-        scanav:   False (default) averages all scans together,
-                  True averages each scan separately
+        scanav:   True (default) averages each scan separately
+                  False averages all scans together,
         weight:   Weighting scheme. 'none' (default), 'var' (variance
                   weighted), 'tsys'
     Example:
@@ -21,18 +21,15 @@ def average_time(*args, **kwargs):
         scanav = average_time(scan)
 
     """
-    scanAv = False
+    scanAv = True
     if kwargs.has_key('scanav'):
        scanAv = kwargs.get('scanav')
-
     weight = 'none'
     if kwargs.has_key('weight'):
        weight = kwargs.get('weight')
-
     mask = ()
     if kwargs.has_key('mask'):
         mask = kwargs.get('mask')
-
     lst = tuple(args)
     from asap._asap import average as _av
     for s in lst:
