@@ -365,10 +365,11 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const
 
 std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, 
 						 Float paOffset) const 
-  // Gets
-  //  doPol=False  : I,Q,U,V
-  //  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
-  //
+//
+// Gets one STokes parameter depending on cursor polSel location
+//  doPol=False  : I,Q,U,V
+//  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
+//
 {
   AlwaysAssert(asap::nAxes==4,AipsError);
   if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
@@ -449,6 +450,33 @@ std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow,
   outV.tovector(stlout);
 
   return stlout;
+}
+
+Array<Float> SDMemTable::getStokesSpectrum(Int whichRow, Int iBeam, Int iIF) const
+{
+
+// Get data
+
+  Array<Float> arr;
+  stokesCol_.get(whichRow, arr);
+
+// Set current cursor location and overwrite polarization axis
+
+  const IPosition& shape = arr.shape();
+  IPosition start(shape.nelements(),0);  
+  IPosition end(shape-1);
+  if (iBeam!=-1) {
+     start(asap::BeamAxis) = iBeam;
+     end(asap::BeamAxis) = iBeam;
+  }
+  if (iIF!=-1) {
+     start(asap::IFAxis) = iIF;
+     end(asap::IFAxis) = iIF;
+  }
+
+// Get slice
+
+  return arr(start,end);
 }
 
 
@@ -1171,7 +1199,6 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc)
   paraCol_.put(rno, sdc.parangle);
   histCol_.put(rno, sdc.getHistory());
   fitCol_.put(rno, sdc.getFitMap());
-
   return true;
 }
 

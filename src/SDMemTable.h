@@ -102,9 +102,9 @@ public:
   // 'getLinear', getStokesSpectrum is 'getStokes' and
   // getCircularSpectrum is 'getCircular'
 
-
-  // Get Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V
-  // (doPol=True) If the latter, you can add a PA offset (degrees)
+  // Get specific Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
+  // (determined by the polSel cursor location 0->3)
+  // If the latter, you can add a PA offset (degrees)
   virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
@@ -113,12 +113,24 @@ public:
   virtual std::vector<float> getCircularSpectrum(casa::Int whichRow=0, 
                                                  casa::Bool rr=casa::True) const;
 
+  // Get all Stokes at the specified Beam/IF cursor location (ignoring
+  // the internal cursor).  -1 means all on that axis.  Really, this function
+  // should not be here, and the SDContainer should hold the stokes spectrum
+  // as well.  However, because the Stokes column is virtual, and its shape
+  // is not the same as nPol(), I have put it here for direct access as needed
+  virtual casa::Array<casa::Float> getStokesSpectrum(casa::Int whichRow=0,
+                                                     casa::Int iBeam=-1, 
+                                                     casa::Int iIF=-1) const;
+
+  // Get Tsys at cursor location
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
+
   // get all as aips++ Vectors
   virtual void getSpectrum(casa::Vector<casa::Float>& spectrum, 
 			   casa::Int whichRow=0) const;
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
 
+  // Get rest frequencies
   std::vector<double> getRestFreqs() const;
   
   // get info for current row  
