@@ -47,6 +47,10 @@ class ASAPlot:
 	self.figmgr = FigureManagerTkAgg(self.canvas, 1, self.window)
 	self.window.wm_title('ASAPlot graphics window')
 
+	self.events = {'button_press':None,
+		       'button_release':None,
+		       'motion_notify':None}
+
 	self.set_title(title)
 	self.subplots = []
 	if rows > 0:
@@ -294,6 +298,64 @@ class ASAPlot:
 	self.window.destroy()
 
 
+    def register(self, type=None, func=None):
+	"""
+	Register, reregister, or deregister events of type 'button_press',
+	'button_release', or 'motion_notify'.
+	
+	The specified callback function should have the following signature:
+
+	    def func(event)
+
+	where event is an MplEvent instance containing the following data:
+
+	    name		# Event name.
+	    canvas		# FigureCanvas instance generating the event.
+	    x      = None	# x position - pixels from left of canvas.
+	    y      = None	# y position - pixels from bottom of canvas.
+	    button = None	# Button pressed: None, 1, 2, 3.
+	    key    = None	# Key pressed: None, chr(range(255)), shift,
+				  win, or control
+	    inaxes = None	# Axes instance if cursor within axes.
+	    xdata  = None	# x world coordinate.
+	    ydata  = None	# y world coordinate.
+
+	For example:
+
+	    def mouse_move(event):
+		print event.xdata, event.ydata
+
+	    a = asaplot()
+	    a.register('motion_notify', mouse_move)
+
+	If func is None, the event is deregistered.
+
+	Note that in TkAgg keyboard button presses don't generate an event.
+	"""
+
+	if not self.events.has_key(type): return
+
+	if func is None:
+	    if self.events[type] is not None:
+		# It's not clear that this does anything.
+		self.canvas.mpl_disconnect(self.events[type])
+		self.events[type] = None
+
+		# It seems to be necessary to return events to the toolbar.
+		if type == 'motion_notify':
+		    self.canvas.mpl_connect(type + '_event',
+			self.figmgr.toolbar.mouse_move)
+		elif type == 'button_press':
+		    self.canvas.mpl_connect(type + '_event',
+			self.figmgr.toolbar.press)
+		elif type == 'button_release':
+		    self.canvas.mpl_connect(type + '_event',
+			self.figmgr.toolbar.release)
+
+	else:
+	    self.events[type] = self.canvas.mpl_connect(type + '_event', func)
+
+
     def release(self):
 	"""
 	Release buffered graphics.
@@ -497,10 +559,10 @@ class ASAPlot:
 	l = len(self.subplots)
 	if l:
 	    if i is not None:
-	        self.i = i
+		self.i = i
 
 	    if inc is not None:
-	        self.i += inc
+		self.i += inc
 
 	    self.i %= l
 	    self.axes  = self.subplots[self.i]['axes']
