@@ -111,7 +111,7 @@ class SDMath {
 
 // Frequency Alignment
    SDMemTable* frequencyAlignment (const SDMemTable& in, const casa::String& refTime,
-                                   const casa::String& method) const;
+                                   const casa::String& method, casa::Bool perFreqID) const;
 
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
@@ -190,7 +190,7 @@ class SDMath {
    SDMemTable* frequencyAlign (const SDMemTable& in,
                               casa::MFrequency::Types system,
                               const casa::String& timeRef,
-                              const casa::String& method) const;
+                              const casa::String& method, casa::Bool perIF) const;
 
 // Generate frequency aligners
    void generateFrequencyAligners (casa::PtrBlock<casa::FrequencyAligner<casa::Float>* >& a,
@@ -198,7 +198,7 @@ class SDMath {
                                    const SDMemTable& in, casa::uInt nChan,
                                    casa::MFrequency::Types system,
                                    const casa::MPosition& refPos,
-                                   const casa::MEpoch& refEpoch) const;
+                                   const casa::MEpoch& refEpoch, casa::Bool perFreqID) const;
 
 // Generate data description table (combines source and freqID)
    void generateDataDescTable (casa::Matrix<casa::uInt>& ddIdx,
@@ -207,7 +207,8 @@ class SDMath {
                                const SDMemTable& in,
                                const casa::Table& tabIn,
                                const casa::ROScalarColumn<casa::String>& srcCol,
-                               const casa::ROArrayColumn<casa::uInt>& fqIDCol) const;
+                               const casa::ROArrayColumn<casa::uInt>& fqIDCol,
+                               casa::Bool perFreqID) const;
 
 // Function to get the current cursor location
    void getCursorLocation (casa::IPosition& start, casa::IPosition& end,

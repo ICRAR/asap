@@ -110,9 +110,9 @@ SDMath::~SDMath()
 
 
 
-SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime, const String& method) const
+SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime, 
+                                         const String& method, Bool perFreqID) const
 {
-
 // Get frame info from Table
 
    std::vector<std::string> info = in.getCoordInfo();
@@ -130,7 +130,7 @@ SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refT
 
 // Do it
 
-   return frequencyAlign (in, freqSystem, refTime, method);
+   return frequencyAlign (in, freqSystem, refTime, method, perFreqID);
 }
 
 
@@ -1360,7 +1360,9 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 
 SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
                                    MFrequency::Types freqSystem,
-                                   const String& refTime, const String& methodStr) const
+                                   const String& refTime, 
+                                   const String& methodStr,
+                                   Bool perFreqID) const
 {
 // Get Header
 
@@ -1380,11 +1382,11 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
    Vector<Double> times = mjdCol.getColumn();
 
-// Generate DataDesc table
+// Generate DataDesc table 
  
    Matrix<uInt> ddIdx;
    SDDataDesc dDesc;
-   generateDataDescTable (ddIdx, dDesc, nIF, in, tabIn, srcCol, fqIDCol);
+   generateDataDescTable (ddIdx, dDesc, nIF, in, tabIn, srcCol, fqIDCol, perFreqID);
 
 // Get reference Epoch to time of first row or given String
 
@@ -1403,13 +1405,16 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
    MPosition refPos = in.getAntennaPosition();
 
-// Create FrequencyAligner Block. One VA for each possible
-// source/freqID combination
+// Create FrequencyAligner Block. One FA for each possible
+// source/freqID (perFreqID=True) or source/IF (perFreqID=False) combination
 
    PtrBlock<FrequencyAligner<Float>* > a(dDesc.length());
-   generateFrequencyAligners (a, dDesc, in, nChan, freqSystem, refPos, refEpoch);
+   generateFrequencyAligners (a, dDesc, in, nChan, freqSystem, refPos, 
+                              refEpoch, perFreqID);
 
-// Generate and fill output Frequency Tabke
+// Generate and fill output Frequency Table.  WHen perFreqID=True, there is one output FreqID
+// for each entry in the SDDataDesc table.  However, in perFreqID=False mode, there may be
+// some degeneracy, so we need a little translation map
 
    SDFrequencyTable freqTabOut = in.getSDFreqTable();
    freqTabOut.setLength(0);
@@ -1417,6 +1422,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    units = String("Hz");
    Bool linear=True;
 //
+   Vector<uInt> ddFQTrans(dDesc.length(),0);
    for (uInt i=0; i<dDesc.length(); i++) {
 
 // Get Aligned SC in Hz
@@ -1426,9 +1432,10 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
 // Add FreqID
 
-      freqTabOut.addFrequency(sC.referencePixel()[0],
-                              sC.referenceValue()[0],
-                              sC.increment()[0]);
+      uInt idx = freqTabOut.addFrequency(sC.referencePixel()[0],
+                                         sC.referenceValue()[0],
+                                         sC.increment()[0]);
+      ddFQTrans(i) = idx;                                       // output FreqID = ddFQTrans(ddIdx)
    }
 
 // Interpolation method
@@ -1438,6 +1445,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
 // New output Table
 
+   cerr << "Create output table" << endl;
    SDMemTable* pTabOut = new SDMemTable(in,True);
    pTabOut->putSDFreqTable(freqTabOut);
 
@@ -1452,6 +1460,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    Vector<Bool> maskOut;
    Vector<uInt> freqID(nIF);
    uInt ifIdx, faIdx;
+   Vector<Double> xIn;
 //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
       if (iRow%10==0) {
@@ -1470,8 +1479,6 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
      Array<Float> values = mArrIn.getArray();
      Array<Bool> mask = mArrIn.getMask(); 
 
-// cerr << "values in = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
-
 // For each row, the Frequency abcissa will be the same regardless
 // of polarization.  For all other axes (IF and BEAM) the abcissa
 // will change.  So we iterate through the data by pol-chan planes
@@ -1487,6 +1494,20 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
         const IPosition& pos = itValuesPlane.pos();
         ifIdx = pos(asap::IFAxis);
         faIdx = ddIdx(iRow,ifIdx);
+
+// Generate abcissa for perIF.  Could cache this in a Matrix
+// on a per scan basis.   Pretty expensive doing it for every row.
+
+        if (!perFreqID) {
+           xIn.resize(nChan);
+           uInt fqID = dDesc.secID(ddIdx(iRow,ifIdx));
+           SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
+           Double w;
+           for (uInt i=0; i<nChan; i++) {
+              sC.toWorld(w,Double(i));
+              xIn[i] = w;
+           }
+        }
 //
         VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
         VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
@@ -1496,9 +1517,15 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
         first = True;
         useCachedAbcissa=False;
         while (!itValuesVec.pastEnd()) {     
-           ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
-                                 itMaskVec.vector(), epoch, useCachedAbcissa,
-                                 interp, extrapolate); 
+           if (perFreqID) {
+              ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
+                                    itMaskVec.vector(), epoch, useCachedAbcissa,
+                                    interp, extrapolate); 
+           } else {
+              ok = a[faIdx]->align (yOut, maskOut, xIn, itValuesVec.vector(),
+                                    itMaskVec.vector(), epoch, useCachedAbcissa,
+                                    interp, extrapolate); 
+           }
 //
            itValuesVec.vector() = yOut;
            itMaskVec.vector() = maskOut;
@@ -1516,15 +1543,16 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
        itMaskPlane.next();
      }
 
-// cerr << "values out = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
-
 // Create SDContainer and put back
 
     SDContainer sc = in.getSDContainer(iRow);
     putDataInSDC(sc, values, mask);
+
+// Set output FreqIDs
+
     for (uInt i=0; i<nIF; i++) {
-       uInt idx = ddIdx(iRow,i);
-       freqID(i) = dDesc.freqID(idx);
+       uInt idx = ddIdx(iRow,i);               // Index into SDDataDesc table
+       freqID(i) = ddFQTrans(idx);             // FreqID in output FQ table
     }
     sc.putFreqMap(freqID);
 //
@@ -1849,7 +1877,8 @@ void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
                                     const SDMemTable& in,
                                     const Table& tabIn,
                                     const ROScalarColumn<String>& srcCol,
-                                    const ROArrayColumn<uInt>& fqIDCol) const
+                                    const ROArrayColumn<uInt>& fqIDCol,
+                                    Bool perFreqID) const
 {
    const uInt nRows = tabIn.nrow();
    ddIdx.resize(nRows,nIF);
@@ -1861,12 +1890,27 @@ void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
       fqIDCol.get(iRow, freqIDs);
       const MDirection& dir = in.getDirection(iRow);
 //
-      for (uInt iIF=0; iIF<nIF; iIF++) {
-         uInt idx = dDesc.addEntry(srcName, freqIDs[iIF], dir);
-         ddIdx(iRow,iIF) = idx;
+      if (perFreqID) {
+
+// One entry per source/freqID pair
+
+         for (uInt iIF=0; iIF<nIF; iIF++) {
+            ddIdx(iRow,iIF) = dDesc.addEntry(srcName, freqIDs[iIF], dir, 0);
+         }
+      } else {
+
+// One entry per source/IF pair.  Hang onto the FreqID as well
+
+         for (uInt iIF=0; iIF<nIF; iIF++) {
+            ddIdx(iRow,iIF) = dDesc.addEntry(srcName, iIF, dir, freqIDs[iIF]);
+         }
       }
    }
 }
+
+
+
+
 
 MEpoch SDMath::epochFromString (const String& str, MEpoch::Types timeRef) const
 {
@@ -1894,13 +1938,27 @@ void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a,
                                         const SDMemTable& in, uInt nChan,
                                         MFrequency::Types system,
                                         const MPosition& refPos,
-                                        const MEpoch& refEpoch) const
+                                        const MEpoch& refEpoch,
+                                        Bool perFreqID) const
 {
    for (uInt i=0; i<dDesc.length(); i++) {
-      uInt freqID = dDesc.freqID(i);
-      const MDirection& refDir = dDesc.direction(i);
+      uInt ID = dDesc.ID(i);
+      uInt secID = dDesc.secID(i);
+      const MDirection& refDir = dDesc.secDir(i);
 //
-      SpectralCoordinate sC = in.getSpectralCoordinate(freqID);
-      a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
+      if (perFreqID) {
+
+// One aligner per source/FreqID pair.  
+
+         SpectralCoordinate sC = in.getSpectralCoordinate(ID);
+         a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
+      } else {
+
+// One aligner per source/IF pair.  But we still need the FreqID to
+// get the right SC.  Hence the messing about with the secondary ID
+
+         SpectralCoordinate sC = in.getSpectralCoordinate(secID);
+         a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
+      }
    }
 }
