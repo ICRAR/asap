@@ -13,6 +13,7 @@ then
     SRCDIR='/DATA/KAPUTAR_2/vor010/ASAP/asap'
     BINDIR='/DATA/KAPUTAR_2/vor010/ASAP/executables'
 else
+    #ASAPDIR='/u/mar637/brage/apps/lib/python2.3/site-packages/asap'
     ASAPDIR='/usr/local/lib/python2.3/site-packages/asap'
     SRCDIR='/u/mar637/asap'
     BINDIR='/usr/local/bin'
@@ -43,7 +44,7 @@ pydir='python'
 libdir='lib'
 bindir='bin'
 # the python files to install
-srcfiles="__init__.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapplotter.py asaplinefind.py"
+srcfiles="__init__.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapfit.py asapplotter.py asaplinefind.py"
 
 # the libraries to install
 libfiles='_asap.so'
