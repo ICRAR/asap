@@ -229,7 +229,7 @@ Array<Float> SDPolUtil::polarizedIntensity (const Array<Float>& Q,
 Array<Float> SDPolUtil::positionAngle (const Array<Float>& Q,
                                        const Array<Float>& U)
 {
-   return Float(180.0/C::pi/2.0)*atan2(Q,U);
+   return Float(180.0/C::pi/2.0)*atan2(Q,U);       // Degrees
 }
 
 

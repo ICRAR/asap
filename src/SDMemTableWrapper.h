@@ -80,8 +80,8 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
-  std::vector<float> getStokesSpectrum(int whichRow=0, bool doPol=false) const {
-    return table_->getStokesSpectrum(whichRow, doPol);
+  std::vector<float> getStokesSpectrum(int whichRow=0, bool doPol=false, float paOff=0.0) const {
+    return table_->getStokesSpectrum(whichRow, doPol, paOff);
   }
 
   std::vector<double> getAbcissa(int whichRow=0) const {

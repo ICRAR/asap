@@ -93,8 +93,11 @@ public:
   // cursor - all as stl vectors
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
   virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
+  // Get STokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
+  // If the latter, you can add a PA offset (degrees)
   virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
-                                               casa::Bool doPol=casa::False) const;
+                                               casa::Bool doPol=casa::False,
+                                               casa::Float paOffset=0.0) const;
 
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
   // get all as aips++ Vectors

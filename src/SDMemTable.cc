@@ -345,7 +345,7 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const
   return getFloatSpectrum (arr);
 }
 
-std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const 
+std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, Float paOffset) const 
 //
 // Gets
 //  doPol=False  : I,Q,U,V
@@ -375,7 +375,7 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const
      if (polSel_==1) {                                        // P
         out = SDPolUtil::polarizedIntensity(Q,U);
      } else if (polSel_==2) {                                 // P.A.
-        out = SDPolUtil::positionAngle(Q,U);
+        out = SDPolUtil::positionAngle(Q,U) + paOffset;
      }
 //
      IPosition vecShape(1,shape(asap::ChanAxis));
