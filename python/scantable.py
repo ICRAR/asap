@@ -143,7 +143,7 @@ class scantable(sdtable):
                      'var', 'stddev', 'avdev', 'rms', 'median'
             mask:    an optional mask specifying where the statistic
                      should be determined.
-            all:     optional flag to show all or a selected
+            all:     optional flag to show all (default) or a selected
                      spectrum of Beam/IF/Pol
 
         Example:
@@ -220,18 +220,18 @@ class scantable(sdtable):
                         self.setpol(k)
                         ts = self._gettsys()
                         tmp.append(ts)
-                        out += 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,ts)
-            if self._vb:
-                print out
+#                        out += 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,ts)
+#            if self._vb:
+#                print out
             return tmp
         else:
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
             ts = self._gettsys()
-            out = 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,ts)
-            if self._vb:
-                print out
+#            out = 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,ts)
+#            if self._vb:
+#                print out
             return ts
         
     def get_time(self):
