@@ -105,7 +105,8 @@ class SDMath {
                               const casa::String& method, casa::Bool doAll) const;
 
 // Frequency Alignment
-   SDMemTable* frequencyAlignment (const SDMemTable& in, const casa::String& refTime) const;
+   SDMemTable* frequencyAlignment (const SDMemTable& in, const casa::String& refTime,
+                                   const casa::String& method) const;
 
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
@@ -164,7 +165,9 @@ class SDMath {
    void convertWeightString (WeightType& wt, const casa::String& weightStr) const;
 
 // Convert interpolation type string
-   void convertInterpString(casa::Int& type, const casa::String& interp) const;
+//   void convertInterpString(casa::Int& type, const casa::String& interp) const;
+   void convertInterpString(casa::InterpolateArray1D<casa::Double,casa::Float>::InterpolationMethod& method,  
+                             const casa::String& interp) const;
 
 // Correct data from an ascii Table
    void correctFromAsciiTable(SDMemTable* pTabOut, const SDMemTable& in, 
@@ -205,7 +208,8 @@ class SDMath {
 // Align in Frequency
    SDMemTable* frequencyAlign (const SDMemTable& in,
                               casa::MFrequency::Types system,
-                              const casa::String& timeRef) const;
+                              const casa::String& timeRef,
+                              const casa::String& method) const;
 
 // Convert time String to Epoch
    casa::MEpoch epochFromString (const casa::String& str, casa::MEpoch::Types timeRef) const;

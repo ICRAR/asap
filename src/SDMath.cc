@@ -107,7 +107,7 @@ SDMath::~SDMath()
 
 
 
-SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime) const
+SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime, const String& method) const
 {
 
 // Get frame info from Table
@@ -127,7 +127,7 @@ SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refT
 
 // Do it
 
-   return frequencyAlign (in, freqSystem, refTime);
+   return frequencyAlign (in, freqSystem, refTime, method);
 }
 
 
@@ -634,11 +634,11 @@ SDMemTable* SDMath::resample (const SDMemTable& in, const String& methodStr,
       }
    } 
 
-
 // Interpolation method
 
-  Int interpMethod = 0;
-  convertInterpString(interpMethod, methodStr);
+  InterpolateArray1D<Double,Float>::InterpolationMethod interp;
+  convertInterpString(interp, methodStr);
+  Int interpMethod(interp);
 
 // Make output table
 
@@ -1252,7 +1252,7 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 
 SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
                                    MFrequency::Types freqSystem,
-                                   const String& refTime) const
+                                   const String& refTime, const String& methodStr) const
 {
 // Get Header
 
@@ -1311,6 +1311,11 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    generateFrequencyAligners (a, in, nChan, nFreqIDs, nSrcTab, firstRow,
                               freqSystem, refPos, refEpoch);
 
+// Interpolation method
+
+   InterpolateArray1D<Double,Float>::InterpolationMethod interp;
+   convertInterpString(interp, methodStr);
+
 // New output Table
 
    SDMemTable* pTabOut = new SDMemTable(in,True);
@@ -1318,7 +1323,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 // Loop over rows in Table
 
    const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
-   FrequencyAligner<Float>::Method method = FrequencyAligner<Float>::LINEAR;
+
    Bool extrapolate=False;
    Bool useCachedAbcissa = False;
    Bool first = True;
@@ -1375,8 +1380,8 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
         useCachedAbcissa=False;
         while (!itValuesVec.pastEnd()) {     
            ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
-                                  itMaskVec.vector(), epoch, useCachedAbcissa,
-                                  method, extrapolate); 
+                                 itMaskVec.vector(), epoch, useCachedAbcissa,
+                                 interp, extrapolate); 
            itValuesVec.vector() = yOut;
            itMaskVec.vector() = maskOut;
 //
@@ -1630,18 +1635,20 @@ void SDMath::convertWeightString(WeightType& wtType, const String& weightStr) co
   }
 }
 
-void SDMath::convertInterpString(Int& type, const String& interp) const
+
+void SDMath::convertInterpString(casa::InterpolateArray1D<Double,Float>::InterpolationMethod& type,  
+                                 const casa::String& interp) const
 {
   String tStr(interp);
   tStr.upcase();
   if (tStr.contains(String("NEAR"))) {
-     type = InterpolateArray1D<Float,Float>::nearestNeighbour;
+     type = InterpolateArray1D<Double,Float>::nearestNeighbour;
   } else if (tStr.contains(String("LIN"))) {
-     type = InterpolateArray1D<Float,Float>::linear;
+     type = InterpolateArray1D<Double,Float>::linear;
   } else if (tStr.contains(String("CUB"))) {
-     type = InterpolateArray1D<Float,Float>::cubic;
+     type = InterpolateArray1D<Double,Float>::cubic;
   } else if (tStr.contains(String("SPL"))) {
-     type = InterpolateArray1D<Float,Float>::spline;
+     type = InterpolateArray1D<Double,Float>::spline;
   } else {
     throw(AipsError("Unrecognized interpolation type"));
   }
@@ -1697,13 +1704,14 @@ void SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in,
 
 // Interpolate (and extrapolate) with desired method
 
-   Int method = 0;
+   InterpolateArray1D<Double,Float>::InterpolationMethod method;
    convertInterpString(method, methodStr);
+   Int intMethod(method);
 //
    Vector<Float> yOut;
    Vector<Bool> maskOut;
    InterpolateArray1D<Float,Float>::interpolate(yOut, maskOut, xOut, 
-                                                xIn, yIn, maskIn, method,
+                                                xIn, yIn, maskIn, intMethod,
                                                 True, True);
 // Apply 
 
