@@ -64,9 +64,8 @@ SDMemTable::SDMemTable(const std::string& name) :
   IFSel_(0),
   beamSel_(0),
   polSel_(0) {
-  name_ = String(name);
-  Table tab(name_);
-  table_ = tab.copyToMemoryTable(name_);
+  Table tab("dummy");
+  table_ = tab.copyToMemoryTable("dummy");
 }
 
 SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
@@ -74,7 +73,6 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
   this->beamSel_= other.beamSel_;
   this->polSel_= other.polSel_;
   this->chanMask_ = other.chanMask_;
-  this->name_ = String("dummy");
   this->table_ = other.table_.copyToMemoryTable(String("dummy"));
   // clear all rows()
   if (clear) {
@@ -90,12 +88,11 @@ SDMemTable::SDMemTable(const Table& tab, Int scanID) :
   IFSel_(0),
   beamSel_(0),
   polSel_(0) {
-  name_ = String("SDMemTable");
   String exprs = String("select * from $1 where SCANID == ")
     +String::toString(scanID);
   cerr << exprs << endl;
   Table t = tableCommand(exprs,tab);
-  table_ = t.copyToMemoryTable(name_);
+  table_ = t.copyToMemoryTable("dummy");
 }
 
 SDMemTable::~SDMemTable(){
@@ -118,12 +115,8 @@ void SDMemTable::setup() {
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));  
   // Now create a new table from the description.
 
-  SetupNewTable aNewTab(name_, td, Table::New);
+  SetupNewTable aNewTab("dummy", td, Table::New);
   table_ = Table(aNewTab, Table::Memory, 0);  
-}
-
-std::string SDMemTable::name() const {
-  return name_;
 }
 
 std::string SDMemTable::getSourceName(Int whichRow) const {

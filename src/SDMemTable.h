@@ -102,9 +102,6 @@ public:
   // print a summary to stdout
   virtual void summary() const;
   
-  // the (irrelevant) name 
-  std::string name() const;
-
   // write to disk as aips++ table
   void makePersistent(const std::string& filename);
 
@@ -121,13 +118,16 @@ public:
   Int nPol() const;
   Int nChan() const;
 
+  // return the number of rows (integrations) in the table
+  Int nRows() const { return table_.nrow(); }
+
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
   MaskedArray<Float> rowAsMaskedArray(uInt whichRow,
 				      Bool useSelection = False);
 
 private:
-  // set up tabel structure
+  // set up table structure
   void setup();
   // the current cursor into the array
   Int IFSel_,beamSel_,polSel_;
