@@ -40,7 +40,7 @@ using namespace atnf_sd;
 
 void SDHeader::print() const {
   MVTime mvt(this->utc);
-
+  mvt.setFormat(MVTime::YMD);
   cout << "Observer: " << this->observer << endl 
        << "Project: " << this->project << endl
        << "Obstype: " << this->obstype << endl
@@ -51,7 +51,7 @@ void SDHeader::print() const {
        << "Ref. frequency: " << this->reffreq << endl
        << "Bandwidth: "  << this->bandwidth << endl
        << "Time (utc): " 
-       << mvt.string()
+       << mvt
        << endl;
   //setprecision(10) << this->utc << endl;
 }
@@ -84,6 +84,17 @@ SDContainer::SDContainer(IPosition shp)
 }
 
 SDContainer::~SDContainer() {
+}
+
+Bool SDContainer::resize(IPosition shp) {
+  nBeam_ = shp(0);
+  nIF_ = shp(1);
+  nPol_ = shp(2);
+  nChan_ = shp(3);
+  spectrum_.resize(shp);
+  flags_.resize(shp);
+  tsys_.resize(shp);
+  freqidx_.resize(shp(1));
 }
 
 Bool SDContainer::putSpectrum(const Array<Float>& spec) {

@@ -100,6 +100,8 @@ public:
 
   virtual ~SDContainer();
 
+  Bool resize(IPosition shp);
+
   Bool setSpectrum(const Matrix<Float>& spec,
 		   uInt whichBeam, uInt whichIF);
   Bool putSpectrum(const Array<Float>& spec);
