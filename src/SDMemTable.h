@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 // AIPS++
- #include <casa/aips.h>
+#include <casa/aips.h>
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/BasicSL/String.h>
 #include <coordinates/Coordinates/SpectralCoordinate.h>
@@ -48,11 +48,11 @@
 
 
 namespace asap {
-
+  
 class SDContainer;
 class SDHeader;
 class SDFrequencyTable;
-
+class SDFitTable;
 
 
 
@@ -94,18 +94,18 @@ public:
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
   virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
 
-
   // When we can handle input correlations being either circular or
-  // linear, we should probably have functions; getLinear, getCircular, getStokes
-  // since one can inter-convert between all three regardless of the input
-  // provided there are 4 polarizations. For now, we are assuming, if
-  // there are 4 polarizations, that we have linears.  getSpectrum 
-  // is then 'getLinear', getStokesSpectrum is 'getStokes' and getCircularSpectrum
-  // is 'getCircular'  
+  // linear, we should probably have functions; getLinear,
+  // getCircular, getStokes since one can inter-convert between all
+  // three regardless of the input provided there are 4
+  // polarizations. For now, we are assuming, if there are 4
+  // polarizations, that we have linears.  getSpectrum is then
+  // 'getLinear', getStokesSpectrum is 'getStokes' and
+  // getCircularSpectrum is 'getCircular'
 
 
-  // Get Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
-  // If the latter, you can add a PA offset (degrees)
+  // Get Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V
+  // (doPol=True) If the latter, you can add a PA offset (degrees)
   virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
@@ -129,28 +129,28 @@ public:
   casa::MEpoch getEpoch(casa::Int whichRow=0) const; 
   casa::MDirection getDirection(casa::Int whichRow=0,
 				casa::Bool refBeam=casa::False) const; 
-//
+
   std::string getSourceName(casa::Int whichRow=0) const;
   double getInterval(casa::Int whichRow=0) const;
 
   virtual void setSpectrum(std::vector<float> spectrum, int whichRow=0);
   virtual void setCoordInfo(std::vector<string> theinfo);
 
-// Set RestFreqID.  source="" and IF=-1 means select all
-  virtual casa::Bool setRestFreqs (const casa::Vector<casa::Double>& restFreqs, 
-                                   const casa::String& unit,
-                                   const std::vector<std::string>& lines,
-                                   const casa::String& source,
-                                   casa::Int whichIF=-1);
+  // Set RestFreqID.  source="" and IF=-1 means select all
+  virtual casa::Bool setRestFreqs(const casa::Vector<casa::Double>& restFreqs, 
+				  const casa::String& unit,
+				  const std::vector<std::string>& lines,
+				  const casa::String& source,
+				  casa::Int whichIF=-1);
 
-// List lines
-   void spectralLines() const;
+  // List lines
+  void spectralLines() const;
 
-// Get/Set flux unit
+  // Get/Set flux unit
   std::string getFluxUnit() const;
   void setFluxUnit (const std::string& unit);
-
-// Set Instrument
+  
+  // Set Instrument
   void setInstrument (const std::string& instrument);
 
   // set the current value
@@ -242,22 +242,28 @@ public:
 // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument,
 				      casa::Bool throwIt);
+  
+  bool putSDFitTable(const SDFitTable& sdft);
+  SDFitTable getSDFitTable() const;
 
+  void addFit(casa::uInt whichRow,
+	      const casa::Vector<casa::Double>& p, 
+	      const casa::Vector<casa::Bool>& m,
+	      const casa::Vector<casa::String>& f, 
+	      const casa::Vector<casa::Int>& c);
+  
 private:
   // utility func for nice printout
   casa::String formatSec(casa::Double x) const;
   casa::String formatDirection(const casa::MDirection& md) const;
-  std::vector<float> getFloatSpectrum (const casa::Array<casa::Float>& arr) const;
+  std::vector<float> getFloatSpectrum(const casa::Array<casa::Float>& arr) const;
   void setup();
   void attach();
   void renumber();
 
   // Generate start and end for shape and current cursor selection
-  void setCursorSlice(casa::IPosition& start, casa::IPosition& end, const casa::IPosition& shape) const;
-
-  // Convert Vector to vector
-  std::vector<float> convertVector (const casa::Vector<casa::Float>& in) const;
-
+  void setCursorSlice(casa::IPosition& start, casa::IPosition& end, 
+		      const casa::IPosition& shape) const;
 
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;
@@ -265,7 +271,7 @@ private:
   // the underlying memory table
   casa::Table table_;
 
-// Cached Columns to avoid reconstructing them for each row get/put
+  // Cached Columns to avoid reconstructing them for each row get/put
   casa::ScalarColumn<casa::Double> timeCol_, integrCol_;
   casa::ScalarColumn<casa::Float> azCol_, elCol_, paraCol_;
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_, tcaltCol_;
@@ -275,6 +281,7 @@ private:
   casa::ArrayColumn<casa::uChar> flagsCol_;
   casa::ArrayColumn<casa::uInt> freqidCol_, restfreqidCol_;
   casa::ArrayColumn<casa::String> histCol_;
+  casa::ArrayColumn<casa::Int> fitCol_;
   casa::ROArrayColumn<casa::Float> stokesCol_;
 };
 
