@@ -61,8 +61,9 @@ public:
 
   std::vector<double> getAbscissa(int whichRow, 
 				  const std::string& unit = "GHz",
+				  const std::string& frame = "TOPO",
 				  double restfreq=0.0) const {
-    return table_->getAbscissa(whichRow,unit,restfreq);
+    return table_->getAbscissa(whichRow,unit,frame,restfreq);
   }
 
   float getTsys(int whichRow=0) {return table_->getTsys(whichRow);}

@@ -65,7 +65,8 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan)
     spectrum_(IPosition(4,nBeam,nIF,nPol,nChan)),
     flags_(IPosition(4,nBeam,nIF,nPol,nChan)),
     tsys_(IPosition(4,nBeam,nIF,nPol,nChan)),
-    freqidx_(nIF) {
+    freqidx_(nIF),
+    direction_(IPosition(2,nBeam,2)) {
   uChar x = 0;
   flags_ = ~x;
 }
@@ -78,7 +79,9 @@ SDContainer::SDContainer(IPosition shp)
     spectrum_(shp),
     flags_(shp),
     tsys_(shp),
-    freqidx_(shp(1)){
+    freqidx_(shp(1)) {
+  IPosition ip(2,shp(0),2);
+  direction_.resize(ip);
   uChar x = 0;
   flags_ = ~x;
 }
@@ -95,6 +98,8 @@ Bool SDContainer::resize(IPosition shp) {
   flags_.resize(shp);
   tsys_.resize(shp);
   freqidx_.resize(shp(1));
+  IPosition ip(2,shp(0),2);
+  direction_.resize(ip);
 }
 
 Bool SDContainer::putSpectrum(const Array<Float>& spec) {
@@ -283,6 +288,21 @@ Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
   return tsys.copy();
 }
 
+Array<Double> SDContainer::getDirection(uInt whichBeam) const {
+  Vector<Double> direct(2);
+  ArrayAccessor<Double, Axis<0> > i0(direction_);
+  i0.reset(i0.begin(whichBeam));
+  ArrayAccessor<Double, Axis<0> > o0(direct);
+  ArrayAccessor<Double, Axis<1> > i1(i0);
+  while (i1 != i1.end()) {
+    *o0 = *i1;
+    i1++;
+    o0++;
+  }  
+  return direct.copy();
+}
+
+
 Bool SDContainer::setFrequencyMap(uInt freqslot, uInt whichIF) {
   freqidx_[whichIF] = freqslot;
   return True;
@@ -291,6 +311,25 @@ Bool SDContainer::setFrequencyMap(uInt freqslot, uInt whichIF) {
 Bool SDContainer::putFreqMap(const Vector<uInt>& freqs) {
   freqidx_.resize();
   freqidx_ = freqs;
+  return True;
+}
+
+Bool SDContainer::setDirection(const Vector<Double>& point, uInt whichBeam) {
+  if (point.nelements() != 2) return False;
+  ArrayAccessor<Double, Axis<0> > aa0(direction_);
+  aa0.reset(aa0.begin(whichBeam));
+  ArrayAccessor<Double, Axis<0> > jj(point);
+  for (ArrayAccessor<Double, Axis<1> > i(aa0);i != i.end(); ++i) {
+    
+    (*i) = (*jj);
+    jj++;
+  }
+  return True;
+}
+
+Bool SDContainer::putDirection(const Array<Double>& dir) {
+  direction_.resize();
+  direction_ = dir;
   return True;
 }
 

@@ -50,6 +50,7 @@ void python_SDMemTable() {
     .def("getabscissa", &SDMemTableWrapper::getAbscissa,
 	 (boost::python::arg("whichRow")=0,
 	  boost::python::arg("unit")=std::string("GHz"),
+	  boost::python::arg("frame")=std::string("TOPO"),
 	  boost::python::arg("restFrequency")=0.0) )
     .def("getmask", &SDMemTableWrapper::getMask,
 	 (boost::python::arg("whichRow")=0) )

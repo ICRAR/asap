@@ -192,7 +192,7 @@ int SDReader::read(const std::vector<int>& seq) {
 	sc.setSpectrum(spectra, beamNo-1, IFno-1);
 	sc.setFlags(flagtra,  beamNo-1, IFno-1);
 	sc.setTsys(tsys, beamNo-1, IFno-1);
-	//sc.addPointing(direction, beamNo-1);
+	sc.setDirection(direction, beamNo-1);
       }
     }
     if (cursor_ == seq[seqi] || getAll) {

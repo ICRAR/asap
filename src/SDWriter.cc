@@ -138,7 +138,7 @@ Int SDWriter::write(
       for (Int iIF = 0; iIF < hdr.nif; iIF++) {
         // None of these are stored in SDMemTable by SDReader.
         String          fieldName = "";
-        Vector<Double>  srcDir(2, 0.0);
+        //Vector<Double>  srcDir(2, 0.0);
         Vector<Double>  srcPM(2, 0.0);
         Double          srcVel = 0.0;
         Double          freqInc = 0.0;
@@ -157,7 +157,7 @@ Int SDWriter::write(
         Float           windSpeed = 0.0f;
         Float           windAz = 0.0f;
         Int             refBeam = 0;
-        Vector<Double>  direction(2, 0.0);
+        //Vector<Double>  direction(2, 0.0);
         Vector<Double>  scanRate(2, 0.0);
         Vector<Float>   sigma(nPol, 0.0f);
         Vector<Float>   calFctr(nPol, 0.0f);
@@ -165,15 +165,17 @@ Int SDWriter::write(
         Matrix<Float>   baseSub(nPol,9, 0.0f);
         Complex         xCalFctr;
         Vector<Complex> xPol;
-
         if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
                                     sd.interval, fieldName, sd.sourcename,
-                                    srcDir, srcPM, srcVel, iIF+1, hdr.reffreq,
+                                    sd.getDirection(iBeam), 
+				    srcPM, srcVel, iIF+1, hdr.reffreq,
                                     hdr.bandwidth, freqInc, restFreq, tcal,
                                     tcalTime, azimuth, elevation, parAngle,
                                     focusAxi, focusTan, focusRot, temperature,
                                     pressure, humidity, windSpeed, windAz,
-                                    refBeam, iBeam+1, direction, scanRate,
+                                    refBeam, iBeam+1, 
+				    sd.getDirection(iBeam), 
+				    scanRate,
                                     sd.getTsys(iBeam, iIF), sigma, calFctr,
                                     baseLin, baseSub,
                                     sd.getSpectrum(iBeam, iIF),

@@ -114,7 +114,8 @@ public:
 	       uInt whichBeam, uInt whichIF);
   Bool putTsys(const Array<Float>& spec);
 
-  Bool setPointing(const Vector<Double>& point, uInt whichBeam) {;}
+  Bool setDirection(const Vector<Double>& point, uInt whichBeam);
+  Bool putDirection(const Array<Double>& dir);
 
   Bool setFrequencyMap(uInt freqslot, uInt whichIF);
   Bool putFreqMap(const Vector<uInt>& freqs);
@@ -122,13 +123,15 @@ public:
   Array<Float> getSpectrum(uInt whichBeam, uInt whichIF) const;
   Array<uChar> getFlags(uInt whichBeam, uInt whichIF) const;
   Array<Float> getTsys(uInt whichBeam, uInt whichIF) const;
+  Array<Double> getDirection(uInt whichBeam) const;
 
   const Array<Float>& getSpectrum() const { return spectrum_; }
   const Array<uChar>& getFlags() const { return flags_; }
   const Array<Float>& getTsys() const { return tsys_; }
+  const Array<Double>& getDirection() const { return direction_; }
 
   const Vector<uInt>& getFreqMap() const { return freqidx_; }
-
+  
   Double timestamp;
   String sourcename;
   Double interval;
@@ -146,10 +149,10 @@ private:
   Array<Float>    tsys_;
   Array<Float>    tcal_;
 
-  //(nBeam) maybe use Measures here...
-  //*** Vector<Vector<Double>>  pointing_;
   //(nIF) indx into "global" frequency table
   Vector<uInt>            freqidx_;
+  //(nBeam,2) maybe use Measures here...
+  Array<Double>  direction_;
 
 };
 
