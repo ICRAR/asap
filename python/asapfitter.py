@@ -237,7 +237,7 @@ class fitter:
             tlab = self.data._getsourcename(0)
             xlab = self.data._getabcissalabel(0)
         ylab = r'Flux'
-        m = self.data.getmask(0)
+        m = self.data._getmask(0)
         self._p.set_line(colour='blue',label='Spectrum')
         self._p.plot(self.x, self.y, m)
         if residual:
