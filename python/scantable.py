@@ -44,11 +44,11 @@ class scantable(sdtable):
         Set the verbose level True or False, to indicate if output
         should be printed as well as returned.
         """
-        if type(args[0]) is bool:
+        if len(args) == 0:
+            return self._vb
+        elif type(args[0]) is bool:
             self._vb = args[0]
             return
-        elif len(args) == 0:
-            return self._vb
 
 
     def copy(self):
@@ -372,7 +372,8 @@ class scantable(sdtable):
         Plot Tsys vs Time
         Parameters:
             what:     a choice of 'spectrum' (default) or 'tsys'
-            col:      which out of Beams/IFs/Pols should be colour stacked
+            col:      which out of Beams, IFs, Pols (default)
+                      should be colour stacked
             panel:    set up multiple panels, currently not working.
         """
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
