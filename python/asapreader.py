@@ -57,6 +57,7 @@ class reader(sdreader):
         print "Reading integrations from disk..."
         sdreader._read(self,integrations)
         tbl = sdreader._getdata(self)
+        sdreader._reset(self) # reset to the beginning of the file
         if self.unit is not None:
             tbl.set_fluxunit(self.unit)
         return scantable(tbl)
@@ -76,18 +77,19 @@ class reader(sdreader):
         sdreader._reset(self)
         print tbl._summary()
         return
-    def reset(self):
-        """
-        Reset to the beginning of the file.
-        Parameters:
-             none
-        Examples:
-             r = reader('xyz.sdfits')
-             scans0 = r.read(range(10))
-             r.reset()
-             scans1 = r.read(range(5,15))
-             # produces 2 scatables  one containing integrations(rows) 0-9
-             # and a second one with rows 5-14
-        """
-        sdreader._reset(self)
+##     def reset(self):
+##         """
+##         [Advanced use]
+##         Reset to the beginning of the file.
+##         Parameters:
+##              none
+##         Examples:
+##              r = reader('xyz.sdfits')
+##              scans0 = r.read(range(10))
+##              r.reset()
+##              scans1 = r.read(range(5,15))
+##              # produces 2 scatables  one containing integrations(rows) 0-9
+##              # and a second one with rows 5-14
+##         """
+##        sdreader._reset(self)
         
