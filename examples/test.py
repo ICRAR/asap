@@ -11,6 +11,16 @@ r.read(integrations)
 scans = r.gettable()
 # close the reader
 r = None
+
+# Test sdwriter.
+print 'Begin sdwriter tests...'
+# Create an MS2 writer.
+w = sdwriter('MS2')
+# Change to SDFITS output format (the default).
+w.setformat()
+# Write out the spectra.
+w.write(scans, 'test_SDWriter.sdfits')
+
 # print a short summary of the data
 scans.summary()
 # get the scan with the number '1'
