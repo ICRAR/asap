@@ -109,7 +109,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
    Vector<Int> whichStokes(1,1);
    Array<Double> whichDir;
-   Vector<Double> latLon(2);
+   Vector<Double> lonLat(2);
    IPosition posDir(2,0);
    Projection proj(Projection::SIN);                   // What should we use ?
    Matrix<Double> xForm(2,2);
@@ -168,12 +168,12 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
          dir.get(iRow, whichDir);
          posDir(0) = pos(beamAxis);
          posDir(1) = 0;
-         latLon[0] = whichDir(posDir);
+         lonLat[0] = whichDir(posDir);
 //
          posDir(0) = pos(beamAxis);
          posDir(1) = 1;
-         latLon[1] = whichDir(posDir);
-         DirectionCoordinate dC(dirRef, proj, latLon[0], latLon[1],
+         lonLat[1] = whichDir(posDir);
+         DirectionCoordinate dC(dirRef, proj, lonLat[0], lonLat[1],
                                incLonLat[0], incLonLat[1], xForm, 
                                refPixLonLat[0], refPixLonLat[1]);
 
