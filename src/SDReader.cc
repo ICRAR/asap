@@ -28,6 +28,9 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+#include <casa/iostream.h>
+#include <casa/iomanip.h>
+
 #include <casa/Exceptions.h>
 #include <casa/OS/Path.h>
 #include <casa/OS/File.h>
@@ -268,8 +271,8 @@ int SDReader::read(const std::vector<int>& seq) {
 	  sc.elevation = elevation;
         }
         // add specific info
-        // refPix = nChan/2+1 in  Integer arith.!
-        Int refPix = header_.nchan/2+1;
+        // refPix = nChan/2+1 in  1-rel Integer arith.!
+        Int refPix = header_.nchan/2;                                         // 0-rel
         uInt freqID = frequencies_.addFrequency(refPix, refFreq, freqInc);
 	uInt restFreqID = frequencies_.addRestFrequency(restFreq);
 //   
@@ -286,12 +289,14 @@ int SDReader::read(const std::vector<int>& seq) {
         sc.setDirection(direction, beamNo);
       }
     }
+
     if (cursor_ == seq[seqi] || getAll) {
       // insert container into table/list
       table_->putSDContainer(sc);
       seqi++;// next in list
     }
     cursor_++;// increment position in file
+
   }
   table_->putSDFreqTable(frequencies_);
   return status;
