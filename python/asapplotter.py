@@ -95,7 +95,7 @@ class asapplotter:
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                self._plotter.set_panels(rows=n,cols=0)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n)
         for i in range(n):
             if n > 1:
                 self._plotter.palette(1)
@@ -150,12 +150,12 @@ class asapplotter:
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                self._plotter.set_panels(rows=n,cols=0)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n)
         i = 0
         for scan in scans:
             if n > 1:
                 self._plotter.subplot(i)
-                self._plotter.palette(0)
+                self._plotter.palette(1)
             for j in range(ncol):
                 eval(cdict.get(colmode))
                 x = None
@@ -205,11 +205,12 @@ class asapplotter:
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                self._plotter.set_panels(rows=n,cols=0)
+                print n
+                self._plotter.set_panels(rows=n,cols=0,nplots=n)
         for i in range(n):
             if n>1:
                 self._plotter.subplot(i)
-                self._plotter.palette(0)
+                self._plotter.palette(1)
             k=0
             j=i
             eval(cdict.get(self._panels))
@@ -352,7 +353,7 @@ class asapplotter:
                     to the indeces in order
 
         Example:
-             If the data has to IFs/rest frequencies with index 0 and 1
+             If the data has two IFs/rest frequencies with index 0 and 1
              for CO and SiO:
              plotter.set_stacking('i')
              plotter.set_legend_map(['CO','SiO'])
