@@ -1141,7 +1141,13 @@ std::string SDMemTable::summary() const  {
       String t = formatSec(Double(getInterval(firstRow)));
       String posit = formatDirection(getDirection(firstRow,True));
       uInt nInt = (i-firstRow);
-      if (i==nRow-1 &&scanID==lastScanID) nInt++;   // Last row but same scan
+
+// Special case adjustments
+
+      if (i==nRow-1 &&scanID==lastScanID)  nInt++;   
+      if (nInt==1 && i>1) {
+         for (uInt j=0; j<freqIDs.nelements(); j++) mathutil::addEntry(listFQ, freqIDs(j));
+      }
 //
       oss << setw(6) << scanNo 
           << setw(15) << name
@@ -1155,9 +1161,7 @@ std::string SDMemTable::summary() const  {
       scanNo++;
       listFQ.resize(0);
     } else {
-      for (uInt j=0; j<freqIDs.nelements(); j++) {
-         mathutil::addEntry(listFQ, freqIDs(j));
-      }
+       for (uInt j=0; j<freqIDs.nelements(); j++) mathutil::addEntry(listFQ, freqIDs(j));
     }
   }
   oss << endl;
