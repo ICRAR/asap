@@ -113,9 +113,9 @@ class fitter:
                 self.y = self.data.getspectrum()
                 print "Fitting:"
                 vb = self.data._verbose
-                self.data._set_verbose(True)
+                self.data._verbose(True)
                 s = self.data.get_selection()
-                self.data._set_verbose(vb)
+                self.data._verbose(vb)
         
         self.fitter.setdata(self.x,self.y,self.mask)
         if self.fitfunc == 'gauss':
