@@ -50,7 +50,7 @@ using namespace atnf_sd;
 // Default constructor.
 
 SDWriter::SDWriter(
-        const string &format = "SDFITS")
+        const std::string &format = "SDFITS")
 {
   cFormat = format;
 
@@ -75,7 +75,7 @@ SDWriter::~SDWriter()
 // Reset the output format.
 
 Int SDWriter::setFormat(
-        const string &format = "SDFITS")
+        const std::string &format = "SDFITS")
 {
   if (format != cFormat) {
     delete cWriter;
@@ -98,7 +98,7 @@ Int SDWriter::setFormat(
 
 Int SDWriter::write(
         const CountedPtr<SDMemTable> table,
-        const string &filename)
+        const std::string &filename)
 {
   // Extract the header from the table.
   SDHeader hdr = table->getSDHeader();

@@ -53,7 +53,7 @@ public:
             const string &filename);
 
 private:
-  string     cFormat;
+  std::string     cFormat;
   PKSwriter *cWriter;
 };
 
