@@ -95,7 +95,7 @@ private:
   casa::Int nFreq_;
   casa::Vector<casa::Double> refPix_;
   casa::Vector<casa::Double> refVal_;           // Hz
-  casa::Vector<casa::Double> increment_         // Hz
+  casa::Vector<casa::Double> increment_;        // Hz
   casa::Float equinox_;
   casa::String refFrame_;
   casa::Vector<casa::Double> restFreqs_;        // Hz
