@@ -4,6 +4,14 @@ This directory contains ASAP defects
 Each defect gets a defect number assigned and a file is created in the
 directory containing the traffic on the defect.
 
-The bug number is soley determined by the last entry in this directory.
+The bug number is solely determined by the last entry in this directory.
+
+* Defects/bugs are sent to asap@atnf.csiro.au
+* assign bug id  asap0000, asap0001 ...
+* add bugs/asapNNNN.txt for new defect
+
+* Bug fixes have to be cvs tagged with the bug id
+* trunk has to be merged with the fixes branch
+
 
 MM20050315
