@@ -49,13 +49,14 @@ class SDFrequencyTable;
 
 class SDMemTable {
 public:
-  SDMemTable(const std::string& name= "SDInputTable.tbl");
+  SDMemTable();
+  SDMemTable(const std::string& name);
   SDMemTable(const SDMemTable& other, Bool clear=False);
 
   SDMemTable(const Table& tab, Int scanID);
   virtual ~SDMemTable();
   virtual bool putSDContainer(const SDContainer& sdc);
-  virtual bool putSDHeader(const SDHeader& sdh) {;}
+  virtual bool putSDHeader(const SDHeader& sdh);
   virtual bool putSDFreqTable(const SDFrequencyTable& sdft) {;}
   
   virtual std::vector<float> getSpectrum(Int whichRow) const;
@@ -71,24 +72,31 @@ public:
   virtual bool setIF(Int whichIF=0);
   virtual bool setBeam(Int whichBeam=0);
   virtual bool setPol(Int whichPol=0);    
+  //sets the user mask
+  virtual bool setMask(const std::vector<int>& whichChans);
+ 
 
   virtual Int getIF() { return IFSel_; }
   virtual Int getBeam() { return beamSel_; }
   virtual Int getPol() { return polSel_; }   
-
-  //sets the mask
-  virtual bool setMask(const std::vector<int>& whichChans);
-  
+ 
   virtual void summary() const;
   
   std::string name() const;
   void makePersistent(const std::string& filename);
   SDMemTable getScan(Int scanID);
+
+  const TableRecord& getHeader() const {;}
   const Table& table() { return table_; }
+
+  Int nBeam() const;
+  Int nIF() const;
+  Int nPol() const;
+  Int nChan() const;
 
 private:
   void setup();
-  //Int nBeam_,nIF_,nChan_,nPol_;
+
   Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;
   String name_;

@@ -41,6 +41,7 @@ namespace atnf_sd {
 
 void python_SDMemTable() {
   class_<SDMemTableWrapper>("sdtable")
+    .def( init <> () )
     .def( init < std::string > () )
     .def( init < SDMemTableWrapper, int > () )
     .def("getscan", &SDMemTableWrapper::getScan)
@@ -52,6 +53,11 @@ void python_SDMemTable() {
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
     .def("getpol", &SDMemTableWrapper::getPol)
+    .def("nif", &SDMemTableWrapper::nIF)
+    .def("nbeam", &SDMemTableWrapper::nBeam)
+    .def("npol", &SDMemTableWrapper::nPol)
+    .def("nchan", &SDMemTableWrapper::nChan)
+
     .def("setif", &SDMemTableWrapper::setIF,
 	 (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)

@@ -46,18 +46,27 @@
 #include <aips/Tables/ExprNode.h>
 #include <aips/Tables/ScalarColumn.h>
 #include <aips/Tables/ArrayColumn.h>
+#include <aips/Tables/TableRecord.h>
+
 
 #include "SDMemTable.h"
 #include "SDContainer.h"
 
 using namespace atnf_sd;
 
+SDMemTable::SDMemTable() :
+  IFSel_(0),
+  beamSel_(0),
+  polSel_(0) {
+  setup();
+}
 SDMemTable::SDMemTable(const std::string& name) :
   IFSel_(0),
   beamSel_(0),
   polSel_(0) {
   name_ = String(name);
-  setup();
+  Table tab(name_);
+  table_ = tab.copyToMemoryTable(name_);
 }
 
 SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
@@ -100,7 +109,6 @@ SDMemTable SDMemTable::getScan(Int scanID) {
 void SDMemTable::setup() {
   TableDesc td("", "1", TableDesc::Scratch);
   td.comment() = "A SDMemTable";
-  //td.rwKeywordSet().define("VERSION",Float(0.1));
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
   td.addColumn(ScalarColumnDesc<String>("SRCNAME"));
   td.addColumn(ArrayColumnDesc<Float>("SPECTRA"));
@@ -109,6 +117,7 @@ void SDMemTable::setup() {
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));  
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));  
   // Now create a new table from the description.
+
   SetupNewTable aNewTab(name_, td, Table::New);
   table_ = Table(aNewTab, Table::Memory, 0);  
 }
@@ -292,14 +301,41 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   
   return true;
 }
+
+bool SDMemTable::putSDHeader(const SDHeader& sdh) {
+  table_.lock();
+  table_.rwKeywordSet().define("nIF", sdh.nif);
+  table_.rwKeywordSet().define("nBeam", sdh.nbeam);
+  table_.rwKeywordSet().define("nPol", sdh.npol);
+  table_.rwKeywordSet().define("nChan", sdh.nchan);
+  table_.rwKeywordSet().define("Observer", sdh.observer);
+  table_.rwKeywordSet().define("Project", sdh.project);
+  table_.rwKeywordSet().define("Obstype", sdh.obstype);
+  table_.rwKeywordSet().define("AntennaName", sdh.antennaname);
+  table_.rwKeywordSet().define("AntennaPosition", sdh.antennaposition);
+  table_.rwKeywordSet().define("Equinox", sdh.equinox);
+  table_.rwKeywordSet().define("FreqRefFrame", sdh.freqref);
+  table_.rwKeywordSet().define("FreqRefVal", sdh.reffreq);
+  table_.rwKeywordSet().define("Bandwidth", sdh.bandwidth);
+  table_.rwKeywordSet().define("UTC", sdh.utc);
+  table_.unlock();
+  cerr << "Table Header set" << endl;
+  return true;
+}
+
 void SDMemTable::makePersistent(const std::string& filename) {
   table_.deepCopy(filename,Table::New);
 }
 
 void SDMemTable::summary() const {
-  cerr << "SDMemTable::summary()" << endl;
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
+  cout << "*************** Header ***************" << endl;
+  cout << "nBeam = " << nBeam() << "\t"
+       << "nIF   = " << nIF() << endl
+       << "nPol  = " << nPol() << "\t"
+       << "nChan = " << nChan() << "\t" << endl;
+  cout << "*************** Header ***************" << endl;
   uInt count = 0;
   String name;
   Int previous = -1;Int current=0;
@@ -315,11 +351,33 @@ void SDMemTable::summary() const {
 	   << endl;
     }
   }
-  cout << "Table contains " << table_.nrow() << "integrations." << endl;
-  cout << "in " << count << "scans." << endl;
+  cout << "Table contains " << table_.nrow() << " integration(s)." << endl;
+  cout << "in " << count << " scan(s)." << endl;
 }
+
+Int SDMemTable::nBeam() const {
+  Int n;
+  table_.keywordSet().get("nBeam",n);
+  return n;
+}
+Int SDMemTable::nIF() const {
+  Int n;
+  table_.keywordSet().get("nIF",n);
+  return n;
+}
+Int SDMemTable::nPol() const {
+  Int n;
+  table_.keywordSet().get("nPol",n);
+  return n;
+}
+Int SDMemTable::nChan() const {
+  Int n;
+  table_.keywordSet().get("nChan",n);
+  return n;
+}
+
 /*
-void maskChannels(const std::vector<Int>& whichChans ) {
+void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
   
   std::vector<int>::iterator it;
   ArrayAccessor<uChar, Axis<2> > j(flags_);

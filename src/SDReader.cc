@@ -29,30 +29,10 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 #include <atnf/PKSIO/PKSreader.h>
-#include <aips/Quanta/MVTime.h>
-#include "SDContainer.h"
+
 #include "SDReader.h"
 
 using namespace atnf_sd;
-
-void SDHeader::print() const {
-  MVTime mvt(this->utc);
-
-  cout << "Observer: " << this->observer << endl 
-       << "Project: " << this->project << endl
-       << "Obstype: " << this->obstype << endl
-       << "Antenna: " << this->antennaname << endl
-       << "Ant. Position: " << this->antennaposition << endl
-       << "Equinox: " << this->equinox << endl
-       << "Freq. ref.: " << this->freqref << endl
-       << "Ref. frequency: " << this->reffreq << endl
-       << "Bandwidth: "  << this->bandwidth << endl
-       << "Time (utc): " 
-       << mvt.string()
-       << endl;
-  //setprecision(10) << this->utc << endl;
-}
-
 
 SDReader::SDReader() :
   reader_(0),
@@ -97,10 +77,10 @@ void SDReader::open(const std::string& filename) {
     return;
   }
   nBeam_ = beams.nelements();
-  cout << "Reading " + format + " format from " + inName << endl;
-  cout << "nChannels = " << nChan_ << ", " << "nPol = " << nPol_ << endl
-       << "nIF = " << nIF_ << endl 
-       << "nBeams = " << nBeam_ << endl;
+  //cout << "Reading " + format + " format from " + inName << endl;
+  //cout << "nChannels = " << nChan_ << ", " << "nPol = " << nPol_ << endl
+  //     << "nIF = " << nIF_ << endl 
+  //     << "nBeams = " << nBeam_ << endl;
   
   // Get basic parameters.
   header_ = SDHeader();
@@ -130,18 +110,16 @@ void SDReader::open(const std::string& filename) {
   }
   header_.nif = nIF_;
   // Apply selection criteria.
-  cerr << "applying selection criteria..." << endl; 
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
   Vector<Int> ref;
   Vector<Bool> beamSel(nBeam_,True);
   Vector<Bool> IFsel(nIF_,True);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
-  cerr << "open finished" << endl;
+  table_->putSDHeader(header_);
 }
 
 int SDReader::read(const std::vector<int>& seq) {
-  cerr << "SDReader::read" << endl;
   int status = 0;  
   
   Int    beamNo, IFno, refBeam, scanNo, cycleNo;
@@ -158,7 +136,7 @@ int SDReader::read(const std::vector<int>& seq) {
   Vector<Complex> xPol;
   mjd = 0;
   uInt n = seq.size();
-  cerr <<  header_.nif << ", " << header_.nbeam << endl;
+  //cerr <<  header_.nif << ", " << header_.nbeam << endl;
   uInt stepsize = header_.nif*header_.nbeam;
   cerr << "SDReader stepsize = " << stepsize << endl;
   uInt scanid = 0;
@@ -173,7 +151,6 @@ int SDReader::read(const std::vector<int>& seq) {
 
     // iterate over one correlator integration cycle = nBeam*nIF
     for (uInt row=0; row < stepsize; row++) {
-      // add scanid from GROUP field -- this will remove the need for
       // stepsize as well
       // spectra(nChan,nPol)!!!
       status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName, 
@@ -212,10 +189,6 @@ int SDReader::read(const std::vector<int>& seq) {
 	//uInt refPix = header_.nchan/2+1; 
 	//uInt frqslot = sdft.addFrequency(refPix, refFreq, freqInc);
 
-	//if ( srcName != prevName ) {//temp
-	//scanid++;//temp
-	// prevName = srcName;//temp
-	//}//temp
 	sc.scanid = scanNo;
 	//sc.setFrequencyMap(frqslot,IFno-1);
 	sc.setSpectrum(spectra, beamNo-1, IFno-1);

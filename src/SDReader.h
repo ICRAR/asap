@@ -42,28 +42,11 @@
 #include <aips/Arrays/Vector.h>
 
 #include "SDMemTable.h"
+#include "SDContainer.h"
 
 class PKSreader;
 
 namespace atnf_sd {
-
-struct SDHeader {
-  Int nchan;
-  Int npol;
-  Int nif;
-  Int nbeam;
-  String observer;
-  String project;
-  String obstype;
-  String antennaname;
-  Vector<Double> antennaposition;
-  Float equinox;
-  String freqref;
-  Double reffreq;
-  Double bandwidth;
-  Double utc;
-  void print() const ;
-};
 
 class SDReader {
 public:
@@ -89,7 +72,6 @@ protected:
 
 private:
   Int nBeam_,nIF_,nPol_,nChan_;
-  Bool getHeader();
   PKSreader* reader_;  
   SDHeader header_;
   CountedPtr<SDMemTable> table_;
@@ -100,4 +82,3 @@ private:
 
 }// namespace
 #endif
-

@@ -43,8 +43,11 @@ namespace atnf_sd {
 class SDMemTableWrapper {
 
 public:
-  SDMemTableWrapper(const std::string& name = "SDinput.tbl") : 
+  SDMemTableWrapper(const std::string& name) : 
     table_(new SDMemTable(name)) {;}
+  SDMemTableWrapper() : 
+    table_(new SDMemTable()) {;}
+  
   SDMemTableWrapper(CountedPtr<SDMemTable> cp) : table_(cp) {;}
   SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
   
@@ -79,6 +82,10 @@ public:
   int getBeam() {return table_->getBeam();}
   int getPol() {return table_->getPol();} 
 
+  int nIF() {return table_->nIF();}
+  int nBeam() {return table_->nBeam();}
+  int nPol() {return table_->nPol();} 
+  int nChan() {return table_->nChan();} 
 
   //sets the mask
   bool setChannels(const std::vector<int>& whichChans) {

@@ -32,10 +32,30 @@
 #include <aips/Arrays/IPosition.h>
 #include <aips/Arrays/ArrayAccessor.h>
 #include <aips/Arrays/Matrix.h>
+#include <aips/Quanta/MVTime.h>
 
 #include "SDContainer.h"
 
 using namespace atnf_sd;
+
+void SDHeader::print() const {
+  MVTime mvt(this->utc);
+
+  cout << "Observer: " << this->observer << endl 
+       << "Project: " << this->project << endl
+       << "Obstype: " << this->obstype << endl
+       << "Antenna: " << this->antennaname << endl
+       << "Ant. Position: " << this->antennaposition << endl
+       << "Equinox: " << this->equinox << endl
+       << "Freq. ref.: " << this->freqref << endl
+       << "Ref. frequency: " << this->reffreq << endl
+       << "Bandwidth: "  << this->bandwidth << endl
+       << "Time (utc): " 
+       << mvt.string()
+       << endl;
+  //setprecision(10) << this->utc << endl;
+}
+
 
 SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan) 
   : nBeam_(nBeam),

@@ -31,6 +31,8 @@
 #ifndef _SDCONTAINER_H_
 #define _SDCONTAINER_H_
 
+#include <vector>
+
 #include <aips/aips.h>
 #include <aips/Utilities/String.h>
 #include <aips/Arrays/Array.h>
@@ -40,23 +42,42 @@ template<class T> class Matrix;
 
 namespace atnf_sd {
 
+
+struct SDHeader {
+  Int nchan;
+  Int npol;
+  Int nif;
+  Int nbeam;
+  String observer;
+  String project;
+  String obstype;
+  String antennaname;
+  Vector<Double> antennaposition;
+  Float equinox;
+  String freqref;
+  Double reffreq;
+  Double bandwidth;
+  Double utc;
+  void print() const ;
+};
+
 class SDFrequencyTable {
 
 public:
 
-  SDFrequencyTable(Double refPix, Double refVal, Double inc) {;}
+  SDFrequencyTable() {;}
   // returns the index into the table
   // this creates a new one or returns an existing one
   Int addFrequency(Double refPix, Double refVal, Double inc) {;}
   
   Int length() const { return nFreq_;};// # of stored Frequencies
   // returns a Table with nRows == nFreq, and three cols
-
+  
 private:
   Int nFreq_;
-  Vector<Double> refPix_;
-  Vector<Double> revVal_;
-  Vector<Double> increment_;
+  std::vector<double> refPix_;
+  std::vector<double> revVal_;
+  std::vector<double> increment_;
 };
 
 
