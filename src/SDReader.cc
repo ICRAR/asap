@@ -88,7 +88,6 @@ void SDReader::open(const std::string& filename) {
                               nChan_, nPol_, haveBase, haveSpectra,
                               haveXPol)) == 0)  {
     throw(AipsError("PKSreader failed"));
-    //cerr << "PKSreader failed" << endl;
   }
   if (!haveSpectra) {
     delete reader_;
@@ -98,6 +97,10 @@ void SDReader::open(const std::string& filename) {
   }
   nBeam_ = beams.nelements();
   // Get basic parameters.
+  if (haveXPol) {
+    cout << "Warning. Ignoring cross polarisation." << endl;
+    nPol_--;    
+  }
   header_ = SDHeader();
   header_.nchan = nChan_;
   header_.npol = nPol_;
@@ -175,7 +178,7 @@ int SDReader::read(const std::vector<int>& seq) {
       if (status) {
         if (status == -1) {
           // EOF.
-          if (row < stepsize-1) cerr << "incomplete integration data." << endl;
+          if (row < stepsize-1) cerr << "incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan a present." << endl;
           //cerr << "EOF" << endl;
           table_->putSDFreqTable(frequencies_);
           return status;
@@ -192,6 +195,9 @@ int SDReader::read(const std::vector<int>& seq) {
           sc.timestamp = mjd;
           sc.interval = interval;
           sc.sourcename = srcName;
+	  sc.fieldname = fieldName;
+	  sc.azimuth = azimuth;
+	  sc.elevation = elevation;
         }
         // add specific info
         // IFno beamNo are 1-relative
@@ -199,7 +205,10 @@ int SDReader::read(const std::vector<int>& seq) {
         Int refPix = header_.nchan/2+1;
         Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
         sc.setFrequencyMap(frqslot,IFno-1);
-
+	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
+	sc.tcaltime = tcalTime;
+	sc.parangle = parAngle;
+	sc.refbeam = refBeam;
         sc.scanid = scanNo-1;//make it 0-based
         sc.setSpectrum(spectra, beamNo-1, IFno-1);
         sc.setFlags(flagtra,  beamNo-1, IFno-1);
