@@ -163,35 +163,20 @@ rcParamsDefault = dict(rcParams.items()) # a copy
 def rc(group, **kwargs):
     """
     Set the current rc params.  Group is the grouping for the rc, eg
-    for lines.linewidth the group is 'lines', for axes.facecolor, the
-    group is 'axes', and so on.  kwargs is a list of attribute
+    for scantable.save the group is 'scantable', for plotter.stacking, the
+    group is 'plotter', and so on.  kwargs is a list of attribute
     name/value pairs, eg
 
-      rc('lines', linewidth=2, color='r')
+      rc('scantable', save='SDFITS')
 
     sets the current rc params and is equivalent to
     
-      rcParams['lines.linewidth'] = 2
-      rcParams['lines.color'] = 'r'
+      rcParams['scantable.save'] = 'SDFITS'
 
-
-    Note you can use python's kwargs dictionary facility to store
-    dictionaries of default parameters.  Eg, you can customize the
-    font rc as follows
-
-      font = {'family' : 'monospace',
-              'weight' : 'bold',
-              'size'   : 'larger',
-             }
-
-      rc('font', **font)  # pass in the font dict as kwargs
-
-    This enables you to easily switch between several configurations.
     Use rcdefaults to restore the default rc params after changes.
     """
 
-    aliases = {
-        }
+    aliases = {}
     
     for k,v in kwargs.items():
         name = aliases.get(k) or k
