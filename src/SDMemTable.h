@@ -96,6 +96,10 @@ public:
   // if whichRow == -1 the Header time is given
   std::string getTime(casa::Int whichRow=0, 
 		      casa::Bool showDate=casa::False) const ;
+  casa::MEpoch getEpoch(casa::Int whichRow=0) const; 
+  casa::MDirection getDirection(casa::Int whichRow=0,
+				casa::Bool refBeam=casa::False) const; 
+//
   std::string getSourceName(casa::Int whichRow=0) const;
   double getInterval(casa::Int whichRow=0) const;
 
@@ -163,25 +167,31 @@ public:
 						  casa::Bool useSelection = 
 						  casa::False) const;
 
-  casa::SpectralCoordinate getCoordinate(casa::uInt whichIdx) const;
+  // Return SC, setting only the basic construction state (i.e.
+  // no conversion or velocity or rest frequency state)
+  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt whichIdx) const;
+
+  // Return SC. Set velocity conversion state (unit,doppler), 
+  // set rest frequencies.  If row number given (>-0), also set
+  // frame conversion layer (needs direction & time which require row)
+  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt whichIdx, casa::uInt row) const;
+
+  // Set just the reference value, pixel and increment into the table
+  // No other state is extracted.
   casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord, 
 			   casa::uInt whichIdx);
 
   casa::Int nCoordinates() const;
 
-
   std::vector<double> getAbcissa(int whichRow=0) const;
   std::string getAbcissaString(casa::Int whichRow=0) const;
 
-// Get MDirection for this row
-  casa::MDirection getDirection(casa::Int whichRow=0,
-				casa::Bool refBeam=casa::False) const; 
-
-// Get gloabl Direction reference 
+// Get global reference  types
   casa::MDirection::Types getDirectionReference() const;
-
-// Get global Time reference
   casa::MEpoch::Types getTimeReference() const;
+
+// Get global antenna position
+  casa::MPosition getAntennaPosition() const;
 
 // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument,

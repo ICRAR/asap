@@ -40,6 +40,7 @@
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/Quanta/MVAngle.h>
 
 #include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableDesc.h>
@@ -363,130 +364,101 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
   }
 }
 
+
 std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
 {
-  std::vector<double> absc(nChan());
-  Vector<Double> absc1(nChan());
-  indgen(absc1);
-  ROArrayColumn<uInt> fid(table_, "FREQID");
-  Vector<uInt> v;
-  fid.get(whichRow, v);
-  uInt specidx = v(IFSel_);
-  SpectralCoordinate spc = getCoordinate(specidx);
+  std::vector<double> abc(nChan());
+
+// Get header units keyword
+
   Table t = table_.keywordSet().asTable("FREQUENCIES");
-
-  MDirection direct = getDirection(whichRow);
-
-  ROScalarColumn<Double> tme(table_, "TIME");
-  Double obstime;
-  tme.get(whichRow,obstime);
-  MVEpoch tm2(Quantum<Double>(obstime, Unit(String("d"))));
-  MEpoch::Types met = getTimeReference();
-  MEpoch epoch(tm2, met);
-
-  Vector<Double> antpos;
-  table_.keywordSet().get("AntennaPosition", antpos);
-  MVPosition mvpos(antpos(0),antpos(1),antpos(2));
-  MPosition pos(mvpos);
   String sunit;
   t.keywordSet().get("UNIT",sunit);
   if (sunit == "") sunit = "pixel";
   Unit u(sunit);
-  String frm;
-  t.keywordSet().get("REFFRAME",frm);
-  if (frm == "") frm = "TOPO";
-  String dpl;
-  t.keywordSet().get("DOPPLER",dpl);
-  if (dpl == "") dpl = "RADIO";
-  MFrequency::Types mtype;
-  if (!MFrequency::getType(mtype, frm)) {
-    cout << "Frequency type unknown assuming TOPO" << endl;       // SHould never happen
-    mtype = MFrequency::TOPO;
-  }
-  MDoppler::Types dtype;
-  if (!MDoppler::getType(dtype, dpl)) {
-    cout << "Doppler type unknown assuming RADIO" << endl;        // SHould never happen
-    dtype = MDoppler::RADIO;
-  }
-  
-  if (!spc.setReferenceConversion(mtype,epoch,pos,direct)) {
-    throw(AipsError("Couldn't convert frequency frame."));
-  }
 
-  if ( u == Unit("km/s") ) {
-    Vector<Double> rstf;
-    t.keywordSet().get("RESTFREQS",rstf);
-    if (rstf.nelements() > 0) {
-      if (rstf.nelements() >= nIF())
-        spc.selectRestFrequency(uInt(IFSel_));
-      spc.setVelocity(u.getName(),dtype);
-      Vector<Double> wrld;
-      spc.pixelToVelocity(wrld,absc1);
-      std::vector<double>::iterator it;
-      uInt i = 0;
-      for (it = absc.begin(); it != absc.end(); ++it) {
-        (*it) = wrld[i];
-        i++;
-      }
-    }
-  } else if (u == Unit("Hz")) {
-    Vector<String> wau(1); wau = u.getName();
-    spc.setWorldAxisUnits(wau);
-    std::vector<double>::iterator it;
-    Double tmp;
-    uInt i = 0;
-    for (it = absc.begin(); it != absc.end(); ++it) {
-      spc.toWorld(tmp,absc1[i]);
-      (*it) = tmp;
-      i++;
-    }
+// Easy if just wanting pixels
 
-  } else {
+  if (sunit==String("pixel")) {
     // assume channels/pixels
     std::vector<double>::iterator it;
     uInt i=0;
-    for (it = absc.begin(); it != absc.end(); ++it) {
+    for (it = abc.begin(); it != abc.end(); ++it) {
       (*it) = Double(i++);
     }
+//
+    return abc;
   }
-  return absc;
+
+// Continue with km/s or Hz.  Get FreqID
+
+  ROArrayColumn<uInt> fid(table_, "FREQID");
+  Vector<uInt> v;
+  fid.get(whichRow, v);
+  uInt specidx = v(IFSel_);
+
+// Get SpectralCoordinate, set reference frame conversion,
+// velocity conversion, and rest freq state
+
+  SpectralCoordinate spc = getSpectralCoordinate(specidx, whichRow);
+//
+  Vector<Double> pixel(nChan());
+  indgen(pixel);
+//
+  if (u == Unit("km/s")) {
+     Vector<Double> world;
+     spc.pixelToVelocity(world,pixel);
+     std::vector<double>::iterator it;
+     uInt i = 0;
+     for (it = abc.begin(); it != abc.end(); ++it) {
+       (*it) = world[i];
+       i++;
+     }
+  } else if (u == Unit("Hz")) {
+
+// Set world axis units
+
+    Vector<String> wau(1); wau = u.getName();
+    spc.setWorldAxisUnits(wau);
+//
+    std::vector<double>::iterator it;
+    Double tmp;
+    uInt i = 0;
+    for (it = abc.begin(); it != abc.end(); ++it) {
+      spc.toWorld(tmp,pixel[i]);
+      (*it) = tmp;
+      i++;
+    }
+  }
+  return abc;
 }
 
 std::string SDMemTable::getAbcissaString(Int whichRow) const
 {
   ROArrayColumn<uInt> fid(table_, "FREQID");
   Table t = table_.keywordSet().asTable("FREQUENCIES");
+//
   String sunit;
   t.keywordSet().get("UNIT",sunit);
   if (sunit == "") sunit = "pixel";
   Unit u(sunit);
+//
   Vector<uInt> v;
   fid.get(whichRow, v);
   uInt specidx = v(IFSel_);
-  SpectralCoordinate spc = getCoordinate(specidx);
-  String frm;
-  t.keywordSet().get("REFFRAME",frm);
-//
-  MFrequency::Types mtype;
-  if (!MFrequency::getType(mtype, frm)) {
-    cout << "Frequency type unknown assuming TOPO" << endl;
-    mtype = MFrequency::TOPO;
-  }
-  spc.setFrequencySystem(mtype);
-//
-  String dpl;
-  t.keywordSet().get("DOPPLER",dpl);
-  MDoppler::Types dtype;
-  MDoppler::getType(dtype, dpl);         // Can't fail
+
+// Get SpectralCoordinate, with frame, velocity, rest freq state set
+
+  SpectralCoordinate spc = getSpectralCoordinate(specidx, whichRow);
 //
   String s = "Channel";
   if (u == Unit("km/s")) { 
-    spc.setVelocity(u.getName(), dtype);
     s = CoordinateUtil::axisLabel(spc,0,True,True,True);
   } else if (u == Unit("Hz")) {
     Vector<String> wau(1);wau = u.getName();
     spc.setWorldAxisUnits(wau);
-    s = CoordinateUtil::axisLabel(spc);
+//
+    s = CoordinateUtil::axisLabel(spc,0,True,True,False);
   }
   return s;
 }
@@ -638,26 +610,45 @@ MDirection SDMemTable::getDirection(Int whichRow, Bool refBeam) const
   wpos[1] = posit(IPosition(2,beamSel_,1));
   Quantum<Double> lon(wpos[0],Unit(String("rad")));
   Quantum<Double> lat(wpos[1],Unit(String("rad")));
-  MDirection direct(lon, lat, mdr);
-  return direct;
+  return MDirection(lon, lat, mdr);
 }
 
-SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx) const
+MEpoch SDMemTable::getEpoch (Int whichRow) const
+{
+  MEpoch::Types met = getTimeReference();
+//
+  ROScalarColumn<Double> tme(table_, "TIME");
+  Double obstime;
+  tme.get(whichRow,obstime);
+  MVEpoch tm2(Quantum<Double>(obstime, Unit(String("d"))));
+  return MEpoch(tm2, met);
+}
+
+MPosition SDMemTable::getAntennaPosition () const
+{
+  Vector<Double> antpos;
+  table_.keywordSet().get("AntennaPosition", antpos);
+  MVPosition mvpos(antpos(0),antpos(1),antpos(2));
+  return MPosition(mvpos);
+}
+
+
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx) const
 {
   
   Table t = table_.keywordSet().asTable("FREQUENCIES");
   if (whichIdx > t.nrow() ) {
-    throw(AipsError("SDMemTable::getCoordinate - whichIdx out of range"));
+    throw(AipsError("SDMemTable::getSpectralCoordinate - whichIdx out of range"));
   }
 
   Double rp,rv,inc;
   String rf;
-  Vector<Double> vec;
   ROScalarColumn<Double> rpc(t, "REFPIX");
   ROScalarColumn<Double> rvc(t, "REFVAL");
   ROScalarColumn<Double> incc(t, "INCREMENT");
-  t.keywordSet().get("RESTFREQS",vec);
   t.keywordSet().get("BASEREFFRAME",rf);
+
+// Create SpectralCoordinate (units Hz)
 
   MFrequency::Types mft;
   if (!MFrequency::getType(mft, rf)) {
@@ -667,11 +658,78 @@ SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx) const
   rpc.get(whichIdx, rp);
   rvc.get(whichIdx, rv);
   incc.get(whichIdx, inc);
+//
   SpectralCoordinate spec(mft,rv,inc,rp);
-  if (vec.nelements() > 0)
-    spec.setRestFrequencies(vec);
+//
   return spec;
 }
+
+
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx, uInt whichRow) const
+{
+// Create basic SC
+
+  SpectralCoordinate spec = getSpectralCoordinate (whichIdx);
+//
+  Table t = table_.keywordSet().asTable("FREQUENCIES");
+
+// Set rest frequencies
+
+  Vector<Double> vec;
+  t.keywordSet().get("RESTFREQS",vec);
+  if (vec.nelements() > 0) {
+    spec.setRestFrequencies(vec);
+
+// Select rest freq
+
+    if (vec.nelements() >= nIF()) {
+       spec.selectRestFrequency(uInt(IFSel_));
+    }
+  }
+
+// Set up frame conversion layer
+
+  String frm;
+  t.keywordSet().get("REFFRAME",frm);
+  if (frm == "") frm = "TOPO";
+  MFrequency::Types mtype;
+  if (!MFrequency::getType(mtype, frm)) {
+    cout << "Frequency type unknown assuming TOPO" << endl;       // SHould never happen
+    mtype = MFrequency::TOPO;
+  }
+
+// Set reference frame conversion  (requires row)
+
+  MDirection direct = getDirection(whichRow);
+  MEpoch epoch = getEpoch(whichRow);
+  MPosition pos = getAntennaPosition();
+  if (!spec.setReferenceConversion(mtype,epoch,pos,direct)) {
+    throw(AipsError("Couldn't convert frequency frame."));
+  }
+
+// Now velocity conversion if appropriate
+
+  String unitStr;
+  t.keywordSet().get("UNIT",unitStr);
+//
+  String dpl;
+  t.keywordSet().get("DOPPLER",dpl);
+  MDoppler::Types dtype;
+  MDoppler::getType(dtype, dpl);
+
+// Only set velocity unit if non-blank and non-Hz
+
+  if (!unitStr.empty()) {
+     Unit unitU(unitStr);
+     if (unitU==Unit("Hz")) {
+     } else {
+        spec.setVelocity(unitStr, dtype);
+     }
+  }
+//
+  return spec;
+}
+
 
 Bool SDMemTable::setCoordinate(const SpectralCoordinate& speccord,
                                uInt whichIdx) {
