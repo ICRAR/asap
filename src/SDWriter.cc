@@ -110,7 +110,7 @@ Int SDWriter::setFormat(const std::string &format)
 // finished.
 
 Int SDWriter::write(const CountedPtr<SDMemTable> in,
-                    const std::string &filename)
+                    const std::string &filename, Bool toStokes)
 {
 
 // Image FITS
@@ -118,14 +118,14 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
   if (cFormat=="FITS") {
      Bool verbose = True;
      SDFITSImageWriter iw;
-     if (iw.write(*in, filename, verbose)) {
+     if (iw.write(*in, filename, verbose, toStokes)) {
         return 0;
      } else {
         return 1;
      }
   } else if (cFormat=="ASCII") {
      SDAsciiWriter iw;
-     if (iw.write(*in, filename)) {
+     if (iw.write(*in, filename, toStokes)) {
         return 0;
      } else {
         return 1;
@@ -138,6 +138,9 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
   SDHeader hdr = in->getSDHeader();
   const Int nPol  = hdr.npol;
   const Int nChan = hdr.nchan;
+  if (toStokes) {
+     cerr << "Stokes conversion not yet available with SDFITS or MS" << endl;
+  }
 
 // Get Freq table
 
@@ -199,13 +202,13 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
         Vector<Double>  srcPM(2, 0.0);
         Double          srcVel = 0.0;
 
-// The writer will assume refPix = nChan/2 + 1.  So recompute
+// The writer will assume refPix = nChan/2 (0-rel).  So recompute
 // the frequency at this location. 
 
         Double          cdelt = sdft.increment(freqID);
         Double          crval = sdft.referenceValue(freqID);
         Double          crpix = sdft.referencePixel(freqID);
-        Double          pixel = nChan/2 + 1;
+        Double          pixel = nChan/2;
         Double          refFreqNew = (pixel-crpix)*cdelt + crval;
 //
         //Vector<Float>   tcal(2, 0.0f);

@@ -49,9 +49,10 @@ public:
   ~SDWriter();
 
 // Format can be "SDFITS", "FITS", "MS2" or "ASCII"
+// Stokes conversion available for FITS and ASCII at present
   casa::Int setFormat(const string &format = "SDFITS");
   casa::Int write(const casa::CountedPtr<SDMemTable> table,
-            const string &filename);
+            const string &filename, casa::Bool toStokes);
 
 private:
   std::string     cFormat;
