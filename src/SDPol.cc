@@ -105,8 +105,7 @@ Record SDStokesEngine::dataManagerSpec() const
     return spec;
 }
 
-DataManager* SDStokesEngine::makeObject (const String&,
-						 const Record& spec)
+DataManager* SDStokesEngine::makeObject (const String&, const Record& spec)
 {
     DataManager* dmPtr = new SDStokesEngine(spec);
     return dmPtr;
@@ -401,4 +400,42 @@ Array<Bool> SDPolUtil::stokesMask (Array<Bool> rawFlags,
    }
 //
    return stokesFlags;
+}
+
+Stokes::StokesTypes SDPolUtil::convertStokes(Int val, Bool toStokes, Bool linear)
+{   
+   Stokes::StokesTypes stokes = Stokes::Undefined;
+   if (toStokes) {
+      if (val==0) {
+         stokes = Stokes::I;
+      } else if (val==1) {
+         stokes = Stokes::Q;
+      } else if (val==2) {
+         stokes = Stokes::U;
+      } else if (val==3) {
+         stokes = Stokes::V;
+      }   
+   } else if (linear) {
+      if (val==0) {
+         stokes = Stokes::XX;
+      } else if (val==1) {
+         stokes = Stokes::YY;
+      } else if (val==2) {
+         stokes = Stokes::XY;         // Real(XY)
+      } else if (val==3) {
+         stokes = Stokes::XY;         // Imag(XY)
+      }
+   } else {
+      if (val==0) {
+         stokes = Stokes::RR;
+      } else if (val==1) {
+         stokes = Stokes::LL;
+      } else if (val==2) {
+         stokes = Stokes::RL;
+      } else if (val==3) {
+         stokes = Stokes::RL;
+      }
+   }
+//
+   return stokes;
 }

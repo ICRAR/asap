@@ -34,6 +34,7 @@
 //# Includes
 #include <casa/aips.h>
 #include <casa/Arrays/Array.h>
+#include <measures/Measures/Stokes.h>
 #include <tables/Tables/BaseMappedArrayEngine.h>
 
 
@@ -70,6 +71,10 @@ class SDPolUtil
   static casa::Array<casa::Bool> stokesMask (casa::Array<casa::Bool> rawFlags,
                                              casa::Bool doLinear);
 
+// Find the Stokes type for the given polarization axis (0,1,2,3)
+// You can ask for STokes or raw correltions (linear or circular)
+   static casa::Stokes::StokesTypes convertStokes(casa::Int val, casa::Bool toStokes, 
+                                                  casa::Bool linear);
 };
 
 
