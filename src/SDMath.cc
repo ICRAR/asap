@@ -70,7 +70,7 @@ using namespace asap;
 SDMath::SDMath()
 {;}
 
-SDMath::SDMath (const SDMath& other)
+SDMath::SDMath(const SDMath& other)
 {
 
 // No state
@@ -89,9 +89,9 @@ SDMath::~SDMath()
 {;}
 
 
-CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in,
-                                        const Vector<Bool>& mask, Bool scanAv,
-                                        const std::string& weightStr)
+CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
+				       const Vector<Bool>& mask, Bool scanAv,
+				       const std::string& weightStr)
 //
 // Weighted averaging of spectra from one or more Tables.
 //
@@ -100,7 +100,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 // Convert weight type
   
   WeightType wtType = NONE;
-  convertWeightString (wtType, weightStr);
+  convertWeightString(wtType, weightStr);
 
 // Create output Table by cloning from the first table
 
@@ -250,14 +250,14 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 
 // Normalize data in 'sum' accumulation array according to weighting scheme
 
-           normalize (sum, sumSq, nPts, wtType, axis, nAxesSub);
+           normalize(sum, sumSq, nPts, wtType, axis, nAxesSub);
 
 // Fill scan container. The source and freqID come from the
 // first row of the first table that went into this average (
 // should be the same for all rows in the scan average)
 
            Float nR(nAccum);
-           fillSDC (sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+           fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
                     timeSum/nR, intSum, sourceNameStart, freqIDStart);
 
 // Write container out to Table
@@ -289,7 +289,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 
 // Accumulate
 
-        accumulate (timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, 
+        accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, 
                     tSys, nInc, mask, time, interval, in, iTab, iRow, axis, 
                     nAxesSub, useMask, wtType);
 //
@@ -304,7 +304,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 //   - accumulated from the last scan average
 //
 // Normalize data in 'sum' accumulation array according to weighting scheme
-  normalize (sum, sumSq, nPts, wtType, axis, nAxesSub);
+  normalize(sum, sumSq, nPts, wtType, axis, nAxesSub);
 
 // Create and fill container.  The container we clone will be from
 // the last Table and the first row that went into the current
@@ -312,7 +312,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 
   Float nR(nAccum);
   SDContainer sc = in[tableStart]->getSDContainer(rowStart);
-  fillSDC (sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
+  fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
            timeSum/nR, intSum, sourceNameStart, freqIDStart);
 //
   pTabOut->putSDContainer(sc);
@@ -334,11 +334,11 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 
 CountedPtr<SDMemTable>
 SDMath::quotient(const CountedPtr<SDMemTable>& on,
-                 const CountedPtr<SDMemTable>& off) 
+		 const CountedPtr<SDMemTable>& off) 
+{
 //
 // Compute quotient spectrum
 //
-{
   const uInt nRows = on->nRow();
   if (off->nRow() != nRows) {
      throw (AipsError("Input Scan Tables must have the same number of rows"));
@@ -384,7 +384,7 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
      SDContainer sc = on->getSDContainer(i);
 //
-     putDataInSDC (sc, out, outflagsb);
+     putDataInSDC(sc, out, outflagsb);
      sc.putTsys(tsarr);
      sc.scanid = i;
 
@@ -398,9 +398,9 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 
 
-std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
-                                      const std::vector<bool>& mask,
-                                      const String& which)
+std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
+				     const std::vector<bool>& mask,
+				     const String& which)
 //
 // Perhaps iteration over pol/beam/if should be in here
 // and inside the nrow iteration ?
@@ -413,7 +413,7 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
 // Specify cursor location
 
   IPosition start, end;
-  getCursorLocation (start, end, *in);
+  getCursorLocation(start, end, *in);
 
 // Loop over rows
 
@@ -449,7 +449,7 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
 }
 
 
-SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
+SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 {
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
@@ -462,7 +462,7 @@ SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
     CoordinateSystem cSys;
     cSys.addCoordinate(in.getCoordinate(j));
     CoordinateSystem cSysBin = 
-      CoordinateUtil::makeBinnedCoordinateSystem (factors, cSys, False);
+      CoordinateUtil::makeBinnedCoordinateSystem(factors, cSys, False);
 //
     SpectralCoordinate sCBin = cSysBin.spectralCoordinate(0);
     pTabOut->setCoordinate(sCBin, j);
@@ -471,7 +471,7 @@ SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
 // Use RebinLattice to find shape
 
   IPosition shapeIn(1,sh.nchan);
-  IPosition shapeOut = RebinLattice<Float>::rebinShape (shapeIn, factors);
+  IPosition shapeOut = RebinLattice<Float>::rebinShape(shapeIn, factors);
   sh.nchan = shapeOut(0);
   pTabOut->putSDHeader(sh);
 
@@ -495,7 +495,7 @@ SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
     IPosition ip2 = marrout.shape();
     sc.resize(ip2);
 //
-    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
+    putDataInSDC(sc, marrout.getArray(), marrout.getMask());
 
 // Bin up Tsys.  
 
@@ -511,8 +511,8 @@ SDMemTable* SDMath::bin (const SDMemTable& in, Int width)
   return pTabOut;
 }
 
-SDMemTable* SDMath::simpleOperate (const SDMemTable& in, Float val, Bool doAll,
-                                   uInt what)
+SDMemTable* SDMath::simpleOperate(const SDMemTable& in, Float val, Bool doAll,
+				  uInt what)
 //
 // what = 0   Multiply
 //        1   Add
@@ -545,7 +545,7 @@ SDMemTable* SDMath::simpleOperate (const SDMemTable& in, Float val, Bool doAll,
 // Get cursor location
 
       IPosition start, end;
-      getCursorLocation (start, end, in);
+      getCursorLocation(start, end, in);
 //
       for (uInt i=0; i < tOut.nrow(); i++) {
 
@@ -578,13 +578,13 @@ SDMemTable* SDMath::simpleOperate (const SDMemTable& in, Float val, Bool doAll,
 
 
 
-SDMemTable* SDMath::averagePol (const SDMemTable& in, const Vector<Bool>& mask)
+SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask)
 //
 // Average all polarizations together, weighted by variance
 //
 {
 //   WeightType wtType = NONE;
-//   convertWeightString (wtType, weight);
+//   convertWeightString(wtType, weight);
 
    const uInt nRows = in.nRow();
    const uInt polAxis = 2;                     // Polarization axis
@@ -703,7 +703,7 @@ SDMemTable* SDMath::averagePol (const SDMemTable& in, const Vector<Bool>& mask)
       SDContainer sc = in.getSDContainer();
       sc.resize(shapeOut);
 //
-      putDataInSDC (sc, outData, outMask);
+      putDataInSDC(sc, outData, outMask);
       pTabOut->putSDContainer(sc);
    }
 //
@@ -711,8 +711,9 @@ SDMemTable* SDMath::averagePol (const SDMemTable& in, const Vector<Bool>& mask)
 }
 
 
-SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType,
-                            casa::Float width, Bool doAll)
+SDMemTable* SDMath::smooth(const SDMemTable& in, 
+			   const casa::String& kernelType,
+			   casa::Float width, Bool doAll)
 {
 
 // Number of channels
@@ -723,7 +724,7 @@ SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType
 
 // Generate Kernel
 
-   VectorKernel::KernelTypes type = VectorKernel::toKernelType (kernelType);
+   VectorKernel::KernelTypes type = VectorKernel::toKernelType(kernelType);
    Vector<Float> kernel = VectorKernel::make(type, width, nChan, True, False);
 
 // Generate Convolver
@@ -738,7 +739,7 @@ SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType
 // Get cursor location
          
   IPosition start, end;
-  getCursorLocation (start, end, in);
+  getCursorLocation(start, end, in);
 //
   IPosition shapeOut(4,1);
 
@@ -809,7 +810,7 @@ SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType
 // Create and put back
 
     SDContainer sc = in.getSDContainer(ri);
-    putDataInSDC (sc, valuesIn, maskIn);
+    putDataInSDC(sc, valuesIn, maskIn);
 //
     pTabOut->putSDContainer(sc);
   }
@@ -823,17 +824,17 @@ SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType
 
 // 'private' functions
 
-void SDMath::fillSDC (SDContainer& sc,
-                      const Array<Bool>& mask,
-                      const Array<Float>& data,
-                      const Array<Float>& tSys,
-                      Int scanID, Double timeStamp,
-                      Double interval, const String& sourceName,
-                      const Vector<uInt>& freqID)
+void SDMath::fillSDC(SDContainer& sc,
+		     const Array<Bool>& mask,
+		     const Array<Float>& data,
+		     const Array<Float>& tSys,
+		     Int scanID, Double timeStamp,
+		     Double interval, const String& sourceName,
+		     const Vector<uInt>& freqID)
 {
 // Data and mask
 
-  putDataInSDC (sc, data, mask);
+  putDataInSDC(sc, data, mask);
 
 // TSys
 
@@ -849,7 +850,7 @@ void SDMath::fillSDC (SDContainer& sc,
   sc.putFreqMap(freqID);
 }
 
-void SDMath::normalize (MaskedArray<Float>& sum,
+void SDMath::normalize(MaskedArray<Float>& sum,
                         const Array<Float>& sumSq,
                         const Array<Float>& nPts,
                         WeightType wtType, Int axis,
@@ -882,15 +883,15 @@ void SDMath::normalize (MaskedArray<Float>& sum,
 }
 
 
-void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
-                         MaskedArray<Float>& sum, Array<Float>& sumSq, 
-                         Array<Float>& nPts, Array<Float>& tSysSum, 
-                         const Array<Float>& tSys, const Array<Float>& nInc, 
-                         const Vector<Bool>& mask, Double time, Double interval,
-                         const Block<CountedPtr<SDMemTable> >& in,
-                         uInt iTab, uInt iRow, uInt axis, 
-                         uInt nAxesSub, Bool useMask,
-                         WeightType wtType)
+void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
+			MaskedArray<Float>& sum, Array<Float>& sumSq, 
+			Array<Float>& nPts, Array<Float>& tSysSum, 
+			const Array<Float>& tSys, const Array<Float>& nInc, 
+			const Vector<Bool>& mask, Double time, Double interval,
+			const Block<CountedPtr<SDMemTable> >& in,
+			uInt iTab, uInt iRow, uInt axis, 
+			uInt nAxesSub, Bool useMask,
+			WeightType wtType)
 {
 
 // Get data
@@ -957,8 +958,8 @@ void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
 
 
 
-void SDMath::getCursorLocation (IPosition& start, IPosition& end,
-                                const SDMemTable& in)
+void SDMath::getCursorLocation(IPosition& start, IPosition& end,
+			       const SDMemTable& in)
 {
   const uInt nDim = 4;
   const uInt i = in.getBeam();
@@ -980,7 +981,7 @@ void SDMath::getCursorLocation (IPosition& start, IPosition& end,
 }
 
 
-void SDMath::convertWeightString (WeightType& wtType, const std::string& weightStr)
+void SDMath::convertWeightString(WeightType& wtType, const std::string& weightStr)
 {
   String tStr(weightStr);
   tStr.upcase();
@@ -990,14 +991,14 @@ void SDMath::convertWeightString (WeightType& wtType, const std::string& weightS
      wtType = VAR;
   } else if (tStr.contains(String("TSYS"))) {
      wtType = TSYS;
-     throw (AipsError("T_sys weighting not yet implemented"));
+     throw(AipsError("T_sys weighting not yet implemented"));
   } else {
-    throw (AipsError("Unrecognized weighting type"));
+    throw(AipsError("Unrecognized weighting type"));
   }
 }
 
-void SDMath::putDataInSDC (SDContainer& sc, const Array<Float>& data,
-                           const Array<Bool>& mask)
+void SDMath::putDataInSDC(SDContainer& sc, const Array<Float>& data,
+			  const Array<Bool>& mask)
 {
     sc.putSpectrum(data);
 //
