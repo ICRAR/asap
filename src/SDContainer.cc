@@ -78,6 +78,7 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan)
     flags_(IPosition(4,nBeam,nIF,nPol,nChan)),
     tsys_(IPosition(4,nBeam,nIF,nPol,nChan)),
     freqidx_(nIF),
+    restfreqidx_(nIF),
     direction_(IPosition(2,nBeam,2)) {
   uChar x = 0;
   flags_ = ~x;
@@ -92,7 +93,8 @@ SDContainer::SDContainer(IPosition shp)
     spectrum_(shp),
     flags_(shp),
     tsys_(shp),
-    freqidx_(shp(1)) {
+    freqidx_(shp(1)),
+    restfreqidx_(shp(1)) {
   IPosition ip(2,shp(0),2);
   direction_.resize(ip);
   uChar x = 0;
@@ -112,6 +114,7 @@ Bool SDContainer::resize(IPosition shp) {
   flags_.resize(shp);
   tsys_.resize(shp);
   freqidx_.resize(shp(1));
+  restfreqidx_.resize(shp(1));
   IPosition ip(2,shp(0),2);
   direction_.resize(ip);
 }
@@ -341,14 +344,25 @@ Array<Double> SDContainer::getDirection(uInt whichBeam) const {
 }
 
 
-Bool SDContainer::setFrequencyMap(uInt freqslot, uInt whichIF) {
-  freqidx_[whichIF] = freqslot;
+Bool SDContainer::setFrequencyMap(uInt freqID, uInt whichIF) {
+  freqidx_[whichIF] = freqID;
   return True;
 }
 
 Bool SDContainer::putFreqMap(const Vector<uInt>& freqs) {
   freqidx_.resize();
   freqidx_ = freqs;
+  return True;
+}
+
+Bool SDContainer::setRestFrequencyMap(uInt freqID, uInt whichIF) {
+  restfreqidx_[whichIF] = freqID;
+  return True;
+}
+
+Bool SDContainer::putRestFreqMap(const Vector<uInt>& freqs) {
+  restfreqidx_.resize();
+  restfreqidx_ = freqs;
   return True;
 }
 
@@ -414,25 +428,20 @@ void SDContainer::setSlice (IPosition& start, IPosition& end,
 }
 
 
-
-// SDFrequenctTable
-
-
-Int SDFrequencyTable::addFrequency(Double refPix, Double refVal, Double inc) {
-  Int idx = -1;
-  Bool addit = False;
+uInt SDFrequencyTable::addFrequency(Double refPix, Double refVal, Double inc) 
+{
   if (length() > 0) {
-    for (uInt i=0; i< length();++i) {
-      if ( near(refVal,refVal_[i]) ) {
-	if (near(refPix,refPix_[i]) )
-	  if ( near(inc,increment_[i]) )
-	    idx = Int(i);
+    for (uInt i=0; i< length();i++) {
+      if (near(refVal,refVal_[i]) && 
+          near(refPix,refPix_[i]) && 
+          near(inc,increment_[i])) {
+         return i;
       }
     }
-    if (idx >= 0) {
-      return idx;
-    }
   }
+
+// Not found - add it
+
   nFreq_ += 1;
   refPix_.resize(nFreq_,True);
   refVal_.resize(nFreq_,True);
@@ -440,29 +449,29 @@ Int SDFrequencyTable::addFrequency(Double refPix, Double refVal, Double inc) {
   refPix_[nFreq_-1] = refPix;
   refVal_[nFreq_-1] = refVal;
   increment_[nFreq_-1] = inc;
-  idx = nFreq_-1;
-  return idx;
+  return nFreq_-1;
 }
 
-void SDFrequencyTable::addRestFrequency(Double val)
+uInt SDFrequencyTable::addRestFrequency(Double val)
 {
-  if (restFreqs_.nelements()  == 0) {
-    restFreqs_.resize(1);
-    restFreqs_[0] = val;
-  } else {
-    Bool found = False;
-    for (uInt i=0;i<restFreqs_.nelements();++i) {
-      if (restFreqs_[i] == val) {
-	found = True;
-	return;
+  uInt nFreq = restFreqs_.nelements();
+  if (nFreq>0) {
+    for (uInt i=0; i<nFreq;i++) {
+      if (near(restFreqs_[i],val)) {
+         return i;
       }
     }
-    if (!found) {
-      restFreqs_.resize(restFreqs_.nelements()+1,True);
-      restFreqs_[restFreqs_.nelements()-1] = val;
-    }
   }
+
+// Not found - add it
+
+  nFreq += 1;
+  restFreqs_.resize(nFreq,True);
+  restFreqs_[nFreq-1] = val;
+  return nFreq-1;
 }
+
+
 void SDFrequencyTable::restFrequencies(Vector<Double>& rfs, 
 				       String& rfunit ) const
 {

@@ -73,7 +73,7 @@ public:
   virtual ~SDFrequencyTable() {;}
 
 // Add a new entry or match an existing one. Returns the index into the table
-  casa::Int addFrequency(casa::Double refPix, casa::Double refVal, 
+  casa::uInt addFrequency(casa::Double refPix, casa::Double refVal, 
 			 casa::Double inc);
 //  
   casa::Int length() const { return nFreq_;}          // # of stored Frequencies
@@ -91,11 +91,11 @@ public:
 // Set attributes
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
-  void addRestFrequency(casa::Double);
+  casa::uInt addRestFrequency(casa::Double);
   void setRestFrequencyUnit(const casa::String& theunit) {restFreqUnit_ = theunit;}
 
 private:
-  casa::Int nFreq_;
+  casa::uInt nFreq_;
   casa::Vector<casa::Double> refPix_;
   casa::Vector<casa::Double> refVal_;           // Hz
   casa::Vector<casa::Double> increment_;        // Hz
@@ -135,6 +135,9 @@ public:
 
   casa::Bool setFrequencyMap(casa::uInt freqslot, casa::uInt whichIF);
   casa::Bool putFreqMap(const casa::Vector<casa::uInt>& freqs);
+
+  casa::Bool setRestFrequencyMap(casa::uInt freqslot, casa::uInt whichIF);
+  casa::Bool putRestFreqMap(const casa::Vector<casa::uInt>& freqs);
   
   casa::Array<casa::Float> getSpectrum(casa::uInt whichBeam, 
 				       casa::uInt whichIF) const;
@@ -150,6 +153,7 @@ public:
   const casa::Array<casa::Double>& getDirection() const { return direction_; }
 
   const casa::Vector<casa::uInt>& getFreqMap() const { return freqidx_; }
+  const casa::Vector<casa::uInt>& getRestFreqMap() const { return restfreqidx_; }
   
   const casa::Vector<casa::String>& getHistory() const { return history_; }
   casa::Bool putHistory(const casa::Vector<casa::String>& hist);
@@ -182,6 +186,8 @@ private:
 
   //(nIF) indx into "global" frequency table
   casa::Vector<casa::uInt>    freqidx_;
+ // (nIF) indx into "global" rest frequency table
+  casa::Vector<casa::uInt>    restfreqidx_;
   //(nBeam,2) maybe use Measures here...
   casa::Array<casa::Double>   direction_;
   casa::Vector<casa::String> history_;
