@@ -69,19 +69,11 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 // Weighted averaging of spectra from one or more Tables.
 //
 {
-  weightType wtType = NONE;
-  String tStr(weightStr);
-  tStr.upcase();
-  if (tStr.contains(String("NONE"))) {
-     wtType = NONE;
-  } else if (tStr.contains(String("VAR"))) {
-     wtType = VAR;
-  } else if (tStr.contains(String("TSYS"))) {
-     wtType = TSYS;
-     throw (AipsError("T_sys weighting not yet implemented"));
-  } else {
-    throw (AipsError("Unrecognized weighting type"));
-  }
+
+// Convert weight type
+  
+  WeightType wtType = NONE;
+  convertWeightString (wtType, weightStr);
 
 // Create output Table by cloning from the first table
 
@@ -358,17 +350,15 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
      Array<Float> out(tmp.getArray());
      out /= moff;
      out *= tsarr;
-     Array<Bool> outflagsb = !(mon.getMask() && moff.getMask());
-     Array<uChar> outflags(outflagsb.shape());
-     convertArray(outflags,outflagsb);
+     Array<Bool> outflagsb = mon.getMask() && moff.getMask();
 
 // Fill container for this row
 
      SDContainer sc = on->getSDContainer();
+//
+     putDataInSDC (sc, out, outflagsb);
      sc.putTsys(tsarr);
      sc.scanid = 0;
-     sc.putSpectrum(out);
-     sc.putFlags(outflags);
 
 // Put new row in output Table
 
@@ -449,30 +439,54 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in)
 
 // Create and put back
 
-    Array<uChar> outflags(barr.shape());
-    convertArray(outflags,!barr);
     SDContainer sc = in->getSDContainer(ri);
-    sc.putSpectrum(arr);
-    sc.putFlags(outflags);
+    putDataInSDC (sc, arr, barr);
+//
     sdmt->putSDContainer(sc);
   }
   return CountedPtr<SDMemTable>(sdmt);
 }
 
 
-
-
 CountedPtr<SDMemTable>
 SDMath::averagePol(const CountedPtr<SDMemTable>& in,
-                   const Vector<Bool>& mask) 
+                   const Vector<Bool>& mask)
+//
+// Average all polarizations together, weighted by variance
+//
 {
+//   WeightType wtType = NONE;
+//   convertWeightString (wtType, weight);
+
    const uInt nRows = in->nRow();
-   const uInt axis = 3;                        // Spectrum
-   const IPosition axes(2, 2, 3);              // pol-channel plane
+   const uInt polAxis = 2;                     // Polarization axis
+   const uInt chanAxis = 3;                    // Spectrum axis
 
-// Create output Table
+// Create output Table and reshape number of polarizations
 
-  SDMemTable* sdmt = new SDMemTable(*in, True);
+  Bool clear=True;
+  SDMemTable* pTabOut = new SDMemTable(*in, clear);
+  SDHeader header = pTabOut->getSDHeader();
+  header.npol = 1;
+  pTabOut->putSDHeader(header);
+
+// Shape of input and output data 
+
+  const IPosition shapeIn = in->rowAsMaskedArray(0).shape();
+  IPosition shapeOut(shapeIn);
+  shapeOut(polAxis) = 1;                          // Average all polarizations
+//
+  const uInt nChan = shapeIn(chanAxis);
+  const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
+  IPosition start(4), end(4);
+
+// Output arrays
+
+  Array<Float> outData(shapeOut, 0.0);
+  Array<Bool> outMask(shapeOut, True);
+  const IPosition axes(2, 2, 3);              // pol-channel plane
+// 
+  const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
 
 // Loop over rows
 
@@ -483,26 +497,22 @@ SDMath::averagePol(const CountedPtr<SDMemTable>& in,
       MaskedArray<Float> marr(in->rowAsMaskedArray(iRow));
       Array<Float>& arr = marr.getRWArray();
       const Array<Bool>& barr = marr.getMask();
-//
-      IPosition shp = marr.shape();
-      const Bool useMask = (mask.nelements() == shp(axis));
-      const uInt nChan = shp(axis);
 
 // Make iterators to iterate by pol-channel planes
 
-     ArrayIterator<Float> itDataPlane(arr, axes);
-     ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
+      ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
+      ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
 
 // Accumulations
 
-     Float fac = 0.0;
-     Vector<Float> vecSum(nChan,0.0);
+      Float fac = 1.0;
+      Vector<Float> vecSum(nChan,0.0);
 
-// Iterate by plane
+// Iterate through data by pol-channel planes
 
-     while (!itDataPlane.pastEnd()) {
+      while (!itDataPlane.pastEnd()) {
 
-// Iterate through pol-channel plane by spectrum
+// Iterate through plane by polarization  and accumulate Vectors
 
         Vector<Float> t1(nChan); t1 = 0.0;
         Vector<Bool> t2(nChan); t2 = True;
@@ -540,36 +550,36 @@ SDMath::averagePol(const CountedPtr<SDMemTable>& in,
 
         vecSum /= varSum;
 
-// We have formed the weighted averaged spectrum from all polarizations
-// for this beam and IF.  Now replicate the spectrum to all polarizations 
+// FInd position in input data array.  We are iterating by pol-channel
+// plane so all that will change is beam and IF and that's what we want.
 
-        {
-           VectorIterator<Float> itDataVec(itDataPlane.array(), 1);  // Writes back into 'arr'
-           const Vector<Float>& vecSumData = vecSum.getArray();      // It *is* a Vector
-//
-           while (!itDataVec.pastEnd()) {     
-              itDataVec.vector() = vecSumData;
-              itDataVec.next();
-           }
-        }
+        IPosition pos = itDataPlane.pos();
+
+// Write out data. This is a bit messy. We have to reform the Vector 
+// accumulator into an Array of shape (1,1,1,nChan)
+
+        start = pos;
+        end = pos; 
+        end(chanAxis) = nChan-1;
+        outData(start,end) = vecSum.getArray().reform(vecShapeOut);
+        outMask(start,end) = vecSum.getMask().reform(vecShapeOut);
 
 // Step to next beam/IF combination
 
         itDataPlane.next();
         itMaskPlane.next();
-     }
+      }
 
 // Generate output container and write it to output table
 
-     SDContainer sc = in->getSDContainer();
-     Array<uChar> outflags(barr.shape());
-     convertArray(outflags,!barr);
-     sc.putSpectrum(arr);
-     sc.putFlags(outflags);
-     sdmt->putSDContainer(sc);
+      SDContainer sc = in->getSDContainer();
+      sc.resize(shapeOut);
+//
+      putDataInSDC (sc, outData, outMask);
+      pTabOut->putSDContainer(sc);
    }
 //
-  return CountedPtr<SDMemTable>(sdmt);
+  return CountedPtr<SDMemTable>(pTabOut);
 }
 
 
@@ -619,11 +629,8 @@ CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in,
 
     IPosition ip2 = marrout.shape();
     sc.resize(ip2);
-    sc.putSpectrum(marrout.getArray());
 //
-    Array<uChar> outflags(ip2);
-    convertArray(outflags,!(marrout.getMask()));
-    sc.putFlags(outflags);
+    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
 
 // Bin up Tsys.  
 
@@ -633,6 +640,7 @@ CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in,
     MaskedArray<Float> tSysOut;    
     LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
     sc.putTsys(tSysOut.getArray());
+//
     sdmt->putSDContainer(sc);
   }
   return CountedPtr<SDMemTable>(sdmt);
@@ -702,12 +710,12 @@ void SDMath::fillSDC (SDContainer& sc,
                       Double interval, const String& sourceName,
                       const Vector<uInt>& freqID)
 {
-  sc.putSpectrum(data);
-//
-  Array<uChar> outflags(mask.shape());
-  convertArray(outflags,!mask);
-  sc.putFlags(outflags);
-//
+// Data and mask
+
+  putDataInSDC (sc, data, mask);
+
+// TSys
+
   sc.putTsys(tSys);
 
 // Time things
@@ -723,7 +731,7 @@ void SDMath::fillSDC (SDContainer& sc,
 void SDMath::normalize (MaskedArray<Float>& sum,
                         const Array<Float>& sumSq,
                         const Array<Float>& nPts,
-                        weightType wtType, Int axis,
+                        WeightType wtType, Int axis,
                         Int nAxesSub)
 {
    IPosition pos2(nAxesSub,0);
@@ -761,7 +769,7 @@ void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
                          const Block<CountedPtr<SDMemTable> >& in,
                          uInt iTab, uInt iRow, uInt axis, 
                          uInt nAxesSub, Bool useMask,
-                         weightType wtType)
+                         WeightType wtType)
 {
 
 // Get data
@@ -901,11 +909,42 @@ void SDMath::getCursorLocation (IPosition& start, IPosition& end,
   const uInt k = in.getPol();
   const uInt n = in.nChan();
 //
-  IPosition s(nDim,i,j,k,0);
-  IPosition e(nDim,i,j,k,n-1);
-//
   start.resize(nDim);
-  start = s;
+  start(0) = i;
+  start(1) = j;
+  start(2) = k;
+  start(3) = 0;
+//
   end.resize(nDim);
-  end = e;
+  end(0) = i;
+  end(1) = j;
+  end(2) = k;
+  end(3) = n-1;
+}
+
+
+void SDMath::convertWeightString (WeightType& wtType, const std::string& weightStr)
+{
+  String tStr(weightStr);
+  tStr.upcase();
+  if (tStr.contains(String("NONE"))) {
+     wtType = NONE;
+  } else if (tStr.contains(String("VAR"))) {
+     wtType = VAR;
+  } else if (tStr.contains(String("TSYS"))) {
+     wtType = TSYS;
+     throw (AipsError("T_sys weighting not yet implemented"));
+  } else {
+    throw (AipsError("Unrecognized weighting type"));
+  }
+}
+
+void SDMath::putDataInSDC (SDContainer& sc, const Array<Float>& data,
+                           const Array<Bool>& mask)
+{
+    sc.putSpectrum(data);
+//
+    Array<uChar> outflags(data.shape());
+    convertArray(outflags,!mask);
+    sc.putFlags(outflags);
 }
