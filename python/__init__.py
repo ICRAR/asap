@@ -52,7 +52,7 @@ defaultParams = {
     # general
     'verbose'             : [True, _validate_bool],
     'useplotter'          : [True, _validate_bool],
-    'insitu'              : [False, _validate_bool],
+    'insitu'              : [True, _validate_bool],
     
     # plotting
     'plotter.stacking'    : ['p', str],
@@ -80,7 +80,7 @@ def list_rcparameters():
     useplotter                 : True
 
     # apply operations on the input scantable or return new one
-    insitu                     : False
+    insitu                     : True
     
     # plotting
     # default mode for colour stacking
