@@ -81,7 +81,7 @@ void python_SDMemTable() {
     .def("setmask", &SDMemTableWrapper::setMask)
     .def("_flag", &SDMemTableWrapper::flag,
          (boost::python::arg("whichRow")=-1) )
-    .def("save",  &SDMemTableWrapper::makePersistent)
+    .def("_save",  &SDMemTableWrapper::makePersistent)
     .def("summary",  &SDMemTableWrapper::summary)
     .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
     .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
