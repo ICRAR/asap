@@ -495,7 +495,13 @@ class scantable(sdtable):
         """
         return list(self._getrestfreqs())
 
-    def set_restfreqs(self, freqs, unit='Hz', source=None, theif=None):
+    def lines(self):
+        """
+        Print the list of known spectral lines
+        """
+        sdtable._lines(self)
+
+    def set_restfreqs(self, freqs=None, unit='Hz', lines=None, source=None, theif=None):
         """
         Select the restfrequency for the specified source and IF OR
         replace for all IFs.  If the 'freqs' argument holds a scalar,
@@ -510,9 +516,16 @@ class scantable(sdtable):
         to the corresponding value you give in the 'freqs' vector.  
         E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and 
         IF 1 gets restfreq 2e9.
+
+        You can also specify the frequencies via known line names
+        in the argument 'lines'.  Use 'freqs' or 'lines'.  'freqs'
+        takes precedence. See the list of known names via function
+        scantable.lines()
         Parameters:
-            freqs:   rest frequencies
+            freqs:   list of rest frequencies
             unit:    unit for rest frequency (default 'Hz')
+            lines:   list of known spectral lines names (alternative to freqs).
+                     See possible list via scantable.lines()
             source:  Source name (blank means all)
             theif:   IF (-1 means all)
         Example:
@@ -526,7 +539,14 @@ class scantable(sdtable):
         t = type(freqs)
         if t is int or t is float:
            freqs = [freqs]
-        sdtable._setrestfreqs(self, freqs, unit, source, theif)
+        if freqs is None:
+           freqs = []
+        t = type(lines)
+        if t is str:
+           lines = [lines]
+        if lines is None:
+           lines = []
+        sdtable._setrestfreqs(self, freqs, unit, lines, source, theif)
         return
 
 
