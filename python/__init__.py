@@ -8,6 +8,9 @@ from asapfitter import *
 from asapreader import reader
 from asapmath import *
 from scantable import *
+print "Initialising plotter..."
+from asapplotter import *
+plotter = asapplotter()
 #from numarray ones,zeros
 
 __date__ = '$Date$'
@@ -26,7 +29,7 @@ def list_scans(t = scantable):
     print x
 
 def commands():
-    x = """
+    x = """    
     [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
@@ -78,6 +81,16 @@ def commands():
             set_parameters  - set the parameters for the function(s), and
                               set if they should be held fixed during fitting
             get_parameters  - get the fitted parameters
+    [Plotter]
+        asapplotter         - a plotter for asap, default plotter is
+                              called 'plotter'
+            plot            - plot a (list of) scantable
+            set_mode        - set the state of the plotter, i.e.
+                              what is to be plotted 'colour stacked'
+                              and what 'panelled'
+            set_range       - set the abcissa 'zoom' range
+            set_legend_map  - specify user labels for the legend indeces
+            
     [Reading files]
         reader              - access rpfits/sdfits files
             read            - read in integrations
@@ -92,6 +105,17 @@ def commands():
                               range(3) = [0,1,2], range(2,5) = [2,3,4]
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
+    Note:
+        How to use this with help:
+                                         # function 'summary'
+        [xxx] is just a category
+        Every 'sub-level' in this list should be replaces by a '.' Period when
+        using help 
+        Example:
+            ASAP> help scantable # to get info on ths scantable
+            ASAP> help scantable.summary # to get help on the scantable's
+            ASAP> help average_time
+
     """
     print x
     return
