@@ -8,7 +8,7 @@ class scantable(sdtable):
         The ASAP container for scans
     """
     
-    def __init__(self, filename, unit=None):
+    def __init__(self, filename, average=None, unit=None):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
@@ -20,15 +20,20 @@ class scantable(sdtable):
                          or
                          [advanced] a reference to an existing
                          scantable
-           unit:         brightness unit; must be consistent with K or Jy.
+            average:     average all integrations withinb a scan on read.
+                         The default (True) is taken from .asaprc.
+            unit:         brightness unit; must be consistent with K or Jy.
                          Over-rides the default selected by the reader
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
         """
+        varlist = vars()
         self._vb = rcParams['verbose']
         self._p = None
-        from os import stat as st
-        import stat
+        
+        if average is None or type(average) is not bool:
+            autoav = rcParams['scantable.autoaverage']            
+
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
             if unit is not None:
@@ -48,9 +53,7 @@ class scantable(sdtable):
                 else:
                     print "The given file '%s'is not a valid asap table." % (filename)
                     return
-            else:
-                autoav = rcParams['scantable.autoaverage']
-
+            else:            
                 from asap._asap import sdreader
                 ifSel = -1
                 beamSel = -1
@@ -69,6 +72,7 @@ class scantable(sdtable):
                     del r,tbl
                 else:
                     sdtable.__init__(self,tbl)
+                self._add_history("scantable", varlist)
 
     def save(self, name=None, format=None, stokes=False, overwrite=False):
         """
@@ -177,7 +181,7 @@ class scantable(sdtable):
             else:
                 print "Illegal file name '%s'." % (filename)
         print info
-
+            
     def set_cursor(self, thebeam=0,theif=0,thepol=0):
         """
         Set the spectrum for individual operations.
@@ -188,9 +192,11 @@ class scantable(sdtable):
             pol1sig = scan.stats(all=False) # returns std dev for beam=0
                                             # if=0, pol=1
         """
+        varlist = vars()
         self.setbeam(thebeam)
         self.setpol(thepol)
         self.setif(theif)
+        self._add_history("set_cursor",varlist)
         return
 
     def get_cursor(self):
@@ -379,15 +385,16 @@ class scantable(sdtable):
             unit:    optional unit, default is 'channel'
                      one of '*Hz','km/s','channel', ''
         """
-
+        varlist = vars()
         if unit in ['','pixel', 'channel']:
             unit = ''
         inf = list(self._getcoordinfo())
         inf[0] = unit
         self._setcoordinfo(inf)
         if self._p: self.plot()
+        self._add_history("set_unit",varlist)
 
-    def set_instrument (self, instr):
+    def set_instrument(self, instr):
         """
         Set the instrument for subsequent processing
         Parameters:
@@ -395,6 +402,7 @@ class scantable(sdtable):
                       'DSS-43' (Tid), 'CEDUNA', and 'HOBART'
         """
         self._setInstrument(instr)
+        self._add_history("set_instument",vars())
 
     def set_doppler(self, doppler='RADIO'):
         """
@@ -402,11 +410,12 @@ class scantable(sdtable):
         Parameters:
             doppler:    One of 'RADIO', 'OPTICAL', 'Z', 'BETA', 'GAMMA'
         """
-
+        varlist = vars()
         inf = list(self._getcoordinfo())
         inf[2] = doppler
         self._setcoordinfo(inf)
         if self._p: self.plot()
+        self._add_history("set_doppler",vars())
  
     def set_freqframe(self, frame=None):
         """
@@ -416,13 +425,15 @@ class scantable(sdtable):
         Examples:
             scan.set_freqframe('BARY')
         """
-        if not frame: frame = rcParams['scantable.freqframe']
+        if frame is None: frame = rcParams['scantable.freqframe']
+        varlist = vars()
         valid = ['REST','TOPO','LSRD','LSRK','BARY', \
                    'GEO','GALACTO','LGROUP','CMB']
         if frame in valid:
             inf = list(self._getcoordinfo())
             inf[1] = frame
             self._setcoordinfo(inf)
+            self._add_history("set_freqframe",varlist)
         else:
             print "Please specify a valid freq type. Valid types are:\n",valid
             
@@ -479,6 +490,7 @@ class scantable(sdtable):
             # and 800 and 900 in the unit 'channel'
            
         """
+        varlist = vars()
         u = self._getcoordinfo()[0]
         if self._vb:
             if u == "": u = "channel"
@@ -486,7 +498,7 @@ class scantable(sdtable):
         n = self.nchan()
         data = self._getabcissa()
         msk = zeros(n)
-        for  window in args:
+        for window in args:
             if (len(window) != 2 or window[0] > window[1] ):
                 print "A window needs to be defined as [min,max]"
                 return
@@ -497,6 +509,7 @@ class scantable(sdtable):
             if kwargs.get('invert'):
                 from numarray import logical_not
                 msk = logical_not(msk)
+        self._add_history("create_mask", varlist)
         return msk
     
     def get_restfreqs(self):
@@ -516,7 +529,8 @@ class scantable(sdtable):
         """
         sdtable._lines(self)
 
-    def set_restfreqs(self, freqs=None, unit='Hz', lines=None, source=None, theif=None):
+    def set_restfreqs(self, freqs=None, unit='Hz', lines=None, source=None,
+                      theif=None):
         """
         Select the restfrequency for the specified source and IF OR
         replace for all IFs.  If the 'freqs' argument holds a scalar,
@@ -547,6 +561,7 @@ class scantable(sdtable):
             scan.set_restfreqs(freqs=1.4e9, source='NGC253', theif=2)
             scan.set_restfreqs(freqs=[1.4e9,1.67e9])
         """
+        varlist = vars()
         if source is None:
             source = ""
         if theif is None:
@@ -562,7 +577,8 @@ class scantable(sdtable):
         if lines is None:
            lines = []
         sdtable._setrestfreqs(self, freqs, unit, lines, source, theif)
-        return
+        self._add_history("set_restfreqs", varlist)
+        
 
 
     def flag_spectrum(self, thebeam, theif, thepol):
@@ -584,6 +600,7 @@ class scantable(sdtable):
             sdtable.setif(self, theif)
             sdtable.setpol(self, thepol)
             sdtable._flag(self)
+            self._add_history("flag_spectrum", vars())
         else:
             print "Please specify a valid (Beam/IF/Pol)"
         return
@@ -682,8 +699,72 @@ class scantable(sdtable):
                     for l in range(shp[2]):
                         if shp[2] > 1: out +=  ' %s[%d] ' % (a[2],l)
                         out += '= %3.3f\n' % (t[j,k,l])
-            out += "--------------------------------------------------\n"
-        print "--------------------------------------------------"
+            out += "-"*80
+            out += "\n"
+        print "-"*80
         print " ", label
-        print "--------------------------------------------------"
+        print "-"*80
         print out 
+
+    def history(self):
+        hist = list(self._gethistory())
+        print "-"*80
+        for h in hist:
+            items = h.split("##")
+            date = items[0]
+            func = items[1]
+            items = items[2:]
+            print date            
+            print "Function: %s\n  Parameters:" % (func)
+            for i in items:
+                s = i.split("=")
+                print "   %s: %s" % (s[0],s[1])
+            print "-"*80
+        return
+
+    def _add_history(self, funcname, parameters):
+        # create date
+        sep = "##"
+        from datetime import datetime
+        dstr = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+        hist = dstr+sep
+        hist += funcname+sep#cdate+sep
+        if parameters.has_key('self'): del parameters['self']
+        for k,v in parameters.iteritems():
+            if type(v) is dict:
+                for k2,v2 in v.iteritems():
+                    hist += k2
+                    hist += "="
+                    if isinstance(v2,scantable):
+                        hist += 'scantable'
+                    elif k2 == 'mask':
+                        hist += str(self._zip_mask(v2))
+                    else:
+                        hist += str(v2)                    
+            else:
+                hist += k
+                hist += "="
+                if isinstance(v,scantable):
+                    hist += 'scantable'
+                elif k == 'mask':
+                    hist += str(self._zip_mask(v))
+                else:
+                    hist += str(v)
+            hist += sep
+        hist = hist[:-2] # remove trailing '##'
+        self._addhistory(hist)
+        
+
+    def _zip_mask(self, mask):
+        mask = list(mask)
+        i = 0
+        segments = []
+        while mask[i:].count(1):
+            i += mask[i:].index(1)
+            if mask[i:].count(0):
+                j = i + mask[i:].index(0)
+            else:
+                j = len(mask)                
+            segments.append([i,j])
+            i = j
+        return segments
