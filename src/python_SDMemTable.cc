@@ -75,6 +75,9 @@ void python_SDMemTable() {
          (boost::python::arg("whichRow")=0),
          (boost::python::arg("pol")=false),
          (boost::python::arg("pa")=0.0) )
+    .def("_getcircularspectrum", &SDMemTableWrapper::getCircularSpectrum,
+         (boost::python::arg("whichRow")=0),
+         (boost::python::arg("rr")=true))
     .def("_setspectrum",&SDMemTableWrapper::setSpectrum,
          (boost::python::arg("whichRow")=0) )
     .def("_getabcissa", &SDMemTableWrapper::getAbcissa,

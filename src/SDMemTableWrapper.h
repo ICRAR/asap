@@ -84,6 +84,10 @@ public:
     return table_->getStokesSpectrum(whichRow, doPol, paOff);
   }
 
+  std::vector<float> getCircularSpectrum(int whichRow=0, bool doRR=true) const {
+    return table_->getCircularSpectrum(whichRow, doRR);
+  }
+
   std::vector<double> getAbcissa(int whichRow=0) const {
     return table_->getAbcissa(whichRow);
   }
