@@ -120,7 +120,7 @@ Int SDWriter::write(
   Double mjd0 = 0.0;
 
   Int count = 0;
-  for (Int iRow = 0; iRow < table->nRows(); iRow++) {
+  for (Int iRow = 0; iRow < table->nRow(); iRow++) {
     // Extract the next integration from the table.
     SDContainer sd = table->getSDContainer(iRow);
     if (sd.scanid != scanNo) {
@@ -167,15 +167,15 @@ Int SDWriter::write(
         Vector<Complex> xPol;
         if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
                                     sd.interval, fieldName, sd.sourcename,
-                                    sd.getDirection(iBeam), 
-				    srcPM, srcVel, iIF+1, hdr.reffreq,
+                                    sd.getDirection(iBeam),
+                                    srcPM, srcVel, iIF+1, hdr.reffreq,
                                     hdr.bandwidth, freqInc, restFreq, tcal,
                                     tcalTime, azimuth, elevation, parAngle,
                                     focusAxi, focusTan, focusRot, temperature,
                                     pressure, humidity, windSpeed, windAz,
-                                    refBeam, iBeam+1, 
-				    sd.getDirection(iBeam), 
-				    scanRate,
+                                    refBeam, iBeam+1,
+                                    sd.getDirection(iBeam),
+                                    scanRate,
                                     sd.getTsys(iBeam, iIF), sigma, calFctr,
                                     baseLin, baseSub,
                                     sd.getSpectrum(iBeam, iIF),
