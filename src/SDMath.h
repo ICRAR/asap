@@ -60,17 +60,18 @@ class SDMath {
 // Average in time
    casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                                          const casa::Vector<casa::Bool>& mask,
-                                         bool scanAverage, const std::string& weightStr);
+                                         casa::Bool scanAverage, const std::string& weightStr);
 
 // Statistics
    std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
-    		                const std::vector<bool>& mask, const std::string& which);
-
-// Hanning
-   SDMemTable* hanning(const SDMemTable& in, casa::Bool doAll);
+    		                const std::vector<bool>& mask, const casa::String& which);
 
 // Bin up spectra
    SDMemTable* bin(const SDMemTable& in, casa::Int width);
+
+// Smooth
+   SDMemTable* smooth (const SDMemTable& in, const casa::String& kernel,
+                       casa::Float width, casa::Bool doAll);
 
 // Simple mathematical operations.  what=0 (mul) or 1 (add)
    SDMemTable* simpleOperate(const SDMemTable& in, casa::Float offset, 
@@ -123,7 +124,6 @@ class SDMath {
 // Convert weight string to enum value
 
    void convertWeightString (WeightType& wt, const std::string& weightStr);
-
 };
 
 } // namespace

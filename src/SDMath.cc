@@ -41,7 +41,11 @@
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/MaskArrLogi.h>
+#include <casa/Utilities/Assert.h>
 #include <casa/Exceptions.h>
+
+#include <scimath/Mathematics/VectorKernel.h>
+#include <scimath/Mathematics/Convolver.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
@@ -83,7 +87,7 @@ SDMath& SDMath::operator=(const SDMath& other)
 
 
 CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in,
-                                        const Vector<Bool>& mask, bool scanAv,
+                                        const Vector<Bool>& mask, Bool scanAv,
                                         const std::string& weightStr)
 //
 // Weighted averaging of spectra from one or more Tables.
@@ -390,86 +394,9 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 
 
-SDMemTable* SDMath::hanning(const SDMemTable& in, Bool doAll)
-//
-// Hanning smooth each row
-// Should Tsys be smoothed ?
-//
-{
-
-// New Table
-
-  SDMemTable* pTabOut = new SDMemTable(in,True);
-
-// Get cursor location
-         
-  IPosition start, end;
-  getCursorLocation (start, end, in);
-//
-  const uInt chanAxis = 3;                    // Spectrum axis
-  IPosition shapeOut(4,1);
-
-// Loop over rows in Table
-
-  for (uInt ri=0; ri < in.nRow(); ++ri) {
-
-// Get copy of data
-    
-    const MaskedArray<Float>& dataIn(in.rowAsMaskedArray(ri));
-    Array<Float> valuesIn = dataIn.getArray();
-    Array<Bool> maskIn = dataIn.getMask();
-
-// Smooth along the channels axis
-
-    Vector<Float> outValues;
-    Vector<Bool> outMask;
-    if (doAll) {
-       uInt axis = 3;
-       VectorIterator<Float> itValues(valuesIn, axis);
-       VectorIterator<Bool> itMask(maskIn, axis);
-       while (!itValues.pastEnd()) {
-          mathutil::hanning(outValues, outMask, itValues.vector(), itMask.vector());
-          itValues.vector() = outValues; 
-          itMask.vector() = outMask;
-//
-          itValues.next();
-          itMask.next();
-       }
-    } else {
-
-// Set multi-dim Vector shape
-
-       shapeOut(chanAxis) = valuesIn.shape()(chanAxis);
-
-// Stuff about with shapes so that we don't have conformance run-time errors
-
-       Vector<Float> valuesIn2 = valuesIn(start,end).nonDegenerate();
-       Vector<Bool> maskIn2 = maskIn(start,end).nonDegenerate();
-       mathutil::hanning(outValues, outMask, valuesIn2, maskIn2);
-
-// Write back
-
-       valuesIn(start,end) = outValues.reform(shapeOut);
-       maskIn(start,end) = outMask.reform(shapeOut);
-    }
-
-// Create and put back
-
-    SDContainer sc = in.getSDContainer(ri);
-    putDataInSDC (sc, valuesIn, maskIn);
-//
-    pTabOut->putSDContainer(sc);
-  }
-//
-  return pTabOut;
-}
-
-
-
-
 std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
-                                       const std::vector<bool>& mask,
-                                       const std::string& which)
+                                      const std::vector<bool>& mask,
+                                      const String& which)
 //
 // Perhaps iteration over pol/beam/if should be in here
 // and inside the nrow iteration ?
@@ -780,6 +707,114 @@ SDMemTable* SDMath::averagePol (const SDMemTable& in, const Vector<Bool>& mask)
 }
 
 
+SDMemTable* SDMath::smooth (const SDMemTable& in, const casa::String& kernelType,
+                            casa::Float width, Bool doAll)
+{
+
+// Number of channels
+
+   const uInt chanAxis = 3;                                     // Spectral axis
+   SDHeader sh = in.getSDHeader();
+   const uInt nChan = sh.nchan;
+
+// Generate Kernel
+
+   VectorKernel::KernelTypes type = VectorKernel::toKernelType (kernelType);
+   Vector<Float> kernel = VectorKernel::make(type, width, nChan, True, False);
+
+// Generate Convolver
+
+   IPosition shape(1,nChan);
+   Convolver<Float> conv(kernel, shape);
+
+// New Table
+
+   SDMemTable* pTabOut = new SDMemTable(in,True);
+
+// Get cursor location
+         
+  IPosition start, end;
+  getCursorLocation (start, end, in);
+//
+  IPosition shapeOut(4,1);
+
+// Output Vectors
+
+  Vector<Float> valuesOut(nChan);
+  Vector<Bool> maskOut(nChan);
+
+// Loop over rows in Table
+
+  for (uInt ri=0; ri < in.nRow(); ++ri) {
+
+// Get copy of data
+    
+    const MaskedArray<Float>& dataIn(in.rowAsMaskedArray(ri));
+    AlwaysAssert(dataIn.shape()(chanAxis)==nChan, AipsError);
+//
+    Array<Float> valuesIn = dataIn.getArray();
+    Array<Bool> maskIn = dataIn.getMask();
+
+// Branch depending on whether we smooth all locations or just
+// those pointed at by the current selection cursor
+
+    if (doAll) {
+       uInt axis = 3;
+       VectorIterator<Float> itValues(valuesIn, axis);
+       VectorIterator<Bool> itMask(maskIn, axis);
+       while (!itValues.pastEnd()) {
+
+// Smooth
+          if (kernelType==VectorKernel::HANNING) {
+             mathutil::hanning(valuesOut, maskOut, itValues.vector(), itMask.vector());
+             itMask.vector() = maskOut;
+          } else {
+             mathutil::replaceMaskByZero(itValues.vector(), itMask.vector());
+             conv.linearConv(valuesOut, itValues.vector());
+          }
+//
+          itValues.vector() = valuesOut;
+//
+          itValues.next();
+          itMask.next();
+       }
+    } else {
+
+// Set multi-dim Vector shape
+
+       shapeOut(chanAxis) = valuesIn.shape()(chanAxis);
+
+// Stuff about with shapes so that we don't have conformance run-time errors
+
+       Vector<Float> valuesIn2 = valuesIn(start,end).nonDegenerate();
+       Vector<Bool> maskIn2 = maskIn(start,end).nonDegenerate();
+
+// Smooth
+
+       if (kernelType==VectorKernel::HANNING) {
+          mathutil::hanning(valuesOut, maskOut, valuesIn2, maskIn2);
+          maskIn(start,end) = maskOut.reform(shapeOut);
+       } else {
+          mathutil::replaceMaskByZero(valuesIn2, maskIn2);
+          conv.linearConv(valuesOut, valuesIn2);
+       }
+//
+       valuesIn(start,end) = valuesOut.reform(shapeOut);
+    }
+
+// Create and put back
+
+    SDContainer sc = in.getSDContainer(ri);
+    putDataInSDC (sc, valuesIn, maskIn);
+//
+    pTabOut->putSDContainer(sc);
+  }
+//
+  return pTabOut;
+}
+
+
+
 
 
 // 'private' functions
@@ -966,5 +1001,3 @@ void SDMath::putDataInSDC (SDContainer& sc, const Array<Float>& data,
     convertArray(outflags,!mask);
     sc.putFlags(outflags);
 }
-
-
