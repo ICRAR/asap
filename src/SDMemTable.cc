@@ -192,6 +192,8 @@ void SDMemTable::setup()
   // point, we must bind the Virtual Engine regardless.  The STOKES
   // column won't be accessed if not appropriate (nPol=4)
 
+
+   SDStokesEngine::registerClass();
    SDStokesEngine stokesEngine(String("STOKES"), String("SPECTRA"));
    aNewTab.bindColumn ("STOKES", stokesEngine);
 
