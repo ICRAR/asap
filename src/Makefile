@@ -15,7 +15,7 @@ CASAINC   := -I$(CASAROOT)/code/include
 CASALIB   := $(CASAROOT)/linux_gnu/lib
 CASAPPLIB := $(CASALIB)/version.o \
              -L$(CASALIB) \
-	     -latnf -lms -limages -lcomponents -lcoordinates \
+	     -latnf -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
 	     -ltables -lscimath -lscimath_f -lcasa \
               $(CASALIB)/libwcs.a -lmir \
