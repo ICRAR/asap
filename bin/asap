@@ -50,6 +50,8 @@ if [ "${AIPSPATH}" == "" ]; then
 	. ${aroot}/weekly/aipsinit.sh
     elif  test -d ${aroot}/daily ; then
 	. ${aroot}/daily/aipsinit.sh
+    elif  test -d /nfs/aips++/pks ; then
+	. /nfs/aips++/pks/aipsinit.sh
     else 
 	echo "Cannot locate aips++ installation"
 	exit 0
