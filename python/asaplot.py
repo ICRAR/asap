@@ -625,6 +625,10 @@ class ASAPlot:
             fname = 'asap'+dstr+'.png'
             
         d = ['png','.ps','eps']
+
+        from os.path import expandvars
+        fname = expandvars(fname)
+
         if fname[-3:].lower() in d:
             try:
                 self.canvas.print_figure(fname)
@@ -675,12 +679,14 @@ def list_colours():
 	print colours[name], name
 
 
-def load_colours(file='/usr/local/lib/rgb.txt'):
+def load_colours(filename='/usr/local/lib/rgb.txt'):
     """
     Load the colour dictionary from the specified file.
     """
     print 'Loading colour dictionary from', file
-    rgb = open(file, 'r')
+    from os.path import expandvars
+    filename = expandvars(filename)
+    rgb = open(filename, 'r')
 
     while True:
 	line = rgb.readline()

@@ -159,7 +159,8 @@ def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None, allaxes=None)
         _convert(scan, d, eta, jyperk, allaxes)
         return
 
-def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=None):
+def gain_el(scan, poly=None, filename="", method="linear",
+            insitu=None, allaxes=None):
     """
     Return a scan after applying a gain-elevation correction. The correction
     can be made via either a polynomial or a table-based interpolation 
@@ -203,6 +204,8 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=
     if poly is None:
        poly = ()
     if insitu is None: insitu = rcParams['insitu']
+    from os.path import expandvars
+    filename = expandvars(filename)
     if not insitu:
         from asap._asap import gainel as _gainEl
         return scantable(_gainEl(scan, poly, filename, method, allaxes))

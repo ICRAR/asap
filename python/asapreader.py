@@ -35,6 +35,8 @@ class reader(sdreader):
             theif = -1
         if thebeam is None:
             thebeam = -1
+        from os.path import expandvars
+        filename = expandvars(filename)
         sdreader.__init__(self, filename, theif, thebeam)
 
     def read(self,integrations=None):
@@ -62,7 +64,7 @@ class reader(sdreader):
             tbl.set_fluxunit(self.unit)
         return scantable(tbl)
 
-    def summary(self):
+    def summary(self, name=None):
         """
         Print a summary of all scans/integrations. This reads through the
         whole file once.
@@ -73,9 +75,10 @@ class reader(sdreader):
         """
         sdreader._reset(self)
         sdreader._read(self,[-1])
-        tbl = sdreader._getdata(self)
+        from asap import scantable
+        tbl = scantable(sdreader._getdata(self))
         sdreader._reset(self)
-        print tbl._summary()
+        print tbl.summary(name=name)
         return
 ##     def reset(self):
 ##         """

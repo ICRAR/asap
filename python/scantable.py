@@ -34,19 +34,19 @@ class scantable(sdtable):
             if unit is not None:
                 self.set_fluxunit(unit)                       
         else:
-            try:
-                mode = st(filename)[stat.ST_MODE]
-            except OSError:
-                print "File not found"
+            import os.path
+            if not os.path.exists(filename):
+                print "File '%s' not found." % (filename)
                 return
-            if stat.S_ISDIR(mode):
+            filename = os.path.expandvars(filename)
+            if os.path.isdir(filename):
                 # crude check if asap table
-                if stat.S_ISREG(st(filename+'/table.info')[stat.ST_MODE]):
+                if os.path.exists(filename+'/table.info'):
                     sdtable.__init__(self, filename)
                     if unit is not None:
                         self.set_fluxunit(unit)                       
                 else:
-                    print 'The given file is not a valid asap table'
+                    print "The given file '%s'is not a valid asap table." % (filename)
                     return
             else:
                 autoav = rcParams['scantable.autoaverage']
@@ -56,8 +56,8 @@ class scantable(sdtable):
                 beamSel = -1
                 r = sdreader(filename,ifSel,beamSel)
                 print 'Importing data...'
-                r.read([-1])
-                tbl = r.getdata()
+                r._read([-1])
+                tbl = r._getdata()
                 if unit is not None:
                     tbl.set_fluxunit(unit)
                 if autoav:
@@ -85,19 +85,20 @@ class scantable(sdtable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
-            overwrite:   if the file should be overwritten if it exists.
+            overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
-                         without writing the output
+                         without writing the output. USE WITH CARE.
         Example:
             scan.save('myscan.asap')
             scan.save('myscan.sdfits','SDFITS')
         """
+        from os import path
         if format is None: format = rcParams['scantable.save']
         suffix = '.'+format.lower()
         if name is None or name =="":
             name = 'scantable'+suffix
             print "No filename given. Using default name %s..." % name
-        from os import path
+        name = path.expandvars(name)
         if path.isfile(name) or path.isdir(name):
             if not overwrite:
                 print "File %s already exists." % name
@@ -165,6 +166,8 @@ class scantable(sdtable):
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
+            from os.path import expandvars
+            filename = expandvars(filename)
             data = open(filename, 'w')
             data.write(info)
             data.close()
