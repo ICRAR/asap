@@ -149,6 +149,24 @@ SDMemTableWrapper SDMathWrapper::bin (const SDMemTableWrapper& in,
   return CountedPtr<SDMemTable>(sdm.bin(*pIn, Int(width)));
 }
 
+void SDMathWrapper::resampleInSitu(SDMemTableWrapper& in, const std::string& method,
+                                   float width)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  SDMemTable* pOut = sdm.resample(*pIn, String(method), Float(width));
+  *pIn = *pOut;
+   delete pOut;
+}
+
+SDMemTableWrapper SDMathWrapper::resample (const SDMemTableWrapper& in,
+                                           const std::string& method, float width)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.resample(*pIn, String(method), Float(width)));
+}
+
 
 void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, 
 				     const std::vector<bool>& mask)

@@ -70,6 +70,11 @@ namespace SDMathWrapper {
   void binInSitu(SDMemTableWrapper& in, int width);
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
+// Resample 
+  void resampleInSitu(SDMemTableWrapper& in, const std::string& method, float width);
+  SDMemTableWrapper resample(const SDMemTableWrapper& in, const std::string& method, 
+                             float width);
+
 // Convert brightness between Jy and K
   void convertFluxInSitu(SDMemTableWrapper& in, float area, float eta, bool doAll);
   SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float area, float eta, bool doAll);

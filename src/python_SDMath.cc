@@ -96,6 +96,9 @@ namespace asap {
       def("bin", &SDMathWrapper::bin);
       def("bin_insitu", &SDMathWrapper::binInSitu);
 //
+      def("resample", &SDMathWrapper::resample);
+      def("resample_insitu", &SDMathWrapper::resampleInSitu);
+//
       def("stats", &SDMathWrapper::statistic);
     };
 
