@@ -39,10 +39,12 @@ namespace asap {
 		ChanAxis };
 
   enum Instrument {UNKNOWN=0,
-                   PKSMULTIBEAM,
-                   PKSSINGLEBEAM,
-                   MOPRA,
+                   ATPKSMB,
+                   ATPKSHOH,
+                   ATMOPRA,
                    TIDBINBILLA,
+                   CEDUNA,
+                   HOBART,
                    N_INSTRUMENTS};
 }
 
