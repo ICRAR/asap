@@ -11,7 +11,10 @@ The bug number is solely determined by the last entry in this directory.
 * add bugs/asapNNNN.txt for new defect
 
 * Bug fixes have to be cvs tagged with the bug id
+  - cd <root asap dir>
+  - cvs tag asapNNNN
 * trunk has to be merged with the fixes branch
+  - cd <other root dir>
+  - cvs update -d -j Release-1 -j asapNNNN
 
-
-MM20050315
+MM
