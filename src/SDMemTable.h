@@ -86,7 +86,7 @@ public:
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
   // get all as aips++ Vectors
   virtual void getSpectrum(casa::Vector<casa::Float>& spectrum, 
-			   casa::Int whichRow=0);
+			   casa::Int whichRow=0) const;
 
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
 
@@ -125,8 +125,8 @@ public:
   void makePersistent(const std::string& filename);
 
   // get a new SDMemTable containing all rows with the same give SCANID
-  SDMemTable getScan(casa::Int scanID);
-  SDMemTable getSource(const std::string& source);
+  SDMemTable getScan(casa::Int scanID) const;
+  SDMemTable getSource(const std::string& source) const;
 
   const casa::TableRecord& getHeader() const {return table_.keywordSet();}
   // get a handle to the "raw" aips++ table
@@ -144,7 +144,7 @@ public:
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
   casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow,
-						  casa::Bool useSelection = casa::False);
+						  casa::Bool useSelection = casa::False) const;
 
   casa::SpectralCoordinate getCoordinate(casa::uInt whichIdx) const;
   casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord, 
@@ -152,8 +152,8 @@ public:
 
   casa::Int nCoordinates() const;
 
-  std::vector<double> getAbcissa(int whichRow=0);
-  std::string getAbcissaString(casa::Int whichRow=0);
+  std::vector<double> getAbcissa(int whichRow=0) const;
+  std::string getAbcissaString(casa::Int whichRow=0) const;
 
 private:
   // utility func for nice printout

@@ -103,7 +103,7 @@ SDMemTable::~SDMemTable(){
   //cerr << "goodbye from SDMemTable @ " << this << endl;
 }
 
-SDMemTable SDMemTable::getScan(Int scanID) {
+SDMemTable SDMemTable::getScan(Int scanID) const {
   String cond("SELECT * from $1 WHERE SCANID == ");
   cond += String::toString(scanID);
   return SDMemTable(table_, cond);
@@ -121,7 +121,7 @@ SDMemTable &SDMemTable::operator=(const SDMemTable& other) {
   return *this;
 }
 
-SDMemTable SDMemTable::getSource(const std::string& source) {
+SDMemTable SDMemTable::getSource(const std::string& source) const {
   String cond("SELECT * from $1 WHERE SRCNAME == ");
   cond += source;
   return SDMemTable(table_, cond);
@@ -320,7 +320,7 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo) {
 
 }
 
-std::vector<double> SDMemTable::getAbcissa(Int whichRow) {
+std::vector<double> SDMemTable::getAbcissa(Int whichRow) const {
   std::vector<double> absc(nChan());
   Vector<Double> absc1(nChan());
   indgen(absc1);
@@ -415,7 +415,7 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) {
   return absc;
 }
 
-std::string SDMemTable::getAbcissaString(Int whichRow)
+std::string SDMemTable::getAbcissaString(Int whichRow) const
 {
   ROArrayColumn<uInt> fid(table_, "FREQID");
   Table t = table_.keywordSet().asTable("FREQUENCIES");
@@ -470,7 +470,7 @@ void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow) {
   spec.put(whichRow, arr);
 }
 
-void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) {
+void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const {
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   spec.get(whichRow, arr);
@@ -523,7 +523,8 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
 }
 */
 MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
-                                                Bool useSelection) {
+                                                Bool useSelection) const 
+{
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   ROArrayColumn<uChar> flag(table_, "FLAGTRA");
@@ -831,7 +832,7 @@ String SDMemTable::formatSec(Double x) {
   return mvt.string(MVTime::TIME_CLEAN_NO_H, 7)+" ";
 };
 
-std::string SDMemTable::summary()  {
+std::string SDMemTable::summary()   {
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
   ostringstream oss;
