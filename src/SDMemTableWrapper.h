@@ -96,7 +96,6 @@ public:
   }
   CountedPtr<SDMemTable> getCP() const {return table_;}
   void summary() { table_->summary(); }
-  std::string name() { return table_->name(); }
   
 private:
   CountedPtr<SDMemTable> table_;
@@ -124,8 +123,13 @@ public:
   }
   SDMemTableWrapper multiply(const SDMemTableWrapper& in,
 			     Float factor) {
-    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
+    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));    
   }
+  /*
+  std::vector<float> baseline(const SDMemTableWrapper& in, const std::string& fitexpr) {
+    return SDMath::baseline(in.getCP(), fitexpr);
+  }
+  */
 };
 
 } // namespace
