@@ -37,7 +37,6 @@
 #include <boost/python/tuple.hpp>
 
 #include "SDMemTableWrapper.h"
-#include "SDMath.h"
 
 namespace asap {
 
@@ -45,18 +44,18 @@ namespace SDMathWrapper {
 
 // Quotient
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
-                            const SDMemTableWrapper& off);
+                             const SDMemTableWrapper& off);
 
 // Multiply
 
-  void scaleInSitu(SDMemTableWrapper& in, casa::Float factor, casa::Bool all);
+  void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll);
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
-                          casa::Float factor, casa::Bool all);
+                          float factor, bool all);
 
 // Add
 
-  void addInSitu(SDMemTableWrapper& in, casa::Float offset, casa::Bool all);
-  SDMemTableWrapper add(const SDMemTableWrapper& in, casa::Float offset, casa::Bool all);
+  void addInSitu(SDMemTableWrapper& in, float offset, bool all);
+  SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
 // Hanning
 

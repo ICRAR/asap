@@ -35,6 +35,7 @@
 #include <casa/Utilities/CountedPtr.cc>
 
 #include "SDMathWrapper.h"
+#include "SDMath.h"
 
 using namespace casa;
 using namespace boost::python;
@@ -54,7 +55,9 @@ namespace asap {
         b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
-      return SDMemTableWrapper(SDMath::average(b,msk,scanAv,weightStr));
+//
+      SDMath sdm;
+      return SDMemTableWrapper(sdm.average(b, msk, Bool(scanAv), weightStr));
     };
   } // namespace SDMathWrapper
 

@@ -62,6 +62,26 @@
 using namespace casa;
 using namespace asap;
 
+
+SDMath::SDMath()
+{;}
+
+SDMath::SDMath (const SDMath& other)
+{
+
+// No state
+
+}
+
+SDMath& SDMath::operator=(const SDMath& other) 
+{
+  if (this != &other) {
+// No state
+  }
+  return *this;
+}
+
+
 CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in,
                                         const Vector<Bool>& mask, bool scanAv,
                                         const std::string& weightStr)

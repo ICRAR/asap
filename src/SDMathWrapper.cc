@@ -31,6 +31,8 @@
 
 
 #include "SDMathWrapper.h"
+#include "SDMath.h"
+
 
 using namespace asap;
 using namespace casa;
@@ -38,58 +40,66 @@ using namespace casa;
 SDMemTableWrapper SDMathWrapper::quotient(const SDMemTableWrapper& on,
                                           const SDMemTableWrapper& off)
 {
-    return SDMemTableWrapper(SDMath::quotient(on.getCP(),
-                                             off.getCP()));
+    SDMath sdm;
+    return SDMemTableWrapper(sdm.quotient(on.getCP(), off.getCP()));
 }
 
 
-void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, casa::Float factor, casa::Bool doAll)
+void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
   const uInt what = 0;
-  SDMemTable* pOut = SDMath::simpleOperate (*pIn, factor, doAll, what);
+//
+  SDMath sdm;
+  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(factor), Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
 }
 
 SDMemTableWrapper SDMathWrapper::scale(const SDMemTableWrapper& in,
-                          casa::Float factor, casa::Bool doAll)
+                          float factor, bool doAll)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 0;
-  return CountedPtr<SDMemTable>(SDMath::simpleOperate(*pIn, factor, doAll, what));
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(factor), Bool(doAll), what));
 }
 
 
 
-void SDMathWrapper::addInSitu(SDMemTableWrapper& in, casa::Float offset, casa::Bool doAll)
+void SDMathWrapper::addInSitu(SDMemTableWrapper& in, float offset, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
   const uInt what = 1;
-  SDMemTable* pOut = SDMath::simpleOperate (*pIn, offset, doAll, what);
+//
+  SDMath sdm;
+  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(offset), Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
 }
 
 SDMemTableWrapper SDMathWrapper::add(const SDMemTableWrapper& in,
-                                     casa::Float offset, casa::Bool doAll)
+                                     float offset, bool doAll)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 1;
-  return CountedPtr<SDMemTable>(SDMath::simpleOperate(*pIn, offset, doAll, what));
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(offset), Bool(doAll), what));
 }
 
 
 SDMemTableWrapper SDMathWrapper::hanning(const SDMemTableWrapper& in) 
 {
-  return SDMemTableWrapper(SDMath::hanning(in.getCP()));
+  SDMath sdm;
+  return SDMemTableWrapper(sdm.hanning(in.getCP()));
 }
 
 
 void SDMathWrapper::binInSitu(SDMemTableWrapper& in, int width)
 {
   SDMemTable* pIn = in.getPtr();
-  SDMemTable* pOut = SDMath::bin (*pIn, Int(width));
+  SDMath sdm;
+  SDMemTable* pOut = sdm.bin (*pIn, Int(width));
   *pIn = *pOut;
    delete pOut;
 }
@@ -98,14 +108,16 @@ SDMemTableWrapper SDMathWrapper::bin (const SDMemTableWrapper& in,
                                       int width)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
-  return CountedPtr<SDMemTable>(SDMath::bin(*pIn, Int(width)));
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.bin(*pIn, Int(width)));
 }
 
 
 void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, const std::vector<bool>& mask)
 {
   SDMemTable* pIn = in.getPtr();
-  SDMemTable* pOut = SDMath::averagePol (*pIn, mask);
+  SDMath sdm;
+  SDMemTable* pOut = sdm.averagePol (*pIn, mask);
   *pIn = *pOut;
    delete pOut;
 }
@@ -114,7 +126,8 @@ SDMemTableWrapper SDMathWrapper::averagePol (const SDMemTableWrapper& in, const 
 
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
-  return CountedPtr<SDMemTable>(SDMath::averagePol(*pIn, mask));
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.averagePol(*pIn, mask));
 }
 
 
@@ -122,5 +135,6 @@ std::vector<float> SDMathWrapper::statistic(const SDMemTableWrapper& in,
                                             const std::vector<bool>& mask, 
                                             const std::string& which) 
 {
-  return SDMath::statistic(in.getCP(), mask, which);
+  SDMath sdm;
+  return sdm.statistic(in.getCP(), mask, which);
 }

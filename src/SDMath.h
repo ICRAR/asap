@@ -40,45 +40,55 @@ namespace asap {
 
 class SDMemTable;
 
-namespace SDMath {
+class SDMath {
+
+ public:
+
+// Default constructor 
+   SDMath();
+
+// Copy Constructor (copy semantics)
+   SDMath (const SDMath& other);
+
+// Assignment  (copy semantics)
+   SDMath &operator=(const SDMath& other);
 
 // Quotient
 
-  casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
+   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
 
 //  Hanning
 
-  casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
+   casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
 
 // Average in time
 
-  casa::CountedPtr<SDMemTable>  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
-                                         const casa::Vector<casa::Bool>& mask,
-                                         bool scanAverage, const std::string& weightStr);
+   casa::CountedPtr<SDMemTable>  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
+                                          const casa::Vector<casa::Bool>& mask,
+                                          bool scanAverage, const std::string& weightStr);
 
 // Statistics
 
-  std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
-   		                const std::vector<bool>& mask, const std::string& which);
+   std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
+    		                const std::vector<bool>& mask, const std::string& which);
 
 
 // Simple mathematical operations.  what=0 (mul) or 1 (add)
 
-  SDMemTable* simpleOperate (const SDMemTable& in, casa::Float offset, 
-                            casa::Bool doAll, casa::uInt what);
+   SDMemTable* simpleOperate (const SDMemTable& in, casa::Float offset, 
+                              casa::Bool doAll, casa::uInt what);
 
 // Average polarizations
 
-  SDMemTable* averagePol (const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
+   SDMemTable* averagePol (const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
 
 // Bin up spectra
 
-  SDMemTable* bin (const SDMemTable& in, casa::Int width);
+   SDMemTable* bin (const SDMemTable& in, casa::Int width);
 
 
-
-// private like functions (this is not a class so can't make them private)
+ private:
 
 // Weighting type for time averaging
 
