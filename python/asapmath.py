@@ -203,11 +203,11 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=
         _gainEl(scan, poly, filename, method, allaxes)
         return
         
-def align(scan, reftime=None, insitu=None):
+def freq_align(scan, reftime=None, insitu=None):
     """
-        Return a scan where all rows have been aligned in velocity. The
-        velocity reference frame (e.gh. LSRK), unit and doppler (e.g. OPTICAL)
-        are those set by functions  set_unit and set_freqframe.  
+        Return a scan where all rows have been aligned in frequency. The
+        alignment frequency frame (e.g. LSRK) is that set by function
+        set_freqframe.  
         scan:        a scantable
         reftime:     reference time to align at. By default, the time of
                      the first row of data is used.  
@@ -218,10 +218,10 @@ def align(scan, reftime=None, insitu=None):
     if reftime is None: reftime = ''
     if insitu is None: insitu = rcParams['insitu']
     if not insitu:
-        from asap._asap import align as _align
+        from asap._asap import freq_align as _align
         return scantable(_align(scan, reftime))
     else:
-        from asap._asap import align_insitu as _align
+        from asap._asap import freq_align_insitu as _align
         _align(scan, reftime)
         return
         
