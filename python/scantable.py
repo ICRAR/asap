@@ -192,20 +192,20 @@ class scantable(sdtable):
                 print "Illegal file name '%s'." % (filename)
         print info
             
-    def set_cursor(self, thebeam=0,theif=0,thepol=0):
+    def set_cursor(self, beam=0, IF=0, pol=0):
         """
         Set the spectrum for individual operations.
         Parameters:
-            thebeam,theif,thepol:    a number
+            beam, IF, pol:    a number
         Example:
             scan.set_cursor(0,0,1)
             pol1sig = scan.stats(all=False) # returns std dev for beam=0
                                             # if=0, pol=1
         """
         varlist = vars()
-        self.setbeam(thebeam)
-        self.setpol(thepol)
-        self.setif(theif)
+        self.setbeam(beam)
+        self.setpol(pol)
+        self.setif(IF)
         self._add_history("set_cursor",varlist)
         return
 
