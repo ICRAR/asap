@@ -173,7 +173,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
          Vector<uInt> iTmp;
          freqidCol.get(iRow, iTmp);
-         SpectralCoordinate sC = sdTable.getCoordinate(iTmp(pos(ifAxis)));
+         SpectralCoordinate sC = sdTable.getSpectralCoordinate(iTmp(pos(ifAxis)), iRow);
 
 // Form DirectionCoordinate
  
@@ -209,7 +209,6 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Create aips++ Image
 
-     
          TempImage<Float> tIm(tShapeOut, cSys);
          tIm.put(t1);
 //
