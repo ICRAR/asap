@@ -217,13 +217,14 @@ from asaplinefind import *
 
 if rcParams['useplotter']:
     if os.environ.has_key('DISPLAY'):
-        print "Initialising plotter..."
+        print "Initialising asapplotter with the name 'plotter' ..."
         import asapplotter 
         plotter = asapplotter.asapplotter()
     else:
-        print "No $DISPLAY set. Disabling plotter\n"
+        print "No $DISPLAY set. Disabling plotter.\n"
 
 #from numarray ones,zeros
+
 
 __date__ = '$Date$'
 __version__  = '0.2'
@@ -313,6 +314,7 @@ def commands():
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'
             plot            - plot a (list of) scantable
+            save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
@@ -321,6 +323,7 @@ def commands():
             set_title       - specify user labels for the panel indeces
             set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
+            set_layout      - specify the multi-panel layout (rows,cols)
             
     [Reading files]
         reader              - access rpfits/sdfits files
@@ -354,11 +357,11 @@ def commands():
     return
 
 print """Welcome to ASAP - the ATNF Single Dish Analysis Package
-This is a testing pre-release v0.2
+This is a testing pre-release %s
 
 Please report any bugs to:
 Malte.Marquarding@csiro.au
 
-[NOTE: ASAP is 0-based]
+[IMPORTANT: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.
-"""
+""" % (__version__)
