@@ -41,8 +41,10 @@ using namespace boost::python;
 
 namespace asap {
   namespace SDMathWrapper {
-    SDMemTableWrapper SDMathWrapper::averages(boost::python::tuple tp,
-                                              const std::vector<bool>& mask) {
+    SDMemTableWrapper SDMathWrapper::average(boost::python::tuple tp,
+                                             const std::vector<bool>& mask,
+                                             bool scanAv,
+                                             const std::string& weightStr) {
       int n;
       n = extract<int>(tp.attr("__len__")());
       Block<CountedPtr<asap::SDMemTable> > b(n);
@@ -52,20 +54,18 @@ namespace asap {
         b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
-      return SDMemTableWrapper(SDMath::averages(b,msk));
+      return SDMemTableWrapper(SDMath::average(b,msk,scanAv,weightStr));
     };
-
   } // namespace SDMathWrapper
 
   namespace python {
     void python_SDMath() {
-      def("average", &SDMathWrapper::average);
       def("quotient", &SDMathWrapper::quotient);
       def("scale", &SDMathWrapper::scale);
       def("scale_insitu", &SDMathWrapper::scaleInSitu);
       def("add", &SDMathWrapper::add);
       def("hanning", &SDMathWrapper::hanning);
-      def("averages", &SDMathWrapper::averages);
+      def("average", &SDMathWrapper::average);
       def("averagepol", &SDMathWrapper::averagePol);
       def("bin", &SDMathWrapper::bin);
       def("stats", &SDMathWrapper::statistic);

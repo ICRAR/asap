@@ -42,9 +42,6 @@
 namespace asap {
 
 namespace SDMathWrapper {
-  SDMemTableWrapper average(const SDMemTableWrapper& sdt) {
-    return SDMemTableWrapper(SDMath::average(sdt.getCP()));
-  }
 
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
                              const SDMemTableWrapper& off) {
@@ -56,6 +53,7 @@ namespace SDMathWrapper {
                              casa::Float factor) {
     return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
+
   void scaleInSitu(SDMemTableWrapper& in, casa::Float factor) {
     SDMemTable* sdmt = in.getPtr();
     SDMath::multiplyInSitu(in.getPtr(),factor);
@@ -70,8 +68,9 @@ namespace SDMathWrapper {
     return SDMemTableWrapper(SDMath::hanning(in.getCP()));
   }
 
-  SDMemTableWrapper averages(boost::python::tuple tpl,
-                             const std::vector<bool>& mask);
+  SDMemTableWrapper average (boost::python::tuple tpl,
+                             const std::vector<bool>& mask,
+                             bool scanAv, const std::string& wt);
 
   SDMemTableWrapper averagePol(const SDMemTableWrapper& in,
                                const std::vector<bool>& mask) {
