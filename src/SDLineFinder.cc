@@ -43,13 +43,66 @@ using namespace casa;
 using namespace std;
 using namespace boost::python;
 
+namespace asap {
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// IStatHolder - an abstract class to collect statistics from the running
+//               mean calculator, if necessary.
+//               We define it here, because it is used in LFRunningMean and
+//               SDLineFinder only
+//
+
+struct IStatHolder  {
+   // This function is called for each spectral channel processed by
+   // the running mean calculator. The order of channel numbers may be
+   // arbitrary
+   // ch - a number of channel, corresponding to (approximately) the centre
+   //      of the running box
+   // box_nchan - number of channels in the box
+   //
+   virtual void accumulate(int ch, Float sum, Float sum2, int box_nchan)
+                      throw(AipsError) = 0;		      
+};
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SignAccumulator - a simple class to deal with running mean statistics:
+//                   it stores the sign of the value-mean only
+//
+class SignAccumulator : public IStatHolder {
+   Vector<Int>  sign;                // either +1, -1 or 0
+   const Vector<Float>   &spectrum;  // a reference to the spectrum
+                                     // to calculate the sign   
+public:
+   // all channels >=nchan are ignored
+   SignAccumulator(uInt nchan, const Vector<Float> &in_spectrum);
+   
+   // This function is called for each spectral channel processed by
+   // the running mean calculator. The order of channel numbers may be
+   // arbitrary
+   // ch - a number of channel, corresponding to (approximately) the centre
+   //      of the running box
+   // box_nchan - number of channels in the box
+   //
+   virtual void accumulate(int ch, Float sum, Float, int box_nchan)
+                      throw(AipsError);
+
+   // access to the sign
+   const Vector<Int>& getSigns() const throw();
+};
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // LFRunningMean - a running mean algorithm for line detection
 //
 //
-
-namespace asap {
 
 // An auxiliary class implementing one pass of the line search algorithm,
 // which uses a running mean. We define this class here because it is
@@ -95,7 +148,10 @@ public:
    void setCriterion(int in_min_nchan, casa::Float in_threshold) throw();
 
    // find spectral lines and add them into list
-   void findLines(std::list<pair<int,int> > &lines) throw(casa::AipsError);
+   // if statholder is not NULL, the accumulate function of it will be
+   // called for each channel to save statistics
+   void findLines(std::list<pair<int,int> > &lines,
+                  IStatHolder* statholder = NULL) throw(casa::AipsError);
    
 protected:
    // supplementary function to control running mean calculations.
@@ -122,7 +178,50 @@ protected:
    void processCurLine(std::list<pair<int,int> > &lines) throw(casa::AipsError);
 
 };
+
+//
+///////////////////////////////////////////////////////////////////////////////
 } // namespace asap
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SignAccumulator - a simple class to deal with running mean statistics:
+//                   it stores the sign of the value-mean only
+//
+
+// all channels >=nchan are ignored
+SignAccumulator::SignAccumulator(uInt nchan,
+                   const Vector<Float> &in_spectrum) : sign(nchan,0),
+		   spectrum(in_spectrum) {}
+
+
+// This function is called for each spectral channel processed by
+// the running mean calculator. The order of channel numbers may be
+// arbitrary
+// ch - a number of channel, corresponding to (approximately) the centre
+//      of the running box
+// box_nchan - number of channels in the box
+//
+void SignAccumulator::accumulate(int ch, Float sum, Float, int box_nchan)
+                   throw(AipsError)
+{
+   if (ch>=sign.nelements()) return;
+   DebugAssert(ch>=0,AipsError);
+   DebugAssert(ch<=spectrum.nelements(), AipsError);
+   if (box_nchan) {
+       Float buf=spectrum[ch]-sum/Float(box_nchan);
+       if (buf>0) sign[ch]=1;
+       else if (buf<0) sign[ch]=-1;
+       else sign[ch]=0;
+   } else sign[ch]=0;    
+}
+
+// access to the sign
+const Vector<Int>& SignAccumulator::getSigns() const throw()
+{
+   return sign;
+}
+
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,7 +351,8 @@ void LFRunningMean::processCurLine(std::list<pair<int,int> > &lines)
 }
 
 // find spectral lines and add them into list
-void LFRunningMean::findLines(std::list<pair<int,int> > &lines)
+void LFRunningMean::findLines(std::list<pair<int,int> > &lines,
+                              IStatHolder* statholder)
                         throw(casa::AipsError)
 {
   const int minboxnchan=4;
@@ -272,6 +372,10 @@ void LFRunningMean::findLines(std::list<pair<int,int> > &lines)
   // actual search algorithm
   is_detected_before=False;
 
+  if (statholder!=NULL)
+      for (int n=0;n<initial_box_ch-max_box_nchan/2;++n)
+           statholder->accumulate(n,sum,sumsq,box_chan_cntr);
+
   if (box_chan_cntr>=minboxnchan) 
       // there is a minimum amount of data. We can search in the
       // half of the initial box   
@@ -282,10 +386,15 @@ void LFRunningMean::findLines(std::list<pair<int,int> > &lines)
   // yet been included in the running mean.
   for (int n=initial_box_ch-max_box_nchan/2;n<edge.second;++n) {
       advanceRunningBox(n+max_box_nchan/2); // update running mean & variance
+      if (statholder!=NULL)
+          statholder->accumulate(n,sum,sumsq,box_chan_cntr);
       if (box_chan_cntr>=minboxnchan) // have enough data to process
           processChannel(lines,n);
       else processCurLine(lines); // just finish what was accumulated before
-  }  
+  }
+  if (statholder!=NULL)
+      for (int n=edge.second;n<spectrum.nelements();++n)
+           statholder->accumulate(n,sum,sumsq,box_chan_cntr);
 }
 
 //
@@ -467,17 +576,25 @@ int SDLineFinder::findLines() throw(casa::AipsError)
 
   lines.resize(0); // search from the scratch
   Vector<Bool> temp_mask(mask);
-  Bool need2iterate=True;
-  while (need2iterate) {
+  
+  while (true) {
      // line find algorithm
      LFRunningMean lfalg(spectrum,temp_mask,edge,max_box_nchan,min_nchan,
                          threshold);
+     SignAccumulator sacc(spectrum.nelements(),spectrum);
+
+     // a buffer for new lines found at this iteration
      std::list<pair<int,int> > new_lines;
-     lfalg.findLines(new_lines);
-     if (!new_lines.size()) need2iterate=False;
-     temp_mask=getMask();
+     
+     lfalg.findLines(new_lines,&sacc);
+     if (!new_lines.size()) break; // nothing new
+
+     searchForWings(new_lines, sacc.getSigns());
+
      // update the list (lines) merging intervals, if necessary
-     addNewSearchResult(new_lines);
+     addNewSearchResult(new_lines,lines);
+     // get a new mask
+     temp_mask=getMask();     
   }
   return int(lines.size());
 }
@@ -568,7 +685,8 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
 
 // concatenate two lists preserving the order. If two lines appear to
 // be adjacent, they are joined into the new one
-void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines)
+void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines,
+                         std::list<std::pair<int, int> > &lines_list) 
                         throw(AipsError)
 {
   try {
@@ -577,27 +695,27 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
 	   
 	   // the first item, which has a non-void intersection or touches
 	   // the new line
-	   std::list<pair<int,int> >::iterator pos_beg=find_if(lines.begin(),
-	                  lines.end(), IntersectsWith(*cli));           
+	   std::list<pair<int,int> >::iterator pos_beg=find_if(lines_list.begin(),
+	                  lines_list.end(), IntersectsWith(*cli));           
 	   // the last such item	  
 	   std::list<pair<int,int> >::iterator pos_end=find_if(pos_beg,
-	                  lines.end(), not1(IntersectsWith(*cli)));
+	                  lines_list.end(), not1(IntersectsWith(*cli)));
 
            // extract all lines which intersect or touch a new one into
 	   // a temporary buffer. This may invalidate the iterators
 	   // line_buffer may be empty, if no lines intersects with a new
 	   // one.
 	   std::list<pair<int,int> > lines_buffer;
-	   lines_buffer.splice(lines_buffer.end(),lines, pos_beg, pos_end);
+	   lines_buffer.splice(lines_buffer.end(),lines_list, pos_beg, pos_end);
 
 	   // build a union of all intersecting lines 
 	   pair<int,int> union_line=for_each(lines_buffer.begin(),
 	           lines_buffer.end(),BuildUnion(*cli)).result();
            
 	   // search for a right place for the new line (union_line) and add
-	   std::list<pair<int,int> >::iterator pos2insert=find_if(lines.begin(),
-	                  lines.end(), LaterThan(union_line));
-	   lines.insert(pos2insert,union_line);
+	   std::list<pair<int,int> >::iterator pos2insert=find_if(lines_list.begin(),
+	                  lines_list.end(), LaterThan(union_line));
+	   lines_list.insert(pos2insert,union_line);
       }
   }
   catch (const AipsError &ae) {
@@ -605,5 +723,45 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
   }  
   catch (const exception &ex) {
       throw AipsError(String("SDLineFinder::addNewSearchResult - STL error: ")+ex.what());
+  }
+}
+
+// extend all line ranges to the point where a value stored in the
+// specified vector changes (e.g. value-mean change its sign)
+// This operation is necessary to include line wings, which are below
+// the detection threshold. If lines becomes adjacent, they are
+// merged together. Any masked channel stops the extension
+void SDLineFinder::searchForWings(std::list<std::pair<int, int> > &newlines,
+           const casa::Vector<casa::Int> &signs) throw(casa::AipsError)
+{
+  try {
+      for (std::list<pair<int,int> >::iterator li=newlines.begin();
+           li!=newlines.end();++li) {
+	   // update the left hand side
+	   for (int n=li->first-1;n>=edge.first;--n) {
+	        if (!mask[n]) break;
+	        if (signs[n]==signs[li->first] && signs[li->first])
+		    li->first=n;
+		else break;    
+	   }
+	   // update the right hand side
+	   for (int n=li->second;n<edge.second;++n) {
+	        if (!mask[n]) break;
+		if (signs[n]==signs[li->second-1] && signs[li->second-1])
+		    li->second=n;
+		else break;    
+	   }
+      }
+      // need to search for possible mergers.
+      std::list<std::pair<int, int> >  result_buffer;
+      addNewSearchResult(newlines,result_buffer);
+      newlines.clear();
+      newlines.splice(newlines.end(),result_buffer);
+  }
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("SDLineFinder::extendLines - STL error: ")+ex.what());
   }
 }

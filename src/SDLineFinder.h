@@ -88,8 +88,18 @@ protected:
    // concatenate two lists preserving the order. If two lines appear to
    // be adjacent or have a non-void intersection, they are joined into 
    // the new line
-   void addNewSearchResult(const std::list<std::pair<int, int> > &newlines)
+   static void addNewSearchResult(const std::list<std::pair<int, int> >
+                  &newlines, std::list<std::pair<int, int> > &lines_list)
                            throw(casa::AipsError);
+
+   // extend all line ranges to the point where a value stored in the
+   // specified vector changes (e.g. value-mean change its sign)
+   // This operation is necessary to include line wings, which are below
+   // the detection threshold. If lines becomes adjacent, they are
+   // merged together. Any masked channel stops the extension
+   void searchForWings(std::list<std::pair<int, int> > &newlines,
+                           const casa::Vector<casa::Int> &signs)
+			   throw(casa::AipsError);
 			   
    // An auxiliary object function to test whether two lines have a non-void
    // intersection
