@@ -812,9 +812,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 //
 {
    WeightType wtType = NONE;
-   convertWeightString(wtType, weightStr, False);
-
-   const uInt nRows = in.nRow();
+   convertWeightString(wtType, weightStr, True);
 
 // Create output Table and reshape number of polarizations
 
@@ -823,6 +821,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
   SDHeader header = pTabOut->getSDHeader();
   header.npol = 1;
   pTabOut->putSDHeader(header);
+//
+  const Table& tabIn = in.table();
 
 // Shape of input and output data 
 
@@ -833,7 +833,9 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
      throw(AipsError("The input has only one polarisation"));
   }
 //
+  const uInt nRows = in.nRow();
   const uInt nChan = shapeIn(asap::ChanAxis);
+  AlwaysAssert(asap::nAxes==4,AipsError);
   const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
   IPosition start(4), end(4);
 
@@ -842,6 +844,14 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
   Array<Float> outData(shapeOut, 0.0);
   Array<Bool> outMask(shapeOut, True);
   const IPosition axes(2, asap::PolAxis, asap::ChanAxis);              // pol-channel plane
+
+// Attach Tsys column if needed
+
+  ROArrayColumn<Float> tSysCol;
+  Array<Float> tSys;
+  if (wtType==TSYS) {
+     tSysCol.attach(tabIn,"TSYS");
+  }
 // 
   const Bool useMask = (mask.nelements() == shapeIn(asap::ChanAxis));
 
@@ -854,11 +864,21 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
       MaskedArray<Float> marr(in.rowAsMaskedArray(iRow));
       Array<Float>& arr = marr.getRWArray();
       const Array<Bool>& barr = marr.getMask();
+      
+// Get Tsys
+
+      if (wtType==TSYS) {
+         tSysCol.get(iRow,tSys);
+      }
 
 // Make iterators to iterate by pol-channel planes
+// The tSys array is empty unless wtType=TSYS so only
+// access the iterator is that is the case
 
       ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
       ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
+      ReadOnlyArrayIterator<Float>* pItTsysPlane = 0;
+      if (wtType==TSYS) pItTsysPlane = new ReadOnlyArrayIterator<Float>(tSys, axes);
 
 // Accumulations
 
@@ -873,21 +893,38 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
         Vector<Float> t1(nChan); t1 = 0.0;
         Vector<Bool> t2(nChan); t2 = True;
+	Float tSys = 0.0;
         MaskedArray<Float> vecSum(t1,t2);
         Float norm = 0.0;
         {
            ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
            ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+//
+           ReadOnlyVectorIterator<Float>* pItTsysVec = 0;
+	   if (wtType==TSYS) {
+              pItTsysVec = new ReadOnlyVectorIterator<Float>(pItTsysPlane->array(), 1);
+           }	         
+//
            while (!itDataVec.pastEnd()) {     
 
 // Create MA of data & mask (optionally including OTF mask) and  get variance for this spectrum
 
               if (useMask) {
                  const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
-                 if (wtType==VAR) fac = 1.0 / variance(spec);
+                 if (wtType==VAR) {
+                    fac = 1.0 / variance(spec);
+                 } else if (wtType==TSYS) {
+		    tSys = pItTsysVec->vector()[0];      // Drop pseudo channel dependency
+                    fac = 1.0 / tSys / tSys;
+                 }		      
               } else {
                  const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
-                 if (wtType==VAR) fac = 1.0 / variance(spec);
+                 if (wtType==VAR) {
+                    fac = 1.0 / variance(spec);
+                 } else if (wtType==TSYS) {
+		    tSys = pItTsysVec->vector()[0];      // Drop pseudo channel dependency
+                    fac = 1.0 / tSys / tSys;
+                 }
               }
 
 // Normalize spectrum (without OTF mask) and accumulate
@@ -900,7 +937,15 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
               itDataVec.next();
               itMaskVec.next();
+	      if (wtType==TSYS) pItTsysVec->next();
            }
+	   
+// Clean up
+
+  	   if (pItTsysVec) {
+              delete pItTsysVec; 
+              pItTsysVec = 0;
+           }	        
         }
 
 // Normalize summed spectrum
@@ -925,6 +970,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
         itDataPlane.next();
         itMaskPlane.next();
+	if (wtType==TSYS) pItTsysPlane->next();
       }
 
 // Generate output container and write it to output table
@@ -934,6 +980,11 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 //
       putDataInSDC(sc, outData, outMask);
       pTabOut->putSDContainer(sc);
+//
+      if (wtType==TSYS) {
+         delete pItTsysPlane;
+         pItTsysPlane = 0;
+      }
    }
 
 // Set polarization cursor to 0

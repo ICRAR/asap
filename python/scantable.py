@@ -987,8 +987,8 @@ class scantable(sdtable):
             mask:        An optional mask defining the region, where the
                          averaging will be applied. The output will have all
                          specified points masked.
-            weight:      Weighting scheme. 'none' (default), or
-                         'var' (variance weighted)
+            weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
+                         weighted), or 'tsys' (1/Tsys**2 weighted)
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)

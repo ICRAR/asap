@@ -120,7 +120,7 @@ class SDMath {
    SDMemTable* unaryOperate(const SDMemTable& in, casa::Float offset, 
                             casa::Bool doAll, casa::uInt what, casa::Bool tSys) const;
 
-// Average polarizations
+// Average polarizations.
    SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask,
                           const casa::String& wtStr) const;
 
