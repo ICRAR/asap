@@ -44,7 +44,7 @@ class scantable(sdtable):
                 autoav = rcParams['scantable.autoaverage']
 
                 from asap._asap import sdreader
-                r = sdreader(filename)
+                r = sdreader(filename,-1,-1)
                 print 'Importing data...'
                 r.read([-1])
                 tbl = r.getdata()
