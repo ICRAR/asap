@@ -88,6 +88,10 @@ class SDMath {
 // Bin up spectra
    SDMemTable* bin(const SDMemTable& in, casa::Int width) const;
 
+// Resample spectra
+   SDMemTable* resample(const SDMemTable& in, const casa::String& method, 
+                        casa::Float factor) const;
+
 // Smooth
    SDMemTable* smooth (const SDMemTable& in, const casa::String& kernel,
                        casa::Float width, casa::Bool doAll) const;

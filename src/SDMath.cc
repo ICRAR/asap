@@ -598,7 +598,6 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
   sh.nchan = shapeOut(0);
   pTabOut->putSDHeader(sh);
 
-
 // Loop over rows and bin along channel axis
   
   for (uInt i=0; i < in.nRow(); ++i) {
@@ -630,6 +629,115 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
 //
     pTabOut->putSDContainer(sc);
   }
+  return pTabOut;
+}
+
+SDMemTable* SDMath::resample (const SDMemTable& in, const String& methodStr,
+                              Float width) const
+//
+// Should add the possibility of width being specified in km/s. This means
+// that for each freqID (SpectralCoordinate) we will need to convert to an 
+// average channel width (say at the reference pixel).  Then we would need  
+// to be careful to make sure each spectrum (of different freqID) 
+// is the same length.
+//
+{
+   Bool doVel = False;
+
+// Interpolation method
+
+  Int interpMethod = 0;
+  convertInterpString(interpMethod, methodStr);
+
+// Make output table
+
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+
+// Resample SpectralCoordinates (one per freqID)
+
+  const uInt nCoord = in.nCoordinates();
+  Vector<Float> offset(1,0.0);
+  Vector<Float> factors(1,1.0/width);
+  Vector<Int> newShape;
+  for (uInt j=0; j<in.nCoordinates(); ++j) {
+    CoordinateSystem cSys;
+    cSys.addCoordinate(in.getSpectralCoordinate(j));
+    CoordinateSystem cSys2 = cSys.subImage(offset, factors, newShape);
+    SpectralCoordinate sC = cSys2.spectralCoordinate(0);
+//
+    pTabOut->setCoordinate(sC, j);
+  }
+
+// Get header
+
+  SDHeader sh = in.getSDHeader();
+
+// Generate resampling vectors
+
+  const uInt nChanIn = sh.nchan;
+  Vector<Float> xIn(nChanIn);
+  indgen(xIn);
+//
+  Int fac =  Int(nChanIn/width);
+  Vector<Float> xOut(fac+10);          // 10 to be safe - resize later
+  uInt i = 0;
+  Float x = 0.0;
+  Bool more = True;
+  while (more) {
+    xOut(i) = x;
+//
+    i++;
+    x += width;
+    if (x>nChanIn-1) more = False;
+  }
+  const uInt nChanOut = i;
+  xOut.resize(nChanOut,True);
+cerr << "width, shape in, out = " << width << ", " << nChanIn << ", " << nChanOut << endl;
+//
+  IPosition shapeIn(in.rowAsMaskedArray(0).shape());
+  sh.nchan = nChanOut;
+  pTabOut->putSDHeader(sh);
+
+// Loop over rows and resample along channel axis
+
+  Array<Float> valuesOut;
+  Array<Bool> maskOut;  
+  Array<Float> tSysOut;
+  Array<Bool> tSysMaskIn(shapeIn,True);
+  Array<Bool> tSysMaskOut;
+  for (uInt i=0; i < in.nRow(); ++i) {
+
+// Get container
+
+     SDContainer sc = in.getSDContainer(i);
+
+// Get data and Tsys
+    
+     const Array<Float>& tSysIn = sc.getTsys();
+     const MaskedArray<Float>& dataIn(in.rowAsMaskedArray(i));
+     Array<Float> valuesIn = dataIn.getArray();
+     Array<Bool> maskIn = dataIn.getMask();
+
+// Interpolate data
+
+     InterpolateArray1D<Float,Float>::interpolate(valuesOut, maskOut, xOut, 
+                                                  xIn, valuesIn, maskIn,
+                                                  interpMethod, True, True);
+     sc.resize(valuesOut.shape());
+     putDataInSDC(sc, valuesOut, maskOut);
+
+// Interpolate TSys
+
+     InterpolateArray1D<Float,Float>::interpolate(tSysOut, tSysMaskOut, xOut, 
+                                                  xIn, tSysIn, tSysMaskIn,
+                                                  interpMethod, True, True);
+    sc.putTsys(tSysOut);
+
+// Put container in output
+
+    pTabOut->putSDContainer(sc);
+  }
+//
   return pTabOut;
 }
 
@@ -844,11 +952,13 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) c
 SDMemTable* SDMath::smooth(const SDMemTable& in, 
 			   const casa::String& kernelType,
 			   casa::Float width, Bool doAll) const
+//
+// Should smooth TSys as well
+//
 {
 
 // Number of channels
 
-   const uInt chanAxis = asap::ChanAxis;  // Spectral axis
    SDHeader sh = in.getSDHeader();
    const uInt nChan = sh.nchan;
 
@@ -894,9 +1004,8 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 // those pointed at by the current selection cursor
 
     if (doAll) {
-       uInt axis = asap::ChanAxis;
-       VectorIterator<Float> itValues(valuesIn, axis);
-       VectorIterator<Bool> itMask(maskIn, axis);
+       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
+       VectorIterator<Bool> itMask(maskIn, asap::ChanAxis);
        while (!itValues.pastEnd()) {
 
 // Smooth
@@ -917,7 +1026,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 // Set multi-dim Vector shape
 
-       shapeOut(asap::ChanAxis) = valuesIn.shape()(chanAxis);
+       shapeOut(asap::ChanAxis) = valuesIn.shape()(asap::ChanAxis);
 
 // Stuff about with shapes so that we don't have conformance run-time errors
 
