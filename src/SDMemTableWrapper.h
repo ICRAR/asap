@@ -84,17 +84,24 @@ public:
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }
-
-  std::vector<float> getStokesSpectrum(int whichRow=0, bool doPol=false, 
+//
+  std::vector<float> getStokesSpectrum(int whichRow=0, bool linPol=false, 
 				       float paOff=0.0) const {
-    return table_->getStokesSpectrum(whichRow, doPol, paOff);
+    return table_->getStokesSpectrum(whichRow, linPol, paOff);
   }
 
-  std::vector<float> getCircularSpectrum(int whichRow=0, 
-					 bool doRR=true) const {
-    return table_->getCircularSpectrum(whichRow, doRR);
+  std::vector<float> stokesToPolSpectrum (int whichRow, bool linear,
+					  int polIdx) const {
+    return table_->stokesToPolSpectrum(whichRow, linear, polIdx);
   }
 
+//  std::string getPolarizationLabel (bool linear, bool stokes, bool linPol, int polIdx) const {
+// Boost fails with 4 arguments.
+  std::string getPolarizationLabel (bool linear, bool stokes, bool linPol) const {
+     int polIdx = -1;
+     return table_->getPolarizationLabel (linear, stokes, linPol, polIdx);
+  }
+//
   std::vector<double> getAbcissa(int whichRow=0) const {
     return table_->getAbcissa(whichRow);
   }
@@ -150,6 +157,7 @@ public:
   int nChan() {return table_->nChan();}
   int nScan() {return table_->nScan();}
   int nRow() {return table_->nRow();}
+  int nStokes() {return table_->nStokes();}
 
   //sets the mask
   bool setChannels(const std::vector<int>& whichChans) {

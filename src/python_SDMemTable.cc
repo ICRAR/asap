@@ -69,13 +69,20 @@ void python_SDMemTable() {
     .def("_getsource", &SDMemTableWrapper::getSource)
     .def("_getspectrum", &SDMemTableWrapper::getSpectrum,
          (boost::python::arg("whichRow")=0))
+    .def("nstokes", &SDMemTableWrapper::nStokes)
     .def("_getstokesspectrum", &SDMemTableWrapper::getStokesSpectrum,
          (boost::python::arg("whichRow")=0),
-         (boost::python::arg("pol")=false),
+         (boost::python::arg("linpol")=false),
          (boost::python::arg("pa")=0.0) )
-    .def("_getcircularspectrum", &SDMemTableWrapper::getCircularSpectrum,
+    .def("_stokestopolspectrum", &SDMemTableWrapper::stokesToPolSpectrum,
          (boost::python::arg("whichRow")=0),
-         (boost::python::arg("rr")=true))
+         (boost::python::arg("linear")=false),
+         (boost::python::arg("thepol")=0) )
+    .def("_getpolarizationlabel", &SDMemTableWrapper::getPolarizationLabel,
+         (boost::python::arg("linear")=false),
+         (boost::python::arg("stokes")=false),
+         (boost::python::arg("linpol")=false) )
+//         (boost::python::arg("thepol")=0) )        // Boost fails with 4 arguments
     .def("_setspectrum",&SDMemTableWrapper::setSpectrum,
          (boost::python::arg("whichRow")=0) )
     .def("_getabcissa", &SDMemTableWrapper::getAbcissa,
