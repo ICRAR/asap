@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef _PYTHON_SD_H_
 #define _PYTHON_SD_H_
@@ -36,6 +36,7 @@ namespace atnf_sd {
 
 void python_SDMemTable();
 void python_SDReader();
+void python_SDWriter();
 void python_SDMath();
 
   } // python

@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id$
 //#---------------------------------------------------------------------------
 #include <string>
 #include <vector>
@@ -40,6 +40,7 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(atnf_sd) {
   atnf_sd::python::python_SDMemTable();
   atnf_sd::python::python_SDReader();
+  atnf_sd::python::python_SDWriter();
   atnf_sd::python::python_SDMath();
 
   std_vector_to_tuple < int > ();
