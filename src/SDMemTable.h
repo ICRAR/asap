@@ -101,8 +101,7 @@ public:
   // (determined by the polSel cursor location 0->3)
   // If the latter, you can add a PA offset (degrees)
   virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
-                                               casa::Bool doPol=casa::False,
-                                               casa::Float paOffset=0.0) const;
+                                               casa::Bool doPol=casa::False) const;
 
   // Returns Label for polarization selected by polSel_ (or over-ridden
   // with arg. polIdx).  If doStokes is False,

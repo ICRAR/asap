@@ -42,6 +42,7 @@
 #include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/BasicMath/Math.h>
+#include <casa/BasicSL/Constants.h>
 #include <casa/Quanta/MVAngle.h>
 
 #include <tables/Tables/TableParse.h>
@@ -376,8 +377,7 @@ int SDMemTable::nStokes() const
 }
 
 
-std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, 
-						 Float paOffset) const 
+std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const
 //
 // Gets one STokes parameter depending on cursor polSel location
 //  doPol=False  : I,Q,U,V
@@ -393,23 +393,24 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol,
 
   if (doPol && (polSel_==1 || polSel_==2)) {       //   Q,U --> P, P.A.
 
-    // Set current cursor location
+// Set current cursor location
+
      const IPosition& shape = arr.shape();
      IPosition start, end;
      getCursorSlice(start, end, shape);
 
-     // Get Q and U slices
+// Get Q and U slices
 
      Array<Float> Q = SDPolUtil::getStokesSlice(arr,start,end,"Q");
      Array<Float> U = SDPolUtil::getStokesSlice(arr,start,end,"U");
 
-     // Compute output 
+// Compute output 
 
      Array<Float> out;
      if (polSel_==1) {                                        // P
         out = SDPolUtil::polarizedIntensity(Q,U);
      } else if (polSel_==2) {                                 // P.A.
-        out = SDPolUtil::positionAngle(Q,U) + paOffset;
+        out = SDPolUtil::positionAngle(Q,U);
      }
 
      // Copy to output
