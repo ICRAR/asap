@@ -94,25 +94,28 @@ def bin(scan, binwidth=5):
     from asap._asap import bin as _bin
     return scantable(_bin(scan, binwidth))
 
-def average_pol(scan, mask=None):
+def average_pol(scan, mask=None, insitu=False):
     """
     Average the Polarisations together.
     Parameters:
         scan   - a scantable
-        mask   - an optional mask defining the region, where
-                 the averaging will be applied. The output
-                 will have all specified points masked.
-                 The dimension won't be reduced and
-                 all polarisations will contain the
-                 averaged spectrum.
+        mask   - an optional mask defining the region, where the
+                 averaging will be applied. The output will have all 
+                 specified points masked. 
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the averaging is done in-situ
     Example:
         polav = average_pols(myscan)
     """
-    from asap._asap import averagepol as _avpol
-    from numarray import ones
     if mask is None:
-        mask = tuple(ones(scan.nchan()))
-    return scantable(_avpol(scan, mask))
+        mask = ()
+    if not insitu:
+        from asap._asap import averagepol as _avpol
+        return scantable(_avpol(scan, mask))
+    else:
+        from asap._asap import averagepol_insitu as _avpol
+        _avpol(scan, mask)
+        return
     
 def hanning(scan):
     """
