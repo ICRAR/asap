@@ -92,6 +92,7 @@ template Float avdev<Float>(MaskedArray<Float> const&);
 template class CompiledFunction<AutoDiff<Float> >;
 template class CompiledParam<AutoDiff<Float> >;
 template Vector<Bool>::Vector(const vector<bool> &);
+template Vector<Int>::Vector(const vector<int> &);
 template Vector<Float>::Vector(const vector<float> &);
 template Vector<Double>::Vector(const vector<double> &);
 template void Array<float>::tovector(vector<float> &) const;
