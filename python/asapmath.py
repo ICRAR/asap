@@ -56,7 +56,7 @@ def quotient(source, reference, preserve=True):
     from asap._asap import quotient as _quot
     return scantable(_quot(source, reference, preserve))
 
-def simple_math(left, right, op='add'):
+def simple_math(left, right, op='add', tsys=True):
     """
     Apply simple mathematical binary operations to two 
     scan tables,  returning the result in a new scan table.
@@ -65,14 +65,16 @@ def simple_math(left, right, op='add'):
         left:          the 'left' scan
         right:         the 'right' scan
         op:            the operation: 'add' (default), 'sub', 'mul', 'div'
+        tsys:          if True (default) then apply the operation to Tsys
+                       as well as the data
     """
     if not isinstance(left,scantable) and not isinstance(right,scantable):
         print "Please provide two scantables as input"
         return
     from asap._asap import b_operate as _bop
-    return scantable(_bop(left, right, op))
+    return scantable(_bop(left, right, op, tsys))
 
-def scale(scan, factor, insitu=None, allaxes=None):
+def scale(scan, factor, insitu=None, allaxes=None, tsys=True):
     """
     Return a scan where all spectra are scaled by the give 'factor'
     Parameters:
@@ -84,15 +86,17 @@ def scale(scan, factor, insitu=None, allaxes=None):
         allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only.
                      The default is taken from .asaprc (True)
+        tsys:        if True (default) then apply the operation to Tsys
+                     as well as the data
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import scale as _scale
-        return scantable(_scale(scan, factor, allaxes))
+        return scantable(_scale(scan, factor, allaxes, tsys))
     else:
         from asap._asap import scale_insitu as _scale
-        _scale(scan, factor, allaxes)
+        _scale(scan, factor, allaxes, tsys)
         return
         
 
