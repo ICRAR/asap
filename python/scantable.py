@@ -344,19 +344,23 @@ class scantable(sdtable):
             retval = {'axes': axes, 'data': array(statval), 'cursor':(i,j,k)}
             return retval
         
-    def get_time(self):
+    def get_time(self, row=-1):
         """
         Get a list of time stamps for the observations.
         Return a string for each integration in the scantable.
         Parameters:
-            none
+            row:    row no of integration. Default -1 return all rows
         Example:
             none
         """
         out = []
-        for i in range(self.nrow()):
-            out.append(self._gettime(i))
-        return out
+        if row == -1:
+            for i in range(self.nrow()):
+                out.append(self._gettime(i))
+            return out
+        else:
+            if row < self.nrow():
+                return self._gettime(row)
 
     def set_unit(self, unit='channel'):
         """
@@ -377,8 +381,8 @@ class scantable(sdtable):
         """
         Set the instrument for subsequent processing
         Parameters:
-            instr:    Select from "ATPKSMB", "ATPKSHOH", "ATMOPRA", 
-                      "DSS-43" (Tid), "CEDUNA", and "HOBART"
+            instr:    Select from 'ATPKSMB', 'ATPKSHOH', 'ATMOPRA', 
+                      'DSS-43' (Tid), 'CEDUNA', and 'HOBART'
         """
         self._setInstrument(instr)
 
@@ -432,11 +436,12 @@ class scantable(sdtable):
             rowno:    an optional row number in the scantable. Default is the
                       first row, i.e. rowno=0
         Returns:
-            The abcissa values and it's format string.
+            The abcissa values and it's format string (as a dictionary)
         """
         abc = self._getabcissa(rowno)
-        lbl = self._getabcissalabel(rowno)
+        lbl = self._getabcissalabel(rowno)        
         return abc, lbl
+        #return {'abcissa':abc,'label':lbl}
 
     def create_mask(self, *args, **kwargs):
         """
@@ -562,11 +567,13 @@ class scantable(sdtable):
             scan.flag_spectrum(0,0,1)
             flags the spectrum for Beam=0, IF=0, Pol=1
         """
-        if (thebeam < self.nbeam() and  theif < self.nif() and thepol < self.npol()):
-            stable.setbeam(thebeam)
-            stable.setif(theif)
-            stable.setpol(thepol)
-            stable._flag(self)
+        if (thebeam < self.nbeam() and
+            theif < self.nif() and
+            thepol < self.npol()):
+            sdtable.setbeam(self, thebeam)
+            sdtable.setif(self, theif)
+            sdtable.setpol(self, thepol)
+            sdtable._flag(self)
         else:
             print "Please specify a valid (Beam/IF/Pol)"
         return
