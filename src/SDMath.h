@@ -54,39 +54,31 @@ class SDMath {
    SDMath &operator=(const SDMath& other);
 
 // Quotient
-
    casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
 
-//  Hanning
-
-   casa::CountedPtr<SDMemTable> hanning(const casa::CountedPtr<SDMemTable>& in);
-
 // Average in time
-
    casa::CountedPtr<SDMemTable>  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                                           const casa::Vector<casa::Bool>& mask,
                                           bool scanAverage, const std::string& weightStr);
 
 // Statistics
-
    std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
     		                const std::vector<bool>& mask, const std::string& which);
 
+//  Hanning
+   SDMemTable* hanning(const SDMemTable& in);
+
+
+// Bin up spectra
+   SDMemTable* bin (const SDMemTable& in, casa::Int width);
 
 // Simple mathematical operations.  what=0 (mul) or 1 (add)
-
    SDMemTable* simpleOperate (const SDMemTable& in, casa::Float offset, 
                               casa::Bool doAll, casa::uInt what);
 
 // Average polarizations
-
    SDMemTable* averagePol (const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
-
-// Bin up spectra
-
-   SDMemTable* bin (const SDMemTable& in, casa::Int width);
-
 
  private:
 

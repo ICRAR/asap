@@ -348,7 +348,7 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 // Output Table cloned from input
 
-  SDMemTable* sdmt = new SDMemTable(*on, True);
+  SDMemTable* pTabOut = new SDMemTable(*on, True);
 
 // Loop over rows
 
@@ -382,30 +382,29 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 // Put new row in output Table
 
-     sdmt->putSDContainer(sc);
+     pTabOut->putSDContainer(sc);
   }
 //
-  return CountedPtr<SDMemTable>(sdmt);
+  return CountedPtr<SDMemTable>(pTabOut);
 }
 
 
 
-CountedPtr<SDMemTable>
-SDMath::hanning(const CountedPtr<SDMemTable>& in) 
+SDMemTable* SDMath::hanning(const SDMemTable& in) 
 //
 // Hanning smooth each row
 // Should Tsys be smoothed ?
 //
 {
-  SDMemTable* sdmt = new SDMemTable(*in,True);
+  SDMemTable* pTabOut = new SDMemTable(in,True);
 
 // Loop over rows in Table
 
-  for (uInt ri=0; ri < in->nRow(); ++ri) {
+  for (uInt ri=0; ri < in.nRow(); ++ri) {
 
 // Get data
     
-    const MaskedArray<Float>& marr(in->rowAsMaskedArray(ri));
+    const MaskedArray<Float>& marr(in.rowAsMaskedArray(ri));
     Array<Float> arr = marr.getArray();
     Array<Bool> barr = marr.getMask();
 
@@ -427,12 +426,13 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in)
 
 // Create and put back
 
-    SDContainer sc = in->getSDContainer(ri);
+    SDContainer sc = in.getSDContainer(ri);
     putDataInSDC (sc, arr, barr);
 //
-    sdmt->putSDContainer(sc);
+    pTabOut->putSDContainer(sc);
   }
-  return CountedPtr<SDMemTable>(sdmt);
+//
+  return pTabOut;
 }
 
 

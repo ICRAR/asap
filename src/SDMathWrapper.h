@@ -47,38 +47,32 @@ namespace SDMathWrapper {
                              const SDMemTableWrapper& off);
 
 // Multiply
-
   void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll);
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
                           float factor, bool all);
 
 // Add
-
   void addInSitu(SDMemTableWrapper& in, float offset, bool all);
   SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
 // Hanning
-
+  void hanningInSitu (SDMemTableWrapper& in);
   SDMemTableWrapper hanning(const SDMemTableWrapper& in);
 
 // Bin up
-
   void binInSitu (SDMemTableWrapper& in, int width);
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
 // Average in time
-
   SDMemTableWrapper average (boost::python::tuple tpl,
                              const std::vector<bool>& mask,
                              bool scanAv, const std::string& wt);
 
 // Average polarizations
-
   void averagePolInSitu (SDMemTableWrapper& in,  const std::vector<bool>& mask);
   SDMemTableWrapper averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask);
 
 // Statistics
-
   std::vector<float> statistic(const SDMemTableWrapper& in,
                                const std::vector<bool>& mask, 
                                const std::string& which);

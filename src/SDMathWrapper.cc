@@ -87,12 +87,22 @@ SDMemTableWrapper SDMathWrapper::add(const SDMemTableWrapper& in,
   return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(offset), Bool(doAll), what));
 }
 
-
-SDMemTableWrapper SDMathWrapper::hanning(const SDMemTableWrapper& in) 
+void SDMathWrapper::hanningInSitu(SDMemTableWrapper& in)
 {
+  SDMemTable* pIn = in.getPtr();
   SDMath sdm;
-  return SDMemTableWrapper(sdm.hanning(in.getCP()));
+  SDMemTable* pOut = sdm.hanning (*pIn);
+  *pIn = *pOut;
+   delete pOut;
 }
+
+SDMemTableWrapper SDMathWrapper::hanning (const SDMemTableWrapper& in)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.hanning(*pIn));
+}
+
 
 
 void SDMathWrapper::binInSitu(SDMemTableWrapper& in, int width)
