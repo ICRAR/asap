@@ -44,7 +44,7 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nChan, uInt nPol)
   nPol_(nPol),
   spectrum_(IPosition(4,nBeam,nIF,nChan,nPol)),
   flags_(IPosition(4,nBeam,nIF,nChan,nPol)),
-  tsys_(IPosition(3,nBeam,nIF,nPol)) {
+  tsys_(IPosition(4,nBeam,nIF,nChan,nPol)) {
   uChar x = 0;
   flags_ = ~x;
 }
@@ -55,11 +55,11 @@ SDContainer::~SDContainer() {
 Bool SDContainer::putSpectrum(const Array<Float>& spec) {
   spectrum_ = spec;
 }
-Bool SDContainer::putFlags(const Array<uChar>& spec) {
-  flags_ = spec;
+Bool SDContainer::putFlags(const Array<uChar>& flag) {
+  flags_ = flag;
 }
-Bool SDContainer::putTsys(const Array<Float>& spec) {
-  tsys_ = spec;
+Bool SDContainer::putTsys(const Array<Float>& tsys) {
+  tsys_ = tsys;
 }
 
 Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
@@ -127,8 +127,12 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   aa1.reset(aa1.begin(whichIF));
   // assert dimensions are the same....
   uInt idx = 0;
-  for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {
-    (*i) = tsys[idx];
-    idx++;
-  }  
+  
+  for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {    
+    idx = 0;
+    for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
+      (*ii) = tsys[idx];
+      idx++;
+    }
+  }
 }

@@ -98,7 +98,9 @@ private:
   // (nBeam,nIF,nChannel,nPol)
   Array<Float>    spectrum_;  
   Array<uChar>    flags_;
-  // (nBeam,nIF,nPol)
+  // (nBeam,nIF,[nChannel],nPol) Tsys is not really a function of
+  // channel, but this makes it easier to work with at the expense of
+  // a little memory
   Array<Float>    tsys_;
   Array<Float>    tcal_;
 
