@@ -13,6 +13,7 @@ from matplotlib.backends import new_figure_manager, show
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
 	FigureManagerTkAgg
 from matplotlib.figure import Figure, Text
+from matplotlib.font_manager import FontProperties
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
 
@@ -635,11 +636,13 @@ class ASAPlot:
 		# Suppress tick labelling for interior subplots.
 		if i <= (rows-1)*cols - 1:
 		    # Suppress x-labels for frames not in the bottom row.
-		    self.subplots[i]['axes'].set_xticklabels([])
+		    for tick in self.subplots[i]['axes'].xaxis.majorTicks:
+			tick.label1On = False
 
 		if i%cols:
 		    # Suppress y-labels for frames not in the left column.
-		    self.subplots[i]['axes'].set_yticklabels([])
+		    for tick in self.subplots[i]['axes'].yaxis.majorTicks:
+			tick.label1On = False
 
 		self.rows = rows
 		self.cols = cols
