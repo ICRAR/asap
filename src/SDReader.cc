@@ -126,6 +126,8 @@ void SDReader::open(const std::string& filename) {
     nIF_ = 1;
   }
   header_.nif = nIF_;
+  header_.fluxunit = "K";
+  header_.epoch = "UTC";
   // Apply selection criteria.
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
@@ -135,6 +137,7 @@ void SDReader::open(const std::string& filename) {
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
   table_->putSDHeader(header_);
   frequencies_.setRefFrame(header_.freqref);
+  frequencies_.setRestFrequencyUnit("Hz");
   frequencies_.setEquinox(header_.equinox);
 }
 
@@ -156,14 +159,12 @@ int SDReader::read(const std::vector<int>& seq) {
   uInt n = seq.size();
 
   uInt stepsize = header_.nif*header_.nbeam;
-  //cerr << "SDReader stepsize = " << stepsize << endl;
   uInt seqi = 0;
   Bool getAll = False;
   if (seq[n-1] == -1) getAll = True;
   while ( (cursor_ <= seq[n-1]) || getAll) {
     // only needs to be create if in seq
     SDContainer sc(header_.nbeam,header_.nif,header_.npol,header_.nchan);
-
     // iterate over one correlator integration cycle = nBeam*nIF
     for (uInt row=0; row < stepsize; row++) {
       // stepsize as well
@@ -180,7 +181,8 @@ int SDReader::read(const std::vector<int>& seq) {
       if (status) {
         if (status == -1) {
           // EOF.
-          if (row < stepsize-1) cerr << "incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan a present." << endl;
+          if (row > 0 && row < stepsize-1) 
+	    cerr << "incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present." << endl;
           //cerr << "EOF" << endl;
           table_->putSDFreqTable(frequencies_);
           return status;
@@ -206,6 +208,7 @@ int SDReader::read(const std::vector<int>& seq) {
         // refPix = nChan/2+1 in  Integer arith.!
         Int refPix = header_.nchan/2+1;
         Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
+	frequencies_.addRestFrequency(restFreq);
         sc.setFrequencyMap(frqslot,IFno-1);
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
