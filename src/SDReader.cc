@@ -76,19 +76,14 @@ void SDReader::open(const std::string& filename) {
     cerr << "Spectral data absent." << endl;
     return;
   }
+
   nBeam_ = beams.nelements();
-  //cout << "Reading " + format + " format from " + inName << endl;
-  //cout << "nChannels = " << nChan_ << ", " << "nPol = " << nPol_ << endl
-  //     << "nIF = " << nIF_ << endl 
-  //     << "nBeams = " << nBeam_ << endl;
-  
   // Get basic parameters.
   header_ = SDHeader();
   header_.nchan = nChan_;
   header_.npol = nPol_;
   header_.nbeam = nBeam_;
 
-  //cerr << " getting header ..." << endl;
   Int status = reader_->getHeader(header_.observer, header_.project, 
 				  header_.antennaname, header_.antennaposition,
                                   header_.obstype,header_.equinox, 
@@ -134,13 +129,10 @@ int SDReader::read(const std::vector<int>& seq) {
   Matrix<uChar>   flagtra;
   Complex         xCalFctr;
   Vector<Complex> xPol;
-  mjd = 0;
   uInt n = seq.size();
-  //cerr <<  header_.nif << ", " << header_.nbeam << endl;
+
   uInt stepsize = header_.nif*header_.nbeam;
   cerr << "SDReader stepsize = " << stepsize << endl;
-  uInt scanid = 0;
-  String prevName = "_noname_";// temporary until scanid is present
   uInt seqi = 0;
   //SDFrequencyTable sdft();
   Bool getAll = False;
