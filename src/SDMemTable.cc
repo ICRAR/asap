@@ -370,7 +370,7 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const
 }
 
 
-int SDMemTable::stokesLength() const
+int SDMemTable::nStokes() const
 {
    return stokesCol_.shape(0).nelements();        // All rows same shape
 }
@@ -427,113 +427,71 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol,
   }
 }
 
-std::string SDMemTable::getStokesSpectrumLabel (Bool doPol) const
-//
-// Gets STokes label depending on cursor polSel location
-//  doPol=False  : I,Q,U,V
-//  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
-//
+std::string SDMemTable::getPolarizationLabel (Bool linear, Bool stokes, Bool linPol, Int polIdx) const
 {
-  AlwaysAssert(asap::nAxes==4,AipsError);
-  if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
-     throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
-  }
+   uInt idx = polSel_;   
+   if (polIdx >=0) idx = polIdx;
 //
-   Stokes::StokesTypes type = Stokes::Undefined;
-   switch (polSel_) {
-      case 0:
-        {
-           type = Stokes::I;
-        }
-        break;
-      case 1:
-        {
-           if (doPol) {
-              type = Stokes::Plinear;
-           } else {
-              type = Stokes::Q;
-           }
-        }
-      case 2:
-        {
-           if (doPol) {
-              type = Stokes::Pangle;
-           } else {
-              type = Stokes::U;
-           }
-        }
-        break;
-      case 3:
-        {
-           type = Stokes::V;
-        }
-        break;
-      default:
-        {
-            throw(AipsError("Unknown Stokes type"));
-        }
-   }
-//
-   return SDPolUtil::stokesString(type);
+   return SDPolUtil::polarizationLabel (idx, linear, stokes, linPol);
 }
 
 
 
-std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow, 
-						   Bool doRR) const 
-  // Gets
-  //  RR = I + V
-  //  LL = I - V
+std::vector<float> SDMemTable::stokesToPolSpectrum (Int whichRow, Bool toLinear, uInt polIdx) const
+//
+// polIdx
+//   0:3 -> RR,LL,Real(RL),Imag(RL)
+//          XX,YY,Real(XY),Image(XY)
+//
+// Gets only
+//  RR = I + V
+//  LL = I - V
+// at the moment
+//
 {
   AlwaysAssert(asap::nAxes==4,AipsError);
-  if (nPol()!=4) {
-     throw (AipsError("You must have 4 polarizations to get RR or LL"));
+  if (nStokes()!=4) {
+     throw (AipsError("You must have 4 Stokes to convert to linear or circular"));
   }
-  Array<Float> arr;
+//
+  Array<Float> arr, out;
   stokesCol_.get(whichRow, arr);
 
-  // Set current cursor location
+// Set current cursor location
 
   const IPosition& shape = arr.shape();
   IPosition start, end;
   getCursorSlice(start, end, shape);
 
-  // Get I and V slices
+// Get the slice
 
-  Array<Float> I = SDPolUtil::getStokesSlice(arr,start,end,"I");
-  Array<Float> V = SDPolUtil::getStokesSlice(arr,start,end,"V");
+  if (toLinear) {
+     throw(AipsError("Conversion to linears not yet supported"));
+  } else {
+     Bool doRR = (polIdx==0);
+     if(polIdx>1) {
+        throw(AipsError("Only conversion to RR & LL is currently supported"));
+     }
 
-  // Compute output 
+// Get I and V slices
 
-  Array<Float> out = SDPolUtil::circularPolarizationFromStokes(I, V, doRR);
+     Array<Float> I = SDPolUtil::getStokesSlice(arr,start,end,"I");
+     Array<Float> V = SDPolUtil::getStokesSlice(arr,start,end,"V");
 
-  // Copy to output
+// Compute output 
 
-  IPosition vecShape(1,shape(asap::ChanAxis));
-  Vector<Float> outV = out.reform(vecShape);
-  std::vector<float> stlout;
-  outV.tovector(stlout);
-
-  return stlout;
-}
-
-
-std::string SDMemTable::getCircularSpectrumLabel (Bool doRR) const
-//
-// Gets Circular label 
-//
-{
-   Stokes::StokesTypes type = Stokes::Undefined;
-   if (doRR) {
-      type = Stokes::RR;
-   } else {
-      type = Stokes::LL;
+     out = SDPolUtil::circularPolarizationFromStokes(I, V, doRR);
    }
+
+// Copy to output
+
+   IPosition vecShape(1,shape(asap::ChanAxis));
+   Vector<Float> outV = out.reform(vecShape);
+   std::vector<float> stlout;
+   outV.tovector(stlout);
 //
-   return SDPolUtil::stokesString(type);
+   return stlout;
 }
-
-
 
 
 

@@ -93,18 +93,9 @@ public:
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
   virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
 
-  // When we can handle input correlations being either circular or
-  // linear, we should probably have functions; getLinear,
-  // getCircular, getStokes since one can inter-convert between all
-  // three regardless of the input provided there are 4
-  // polarizations. For now, we are assuming, if there are 4
-  // polarizations, that we have linears.  getSpectrum is then
-  // 'getLinear', getStokesSpectrum is 'getStokes' and
-  // getCircularSpectrum is 'getCircular'
-
   // Get length of STokes spectrum. XX & YY -> I
   // Anything else the length stays the same.
-  int stokesLength() const;
+  int nStokes() const;
 
   // Get specific Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
   // (determined by the polSel cursor location 0->3)
@@ -113,15 +104,17 @@ public:
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
 
-  // Returns String for selected Stokes (polSel_)
-  std::string getStokesSpectrumLabel (casa::Bool doPol) const;
+  // Returns Label for polarization selected by polSel_ (or over-ridden
+  // with arg. polIdx).  If doStokes is False,
+  // returns label for raw correlations (linear or circular). If True returns label for
+  // Stokes.  If doPol=False, I,Q,U,V else I,P,PA,V
+  std::string getPolarizationLabel (casa::Bool linear, casa::Bool stokes, 
+                                    casa::Bool linPol, casa::Int polIdx=-1) const;
 
-  // Get RR or LL at cursor location (except not polSel_)
-  virtual std::vector<float> getCircularSpectrum(casa::Int whichRow=0, 
-                                                 casa::Bool rr=casa::True) const;
-
-  // Get circular label
-  std::string getCircularSpectrumLabel (casa::Bool rr=casa::True) const;
+  // Convert Stokes to linear or circular polarizations (specified by polIdx=0:3).
+  // Presently, only conversion to RR or LL is supported.
+  virtual std::vector<float> stokesToPolSpectrum (casa::Int whichRow, casa::Bool toLinear,
+                                                  casa::uInt polIdx) const;
 
   // Get all Stokes at the specified Beam/IF cursor location (ignoring
   // the internal cursor).  -1 means all on that axis.  Really, this function
