@@ -43,9 +43,17 @@ if [ ! -x "$p" ]; then
 fi
 
 # at the moment we need AIPS++ for measures tables and endian detection
-aroot='/nfs/aips++/weekly'
+aroot='/nfs/aips++'
 if [ "${AIPSPATH}" == "" ]; then
-    . ${aroot}/aipsinit.sh
+
+    if test -d ${aroot}/weekly ; then
+	. ${aroot}/weekly/aipsinit.sh
+    elif  test -d ${aroot}/daily ; then
+	. ${aroot}/daily/aipsinit.sh
+    else 
+	echo "Cannot locate aips++ installation"
+	exit 0
+    fi
 fi
 
 #
