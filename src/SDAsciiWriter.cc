@@ -115,13 +115,6 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
 
-// Epoch
-
-      Double dTmp;
-      time.get(iRow, dTmp);
-      MVEpoch tmp2(Quantum<Double>(dTmp, Unit(String("d"))));
-      MEpoch epoch(tmp2, timeRef);
-
 // Iterate through data in this row by spectra
 
       ReadOnlyVectorIterator<Float> itData(values, asap::ChanAxis);
@@ -150,7 +143,7 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
          of << iRow << "  " << pos(asap::BeamAxis) << " " <<  pos(asap::IFAxis) << " " << 
                pos(asap::PolAxis) << " " <<
                src(iRow) <<  " " << formatDirection(lonLat) << " " << 
-               dTmp << " " << itData.vector().nelements() << " ";
+               sdTable.getTime(iRow,True) << " " << itData.vector().nelements() << " ";
 // Write data
 
          const Vector<Float>& data = itData.vector();
