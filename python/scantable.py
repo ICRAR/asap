@@ -743,7 +743,7 @@ class scantable(sdtable):
     # Maths business
     #
 
-    def average_time(self, mask=None, scanav=True, weight=None):
+    def average_time(self, mask=None, scanav=True, weight='tint'):
         """
         Return the (time) average of a scan, or apply it 'insitu'.
         Note:
@@ -755,15 +755,16 @@ class scantable(sdtable):
                       weighting)
             scanav:   True (default) averages each scan separately
                       False averages all scans together,
-            weight:   Weighting scheme. 'none' (default), 'var' (1/var(spec)
+            weight:   Weighting scheme. 'none', 'var' (1/var(spec)
                       weighted), 'tsys' (1/Tsys**2 weighted), or 'tint'
-                      (integration time weighted)
+                      (integration time weighted).  The default is
+                      'tint'
         Example:
             # time average the scantable without using a mask
             newscan = scan.average_time()            
         """
         varlist = vars()
-        if weight is None: weight = 'none'
+        if weight is None: weight = 'tint'
         if mask is None: mask = ()
         from asap._asap import average as _av        
         s = scantable(_av((self,), mask, scanav, weight))
