@@ -176,7 +176,7 @@ def auto_poly_baseline(scan, mask=None, edge=(0,0), order=0,
 	for j in range(workscan.nif()):
 	    workscan.setif(j)
 	    for k in range(workscan.npol()):
-	        scan.setpol(k)
+	        workscan.setpol(k)
 		if f._vb:
 		   print "Processing:"
 		   print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
@@ -188,8 +188,9 @@ def auto_poly_baseline(scan, mask=None, edge=(0,0), order=0,
 		   f.y=workscan._getspectrum(iRow)
                    f.data=None
 		   f.fit()
-		   workscan._setspectrum(f.getresidual(),iRow)
+		   x=f.get_parameters()
+		   workscan._setspectrum(f.fitter.getresidual(),iRow)
     workscan.set_cursor(sel[0],sel[1],sel[2])
     workscan._vb = vb
     if not insitu:
-       return scan
+       return workscan
