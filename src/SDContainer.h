@@ -209,17 +209,21 @@ public:
   SDDataDesc() : n_(0) {;}
   ~SDDataDesc() {;}
 
-// Add an entry if source name (not direction at this point) and freqID are unique
-  casa::uInt addEntry (const casa::String& source, casa::uInt freqID,
-                       const casa::MDirection& dir);
+// Add an entry if source name and Integer ID (can be anything you like, such 
+// as FreqID) are unique.  You can add secondary entries direction
+// and another integer index which are just stored along with the
+// the primary entries
+  casa::uInt addEntry (const casa::String& source, casa::uInt ID,
+                       const casa::MDirection& secDir, casa::uInt secID);
 
 // Number of entries
   casa::Int length() const { return n_;}
 
 // Get attributes
   casa::String source (casa::uInt which) const {return source_[which];}
-  casa::uInt freqID(casa::uInt which) const {return freqID_[which];}
-  casa::MDirection direction (casa::uInt which) const {return dir_[which];}
+  casa::uInt ID(casa::uInt which) const {return ID_[which];}
+  casa::uInt secID(casa::uInt which) const {return secID_[which];}
+  casa::MDirection secDir (casa::uInt which) const {return secDir_[which];}
 
 // Summary
   void summary() const;
@@ -227,8 +231,8 @@ public:
 private:
   casa::uInt n_;
   casa::Vector<casa::String> source_;
-  casa::Vector<casa::uInt> freqID_;
-  casa::Block<casa::MDirection> dir_;
+  casa::Vector<casa::uInt> ID_, secID_;
+  casa::Block<casa::MDirection> secDir_;
 //
   SDDataDesc(const SDDataDesc& other);
 

@@ -484,14 +484,15 @@ void SDFrequencyTable::restFrequencies(Vector<Double>& rfs,
 
 // SDDataDesc
 
-uInt SDDataDesc::addEntry (const String& source, uInt freqID, const MDirection& dir)
+uInt SDDataDesc::addEntry (const String& source, uInt ID, 
+                           const MDirection& dir, uInt secID)
 {
 
 // See if already exists
 
   if (n_ > 0) {
     for (uInt i=0; i<n_; i++) {
-      if (source==source_[i] && freqID==freqID_[i]) {
+      if (source==source_[i] && ID==ID_[i]) {
          return i;
       }
     }
@@ -501,23 +502,24 @@ uInt SDDataDesc::addEntry (const String& source, uInt freqID, const MDirection& 
 
   n_ += 1;
   source_.resize(n_,True);
-  freqID_.resize(n_,True);
-  dir_.resize(n_,True,True);
+  ID_.resize(n_,True);
+  secID_.resize(n_,True);
+  secDir_.resize(n_,True,True);
 //
   source_[n_-1] = source;
-  freqID_[n_-1] = freqID;
-  dir_[n_-1] = dir;
+  ID_[n_-1] = ID;
+  secID_[n_-1] = secID;
+  secDir_[n_-1] = dir;
 //
   return n_-1;
 }
 
-
 void SDDataDesc::summary() const
 {
-   cerr << "Source    FreqID" << endl;
-   for (uInt i=0; i<n_; i++) {
-      cerr << setw(11) << source_(i) << freqID_(i) << endl;
+   if (n_>0) {
+      cerr << "Source    ID" << endl;   
+      for (uInt i=0; i<n_; i++) {
+         cerr << setw(11) << source_(i) << ID_(i) << endl;
+      }
    }
 }
-
-
