@@ -811,7 +811,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
 // Shape of input and output data 
 
-  const IPosition& shapeIn = in.rowAsMaskedArray(0u, False).shape();
+  const IPosition& shapeIn = in.rowAsMaskedArray(0).shape();
   IPosition shapeOut(shapeIn);
   shapeOut(asap::PolAxis) = 1;                          // Average all polarizations
   if (shapeIn(asap::PolAxis)==1) {

@@ -155,7 +155,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Get data converted to Stokes
 
-      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,False,toStokes));
+      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,toStokes));
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
       const IPosition& shapeIn = dataIn.shape();

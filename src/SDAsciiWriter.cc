@@ -111,7 +111,7 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
 
 // Get data
 
-      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,False,toStokes));
+      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,toStokes));
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
 
