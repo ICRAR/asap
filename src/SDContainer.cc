@@ -38,7 +38,6 @@
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/VectorIter.h>
-#include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/Quanta/MVTime.h>
@@ -324,117 +323,101 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   }
 }
 
-Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const 
+Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF)
+//
+// non-const function because of Array(start,end) slicer
+//
+// Input  [nBeam,nIF,nPol,nChan]
+// Output [nChan,nPol]
+//
 {
-  Matrix<Float> spectra(nChan_, nPol_);
 
-  // Beam.
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > i0(spectrum_);
-  i0.reset(i0.begin(whichBeam));
+// Get reference to slice and check dim
 
-  // IF.
-  ArrayAccessor<Float, Axis<asap::IFAxis> > i1(i0);
-  i1.reset(i1.begin(whichIF));
-
-  // Polarization.
-  ArrayAccessor<Float, Axis<asap::PolAxis> > i2(i1);
-  ArrayAccessor<Float, Axis<asap::IFAxis> > o1(spectra);
-
-  while (i2 != i2.end()) {
-    // Channel.
-    ArrayAccessor<Float, Axis<asap::ChanAxis> > i3(i2);
-    ArrayAccessor<Float, Axis<asap::BeamAxis> > o0(o1);
-
-    while (i3 != i3.end()) {
-      *o0 = *i3;
-
-      i3++;
-      o0++;
-    }
-
-    i2++;
-    o1++;
+  IPosition start, end;
+  setSlice (start, end, spectrum_.shape(), whichBeam, whichIF);
+//
+  Array<Float> dataIn = spectrum_(start,end);
+  Array<Float> dataOut(IPosition(2, nChan_, nPol_));
+//
+  ReadOnlyVectorIterator<Float> itIn(dataIn, asap::ChanAxis);
+  VectorIterator<Float> itOut(dataOut, 0);
+  while (!itOut.pastEnd()) {
+     itOut.vector() = itIn.vector();
+//
+     itIn.next();
+     itOut.next();
   }
+//
+  return dataOut.copy(); 
+}
 
-  return spectra.copy();
+Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF)
+//
+// non-const function because of Array(start,end) slicer
+//
+// Input  [nBeam,nIF,nPol,nChan]
+// Output [nChan,nPol]
+//
+{
+
+// Get reference to slice and check dim
+
+  IPosition start, end;
+  setSlice (start, end, flags_.shape(), whichBeam, whichIF);
+//
+  Array<uChar> dataIn = flags_(start,end);
+  Array<uChar> dataOut(IPosition(2, nChan_, nPol_));
+//
+  ReadOnlyVectorIterator<uChar> itIn(dataIn, asap::ChanAxis);
+  VectorIterator<uChar> itOut(dataOut, 0);
+  while (!itOut.pastEnd()) {
+     itOut.vector() = itIn.vector();
+//
+     itIn.next();
+     itOut.next();
+  }
+//
+  return dataOut.copy();
+}
+
+Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) 
+//
+// Input  [nBeam,nIF,nPol,nChan]
+// Output [nPol]   (drop channel dependency and select first value)
+// 
+{
+// Get reference to slice and check dim
+
+  IPosition start, end;
+  setSlice (start, end, spectrum_.shape(), whichBeam, whichIF);
+//
+  Array<Float> dataIn = tsys_(start,end);
+  Vector<Float> dataOut(nPol_);
+//
+  ReadOnlyVectorIterator<Float> itIn(dataIn, asap::ChanAxis);
+  VectorIterator<Float> itOut(dataOut, 0); 
+  uInt i = 0;
+  while (!itIn.pastEnd()) {
+    dataOut[i++] = itIn.vector()[0];
+    itIn.next();
+  }
+//
+  return dataOut.copy();
 }
 
 
-Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
+
+Array<Double> SDContainer::getDirection(uInt whichBeam) const 
+//
+// Input [nBeam,2]
+// Output [nBeam]
+//
 {
-  Matrix<uChar> flagtra(nChan_, nPol_);
-
-  // Beam.
-  ArrayAccessor<uChar, Axis<asap::BeamAxis> > i0(flags_);
-  i0.reset(i0.begin(whichBeam));
-
-  // IF.
-  ArrayAccessor<uChar, Axis<asap::IFAxis> > i1(i0);
-  i1.reset(i1.begin(whichIF));
-
-  // Polarization.
-  ArrayAccessor<uChar, Axis<asap::PolAxis> > i2(i1);
-  ArrayAccessor<uChar, Axis<asap::IFAxis> > o1(flagtra);
-
-  while (i2 != i2.end()) {
-    // Channel.
-    ArrayAccessor<uChar, Axis<asap::ChanAxis> > i3(i2);
-    ArrayAccessor<uChar, Axis<asap::BeamAxis> > o0(o1);
-
-    while (i3 != i3.end()) {
-      *o0 = *i3;
-
-      i3++;
-      o0++;
-    }
-
-    i2++;
-    o1++;
-  }
-
-  return flagtra.copy();
-}
-
-Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
-{
-  Vector<Float> tsys(nPol_);
-
-  // Beam.
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > i0(tsys_);
-  i0.reset(i0.begin(whichBeam));
-
-  // IF.
-  ArrayAccessor<Float, Axis<asap::IFAxis> > i1(i0);
-  i1.reset(i1.begin(whichIF));
-
-  // Channel.
-  ArrayAccessor<Float, Axis<asap::ChanAxis> > i3(i1);
-
-  // Polarization.
-  ArrayAccessor<Float, Axis<asap::PolAxis> > i2(i3);
-  ArrayAccessor<Float, Axis<asap::BeamAxis> > o0(tsys);
-
-  while (i2 != i2.end()) {
-    *o0 = *i2;
-
-    i2++;
-    o0++;
-  }
-  return tsys.copy();
-}
-
-Array<Double> SDContainer::getDirection(uInt whichBeam) const {
-  Vector<Double> direct(2);
-  ArrayAccessor<Double, Axis<asap::BeamAxis> > i0(direction_);
-  i0.reset(i0.begin(whichBeam));
-  ArrayAccessor<Double, Axis<asap::BeamAxis> > o0(direct);
-  ArrayAccessor<Double, Axis<asap::IFAxis> > i1(i0);
-  while (i1 != i1.end()) {
-    *o0 = *i1;
-    i1++;
-    o0++;
-  }  
-  return direct.copy();
+  Vector<Double> dataOut(2);
+  dataOut(0) = direction_(IPosition(2,whichBeam,0));
+  dataOut(1) = direction_(IPosition(2,whichBeam,1));
+  return dataOut.copy();
 }
 
 
@@ -460,18 +443,20 @@ Bool SDContainer::putRestFreqMap(const Vector<uInt>& freqs) {
   return True;
 }
 
-Bool SDContainer::setDirection(const Vector<Double>& point, uInt whichBeam) {
+Bool SDContainer::setDirection(const Vector<Double>& point, uInt whichBeam) 
+//
+// Input [2]
+// Output [nBeam,2]
+//
+{
   if (point.nelements() != 2) return False;
-  ArrayAccessor<Double, Axis<asap::BeamAxis> > aa0(direction_);
-  aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Double, Axis<asap::BeamAxis> > jj(point);
-  for (ArrayAccessor<Double, Axis<asap::IFAxis> > i(aa0);i != i.end(); ++i) {
-    
-    (*i) = (*jj);
-    jj++;
-  }
+//
+  Vector<Double> dataOut(2);
+  direction_(IPosition(2,whichBeam,0)) = point[0];
+  direction_(IPosition(2,whichBeam,1)) = point[1];
   return True;
 }
+
 
 Bool SDContainer::putDirection(const Array<Double>& dir) {
   direction_.resize();
@@ -516,13 +501,22 @@ void SDContainer::setSlice (IPosition& start, IPosition& end,
      AlwaysAssert(shpOut(asap::PolAxis)==shpIn(1)+pOff,AipsError);   // pol
   }
 //
+  setSlice (start, end, shpOut, whichBeam, whichIF);
+}
+
+
+void SDContainer::setSlice (IPosition& start, IPosition& end, const IPosition& shape, 
+                            uInt whichBeam, uInt whichIF) const
+{
+  AlwaysAssert(asap::nAxes==4,AipsError);
+//
   start.resize(asap::nAxes);
   start = 0;
   start(asap::BeamAxis) = whichBeam;
   start(asap::IFAxis) = whichIF;
 //
   end.resize(asap::nAxes);
-  end = shpOut-1;
+  end = shape-1;
   end(asap::BeamAxis) = whichBeam;
   end(asap::IFAxis) = whichIF;
 }

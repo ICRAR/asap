@@ -148,11 +148,11 @@ public:
   casa::Bool putRestFreqMap(const casa::Vector<casa::uInt>& freqs);
   
   casa::Array<casa::Float> getSpectrum(casa::uInt whichBeam, 
-				       casa::uInt whichIF) const;
+				       casa::uInt whichIF);
   casa::Array<casa::uChar> getFlags(casa::uInt whichBeam, 
-				    casa::uInt whichIF) const;
+				    casa::uInt whichIF);
   casa::Array<casa::Float> getTsys(casa::uInt whichBeam, 
-				   casa::uInt whichIF) const;
+				   casa::uInt whichIF);
   casa::Array<casa::Double> getDirection(casa::uInt whichBeam) const;
 
   const casa::Array<casa::Float>& getSpectrum() const { return spectrum_; }
@@ -203,6 +203,9 @@ private:
                  const casa::IPosition& shpIn, const casa::IPosition& shpOut,
                  casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol,
                  casa::Bool xPol) const;
+  void setSlice (casa::IPosition& start, casa::IPosition& end,
+                 const casa::IPosition& shape, 
+                 casa::uInt whichBeam, casa::uInt whichIF) const;
 };
 
 
