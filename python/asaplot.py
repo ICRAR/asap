@@ -15,6 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
 	FigureManagerTkAgg
 from matplotlib.figure import Figure, Text
 from matplotlib.numerix import sqrt
+from matplotlib import rc,rcParams
 
 # Force use of the newfangled toolbar.
 matplotlib.rcParams['toolbar'] = 'toolbar2'
@@ -69,7 +70,7 @@ class ASAPlot:
 
 	matplotlib.interactive = True
 	self.buffering = buffering
-
+        
 	self.canvas.show()
 
 
@@ -464,7 +465,7 @@ class ASAPlot:
 	if redraw: self.show()
 
 
-    def set_panels(self, rows=1, cols=0, n=-1):
+    def set_panels(self, rows=1, cols=0, n=-1, nplots=-1):
 	"""
 	Set the panel layout.
 	
@@ -498,7 +499,9 @@ class ASAPlot:
 
 	    if i*(i-1) >= rows: i -= 1
 	    rows = i
-            
+        else:
+            if nplots > -1:
+                nel=nplots
 	if 0 <= n < rows*cols:
 	    i = len(self.subplots)
 	    self.subplots.append({})
@@ -510,7 +513,7 @@ class ASAPlot:
 
 	else:
 	    self.subplots = []
-	    for i in range(0,nel):
+	    for i in range(nel):
 		self.subplots.append({})
 		self.subplots[i]['axes']  = self.figure.add_subplot(rows,
 						cols, i+1)
@@ -588,8 +591,7 @@ class ASAPlot:
 	Add text to the figure.
 	"""
 	self.figure.text(*args, **kwargs)
-	self.show()
-
+	self.show()        
 
     def unmap(self):
 	"""
@@ -608,6 +610,15 @@ class ASAPlot:
         return
 
     def save(self, fname=None):
+        """
+        Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
+        Parameters:
+             filename:    The name of the output file. This is optional
+                          and autodetects the image format from the file
+                          suffix. If non filename is specified a file
+                          called 'yyyymmdd_hhmmss.png' is created in the
+                          current directory.
+        """
         if fname is None:
             from datetime import datetime
             dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -617,12 +628,13 @@ class ASAPlot:
         if fname[-3:].lower() in d:
             try:
                 self.canvas.print_figure(fname)
+                print 'Written file %s' % (fname)
             except IOError, msg:
                 print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
                 return
         else:
             print "Invalid image type. Valid types are:"
-            print d
+            print "ps, eps, png"
 
 
 def get_colour(colour='black'):
