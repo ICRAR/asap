@@ -44,6 +44,7 @@ OBJECTS   := MathUtils.o \
              MathUtils2.o \
              SDAttr.o \
              SDContainer.o \
+             SDPol.o \
              SDMemTable.o \
              SDReader.o \
              SDWriter.o \
@@ -67,6 +68,7 @@ HEADERS   := SDDefs.h \
              SDAttr.h \
              SDContainer.h \
              SDMemTable.h \
+             SDPol.h \
              SDReader.h \
              SDWriter.h \
              SDMath.h \
