@@ -263,6 +263,25 @@ def bin(scan, width=5, insitu=None):
         _bin(scan, width)
         return
 
+def resample(scan, width=5, method='cubic', insitu=None):
+    """
+    Return a scan where all spectra have been binned up
+        width:       The bin width (default=5) in pixels
+        method:      Interpolation method when correcting from a table. Values 
+                     are  "nearest", "linear", "cubic" (default) and "spline"
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+    """
+    if insitu is None: insitu = rcParams['insitu']
+    if not insitu:
+        from asap._asap import resample as _resample
+        return scantable(_resample(scan, method, width))
+    else:
+        from asap._asap import resample_insitu as _resample
+        _resample(scan, method, width)
+        return
+
 def average_pol(scan, mask=None, insitu=None):
     """
     Average the Polarisations together.

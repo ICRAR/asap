@@ -286,9 +286,10 @@ def commands():
         quotient            - return the on/off quotient
         simple_math         - simple mathematical operations on two scantables,
                               'add', 'sub', 'mul', 'div'
-        scale               - returns a scan scaled by a given factor
-        add                 - returns a scan with given value added 
+        scale               - return a scan scaled by a given factor
+        add                 - return a scan with given value added 
         bin                 - return a scan with binned channels
+        resample            - return a scan with resampled channels
         smooth              - return the spectrally smoothed scan
         poly_baseline       - fit a polynomial baseline to all Beams/IFs/Pols
         gain_el             - apply gain-elevation correction
