@@ -144,7 +144,7 @@ int SDReader::read(const std::vector<int>& seq) {
   cerr << "SDReader::read" << endl;
   int status = 0;  
   
-  Int    beamNo, IFno, refBeam, scanNo;
+  Int    beamNo, IFno, refBeam, scanNo, cycleNo;
   Float  azimuth, elevation, focusAxi, focusRot, focusTan, 
     humidity, parAngle, pressure, temperature, windAz, windSpeed;
   Double bandwidth, freqInc, interval, mjd, refFreq, srcVel;
@@ -176,7 +176,8 @@ int SDReader::read(const std::vector<int>& seq) {
       // add scanid from GROUP field -- this will remove the need for
       // stepsize as well
       // spectra(nChan,nPol)!!!
-      status = reader_->read(scanNo, mjd, interval, fieldName, srcName,
+      status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName, 
+			     srcName,
 			     srcDir, srcPM, srcVel, IFno, refFreq,
 			     bandwidth, freqInc, tcal, tcalTime, 
 			     azimuth, elevation, parAngle, focusAxi, 
@@ -211,11 +212,11 @@ int SDReader::read(const std::vector<int>& seq) {
 	//uInt refPix = header_.nchan/2+1; 
 	//uInt frqslot = sdft.addFrequency(refPix, refFreq, freqInc);
 
-	if ( srcName != prevName ) {//temp
-	  scanid++;//temp
-	  prevName = srcName;//temp
-	}//temp
-	sc.scanid = scanid;
+	//if ( srcName != prevName ) {//temp
+	//scanid++;//temp
+	// prevName = srcName;//temp
+	//}//temp
+	sc.scanid = scanNo;
 	//sc.setFrequencyMap(frqslot,IFno-1);
 	sc.setSpectrum(spectra, beamNo-1, IFno-1);
 	sc.setFlags(flagtra,  beamNo-1, IFno-1);
