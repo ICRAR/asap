@@ -40,8 +40,9 @@ class SDMemTable;
 class SDMath {
 public:
   static CountedPtr<SDMemTable> average(const CountedPtr<SDMemTable>& in);
-  //SDMemTable quotient(const SDMemTable& on, const SDMemTable& off);
-  //SDMemTable multiply(SDMemTable& in, Float factor);
+  static CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
+					 const CountedPtr<SDMemTable>& off);
+  //CountedPtr<SDMemTable> multiply(CountedPtr<SDMemTable>& in, Float factor);
   
 };
 

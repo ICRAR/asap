@@ -77,9 +77,11 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
     tme += tmp;// average time
   }
   // averaging using mask
-  MaskedArray<Float> nma (narr,(narr > Float(0)));
+  MaskedArray<Float> nma(narr,(narr > Float(0)));
   outarr /= nma;
-
+  Array<Bool> outflagsb = !(nma.getMask());
+  Array<uChar> outflags(outflagsb.shape());
+  convertArray(outflags,outflagsb);
   SDContainer sc(ip(0),ip(1),ip(2),ip(3));
 
   Int n = t.nrow();
@@ -89,8 +91,51 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   String tstr; srcn.getScalar(n,tstr);// get sourcename of "mid" point
   sc.sourcename = tstr;
   sc.putSpectrum(outarr);
-  //sc.putFlags(outflags);  
+  sc.putFlags(outflags);  
   SDMemTable* sdmt = new SDMemTable(*in);
   sdmt->putSDContainer(sc);
   return CountedPtr<SDMemTable>(sdmt);
 }
+
+static CountedPtr<SDMemTable> 
+SDMath::quotient(const CountedPtr<SDMemTable>& on, 
+		 const CountedPtr<SDMemTable>& off) {
+  
+  Table ton = on->table();
+  Table toff = off->table();
+  ROArrayColumn<Float> tsys(ton, "TSYS");
+  
+  ROScalarColumn<Double> mjd(ton, "TIME");
+  ROScalarColumn<String> srcn(ton, "SRCNAME");
+  MaskedArray<Float> mon(on->rowAsMaskedArray(0));
+  MaskedArray<Float> moff(off->rowAsMaskedArray(0));
+  IPosition ipon = mon.shape();
+  IPosition ipoff = moff.shape();
+  Array<Float> tsarr(tsys.shape(0));
+
+  if (ipon != ipoff && ipon != tsarr.shape()) 
+    cerr << "on/off not conformant" << endl;
+ 
+  //IPosition test = mon.shape()/2;
+  MaskedArray<Float> tmp = (mon-moff);
+  Array<Float> out(tmp.getArray()); 
+  out /= moff;
+  out *= tsarr;
+  Array<Bool> outflagsb = !(mon.getMask() && moff.getMask());
+  Array<uChar> outflags(outflagsb.shape());
+  convertArray(outflags,outflagsb);
+
+  SDContainer sc(ipon(0),ipon(1),ipon(2),ipon(3));
+  String tstr; srcn.getScalar(0,tstr);// get sourcename of "on" scan
+  sc.sourcename = tstr;
+  Double tme; mjd.getScalar(0,tme);// get time of "on" scan
+  sc.timestamp = tme;
+  sc.putSpectrum(out);
+  sc.putFlags(outflags);  
+  SDMemTable* sdmt = new SDMemTable(*on);
+  sdmt->putSDContainer(sc);
+  return CountedPtr<SDMemTable>(sdmt);
+  
+}
+
+
