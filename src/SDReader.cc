@@ -277,7 +277,7 @@ int SDReader::read(const std::vector<int>& seq) {
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
 	sc.parangle = parAngle;
-	sc.refbeam = refBeam;
+	sc.refbeam = refBeam-1;//make it 0-based; -1 if nbeams == 1
         sc.scanid = scanNo-1;//make it 0-based
         sc.setSpectrum(spectra, beamNo, IFno);
         sc.setFlags(flagtra,  beamNo, IFno);
