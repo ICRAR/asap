@@ -114,6 +114,7 @@ template class BaseMappedArrayEngine<Float, Float>;
 
 //
 #include "MathUtils2.cc"
+#include "SDPol2.cc"
 namespace mathutil {
   template void hanning(Vector<Float>&, Vector<Bool>&,
 			const Vector<Float>&, 
@@ -123,3 +124,6 @@ namespace mathutil {
   template void extendLastArrayAxis(Array<Int>&, const Array<Int>&,
 				   const Int& initVal);
 }
+template Array<Float> SDPolUtil::stokesData (Array<Float>& dataIn, Bool);
+template Array<Bool> SDPolUtil::stokesData (Array<Bool>& dataIn, Bool);
+
