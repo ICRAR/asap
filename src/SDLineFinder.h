@@ -84,29 +84,11 @@ struct SDLineFinder {
    // instead of channels). If defunits is false, channels will be returned
    std::vector<int>   getLineRanges(bool defunits=true)
                                 const throw(casa::AipsError);
-   
 protected:
-   // supplementary function to control running mean calculations.
-   // It adds a specified channel to the running mean box and
-   // removes (ch-maxboxnchan+1)'th channel from there
-   // Channels, for which the mask is false or index is beyond the
-   // allowed range, are ignored
-   void advanceRunningBox(int ch) throw(casa::AipsError);
-   
-
-   // test a channel against current running mean & rms
-   // if channel specified is masked out or beyond the allowed indexes,
-   // false is returned
-   casa::Bool testChannel(int ch) throw(std::exception, casa::AipsError);
-
-   // process a channel: update curline and is_detected before and
-   // add a new line to the list, if necessary using processCurLine()
-   void processChannel(int ch) throw(casa::AipsError);
-
-   // process the interval of channels stored in curline
-   // if it satisfies the criterion, add this interval as a new line
-   void processCurLine() throw(casa::AipsError);
-   
+   // concatenate two lists preserving the order. If two lines appear to
+   // be adjacent, they are joined into the new one
+   void addNewSearchResult(const std::list<std::pair<int, int> > &newlines)
+                           throw(casa::AipsError);
 private:
    casa::CountedConstPtr<SDMemTable> scan; // the scan to work with
    casa::Vector<casa::Bool> mask;          // associated mask
@@ -123,19 +105,9 @@ private:
 					   // a detection
    std::list<std::pair<int, int> > lines;  // container of start and stop+1
                                            // channels of the spectral lines
-   // statistics for running mean filtering
-   casa::Float sum;       // sum of fluxes
-   casa::Float sumsq;     // sum of squares of fluxes
-   int box_chan_cntr;     // actual number of channels in the box
-   int max_box_nchan;     // maximum allowed number of channels in the box
-                          // (calculated from boxsize and actual spectrum size)
    // a buffer for the spectrum
    mutable casa::Vector<casa::Float>  spectrum;
 
-   // temporary line edge channels and flag, which is True if the line
-   // was detected in the previous channels.
-   std::pair<int,int> cur_line;
-   casa::Bool is_detected_before;
 };
 } // namespace asap
 #endif // #ifndef SDLINEFINDER_H

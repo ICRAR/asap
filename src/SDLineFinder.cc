@@ -41,6 +41,245 @@ using namespace casa;
 using namespace std;
 using namespace boost::python;
 
+namespace asap {
+
+// An auxiliary class implementing one pass of the line search algorithm,
+// which uses a running mean. We define this class here because it is
+// used in SDLineFinder only. The incapsulation of this code into a separate
+// class will provide a possibility to add new algorithms with minor changes
+class LFRunningMean {
+   // The input data to work with. Use reference symantics to avoid
+   // an unnecessary copying   
+   const casa::Vector<casa::Float>  &spectrum; // a buffer for the spectrum
+   const casa::Vector<casa::Bool>   &mask; // associated mask
+   const std::pair<int,int>         &edge; // start and stop+1 channels
+                                           // to work with
+   
+   // statistics for running mean filtering
+   casa::Float sum;       // sum of fluxes
+   casa::Float sumsq;     // sum of squares of fluxes
+   int box_chan_cntr;     // actual number of channels in the box
+   int max_box_nchan;     // maximum allowed number of channels in the box
+                          // (calculated from boxsize and actual spectrum size)
+
+   // temporary line edge channels and flag, which is True if the line
+   // was detected in the previous channels.
+   std::pair<int,int> cur_line;
+   casa::Bool is_detected_before;
+   int  min_nchan;                         // A minimum number of consequtive
+                                           // channels, which should satisfy
+					   // the detection criterion, to be
+					   // a detection
+   casa::Float threshold;                  // detection threshold - the 
+                                           // minimal signal to noise ratio
+public:
+   // set up the object with the references to actual data
+   // as well as the detection criterion (min_nchan and threshold, see above)
+   // and the number of channels in the running box
+   LFRunningMean(const casa::Vector<casa::Float>  &in_spectrum,
+                 const casa::Vector<casa::Bool>   &in_mask,
+		 const std::pair<int,int>         &in_edge,
+		 int in_max_box_nchan, 
+		 int in_min_nchan = 3,
+		 casa::Float in_threshold = 5);
+		 
+   // replace the detection criterion
+   void setCriterion(int in_min_nchan, casa::Float in_threshold) throw();
+
+   // find spectral lines and add them into list
+   void findLines(std::list<pair<int,int> > &lines) throw(casa::AipsError);
+   
+protected:
+   // supplementary function to control running mean calculations.
+   // It adds a specified channel to the running mean box and
+   // removes (ch-maxboxnchan+1)'th channel from there
+   // Channels, for which the mask is false or index is beyond the
+   // allowed range, are ignored
+   void advanceRunningBox(int ch) throw(casa::AipsError);
+   
+
+   // test a channel against current running mean & rms
+   // if channel specified is masked out or beyond the allowed indexes,
+   // false is returned
+   casa::Bool testChannel(int ch) const
+                     throw(std::exception, casa::AipsError);
+
+   // process a channel: update curline and is_detected before and
+   // add a new line to the list, if necessary using processCurLine()
+   void processChannel(std::list<pair<int,int> > &lines,
+                       int ch) throw(casa::AipsError);
+
+   // process the interval of channels stored in curline
+   // if it satisfies the criterion, add this interval as a new line
+   void processCurLine(std::list<pair<int,int> > &lines) throw(casa::AipsError);
+
+};
+} // namespace asap
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFRunningMean - a running mean algorithm for line detection
+//
+//
+
+// set up the object with the references to actual data
+// as well as the detection criterion (min_nchan and threshold, see above)
+// and the number of channels in the running box
+LFRunningMean::LFRunningMean(const casa::Vector<casa::Float>  &in_spectrum,
+                             const casa::Vector<casa::Bool>   &in_mask,
+     	                     const std::pair<int,int>         &in_edge,
+			     int in_max_box_nchan, 
+     	                     int in_min_nchan, casa::Float in_threshold) :
+        spectrum(in_spectrum), mask(in_mask), edge(in_edge),
+	max_box_nchan(in_max_box_nchan),
+	min_nchan(in_min_nchan),threshold(in_threshold) {}
+
+// replace the detection criterion
+void LFRunningMean::setCriterion(int in_min_nchan, casa::Float in_threshold)
+                                 throw()
+{
+  min_nchan=in_min_nchan;
+  threshold=in_threshold;
+}
+
+
+// supplementary function to control running mean calculations.
+// It adds a specified channel to the running mean box and
+// removes (ch-max_box_nchan+1)'th channel from there
+// Channels, for which the mask is false or index is beyond the
+// allowed range, are ignored
+void LFRunningMean::advanceRunningBox(int ch) throw(AipsError)
+{
+  if (ch>=edge.first && ch<edge.second)
+      if (mask[ch]) { // ch is a valid channel
+          ++box_chan_cntr;
+          sum+=spectrum[ch];
+          sumsq+=square(spectrum[ch]);          
+      }
+  int ch2remove=ch-max_box_nchan;
+  if (ch2remove>=edge.first && ch2remove<edge.second)
+      if (mask[ch2remove]) { // ch2remove is a valid channel
+          --box_chan_cntr;
+          sum-=spectrum[ch2remove];
+          sumsq-=square(spectrum[ch2remove]);  
+      }
+}
+
+// test a channel against current running mean & rms
+// if channel specified is masked out or beyond the allowed indexes,
+// false is returned
+Bool LFRunningMean::testChannel(int ch) const throw(exception, AipsError)
+{
+  if (ch<edge.first || ch>=edge.second) return False;
+  if (!mask[ch]) return False;
+  DebugAssert(box_chan_cntr, AipsError);
+  Float mean=sum/Float(box_chan_cntr);
+  Float variance=sqrt(sumsq/Float(box_chan_cntr)-square(mean));
+  /*
+  if (ch>3900 && ch<4100)
+    cout<<"Tested "<<ch<<" mean="<<mean<<" variance="<<variance<<" sp-mean="<<spectrum[ch]-mean<<endl;
+  */
+  return fabs(spectrum[ch]-mean)>=threshold*variance;
+}
+
+// process a channel: update cur_line and is_detected before and
+// add a new line to the list, if necessary
+void LFRunningMean::processChannel(std::list<pair<int,int> > &lines,
+                                   int ch) throw(casa::AipsError)
+{
+  try {
+       if (testChannel(ch)) {
+           if (is_detected_before)
+               cur_line.second=ch+1;
+	   else {
+	       is_detected_before=True;
+	       cur_line.first=ch;
+	       cur_line.second=ch+1;
+	   }
+       } else processCurLine(lines);   
+  }
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("SDLineFinder::processChannel - STL error: ")+ex.what());
+  }
+}
+
+// process the interval of channels stored in cur_line
+// if it satisfies the criterion, add this interval as a new line
+void LFRunningMean::processCurLine(std::list<pair<int,int> > &lines)
+                                   throw(casa::AipsError)
+{
+  try {
+       if (is_detected_before) {	              
+           if (cur_line.second-cur_line.first>min_nchan) {
+	       // it was a detection. We need to change the list
+	       Bool add_new_line=False;
+	       if (lines.size()) { 
+	           for (int i=lines.back().second;i<cur_line.first;++i)
+		        if (mask[i]) { // one valid channel in between
+			        //  means that we deal with a separate line
+			    add_new_line=True;
+			    break;
+			}
+	       } else add_new_line=True; 
+	       if (add_new_line) 
+	           lines.push_back(cur_line);
+               else lines.back().second=cur_line.second;		   
+	   }
+	   is_detected_before=False;
+       }      
+  }
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("SDLineFinder::processCurLine - STL error: ")+ex.what());
+  }
+}
+
+// find spectral lines and add them into list
+void LFRunningMean::findLines(std::list<pair<int,int> > &lines)
+                        throw(casa::AipsError)
+{
+  const int minboxnchan=4;
+
+  // fill statistics for initial box
+  box_chan_cntr=0; // no channels are currently in the box
+  sum=0;           // initialize statistics
+  sumsq=0;
+  int initial_box_ch=edge.first;
+  for (;initial_box_ch<edge.second && box_chan_cntr<max_box_nchan;
+        ++initial_box_ch)
+       advanceRunningBox(initial_box_ch);
+    
+  if (initial_box_ch==edge.second)       
+      throw AipsError("LFRunningMean::findLines - too much channels are masked");
+
+  // actual search algorithm
+  is_detected_before=False;
+
+  if (box_chan_cntr>=minboxnchan) 
+      // there is a minimum amount of data. We can search in the
+      // half of the initial box   
+      for (int n=edge.first;n<initial_box_ch-max_box_nchan/2;++n)
+           processChannel(lines,n);           	   
+  
+  // now the box can be moved. n+max_box_nchan/2 is a new index which haven't
+  // yet been included in the running mean.
+  for (int n=initial_box_ch-max_box_nchan/2;n<edge.second;++n) {
+      advanceRunningBox(n+max_box_nchan/2); // update running mean & variance
+      if (box_chan_cntr>=minboxnchan) // have enough data to process
+          processChannel(lines,n);
+      else processCurLine(lines); // just finish what was accumulated before
+  }  
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
 // SDLineFinder  -  a class for automated spectral line search
 
 SDLineFinder::SDLineFinder() throw() : edge(0,0)
@@ -122,141 +361,26 @@ int SDLineFinder::findLines() throw(casa::AipsError)
       throw AipsError("SDLineFinder::findLines - a scan should be set first,"
                       " use set_scan");
   DebugAssert(mask.nelements()==scan->nChan(), AipsError);
-  lines.resize(0); // search from the scratch
-  
-  max_box_nchan=int(scan->nChan()*box_size); // number of channels in running
-                                              // box
-
+  int max_box_nchan=int(scan->nChan()*box_size); // number of channels in running
+                                                 // box
   if (max_box_nchan<2)
       throw AipsError("SDLineFinder::findLines - box_size is too small");
 
   scan->getSpectrum(spectrum);
-  
-  // fill statistics for initial box
-  box_chan_cntr=0; // no channels are currently in the box
-  sum=0;           // initialize statistics
-  sumsq=0;
-  int initial_box_ch=edge.first;
-  for (;initial_box_ch<edge.second && box_chan_cntr<max_box_nchan;
-        ++initial_box_ch)
-       advanceRunningBox(initial_box_ch);
-    
-  if (initial_box_ch==edge.second)       
-      throw AipsError("SDLineFinder::findLines - too much channels are masked");
 
-  // actual search algorithm
-  is_detected_before=False;
-
-  if (box_chan_cntr>=minboxnchan) 
-      // there is a minimum amount of data. We can search in the
-      // half of the initial box   
-      for (int n=edge.first;n<initial_box_ch-max_box_nchan/2;++n)
-           processChannel(n);           	   
-  
-  // now the box can be moved. n+max_box_nchan/2 is a new index which haven't
-  // yet been included in the running mean.
-  for (int n=initial_box_ch-max_box_nchan/2;n<edge.second;++n) {
-      advanceRunningBox(n+max_box_nchan/2); // update running mean & variance
-      if (box_chan_cntr>=minboxnchan) // have enough data to process
-          processChannel(n);
-      else processCurLine(); // just finish what was accumulated before
-  }
+  lines.resize(0); // search from the scratch
+  Vector<Bool> temp_mask(mask);
+  size_t cursz;
+  do {
+     cursz=lines.size();
+     // line find algorithm
+     LFRunningMean lfalg(spectrum,temp_mask,edge,max_box_nchan,min_nchan,threshold);
+     lfalg.findLines(lines);
+     temp_mask=getMask();
+  } while (cursz!=lines.size());
   return int(lines.size());
 }
 
-// supplementary function to control running mean calculations.
-// It adds a specified channel to the running mean box and
-// removes (ch-max_box_nchan+1)'th channel from there
-// Channels, for which the mask is false or index is beyond the
-// allowed range, are ignored
-void SDLineFinder::advanceRunningBox(int ch) throw(AipsError)
-{
-  if (ch>=edge.first && ch<edge.second)
-      if (mask[ch]) { // ch is a valid channel
-          ++box_chan_cntr;
-          sum+=spectrum[ch];
-          sumsq+=square(spectrum[ch]);          
-      }
-  int ch2remove=ch-max_box_nchan;
-  if (ch2remove>=edge.first && ch2remove<edge.second)
-      if (mask[ch2remove]) { // ch2remove is a valid channel
-          --box_chan_cntr;
-          sum-=spectrum[ch2remove];
-          sumsq-=square(spectrum[ch2remove]);  
-      }
-}
-
-// test a channel against current running mean & rms
-// if channel specified is masked out or beyond the allowed indexes,
-// false is returned
-Bool SDLineFinder::testChannel(int ch) throw(exception, AipsError)
-{
-  if (ch<edge.first || ch>=edge.second) return False;
-  if (!mask[ch]) return False;
-  DebugAssert(box_chan_cntr, AipsError);
-  Float mean=sum/Float(box_chan_cntr);
-  Float variance=sqrt(sumsq/Float(box_chan_cntr)-square(mean));
-  /*
-  if (ch>3900 && ch<4100)
-    cout<<"Tested "<<ch<<" mean="<<mean<<" variance="<<variance<<" sp-mean="<<spectrum[ch]-mean<<endl;
-  */
-  return fabs(spectrum[ch]-mean)>=threshold*variance;
-}
-
-// process a channel: update cur_line and is_detected before and
-// add a new line to the list, if necessary
-void SDLineFinder::processChannel(int ch) throw(casa::AipsError)
-{
-  try {
-       if (testChannel(ch)) {
-           if (is_detected_before)
-               cur_line.second=ch+1;
-	   else {
-	       is_detected_before=True;
-	       cur_line.first=ch;
-	       cur_line.second=ch+1;
-	   }
-       } else processCurLine();   
-  }
-  catch (const AipsError &ae) {
-      throw;
-  }  
-  catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::processChannel - STL error: ")+ex.what());
-  }
-}
-
-// process the interval of channels stored in cur_line
-// if it satisfies the criterion, add this interval as a new line
-void SDLineFinder::processCurLine() throw(casa::AipsError)
-{
-  try {
-       if (is_detected_before) {	              
-           if (cur_line.second-cur_line.first>min_nchan) {
-	       // it was a detection. We need to change the list
-	       Bool add_new_line=False;
-	       if (lines.size()) { 
-	           for (int i=lines.back().second;i<cur_line.first;++i)
-		        if (mask[i]) { // one valid channel in between
-			        //  means that we deal with a separate line
-			    add_new_line=True;
-			    break;
-			}
-	       } else add_new_line=True; 
-	       if (add_new_line) 
-	           lines.push_back(cur_line);
-               else lines.back().second=cur_line.second;		   
-	   }
-	   is_detected_before=False;
-       }      
-  }
-  catch (const AipsError &ae) {
-      throw;
-  }  
-  catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::processCurLine - STL error: ")+ex.what());
-  }
-}
 
 // get the mask to mask out all lines that have been found (default)
 // if invert=true, only channels belong to lines will be unmasked
@@ -339,4 +463,25 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
   catch (const exception &ex) {
       throw AipsError(String("SDLineFinder::getLineRanges - STL error: ")+ex.what());
   }
+}
+
+// concatenate two lists preserving the order. If two lines appear to
+// be adjacent, they are joined into the new one
+void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines)
+                        throw(AipsError)
+{
+  try {
+      for (std::list<pair<int,int> >::const_iterator cli=newlines.begin();
+           cli!=newlines.end();++cli) {
+	   // search for a right place for the new line
+	   //TODO
+      }
+  }
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("SDLineFinder::addNewSearchResult - STL error: ")+ex.what());
+  }
+
 }

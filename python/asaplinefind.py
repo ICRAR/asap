@@ -52,7 +52,7 @@ class linefinder:
 	      dropped out by the edge parameter will still be excluded
 	      regardless on the invert option
         """
-	return self.finder._getmask(invert)
+	return self.finder.getmask(invert)
     def get_ranges(self,defunits=True):
 	"""
 	Get ranges (start and end channels or velocities) for all spectral
