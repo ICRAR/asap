@@ -69,18 +69,37 @@ SDAttr::~SDAttr()
 Float SDAttr::diameter (Instrument inst)  const
 {
    Float D = 1.0;
-   if (inst==ATPKSMB || inst==ATPKSHOH) {
-      D = 64.0;
-   } else if (inst==ATMOPRA) {
-      D = 22.0;
-   } else if (inst==TIDBINBILLA) {
-      D = 70.0;
-   } else if (inst==CEDUNA) {
-      D = 30.0;
-   } else if (inst==HOBART) {
-      D = 26.0;
-   } else {
-      throw(AipsError("Unknown instrument"));
+   switch (inst) {
+      case ATMOPRA:
+        {
+           D = 22.0;
+        }
+        break;
+      case ATPKSMB:
+      case ATPKSHOH:
+        {
+           D = 64.0;
+        }
+        break;
+      case TIDBINBILLA:
+        {
+           D = 70.0;
+        }
+        break;
+      case CEDUNA:
+        {
+           D = 30.0;
+        }
+        break;
+      case HOBART:
+        {
+           D = 26.0;
+        }
+        break;
+      default:
+        {
+            throw(AipsError("Unknown instrument"));
+        }
    }
 //
    return D;
@@ -92,19 +111,16 @@ Vector<Float> SDAttr::beamEfficiency (Instrument inst, const MEpoch& dateObs, co
 // Look at date where appropriate
 
    Vector<Float> facs(freqs.nelements(),1.0);
-   if (inst==ATPKSMB) {
-      cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==ATPKSHOH) {
-      cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==ATMOPRA) {
-      facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_);
-   } else if (inst==TIDBINBILLA) {
-      cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==CEDUNA) {
-      cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==HOBART) {
-      cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-   } else {
+   switch (inst) {
+      case ATMOPRA:
+        {
+           facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_);
+        }
+        break;
+      default:
+        {
+           cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
+        }
    }
 //
    return facs;
@@ -116,20 +132,16 @@ Vector<Float> SDAttr::apertureEfficiency (Instrument inst, const MEpoch& dateObs
 // Look at date where appropriate
 
    Vector<Float> facs(freqs.nelements(),1.0);
-   if (inst==ATPKSMB) {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==ATPKSHOH) {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==ATMOPRA) {
-      facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
-   } else if (inst==TIDBINBILLA) {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==CEDUNA) {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-   } else if (inst==HOBART) {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-   } else {
-      cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
+   switch (inst) {
+      case ATMOPRA:
+        {
+           facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+        }
+        break;
+      default:
+        {
+           cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
+        }
    }
    return facs;
 }
@@ -165,6 +177,27 @@ Float SDAttr::findJyPerKFac (Float etaAp, Float D)
 }
 
 
+Vector<Float> SDAttr::gainElevationPoly (Instrument inst) const
+{
+
+// Look at date where appropriate
+
+   switch (inst) {
+      case TIDBINBILLA:
+        {
+           return TidGainElPoly_.copy();
+        }
+        break;
+      default:
+        {
+           Vector<Float> t;
+           return t.copy();
+        }
+   }
+}
+
+
+
 
 // Private
 
@@ -185,10 +218,13 @@ Vector<Float> SDAttr::interp (const Vector<Float>& xOut, const Vector<Float>& xI
 }
 
 void SDAttr::initData () 
-{
 //
 // Mopra data from online Mopra guide.
 //
+{
+
+// Beam efficiency
+
    MopEtaBeamX_.resize(3);
    MopEtaBeamX_(0) = 86.0;
    MopEtaBeamX_(1) = 100.0;
@@ -203,7 +239,9 @@ void SDAttr::initData ()
    MopEtaBeam2004Y_(0) = 0.49;
    MopEtaBeam2004Y_(1) = 0.44;
    MopEtaBeam2004Y_(2) = 0.42;
-//
+
+// Aperture efficiency
+
    MopEtaApX_.resize(2);
    MopEtaApX_(0) = 86.0;
    MopEtaApX_(1) = 115.0;
@@ -211,5 +249,11 @@ void SDAttr::initData ()
    MopEtaAp2004Y_.resize(2);
    MopEtaAp2004Y_(0) = 0.33;
    MopEtaAp2004Y_(1) = 0.24;
-}
 
+// Gain elevation correction polynomial coefficients (for elevation in degrees)
+
+   TidGainElPoly_.resize(3);
+   TidGainElPoly_(0) = 3.58788e-1;
+   TidGainElPoly_(1) = 2.87243e-2;
+   TidGainElPoly_(2) = -3.219093e-4;
+}

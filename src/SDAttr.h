@@ -62,29 +62,36 @@ class SDAttr {
    casa::Float diameter (Instrument inst) const;
 
 // Beam efficiency.  Frequency in Hz.  Returns 1 if unknown.
-   casa::Vector<casa::Float> beamEfficiency (Instrument, const casa::MEpoch& dateObs, 
+   casa::Vector<casa::Float> beamEfficiency (Instrument instr, const casa::MEpoch& dateObs, 
                                              const casa::Vector<casa::Float>& freqs) const;
  
 // Aperture efficiency. Frequency in Hz.  Returns 1 if unknown.
-   casa::Vector<casa::Float> apertureEfficiency (Instrument, const casa::MEpoch& dateObs, 
+   casa::Vector<casa::Float> apertureEfficiency (Instrument instr, const casa::MEpoch& dateObs, 
                                                  const casa::Vector<casa::Float>& freqs) const;
 
 // Find factor to convert Jy -> K for this telescope, date of observation and frequency (Hz)
-   casa::Vector<casa::Float> JyPerK (Instrument, const casa::MEpoch& dateObs, 
+   casa::Vector<casa::Float> JyPerK (Instrument instr, const casa::MEpoch& dateObs, 
                                      const casa::Vector<casa::Float>& freqs) const;
 
 // Factor to convert K -> Jy. Provide aperture efficiency and dish geometric diameter (m)
    static casa::Float findJyPerKFac (casa::Float etaAp, casa::Float D);
 
+// Gain Elevation polynomial correction coefficients (elevation in degrees)
+// Returns length 0 if not known.
+   casa::Vector<casa::Float> gainElevationPoly (Instrument instr) const;
+
  private:
 
 // Static data
 
-   casa::Vector<casa::Float> MopEtaBeamX_;
+   casa::Vector<casa::Float> MopEtaBeamX_;          // Beam efficiency
    casa::Vector<casa::Float> MopEtaBeam2003Y_;
    casa::Vector<casa::Float> MopEtaBeam2004Y_;
-   casa::Vector<casa::Float> MopEtaApX_;
+//
+   casa::Vector<casa::Float> MopEtaApX_;            // Aperture efficiency
    casa::Vector<casa::Float> MopEtaAp2004Y_;
+//
+   casa::Vector<casa::Float> TidGainElPoly_;        // Gain-el correction poly coeffs
 
 // Init private data
    void initData();
