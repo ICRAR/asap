@@ -379,38 +379,37 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-
-
-void SDMath::multiplyInSitu(SDMemTable* pIn, Float factor)
+void SDMath::multiplyInSitu(SDMemTable* pIn, Float factor, Bool doAll)
 {
-  SDMemTable* pOut = localMultiply (*pIn, factor);
+  const uInt what = 0;
+  SDMemTable* pOut = localOperate (*pIn, factor, doAll, what);
   *pIn = *pOut;
    delete pOut;
 }  
 
 
 CountedPtr<SDMemTable>
-SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) 
+SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor, Bool doAll)
 {
-  return CountedPtr<SDMemTable>(localMultiply(*in,factor));
+  const uInt what = 0;
+  return CountedPtr<SDMemTable>(localOperate (*in, factor, doAll, what));
 }
 
-CountedPtr<SDMemTable>
-SDMath::add(const CountedPtr<SDMemTable>& in, Float offset) 
-//
-// Add offset to values
-//
-{
-  SDMemTable* sdmt = new SDMemTable(*in,False);
-  Table t = sdmt->table();
-  ArrayColumn<Float> spec(t,"SPECTRA");
 
-  for (uInt i=0; i < t.nrow(); i++) {
-    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
-    marr += offset;
-    spec.put(i, marr.getArray());
-  }
-  return CountedPtr<SDMemTable>(sdmt);
+void SDMath::addInSitu (SDMemTable* pIn, Float offset, Bool doAll)
+{
+  const uInt what = 1;
+  SDMemTable* pOut = localOperate (*pIn, offset, doAll, what);
+  *pIn = *pOut;
+   delete pOut;
+}  
+
+
+CountedPtr<SDMemTable>
+SDMath::add(const CountedPtr<SDMemTable>& in, Float offset, Bool doAll)
+{
+  const uInt what = 1;
+  return CountedPtr<SDMemTable>(localOperate(*in, offset, doAll, what));
 }
 
 
@@ -656,11 +655,8 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
 
 // Specify cursor location
 
-  uInt i = in->getBeam();
-  uInt j = in->getIF();
-  uInt k = in->getPol();
-  IPosition start(4,i,j,k,0);
-  IPosition end(4,i,j,k,in->nChan()-1);
+  IPosition start, end;
+  getCursorLocation (start, end, *in);
 
 // Loop over rows
 
@@ -830,18 +826,87 @@ void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
    nAccum += 1;
 }
 
-SDMemTable* SDMath::localMultiply (const SDMemTable& in, Float factor) 
-{
-  SDMemTable* pOut = new SDMemTable(in,False);
-  const Table& tOut = pOut->table();
-  ArrayColumn<Float> spec(tOut,"SPECTRA");  
+SDMemTable* SDMath::localOperate (const SDMemTable& in, Float val, Bool doAll,
+                                  uInt what)
 //
-  for (uInt i=0; i < tOut.nrow(); i++) {
-    MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
-    marr *= factor;
-    spec.put(i, marr.getArray());
-  }
+// what = 0   Multiply
+//        1   Add
+{
+   SDMemTable* pOut = new SDMemTable(in,False);
+   const Table& tOut = pOut->table();
+   ArrayColumn<Float> spec(tOut,"SPECTRA");  
+//
+   if (doAll) {
+      for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Get
+
+         MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
+
+// Operate
+
+         if (what==0) {
+            marr *= val;
+         } else if (what==1) {
+            marr += val;
+         }
+
+// Put
+
+         spec.put(i, marr.getArray());
+      }
+   } else {
+
+// Get cursor location
+
+      IPosition start, end;
+      getCursorLocation (start, end, in);
+//
+      for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Get
+
+         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
+
+// Modify. More work than we would like to deal with the mask
+
+         Array<Float>& values = dataIn.getRWArray();
+         Array<Bool> mask(dataIn.getMask());
+//
+         Array<Float> values2 = values(start,end);
+         Array<Bool> mask2 = mask(start,end);
+         MaskedArray<Float> t(values2,mask2);
+         if (what==0) {
+            t *= val;
+         } else if (what==1) {
+            t += val;
+         }
+         values(start, end) = t.getArray();     // Write back into 'dataIn'
+
+// Put
+         spec.put(i, dataIn.getArray());
+      }
+   }
+//
    return pOut;
 }
 
 
+
+void SDMath::getCursorLocation (IPosition& start, IPosition& end,
+                                const SDMemTable& in)
+{
+  const uInt nDim = 4;
+  const uInt i = in.getBeam();
+  const uInt j = in.getIF();
+  const uInt k = in.getPol();
+  const uInt n = in.nChan();
+//
+  IPosition s(nDim,i,j,k,0);
+  IPosition e(nDim,i,j,k,n-1);
+//
+  start.resize(nDim);
+  start = s;
+  end.resize(nDim);
+  end = e;
+}
