@@ -35,8 +35,6 @@
 #include <string>
 
 #include "SDMemTable.h"
-#include "SDReader.h"
-#include "SDMath.h"
 
 namespace atnf_sd {
 
@@ -57,7 +55,7 @@ public:
   SDMemTableWrapper getScan(int scan) {
     return SDMemTableWrapper(*this, scan);
   }
-  std::vector<float> getSpectrum(int whichRow) const {
+  std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }
 
@@ -67,17 +65,17 @@ public:
     return table_->getAbscissa(whichRow,unit,restfreq);
   }
 
-  float getTsys(int whichRow) {return table_->getTsys(whichRow);}
-  double getTime(int whichRow) {return table_->getTime(whichRow);}
+  float getTsys(int whichRow=0) {return table_->getTsys(whichRow);}
+  std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
 
-  std::vector<bool> getMask(int whichRow) const { 
+  std::vector<bool> getMask(int whichRow=0) const { 
     return table_->getMask(whichRow); 
   }
   bool setMask(const std::vector<int> mvals) const { 
     return table_->setMask(mvals); 
-  }
+ }
 
-  std::string getSourceName(int whichRow) {
+  std::string getSourceName(int whichRow=0) {
     return table_->getSourceName(whichRow);
   }
 
@@ -93,6 +91,7 @@ public:
   int nBeam() {return table_->nBeam();}
   int nPol() {return table_->nPol();} 
   int nChan() {return table_->nChan();} 
+  int nScans() {return table_->nScans();} 
 
   //sets the mask
   bool setChannels(const std::vector<int>& whichChans) {
@@ -108,40 +107,5 @@ private:
   CountedPtr<SDMemTable> table_;
 };
 
-class SDReaderWrapper : public SDReader {
-public:
-  SDReaderWrapper() {;}
-  SDReaderWrapper(SDMemTableWrapper tbl) :
-    SDReader(tbl.getCP()){;}
-  SDMemTableWrapper getSDMemTable() const {
-    return SDMemTableWrapper(getTable());
-  }
-};
-
-class SDMathWrapper {
-public:
-  SDMemTableWrapper average(const SDMemTableWrapper& sdt) {
-    return SDMemTableWrapper(SDMath::average(sdt.getCP()));
-  }
-  SDMemTableWrapper quotient(const SDMemTableWrapper& on,
-			     const SDMemTableWrapper& off) {
-    return SDMemTableWrapper(SDMath::quotient(on.getCP(),
-					     off.getCP()));
-  }
-  SDMemTableWrapper multiply(const SDMemTableWrapper& in,
-			     Float factor) {
-    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));    
-  }
-  
-  SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
-    return SDMemTableWrapper(SDMath::hanning(in.getCP()));    
-  }
-  std::vector<float> baseline(const SDMemTableWrapper& in, const std::string& fitexpr) {
-    return SDMath::baseline(in.getCP(), fitexpr);
-  }
-};
-
 } // namespace
-
 #endif
-
