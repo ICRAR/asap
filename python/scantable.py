@@ -365,6 +365,15 @@ class scantable(sdtable):
         self._setcoordinfo(inf)
         if self._p: self.plot()
 
+    def set_instrument (self, instr):
+        """
+        Set the instrument for subsequent processing
+        Parameters:
+            instr:    Select from "ATPKSMB", "ATPKSHOH", "ATMOPRA", 
+                      "DSS-43" (Tid), "CEDUNA", and "HOBART"
+        """
+        self._setInstrument(instr)
+
     def set_doppler(self, doppler='RADIO'):
         """
         Set the doppler for all following operations on this scantable.
