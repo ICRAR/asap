@@ -92,8 +92,10 @@ public:
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
   std::vector<double> getRestFreqs() const;
   
-  // get info for current row
-  std::string getTime(casa::Int whichRow=0) const ;
+  // get info for current row  
+  // if whichRow == -1 the Header time is given
+  std::string getTime(casa::Int whichRow=0, 
+		      casa::Bool showDate=casa::False) const ;
   std::string getSourceName(casa::Int whichRow=0) const;
   double getInterval(casa::Int whichRow=0) const;
 
@@ -172,21 +174,23 @@ public:
   std::string getAbcissaString(casa::Int whichRow=0) const;
 
 // Get MDirection for this row
-  casa::MDirection getDirection(casa::Int whichRow=0) const; 
+  casa::MDirection getDirection(casa::Int whichRow=0,
+				casa::Bool refBeam=casa::False) const; 
 
 // Get gloabl Direction reference 
-  casa::MDirection::Types getDirectionReference () const;
+  casa::MDirection::Types getDirectionReference() const;
 
 // Get global Time reference
-  casa::MEpoch::Types getTimeReference () const;
+  casa::MEpoch::Types getTimeReference() const;
 
 // Helper function to check instrument (antenna) name and give enum
-  static Instrument convertInstrument (const casa::String& instrument,
-                                       casa::Bool throwIt);
+  static Instrument convertInstrument(const casa::String& instrument,
+				      casa::Bool throwIt);
 
 private:
   // utility func for nice printout
   casa::String formatSec(casa::Double x) const;
+  casa::String formatDirection(const casa::MDirection& md) const;
   void setup();
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;

@@ -55,6 +55,7 @@
 #include <measures/Measures/MeasTable.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <casa/Quanta/MVTime.h>
+#include <casa/Quanta/MVAngle.h>
 
 #include "SDDefs.h"
 #include "SDMemTable.h"
@@ -180,18 +181,25 @@ std::string SDMemTable::getSourceName(Int whichRow) const
   return name;
 }
 
-std::string SDMemTable::getTime(Int whichRow) const
+std::string SDMemTable::getTime(Int whichRow, Bool showDate) const
 {
-  ROScalarColumn<Double> src(table_, "TIME");
   Double tm;
-  src.get(whichRow, tm);
+  if (whichRow > -1) {
+    ROScalarColumn<Double> src(table_, "TIME");
+    src.get(whichRow, tm);
+  } else {
+    table_.keywordSet().get("UTC",tm);
+  }
   MVTime mvt(tm);
-  mvt.setFormat(MVTime::TIME);
+  if (showDate)
+    mvt.setFormat(MVTime::YMD);
+  else 
+    mvt.setFormat(MVTime::TIME);
   ostringstream oss;
   oss << mvt;
-  String str(oss);
-  return str;
+  return String(oss);
 }
+
 double SDMemTable::getInterval(Int whichRow) const
 {
   ROScalarColumn<Double> src(table_, "INTERVAL");
@@ -619,7 +627,7 @@ Float SDMemTable::getTsys(Int whichRow) const
   return out;
 }
 
-MDirection SDMemTable::getDirection(Int whichRow) const
+MDirection SDMemTable::getDirection(Int whichRow, Bool refBeam) const
 {
   MDirection::Types mdr = getDirectionReference();
   ROArrayColumn<Double> dir(table_, "DIRECTION");
@@ -916,10 +924,32 @@ String SDMemTable::formatSec(Double x) const
 {
   Double xcop = x;
   MVTime mvt(xcop/24./3600.);  // make days
+  
   if (x < 59.95)
-    return  String("   ") + mvt.string(MVTime::TIME_CLEAN_NO_HM, 7)+"s";
-  return mvt.string(MVTime::TIME_CLEAN_NO_H, 7)+" ";
+    return  String("      ") + mvt.string(MVTime::TIME_CLEAN_NO_HM, 7)+"s";
+  else if (x < 3599.95) 
+    return String("   ") + mvt.string(MVTime::TIME_CLEAN_NO_H,7)+" ";
+  else {
+    ostringstream oss;
+    oss << setw(2) << std::right << setprecision(1) << mvt.hour();
+    oss << ":" << mvt.string(MVTime::TIME_CLEAN_NO_H,7) << " ";
+    return String(oss);
+  }   
 };
+
+String SDMemTable::formatDirection(const MDirection& md) const
+{
+  Vector<Double> t = md.getAngle(Unit(String("rad"))).getValue();
+  Int prec = 7;
+
+  MVAngle mvLon(t[0]);
+  String sLon = mvLon.string(MVAngle::TIME,prec);
+  MVAngle mvLat(t[1]);
+  String sLat = mvLat.string(MVAngle::ANGLE+MVAngle::DIG2,prec);
+
+   return sLon + String(" ") + sLat;
+}
+
 
 std::string SDMemTable::getFluxUnit() const
 {
@@ -952,6 +982,24 @@ void SDMemTable::setInstrument(const std::string& name)
 std::string SDMemTable::summary() const  {
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
+
+  // get number of integrations per scan
+  int cIdx = 0;
+  int idx = 0;
+  int scount = 0;
+  std::vector<int> cycles;
+  for (uInt i=0; i<scans.nrow();++i) {
+    while (idx == cIdx && i<scans.nrow()) {
+      scans.getScalar(++i,cIdx);
+      ++scount;
+    }
+    idx = cIdx;
+    cycles.push_back(scount);
+    scount=0;
+    --i;
+  }  
+
+
   ostringstream oss;
   oss << endl;
   oss << "--------------------------------------------------" << endl;
@@ -966,6 +1014,7 @@ std::string SDMemTable::summary() const  {
   String tmp;
   table_.keywordSet().get("Observer", tmp);
   oss << setw(15) << "Observer:" << tmp << endl;
+  oss << setw(15) << "Obs Date:" << getTime(-1,True) << endl;
   table_.keywordSet().get("Project", tmp);
   oss << setw(15) << "Project:" << tmp << endl;
   table_.keywordSet().get("Obstype", tmp);
@@ -991,21 +1040,33 @@ std::string SDMemTable::summary() const  {
   String name;
   Int previous = -1;Int current=0;
   Int integ = 0;
+  String dirtype ="Position ("+
+    MDirection::showType(getDirectionReference())+
+    ")";
   oss << setw(6) << "Scan"
-      << setw(12) << "Source"
-      << setw(21) << "Time"
-      << setw(11) << "Integration" << endl;
-  oss << "--------------------------------------------------" << endl;
+      << setw(15) << "Source"
+      << setw(26) << dirtype
+      << setw(10) << "Time"
+      << setw(13) << "Integration" << endl;
+  oss << "-------------------------------------------------------------------------------" << endl;
+  
+  std::vector<int>::iterator it = cycles.begin();
   for (uInt i=0; i< scans.nrow();i++) {
     scans.getScalar(i,current);
     if (previous != current) {
       srcs.getScalar(i,name);
       previous = current;
       String t = formatSec(Double(getInterval(i)));
-      oss << setw(6) << count << setw(12) << name << setw(21) << getTime(i)
-          << setw(2) << setprecision(1)
-          << t << endl;
+      String posit = formatDirection(getDirection(i,True));
+      oss << setw(6) << count 
+	  << setw(15) << name
+	  << setw(26) << posit
+	  << setw(10) << getTime(i,False)
+	  << setw(3) << std::right << *it << " x "
+          << setw(10) 
+          << t << std::left << endl;
       count++;
+      it++;
     } else {
       integ++;
     }
@@ -1013,7 +1074,7 @@ std::string SDMemTable::summary() const  {
   oss << endl;
   oss << "Table contains " << table_.nrow() << " integration(s)." << endl;
   oss << "in " << count << " scan(s)." << endl;
-  oss << "--------------------------------------------------";
+  oss << "-------------------------------------------------------------------------------";
   return String(oss);
 }
 
@@ -1100,7 +1161,7 @@ void SDMemTable::flag(int whichRow)
   spec.put(whichRow, arr);
 }
 
-MDirection::Types SDMemTable::getDirectionReference () const
+MDirection::Types SDMemTable::getDirectionReference() const
 {  
   Float eq;
   table_.keywordSet().get("Equinox",eq);
