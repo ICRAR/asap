@@ -11,8 +11,9 @@ def average_time(*args, **kwargs):
         scanav:   True (default) averages each scan separately
                   False averages all scans together,
         weight:   Weighting scheme. 'none, 'var' (1/var(spec) 
-                  weighted), 'tsys' (1/Tsys**2 weighted), or 'tint'
-                  (integration time weighted). The default is 'tint'
+                  weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
+                  (integration time weighted) or 'tintsys' (Tsys 
+                  and tint). The default is 'tint'
     Example:
         # return a time averaged scan from scana and scanb
         # without using a mask
