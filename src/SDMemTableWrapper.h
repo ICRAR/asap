@@ -142,6 +142,11 @@ public:
   void setRestFreqs(std::vector<double> freqs, const std::string& theunit) {
     table_->setRestFreqs(freqs, theunit);
   }
+
+  std::vector<double> getRestFreqs() {
+    return table_->getRestFreqs();
+  }
+
   void setCoordInfo(std::vector<string> theinfo) {
     table_->setCoordInfo(theinfo);
   }

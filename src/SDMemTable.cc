@@ -677,6 +677,16 @@ void SDMemTable::setRestFreqs(std::vector<double> freqs,
   t.rwKeywordSet().define("RESTFREQS",tvec);
 }
 
+std::vector<double> SDMemTable::getRestFreqs() const
+{
+  Table t = table_.keywordSet().asTable("FREQUENCIES");
+  Vector<Double> tvec;
+  t.keywordSet().get("RESTFREQS",tvec);
+  std::vector<double> stlout;
+  tvec.tovector(stlout);
+  return stlout;  
+}
+
 bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
 {
   TableDesc td("", "1", TableDesc::Scratch);
@@ -714,8 +724,10 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
 
 SDFrequencyTable SDMemTable::getSDFreqTable() const
 {
+  // TODO !!!!! implement this properly USE with care
+  const Table& t = table_.keywordSet().asTable("FREQUENCIES");
   SDFrequencyTable sdft;
-
+  sdft.setLength(t.nrow());
   return sdft;
 }
 

@@ -90,7 +90,8 @@ public:
 			   casa::Int whichRow=0) const;
 
   //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
-
+  std::vector<double> getRestFreqs() const;
+  
   // get info for current row
   std::string getTime(casa::Int whichRow=0) const ;
   std::string getSourceName(casa::Int whichRow=0) const;
