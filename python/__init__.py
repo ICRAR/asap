@@ -84,20 +84,20 @@ def list_rcparameters():
     
     # plotting
     # default mode for colour stacking
-    plotter.stacking           : 'Pol'
+    plotter.stacking           : Pol
 
     # default mode for panelling
-    plotter.panelling          : 'scan'
+    plotter.panelling          : scan
 
     # scantable
     # default ouput format when saving
-    scantable.save             : 'ASAP'
+    scantable.save             : ASAP
     # auto averaging on read
     scantable.autoaverage      : True
 
     # default frequency frame to set when function
     # scantable.set_freqfrmae is called
-    scantable.freqframe        : 'LSRK'
+    scantable.freqframe        : LSRK
 
     # apply action to all axes not just the cursor location
     scantable.allaxes          : True 
