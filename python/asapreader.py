@@ -88,5 +88,6 @@ class reader(sdreader):
              scans1 = r.read(range(5,15))
              # produces 2 scatables  one containing integrations(rows) 0-9
              # and a second one with rows 5-14
+        """
         sdreader._reset(self)
         
