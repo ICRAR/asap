@@ -62,8 +62,14 @@ class SDPolUtil
 
 // Compute Circular polarization RR or LL from I and V
   static casa::Array<casa::Float> circularPolarizationFromStokes (casa::Array<casa::Float>& I, 
-                                                                  casa::Array<casa::Float>& V, 
+                                                                  casa::Array<casa::Float>& V,  
                                                                   casa::Bool doRR);
+
+// Compute Mask for STokes parameters from raw correlation masks
+// Gets output shape right (e.g. XX,YY -> I)
+  static casa::Array<casa::Bool> stokesMask (casa::Array<casa::Bool> rawFlags,
+                                             casa::Bool doLinear);
+
 };
 
 

@@ -34,6 +34,7 @@
 
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/ArrayLogical.h>
 #include <casa/Containers/Record.h>
 #include <casa/BasicSL/Constants.h>
 #include <casa/BasicSL/String.h>
@@ -178,7 +179,7 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    const IPosition inputShape = input.shape();
    const uInt polAxis = asap::PolAxis;
    const uInt nPol = inputShape(polAxis);
-   AlwaysAssert(nPol==1 || nPol==2 || nPol==3, AipsError);
+   AlwaysAssert(nPol==1 || nPol==2 || nPol==4, AipsError);
 
 // The silly Array slice operator does not give me back
 // a const reference so have to caste it away
@@ -321,3 +322,83 @@ Array<Float> SDPolUtil::circularPolarizationFromStokes (Array<Float>& I,
    }
 }
 
+Array<Bool> SDPolUtil::stokesMask (Array<Bool> rawFlags,
+                                   Bool doLinear)
+//
+// Generate mask for each Stokes parameter from the
+// raw flags.  This is a lot of computational work and may
+// not be worth the effort.
+//
+{
+   IPosition shapeIn = rawFlags.shape();
+   uInt nPol = shapeIn(asap::PolAxis);
+   const uInt nDim = shapeIn.nelements();
+   Array<Bool> stokesFlags;
+//
+   IPosition start(nDim,0);
+   IPosition end(shapeIn-1);
+   IPosition shapeOut = shapeIn;
+//
+   if (doLinear) {
+      if (nPol==1) {
+         stokesFlags.resize(shapeOut);
+         stokesFlags = rawFlags;
+      } else if (nPol==2 || nPol==4) {
+
+// Set shape of output array
+
+         if (nPol==2) {
+            shapeOut(asap::PolAxis) = 1;
+         } else {
+            shapeOut(asap::PolAxis) = 4;
+         }
+         stokesFlags.resize(shapeOut);
+
+// Get reference slices and assign/compute
+
+         start(asap::PolAxis) = 0;
+         end(asap::PolAxis) = 0;
+         Array<Bool> M1In = rawFlags(start,end);
+//
+         start(asap::PolAxis) = 1;
+         end(asap::PolAxis) = 1;
+         Array<Bool> M2In = rawFlags(start,end);
+//
+         start(asap::PolAxis) = 0;
+         end(asap::PolAxis) = 0;
+         Array<Bool> M1Out = stokesFlags(start,end);
+         M1Out = M1In && M2In;                             // I
+//
+         if (nPol==4) {   
+            start(asap::PolAxis) = 2;
+            end(asap::PolAxis) = 2;
+            Array<Bool> M3In = rawFlags(start,end);
+//
+            start(asap::PolAxis) = 3;
+            end(asap::PolAxis) = 3;
+            Array<Bool> M4In = rawFlags(start,end);
+//
+            start(asap::PolAxis) = 1;
+            end(asap::PolAxis) = 1;
+            Array<Bool> M2Out = stokesFlags(start,end);
+            M2Out = M1Out;                                  // Q
+//
+            start(asap::PolAxis) = 2;
+            end(asap::PolAxis) = 2;
+            Array<Bool> M3Out = stokesFlags(start,end);
+            M3Out = M3In;                                   // U
+//
+            start(asap::PolAxis) = 3;
+            end(asap::PolAxis) = 3;
+            Array<Bool> M4Out = stokesFlags(start,end);
+            M4Out = M4In;                                   // V
+         }
+      } else {
+         throw(AipsError("Can only handle 1,2 or 4 polarizations"));
+      }
+   } else {
+      throw (AipsError("Only implemented for Linear polarizations"));
+   }
+//
+   return stokesFlags;
+}
