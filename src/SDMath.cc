@@ -390,44 +390,73 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 
 
-SDMemTable* SDMath::hanning(const SDMemTable& in) 
+SDMemTable* SDMath::hanning(const SDMemTable& in, Bool doAll)
 //
 // Hanning smooth each row
 // Should Tsys be smoothed ?
 //
 {
+
+// New Table
+
   SDMemTable* pTabOut = new SDMemTable(in,True);
+
+// Get cursor location
+         
+  IPosition start, end;
+  getCursorLocation (start, end, in);
+//
+  const uInt chanAxis = 3;                    // Spectrum axis
+  IPosition shapeOut(4,1);
 
 // Loop over rows in Table
 
   for (uInt ri=0; ri < in.nRow(); ++ri) {
 
-// Get data
+// Get copy of data
     
-    const MaskedArray<Float>& marr(in.rowAsMaskedArray(ri));
-    Array<Float> arr = marr.getArray();
-    Array<Bool> barr = marr.getMask();
+    const MaskedArray<Float>& dataIn(in.rowAsMaskedArray(ri));
+    Array<Float> valuesIn = dataIn.getArray();
+    Array<Bool> maskIn = dataIn.getMask();
 
 // Smooth along the channels axis
 
-    uInt axis = 3;
-    VectorIterator<Float> itData(arr, axis);
-    VectorIterator<Bool> itMask(barr, axis);
-    Vector<Float> outv;
-    Vector<Bool> outm;
-    while (!itData.pastEnd()) {
-       mathutil::hanning(outv, outm, itData.vector(), itMask.vector());
-       itData.vector() = outv;                                                 
-       itMask.vector() = outm;
+    Vector<Float> outValues;
+    Vector<Bool> outMask;
+    if (doAll) {
+       uInt axis = 3;
+       VectorIterator<Float> itValues(valuesIn, axis);
+       VectorIterator<Bool> itMask(maskIn, axis);
+       while (!itValues.pastEnd()) {
+          mathutil::hanning(outValues, outMask, itValues.vector(), itMask.vector());
+          itValues.vector() = outValues; 
+          itMask.vector() = outMask;
 //
-       itData.next();
-       itMask.next();
+          itValues.next();
+          itMask.next();
+       }
+    } else {
+
+// Set multi-dim Vector shape
+
+       shapeOut(chanAxis) = valuesIn.shape()(chanAxis);
+
+// Stuff about with shapes so that we don't have conformance run-time errors
+
+       Vector<Float> valuesIn2 = valuesIn(start,end).nonDegenerate();
+       Vector<Bool> maskIn2 = maskIn(start,end).nonDegenerate();
+       mathutil::hanning(outValues, outMask, valuesIn2, maskIn2);
+
+// Write back
+
+       valuesIn(start,end) = outValues.reform(shapeOut);
+       maskIn(start,end) = outMask.reform(shapeOut);
     }
 
 // Create and put back
 
     SDContainer sc = in.getSDContainer(ri);
-    putDataInSDC (sc, arr, barr);
+    putDataInSDC (sc, valuesIn, maskIn);
 //
     pTabOut->putSDContainer(sc);
   }

@@ -52,12 +52,12 @@ namespace SDMathWrapper {
                           float factor, bool all);
 
 // Add
-  void addInSitu(SDMemTableWrapper& in, float offset, bool all);
+  void addInSitu(SDMemTableWrapper& in, float offset, bool doAall);
   SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
 // Hanning
-  void hanningInSitu (SDMemTableWrapper& in);
-  SDMemTableWrapper hanning(const SDMemTableWrapper& in);
+  void hanningInSitu (SDMemTableWrapper& in, bool doAll);
+  SDMemTableWrapper hanning(const SDMemTableWrapper& in, bool doAll);
 
 // Bin up
   void binInSitu (SDMemTableWrapper& in, int width);
