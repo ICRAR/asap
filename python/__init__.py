@@ -60,6 +60,7 @@ def commands():
                               averaged spectrum.
         quotient            - return the on/off quotient
         scale               - returns a scan scaled by a given factor
+        add                 - returns a scan with given value added 
         bin                 - return a scan with binned channels
         hanning             - return the hanning smoothed scan
         poly_baseline       - fit a polynomial baseline to all Beams/IFs/Pols
