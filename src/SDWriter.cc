@@ -50,7 +50,7 @@ using namespace atnf_sd;
 // Default constructor.
 
 SDWriter::SDWriter(
-        const std::string &format = "SDFITS")
+        const std::string &format)
 {
   cFormat = format;
 
@@ -75,7 +75,7 @@ SDWriter::~SDWriter()
 // Reset the output format.
 
 Int SDWriter::setFormat(
-        const std::string &format = "SDFITS")
+        const std::string &format)
 {
   if (format != cFormat) {
     delete cWriter;
