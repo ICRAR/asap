@@ -47,11 +47,17 @@ void python_SDMemTable() {
     .def("getscan", &SDMemTableWrapper::getScan)
     .def("getspectrum", &SDMemTableWrapper::getSpectrum,
 	 (boost::python::arg("whichRow")=0) )
+    .def("getabscissa", &SDMemTableWrapper::getAbscissa,
+	 (boost::python::arg("whichRow")=0,
+	  boost::python::arg("unit")=std::string("GHz"),
+	  boost::python::arg("restFrequency")=0.0) )
     .def("getmask", &SDMemTableWrapper::getMask,
 	 (boost::python::arg("whichRow")=0) )
     .def("gettsys", &SDMemTableWrapper::getTsys)
-    .def("getsourcename", &SDMemTableWrapper::getSourceName)
-    .def("gettime", &SDMemTableWrapper::getTime)
+    .def("getsourcename", &SDMemTableWrapper::getSourceName,
+	 (boost::python::arg("whichRow")=0) )
+    .def("gettime", &SDMemTableWrapper::getTime,
+	 (boost::python::arg("whichRow")=0) )
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
     .def("getpol", &SDMemTableWrapper::getPol)
