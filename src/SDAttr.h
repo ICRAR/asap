@@ -91,6 +91,9 @@ class SDAttr {
    casa::Vector<casa::Float> MopEtaApX_;            // Aperture efficiency
    casa::Vector<casa::Float> MopEtaAp2004Y_;
 //
+   casa::Vector<casa::Float> TidEtaApX_;            // Aperture efficiency
+   casa::Vector<casa::Float> TidEtaApY_;
+//
    casa::Vector<casa::Float> TidGainElPoly_;        // Gain-el correction poly coeffs
 
 // Init private data

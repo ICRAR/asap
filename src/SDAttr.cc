@@ -160,6 +160,10 @@ Vector<Float> SDAttr::apertureEfficiency (Instrument inst, const MEpoch& dateObs
            }
         }
         break;
+      case TIDBINBILLA:
+        {
+            facs = interp (freqs/1.0e9f, TidEtaApX_, TidEtaApY_);
+        }
       default:
         {
            cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
@@ -241,7 +245,9 @@ Vector<Float> SDAttr::interp (const Vector<Float>& xOut, const Vector<Float>& xI
 
 void SDAttr::initData () 
 //
-// Mopra data from online Mopra guide.
+// Mopra data from Mopra web page
+// Tid  data from Tid web page
+// X in GHz
 //
 {
 
@@ -271,6 +277,13 @@ void SDAttr::initData ()
    MopEtaAp2004Y_.resize(2);
    MopEtaAp2004Y_(0) = 0.33;
    MopEtaAp2004Y_(1) = 0.24;
+//
+   TidEtaApX_.resize(2);
+   TidEtaApY_.resize(2);
+   TidEtaApX_(0) = 18.0;
+   TidEtaApX_(1) = 26.5;
+   TidEtaApY_(0) = 0.4848;
+   TidEtaApY_(1) = 0.4848;
 
 // Gain elevation correction polynomial coefficients (for elevation in degrees)
 
