@@ -44,8 +44,8 @@ class SDWriterWrapper : public SDWriter {
 public:
   SDWriterWrapper(const string &format = "SDFITS") : SDWriter(format) {;}
 
-  casa::Int write(const SDMemTableWrapper &table, const string &filename) {
-    return SDWriter::write(table.getCP(), filename);
+  casa::Int write(const SDMemTableWrapper &table, const string &filename, bool toStokes) {
+    return SDWriter::write(table.getCP(), filename, toStokes);
   }
 };
 
