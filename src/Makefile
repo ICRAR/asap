@@ -1,93 +1,96 @@
-TARGET    = ../lib/atnf_sd.so
+TARGET   := ../lib/atnf_sd.so
 
-CXX	  = g++-3.2.3
-CXXFLAGS  = -fPIC -w -g -fpermissive -O2
+CXX      := g++-3.2.3
+CXXFLAGS := -O -fPIC
+CXXFLAGS += -w -fpermissive # This should be removed.
+#CXXFLAGS += -ansi
+#CXXFLAGS += -pedantic -Wno-long-long
+#CXXFLAGS += -Wall -Wno-parentheses
 
-AIPSROOT = $(word 1, $(AIPSPATH))
+AIPSROOT  := $(word 1, $(AIPSPATH))
+AIPSINC   := -I$(AIPSROOT)/code/include
+AIPSLIB   := $(AIPSROOT)/linux_gnu/lib
+AIPSPPLIB := $(AIPSLIB)/version.o \
+             -L$(AIPSLIB) -latnf -ltrial -laips -laips_f -lmir -lwcs \
+             -lrpfits -lcfitsio -llapack -lblas -lg2c
 
-AIPSINC = -I$(AIPSROOT)/code/include \
-          -I$(AIPSROOT)/code/atnf \
-          -I$(AIPSROOT)/code/trial \
-          -I$(AIPSROOT)/code/aips
+LD        := g++-3.2.3
+LDFLAGS   := -shared -Wl,--soname=$(TARGET)
+LDFLAGS   += -s
 
-AIPSLIB  = $(AIPSROOT)/linux_gnu/lib
-AIPSPPLIB = -L$(AIPSLIB) \
-        $(AIPSLIB)/version.o \
-        $(AIPSLIB)/libatnf.a \
-        $(AIPSLIB)/libtrial.a \
-        $(AIPSLIB)/libaips_f.a \
-        $(AIPSLIB)/libaips.a \
-	$(AIPSLIB)/libwcs.a \
-	$(AIPSLIB)/libglish.a \
-	$(AIPSLIB)/libedit.a \
-	$(AIPSLIB)/libsos.a \
-	$(AIPSLIB)/libnpd.a \
-        -llapack -lblas -lg2c -lcfitsio -lrpfits
-#        -lglish -ledit -lsos -lnpd
+BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python-gcc-mt.a
+BOOSTINC  :=
 
-LINK      = g++-3.2.3
-LFLAGS    = -shared -Wl,-soname,$(TARGET)
-#-rpath,/home/mar637/lib
-#LFLAGS    += -Xlinker -rpath -Xlinker -L$(AIPSLIB)
+PYTHONINC := -I/usr/include/python2.2
+PYTHONLIB := -lpython2.2
 
-BOOSTLIB  = /nfs/atapplic/boost/linux/lib/libboost_python-gcc-mt.a
-BOOSTINC  = 
+CFITSIOINC := -I/usr/local/include/cfitsio
 
-PYTHONINC = -I/usr/include/python2.2
-PYTHONLIB = -lpython2.2
+INCDIRS   := -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
+LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
 
-CFITSIOINC = -I/usr/local/include/cfitsio
-
-INCDIRS   = -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
-LIBDIRS   = $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
-
-OBJECTS   = MathUtils.o \
-	    SDContainer.o \
-	    SDMemTable.o \
-	    SDReader.o \
-            SDWriter.o \
-            SDMath.o \
-            SDTemplates.o \
-            python_SDMemTable.o \
-            python_SDReader.o \
-            python_SDWriter.o \
-            python_SDMath.o \
-            python_SD.o
+OBJECTS   := MathUtils.o \
+             SDContainer.o \
+             SDMemTable.o \
+             SDReader.o \
+             SDWriter.o \
+             SDMath.o \
+             SDTemplates.o \
+             python_SDMemTable.o \
+             python_SDReader.o \
+             python_SDWriter.o \
+             python_SDMath.o \
+             python_SD.o
 
 
-HEADERS   = SDContainer.h \
-            SDMemTable.h \
-            SDReader.h \
-            SDWriter.h \
-            SDMath.h \
-            SDMemTableWrapper.h \
-            SDMathWrapper.h \
-            SDReaderWrapper.h \
-            SDWriterWrapper.h \
-            python_SD.h
+HEADERS   := SDContainer.h \
+             SDMemTable.h \
+             SDReader.h \
+             SDWriter.h \
+             SDMath.h \
+             SDMemTableWrapper.h \
+             SDMathWrapper.h \
+             SDReaderWrapper.h \
+             SDWriterWrapper.h \
+             python_SD.h
 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
 
 .cpp.o:
-	$(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	-@ echo
+	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .cc.o:
-	$(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	-@ echo
+	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
-.cxx.o:	
-	$(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+.cxx.o:
+	-@ echo
+	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .C.o:
-	$(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	-@ echo
+	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
-$(TARGET):  $(OBJECTS)
-	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS)  $(LIBDIRS)
-	strip $(TARGET)
 
-$(OBJECTS): $(HEADERS)
+.PHONY : all clean objects realclean relink
 
-clean:
+all : $(TARGET)
+
+relink : cleanso $(TARGET)
+
+objects : $(OBJECTS)
+
+$(TARGET) : $(OBJECTS)
+	-@ echo
+	   $(LD) $(LDFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+
+$(OBJECTS) : $(HEADERS)
+
+clean :
 	-rm -f $(OBJECTS)
 
-realclean: clean
+cleanso :
 	-rm -f $(TARGET)
+
+realclean : clean cleanso
