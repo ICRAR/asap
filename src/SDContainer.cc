@@ -172,3 +172,102 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
     }
   }
 }
+
+Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const
+{
+  Matrix<Float> spectra(nChan_, nPol_);
+
+  // Beam.
+  ArrayAccessor<Float, Axis<0> > i0(spectrum_);
+  i0.reset(i0.begin(whichBeam));
+
+  // IF.
+  ArrayAccessor<Float, Axis<1> > i1(i0);
+  i1.reset(i1.begin(whichIF));
+
+  // Polarization.
+  ArrayAccessor<Float, Axis<2> > i2(i1);
+  ArrayAccessor<Float, Axis<1> > o1(spectra);
+
+  while (i2 != i2.end()) {
+    // Channel.
+    ArrayAccessor<Float, Axis<3> > i3(i2);
+    ArrayAccessor<Float, Axis<0> > o0(o1);
+
+    while (i3 != i3.end()) {
+      *o0 = *i3;
+
+      i3++;
+      o0++;
+    }
+
+    i2++;
+    o1++;
+  }
+
+  return spectra;
+}
+
+Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
+{
+  Matrix<uChar> flagtra(nChan_, nPol_);
+
+  // Beam.
+  ArrayAccessor<uChar, Axis<0> > i0(flags_);
+  i0.reset(i0.begin(whichBeam));
+
+  // IF.
+  ArrayAccessor<uChar, Axis<1> > i1(i0);
+  i1.reset(i1.begin(whichIF));
+
+  // Polarization.
+  ArrayAccessor<uChar, Axis<2> > i2(i1);
+  ArrayAccessor<uChar, Axis<1> > o1(flagtra);
+
+  while (i2 != i2.end()) {
+    // Channel.
+    ArrayAccessor<uChar, Axis<3> > i3(i2);
+    ArrayAccessor<uChar, Axis<0> > o0(o1);
+
+    while (i3 != i3.end()) {
+      *o0 = *i3;
+
+      i3++;
+      o0++;
+    }
+
+    i2++;
+    o1++;
+  }
+
+  return flagtra;
+}
+
+Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
+{
+  Vector<Float> tsys(nPol_);
+
+  // Beam.
+  ArrayAccessor<Float, Axis<0> > i0(tsys_);
+  i0.reset(i0.begin(whichBeam));
+
+  // IF.
+  ArrayAccessor<Float, Axis<1> > i1(i0);
+  i1.reset(i1.begin(whichIF));
+
+  // Channel.
+  ArrayAccessor<Float, Axis<3> > i3(i1);
+
+  // Polarization.
+  ArrayAccessor<Float, Axis<2> > i2(i3);
+  ArrayAccessor<Float, Axis<0> > o0(tsys);
+
+  while (i2 != i2.end()) {
+    *o0 = *i2;
+
+    i2++;
+    o0++;
+  }
+
+  return tsys;
+}

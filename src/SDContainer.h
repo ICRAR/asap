@@ -108,6 +108,10 @@ public:
   const Array<Float>& getSpectrum() const { return spectrum_; }
   const Array<uChar>& getFlags() const { return flags_; }
   const Array<Float>& getTsys() const { return tsys_; }
+  
+  Array<Float> getSpectrum(uInt whichBeam, uInt whichIF) const;
+  Array<uChar> getFlags(uInt whichBeam, uInt whichIF) const;
+  Array<Float> getTsys(uInt whichBeam, uInt whichIF) const;
 
   Double timestamp;
   String sourcename;
