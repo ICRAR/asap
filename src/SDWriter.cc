@@ -39,9 +39,9 @@
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
 
-#include <SDMemTable.h>
-#include <SDWriter.h>
-
+#include "SDContainer.h"
+#include "SDMemTable.h"
+#include "SDWriter.h"
 
 using namespace atnf_sd;
 
