@@ -38,6 +38,8 @@ class asapplotter:
         self._data = None
         self._lmap = []
         self._title = None
+        self._ordinate = None
+        self._abcissa = None
 
     def _translate(self, name):
         for d in self._dicts:
@@ -105,9 +107,13 @@ class asapplotter:
                     else:
                         tlab = scan._getsourcename(i)                   
                 x,xlab = scan.get_abcissa(i)
-                y = scan.getspectrum(i)
-                ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan.getmask(i)
+                if self._abcissa: xlab = self._abcissa
+                y = scan._getspectrum(i)
+                if self._ordinate:
+                    ylab = self._ordinate
+                else:
+                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                m = scan._getmask(i)
                 if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[j]
                 else:
@@ -148,10 +154,14 @@ class asapplotter:
                 if not self._title:
                     tlab = scan._getsourcename()
                 x,xlab = scan.get_abcissa()
-                y = scan.getspectrum()
-                ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan.getmask()
-                if len(self._lmap) > 0:
+                if self._abcissa: xlab = self._abcissa
+                y = scan._getspectrum()
+                if self._ordinate:
+                    ylab = self._ordinate
+                else:
+                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                m = scan._getmask()
+                if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[j]
                 else:
                     llab = self._ldict.get(colmode)+' '+str(j)
@@ -185,7 +195,7 @@ class asapplotter:
                 self._plotter.subplot(i)
                 self._plotter.palette(0)
             k=0
-            j=i
+            #j=i
             eval(cdict.get(self._panels))
             for j in range(ncol):
                 if colmode == 's':
@@ -198,9 +208,13 @@ class asapplotter:
                 y = None
                 m = None
                 x,xlab = scan.get_abcissa(k)
-                y = scan.getspectrum(k)
-                ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan.getmask(k)
+                if self._abcissa: xlab = self._abcissa
+                y = scan._getspectrum(k)
+                if self._ordinate:
+                    ylab = self._ordinate
+                else:
+                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                m = scan._getmask(k)
                 if colmode == 's' or colmode == 't':
                     if not self._title:
                         tlab = self._ldict.get(self._panels)+' '+str(i)
@@ -212,9 +226,9 @@ class asapplotter:
                     llab = scan._getsourcename(k)
                 else:
                     if self._title and len(self._title) > 0:
-                        tlab = self._title[k]
+                        tlab = self._title[i]
                     else:
-                        tlab = scan._getsourcename(k)
+                        tlab = self._ldict.get(self._panels)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[j]
                     else:
@@ -293,7 +307,7 @@ class asapplotter:
             if self._data: self.plot()
         return
     
-    def set_legend_map(self, mp=[]):
+    def set_legend(self, mp=None):
         """
         Specify a mapping for the legend instead of using the default
         indices:
@@ -317,6 +331,18 @@ class asapplotter:
         self._title = title
         if self._data: self.plot()
         return
+
+    def set_ordinate(self, ordinate=None):
+        self._ordinate = ordinate
+        if self._data: self.plot()
+        return
+
+    def set_abcissa(self, abcissa=None):
+        self._abcissa = abcissa
+        if self._data: self.plot()
+        return
+
+        
 
 if __name__ == '__main__':
     plotter = asapplotter()
