@@ -1924,7 +1924,7 @@ void SDMath::convertWeightString(WeightType& wtType, const String& weightStr,
      msg = String("Weighting type selected : Variance");
   } else if (tStr.contains(String("TINT"))) {
      wtType = TINT;
-     msg = String("Weighting type selected : Tnt");
+     msg = String("Weighting type selected : Tint");
   } else if (tStr.contains(String("TSYS"))) {
      wtType = TSYS;
      msg = String("Weighting type selected : Tsys");
