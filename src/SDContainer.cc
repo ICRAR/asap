@@ -408,3 +408,41 @@ void SDFrequencyTable::restFrequencies(Vector<Double>& rfs,
   rfs = restFreqs_;
   rfunit = restFreqUnit_;
 }
+
+
+uInt SDDataDesc::addEntry (const String& source, uInt freqID, const MDirection& dir)
+{
+
+// See if already exists
+
+  if (n_ > 0) {
+    for (uInt i=0; i<n_; i++) {
+      if (source==source_[i] && freqID==freqID_[i]) {
+         return i;
+      }
+    }
+  }
+
+// Not found - add it
+
+  n_ += 1;
+  source_.resize(n_,True);
+  freqID_.resize(n_,True);
+  dir_.resize(n_,True,True);
+//
+  source_[n_-1] = source;
+  freqID_[n_-1] = freqID;
+  dir_[n_-1] = dir;
+//
+  return n_-1;
+}
+
+
+void SDDataDesc::summary() const
+{
+   cerr << "Source    FreqID" << endl;
+   for (uInt i=0; i<n_; i++) {
+      cerr << source_(i) << freqID_(i) << endl;
+   }
+}
+

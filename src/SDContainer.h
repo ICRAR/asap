@@ -37,6 +37,8 @@
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/Containers/Block.h>
+#include <measures/Measures/MDirection.h>
 
 template<class T> class casa::Matrix;
 
@@ -185,6 +187,41 @@ private:
   casa::Vector<casa::String> history_;
 
 };
+
+
+
+class SDDataDesc {
+
+public:
+
+// COnstructor
+  SDDataDesc() : n_(0) {;}
+  ~SDDataDesc() {;}
+
+// Add an entry if source name (not direction at this point) and freqID are unique
+  casa::uInt addEntry (const casa::String& source, casa::uInt freqID,
+                       const casa::MDirection& dir);
+
+// Number of entries
+  casa::Int length() const { return n_;}
+
+// Get attributes
+  casa::String source (casa::uInt which) const {return source_[which];}
+  casa::uInt freqID(casa::uInt which) const {return freqID_[which];}
+  casa::MDirection direction (casa::uInt which) const {return dir_[which];}
+
+// Summary
+  void summary() const;
+
+private:
+  casa::uInt n_;
+  casa::Vector<casa::String> source_;
+  casa::Vector<casa::uInt> freqID_;
+  casa::Block<casa::MDirection> dir_;
+//
+  SDDataDesc(const SDDataDesc& other);
+};
+
 
 } // namespace
 #endif
