@@ -1,8 +1,5 @@
 %% TODO
-%% Help doco
-%% .asaprc
 %% Intro
-%% Plotter options - pol etc
 %% Fit saving
 
 \documentclass[11pt]{article}
@@ -53,7 +50,7 @@ To start asap log onto one of these Linux hosts and  enter
   > asap
 \end{verbatim}
 
-This starts the asap. To quit, you need to type  \verb+^+-d (control-d).
+This starts the asap. To quit, you need to type \verb+^+-d (control-d).
 
 \section{Interface}
 
@@ -98,13 +95,13 @@ Following the object oriented approach, objects have associated
 ``member functions'' which can either be used to modify the data in
 some way or change global properties of the object. In this document
 member functions will be referred to simply as functions. From the
-command line, the user can excute these functions using the syntax:
+command line, the user can execute these functions using the syntax:
 \begin{verbatim}
   ASAP> out = object.function(arguments)
 \end{verbatim}
 
 Where \cmd{out} is the name of the returned variable (could be a new
-scantable object, or a vector of data, or a status retrn),  \cmd{object} is the
+scantable object, or a vector of data, or a status return),  \cmd{object} is the
 object variable name (set by the user), \cmd{function} is the name of
 the member function and \cmd{arguments} is a list of arguments to the
 function. The arguments can be provided either though position or names.
@@ -122,11 +119,11 @@ A mix of the two can be used.  E.g.
 \subsection{Global Functions}
 
 Some functions do not make sense to be implemented as member
-functions, typically fuctions which operate on more than one scantable
+functions, typically functions which operate on more than one scantable
 (e.g. time averaging of many scans). These functions will always be
-refered to as global functions.
+referred to as global functions.
 
-\subsection{Interactive enviroment}
+\subsection{Interactive environment}
 
 ipython has a number of useful interactive features and a few things to be aware
 of for the new user.
@@ -135,7 +132,7 @@ of for the new user.
 
 Tab completion is enabled for all function names. If you type the
 first few letters of a function name, then type <TAB> the function
-name will be auto completed if it is un-ambigious, or a list of
+name will be auto completed if it is un-ambiguous, or a list of
 possibilities will be given. Auto-completion works for the user
 object names as well as function names. It does not work for filenames,
 nor for function arguments.
@@ -168,10 +165,58 @@ arbitrary programs. E.g.
 
 \subsection{Help}
 
-Help me...
+ASAP has built in help for all functions. To get a list of functions type:
+
+\begin{verbatim}
+  ASAP> commands
+\end{verbatim}
+
+To get help on specific functions, the built in help needs to be given
+the object and function name. E.g.
+
+\begin{verbatim}
+  ASAP> help scantable.get_scan
+  ASAP> help scantable.stats
+  ASAP> help plotter.plot
+  ASAP> help fitter.plot
+
+  ASAP> scans = scantable('mydata.asap')
+  ASAP> help scans.get_scan # Same as above
+
+  ASAP> help average_time # Global functions just need their name
+
+\end{verbatim}
+
+Note that if you just type \cmd{help} the internal ipython help is
+invoked, which is probably {\em not} what you want. Type \verb+^+-d
+(control-d) to escape from this.
 
 \subsection{.asaprc}
 
+ASAP use a \cmd{.asaprc} file to control the users preferences of
+default values for various functions arguments. This includes the
+defaults for aguments such as \cmd{insitu}, scantable \cmd{freqframe}
+and the plotters \cmd{set\_mode} values. The help on individual
+functons says which agruments can be set default values from the
+\cmd{.asaprc} file. To get a sample contents for the \cmd{.asaprc}
+file use then command \cmd{list\_rcparameters}.
+
+Common values include:
+\begin{verbatim}
+  # apply operations on the input scantable or return new one
+  insitu                     : False
+
+  # default ouput format when saving scantable
+  scantable.save             : 'ASAP'
+
+
+  # default frequency frame to set when function
+  # scantable.set_freqframe is called
+  scantable.freqframe        : 'LSRK'
+
+  # auto averaging on read
+  scantable.autoaverage      : True
+\end{verbatim}
 
 \section{Scantables}
 
@@ -212,7 +257,7 @@ The data are stored in columns (the length of a column is the number of
 rows/integrations of course).  
 
 Two important columns are those that describe the frequency setup.  We mention
-them explicitly here because you need to be able to undertand the presentation
+them explicitly here because you need to be able to understand the presentation
 of the frequency information and possibly how to manipulate it.
 
 These columns are called FreqID and RestFreqID.  They contain indices, for
@@ -275,19 +320,14 @@ Example:
   ASAP> scan2 = scans.copy()
 \end{verbatim}
 
-
-
 \subsection{State}
-
 
 Each scantable contains "state"; these are properties  applying to all
 of the data in the scantable.  
 
 Examples are the selection of beam, IF and polarisation,  spectral unit
-(e.g. $km/s$) frequency reference frame (e.g. BARY) and velocity doppler
+(e.g. $km/s$) frequency reference frame (e.g. BARY) and velocity Doppler
 type (e.g. RADIO).
-
-
 
 \subsubsection{Units, Doppler and Frequency Reference Frame}
 
@@ -305,7 +345,7 @@ scantable. All functions will (where relevant) work with the selected
 unit until this changes. This is mainly important for fitting (the fits
 can be computed in any of these units), plotting and mask creation. 
 
-The velocity doppler can be changed with the \cmd{set\_doppler}
+The velocity Doppler can be changed with the \cmd{set\_doppler}
 function, and the frequency reference frame can be changed with the 
 \cmd{set\_freqframe} function.
 
@@ -334,8 +374,11 @@ If you specify just one rest frequency, then it is selected for the
 specified source and IF and added to the list of rest frequencies.
 
 \begin{verbatim}
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   # Selected for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             # Selected for all sources and IFs
+  # Select for specified source/IF
+  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   
+
+  # Select for all sources and IFs
+  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             
 \end{verbatim}
 
 
@@ -347,8 +390,11 @@ list.
 
 
 \begin{verbatim}
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   # Selected for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             # Selected for all sources and IFs
+  # Select for specified source/IF
+  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   
+
+  # Select for all sources and IFs
+  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             
 \end{verbatim}
 
 
@@ -389,7 +435,7 @@ Example :
 
 Most functions work on all rows of a scan table. Exceptions are the
 fitter and plotter. If you wish to only operate on a selected set of
-scantable rows, usw the \cmd{get_scan} function to copy the rows into
+scantable rows, use the \cmd{get\_scan} function to copy the rows into
 a new scantable.
 
 \subsubsection{Allaxes}
@@ -500,8 +546,9 @@ Example usage:
 \section{Basic Processing}
 
 In the following section, a simple data reduction to form a quotient
-spectrum of a single source is followed. Variations of this approach
-are given later.
+spectrum of a single source is followed. In the following it has been
+assume that the \cmd{.asaprc} file has been used to set \cmd{insitu}
+to a default value or \cmd{True}.
 
 %\subsection{Editing}
 
@@ -769,6 +816,7 @@ For example:
 \begin{verbatim}
   ASAP> ss = scans.get_scan(10) # Get the 11th scan (zero based)
   ASAP> ss = scans.get_scan(range(10)) # Get the first 10 scans
+  ASAP> ss = scans.get_scan(range(10,20)) # Get the next 10 scans
   ASAP> ss = scans.get_scan([2,4,6,8,10]) # Get a selection of scans
 
   ASAP> ss = scans.get_scan('345p407') # Get a specific source
@@ -838,7 +886,6 @@ Typical usages are:
 \end{verbatim}
 
 
-
 \section{Plotter}
 
 Scantable spectra can be plotter at any time. An asapplotter object is
@@ -846,12 +893,12 @@ used for plotting, meaning multiple plot windows can be active at the
 same time. On start up a default asapplotter object is created called
 ``plotter''. This would normally be used for standard plotting.
 
-The plotter, optionally, will run in a mulipanel mode and contain
+The plotter, optionally, will run in a multipanel mode and contain
 multiple plots per panel. The user must tell the plotter how they want
 the data distributed. This is done using the set\_mode function. The
 default can be set in the users {\tt .asaprc} file. The units (and frame
-etc) of the abcissa will be whatever has previously been set by
-set\_unit, set\_freqframe etc.
+etc) of the abscissa will be whatever has previously been set by
+\cmd{set\_unit}, \cmd{set\_freqframe} etc.
 
 Typical plotter usage would be:
 
@@ -864,12 +911,49 @@ Typical plotter usage would be:
 This will plot multiple polarisation within each plot panel and each
 scanrow in a separate panel.
 
-Other possbilities include:
+Other possibilities include:
 
 \begin{verbatim}
   # Plot multiple IFs per panel
   ASAP> plotter.set_mode(stacking='i',panelling='t')
-  more????
+
+  # Plot multiple beams per panel
+  ASAP> plotter.set_mode(stacking='b',panelling='t')
+
+  # Plot one IF per panel, time stacked
+  ASAP> plotter.set_mode('t', 'i')
+
+  # Plot each scan in a seperate panel
+  ASAP> plotter.set_mode('t', 's')
+
+\end{verbatim}
+
+\subsection{Plot Selection}
+\label{sec:plotter_cursor}
+
+The plotter can plot up to 25 panels and stacked spectra per
+panel. If you have data larger than this (or for your own sanity) you
+need to select a subset of this data. This is particularly true for
+multibeam or multi IF data. The plotter \cmd{set\_cursor} function is
+used to select a subset of the data. The arguments \cmd{row},
+\cmd{beam} and \cmd{IF} all accept a vector if indices corresponding
+to tow, beam or IF selection. Only the selected data will be plotted.
+So select on polarisation, see section~\ref{sec:polplot}.
+
+Examples:
+
+\begin{verbatim}
+  # Select second IF
+  ASAP> plotter.set_cursor(IF=[1])
+
+  # Select first 4 beams
+  ASAP> plotter.set_cursor(beam=[0,1,2,3])
+
+  # Select a few rows
+  ASAP> plotter.set_cursor(row=[2,4,6,10])
+
+  # Multiple selection
+  ASAP> plotter.set_cursor(IF=[1], beam=[0,2], row=range(10))
 \end{verbatim}
 
 \subsection{Plot control}
@@ -899,6 +983,8 @@ was previously.
 \item[Save] (floppy disk). Save the plot as a postscript or .png file
 
 \end{itemize}
+
+\subsection{Plot selection}
 
 \subsection{Other control}
 
@@ -988,7 +1074,6 @@ Examples:
 
   # Plot the first and third component plus the model sum
   ASAP> f.plot(components=[-1,0,2])  # -1 means the compoment sum
-
 \end{verbatim}
 
 \section{Polarisation}
@@ -997,7 +1082,73 @@ Currently ASAP only supports polarmetric analysis on linearly
 polarised feeds and the cross polarisation products measured. Other
 cases will be added on an as needed basic.
 
-But how do you actually do it...
+Conversions of linears to Stokes or Circular polarisations are done
+``on-the-fly''. Leakage cannot be corrected for nor are there routines
+able to calibrate position angle offsets. 
+
+\subsection{Simple Calibration}
+
+{\em Currently the receiver position angle is not stored in the rpfits
+file. This serverly hampers correct handling of polarimetry.}
+
+It is possible that there is a phase offset between polarisation which
+will effect the phase of the cross polarisation
+correlation. \cmd{rotate\_xyphase} can be used to correct for this
+error. The user must know how to determine the size of the phase
+offset.
+
+\begin{verbatim}
+  ASAP> scans.rotate_xyphase(10.5)
+\end{verbatim}
+
+Note that if this function is run twice, the sum of the two values is
+applied.
+
+A correction for the receiver paralactic angle may need to be made,
+either because of how it is mounted or if paralactifiying had to track
+at 90 degrees rather than 0. Use \cmd{rotate\_linpolphase} to correct
+the position angle. Running this function twice results in the sum of
+the corrections being applied.
+
+\begin{verbatim}
+  ASAP> scans.rotate_linpolphase(-20) # Correct for receiver mounting
+
+  # Receiver was tracking 90 degrees rather than 0
+  ASAP> scans.rotate_linpolphase(90)  
+\end{verbatim}
+
+\subsection{Plotting}
+\label{sec:polplot}
+
+To plot stokes values, the plotter \cmd{set\_cursor} function should
+be called first using the \cmd{pol} argument. The values which can be
+plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V] or
+[XX, YY, Real(XY), Imaginary(XY)]. (Plinear and Pangle are the
+percentage and position angle of linear polarisation). Conversion to
+circular polarisations are currently not available.
+
+Example:
+
+\begin{verbatim}
+  ASAP> plotter.set_cursor(pol=[``I'',''Q'']
+  ASAP> plotter.set_cursor(pol=[``XX'',''YY'']
+  ASAP> plotter.set_cursor(pol=[``I'',''Plinear'']
+\end{verbatim}
+
+Row, beam and IF selection are also available in \cmd{set\_cursor} as
+describe in section~\ref{sec:plotter_cursor}.
+
+\subsection{Saving}
+
+When saving data using the \cmd{save} function, the \cmd{stokes}
+argument can be used to save the data as Stoke values when saving in
+FITS format.
+
+Example:
+
+\begin{verbatim}
+  ASAP> scans.save('myscan.sdfits', 'SDFITS', stokes=True)
+\end{verbatim}
 
 \section{Function Summary}
 
@@ -1112,8 +1263,9 @@ But how do you actually do it...
         range               - create a list of values, e.g.
                               range(3) = [0,1,2], range(2,5) = [2,3,4]
         help                - print help for one of the listed functions
-        execfile            - execute an asap script, e.g. execfile('myscript')        list_rcparameters   - print out a list of possible values to be
-                              put into $HOME/.asaprc
+        execfile            - execute an asap script, e.g. execfile('myscript')
+	list_rcparameters   - print out a list of possible values to be
+                              put into \$HOME/.asaprc
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
@@ -1127,18 +1279,15 @@ But how do you actually do it...
             ASAP> help scantable # to get info on ths scantable
             ASAP> help scantable.summary # to get help on the scantable's
             ASAP> help average_time
-
-
 \end{verbatim}
 
-\section{Scripting}
+%\section{Scripting}
 
-Malte to add something
+%Malte to add something
 
 \section{Appendix}
 
 \subsection{Installation}
-
 
 ASAP depends on a number of third-party libraries which you must
 have installed before attempting to build ASAP. These are:
