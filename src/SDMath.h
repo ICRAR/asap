@@ -124,8 +124,11 @@ class SDMath {
    SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask,
                           const casa::String& wtStr) const;
 
-// Rotate XY phase
+// Rotate XY phase. Value in degrees.
    void rotateXYPhase (SDMemTable& in, casa::Float value, casa::Bool doAll);
+
+// Rotate Q & U by operating on the raw correlations.Value in degrees.
+   void rotateLinPolPhase (SDMemTable& in, casa::Float value, casa::Bool doAll);
 
 
  private:

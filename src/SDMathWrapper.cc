@@ -278,6 +278,14 @@ void SDMathWrapper::rotateXYPhaseInSitu(SDMemTableWrapper& in, float angle, bool
 }
 
 
+void SDMathWrapper::rotateLinPolPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  sdm.rotateLinPolPhase(*pIn, Float(angle), Bool(doAll));
+}
+
+
 
 
 void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)

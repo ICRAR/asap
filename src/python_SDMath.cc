@@ -101,7 +101,8 @@ namespace asap {
 //
       def("stats", &SDMathWrapper::statistic);
 // 
-      def ("rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
+      def ("_rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
+      def ("_rotate_linpolphase", &SDMathWrapper::rotateLinPolPhaseInSitu);
     };
 
   } // python

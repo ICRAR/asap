@@ -1270,7 +1270,90 @@ void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
     
 // Rotate
  
-      SDPolUtil::rotateXYPhase(C3, C4, value);
+      SDPolUtil::rotatePhase(C3, C4, value);
+   
+// Put
+    
+      specCol.put(i,data);
+   }
+}     
+
+
+
+void SDMath::rotateLinPolPhase(SDMemTable& in, Float value, Bool doAll)
+//
+// phase in degrees
+// Applies to all Beams and IFs
+// Might want to optionally select on Beam/IF
+//
+{
+   if (in.nPol() != 4) {
+      throw(AipsError("You must have 4 polarizations to run this function"));
+   }
+//    
+   const Table& tabIn = in.table();
+   ArrayColumn<Float> specCol(tabIn,"SPECTRA");  
+   ROArrayColumn<Float> stokesCol(tabIn,"STOKES");  
+   IPosition start(asap::nAxes,0);
+   IPosition end(asap::nAxes);
+
+// Set cursor slice. Assumes shape the same for all rows
+ 
+   setCursorSlice (start, end, doAll, in);
+//
+   IPosition start1(start);
+   start1(asap::PolAxis) = 0;                // C1 (XX)
+   IPosition end1(end);
+   end1(asap::PolAxis) = 0;   
+//
+   IPosition start2(start);
+   start2(asap::PolAxis) = 1;                 // C2 (YY)
+   IPosition end2(end);
+   end2(asap::PolAxis) = 1;   
+//
+   IPosition start3(start);
+   start3(asap::PolAxis) = 2;                 // C3 ( Real(XY) )
+   IPosition end3(end);
+   end3(asap::PolAxis) = 2;   
+//
+   IPosition startI(start);
+   startI(asap::PolAxis) = 0;                 // I
+   IPosition endI(end);
+   endI(asap::PolAxis) = 0;   
+//
+   IPosition startQ(start);
+   startQ(asap::PolAxis) = 1;                 // Q
+   IPosition endQ(end);
+   endQ(asap::PolAxis) = 1;   
+//
+   IPosition startU(start);
+   startU(asap::PolAxis) = 2;                 // U
+   IPosition endU(end);
+   endU(asap::PolAxis) = 2;   
+
+//
+   uInt nRow = in.nRow();
+   Array<Float> data, stokes;
+   for (uInt i=0; i<nRow;++i) {
+      specCol.get(i,data);
+      stokesCol.get(i,stokes);
+      IPosition shape = data.shape();
+ 
+// Get linear polarization slice references
+  
+      Array<Float> C1 = data(start1,end1);
+      Array<Float> C2 = data(start2,end2);
+      Array<Float> C3 = data(start3,end3);
+
+// Get STokes slice references
+
+      Array<Float> I = stokes(startI,endI);
+      Array<Float> Q = stokes(startQ,endQ);
+      Array<Float> U = stokes(startU,endU);
+    
+// Rotate
+ 
+      SDPolUtil::rotateLinPolPhase(C1, C2, C3, I, Q, U, value);
    
 // Put
     
