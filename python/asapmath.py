@@ -85,7 +85,7 @@ def scale(scan, factor, insitu=None, allaxes=None, tsys=True):
                      The default is taken from .asaprc (False)
         allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only.
-                     The default is taken from .asaprc (True)
+                     The default is taken from .asaprc (True if none)
         tsys:        if True (default) then apply the operation to Tsys
                      as well as the data
     """
@@ -111,7 +111,7 @@ def add(scan, offset, insitu=None, allaxes=None):
                      The default is taken from .asaprc (False)
         allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
-                     The default is taken from .asaprc (True)
+                     The default is taken from .asaprc (True if none)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
@@ -141,7 +141,7 @@ def convert_flux(scan, jyperk=None, eta=None, d=None, insitu=None, allaxes=None)
                      The default is taken from .asaprc (False)
         allaxes:         if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
-                     The default is taken from .asaprc (True)
+                     The default is taken from .asaprc (True if none)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
@@ -195,7 +195,7 @@ def gain_el(scan, poly=None, filename="", method="linear",
                      The default is taken from .asaprc (False)
         allaxes:         if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if) spectra only
-                     The default is taken from .asaprc (True)
+                     The default is taken from .asaprc (True if none)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if poly is None:
@@ -250,7 +250,7 @@ def opacity(scan, tau, insitu=None, allaxes=None):
                      The default is taken from .asaprc (False)
         allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
-                     The default is taken from .asaprc (True)
+                     The default is taken from .asaprc (True if none)
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if insitu is None: insitu = rcParams['insitu']
@@ -343,7 +343,7 @@ def smooth(scan, kernel="hanning", width=5.0, insitu=None, allaxes=None):
                     The default is taken from .asaprc (False)
         allaxes:    If True (default) apply to all spectra. Otherwise
                     apply only to the selected (beam/pol/if)spectra only
-                    The default is taken from .asaprc (True)
+                    The default is taken from .asaprc (True if none)
     Example:
          none
     """
