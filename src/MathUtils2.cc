@@ -30,6 +30,8 @@
 //#---------------------------------------------------------------------------
 
 #include <casa/aips.h>
+#include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayIter.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorSTLIterator.h>
 
@@ -107,8 +109,23 @@ uInt mathutil::addEntry (Vector<T>& list, T val)
    return n-1;
 }
 
-
- 
-
-
-
+template <class T>
+void mathutil::extendLastArrayAxis(casa::Array<T>& out, 
+				   const casa::Array<T>& in,
+				   const T& initVal)
+{
+  
+  IPosition ipin = in.shape();
+  IPosition ipout = ipin; // copy?
+  // extend the axis by 1
+  uInt axis = in.ndim()-1;
+  ipout[axis] = ipin[axis]+1;
+  out.resize(ipout);
+  out = initVal;
+  ArrayIterator<T> itout(out,axis);
+  ReadOnlyArrayIterator<T> itin(in,axis);
+  while ( !itin.pastEnd() ) {
+    itout.array() = itin.array();  // copy vector by vector
+    itin.next(); itout.next();
+  }
+}

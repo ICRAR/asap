@@ -58,6 +58,12 @@ float statistics(const casa::String& which,
 // Replace masked value by zero
 void replaceMaskByZero(casa::Vector<casa::Float>& data, 
 			const casa::Vector<casa::Bool>& mask);
+
+// Extend the 
+template <class T>
+void extendLastArrayAxis(casa::Array<T>& out, const casa::Array<T>& in,
+			 const T& initVal);
+
 };
 
 #endif
