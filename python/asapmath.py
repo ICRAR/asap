@@ -91,7 +91,7 @@ def add(scan, offset, insitu=False, all=True):
 def bin(scan, width=5, insitu=False):
     """
     Return a scan where all spectra have been binned up
-        width        The bin width (default=5) in pixels
+        width:       The bin width (default=5) in pixels
         insitu:      if False (default) a new scantable is returned.
                      Otherwise, the addition is done in-situ
     """
@@ -107,11 +107,11 @@ def average_pol(scan, mask=None, insitu=False):
     """
     Average the Polarisations together.
     Parameters:
-        scan   - a scantable
-        mask   - an optional mask defining the region, where the
-                 averaging will be applied. The output will have all 
-                 specified points masked. 
-        insitu:      if False (default) a new scantable is returned.
+        scan:        The scantable
+        mask:        An optional mask defining the region, where the
+                     averaging will be applied. The output will have all 
+                     specified points masked. 
+        insitu:      If False (default) a new scantable is returned.
                      Otherwise, the averaging is done in-situ
     Example:
         polav = average_pols(myscan)
@@ -126,17 +126,24 @@ def average_pol(scan, mask=None, insitu=False):
         _avpol(scan, mask)
         return
     
-def hanning(scan):
+def hanning(scan, insitu=False):
     """
     Hanning smooth the channels.
     Parameters:
-         scan    - the input scan
+        scan:       The input scan
+        insitu:     If False (default) a new scantable is returned.
+                    Otherwise, the scaling is done in-situ
+
     Example:
          none
     """
-    from asap._asap import hanning as _han
-    return scantable(_han(scan))
-
+    if not insitu:
+        from asap._asap import hanning as _hann
+        return scantable(_hann(scan))
+    else:
+        from asap._asap import hanning_insitu as _hann
+        _hann(scan)
+        return
     
 def poly_baseline(scan, mask=None, order=0):
     """
