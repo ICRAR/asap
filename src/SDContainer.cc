@@ -70,23 +70,33 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   ArrayAccessor<Float, Axis<1> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   
-  uInt nChan = spec.nrow();
-  uInt nPol  = spec.ncolumn();
-  Vector<Float> pols(nPol);
-  uInt chani = 0;
-  uInt poli = 0;
+  //Vector<Float> pols(nPol);
+  ArrayAccessor<Float, Axis<0> > j(spec);
+  IPosition shp0 = spectrum_.shape();
+  IPosition shp1 = spec.shape();
+  if ( (shp0(2) != shp1(0)) || (shp0(3) != shp1(1)) ) {
+    cerr << "Arrays not conformant" << endl;      
+    return False;
+  }
+  //uInt chani = 0;
+  //uInt poli = 0;
   // assert dimensions are the same....
   for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {
-    pols = spec.row(chani);
+    //pols = spec.row(chani);    
+    ArrayAccessor<Float, Axis<1> > jj(j);
     for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = pols[poli];
-      poli++;
+      //(*ii) = pols[poli];      
+      (*ii) = (*jj);
+      //poli++;
+      jj++;
     }
-    poli = 0;
-    chani++;
+    //poli = 0;
+    //chani++;
+    j++;
   }
   // unset flags for this spectrum, they might be set again by the
   // setFlags method
+
   IPosition shp = flags_.shape();
   IPosition start(4,whichBeam,whichIF,0,0);
   IPosition end(4,whichBeam,whichIF,shp(2)-1,shp(3)-1);
@@ -102,20 +112,22 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flag,
   ArrayAccessor<uChar, Axis<1> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   
-  uInt nChan = flag.nrow();
-  uInt nPol  = flag.ncolumn();
-  Vector<uChar> pols(nPol);
-  uInt chani = 0;
-  uInt poli = 0;
+  ArrayAccessor<uChar, Axis<0> > j(flag);
+  IPosition shp0 = flags_.shape();
+  IPosition shp1 = flag.shape();
+  if ( (shp0(2) != shp1(0)) || (shp0(3) != shp1(1)) ) {
+    cerr << "Arrays not conformant" << endl;      
+    return False;
+  }
+
   // assert dimensions are the same....
   for (ArrayAccessor<uChar, Axis<2> > i(aa1);i != i.end(); ++i) {
-    pols = flag.row(chani);
+    ArrayAccessor<uChar, Axis<1> > jj(j);
     for (ArrayAccessor<uChar, Axis<3> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = uChar(pols[poli]);
-      poli++;
+      (*ii) = (*jj);
+      jj++;
     }
-    poli = 0;
-    chani++;
+    j++;
   }
 }
 
@@ -127,12 +139,14 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   aa1.reset(aa1.begin(whichIF));
   // assert dimensions are the same....
   uInt idx = 0;
-  
+
+
   for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {    
     idx = 0;
+    ArrayAccessor<Float, Axis<0> > j(tsys);
     for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
-      (*ii) = tsys[idx];
-      idx++;
+      (*ii) = (*j);
+      j++;
     }
   }
 }

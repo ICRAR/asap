@@ -199,6 +199,7 @@ int SDReader::read(const std::vector<int>& seq) {
 	// add specific info
 	// IFno beamNo are 1-relative
 	// refPix = nChan/2+1 in  Integer arith.!
+	
 	uInt refPix = header_.nchan/2+1; 
 	//uInt frqslot = sdft.addFrequency(refPix, refFreq, freqInc);
 
@@ -218,13 +219,13 @@ int SDReader::read(const std::vector<int>& seq) {
 	//sc.addPointing(direction, beamNo-1);
 
 	// cerr << "SDReader::read -  after SDContainer" << endl;
-
+	
       }
     }
     if (cursor_ == seq[seqi]) {
       // insert container into table/list
       table_->putSDContainer(sc);
-      cout << "Reading integration " << seqi << endl;
+      //cout << "Reading integration " << seqi << endl;
       seqi++;// next in list
     }
     cursor_++;
