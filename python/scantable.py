@@ -32,7 +32,7 @@ class scantable(sdtable):
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
             if unit is not None:
-                sdtable.set_fluxunit(unit)                       
+                self.set_fluxunit(unit)                       
         else:
             try:
                 mode = st(filename)[stat.ST_MODE]
@@ -54,12 +54,12 @@ class scantable(sdtable):
                 from asap._asap import sdreader
                 ifSel = -1
                 beamSel = -1
-                if unit is None:
-                    unit = ""
                 r = sdreader(filename,ifSel,beamSel)
                 print 'Importing data...'
                 r.read([-1])
                 tbl = r.getdata()
+                if unit is not None:
+                    tbl.set_fluxunit(unit)
                 if autoav:
                     from asap._asap import average
                     tmp = tuple([tbl])
