@@ -1,11 +1,15 @@
 from scantable import scantable
 
-def average_time(*args,**kwargs):
+def average_time(*args, **kwargs):
     """
     Return the (time) average of a scan or list of scans. [in channels only]
     Parameters:
         one scan or comma separated  scans
-        mask:     an optional mask
+        mask:     an optional mask (only used for 'var' and 'tsys' weighting)
+        scanav:   False (default) averages all scans together,
+                  True averages each scan separately
+        weight:   Weighting scheme. 'none' (default), 'var' (variance
+                  weighted), 'tsys'
     Example:
         # return a time averaged scan from scana and scanb
         # without using a mask
@@ -13,41 +17,27 @@ def average_time(*args,**kwargs):
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
         scanav = average_time(scan)
-        
+
     """
-    lst = args
-    if len(args) < 2:
-        if type(args[0]) is list:
-            if  len(args[0]) < 2:
-                print "Please give at least two scantables"
-                return
-        else:
-            s = args[0]
-            if s.nrow() > 1:
-                from asap._asap import average as _av
-                return scantable(_av(s))
-            else:
-                print "Given scantable is already time averaged"
-                return
-        lst = tuple(args[0])
-    else:
-        lst = tuple(args)
-    from asap._asap import averages as _avs
-    d = [lst[0].nbeam(),lst[0].nif(),lst[0].npol(),lst[0].nchan()]
+    scanAv = False
+    if kwargs.has_key('scanav'):
+       scanAv = kwargs.get('scanav')
+#
+    weight = 'none'
+    if kwargs.has_key('weight'):
+       weight = kwargs.get('weight')
+#
+    mask = ()
+    if kwargs.has_key('mask'):
+        mask = kwargs.get('mask')
+#
+    lst = tuple(args)
+    from asap._asap import average as _av
     for s in lst:
         if not isinstance(s,scantable):
             print "Please give a list of scantables"
             return
-        dim = [s.nbeam(),s.nif(),s.npol(),s.nchan()]
-        if (dim != d):
-            print "All scans have to have the same numer of Beams/IFs/Pols/Chans"
-            return
-    if kwargs.has_key('mask'):
-        return scantable(_avs(lst, kwargs.get('mask')))
-    else:
-        from numarray import ones
-        mask = tuple(ones(d[3]))
-        return scantable(_avs(lst, mask))
+    return scantable(_av(lst, mask, scanAv, weight))
 
 def quotient(source, reference):
     """
