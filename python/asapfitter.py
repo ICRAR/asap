@@ -250,7 +250,7 @@ class fitter:
 
     def auto_fit(self):
         """
-        Return a scan where the function is applied to all Beams/IFs/Pols.
+        Return a scan where the function is applied to all rows for all Beams/IFs/Pols.
         
         """
         from asap import scantable
@@ -261,22 +261,23 @@ class fitter:
         vb = scan._verbose
         scan._verbose(False)
         sel = scan.get_selection()
+        rows = range(scan.nrow())
         for i in range(scan.nbeam()):
             scan.setbeam(i)
             for j in range(scan.nif()):
                 scan.setif(j)
                 for k in range(scan.npol()):
                     scan.setpol(k)
-                    self.x = scan.getabcissa()
-                    self.y = scan.getspectrum()
-                    self.data = None
-                    self.fit()                    
                     if self._vb:
                         print "Fitting:"
                         print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    for iRow in rows:
+                        self.x = scan.getabcissa(iRow)
+                        self.y = scan.getspectrum(iRow)
+                        self.data = None
+                        self.fit()                    
                         x = self.get_parameters()
-                    scan.setspectrum(self.fitter.getresidual())
+                        scan.setspectrum(self.fitter.getresidual(),iRow)
         scan.set_selection(sel[0],sel[1],sel[2])
         scan._verbose(vb)
         return scan
-    
