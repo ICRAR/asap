@@ -63,7 +63,7 @@
 #include <coordinates/Coordinates/VelocityAligner.h>
 
 #include "MathUtils.h"
-#include "Definitions.h"
+#include "SDDefs.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 
