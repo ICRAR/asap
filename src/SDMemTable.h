@@ -36,18 +36,24 @@
 #include <vector>
 // AIPS++
  #include <casa/aips.h>
-#include <casa/BasicSL/String.h>
-#include <tables/Tables/Table.h>
 #include <casa/Arrays/MaskedArray.h>
+#include <casa/BasicSL/String.h>
+#include <coordinates/Coordinates/SpectralCoordinate.h>
+#include <tables/Tables/Table.h>
+#include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/ScalarColumn.h>
+
 #include "SDDefs.h"
 
-#include <coordinates/Coordinates/SpectralCoordinate.h>
+
 
 namespace asap {
 
 class SDContainer;
 class SDHeader;
 class SDFrequencyTable;
+
+
 
 
 class SDMemTable {
@@ -209,11 +215,23 @@ private:
   casa::String formatSec(casa::Double x) const;
   casa::String formatDirection(const casa::MDirection& md) const;
   void setup();
+  void attach();
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;
   // the underlying memory table
   casa::Table table_;
+
+// Cached Columns to avoid reconstructing them for each row get/put
+  casa::ScalarColumn<casa::Double> timeCol_, integrCol_;
+  casa::ScalarColumn<casa::Float> azCol_, elCol_, paraCol_;
+  casa::ScalarColumn<casa::String> srcnCol_, fldnCol_, tcaltCol_;
+  casa::ScalarColumn<casa::Int> scanCol_, rbeamCol_;
+  casa::ArrayColumn<casa::Float> specCol_, tsCol_, tcalCol_;
+  casa::ArrayColumn<casa::Double> dirCol_;
+  casa::ArrayColumn<casa::uChar> flagsCol_;
+  casa::ArrayColumn<casa::uInt> freqidCol_;
+  casa::ArrayColumn<casa::String> histCol_;
 };
 
 }// namespace

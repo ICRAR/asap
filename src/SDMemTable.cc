@@ -49,8 +49,6 @@
 #include <tables/Tables/ArrColDesc.h>
 
 #include <tables/Tables/ExprNode.h>
-#include <tables/Tables/ScalarColumn.h>
-#include <tables/Tables/ArrayColumn.h>
 #include <tables/Tables/TableRecord.h>
 #include <measures/Measures/MFrequency.h>
 #include <measures/Measures/MeasTable.h>
@@ -72,6 +70,8 @@ SDMemTable::SDMemTable() :
   polSel_(0) 
 {
   setup();
+cerr << "Call SDMemTable::attach" << endl;
+  attach();
 }
 
 SDMemTable::SDMemTable(const std::string& name) :
@@ -99,6 +99,8 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
     beamSel_ = other.beamSel_;
     polSel_ = other.polSel_;
   }
+//
+  attach();
   //cerr << "hello from CC SDMemTable @ " << this << endl;
 }
 
@@ -134,6 +136,7 @@ SDMemTable &SDMemTable::operator=(const SDMemTable& other)
      chanMask_.resize(0);
      chanMask_ = other.chanMask_;
      table_ = other.table_.copyToMemoryTable(String("dummy"));
+     attach();
   }
   //cerr << "hello from ASS SDMemTable @ " << this << endl;
   return *this;
@@ -150,6 +153,7 @@ void SDMemTable::setup()
 {
   TableDesc td("", "1", TableDesc::Scratch);
   td.comment() = "A SDMemTable";
+//
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
   td.addColumn(ScalarColumnDesc<String>("SRCNAME"));
   td.addColumn(ArrayColumnDesc<Float>("SPECTRA"));
@@ -174,11 +178,32 @@ void SDMemTable::setup()
   table_ = Table(aNewTab, Table::Memory, 0);
 }
 
+void SDMemTable::attach ()
+{
+  timeCol_.attach(table_, "TIME");
+  srcnCol_.attach(table_, "SRCNAME");
+  specCol_.attach(table_, "SPECTRA");
+  flagsCol_.attach(table_, "FLAGTRA");
+  tsCol_.attach(table_, "TSYS");
+  scanCol_.attach(table_, "SCANID");
+  integrCol_.attach(table_, "INTERVAL");
+  freqidCol_.attach(table_, "FREQID");
+  dirCol_.attach(table_, "DIRECTION");
+  fldnCol_.attach(table_, "FIELDNAME");
+  tcaltCol_.attach(table_, "TCALTIME");
+  tcalCol_.attach(table_, "TCAL");
+  azCol_.attach(table_, "AZIMUTH");
+  elCol_.attach(table_, "ELEVATION");
+  paraCol_.attach(table_, "PARANGLE");
+  rbeamCol_.attach(table_, "REFBEAM");
+  histCol_.attach(table_, "HISTORY");
+}
+
+
 std::string SDMemTable::getSourceName(Int whichRow) const
 {
-  ROScalarColumn<String> src(table_, "SRCNAME");
   String name;
-  src.get(whichRow, name);
+  srcnCol_.get(whichRow, name);
   return name;
 }
 
@@ -186,8 +211,7 @@ std::string SDMemTable::getTime(Int whichRow, Bool showDate) const
 {
   Double tm;
   if (whichRow > -1) {
-    ROScalarColumn<Double> src(table_, "TIME");
-    src.get(whichRow, tm);
+    timeCol_.get(whichRow, tm);
   } else {
     table_.keywordSet().get("UTC",tm);
   }
@@ -203,9 +227,8 @@ std::string SDMemTable::getTime(Int whichRow, Bool showDate) const
 
 double SDMemTable::getInterval(Int whichRow) const
 {
-  ROScalarColumn<Double> src(table_, "INTERVAL");
   Double intval;
-  src.get(whichRow, intval);
+  integrCol_.get(whichRow, intval);
   return intval;
 }
 
@@ -245,9 +268,8 @@ void SDMemTable::resetCursor ()
 
 bool SDMemTable::setMask(std::vector<int> whichChans)
 {
-  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   std::vector<int>::iterator it;
-  uInt n = spec.shape(0)(3);
+  uInt n = flagsCol_.shape(0)(3);
   if (whichChans.empty()) {
     chanMask_ = std::vector<bool>(n,true);
     return true;      
@@ -263,9 +285,8 @@ bool SDMemTable::setMask(std::vector<int> whichChans)
 
 std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   std::vector<bool> mask;
-  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
-  spec.get(whichRow, arr);
+  flagsCol_.get(whichRow, arr);
   ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
   ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
@@ -293,9 +314,8 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
 std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
 {
   std::vector<float> spectrum;
-  ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
-  spec.get(whichRow, arr);
+  specCol_.get(whichRow, arr);
   ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
   ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
@@ -411,9 +431,8 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
 
 // Continue with km/s or Hz.  Get FreqID
 
-  ROArrayColumn<uInt> fid(table_, "FREQID");
   Vector<uInt> v;
-  fid.get(whichRow, v);
+  freqidCol_.get(whichRow, v);
   uInt specidx = v(IFSel_);
 
 // Get SpectralCoordinate, set reference frame conversion,
@@ -454,7 +473,6 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
 
 std::string SDMemTable::getAbcissaString(Int whichRow) const
 {
-  ROArrayColumn<uInt> fid(table_, "FREQID");
   Table t = table_.keywordSet().asTable("FREQUENCIES");
 //
   String sunit;
@@ -463,7 +481,7 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
   Unit u(sunit);
 //
   Vector<uInt> v;
-  fid.get(whichRow, v);
+  freqidCol_.get(whichRow, v);
   uInt specidx = v(IFSel_);
 
 // Get SpectralCoordinate, with frame, velocity, rest freq state set
@@ -484,9 +502,8 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
 
 void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow)
 {
-  ArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
-  spec.get(whichRow, arr);
+  specCol_.get(whichRow, arr);
   if (spectrum.size() != arr.shape()(3)) {
     throw(AipsError("Attempting to set spectrum with incorrect length."));
   }
@@ -503,14 +520,13 @@ void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow)
     (*i) = Float(*it);
     it++;
   }
-  spec.put(whichRow, arr);
+  specCol_.put(whichRow, arr);
 }
 
 void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const
 {
-  ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
-  spec.get(whichRow, arr);
+  specCol_.get(whichRow, arr);
   spectrum.resize(arr.shape()(3));
   ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
@@ -527,9 +543,8 @@ void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const
 }
 /*
 void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
-  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
-  spec.get(whichRow, arr);
+  flagsCol_.get(whichRow, arr);
   mask.resize(arr.shape()(3));
 
   ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
@@ -562,12 +577,10 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
 MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
                                                 Bool useSelection) const 
 {
-  ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
-  ROArrayColumn<uChar> flag(table_, "FLAGTRA");
   Array<uChar> farr;
-  spec.get(whichRow, arr);
-  flag.get(whichRow, farr);
+  specCol_.get(whichRow, arr);
+  flagsCol_.get(whichRow, farr);
   Array<Bool> barr(farr.shape());convertArray(barr, farr);
   MaskedArray<Float> marr;
   if (useSelection) {
@@ -608,9 +621,8 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
 
 Float SDMemTable::getTsys(Int whichRow) const
 {
-  ROArrayColumn<Float> ts(table_, "TSYS");
   Array<Float> arr;
-  ts.get(whichRow, arr);
+  tsCol_.get(whichRow, arr);
   Float out;
   IPosition ip(arr.shape());
   ip(0) = beamSel_;ip(1) = IFSel_;ip(2) = polSel_;ip(3)=0;
@@ -621,9 +633,8 @@ Float SDMemTable::getTsys(Int whichRow) const
 MDirection SDMemTable::getDirection(Int whichRow, Bool refBeam) const
 {
   MDirection::Types mdr = getDirectionReference();
-  ROArrayColumn<Double> dir(table_, "DIRECTION");
   Array<Double> posit;
-  dir.get(whichRow,posit);
+  dirCol_.get(whichRow,posit);
   Vector<Double> wpos(2);
   wpos[0] = posit(IPosition(2,beamSel_,0));
   wpos[1] = posit(IPosition(2,beamSel_,1));
@@ -636,9 +647,8 @@ MEpoch SDMemTable::getEpoch (Int whichRow) const
 {
   MEpoch::Types met = getTimeReference();
 //
-  ROScalarColumn<Double> tme(table_, "TIME");
   Double obstime;
-  tme.get(whichRow,obstime);
+  timeCol_.get(whichRow,obstime);
   MVEpoch tm2(Quantum<Double>(obstime, Unit(String("d"))));
   return MEpoch(tm2, met);
 }
@@ -877,99 +887,64 @@ SDFrequencyTable SDMemTable::getSDFreqTable() const
 
 bool SDMemTable::putSDContainer(const SDContainer& sdc)
 {
-  ScalarColumn<Double> mjd(table_, "TIME");
-  ScalarColumn<String> srcn(table_, "SRCNAME");
-  ScalarColumn<String> fldn(table_, "FIELDNAME");
-  ArrayColumn<Float> spec(table_, "SPECTRA");
-  ArrayColumn<uChar> flags(table_, "FLAGTRA");
-  ArrayColumn<Float> ts(table_, "TSYS");
-  ScalarColumn<Int> scan(table_, "SCANID");
-  ScalarColumn<Double> integr(table_, "INTERVAL");
-  ArrayColumn<uInt> freqid(table_, "FREQID");
-  ArrayColumn<Double> dir(table_, "DIRECTION");
-  ScalarColumn<Int> rbeam(table_, "REFBEAM");
-  ArrayColumn<Float> tcal(table_, "TCAL");
-  ScalarColumn<String> tcalt(table_, "TCALTIME");
-  ScalarColumn<Float> az(table_, "AZIMUTH");
-  ScalarColumn<Float> el(table_, "ELEVATION");
-  ScalarColumn<Float> para(table_, "PARANGLE");
-  ArrayColumn<String> hist(table_, "HISTORY");
-
   uInt rno = table_.nrow();
   table_.addRow();
 
-  mjd.put(rno, sdc.timestamp);
-  srcn.put(rno, sdc.sourcename);
-  fldn.put(rno, sdc.fieldname);
-  spec.put(rno, sdc.getSpectrum());
-  flags.put(rno, sdc.getFlags());
-  ts.put(rno, sdc.getTsys());
-  scan.put(rno, sdc.scanid);
-  integr.put(rno, sdc.interval);
-  freqid.put(rno, sdc.getFreqMap());
-  dir.put(rno, sdc.getDirection());
-  rbeam.put(rno, sdc.refbeam);
-  tcal.put(rno, sdc.tcal);
-  tcalt.put(rno, sdc.tcaltime);
-  az.put(rno, sdc.azimuth);
-  el.put(rno, sdc.elevation);
-  para.put(rno, sdc.parangle);
-  hist.put(rno, sdc.getHistory());
+//  mjd.put(rno, sdc.timestamp);
+  timeCol_.put(rno, sdc.timestamp);
+  srcnCol_.put(rno, sdc.sourcename);
+  fldnCol_.put(rno, sdc.fieldname);
+  specCol_.put(rno, sdc.getSpectrum());
+  flagsCol_.put(rno, sdc.getFlags());
+  tsCol_.put(rno, sdc.getTsys());
+  scanCol_.put(rno, sdc.scanid);
+  integrCol_.put(rno, sdc.interval);
+  freqidCol_.put(rno, sdc.getFreqMap());
+  dirCol_.put(rno, sdc.getDirection());
+  rbeamCol_.put(rno, sdc.refbeam);
+  tcalCol_.put(rno, sdc.tcal);
+  tcaltCol_.put(rno, sdc.tcaltime);
+  azCol_.put(rno, sdc.azimuth);
+  elCol_.put(rno, sdc.elevation);
+  paraCol_.put(rno, sdc.parangle);
+  histCol_.put(rno, sdc.getHistory());
 
   return true;
 }
 
 SDContainer SDMemTable::getSDContainer(uInt whichRow) const
 {
-  ROScalarColumn<Double> mjd(table_, "TIME");
-  ROScalarColumn<String> srcn(table_, "SRCNAME");
-  ROScalarColumn<String> fldn(table_, "FIELDNAME");
-  ROArrayColumn<Float> spec(table_, "SPECTRA");
-  ROArrayColumn<uChar> flags(table_, "FLAGTRA");
-  ROArrayColumn<Float> ts(table_, "TSYS");
-  ROScalarColumn<Int> scan(table_, "SCANID");
-  ROScalarColumn<Double> integr(table_, "INTERVAL");
-  ROArrayColumn<uInt> freqid(table_, "FREQID");
-  ROArrayColumn<Double> dir(table_, "DIRECTION");
-  ROScalarColumn<Int> rbeam(table_, "REFBEAM");
-  ROArrayColumn<Float> tcal(table_, "TCAL");
-  ROScalarColumn<String> tcalt(table_, "TCALTIME");
-  ROScalarColumn<Float> az(table_, "AZIMUTH");
-  ROScalarColumn<Float> el(table_, "ELEVATION");
-  ROScalarColumn<Float> para(table_, "PARANGLE");
-  ROArrayColumn<String> hist(table_, "HISTORY");
-
   SDContainer sdc(nBeam(),nIF(),nPol(),nChan());
-  mjd.get(whichRow, sdc.timestamp);
-  srcn.get(whichRow, sdc.sourcename);
-  integr.get(whichRow, sdc.interval);
-  scan.get(whichRow, sdc.scanid);
-  fldn.get(whichRow, sdc.fieldname);
-  rbeam.get(whichRow, sdc.refbeam);
-  az.get(whichRow, sdc.azimuth);
-  el.get(whichRow, sdc.elevation);
-  para.get(whichRow, sdc.parangle);
+  timeCol_.get(whichRow, sdc.timestamp);
+  srcnCol_.get(whichRow, sdc.sourcename);
+  integrCol_.get(whichRow, sdc.interval);
+  scanCol_.get(whichRow, sdc.scanid);
+  fldnCol_.get(whichRow, sdc.fieldname);
+  rbeamCol_.get(whichRow, sdc.refbeam);
+  azCol_.get(whichRow, sdc.azimuth);
+  elCol_.get(whichRow, sdc.elevation);
+  paraCol_.get(whichRow, sdc.parangle);
   Vector<Float> tc;
-  tcal.get(whichRow, tc);
+  tcalCol_.get(whichRow, tc);
   sdc.tcal[0] = tc[0];sdc.tcal[1] = tc[1];
-  tcalt.get(whichRow, sdc.tcaltime);
+  tcaltCol_.get(whichRow, sdc.tcaltime);
   Array<Float> spectrum;
   Array<Float> tsys;
   Array<uChar> flagtrum;
   Vector<uInt> fmap;
   Array<Double> direction;
   Vector<String> histo;
-  spec.get(whichRow, spectrum);
+  specCol_.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
-  flags.get(whichRow, flagtrum);
+  flagsCol_.get(whichRow, flagtrum);
   sdc.putFlags(flagtrum);
-  ts.get(whichRow, tsys);
+  tsCol_.get(whichRow, tsys);
   sdc.putTsys(tsys);
-  freqid.get(whichRow, fmap);
+  freqidCol_.get(whichRow, fmap);
   sdc.putFreqMap(fmap);
-  dir.get(whichRow, direction);
+  dirCol_.get(whichRow, direction);
   sdc.putDirection(direction);
-  hist.get(whichRow, histo);
+  histCol_.get(whichRow, histo);
   sdc.putHistory(histo);
   return sdc;
 }
@@ -1023,10 +998,9 @@ void SDMemTable::makePersistent(const std::string& filename)
 
 Int SDMemTable::nScan() const {
   Int n = 0;
-  ROScalarColumn<Int> scans(table_, "SCANID");
   Int previous = -1;Int current=0;
-  for (uInt i=0; i< scans.nrow();i++) {
-    scans.getScalar(i,current);
+  for (uInt i=0; i< scanCol_.nrow();i++) {
+    scanCol_.getScalar(i,current);
     if (previous != current) {
       previous = current;
       n++;
@@ -1095,17 +1069,15 @@ void SDMemTable::setInstrument(const std::string& name)
 }
 
 std::string SDMemTable::summary() const  {
-  ROScalarColumn<Int> scans(table_, "SCANID");
-  ROScalarColumn<String> srcs(table_, "SRCNAME");
 
   // get number of integrations per scan
   int cIdx = 0;
   int idx = 0;
   int scount = 0;
   std::vector<int> cycles;
-  for (uInt i=0; i<scans.nrow();++i) {
-    while (idx == cIdx && i<scans.nrow()) {
-      scans.getScalar(++i,cIdx);
+  for (uInt i=0; i<scanCol_.nrow();++i) {
+    while (idx == cIdx && i<scanCol_.nrow()) {
+      scanCol_.getScalar(++i,cIdx);
       ++scount;
     }
     idx = cIdx;
@@ -1166,10 +1138,10 @@ std::string SDMemTable::summary() const  {
   oss << "-------------------------------------------------------------------------------" << endl;
   
   std::vector<int>::iterator it = cycles.begin();
-  for (uInt i=0; i< scans.nrow();i++) {
-    scans.getScalar(i,current);
+  for (uInt i=0; i< scanCol_.nrow();i++) {
+    scanCol_.getScalar(i,current);
     if (previous != current) {
-      srcs.getScalar(i,name);
+      srcnCol_.getScalar(i,name);
       previous = current;
       String t = formatSec(Double(getInterval(i)));
       String posit = formatDirection(getDirection(i,True));
@@ -1230,19 +1202,17 @@ Int SDMemTable::nChan() const {
 }
 bool SDMemTable::appendHistory(const std::string& hist, int whichRow)
 {
-  ArrayColumn<String> histo(table_, "HISTORY");
   Vector<String> history;
-  histo.get(whichRow, history);
+  histCol_.get(whichRow, history);
   history.resize(history.nelements()+1,True);
   history[history.nelements()-1] = hist;
-  histo.put(whichRow, history);
+  histCol_.put(whichRow, history);
 }
 
 std::vector<std::string> SDMemTable::history(int whichRow) const
 {
-  ROArrayColumn<String> hist(table_, "HISTORY");
   Vector<String> history;
-  hist.get(whichRow, history);
+  histCol_.get(whichRow, history);
   std::vector<std::string> stlout;
   // there is no Array<String>.tovector(std::vector<std::string>), so
   // do it by hand
@@ -1272,9 +1242,8 @@ void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 */
 void SDMemTable::flag(int whichRow)
 {
-  ArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
-  spec.get(whichRow, arr);
+  flagsCol_.get(whichRow, arr);
 
   ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
@@ -1287,7 +1256,7 @@ void SDMemTable::flag(int whichRow)
     (*i) = uChar(True);
   }
 
-  spec.put(whichRow, arr);
+  flagsCol_.put(whichRow, arr);
 }
 
 MDirection::Types SDMemTable::getDirectionReference() const
