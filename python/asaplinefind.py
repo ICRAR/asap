@@ -78,11 +78,15 @@ class linefinder:
         """
 	if not scan:
 	   raise RuntimeError, 'Please give a correct scan'
+ 
+	if isinstance(edge,int):
+	   edge=(edge,)
+
         from asap import _is_sequence_or_number as _is_valid
 
         if not _is_valid(edge, int):
-           raise RuntimeError, "Parameter 'edge' as to be an integer or \
-           a pair of integers"
+           raise RuntimeError, "Parameter 'edge' has to be an integer or \
+           a pair of integers specified as a tuple"
 
 	if len(edge)>2:
 	   raise RuntimeError, "The edge parameter should have two \
