@@ -127,7 +127,7 @@ int SDReader::read(const std::vector<int>& seq) {
   Int    beamNo, IFno, refBeam, scanNo, cycleNo;
   Float  azimuth, elevation, focusAxi, focusRot, focusTan, 
     humidity, parAngle, pressure, temperature, windAz, windSpeed;
-  Double bandwidth, freqInc, interval, mjd, refFreq, srcVel;
+  Double bandwidth, freqInc, interval, mjd, refFreq, restFreq, srcVel;
   String          fieldName, srcName, tcalTime;
   Vector<Float>   calFctr, sigma, tcal, tsys;
   Matrix<Float>   baseLin, baseSub;
@@ -152,9 +152,8 @@ int SDReader::read(const std::vector<int>& seq) {
       // stepsize as well
       // spectra(nChan,nPol)!!!
       status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName, 
-			     srcName,
-			     srcDir, srcPM, srcVel, IFno, refFreq,
-			     bandwidth, freqInc, tcal, tcalTime, 
+			     srcName, srcDir, srcPM, srcVel, IFno, refFreq,
+			     bandwidth, freqInc, restFreq, tcal, tcalTime, 
 			     azimuth, elevation, parAngle, focusAxi, 
 			     focusTan, focusRot, temperature, pressure, 
 			     humidity, windSpeed, windAz, refBeam, 
