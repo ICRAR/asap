@@ -581,57 +581,6 @@ void SDFrequencyTable::restFrequencies(Vector<Double>& rfs,
   rfunit = restFreqUnit_;
 }
 
-// SDFitTable
-
-
-const Vector<Double>& SDFitTable::getFitParameters(uInt whichRow) const
-{
-  if (whichRow <= n_)
-    return fitParms_[whichRow];
-}
-
-const Vector<Bool>& SDFitTable::getFitParameterMask(uInt whichRow) const
-{
-  if (whichRow <= n_)
-    return parMask_[whichRow];
-}
-
-const Vector<Int>& SDFitTable::getFitComponents(uInt whichRow) const
-{
-  if (whichRow <= n_)
-    return fitComps_[whichRow];
-}
-
-const Vector<String>& SDFitTable::getFitFunctions(uInt whichRow) const
-{
-  if (whichRow <= n_)
-    return fitFuncs_[whichRow];
-}
-
-void SDFitTable::putFitParameters(uInt whichRow, const Vector<Double>& arr)
-{
-  if (whichRow <= n_)
-    fitParms_[whichRow] = arr;
-}
-
-void SDFitTable::putFitParameterMask(uInt whichRow, const Vector<Bool>& arr)
-{
-  if (whichRow <= n_)
-    parMask_[whichRow] = arr;
-}
-
-void SDFitTable::putFitComponents(uInt whichRow, const Vector<Int>& arr)
-{
-  if (whichRow <= n_)
-    fitComps_[whichRow] = arr;
-}
-void SDFitTable::putFitFunctions(uInt whichRow, const Vector<String>& arr)
-{
-  if (whichRow <= n_)
-    fitFuncs_[whichRow] = arr;
-}
-
-
 // SDDataDesc
 
 uInt SDDataDesc::addEntry(const String& source, uInt ID, 

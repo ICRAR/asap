@@ -260,38 +260,6 @@ private:
 
 };
 
-class SDFitTable {
-public:
-  // Create a FitTable with "n" rows
-  SDFitTable(casa::uInt n=0) : n_(n) {;};
-  
-  casa::uInt length() const { return n_; };
-  const casa::Vector<casa::Double>& getFitParameters(casa::uInt which) const;
-  const casa::Vector<casa::Bool>& getFitParameterMask(casa::uInt which) const;
-  const casa::Vector<casa::String>& getFitFunctions(casa::uInt which) const;
-  const casa::Vector<casa::Int>& getFitComponents(casa::uInt which) const;
-
-  void putFitParameters(casa::uInt whichRow, 
-			const casa::Vector<casa::Double>& arr);
-  void putFitParameterMask(casa::uInt whichRow,
-			   const casa::Vector<casa::Bool>& arr);
-  void putFitFunctions(casa::uInt whichRow, 
-		       const casa::Vector<casa::String>& arr);
-  void putFitComponents(casa::uInt whichRow, 
-			const casa::Vector<casa::Int>& arr);
-
-private:
-  
-  casa::uInt n_;
-  casa::Vector<casa::Vector<casa::Double> > fitParms_;
-  // (npars,nrows)
-  casa::Vector<casa::Vector<casa::Bool> > parMask_;
-  // the fit function names (nnames,nrows)
-  casa::Vector<casa::Vector<casa::String> > fitFuncs_;
-  // the number of components of the function (ncomps, nrows)
-  casa::Vector<casa::Vector<casa::Int> > fitComps_;
-
-};
 
 } // namespace
 #endif

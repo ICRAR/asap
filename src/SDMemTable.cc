@@ -59,12 +59,11 @@
 #include <casa/Quanta/MVAngle.h>
 
 #include "SDDefs.h"
-#include "SDMemTable.h"
 #include "SDContainer.h"
 #include "MathUtils.h"
 #include "SDPol.h"
 
-
+#include "SDMemTable.h"
 
 using namespace casa;
 using namespace asap;
@@ -205,6 +204,7 @@ void SDMemTable::setup()
   tdf.addColumn(ArrayColumnDesc<Int>("COMPONENTS"));
   tdf.addColumn(ArrayColumnDesc<Double>("PARAMETERS"));
   tdf.addColumn(ArrayColumnDesc<Bool>("PARMASK"));
+  tdf.addColumn(ArrayColumnDesc<String>("FRAMEINFO"));
   SetupNewTable fittab("fits", tdf, Table::New);
   Table fitTable(fittab, Table::Memory);
   table_.rwKeywordSet().defineTable("FITS", fitTable);
@@ -947,21 +947,25 @@ bool SDMemTable::putSDFitTable(const SDFitTable& sdft)
   td.addColumn(ArrayColumnDesc<Int>("COMPONENTS"));
   td.addColumn(ArrayColumnDesc<Double>("PARAMETERS"));
   td.addColumn(ArrayColumnDesc<Bool>("PARMASK"));
+  td.addColumn(ArrayColumnDesc<String>("FRAMEINFO"));
   SetupNewTable aNewTab("fits", td, Table::New);
   Table aTable(aNewTab, Table::Memory);
   ArrayColumn<String> sc0(aTable, "FUNCTIONS");
   ArrayColumn<Int> sc1(aTable, "COMPONENTS");
   ArrayColumn<Double> sc2(aTable, "PARAMETERS");
   ArrayColumn<Bool> sc3(aTable, "PARMASK");
+  ArrayColumn<String> sc4(aTable, "FRAMEINFO");
   for (uInt i; i<sdft.length(); ++i) {
-    const Vector<Double>& parms = sdft.getFitParameters(i);
-    const Vector<Bool>& parmask = sdft.getFitParameterMask(i);
-    const Vector<String>& funcs = sdft.getFitFunctions(i);
-    const Vector<Int>& comps = sdft.getFitComponents(i);
+    const Vector<Double>& parms = sdft.getParameters(i);
+    const Vector<Bool>& parmask = sdft.getParameterMask(i);
+    const Vector<String>& funcs = sdft.getFunctions(i);
+    const Vector<Int>& comps = sdft.getComponents(i);
+    const Vector<String>& finfo = sdft.getFrameInfo(i);
     sc0.put(i,funcs);
     sc1.put(i,comps);
     sc3.put(i,parmask);
     sc2.put(i,parms);
+    sc4.put(i,finfo);
   }
   table_.rwKeywordSet().defineTable("FITS", aTable);
   return true;
@@ -973,26 +977,70 @@ SDFitTable SDMemTable::getSDFitTable() const
   Vector<Double> parms;
   Vector<Bool> parmask;
   Vector<String> funcs;
+  Vector<String> finfo;
   Vector<Int> comps;  
   ROArrayColumn<Double> parmsCol(t, "PARAMETERS");
   ROArrayColumn<Bool> parmaskCol(t, "PARMASK");
   ROArrayColumn<Int> compsCol(t, "COMPONENTS");
   ROArrayColumn<String> funcsCol(t, "FUNCTIONS");
+  ROArrayColumn<String> finfoCol(t, "FRAMEINFO");
   uInt n = t.nrow();
-  SDFitTable sdft(n);
+  SDFitTable sdft;
   for (uInt i=0; i<n; ++i) {
     parmaskCol.get(i, parmask);
-    sdft.putFitParameterMask(i, parmask);
     parmsCol.get(i, parms);
-    sdft.putFitParameters(i, parms);
     funcsCol.get(i, funcs);
-    sdft.putFitFunctions(i, funcs);
     compsCol.get(i, comps);
-    sdft.putFitComponents(i, comps);
+    finfoCol.get(i, finfo);
+    sdft.addFit(parms, parmask, funcs, comps, finfo);
   }
   return sdft;
 }
 
+SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
+  Array<Int> fitid;
+  fitCol_.get(whichRow, fitid);
+  if (fitid.nelements() == 0) return SDFitTable();
+
+  IPosition shp = fitid.shape();
+  IPosition start(4, beamSel_, IFSel_, polSel_,0);
+  IPosition end(4, beamSel_, IFSel_, polSel_, shp[3]-1);
+
+  // reform the output array slice to be of dim=1
+  Vector<Int> tmp = (fitid(start, end)).reform(IPosition(1,shp[3]));
+
+  const Table& t = table_.keywordSet().asTable("FITS");
+  Vector<Double> parms;
+  Vector<Bool> parmask;
+  Vector<String> funcs;
+  Vector<String> finfo;
+  Vector<Int> comps;    
+  ROArrayColumn<Double> parmsCol(t, "PARAMETERS");
+  ROArrayColumn<Bool> parmaskCol(t, "PARMASK");
+  ROArrayColumn<Int> compsCol(t, "COMPONENTS");
+  ROArrayColumn<String> funcsCol(t, "FUNCTIONS");
+  ROArrayColumn<String> finfoCol(t, "FRAMEINFO");
+  if (t.nrow() == 0) return SDFitTable();
+  SDFitTable sdft;
+  Int k=-1;
+  for (uInt i=0; i< tmp.nelements(); ++i) {
+    k = tmp[i];
+    if ( k > -1 && k < t.nrow() ) {
+      parms.resize();
+      parmsCol.get(k, parms);
+      parmask.resize();
+      parmaskCol.get(k, parmask);
+      funcs.resize();
+      funcsCol.get(k, funcs);
+      comps.resize();
+      compsCol.get(k, comps);
+      finfo.resize();
+      finfoCol.get(k, finfo);
+      sdft.addFit(parms, parmask, funcs, comps, finfo);
+    }
+  }
+  return sdft;
+}
 
 void SDMemTable::addFit(uInt whichRow,
 			const Vector<Double>& p, const Vector<Bool>& m,
@@ -1008,10 +1056,13 @@ void SDMemTable::addFit(uInt whichRow,
   ArrayColumn<Bool> parmaskCol(t, "PARMASK");
   ArrayColumn<Int> compsCol(t, "COMPONENTS");
   ArrayColumn<String> funcsCol(t, "FUNCTIONS");
+  ArrayColumn<String> finfoCol(t, "FRAMEINFO");
   parmsCol.put(nrow, p);
   parmaskCol.put(nrow, m);
   compsCol.put(nrow, c);
   funcsCol.put(nrow, f);
+  Vector<String> fi = mathutil::toVectorString(getCoordInfo());
+  finfoCol.put(nrow, fi);
 
   Array<Int> fitarr;
   fitCol_.get(whichRow, fitarr);
@@ -1431,12 +1482,7 @@ std::vector<std::string> SDMemTable::history(int whichRow) const
 {
   Vector<String> history;
   histCol_.get(whichRow, history);
-  std::vector<std::string> stlout;
-  // there is no Array<String>.tovector(std::vector<std::string>), so
-  // do it by hand
-  for (uInt i=0; i<history.nelements(); ++i) {
-    stlout.push_back(history[i]);
-  }
+  std::vector<std::string> stlout = mathutil::tovectorstring(history);
   return stlout;
 }
 /*

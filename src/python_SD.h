@@ -41,6 +41,7 @@ namespace asap {
     void python_SDWriter();
     void python_SDMath();
     void python_SDFitter();
+    void python_SDFitTable();
     void python_SDLineFinder();
 
   } // python

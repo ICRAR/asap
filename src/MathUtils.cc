@@ -33,6 +33,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
+#include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/BasicSL/String.h>
 
 #include "MathUtils.h"
@@ -105,4 +106,25 @@ void mathutil::scanBoundaries(Vector<uInt>& startInt,
   }
   startInt.resize(j+1,True);
   endInt.resize(j+1,True);
+}
+
+std::vector<std::string> mathutil::tovectorstring(const Vector<String>& in) 
+{
+  std::vector<std::string> out;
+  VectorSTLIterator<String> it(in);
+  for (uInt i=0; it != in.end(); ++it,++i) {
+    out.push_back(*it);
+  }
+  return out;
+}
+
+Vector<String> mathutil::toVectorString(const std::vector<std::string>& in) 
+{
+  Vector<String> out(in.size());
+  uInt i=0;
+  std::vector<std::string>::const_iterator it;
+  for (it=in.begin();it != in.end();++it,++i) {
+    out[i] = casa::String(*it);
+  }
+  return out;
 }

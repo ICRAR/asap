@@ -44,6 +44,7 @@ OBJECTS   := MathUtils.o \
              MathUtils2.o \
              SDAttr.o \
              SDContainer.o \
+	     SDFitTable.o \
              SDPol.o \
              SDPol2.o \
              SDMemTable.o \
@@ -61,6 +62,7 @@ OBJECTS   := MathUtils.o \
              python_SDWriter.o \
              python_SDMath.o \
              python_SDFitter.o \
+             python_SDFitTable.o \
 	     python_SDLineFinder.o \
              python_SD.o
 
@@ -68,6 +70,7 @@ OBJECTS   := MathUtils.o \
 HEADERS   := SDDefs.h \
              SDAttr.h \
              SDContainer.h \
+	     SDFitTable.h \
              SDMemTable.h \
              SDPol.h \
              SDReader.h \

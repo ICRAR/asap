@@ -44,8 +44,7 @@
 #include <tables/Tables/ScalarColumn.h>
 
 #include "SDDefs.h"
-
-
+#include "SDFitTable.h"
 
 namespace asap {
   
@@ -242,12 +241,14 @@ public:
   
   bool putSDFitTable(const SDFitTable& sdft);
   SDFitTable getSDFitTable() const;
+  SDFitTable getSDFitTable(casa::uInt whichRow) const;
 
   void addFit(casa::uInt whichRow,
 	      const casa::Vector<casa::Double>& p, 
 	      const casa::Vector<casa::Bool>& m,
 	      const casa::Vector<casa::String>& f, 
 	      const casa::Vector<casa::Int>& c);
+
   
 private:
   // utility func for nice printout

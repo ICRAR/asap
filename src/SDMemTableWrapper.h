@@ -35,6 +35,8 @@
 #include <string>
 #include <casa/Arrays/Vector.h>
 
+#include "MathUtils.h"
+#include "SDFitTable.h"
 #include "SDMemTable.h"
 
 namespace asap {
@@ -194,15 +196,14 @@ public:
     
     casa::Vector<casa::Double> p2(p);
     casa::Vector<casa::Bool> m2(m); 
-    casa::Vector<casa::String> f2(f.size());
-    casa::uInt i=0;
-    std::vector<std::string>::const_iterator it;
-    for (it=f.begin();it != f.end();++it) {
-      f2[i] = casa::String(*it);
-    }
+    casa::Vector<casa::String> f2 = mathutil::toVectorString(f);
     casa::Vector<casa::Int> c2(c);
     table_->addFit(casa::uInt(whichRow), p2,m2,f2,c2);
   }
+  SDFitTable getSDFitTable(int whichRow) {
+    return table_->getSDFitTable(casa::uInt(whichRow));
+  }
+
 
 private:
   casa::CountedPtr<SDMemTable> table_;

@@ -101,6 +101,7 @@ void python_SDMemTable() {
     .def("_history", &SDMemTableWrapper::history,
          (boost::python::arg("whichRow")=0) )
     .def("_addfit", &SDMemTableWrapper::addFit)
+    .def("_getfit", &SDMemTableWrapper::getSDFitTable)
   ;
 };
 
