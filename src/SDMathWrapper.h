@@ -50,12 +50,11 @@ namespace SDMathWrapper {
 // Simple binary operations
   SDMemTableWrapper binaryOperate (const SDMemTableWrapper& left,
                                    const SDMemTableWrapper& right,
-                                   const std::string& op);
+                                   const std::string& op, bool doTSys);
 
 // Multiply
-  void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll);
-  SDMemTableWrapper scale(const SDMemTableWrapper& in,
-                          float factor, bool all);
+  void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll, bool doTSys);
+  SDMemTableWrapper scale(const SDMemTableWrapper& in, float factor, bool all, bool doTSys);
 
 // Add
   void addInSitu(SDMemTableWrapper& in, float offset, bool doAall);

@@ -42,42 +42,42 @@ SDMemTableWrapper SDMathWrapper::quotient(const SDMemTableWrapper& on,
                                           Bool preserveContinuum)
 {
     SDMath sdm;
+    Bool doTSys = True;
     return SDMemTableWrapper(sdm.binaryOperate(on.getCP(), off.getCP(), 
-                             String("QUOTIENT"), preserveContinuum));
+                             String("QUOTIENT"), preserveContinuum, doTSys));
 }
 
 
 SDMemTableWrapper SDMathWrapper::binaryOperate(const SDMemTableWrapper& left,
                                                const SDMemTableWrapper& right,
-                                               const std::string& op)
+                                               const std::string& op, bool doTSys)
 {
     SDMath sdm;
     return SDMemTableWrapper(sdm.binaryOperate(left.getCP(), right.getCP(), 
-                                               String(op), False));
+                                               String(op), False, Bool(doTSys)));
 }
 
 
-void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll)
+void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll, bool doTSys)
 {
   SDMemTable* pIn = in.getPtr();
   const uInt what = 0;
 //
   SDMath sdm;
   SDMemTable* pOut = sdm.unaryOperate (*pIn, Float(factor), 
-					Bool(doAll), what);
+					Bool(doAll), what, Bool(doTSys));
   *pIn = *pOut;
    delete pOut;
 }
 
 SDMemTableWrapper SDMathWrapper::scale(const SDMemTableWrapper& in,
-                          float factor, bool doAll)
+                                       float factor, bool doAll, bool doTSys)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 0;
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.unaryOperate(*pIn,
-						  Float(factor), 
-						  Bool(doAll), what));
+  return CountedPtr<SDMemTable>(sdm.unaryOperate(*pIn, Float(factor), Bool(doAll), 
+                                                 what, Bool (doTSys)));
 }
 
 
@@ -88,8 +88,9 @@ void SDMathWrapper::addInSitu(SDMemTableWrapper& in, float offset, bool doAll)
   const uInt what = 1;
 //
   SDMath sdm;
+  Bool doTSys = False;
   SDMemTable* pOut = sdm.unaryOperate (*pIn, Float(offset), 
-					Bool(doAll), what);
+					Bool(doAll), what, doTSys);
   *pIn = *pOut;
    delete pOut;
 }
@@ -100,8 +101,9 @@ SDMemTableWrapper SDMathWrapper::add(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 1;
   SDMath sdm;
+  Bool doTSys = False;
   return CountedPtr<SDMemTable>(sdm.unaryOperate(*pIn, Float(offset),
-						  Bool(doAll), what));
+						  Bool(doAll), what, doTSys));
 }
 
 
