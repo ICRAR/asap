@@ -12,7 +12,7 @@ AIPSINC = -I$(AIPSROOT)/code/include \
 
 AIPSLIB  = $(AIPSROOT)/linux_gnu/lib
 AIPSPPLIB = -L$(AIPSLIB) \
-	$(AIPSLIB)/version.o \
+        $(AIPSLIB)/version.o \
         $(AIPSLIB)/libatnf.a \
         $(AIPSLIB)/libtrial.a \
         $(AIPSLIB)/libaips_f.a \
@@ -31,25 +31,30 @@ BOOSTINC  =
 PYTHONINC = -I/usr/include/python2.2
 PYTHONLIB = -lpython2.2
 
-INCDIRS   = -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC)
+CFITSIOINC = -I/usr/local/include/cfitsio
+
+INCDIRS   = -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBDIRS   = $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
 
 OBJECTS   = SDContainer.o \
-	    SDMemTable.o \
-	    SDReader.o \
+            SDMemTable.o \
+            SDReader.o \
+            SDWriter.o \
             SDMath.o \
-	    SDTemplates.o \
-	    python_SDMemTable.o \
-	    python_SDReader.o \
-	    python_SDMath.o \
-	    python_SD.o
+            SDTemplates.o \
+            python_SDMemTable.o \
+            python_SDReader.o \
+            python_SDWriter.o \
+            python_SDMath.o \
+            python_SD.o
 
 HEADERS   = SDContainer.h \
-	    SDMemTable.h \
-	    SDReader.h \
-	    SDMath.h \
-	    SDMemTableWrapper.h \
-	    python_SD.h
+            SDMemTable.h \
+            SDReader.h \
+            SDWriter.h \
+            SDMath.h \
+            SDMemTableWrapper.h \
+            python_SD.h
 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
 
