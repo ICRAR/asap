@@ -429,21 +429,49 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 
       if (running_box!=NULL) delete running_box;
       running_box=new RunningBox(spectrum,mask,edge,max_box_nchan);
-    
+
+      
+      // determine the off-line variance first
+      // an assumption made: lines occupy a small part of the spectrum
+
+      std::vector<float> variances(edge.second-edge.first);
+      DebugAssert(variances.size(),AipsError);
+
+      for (;running_box->haveMore();running_box->next()) 
+           variances[running_box->getChannel()-edge.first]=
+	                        running_box->getLinVariance();
+				
+      // in the future we probably should do a proper Chi^2 estimation
+      // now a simple 80% of smaller values will be used.
+      // it may degrade the performance of the algorithm for weak lines
+      // due to a bias of the Chi^2 distribution.
+      stable_sort(variances.begin(),variances.end());
+      Float offline_variance=0;
+      uInt offline_cnt=uInt(0.8*variances.size());      
+      if (!offline_cnt) offline_cnt=variances.size(); // no much else left,
+                                    // although it is very inaccurate
+      for (uInt n=0;n<offline_cnt;++n) 
+           offline_variance+=variances[n];	   
+      offline_variance/=Float(offline_cnt);	   
+           
       // actual search algorithm
       is_detected_before=False;
       Vector<Int> signs(spectrum.nelements(),0);
-          
-      for (;running_box->haveMore();running_box->next()) {
+
+      ofstream os("dbg.dat");
+      for (running_box->rewind();running_box->haveMore();
+                                 running_box->next()) {
            const int ch=running_box->getChannel();
            if (running_box->getNumberOfBoxPoints()>=minboxnchan)
 	       processChannel(mask[ch] && (fabs(running_box->aboveMean()) >=
-		  threshold*running_box->getLinVariance()), mask);
+		  threshold*offline_variance), mask);
 	   else processCurLine(mask); // just finish what was accumulated before
 	   const Float buf=running_box->aboveMean();
 	   if (buf>0) signs[ch]=1;
 	   else if (buf<0) signs[ch]=-1;
-	   else if (buf==0) signs[ch]=0;	   
+	   else if (buf==0) signs[ch]=0;
+	   os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
+	                threshold*offline_variance<<endl;
       }
       if (lines.size())
           searchForWings(lines,signs,mask,edge);
@@ -550,7 +578,8 @@ bool LFLineListOperations::LaterThan::operator()(const std::pair<int,int> &line2
 SDLineFinder::SDLineFinder() throw() : edge(0,0)
 {
   // detection threshold - the minimal signal to noise ratio
-  threshold=3.; // 3 sigma is a default
+  threshold=sqrt(3.); // 3 sigma and 3 channels is a default -> sqrt(3) in
+                     // a single channel
   box_size=1./5.; // default box size for running mean calculations is
                   // 1/5 of the whole spectrum
   // A minimum number of consequtive channels, which should satisfy
@@ -620,7 +649,7 @@ void SDLineFinder::setScan(const SDMemTableWrapper &in_scan,
 
 // search for spectral lines. Number of lines found is returned
 int SDLineFinder::findLines() throw(casa::AipsError)
-{
+{ 
   const int minboxnchan=4;
   if (scan.null())
       throw AipsError("SDLineFinder::findLines - a scan should be set first,"
@@ -637,29 +666,73 @@ int SDLineFinder::findLines() throw(casa::AipsError)
   Vector<Bool> temp_mask(mask);
 
   Bool first_pass=True;
+  Int avg_factor=1; // this number of adjacent channels is averaged together
+                    // the total number of the channels is not altered
+		    // instead, min_nchan is also scaled
+		    // it helps to search for broad lines
   while (true) {
      // a buffer for new lines found at this iteration
-     std::list<pair<int,int> > new_lines;
-
+     std::list<pair<int,int> > new_lines;     
      // line find algorithm
-     LFAboveThreshold lfalg(new_lines,min_nchan, threshold);
+     LFAboveThreshold lfalg(new_lines,avg_factor*min_nchan, threshold);
 
      try {
          lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan);
+         first_pass=False;
+         if (!new_lines.size())
+	      throw AipsError("spurious"); // nothing new - use the same
+	                                   // code as for a real exception
      }
      catch(const AipsError &ae) {
          if (first_pass) throw;
-	 break; // nothing new
+         // nothing new - proceed to the next step of averaging, if any
+	 // (to search for broad lines)
+	 avg_factor*=2; // twice as more averaging
+	 averageAdjacentChannels(temp_mask,avg_factor);
+	 if (avg_factor>8) break; // averaging up to 8 adjacent channels,
+	                          // stop after that
+	 continue; 
      }
-     first_pass=False;
-     if (!new_lines.size()) break; // nothing new
-
+     keepStrongestOnly(temp_mask,new_lines,max_box_nchan);
      // update the list (lines) merging intervals, if necessary
      addNewSearchResult(new_lines,lines);
      // get a new mask
      temp_mask=getMask();     
   }
   return int(lines.size());
+}
+
+// auxiliary function to average adjacent channels and update the mask
+// if at least one channel involved in summation is masked, all
+// output channels will be masked. This function works with the
+// spectrum and edge fields of this class, but updates the mask
+// array specified, rather than the field of this class
+// boxsize - a number of adjacent channels to average
+void SDLineFinder::averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update,
+                                   const casa::Int &boxsize)
+                            throw(casa::AipsError)
+{
+  DebugAssert(mask2update.nelements()==spectrum.nelements(), AipsError);
+  DebugAssert(boxsize!=0,AipsError);
+  
+  for (int n=edge.first;n<edge.second;n+=boxsize) {
+       DebugAssert(n<spectrum.nelements(),AipsError);
+       int nboxch=0; // number of channels currently in the box
+       Float mean=0; // buffer for mean calculations
+       for (int k=n;k<n+boxsize && k<edge.second;++k)
+            if (mask2update[k]) {  // k is a valid channel
+	        mean+=spectrum[k];
+		++nboxch;
+            }	   
+       if (nboxch<boxsize) // mask these channels
+           for (int k=n;k<n+boxsize && k<edge.second;++k)
+	        mask2update[k]=False;
+       else {
+          mean/=Float(boxsize);
+	   for (int k=n;k<n+boxsize && k<edge.second;++k)
+	        spectrum[k]=mean;
+       }
+  }
 }
 
 
@@ -744,6 +817,67 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
   catch (const exception &ex) {
       throw AipsError(String("SDLineFinder::getLineRanges - STL error: ")+ex.what());
   }
+}
+
+// an auxiliary function to remove all lines from the list, except the
+// strongest one (by absolute value). If the lines removed are real,
+// they will be find again at the next iteration. This approach  
+// increases the number of iterations required, but is able to remove 
+// the sidelobes likely to occur near strong lines.
+// Later a better criterion may be implemented, e.g.
+// taking into consideration the brightness of different lines. Now
+// use the simplest solution     
+// temp_mask - mask to work with (may be different from original mask as
+// the lines previously found may be masked)
+// lines2update - a list of lines to work with
+//                 nothing will be done if it is empty
+// max_box_nchan - channels in the running box for baseline filtering
+void SDLineFinder::keepStrongestOnly(const casa::Vector<casa::Bool> &temp_mask,
+     		  std::list<std::pair<int, int> > &lines2update,
+		  int max_box_nchan)
+                                   throw (casa::AipsError)
+{
+  try {
+      if (!lines2update.size()) return; // ignore an empty list
+
+      // current line
+      std::list<std::pair<int,int> >::iterator li=lines2update.begin();
+      // strongest line
+      std::list<std::pair<int,int> >::iterator strongli=lines2update.begin();
+      // the flux (absolute value) of the strongest line
+      Float peak_flux=-1; // negative value - a flag showing uninitialized
+                          // value
+      // the algorithm below relies on the list being ordered
+      Float tmp_flux=-1; // a temporary peak
+      for (RunningBox running_box(spectrum,temp_mask,edge,max_box_nchan);
+           running_box.haveMore(); running_box.next()) {
+
+           if (li==lines2update.end()) break; // no more lines
+	   const int ch=running_box.getChannel();	   
+	   if (ch>=li->first && ch<li->second)
+	       if (temp_mask[ch] && tmp_flux<fabs(running_box.aboveMean()))
+	           tmp_flux=fabs(running_box.aboveMean());
+	   if (ch==li->second-1) {
+	       if (peak_flux<tmp_flux) { // if peak_flux=-1, this condition
+	           peak_flux=tmp_flux;   // will be satisfied
+		   strongli=li;
+	       }
+	       ++li;
+	       tmp_flux=-1;
+	   }
+      }      
+      std::list<std::pair<int,int> > res;
+      res.splice(res.end(),lines2update,strongli);
+      lines2update.clear();
+      lines2update.splice(lines2update.end(),res);
+  }
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("SDLineFinder::keepStrongestOnly - STL error: ")+ex.what());
+  }
+
 }
 
 //

@@ -160,6 +160,34 @@ struct SDLineFinder : protected LFLineListOperations {
    // instead of channels). If defunits is false, channels will be returned
    std::vector<int>   getLineRanges(bool defunits=true)
                                 const throw(casa::AipsError);
+protected:
+   // auxiliary function to average adjacent channels and update the mask
+   // if at least one channel involved in summation is masked, all
+   // output channels will be masked. This function works with the
+   // spectrum and edge fields of this class, but updates the mask
+   // array specified, rather than the field of this class
+   // boxsize - a number of adjacent channels to average
+   void averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update,
+                               const casa::Int &boxsize)
+                               throw(casa::AipsError);
+   
+   // an auxiliary function to remove all lines from the list, except the
+   // strongest one (by absolute value). If the lines removed are real,
+   // they will be find again at the next iteration. This approach  
+   // increases the number of iterations required, but is able to remove 
+   // the sidelobes likely to occur near strong lines.
+   // Later a better criterion may be implemented, e.g.
+   // taking into consideration the brightness of different lines. Now
+   // use the simplest solution     
+   // temp_mask - mask to work with (may be different from original mask as
+   // the lines previously found may be masked)
+   // lines2update - a list of lines to work with
+   //                 nothing will be done if it is empty
+   // max_box_nchan - channels in the running box for baseline filtering
+   void keepStrongestOnly(const casa::Vector<casa::Bool> &temp_mask,
+			  std::list<std::pair<int, int> > &lines2update,
+			  int max_box_nchan)
+                                      throw (casa::AipsError);
 private:
    casa::CountedConstPtr<SDMemTable> scan; // the scan to work with
    casa::Vector<casa::Bool> mask;          // associated mask
