@@ -60,12 +60,14 @@ class scantable(sdtable):
 
     def save(self, name=None, format=None, overwrite=False):
         """
-        Store the scantable on disk. This can be a asap file or SDFITS/MS2.
+        Store the scantable on disk. This can be an asap (aips++) Table, SDFITS, 
+        Image FITS or MS2 format.
         Parameters:
             name:        the name of the outputfile. For format="FITS" this
-                         is the root file name (and can be empty).
+                         is the directory file name into which all the files will
+                         be written (default is 'asap_FITS')
             format:      an optional file format. Default is ASAP.
-                         Allowed are - 'ASAP' (save as ASAP Table),
+                         Allowed are - 'ASAP' (save as ASAP [aips++] Table),
                                        'SDFITS' (save as SDFITS file)
                                        'FITS' (saves each row as a FITS Image) 
                                        'ASCII' (saves as ascii text file)
