@@ -53,7 +53,7 @@ class SDMemTable {
 public:
   // create a new (empty) SDMemTable
   SDMemTable();
-  // create a SDMemTable from a )aips++) table on disk
+  // create a SDMemTable from an (aips++) table on disk
   SDMemTable(const std::string& name);
 
   // Copy Construct a SDMemTable, if clear==True only header and
@@ -77,18 +77,19 @@ public:
   SDFrequencyTable getSDFreqTable() const;
   // get spectrum,mask and tsys for the given row, at the selected
   // cursor - all as stl vectors
-  virtual std::vector<float> getSpectrum(Int whichRow);
-  virtual std::vector<bool> getMask(Int whichRow) const;
+  virtual std::vector<float> getSpectrum(Int whichRow=0) const;
+  virtual std::vector<bool> getMask(Int whichRow=0) const;
 
-  virtual Float getTsys(Int whichRow) const;
+  virtual Float getTsys(Int whichRow=0) const;
   // get all as aips++ Vectors
   virtual void getSpectrum(Vector<Float>& spectrum, Int whichRow=0);
   virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
 
   // get info for current row
-  virtual Double getTime(Int whichRow) const ;
-  virtual std::string getSourceName(Int whichRow) const;
-  
+  std::string getTime(Int whichRow=0) const ;
+  std::string getSourceName(Int whichRow=0) const;
+  double getInterval(Int whichRow=0) const;
+
   // set the current value
   virtual bool setIF(Int whichIF=0);
   virtual bool setBeam(Int whichBeam=0);
@@ -101,6 +102,9 @@ public:
   virtual Int getBeam() { return beamSel_; }
   virtual Int getPol() { return polSel_; }   
  
+  // number of scans in table
+  virtual Int nScans() const;
+
   // print a summary to stdout
   virtual void summary() const;
   
@@ -129,6 +133,8 @@ public:
 				      Bool useSelection = False);
 
   SpectralCoordinate getCoordinate(uInt whichIdx) const;
+  Bool setCoordinate(const SpectralCoordinate& speccord, uInt whichIdx);
+
   std::vector<double> getAbscissa(int whichRow, 
 				  const std::string& whichUnit="GHz",
 				  double restfreq=0.0);
@@ -138,8 +144,7 @@ private:
   // the current cursor into the array
   Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;  
-  String name_;
-  // the unerlying memory table
+  // the underlying memory table
   Table table_;
 };
 
