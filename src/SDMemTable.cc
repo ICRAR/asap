@@ -74,18 +74,18 @@ SDMemTable::SDMemTable(const std::string& name) :
 }
 
 SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
-  this->IFSel_= other.IFSel_;
-  this->beamSel_= other.beamSel_;
-  this->polSel_= other.polSel_;
-  this->chanMask_ = other.chanMask_;
-  this->table_ = other.table_.copyToMemoryTable(String("dummy"));
+  IFSel_= other.IFSel_;
+  beamSel_= other.beamSel_;
+  polSel_= other.polSel_;
+  chanMask_ = other.chanMask_;
+  table_ = other.table_.copyToMemoryTable(String("dummy"));
   // clear all rows()
   if (clear) {
-    this->table_.removeRow(this->table_.rowNumbers());
+    table_.removeRow(this->table_.rowNumbers());
   } else {
-    this->IFSel_ = other.IFSel_;
-    this->beamSel_ = other.beamSel_;
-    this->polSel_ = other.polSel_;
+    IFSel_ = other.IFSel_;
+    beamSel_ = other.beamSel_;
+    polSel_ = other.polSel_;
   }
 }
 
@@ -110,11 +110,14 @@ SDMemTable SDMemTable::getScan(Int scanID) {
 }
 
 SDMemTable &SDMemTable::operator=(const SDMemTable& other) {
-  // reset "cursor"
-  IFSel_ = 0;
-  beamSel_ = 0;
-  polSel_ = 0;
-  table_ = other.table().copyToMemoryTable("dummy");
+  if (this != &other) {
+     IFSel_= other.IFSel_;
+     beamSel_= other.beamSel_;
+     polSel_= other.polSel_;
+     chanMask_.resize(0);
+     chanMask_ = other.chanMask_;
+     table_ = other.table_.copyToMemoryTable(String("dummy"));
+   }
   return *this;
 }
 
