@@ -17,15 +17,20 @@ AIPSPPLIB = -L$(AIPSLIB) \
         $(AIPSLIB)/libtrial.a \
         $(AIPSLIB)/libaips_f.a \
         $(AIPSLIB)/libaips.a \
-        -llapack -lblas -lg2c -lcfitsio -lrpfits \
-        -lglish -ledit -lsos -lnpd -lwcs
+	$(AIPSLIB)/libwcs.a \
+	$(AIPSLIB)/libglish.a \
+	$(AIPSLIB)/libedit.a \
+	$(AIPSLIB)/libsos.a \
+	$(AIPSLIB)/libnpd.a \
+        -llapack -lblas -lg2c -lcfitsio -lrpfits
+#        -lglish -ledit -lsos -lnpd
 
 LINK      = g++-3.2.3
 LFLAGS    = -shared -Wl,-soname,$(TARGET)
 #-rpath,/home/mar637/lib
 #LFLAGS    += -Xlinker -rpath -Xlinker -L$(AIPSLIB)
 
-BOOSTLIB  = -lboost_python-mt
+BOOSTLIB  = /nfs/atapplic/boost/linux/lib/libboost_python-gcc-mt.a
 BOOSTINC  = 
 
 PYTHONINC = -I/usr/include/python2.2
@@ -49,12 +54,16 @@ OBJECTS   = MathUtils.o \
             python_SDMath.o \
             python_SD.o
 
+
 HEADERS   = SDContainer.h \
             SDMemTable.h \
             SDReader.h \
             SDWriter.h \
             SDMath.h \
             SDMemTableWrapper.h \
+            SDMathWrapper.h \
+            SDReaderWrapper.h \
+            SDWriterWrapper.h \
             python_SD.h
 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
@@ -73,6 +82,7 @@ HEADERS   = SDContainer.h \
 
 $(TARGET):  $(OBJECTS)
 	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS)  $(LIBDIRS)
+	strip $(TARGET)
 
 $(OBJECTS): $(HEADERS)
 
