@@ -34,12 +34,20 @@
 #include "SDLineFinder.h"
 
 // STL
+#include <functional>
+#include <algorithm>
 #include <iostream>
 
 using namespace asap;
 using namespace casa;
 using namespace std;
 using namespace boost::python;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFRunningMean - a running mean algorithm for line detection
+//
+//
 
 namespace asap {
 
@@ -115,6 +123,10 @@ protected:
 
 };
 } // namespace asap
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -279,8 +291,93 @@ void LFRunningMean::findLines(std::list<pair<int,int> > &lines)
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// SDLineFinder::IntersectsWith  -  An auxiliary object function to test
+// whether two lines have a non-void intersection
+//
 
+
+// line1 - range of the first line: start channel and stop+1
+SDLineFinder::IntersectsWith::IntersectsWith(const std::pair<int,int> &in_line1) :
+                          line1(in_line1) {}
+
+
+// return true if line2 intersects with line1 with at least one
+// common channel, and false otherwise
+// line2 - range of the second line: start channel and stop+1
+bool SDLineFinder::IntersectsWith::operator()(const std::pair<int,int> &line2)
+                          const throw()
+{
+  if (line2.second<line1.first) return false; // line2 is at lower channels
+  if (line2.first>line1.second) return false; // line2 is at upper channels
+  return true; // line2 has an intersection or is adjacent to line1
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SDLineFinder::BuildUnion - An auxiliary object function to build a union
+// of several lines to account for a possibility of merging the nearby lines
+//
+
+// set an initial line (can be a first line in the sequence)
+SDLineFinder::BuildUnion::BuildUnion(const std::pair<int,int> &line1) :
+                             temp_line(line1) {}
+
+// update temp_line with a union of temp_line and new_line
+// provided there is no gap between the lines
+void SDLineFinder::BuildUnion::operator()(const std::pair<int,int> &new_line)
+                                   throw()
+{
+  if (new_line.first<temp_line.first) temp_line.first=new_line.first;
+  if (new_line.second>temp_line.second) temp_line.second=new_line.second;
+}
+
+// return the result (temp_line)
+const std::pair<int,int>& SDLineFinder::BuildUnion::result() const throw()
+{
+  return temp_line;
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SDLineFinder::LaterThan - An auxiliary object function to test whether a
+// specified line is at lower spectral channels (to preserve the order in
+// the line list)
+//
+
+// setup the line to compare with
+SDLineFinder::LaterThan::LaterThan(const std::pair<int,int> &in_line1) :
+                         line1(in_line1) {}
+
+// return true if line2 should be placed later than line1
+// in the ordered list (so, it is at greater channel numbers)
+bool SDLineFinder::LaterThan::operator()(const std::pair<int,int> &line2)
+                          const throw()
+{
+  if (line2.second<line1.first) return false; // line2 is at lower channels
+  if (line2.first>line1.second) return true; // line2 is at upper channels
+  
+  // line2 intersects with line1. We should have no such situation in
+  // practice
+  return line2.first>line1.first;
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // SDLineFinder  -  a class for automated spectral line search
+//
+//
 
 SDLineFinder::SDLineFinder() throw() : edge(0,0)
 {
@@ -370,14 +467,18 @@ int SDLineFinder::findLines() throw(casa::AipsError)
 
   lines.resize(0); // search from the scratch
   Vector<Bool> temp_mask(mask);
-  size_t cursz;
-  do {
-     cursz=lines.size();
+  Bool need2iterate=True;
+  while (need2iterate) {
      // line find algorithm
-     LFRunningMean lfalg(spectrum,temp_mask,edge,max_box_nchan,min_nchan,threshold);
-     lfalg.findLines(lines);
+     LFRunningMean lfalg(spectrum,temp_mask,edge,max_box_nchan,min_nchan,
+                         threshold);
+     std::list<pair<int,int> > new_lines;
+     lfalg.findLines(new_lines);
+     if (!new_lines.size()) need2iterate=False;
      temp_mask=getMask();
-  } while (cursz!=lines.size());
+     // update the list (lines) merging intervals, if necessary
+     addNewSearchResult(new_lines);
+  }
   return int(lines.size());
 }
 
@@ -473,8 +574,30 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
   try {
       for (std::list<pair<int,int> >::const_iterator cli=newlines.begin();
            cli!=newlines.end();++cli) {
-	   // search for a right place for the new line
-	   //TODO
+	   
+	   // the first item, which has a non-void intersection or touches
+	   // the new line
+	   std::list<pair<int,int> >::iterator pos_beg=find_if(lines.begin(),
+	                  lines.end(), IntersectsWith(*cli));           
+	   // the last such item	  
+	   std::list<pair<int,int> >::iterator pos_end=find_if(pos_beg,
+	                  lines.end(), not1(IntersectsWith(*cli)));
+
+           // extract all lines which intersect or touch a new one into
+	   // a temporary buffer. This may invalidate the iterators
+	   // line_buffer may be empty, if no lines intersects with a new
+	   // one.
+	   std::list<pair<int,int> > lines_buffer;
+	   lines_buffer.splice(lines_buffer.end(),lines, pos_beg, pos_end);
+
+	   // build a union of all intersecting lines 
+	   pair<int,int> union_line=for_each(lines_buffer.begin(),
+	           lines_buffer.end(),BuildUnion(*cli)).result();
+           
+	   // search for a right place for the new line (union_line) and add
+	   std::list<pair<int,int> >::iterator pos2insert=find_if(lines.begin(),
+	                  lines.end(), LaterThan(union_line));
+	   lines.insert(pos2insert,union_line);
       }
   }
   catch (const AipsError &ae) {
@@ -483,5 +606,4 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
   catch (const exception &ex) {
       throw AipsError(String("SDLineFinder::addNewSearchResult - STL error: ")+ex.what());
   }
-
 }
