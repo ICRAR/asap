@@ -100,7 +100,9 @@ public:
 			    const std::string& theunit);
   virtual void setCoordInfo(std::vector<string> theinfo);
 
+// Get/Set flux unit
   std::string getFluxUnit() const;
+  void setFluxUnit (const std::string& unit);
 
   // set the current value
   virtual bool setIF(casa::Int whichIF=0);

@@ -895,6 +895,17 @@ std::string SDMemTable::getFluxUnit() const
   return tmp;
 }
 
+void SDMemTable::setFluxUnit(const std::string& unit)
+{
+  String tmp(unit);
+  Unit tU(tmp);
+  if (tU==Unit("K") || tU==Unit("Jy")) {
+     table_.rwKeywordSet().define(String("FluxUnit"), tmp);
+  } else {
+     throw AipsError("Illegal unit - must be compatible with Jy or K");
+  }
+}
+
 std::string SDMemTable::summary()   {
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
