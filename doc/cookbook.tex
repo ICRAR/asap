@@ -680,8 +680,11 @@ Simple example
 
 \cmd{order} is the polynomial order for the fit. \cmd{threshold} is
 the SNR threshold to use to deliminate line emission from
-signal. Making this too small or too large will result in a poor fit,
-but generally the value is not critical.
+signal. Generally the value of threshold is not too critical, however
+making this too large will compromise the fit (as it will include
+strong line features) and making it too small will mean it cannot find
+enough line free channels.
+
 
 Other examples:
 
@@ -1179,15 +1182,16 @@ the corrections being applied because it is applied in-situ.
 
 To plot Stokes values, the plotter \cmd{set\_cursor} function should
 be called first using the \cmd{pol} argument. The values which can be
-plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V], or
-[XX, YY, Real(XY), Imaginary(XY)]. (Plinear and Pangle are the
-percentage and position angle of linear polarisation). Conversion to
-circular polarisations are currently not available.
+plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V],
+[RR, LL] or [XX, YY, Real(XY), Imaginary(XY)]. (Plinear and Pangle are
+the percentage and position angle of linear polarisation). Conversion
+to circular polarisations are currently not available.
 
 Example:
 
 \begin{verbatim}
   ASAP> plotter.set_cursor(pol=[``I'',''Q'']
+  ASAP> plotter.set_cursor(pol=[``RR'',''LL'']
   ASAP> plotter.set_cursor(pol=[``XX'',''YY'']
   ASAP> plotter.set_cursor(pol=[``I'',''Plinear'']
 \end{verbatim}
@@ -1260,6 +1264,7 @@ Example:
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
+            auto_poly_baseline - automatically fit a polynomial baseline 
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness
