@@ -85,9 +85,7 @@ class scantable(sdtable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
-            stokes:      Convert to Stokes parameters (only available
-                         currently with FITS and ASCII formats.
-                         Default is False.
+            stokes:      Convert to Stokes parameters.  Default is False.
             overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
                          without writing the output. USE WITH CARE.
