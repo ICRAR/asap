@@ -39,7 +39,7 @@ namespace asap {
 		ChanAxis, 
                 nAxes};
 
-  enum Instrument {UNKNOWN=0,
+  enum Instrument {UNKNOWNINST=0,
                    ATPKSMB,
                    ATPKSHOH,
                    ATMOPRA,
@@ -47,6 +47,8 @@ namespace asap {
                    CEDUNA,
                    HOBART,
                    N_INSTRUMENTS};
+
+  enum FeedPolType {UNKNOWNFEED, LINEAR, CIRCULAR, N_POL};
 }
 
 #endif
