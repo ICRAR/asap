@@ -203,6 +203,19 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
+void SDMath::multiplyInSitu(SDMemTable* in, Float factor) {
+  SDMemTable* sdmt = new SDMemTable(*in);
+  Table t = sdmt->table();
+  ArrayColumn<Float> spec(t,"SPECTRA");  
+  for (uInt i=0; i < t.nrow(); i++) {
+    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
+    marr *= factor;
+    spec.put(i, marr.getArray());
+  }
+  in = sdmt;
+  delete sdmt;sdmt=0;
+}
+
 CountedPtr<SDMemTable>
 SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) 
 //

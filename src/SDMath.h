@@ -45,6 +45,8 @@ namespace SDMath {
   casa::CountedPtr<SDMemTable> average(const casa::CountedPtr<SDMemTable>& in);
   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
+  void multiplyInSitu(SDMemTable* in, casa::Float factor);
+
   casa::CountedPtr<SDMemTable> multiply(const casa::CountedPtr<SDMemTable>& in, 
 				  casa::Float factor);
   casa::CountedPtr<SDMemTable> add(const casa::CountedPtr<SDMemTable>& in, 

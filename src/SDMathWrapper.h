@@ -56,6 +56,10 @@ namespace SDMathWrapper {
                              casa::Float factor) {
     return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
+  void scaleInSitu(SDMemTableWrapper& in, casa::Float factor) {
+    SDMemTable* sdmt = in.getPtr();
+    SDMath::multiplyInSitu(in.getPtr(),factor);
+  }
 
   SDMemTableWrapper add(const SDMemTableWrapper& in,
 			casa::Float offset) {
