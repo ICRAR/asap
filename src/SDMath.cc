@@ -267,65 +267,12 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
            outScanID += 1;               // Scan ID for next accumulation period
         }
 
-// Accumulation step. First get data and deconstruct
+// Accumulate
 
-        MaskedArray<Float> dataIn(in[iTab]->rowAsMaskedArray(iRow));
-        Array<Float>& valuesIn = dataIn.getRWArray();           // writable reference
-        const Array<Bool>& maskIn = dataIn.getMask();          // RO reference
+        accumulate (timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, 
+                    tSys, nInc, mask, time, interval, in, iTab, iRow, axis, 
+                    nAxesSub, useMask, wtType);
 //
-        if (wtType==NONE) {
-           const MaskedArray<Float> n(nInc,dataIn.getMask());
-           nPts += n;                               // Only accumulates where mask==T
-        } else if (wtType==VAR) {
-
-// We are going to average the data, weighted by the noise for each pol, beam and IF.
-// So therefore we need to iterate through by spectrum (axis 3)
-
-           VectorIterator<Float> itData(valuesIn, axis);
-           ReadOnlyVectorIterator<Bool> itMask(maskIn, axis);
-           while (!itData.pastEnd()) {
-
-// Make MaskedArray of Vector, optionally apply OTF mask, and find scaling factor
-
-             if (useMask) {
-                MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
-                fac = 1.0/variance(tmp);
-             } else {
-                MaskedArray<Float> tmp(itData.vector(),itMask.vector());
-                fac = 1.0/variance(tmp);
-             }
-
-// Scale data
-
-             itData.vector() *= fac;     // Writes back into 'dataIn'
-//
-// Accumulate variance per if/pol/beam averaged over spectrum
-// This method to get pos2 from itData.pos() is only valid
-// because the spectral axis is the last one (so we can just
-// copy the first nAXesSub positions out)
-
-             pos2 = itData.pos().getFirst(nAxesSub);
-             sumSq(pos2) += fac;
-//
-             itData.next();
-             itMask.next();
-           }
-        } else if (wtType==TSYS) {
-        }
-
-// Accumulate sum of (possibly scaled) data
-
-       sum += dataIn;
-
-// Accumulate Tsys, time, and interval
-
-       tSysSum += tSys;
-       timeSum += time;
-       intSum += interval;
-
-// Number of rows in accumulation
-
-       nAccum += 1;
        oldSourceName = sourceName;
        oldFreqID = freqID;
     }
@@ -432,35 +379,20 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-void SDMath::multiplyInSitu(SDMemTable* in, Float factor) {
-  SDMemTable* sdmt = new SDMemTable(*in);
-  Table t = sdmt->table();
-  ArrayColumn<Float> spec(t,"SPECTRA");  
-  for (uInt i=0; i < t.nrow(); i++) {
-    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
-    marr *= factor;
-    spec.put(i, marr.getArray());
-  }
-  in = sdmt;
-  delete sdmt;sdmt=0;
-}
+
+
+void SDMath::multiplyInSitu(SDMemTable* pIn, Float factor)
+{
+  SDMemTable* pOut = localMultiply (*pIn, factor);
+  *pIn = *pOut;
+   delete pOut;
+}  
+
 
 CountedPtr<SDMemTable>
 SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) 
-//
-// Multiply values by factor
-//
 {
-  SDMemTable* sdmt = new SDMemTable(*in);
-  Table t = sdmt->table();
-  ArrayColumn<Float> spec(t,"SPECTRA");
-
-  for (uInt i=0; i < t.nrow(); i++) {
-    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
-    marr *= factor;
-    spec.put(i, marr.getArray());
-  }
-  return CountedPtr<SDMemTable>(sdmt);
+  return CountedPtr<SDMemTable>(localMultiply(*in,factor));
 }
 
 CountedPtr<SDMemTable>
@@ -469,8 +401,7 @@ SDMath::add(const CountedPtr<SDMemTable>& in, Float offset)
 // Add offset to values
 //
 {
-  SDMemTable* sdmt = new SDMemTable(*in);
-
+  SDMemTable* sdmt = new SDMemTable(*in,False);
   Table t = sdmt->table();
   ArrayColumn<Float> spec(t,"SPECTRA");
 
@@ -764,6 +695,10 @@ std::vector<float> SDMath::statistic (const CountedPtr<SDMemTable>& in,
   return result;
 }
 
+
+
+// 'private' functions
+
 void SDMath::fillSDC (SDContainer& sc,
                       const Array<Bool>& mask,
                       const Array<Float>& data,
@@ -821,4 +756,92 @@ void SDMath::normalize (MaskedArray<Float>& sum,
    } else if (wtType==TSYS) {
    }
 }
+
+
+void SDMath::accumulate (Double& timeSum, Double& intSum, Int& nAccum,
+                         MaskedArray<Float>& sum, Array<Float>& sumSq, 
+                         Array<Float>& nPts, Array<Float>& tSysSum, 
+                         const Array<Float>& tSys, const Array<Float>& nInc, 
+                         const Vector<Bool>& mask, Double time, Double interval,
+                         const Block<CountedPtr<SDMemTable> >& in,
+                         uInt iTab, uInt iRow, uInt axis, 
+                         uInt nAxesSub, Bool useMask,
+                         weightType wtType)
+{
+
+// Get data
+
+   MaskedArray<Float> dataIn(in[iTab]->rowAsMaskedArray(iRow));
+   Array<Float>& valuesIn = dataIn.getRWArray();           // writable reference
+   const Array<Bool>& maskIn = dataIn.getMask();          // RO reference
+//
+   if (wtType==NONE) {
+      const MaskedArray<Float> n(nInc,dataIn.getMask());
+      nPts += n;                               // Only accumulates where mask==T
+   } else if (wtType==VAR) {
+
+// We are going to average the data, weighted by the noise for each pol, beam and IF.
+// So therefore we need to iterate through by spectrum (axis 3)
+
+      VectorIterator<Float> itData(valuesIn, axis);
+      ReadOnlyVectorIterator<Bool> itMask(maskIn, axis);
+      Float fac = 1.0;
+      IPosition pos(nAxesSub,0);  
+//
+      while (!itData.pastEnd()) {
+
+// Make MaskedArray of Vector, optionally apply OTF mask, and find scaling factor
+
+        if (useMask) {
+           MaskedArray<Float> tmp(itData.vector(),mask&&itMask.vector());
+           fac = 1.0/variance(tmp);
+        } else {
+           MaskedArray<Float> tmp(itData.vector(),itMask.vector());
+           fac = 1.0/variance(tmp);
+        }
+
+// Scale data
+
+        itData.vector() *= fac;     // Writes back into 'dataIn'
+//
+// Accumulate variance per if/pol/beam averaged over spectrum
+// This method to get pos2 from itData.pos() is only valid
+// because the spectral axis is the last one (so we can just
+// copy the first nAXesSub positions out)
+
+        pos = itData.pos().getFirst(nAxesSub);
+        sumSq(pos) += fac;
+//
+        itData.next();
+        itMask.next();
+      }
+   } else if (wtType==TSYS) {
+   }
+
+// Accumulate sum of (possibly scaled) data
+
+   sum += dataIn;
+
+// Accumulate Tsys, time, and interval
+
+   tSysSum += tSys;
+   timeSum += time;
+   intSum += interval;
+   nAccum += 1;
+}
+
+SDMemTable* SDMath::localMultiply (const SDMemTable& in, Float factor) 
+{
+  SDMemTable* pOut = new SDMemTable(in,False);
+  const Table& tOut = pOut->table();
+  ArrayColumn<Float> spec(tOut,"SPECTRA");  
+//
+  for (uInt i=0; i < tOut.nrow(); i++) {
+    MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
+    marr *= factor;
+    spec.put(i, marr.getArray());
+  }
+   return pOut;
+}
+
 

@@ -44,12 +44,11 @@ namespace SDMath {
   //public:
   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
 					 const casa::CountedPtr<SDMemTable>& off);
-
+//
   void multiplyInSitu(SDMemTable* in, casa::Float factor);
-
   casa::CountedPtr<SDMemTable> multiply(const casa::CountedPtr<SDMemTable>& in, 
-				  casa::Float factor);
-
+                                        casa::Float factor);
+//
   casa::CountedPtr<SDMemTable> add(const casa::CountedPtr<SDMemTable>& in, 
 			     casa::Float offset);
   
@@ -73,20 +72,35 @@ namespace SDMath {
 
   enum weightType {NONE,VAR,TSYS};
 
+  void accumulate (casa::Double& timeSum, casa::Double& intSum, casa::Int& nAccum,
+                   casa::MaskedArray<casa::Float>& sum, casa::Array<casa::Float>& sumSq,
+                   casa::Array<casa::Float>& nPts, casa::Array<casa::Float>& tSysSum,
+                   const casa::Array<casa::Float>& tSys,  const casa::Array<casa::Float>& nInc,
+                   const casa::Vector<casa::Bool>& mask, casa::Double time, casa::Double interval,
+                   const casa::Block<casa::CountedPtr<SDMemTable> >& in,
+                   casa::uInt iTab, casa::uInt iRow, casa::uInt axis, casa::uInt nAxesSub,
+                   casa::Bool useMask, weightType wtType);
+
   void fillSDC (SDContainer& sc, const casa::Array<casa::Bool>& mask,
                 const casa::Array<casa::Float>& data,
                 const casa::Array<casa::Float>& tSys,
                 casa::Int scanID, casa::Double timeStamp,
                 casa::Double interval, const casa::String& sourceName,
                 const casa::Vector<casa::uInt>& freqID);
-   void normalize (casa::MaskedArray<casa::Float>& data,
-                   const casa::Array<casa::Float>& sumSq,
-                   const casa::Array<casa::Float>& nPts,
-                   weightType wtType, casa::Int axis, casa::Int nAxes);
 
+  SDMemTable* localMultiply (const SDMemTable& in, casa::Float factor);
 
+  void normalize (casa::MaskedArray<casa::Float>& data,
+                  const casa::Array<casa::Float>& sumSq,
+                  const casa::Array<casa::Float>& nPts,
+                  weightType wtType, casa::Int axis, casa::Int nAxes);
 };
 
 } // namespace
 
 #endif
+
+
+
+
+
