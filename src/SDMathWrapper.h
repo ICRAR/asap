@@ -48,9 +48,9 @@ namespace SDMathWrapper {
                              casa::Bool preserveContinuum);
 
 // Simple binary operations
-  SDMemTableWrapper simpleBinaryOperate (const SDMemTableWrapper& left,
-                                         const SDMemTableWrapper& right,
-                                         const std::string& op);
+  SDMemTableWrapper binaryOperate (const SDMemTableWrapper& left,
+                                   const SDMemTableWrapper& right,
+                                   const std::string& op);
 
 // Multiply
   void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll);

@@ -42,17 +42,18 @@ SDMemTableWrapper SDMathWrapper::quotient(const SDMemTableWrapper& on,
                                           Bool preserveContinuum)
 {
     SDMath sdm;
-    return SDMemTableWrapper(sdm.quotient(on.getCP(), off.getCP(), preserveContinuum));
+    return SDMemTableWrapper(sdm.binaryOperate(on.getCP(), off.getCP(), 
+                             String("QUOTIENT"), preserveContinuum));
 }
 
 
-SDMemTableWrapper SDMathWrapper::simpleBinaryOperate(const SDMemTableWrapper& left,
-                                                     const SDMemTableWrapper& right,
-                                                     const std::string& op)
+SDMemTableWrapper SDMathWrapper::binaryOperate(const SDMemTableWrapper& left,
+                                               const SDMemTableWrapper& right,
+                                               const std::string& op)
 {
     SDMath sdm;
-    return SDMemTableWrapper(sdm.simpleBinaryOperate(left.getCP(), right.getCP(), 
-                                                     String(op)));
+    return SDMemTableWrapper(sdm.binaryOperate(left.getCP(), right.getCP(), 
+                                               String(op), False));
 }
 
 
@@ -62,7 +63,7 @@ void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll)
   const uInt what = 0;
 //
   SDMath sdm;
-  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(factor), 
+  SDMemTable* pOut = sdm.unaryOperate (*pIn, Float(factor), 
 					Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
@@ -74,7 +75,7 @@ SDMemTableWrapper SDMathWrapper::scale(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 0;
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn,
+  return CountedPtr<SDMemTable>(sdm.unaryOperate(*pIn,
 						  Float(factor), 
 						  Bool(doAll), what));
 }
@@ -87,7 +88,7 @@ void SDMathWrapper::addInSitu(SDMemTableWrapper& in, float offset, bool doAll)
   const uInt what = 1;
 //
   SDMath sdm;
-  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(offset), 
+  SDMemTable* pOut = sdm.unaryOperate (*pIn, Float(offset), 
 					Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
@@ -99,7 +100,7 @@ SDMemTableWrapper SDMathWrapper::add(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 1;
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(offset),
+  return CountedPtr<SDMemTable>(sdm.unaryOperate(*pIn, Float(offset),
 						  Bool(doAll), what));
 }
 
