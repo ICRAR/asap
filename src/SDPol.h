@@ -34,58 +34,21 @@
 //# Includes
 #include <casa/aips.h>
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/ArrayLogical.h>
 #include <measures/Measures/Stokes.h>
 #include <tables/Tables/BaseMappedArrayEngine.h>
 
 
 namespace asap {
 
-class SDPolUtil
-{
- public:
-// Convert Q and U to polarized intensity
-  static casa::Array<casa::Float> polarizedIntensity (const casa::Array<casa::Float>& Q,
-                                                      const casa::Array<casa::Float>& U);
-// Convert Q and U to polarized position angle (degrees)
-  static casa::Array<casa::Float> positionAngle (const casa::Array<casa::Float>& Q,
-                                                 const casa::Array<casa::Float>& U);
-// Rotate phase of Complex correlation C3+iC4 by phase (degrees)
-  static void rotateXYPhase (casa::Array<casa::Float>& C3,
-                             casa::Array<casa::Float>& C4,
-                             casa::Float phase);
-
-// Get Stokes slices from the Array.  Start and End should
-// already be setup to access the Array at the current cursor location
-// (beam, IF, chanells; see SDMemTable).  This function will modify the asap::PolAxis
-// location to access the desired Stokes slice ("I", "Q", "U", "V")
-  static casa::Array<casa::Float> getStokesSlice (casa::Array<casa::Float>& input, const casa::IPosition& start,
-                                                  const casa::IPosition& end, const casa::String& stokes);
-
-// Compute Circular polarization RR or LL from I and V
-  static casa::Array<casa::Float> circularPolarizationFromStokes (casa::Array<casa::Float>& I, 
-                                                                  casa::Array<casa::Float>& V,  
-                                                                  casa::Bool doRR);
-
-// Compute Mask for STokes parameters from raw correlation masks
-// Gets output shape right (e.g. XX,YY -> I)
-  static casa::Array<casa::Bool> stokesMask (casa::Array<casa::Bool> rawFlags,
-                                             casa::Bool doLinear);
-
-// Find the Stokes type for the given polarization axis (0,1,2,3)
-// You can ask for STokes or raw correltions (linear or circular)
-   static casa::Stokes::StokesTypes convertStokes(casa::Int val, casa::Bool toStokes, 
-                                                  casa::Bool linear);
-};
-
-
-
 class SDStokesEngine : public casa::BaseMappedArrayEngine<casa::Float, casa::Float>
 {
   //# Make members of parent class known.
 public:
-  using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::sourceName;
+  using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::virtualName;
 protected:
-  using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::targetName;
+  using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::storedName;
   using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::table;
   using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::roColumn;
   using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::rwColumn;
@@ -94,7 +57,7 @@ public:
     // Construct engine.  The sourveColumnName holds the XX,YY,R(XY),I(XY)
     // correlations
     SDStokesEngine (const casa::String& virtualColumnName,
-               const casa::String& sourceColumnName);
+                    const casa::String& sourceColumnName);
 
     // Construct from a record specification as created by getmanagerSpec().
     SDStokesEngine (const casa::Record& spec);
@@ -178,6 +141,66 @@ public:
     static DataManager* makeObject (const casa::String& dataManagerType,
 				    const casa::Record& spec);
 };
+
+
+
+class SDPolUtil
+{
+ public:
+// Convert Q and U to linearly polarized intensity
+  static casa::Array<casa::Float> polarizedIntensity (const casa::Array<casa::Float>& Q,
+                                                      const casa::Array<casa::Float>& U);
+// Convert Q and U to linearly polarized position angle (degrees)
+  static casa::Array<casa::Float> positionAngle (const casa::Array<casa::Float>& Q,
+                                                 const casa::Array<casa::Float>& U);
+
+// Rotate phase of Complex correlation C3+iC4 by phase (degrees)
+  static void rotateXYPhase (casa::Array<casa::Float>& C3,
+                             casa::Array<casa::Float>& C4,
+                             casa::Float phase);
+
+// Get Stokes slices from the Array.  Start and End should
+// already be setup to access the Array at the current cursor location
+// (beam, IF, Pol; see SDMemTable).   The desired Stokes
+// is specfied in the string from "I", "Q", "U", "V"
+  static casa::Array<casa::Float> getStokesSlice (casa::Array<casa::Float>& input, const casa::IPosition& start,
+                                                  const casa::IPosition& end, const casa::String& stokes);
+
+// Compute Circular polarization RR or LL from I and V
+  static casa::Array<casa::Float> circularPolarizationFromStokes (casa::Array<casa::Float>& I, 
+                                                                  casa::Array<casa::Float>& V,  
+                                                                  casa::Bool doRR);
+
+
+// Compute value for STokes parameters by combining the raw correlation values
+// The output shape may change from the input shape according to
+// XX or YY          -> I
+// XX,YY             -> I
+// XX,YY,R(XY),I(XY) -> I,Q,U,V
+// Bool for mask
+// Float for TSys 
+  template <class T>
+  static casa::Array<T> stokesData (casa::Array<T>& rawData, casa::Bool doLinear);
+  
+
+// Find the Stokes type for the given polarization axis (0,1,2,3)
+// You can ask for STokes or raw correltions (linear or circular)
+   static casa::Stokes::StokesTypes convertStokes(casa::Int val, casa::Bool toStokes, 
+                                                  casa::Bool linear);
+
+private:
+  static casa::Array<casa::Float> andArrays (const casa::Array<casa::Float>& in1,
+                                             const casa::Array<casa::Float>& in2) 
+                                             {return (in1+in2)/casa::Float(2.0);}
+
+  static casa::Array<casa::Bool> andArrays (const casa::Array<casa::Bool>& in1,
+                                            const casa::Array<casa::Bool>& in2) 
+                                            {return in1&&in2;}
+};
+
+
+
+
 
 } // namespace
 
