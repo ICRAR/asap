@@ -57,15 +57,5 @@ private:
   PKSwriter *cWriter;
 };
 
-
-class SDWriterWrapper : public SDWriter {
-public:
-  SDWriterWrapper(const string &format = "SDFITS") : SDWriter(format) {;}
-
-  Int write(const SDMemTableWrapper &table, const string &filename) {
-    return SDWriter::write(table.getCP(), filename);
-  }
-};
-
-} // namespace atnf_sd
+}// namespace
 #endif
