@@ -55,9 +55,12 @@ template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable>
 #include <casa/Arrays/ArrayLogical.cc>
 #include <casa/Arrays/ArrayMath.cc>
 #include <casa/Arrays/MaskArrMath.cc>
+#include <casa/Arrays/MaskedArray.cc>
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/Array.cc>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Vector2.cc>
+#include <casa/Arrays/Vector.cc>
 #include <casa/Utilities/PtrHolder.cc>
 #include <casa/Utilities/BinarySearch.cc>
 #include <coordinates/Coordinates/FrequencyAligner.cc>
@@ -91,6 +94,10 @@ template Float sumsquares<Float>(MaskedArray<Float> const&);
 template Float avdev<Float>(MaskedArray<Float> const&);
 template class CompiledFunction<AutoDiff<Float> >;
 template class CompiledParam<AutoDiff<Float> >;
+
+template class Vector<Vector<Int> >;
+template class Vector<Vector<Bool> >;
+template class Vector<Vector<String> >;
 template Vector<Bool>::Vector(const vector<bool> &);
 template Vector<Int>::Vector(const vector<int> &);
 template Vector<Float>::Vector(const vector<float> &);
@@ -113,4 +120,6 @@ namespace mathutil {
 			const Vector<Bool>&, 
 			Bool, Bool);
   template uInt addEntry(Vector<uInt>&, uInt);
+  template void extendLastArrayAxis(Array<Int>&, const Array<Int>&,
+				   const Int& initVal);
 }
