@@ -403,7 +403,7 @@ class scantable(sdtable):
         inf[2] = doppler
         self._setcoordinfo(inf)
         if self._p: self.plot()
-
+ 
     def set_freqframe(self, frame=None):
         """
         Set the frame type of the Spectral Axis.
@@ -584,6 +584,21 @@ class scantable(sdtable):
             print "Please specify a valid (Beam/IF/Pol)"
         return
 
+    def rotate_xyphase (self, angle, all=None):
+        """
+        Rotate the phase of the XY correlation.  This is done in situ
+        in the data.  So if you call this function more than once
+        then each call rotates the phase further.       
+        Parameters:
+            angle:   The angle (degrees) to rotate (add) by.
+            all:     if true operate on all axes (default or .asaprc) rather
+                     than the cursor selected spectrum of Beam/IF
+        Examples:
+            scan.rotate_xyphase(2.3)
+        """
+        if all is None: all = rcParams['scantable.allaxes']
+        sdtable._rotate_xyphase(self, angle, all)
+            
     def plot(self, what='spectrum',col='Pol', panel=None):
         """
         Plot the spectra contained in the scan. Alternatively you can also
