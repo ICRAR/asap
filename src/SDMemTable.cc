@@ -30,27 +30,27 @@
 //#---------------------------------------------------------------------------
 
 
-#include <aips/iostream.h>
-#include <aips/iomanip.h>
-#include <aips/Arrays/Array.h>
-#include <aips/Arrays/ArrayMath.h>
-#include <aips/Arrays/MaskArrMath.h>
-#include <aips/Arrays/ArrayLogical.h>
-#include <aips/Arrays/ArrayAccessor.h>
+#include <casa/iostream.h>
+#include <casa/iomanip.h>
+#include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/MaskArrMath.h>
+#include <casa/Arrays/ArrayLogical.h>
+#include <casa/Arrays/ArrayAccessor.h>
 
-#include <aips/Tables/TableParse.h>
-#include <aips/Tables/TableDesc.h>
-#include <aips/Tables/SetupNewTab.h>
-#include <aips/Tables/ScaColDesc.h>
-#include <aips/Tables/ArrColDesc.h>
+#include <tables/Tables/TableParse.h>
+#include <tables/Tables/TableDesc.h>
+#include <tables/Tables/SetupNewTab.h>
+#include <tables/Tables/ScaColDesc.h>
+#include <tables/Tables/ArrColDesc.h>
 
-#include <aips/Tables/ExprNode.h>
-#include <aips/Tables/ScalarColumn.h>
-#include <aips/Tables/ArrayColumn.h>
-#include <aips/Tables/TableRecord.h>
-#include <aips/Measures/MFrequency.h>
-#include <aips/Measures/MeasTable.h>
-#include <aips/Quanta/MVTime.h>
+#include <tables/Tables/ExprNode.h>
+#include <tables/Tables/ScalarColumn.h>
+#include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/TableRecord.h>
+#include <measures/Measures/MFrequency.h>
+#include <measures/Measures/MeasTable.h>
+#include <casa/Quanta/MVTime.h>
 
 #include "SDMemTable.h"
 #include "SDContainer.h"
@@ -87,12 +87,10 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
   }
 }
 
-SDMemTable::SDMemTable(const Table& tab, Int scanID) :
+SDMemTable::SDMemTable(const Table& tab, const std::string& exprs) :
   IFSel_(0),
   beamSel_(0),
   polSel_(0) {
-  String exprs = String("select * from $1 where SCANID == ")
-    +String::toString(scanID);
   //cerr << exprs << endl;
   Table t = tableCommand(exprs,tab);
   table_ = t.copyToMemoryTable("dummy");
@@ -103,7 +101,15 @@ SDMemTable::~SDMemTable(){
 }
 
 SDMemTable SDMemTable::getScan(Int scanID) {
-  return SDMemTable(table_, scanID);
+  String cond("SELECT * from $1 WHERE SCANID == ");
+  cond += String::toString(scanID);
+  return SDMemTable(table_, cond);
+}
+
+SDMemTable SDMemTable::getSource(const std::string& source) {
+  String cond("SELECT * from $1 WHERE SRCNAME == ");
+  cond += source;
+  return SDMemTable(table_, cond);
 }
 
 void SDMemTable::setup() {

@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMEMTABLEWRAPPER_H_
-#define _SDMEMTABLEWRAPPER_H_
+#ifndef _SDMEMTABLEWRAPPER_H
+#define _SDMEMTABLEWRAPPER_H
 
 #include <vector>
 #include <string>
@@ -49,12 +49,21 @@ public:
   SDMemTableWrapper(CountedPtr<SDMemTable> cp) : table_(cp) {;}
   SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
   
-  SDMemTableWrapper(const SDMemTableWrapper& mt, int scan) :
-    table_(new SDMemTable(mt.getCP()->table(), scan)) {;}
+  SDMemTableWrapper(const SDMemTableWrapper& mt, const std::string& expr) :
+    table_(new SDMemTable(mt.getCP()->table(), expr)) {;}
   
   SDMemTableWrapper getScan(int scan) {
-    return SDMemTableWrapper(*this, scan);
+    String cond("SELECT * from $1 WHERE SCANID == ");
+    cond += String::toString(scan);
+    return SDMemTableWrapper(*this, cond);
   }
+
+  SDMemTableWrapper getSource(const std::string& source) {
+    String cond("SELECT * from $1 WHERE SRCNAME == '");
+    cond += source;cond += "'";
+    return SDMemTableWrapper(*this, cond);
+  }
+
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }

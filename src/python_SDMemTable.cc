@@ -43,8 +43,9 @@ void python_SDMemTable() {
   class_<SDMemTableWrapper>("sdtable")
     .def( init <> () )
     .def( init < std::string > () )
-    .def( init < SDMemTableWrapper, int > () )
+    .def( init < SDMemTableWrapper, std::string > () )
     .def("getscan", &SDMemTableWrapper::getScan)
+    .def("getsource", &SDMemTableWrapper::getSource)
     .def("getspectrum", &SDMemTableWrapper::getSpectrum,
 	 (boost::python::arg("whichRow")=0) )
     .def("getabscissa", &SDMemTableWrapper::getAbscissa,

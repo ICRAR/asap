@@ -28,19 +28,19 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMEMTABLE_H_
-#define _SDMEMTABLE_H_
+#ifndef _SDMEMTABLE_H
+#define _SDMEMTABLE_H
 
 // STL
 #include <string>
 #include <vector>
 // AIPS++
-#include <aips/aips.h>
-#include <aips/Utilities/String.h>
-#include <aips/Tables/Table.h>
-#include <aips/Arrays/MaskedArray.h>
+#include <casa/aips.h>
+#include <casa/BasicSL/String.h>
+#include <tables/Tables/Table.h>
+#include <casa/Arrays/MaskedArray.h>
 
-#include <trial/Coordinates/SpectralCoordinate.h>
+#include <coordinates/Coordinates/SpectralCoordinate.h>
 
 namespace atnf_sd {
 
@@ -62,7 +62,7 @@ public:
 
   // Copy Construct a SDMemTable, give a scanid constraint
   // see also getScan()
-  SDMemTable(const Table& tab, Int scanID);
+  SDMemTable(const Table& tab, const std::string& expr);
 
   virtual ~SDMemTable();
 
@@ -113,6 +113,7 @@ public:
 
   // get a new SDMemTable containg all rows with the same give SCANID
   SDMemTable getScan(Int scanID);
+  SDMemTable getSource(const std::string& source);
 
   const TableRecord& getHeader() const {return table_.keywordSet();}
   // get a handle to the "raw" aips++ table
