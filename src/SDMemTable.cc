@@ -432,14 +432,14 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
 
 // Continue with km/s or Hz.  Get FreqID
 
-  Vector<uInt> v;
-  freqidCol_.get(whichRow, v);
-  uInt specidx = v(IFSel_);
+  Vector<uInt> freqIDs;
+  freqidCol_.get(whichRow, freqIDs);
+  uInt freqID = freqIDs(IFSel_);
 
 // Get SpectralCoordinate, set reference frame conversion,
 // velocity conversion, and rest freq state
 
-  SpectralCoordinate spc = getSpectralCoordinate(specidx, whichRow);
+  SpectralCoordinate spc = getSpectralCoordinate(freqID, whichRow);
 //
   Vector<Double> pixel(nChan());
   indgen(pixel);
@@ -481,13 +481,13 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
   if (sunit == "") sunit = "pixel";
   Unit u(sunit);
 //
-  Vector<uInt> v;
-  freqidCol_.get(whichRow, v);
-  uInt specidx = v(IFSel_);
+  Vector<uInt> freqIDs;
+  freqidCol_.get(whichRow, freqIDs);
+  uInt freqID = freqIDs(IFSel_);
 
 // Get SpectralCoordinate, with frame, velocity, rest freq state set
 
-  SpectralCoordinate spc = getSpectralCoordinate(specidx, whichRow);
+  SpectralCoordinate spc = getSpectralCoordinate(freqID, whichRow);
 //
   String s = "Channel";
   if (u == Unit("km/s")) { 
@@ -663,12 +663,12 @@ MPosition SDMemTable::getAntennaPosition () const
 }
 
 
-SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx) const
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 {
   
   Table t = table_.keywordSet().asTable("FREQUENCIES");
-  if (whichIdx > t.nrow() ) {
-    throw(AipsError("SDMemTable::getSpectralCoordinate - whichIdx out of range"));
+  if (freqID> t.nrow() ) {
+    throw(AipsError("SDMemTable::getSpectralCoordinate - freqID out of range"));
   }
 
   Double rp,rv,inc;
@@ -685,9 +685,9 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx) const
     cerr << "Frequency type unknown assuming TOPO" << endl;
     mft = MFrequency::TOPO;
   }
-  rpc.get(whichIdx, rp);
-  rvc.get(whichIdx, rv);
-  incc.get(whichIdx, inc);
+  rpc.get(freqID, rp);
+  rvc.get(freqID, rv);
+  incc.get(freqID, inc);
 //
   SpectralCoordinate spec(mft,rv,inc,rp);
 //
@@ -695,15 +695,15 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx) const
 }
 
 
-SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx, uInt whichRow) const
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, uInt whichRow) const
 {
 // Create basic SC
 
-  SpectralCoordinate spec = getSpectralCoordinate (whichIdx);
+  SpectralCoordinate spec = getSpectralCoordinate (freqID);
 //
   Table t = table_.keywordSet().asTable("FREQUENCIES");
 
-// Set rest frequencies
+// Get rest frequencies from table, one per IF ???
 
   Vector<Double> vec;
   t.keywordSet().get("RESTFREQS",vec);
@@ -712,8 +712,11 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx, uInt whichRo
 
 // Select rest freq
 
-    if (vec.nelements() >= nIF()) {
+    if (IFSel_+1 < vec.nelements()) {
        spec.selectRestFrequency(uInt(IFSel_));
+    } else {
+       cerr << "There is no rest frequency for this IF; selecting rest freq for IF=0" << endl;
+       spec.selectRestFrequency(0u);
     }
   }
 
@@ -724,7 +727,7 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx, uInt whichRo
   if (frm == "") frm = "TOPO";
   MFrequency::Types mtype;
   if (!MFrequency::getType(mtype, frm)) {
-    cout << "Frequency type unknown assuming TOPO" << endl;       // SHould never happen
+    cerr << "Frequency type unknown assuming TOPO" << endl;       // SHould never happen
     mtype = MFrequency::TOPO;
   }
 
@@ -762,18 +765,18 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt whichIdx, uInt whichRo
 
 
 Bool SDMemTable::setCoordinate(const SpectralCoordinate& speccord,
-                               uInt whichIdx) {
+                               uInt freqID) {
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
-  if (whichIdx > t.nrow() ) {
+  if (freqID > t.nrow() ) {
     throw(AipsError("SDMemTable::setCoordinate - coord no out of range"));
   }
   ScalarColumn<Double> rpc(t, "REFPIX");
   ScalarColumn<Double> rvc(t, "REFVAL");
   ScalarColumn<Double> incc(t, "INCREMENT");
 
-  rpc.put(whichIdx, speccord.referencePixel()[0]);
-  rvc.put(whichIdx, speccord.referenceValue()[0]);
-  incc.put(whichIdx, speccord.increment()[0]);
+  rpc.put(freqID, speccord.referencePixel()[0]);
+  rvc.put(freqID, speccord.referenceValue()[0]);
+  incc.put(freqID, speccord.increment()[0]);
 
   return True;
 }
