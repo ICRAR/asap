@@ -59,14 +59,18 @@ SDWriter::SDWriter(const std::string &format)
 {
   cFormat = format;
 //
-  if (cFormat == "MS2") {
+  String t(cFormat);
+  t.upcase();
+  if (t== "MS2") {
     cWriter = new PKSMS2writer();
-  } else if (cFormat == "SDFITS") {
+  } else if (t== "SDFITS") {
     cWriter = new PKSSDwriter();
-  } else if (cFormat == "FITS") {
+  } else if (t== "FITS") {
     cWriter = 0;
-  } else if (cFormat == "ASCII") {
+  } else if (t== "ASCII") {
     cWriter = 0;
+  } else {
+    throw (AipsError("Unrecognized Format"));
   }
 }
 
@@ -89,17 +93,21 @@ Int SDWriter::setFormat(const std::string &format)
 {
   if (format != cFormat) {
     if (cWriter) delete cWriter;
+  }
 //
-    cFormat = format;
-    if (cFormat == "MS2") {
-      cWriter = new PKSMS2writer();
-    } else if (cFormat == "SDFITS") {
-      cWriter = new PKSSDwriter();
-    } else if (cFormat == "FITS") {
-      cWriter = 0;
-    } else if (cFormat == "ASCII") {
-      cWriter = 0;
-    }
+  cFormat = format;
+  String t(cFormat);
+  t.upcase();
+  if (t== "MS2") {
+    cWriter = new PKSMS2writer();
+  } else if (t== "SDFITS") {
+    cWriter = new PKSSDwriter();
+  } else if (t== "FITS") {
+    cWriter = 0;
+  } else if (t== "ASCII") {
+    cWriter = 0;
+  } else {
+    throw (AipsError("Unrecognized Format"));
   }
   return 0;
 }
