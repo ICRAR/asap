@@ -41,6 +41,7 @@ void python_SDMath() {
   class_<SDMathWrapper>("sdmath")
     .def("average", &SDMathWrapper::average)
     .def("quotient", &SDMathWrapper::quotient)
+    .def("multiply", &SDMathWrapper::multiply)
     ;
 };
 

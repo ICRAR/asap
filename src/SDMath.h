@@ -42,7 +42,9 @@ public:
   static CountedPtr<SDMemTable> average(const CountedPtr<SDMemTable>& in);
   static CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
 					 const CountedPtr<SDMemTable>& off);
-  //CountedPtr<SDMemTable> multiply(CountedPtr<SDMemTable>& in, Float factor);
+  static CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
+					 Float factor);
+  
   
 };
 

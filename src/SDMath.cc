@@ -54,6 +54,7 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   ROArrayColumn<Float> tsys(t, "TSYS");  
   ROScalarColumn<Double> mjd(t, "TIME");
   ROScalarColumn<String> srcn(t, "SRCNAME");
+  ROScalarColumn<Double> integr(t, "INTERVAL");
   IPosition ip = in->rowAsMaskedArray(0).shape();
   Array<Float> outarr(ip); outarr =0.0;
   Array<Float> narr(ip);narr = 0.0;
@@ -62,6 +63,7 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   Array<Float> tsarr(tsys.shape(0));
   Array<Float> outtsarr(tsys.shape(0));
   Double tme = 0.0;
+  Double inttime = 0.0;
 
   for (uInt i=0; i < t.nrow(); i++) {
     // data stuff
@@ -75,6 +77,8 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
     Double tmp;
     mjd.get(i,tmp);
     tme += tmp;// average time
+    integr.get(i,tmp);
+    inttime += tmp;
   }
   // averaging using mask
   MaskedArray<Float> nma(narr,(narr > Float(0)));
@@ -87,12 +91,12 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   Int n = t.nrow();
   outtsarr /= Float(n/2);
   sc.timestamp = tme/Double(n/2);
-
-  String tstr; srcn.getScalar(n,tstr);// get sourcename of "mid" point
+  sc.interval =inttime;
+  String tstr; srcn.getScalar(0,tstr);// get sourcename of "mid" point
   sc.sourcename = tstr;
   sc.putSpectrum(outarr);
   sc.putFlags(outflags);  
-  SDMemTable* sdmt = new SDMemTable(*in);
+  SDMemTable* sdmt = new SDMemTable(*in,True);
   sdmt->putSDContainer(sc);
   return CountedPtr<SDMemTable>(sdmt);
 }
@@ -103,9 +107,9 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   
   Table ton = on->table();
   Table toff = off->table();
-  ROArrayColumn<Float> tsys(toff, "TSYS");
-  
+  ROArrayColumn<Float> tsys(toff, "TSYS");  
   ROScalarColumn<Double> mjd(ton, "TIME");
+  ROScalarColumn<Double> integr(ton, "INTERVAL");
   ROScalarColumn<String> srcn(ton, "SRCNAME");
   MaskedArray<Float> mon(on->rowAsMaskedArray(0));
   MaskedArray<Float> moff(off->rowAsMaskedArray(0));
@@ -130,12 +134,33 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   sc.sourcename = tstr;
   Double tme; mjd.getScalar(0,tme);// get time of "on" scan
   sc.timestamp = tme;
+  integr.getScalar(0,tme);
+  sc.interval = tme;
   sc.putSpectrum(out);
   sc.putFlags(outflags);  
-  SDMemTable* sdmt = new SDMemTable(*on);
+  SDMemTable* sdmt = new SDMemTable(*on, True);
   sdmt->putSDContainer(sc);
   return CountedPtr<SDMemTable>(sdmt);
   
 }
+static CountedPtr<SDMemTable> 
+SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
+  SDMemTable* sdmt = new SDMemTable(*in);
+  Table t = sdmt->table();
+  ArrayColumn<Float> spec(t,"SPECTRA");
 
-
+  for (uInt i=0; i < t.nrow(); i++) {
+    // data stuff
+    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
+    marr *= factor;
+    spec.put(i, marr.getArray());
+  }
+  return CountedPtr<SDMemTable>(sdmt);
+}
+/*
+static Float SDMath::rms(const SDMemTable& in, uInt whichRow) {
+  Table t = in.table();  
+  MaskedArray<Float> marr(in.rowAsMaskedArray(whichRow,True));
+  
+}
+*/
