@@ -146,6 +146,9 @@ class LFAboveThreshold : protected LFLineListOperations {
    std::list<pair<int,int> > &lines;       // list where detections are saved
                                            // (pair: start and stop+1 channel)
    RunningBox *running_box;                // running box filter
+   casa::Vector<Int> signs;                // An array to store the signs of
+                                           // the value - current mean
+					   // (used to search wings)
 public:
 
    // set up the detection criterion
@@ -156,6 +159,12 @@ public:
    
    // replace the detection criterion
    void setCriterion(int in_min_nchan, casa::Float in_threshold) throw();
+
+   // return the array with signs of the value-current mean
+   // An element is +1 if value>mean, -1 if less, 0 if equal.
+   // This array is updated each time the findLines method is called and
+   // is used to search the line wings
+   const casa::Vector<Int>& getSigns() const throw();
 
    // find spectral lines and add them into list
    // if statholder is not NULL, the accumulate function of it will be
@@ -418,6 +427,15 @@ void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
   }
 }
 
+// return the array with signs of the value-current mean
+// An element is +1 if value>mean, -1 if less, 0 if equal.
+// This array is updated each time the findLines method is called and
+// is used to search the line wings
+const casa::Vector<Int>& LFAboveThreshold::getSigns() const throw()
+{
+  return signs;
+}
+
 // find spectral lines and add them into list
 void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 		              const casa::Vector<casa::Bool> &mask,
@@ -458,7 +476,10 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
            
       // actual search algorithm
       is_detected_before=False;
-      Vector<Int> signs(spectrum.nelements(),0);
+
+      // initiate the signs array
+      signs.resize(spectrum.nelements());
+      signs=Vector<Int>(spectrum.nelements(),0);
 
       //ofstream os("dbg.dat");
       for (running_box->rewind();running_box->haveMore();
@@ -693,6 +714,11 @@ int SDLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
                     // the total number of the channels is not altered
 		    // instead, min_nchan is also scaled
 		    // it helps to search for broad lines
+  Vector<Int> signs; // a buffer for signs of the value - mean quantity
+                     // see LFAboveThreshold for details
+		     // We need only signs resulted from last iteration
+		     // because all previous values may be corrupted by the
+		     // presence of spectral lines
   while (true) {
      // a buffer for new lines found at this iteration
      std::list<pair<int,int> > new_lines;     
@@ -701,6 +727,8 @@ int SDLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
          // line find algorithm
          LFAboveThreshold lfalg(new_lines,avg_factor*min_nchan, threshold);
          lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan);
+	 signs.resize(lfalg.getSigns().nelements());
+	 signs=lfalg.getSigns();
          first_pass=False;
          if (!new_lines.size())
 	      throw AipsError("spurious"); // nothing new - use the same
@@ -724,6 +752,14 @@ int SDLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
      // get a new mask
      temp_mask=getMask();     
   }
+  
+  // an additional search for wings because in the presence of very strong
+  // lines temporary mean used at each iteration will be higher than
+  // the true mean
+  
+  if (lines.size())
+      LFLineListOperations::searchForWings(lines,signs,mask,edge);
+      
   return int(lines.size());
 }
 
