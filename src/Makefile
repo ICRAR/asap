@@ -42,6 +42,7 @@ LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(CASAPPLIB)
 
 OBJECTS   := MathUtils.o \
              MathUtils2.o \
+             SDAttr.o \
              SDContainer.o \
              SDMemTable.o \
              SDReader.o \
@@ -63,6 +64,7 @@ OBJECTS   := MathUtils.o \
 
 
 HEADERS   := SDDefs.h \
+             SDAttr.h \
              SDContainer.h \
              SDMemTable.h \
              SDReader.h \
