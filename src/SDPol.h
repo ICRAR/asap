@@ -227,7 +227,7 @@ class SDPolUtil
   static casa::Array<casa::Float> computeStokesTSysForWriter (casa::Array<casa::Float>& rawData, casa::Bool doLinear)
                                                          {return computeStokesDataForWriter(rawData,doLinear);};
 
-// This function is explcitrly for SDWriter. It extracts the Beam and IF slice (specified in start
+// This function is explicitly for SDWriter. It extracts the Beam and IF slice (specified in start
 // and end - must be length 1 in beam and IF) and flips the pol and channel axes.
   static casa::Array<casa::Float> extractStokesForWriter (casa::Array<casa::Float>& in, const casa::IPosition& start, 
                                                           const casa::IPosition& end);
