@@ -299,6 +299,7 @@ def commands():
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
+            auto_poly_baseline - automatically fit a polynomial baseline 
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness
