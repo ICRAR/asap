@@ -484,20 +484,6 @@ class scantable(sdtable):
                 msk = logical_not(msk)
         return msk
     
-    def set_restfreqs(self, freqs, unit='Hz'):
-        """
-        Set the restfrequency(s) for this scantable.
-        Parameters:
-            freqs:    one or more frequencies
-            unit:     optional 'unit', default 'Hz'
-        Example:
-            scan.set_restfreqs([1000000000.0])
-        """
-        if type(freqs) is float or int:
-            freqs = (freqs)
-        sdtable._setrestfreqs(self,freqs, unit)
-        return
-
     def get_restfreqs(self):
         """
         Get the restfrequency(s) stored in this scantable.
@@ -509,22 +495,38 @@ class scantable(sdtable):
         """
         return list(self._getrestfreqs())
 
-    def select_restfreq(self, freq, unit='Hz', source=None, theif=None):
+    def set_restfreqs(self, freqs, unit='Hz', source=None, theif=None):
         """
-        Select the restfrequency for the specified source and IF
+        Select the restfrequency for the specified source and IF OR
+        replace for all IFs.  If the 'freqs' argument holds a scalar,
+        then that rest frequency will be applied to the selected
+        data (and added to the list of available rest frequencies).
+        In this way, you can set a rest frequency for each
+        source and IF combination.   If the 'freqs' argument holds
+        a vector, then it MUST be of length the number of IFs
+        (and the available restfrequencies will be replaced by
+        this vector).  In this case, *all* data ('source' and 
+        'theif' are ignored) have the restfrequency set per IF according 
+        to the corresponding value you give in the 'freqs' vector.  
+        E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and 
+        IF 1 gets restfreq 2e9.
         Parameters:
+            freqs:   rest frequencies
+            unit:    unit for rest frequency (default 'Hz')
             source:  Source name (blank means all)
             theif:   IF (-1 means all)
-            freq:    rest frequency
-            unit:    unit for rest frequency (default 'Hz')
         Example:
-            scan.select_restfreq(freq=1.4e9, source='NGC253', theif=2)
+            scan.set_restfreqs(freqs=1.4e9, source='NGC253', theif=2)
+            scan.set_restfreqs(freqs=[1.4e9,1.67e9])
         """
         if source is None:
             source = ""
         if theif is None:
             theif = -1
-        sdtable._selectrestfreq(self, freq, unit, source, theif)
+        t = type(freqs)
+        if t is int or t is float:
+           freqs = [freqs]
+        sdtable._setrestfreqs(self, freqs, unit, source, theif)
         return
 
 
