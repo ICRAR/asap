@@ -384,8 +384,7 @@ def commands():
     print x
     return
 
-print """Welcome to ASAP - the ATNF Single Dish Analysis Package
-This is a testing pre-release %s
+print """Welcome to ASAP v%s - the ATNF Spectral Analysis Package
 
 Please report any bugs to:
 asap@atnf.csiro.au
