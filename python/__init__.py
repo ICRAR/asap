@@ -213,10 +213,15 @@ from asapfitter import *
 from asapreader import reader
 from asapmath import *
 from scantable import *
+
 if rcParams['useplotter']:
-    print "Initialising plotter..."
-    import asapplotter 
-    plotter = asapplotter.asapplotter()
+    if os.environ.has_key('DISPLAY'):
+        print "Initialising plotter..."
+        import asapplotter 
+        plotter = asapplotter.asapplotter()
+    else:
+        print "No $DISPLAY set. Disabling plotter\n"
+
 #from numarray ones,zeros
 
 __date__ = '$Date$'
