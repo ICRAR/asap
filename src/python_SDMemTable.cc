@@ -57,9 +57,7 @@ void python_SDMemTable() {
          (boost::python::arg("whichRow")=0) )
     .def("getmask", &SDMemTableWrapper::getMask,
          (boost::python::arg("whichRow")=0) )
-    .def("_gettsys", &SDMemTableWrapper::getTsys,
-         (boost::python::arg("whichRow")=0),
-         "Return the TSys at the current location" )
+    .def("_gettsys", &SDMemTableWrapper::getTsys)
     .def("_getsourcename", &SDMemTableWrapper::getSourceName,
          (boost::python::arg("whichRow")=0) )
     .def("_gettime", &SDMemTableWrapper::getTime,

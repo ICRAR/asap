@@ -82,7 +82,15 @@ public:
     return table_->getAbscissaString(whichRow);
   }
 
-  float getTsys(int whichRow=0) {return table_->getTsys(whichRow);}
+  std::vector<float> getTsys() {
+     int nRow = table_->nRow();
+     std::vector<float> result(nRow);
+     for (uint i=0; i<nRow; i++) {
+        result[i] = table_->getTsys(i);
+     }
+     return result;
+  }
+
   std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
 
   std::vector<bool> getMask(int whichRow=0) const {
