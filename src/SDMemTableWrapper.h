@@ -93,6 +93,8 @@ public:
 
   std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
 
+  std::string getFluxUnit() const {return table_->getFluxUnit();}
+
   std::vector<bool> getMask(int whichRow=0) const {
     return table_->getMask(whichRow);
   }
@@ -148,6 +150,10 @@ public:
   SDMemTable* getPtr() {return &(*table_);}
   std::string summary() { return table_->summary(); }
   
+  std::vector<std::string> history(int whichRow=0) { 
+    return table_->history(whichRow); 
+  }
+
 private:
   casa::CountedPtr<SDMemTable> table_;
 };
