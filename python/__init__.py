@@ -27,19 +27,18 @@ def list_scans(t = scantable):
 
 def commands():
     x = """
-    [Reading files]
-        reader              - access rpfits/sdfits files
-            read            - read in integrations
-            summary         - list info about all integrations
     [The scan container]
         scantable           - a container for integrations/scans
+                              (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
             summary         - print info about the scantable contents
             set_selection   - set a specific Beam/IF/Pol for furthrt use
             get_selection   - print out the current selection
-            stats           - get specified statistic of the spectra in the scantable
-            stddev          - get the standard deviation of the spectra in the scantable
+            stats           - get specified statistic of the spectra in
+                              the scantable
+            stddev          - get the standard deviation of the spectra
+                              in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
             set_unit        - set the units to be used from this point on
@@ -77,7 +76,11 @@ def commands():
             set_parameters  - set the parameters for the function(s), and
                               set if they should be held fixed during fitting
             get_parameters  - get the fitted parameters
-            
+    [Reading files]
+        reader              - access rpfits/sdfits files
+            read            - read in integrations
+            summary         - list info about all integrations
+
     [General]
         commands            - this command
         print               - print details about a variable
