@@ -70,7 +70,7 @@ class scantable(sdtable):
                 else:
                     sdtable.__init__(self,tbl)
 
-    def save(self, name=None, format=None, overwrite=False):
+    def save(self, name=None, format=None, stokes=True, overwrite=False):
         """
         Store the scantable on disk. This can be an asap (aips++) Table, SDFITS, 
         Image FITS or MS2 format.
@@ -85,6 +85,8 @@ class scantable(sdtable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
+            stokes:      Convert to Stokes parameters (only available
+                         currently with FITS and ASCII formats.
             overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
                          without writing the output. USE WITH CARE.
@@ -108,7 +110,7 @@ class scantable(sdtable):
         else:
             from asap._asap import sdwriter as _sw
             w = _sw(format)
-            w.write(self, name)
+            w.write(self, name, stokes)
         return
 
     def copy(self):
