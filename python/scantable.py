@@ -81,7 +81,9 @@ class scantable(sdtable):
         Parameters:
             name:        the name of the outputfile. For format="FITS" this
                          is the directory file name into which all the files
-                         will be written (default is 'asap_FITS')
+                         will be written (default is 'asap_FITS'). For format
+                         "ASCII" this is the root file name (data in 'name'.txt
+                         and header in 'name'_header.txt)
             format:      an optional file format. Default is ASAP.
                          Allowed are - 'ASAP' (save as ASAP [aips++] Table),
                                        'SDFITS' (save as SDFITS file)
