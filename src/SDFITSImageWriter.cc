@@ -91,6 +91,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    ROArrayColumn<Double> dir(tab, String("DIRECTION"));
    ROScalarColumn<Double> time(tab, "TIME");
    ROArrayColumn<uInt> freqid(tab, "FREQID");
+   ROScalarColumn<String> src(tab, "SRCNAME");
 
 // Output Image Shape; spectral axis to be updated
 
@@ -207,8 +208,13 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
    
          ostringstream oss;
-         oss << String("_row") << iRow << "_beam" << pos(0) << "_if" << pos(1) << "_pol" << pos(2) << ".fits";
-         String fileName = rootName + String(oss);
+         oss << "row" << iRow << "_beam" << pos(0) << "_if" << pos(1) << "_pol" << pos(2) << "_" << src(iRow) << ".fits";
+         String fileName;
+         if (rootName.length()>0) {
+            fileName = rootName + "_" + String(oss);
+         } else {
+            fileName = String(oss);
+         }
          if (verbose) cerr << "Writing row " << iRow << " into file " << fileName << endl;
 //
          Bool ok = ImageFITSConverter::ImageToFITS (errMsg, tIm, fileName, maxMem, preferVelocity,
