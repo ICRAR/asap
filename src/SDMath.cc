@@ -99,13 +99,11 @@ SDMath::~SDMath()
 
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
-				       const String& weightStr) const
-//Bool alignVelocity)
+				       const String& weightStr, Bool alignVelocity) const
 //
 // Weighted averaging of spectra from one or more Tables.
 //
 {
-   Bool alignVelocity = False;
 
 // Convert weight type
   
@@ -366,97 +364,12 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 
 
-CountedPtr<SDMemTable> SDMath::quotient(const CountedPtr<SDMemTable>& on,
-                                        const CountedPtr<SDMemTable>& off,
-                                        Bool preserveContinuum)  const
-{
-  const uInt nRowOn = on->nRow();
-  const uInt nRowOff = off->nRow();
-  Bool ok = (nRowOff==1&&nRowOn>0) ||
-            (nRowOff>=1&&nRowOn==nRowOff);
-  if (!ok) {
-     throw (AipsError("The reference Scan Table can have one row or the same number of rows as the source Scan Table"));
-  }
-
-// Input Tables and columns
-
-  Table tabOn = on->table();
-  Table tabOff = off->table();
-  ROArrayColumn<Float> tSysOn(tabOn, "TSYS");
-  ROArrayColumn<Float> tSysOff(tabOff, "TSYS");
-
-// Output Table cloned from input
-
-  SDMemTable* pTabOut = new SDMemTable(*on, True);
-
-// Loop over rows
-
-  MaskedArray<Float>* pMOff = new MaskedArray<Float>(off->rowAsMaskedArray(0));
-  IPosition shpOff = pMOff->shape();
-//
-  Array<Float> tSysOnArr, tSysOffArr;
-  tSysOn.get(0, tSysOnArr);
-  tSysOff.get(0, tSysOffArr);
-//
-  for (uInt i=0; i<nRowOn; i++) {
-     MaskedArray<Float> mOn(on->rowAsMaskedArray(i));
-     IPosition shpOn = mOn.shape(); 
-     tSysOn.get(i, tSysOnArr);
-//
-     if (nRowOff>1) {
-        delete pMOff;
-        pMOff = new MaskedArray<Float>(off->rowAsMaskedArray(i));
-        shpOff = pMOff->shape();
-        tSysOff.get(i, tSysOffArr);
-     }
-
-// Conformance
-
-     if (!shpOn.isEqual(shpOff)) {
-        throw(AipsError("on/off data are not conformant"));
-     }
-     if (!tSysOnArr.shape().isEqual(tSysOffArr.shape())) {
-        throw(AipsError("on/off Tsys data are not conformant"));
-     }
-     if (!shpOn.isEqual(tSysOnArr.shape())) {
-        throw(AipsError("Correlation and Tsys data are not conformant"));
-     }
-
-// Get container
-
-     SDContainer sc = on->getSDContainer(i);
-
-// Compute and put quotient into container
-
-     if (preserveContinuum) {     
-        MaskedArray<Float> tmp = (tSysOffArr * mOn / *pMOff) - tSysOffArr;
-        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-     } else {
-        MaskedArray<Float> tmp = (tSysOffArr * mOn / *pMOff) - tSysOnArr;
-        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-     }
-     sc.putTsys(tSysOffArr);
-     sc.scanid = i;
-
-// Put new row in output Table
- 
-     pTabOut->putSDContainer(sc);
-  }
-  if (pMOff) delete pMOff;
-//
-  return CountedPtr<SDMemTable>(pTabOut);
-}
-
-
-CountedPtr<SDMemTable> SDMath::simpleBinaryOperate (const CountedPtr<SDMemTable>& left,
-                                                    const CountedPtr<SDMemTable>& right,
-                                                    const String& op)  const
-//
-// Simple binary Table operators. add, subtract, multiply, divide (what=0,1,2,3)
-//
+CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left,
+                                              const CountedPtr<SDMemTable>& right,
+                                              const String& op, Bool preserve)  const
 {
 
-// CHeck operator
+// Check operator
 
   String op2(op);
   op2.upcase();
@@ -469,48 +382,69 @@ CountedPtr<SDMemTable> SDMath::simpleBinaryOperate (const CountedPtr<SDMemTable>
      what = 2;
   } else if (op2=="DIV") {
      what = 3;
+  } else if (op2=="QUOTIENT") {
+     what = 4;
   } else {
-    throw AipsError("Unrecognized operation");
+    throw( AipsError("Unrecognized operation"));
   }
 
 // Check rows
 
-  const uInt nRows = left->nRow();
-  if (right->nRow() != nRows) {
-     throw (AipsError("Input Scan Tables must have the same number of rows"));
+  const uInt nRowLeft = left->nRow();
+  const uInt nRowRight = right->nRow();
+  Bool ok = (nRowRight==1&&nRowLeft>0) ||
+            (nRowRight>=1&&nRowLeft==nRowRight);
+  if (!ok) {
+     throw (AipsError("The right Scan Table can have one row or the same number of rows as the left Scan Table"));
   }
 
-// Input Tables and columns
+// Input Tables 
 
   const Table& tLeft = left->table();
   const Table& tRight = right->table();
-//
+
+// TSys columns
+
   ROArrayColumn<Float> tSysLeft(tLeft, "TSYS");
   ROArrayColumn<Float> tSysRight(tRight, "TSYS");
 
-// Output Table cloned from input
+// First row for right
+
+  Array<Float> tSysLeftArr, tSysRightArr;
+  tSysRight.get(0, tSysRightArr);
+  MaskedArray<Float>* pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(0));
+  IPosition shpRight = pMRight->shape();
+
+// Output Table cloned from left
 
   SDMemTable* pTabOut = new SDMemTable(*left, True);
 
 // Loop over rows
 
-  for (uInt i=0; i<nRows; i++) {
+  for (uInt i=0; i<nRowLeft; i++) {
 
 // Get data 
+
      MaskedArray<Float> mLeft(left->rowAsMaskedArray(i));
-     MaskedArray<Float> mRight(right->rowAsMaskedArray(i));
-//
      IPosition shpLeft = mLeft.shape();
-     IPosition shpRight = mRight.shape();
-     if (!shpLeft.isEqual(shpRight)) {
-       throw(AipsError("left/right Scan Tables are not conformant"));
-     }
-
-// Get TSys
-
-     Array<Float> tSysLeftArr, tSysRightArr;
      tSysLeft.get(i, tSysLeftArr);
-     tSysRight.get(i, tSysRightArr);
+//
+     if (nRowRight>1) {
+        delete pMRight;
+        pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(i));
+        shpRight = pMRight->shape();
+        tSysRight.get(i, tSysRightArr);
+     }
+//
+     if (!shpRight.isEqual(shpLeft)) {
+        throw(AipsError("left and right scan tables are not conformant"));
+     }
+     if (!tSysRightArr.shape().isEqual(tSysRightArr.shape())) {
+        throw(AipsError("left and right Tsys data are not conformant"));
+     }
+     if (!shpRight.isEqual(tSysRightArr.shape())) {
+        throw(AipsError("left and right scan tables are not conformant"));
+     }
 
 // Make container
 
@@ -519,27 +453,37 @@ CountedPtr<SDMemTable> SDMath::simpleBinaryOperate (const CountedPtr<SDMemTable>
 // Operate on data and TSys
 
      if (what==0) {                               
-        MaskedArray<Float> tmp = mLeft + mRight;
+        MaskedArray<Float> tmp = mLeft + *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
         sc.putTsys(tSysLeftArr+tSysRightArr);
      } else if (what==1) {
-        MaskedArray<Float> tmp = mLeft - mRight;
+        MaskedArray<Float> tmp = mLeft - *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
         sc.putTsys(tSysLeftArr-tSysRightArr);
      } else if (what==2) {
-        MaskedArray<Float> tmp = mLeft * mRight;
+        MaskedArray<Float> tmp = mLeft * *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
         sc.putTsys(tSysLeftArr*tSysRightArr);
      } else if (what==3) {
-        MaskedArray<Float> tmp = mLeft / mRight;
+        MaskedArray<Float> tmp = mLeft / *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
         sc.putTsys(tSysLeftArr/tSysRightArr);
+     } else if (what==4) {
+        if (preserve) {     
+           MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - tSysRightArr;
+           putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        } else {
+           MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - tSysLeftArr;
+           putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+        }
+        sc.putTsys(tSysRightArr);
      }
 
 // Put new row in output Table
 
      pTabOut->putSDContainer(sc);
   }
+  if (pMRight) delete pMRight;
 //
   return CountedPtr<SDMemTable>(pTabOut);
 }
@@ -665,8 +609,8 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
   return pTabOut;
 }
 
-SDMemTable* SDMath::simpleOperate(const SDMemTable& in, Float val, Bool doAll,
-				  uInt what) const
+SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
+                                 uInt what) const
 //
 // what = 0   Multiply
 //        1   Add
@@ -1013,7 +957,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
      toKelvin = False;
      sh.fluxunit = "Jy";
   } else {
-     throw AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K");
+     throw(AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K"));
   }
   pTabOut->putSDHeader(sh);
 
@@ -1091,7 +1035,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
 //
   const uInt nC = coeffs.nelements();
   if (fileName.length()>0 && nC>0) {
-     throw AipsError("You must choose either polynomial coefficients or an ascii file, not both");
+     throw(AipsError("You must choose either polynomial coefficients or an ascii file, not both"));
   }
 
 // Correct
@@ -1129,7 +1073,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
      if (coeff.nelements()>0) {
         pPoly->setCoefficients(coeff);
      } else {
-        throw AipsError("There is no known gain-el polynomial known for this instrument");
+        throw(AipsError("There is no known gain-el polynomial known for this instrument"));
      }
 //
      cerr << "Making polynomial correction with " << msg << " coefficients" << endl;

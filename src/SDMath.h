@@ -59,22 +59,17 @@ class SDMath {
 // Destructor
    ~SDMath();
 
-// Quotient
-   casa::CountedPtr<SDMemTable> quotient(const casa::CountedPtr<SDMemTable>& on, 
-					 const casa::CountedPtr<SDMemTable>& off,
-                                         casa::Bool preserveContinuum=casa::True) const;
-
-// Simple binary Table operators. add, subtract, multiply, divide (what=0,1,2,3)
-   casa::CountedPtr<SDMemTable> simpleBinaryOperate (const casa::CountedPtr<SDMemTable>& left,
-                                                     const casa::CountedPtr<SDMemTable>& right,
-                                                     const casa::String& op) const;
+// Binary Table operators. op=ADD, SUB, MUL, DIV, QUOTIENT
+   casa::CountedPtr<SDMemTable> binaryOperate (const casa::CountedPtr<SDMemTable>& left,
+                                               const casa::CountedPtr<SDMemTable>& right,
+                                               const casa::String& op, casa::Bool preserve) const;
 
 // Average in time
    casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                                          const casa::Vector<casa::Bool>& mask,
                                          casa::Bool scanAverage, 
-                                         const casa::String& weightStr) const;
-//                                         casa::Bool alignVelocity) const;
+                                         const casa::String& weightStr,
+                                         casa::Bool alignVelocity=casa::False) const;
 
 // Statistics. If row<0, all rows are done otherwise, just the 
 // specified row.
@@ -101,9 +96,9 @@ class SDMath {
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
 
-// Simple mathematical operations.  what=0 (mul) or 1 (add)
-   SDMemTable* simpleOperate(const SDMemTable& in, casa::Float offset, 
-                             casa::Bool doAll, casa::uInt what) const;
+// Simple unary mathematical operations.  what=0 (mul) or 1 (add)
+   SDMemTable* unaryOperate(const SDMemTable& in, casa::Float offset, 
+                            casa::Bool doAll, casa::uInt what) const;
 
 // Average polarizations
    SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask) const;
