@@ -54,7 +54,10 @@ class scantable(sdtable):
         Parameters:
             name:        the name of the outputfile
             format:      an optional file format. Default is ASAP.
-                         Allowed are 'ASAP', 'SDFITS' and 'MS2'
+                         Allowed are - 'ASAP' (save as ASAP Table),
+                                       'SDFITS' (save as SDFITS file)
+                                       'FITS' (saves each row as a FITS Image) 
+                                       'MS2' (saves as an aips++ MeasurementSet V2)
         Example:
             scan.save('myscan.asap')
             scan.save('myscan.sdfits','SDFITS')
@@ -63,9 +66,8 @@ class scantable(sdtable):
             self._save(name)
         else:
             from asap._asap import sdwriter as _sw
-            w = _sw()
-            if format == 'SDFITS':
-                w.write(self, name)
+            w = _sw(format)
+            w.write(self, name)
         return
 
     def _verbose(self, *args):
