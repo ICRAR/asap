@@ -382,3 +382,22 @@ def poly_baseline(scan, mask=None, order=0, insitu=None):
     f.set_function(poly=order)    
     sf = f.auto_fit(insitu)
     return sf
+
+def rotate_xyphase (scan, angle, allaxes=None):
+    """
+    Rotate the phase of the XY correlation.  This is always done in situ
+    in the data.  So if you call this function more than once
+    then each call rotates the phase further.
+    Parameters:
+        angle:   The angle (degrees) to rotate (add) by.
+        allaxes: If True apply to all spectra. Otherwise
+                 apply only to the selected (beam/pol/if)spectra only.
+                 The default is taken from .asaprc (True if none)
+    Examples:
+        rotate_xyphase(scan, 2.3)
+    """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    from asap._asap import rotate_xyphase as _rotate_xyphase
+    _rotate_xyphase(scan, angle, allaxes)
+    return
+

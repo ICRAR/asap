@@ -590,22 +590,6 @@ class scantable(sdtable):
             print "Please specify a valid (Beam/IF/Pol)"
         return
 
-    def rotate_xyphase (self, angle, allaxes=None):
-        """
-        Rotate the phase of the XY correlation.  This is done in situ
-        in the data.  So if you call this function more than once
-        then each call rotates the phase further.       
-        Parameters:
-            angle:   The angle (degrees) to rotate (add) by.
-            allaxes: If True apply to all spectra. Otherwise
-                     apply only to the selected (beam/pol/if)spectra only.
-                     The default is taken from .asaprc (True if none)
-        Examples:
-            scan.rotate_xyphase(2.3)
-        """
-        if allaxes is None: allaxes = rcParams['scantable.allaxes']
-        sdtable._rotate_xyphase(self, angle, allaxes)
-            
     def plot(self, what='spectrum',col='Pol', panel=None):
         """
         Plot the spectra contained in the scan. Alternatively you can also
