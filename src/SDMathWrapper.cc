@@ -45,6 +45,16 @@ SDMemTableWrapper SDMathWrapper::quotient(const SDMemTableWrapper& on,
 }
 
 
+SDMemTableWrapper SDMathWrapper::simpleBinaryOperate(const SDMemTableWrapper& left,
+                                                     const SDMemTableWrapper& right,
+                                                     const std::string& op)
+{
+    SDMath sdm;
+    return SDMemTableWrapper(sdm.simpleBinaryOperate(left.getCP(), right.getCP(), 
+                                                     String(op)));
+}
+
+
 void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
@@ -141,7 +151,8 @@ void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in,
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
-  SDMemTable* pOut = sdm.averagePol (*pIn, mask);
+  Vector<Bool> tMask(mask);
+  SDMemTable* pOut = sdm.averagePol (*pIn, tMask);
   *pIn = *pOut;
    delete pOut;
 }
@@ -152,16 +163,18 @@ SDMemTableWrapper SDMathWrapper::averagePol (const SDMemTableWrapper& in,
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.averagePol(*pIn, mask));
+  Vector<Bool> tMask(mask);
+  return CountedPtr<SDMemTable>(sdm.averagePol(*pIn, tMask));
 }
 
 
 std::vector<float> SDMathWrapper::statistic(const SDMemTableWrapper& in,
                                             const std::vector<bool>& mask, 
-                                            const std::string& which) 
+                                            const std::string& which, int row) 
 {
   SDMath sdm;
-  return sdm.statistic(in.getCP(), mask, String(which));
+  Vector<Bool> tMask(mask);
+  return sdm.statistic(in.getCP(), tMask, String(which), Int(row));
 }
 
 
@@ -185,24 +198,48 @@ SDMemTableWrapper SDMathWrapper::convertFlux(const SDMemTableWrapper& in,
 }
 
 
-void SDMathWrapper::gainElevationInSitu(SDMemTableWrapper& in, const string& fileName,
+void SDMathWrapper::gainElevationInSitu(SDMemTableWrapper& in, 
+                                        const std::vector<float>& coeffs,
+                                        const string& fileName,
                                         const string& method, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
+  Vector<Float> tCoeffs(coeffs);
   SDMath sdm;
-  SDMemTable* pOut = sdm.gainElevation(*pIn, String(fileName), String(method), Bool(doAll));
+  SDMemTable* pOut = sdm.gainElevation(*pIn, tCoeffs, String(fileName), 
+                                       String(method), Bool(doAll));
   *pIn = *pOut;
   delete pOut;
 }
 
 
 SDMemTableWrapper SDMathWrapper::gainElevation(const SDMemTableWrapper& in, 
+                                               const std::vector<float>& coeffs,
                                                const string& fileName, 
                                                const string& method, bool doAll)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
+  Vector<Float> tCoeffs(coeffs);
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.gainElevation(*pIn, String(fileName), 
+  return CountedPtr<SDMemTable>(sdm.gainElevation(*pIn, tCoeffs, String(fileName), 
                                                   String(method), Bool(doAll)));
+}
+
+void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  SDMemTable* pOut = sdm.opacity(*pIn, Float(tau), Bool(doAll));
+  *pIn = *pOut;
+  delete pOut;
+}
+
+
+SDMemTableWrapper SDMathWrapper::opacity(const SDMemTableWrapper& in, 
+                                         float tau, bool doAll)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.opacity(*pIn, Float(tau), Bool(doAll)));
 }
 

@@ -46,6 +46,11 @@ namespace SDMathWrapper {
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
                              const SDMemTableWrapper& off);
 
+// Simple binary operations
+  SDMemTableWrapper simpleBinaryOperate (const SDMemTableWrapper& left,
+                                         const SDMemTableWrapper& right,
+                                         const std::string& op);
+
 // Multiply
   void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll);
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
@@ -70,10 +75,16 @@ namespace SDMathWrapper {
   SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float area, float eta, bool doAll);
 
 // Apply gain elevation correction
-  void gainElevationInSitu (SDMemTableWrapper& in, const std::string& fileName, 
+  void gainElevationInSitu (SDMemTableWrapper& in, const std::vector<float>& coeffs,
+                            const std::string& fileName, 
                             const std::string& method, bool doAll);
-  SDMemTableWrapper gainElevation(const SDMemTableWrapper& in, const std::string& fileName, 
+  SDMemTableWrapper gainElevation(const SDMemTableWrapper& in, const std::vector<float>& coeffs,
+                                  const std::string& fileName, 
                                   const std::string& method, bool doAll);
+
+// Apply opacity correction
+  void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
+  SDMemTableWrapper opacity (const SDMemTableWrapper& in, float tau, bool doAll);
 
 // Average in time
   SDMemTableWrapper average(boost::python::tuple tpl,
@@ -88,7 +99,7 @@ namespace SDMathWrapper {
 // Statistics
   std::vector<float> statistic(const SDMemTableWrapper& in,
                                const std::vector<bool>& mask, 
-                               const std::string& which);
+                               const std::string& which, int row);
 };
 
 } // namespace
