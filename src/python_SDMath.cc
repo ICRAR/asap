@@ -63,6 +63,8 @@ namespace asap {
 
   namespace python {
     void python_SDMath() {
+      def("b_operate", &SDMathWrapper::simpleBinaryOperate);
+//
       def("quotient", &SDMathWrapper::quotient);
 //
       def("scale", &SDMathWrapper::scale);
@@ -79,6 +81,9 @@ namespace asap {
 //
       def("gainel", &SDMathWrapper::gainElevation);
       def("gainel_insitu", &SDMathWrapper::gainElevationInSitu);
+//
+      def("opacity", &SDMathWrapper::opacity);
+      def("opacity_insitu", &SDMathWrapper::opacityInSitu);
 //
       def("average", &SDMathWrapper::average);
 //
