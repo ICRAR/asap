@@ -50,7 +50,6 @@
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/Unit.h>
 #include <casa/Quanta/MVEpoch.h>
-#include <casa/Quanta/QC.h>
 #include <casa/Quanta/MVTime.h>
 #include <casa/Utilities/Assert.h>
 
@@ -78,6 +77,7 @@
 
 #include "MathUtils.h"
 #include "SDDefs.h"
+#include "SDAttr.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 
@@ -1060,18 +1060,18 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 
 
-SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool doAll) const
+SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp, 
+                                 Float JyPerK, Bool doAll) const
 // 
-// As it is, this function could be implemented with 'simpleOperate'
-// However, I anticipate that eventually we will look the conversion
-// values up in a Table and apply them in a frequency dependent way,
-// so I have implemented it fully here
+// etaAp = aperture efficiency
+// D     = geometric diameter (m)
+// JyPerK 
 //
 {
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
 
-// FInd out how to convert values into Jy and K (e.g. units might be mJy or mK)
+// Find out how to convert values into Jy and K (e.g. units might be mJy or mK)
 // Also automatically find out what we are converting to according to the
 // flux unit
 
@@ -1080,13 +1080,13 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
   Unit JY(String("Jy"));
 //
   Bool toKelvin = True;
-  Double inFac = 1.0;
+  Double cFac = 1.0;    
   if (fluxUnit==JY) {
      cerr << "Converting to K" << endl;
 //
      Quantum<Double> t(1.0,fluxUnit);
      Quantum<Double> t2 = t.get(JY);
-     inFac = (t2 / t).getValue();
+     cFac = (t2 / t).getValue();               // value to Jy
 //
      toKelvin = True;
      sh.fluxunit = "K";
@@ -1095,7 +1095,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
 //
      Quantum<Double> t(1.0,fluxUnit);
      Quantum<Double> t2 = t.get(K);
-     inFac = (t2 / t).getValue();
+     cFac = (t2 / t).getValue();              // value to K
 //
      toKelvin = False;
      sh.fluxunit = "Jy";
@@ -1104,27 +1104,44 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
   }
   pTabOut->putSDHeader(sh);
 
-// Compute conversion factor. 'a' and 'eta' are really frequency, time and  
-// telescope dependent and should be looked// up in a table
+// Make sure input values are converted to either Jy or K first...
 
-  Float factor = 2.0 * inFac * 1.0e-7 * 1.0e26 * 
-                 QC::k.getValue(Unit(String("erg/K"))) / a / eta;
-  if (toKelvin) {
-    factor = 1.0 / factor;
+  Float factor = cFac;
+
+// Select method
+
+  if (JyPerK>0.0) {
+     factor *= JyPerK;
+     if (toKelvin) factor = 1.0 / JyPerK;
+//
+     cerr << "Applying supplied conversion factor = " << factor << endl;
+     Vector<Float> factors(in.nRow(), factor);
+     correctFromVector (pTabOut, in, doAll, factors);
+  } else if (etaAp>0.0) {
+     factor *= SDAttr::findJyPerKFac (etaAp, D);
+     if (toKelvin) {
+        factor = 1.0 / factor;
+     }
+//
+     cerr << "Applying supplied conversion factor = " << factor << endl;
+     Vector<Float> factors(in.nRow(), factor);
+     correctFromVector (pTabOut, in, doAll, factors);
+  } else {
+
+// OK now we must deal with automatic look up of values.
+// We must also deal with the fact that the factors need
+// to be computed per IF and may be different and may
+// change per integration.
+
+     cerr << "Looking up conversion factors" << endl;
+     convertBrightnessUnits (pTabOut, in, toKelvin, cFac, doAll);
   }
-  cerr << "Applying conversion factor = " << factor << endl;
-
-// Generate correction vector.  Apply same factor regardless
-// of beam/pol/IF.  This will need to change somewhen.
-
-  Vector<Float> factors(in.nRow(), factor);
-
-// Correct
-
-  correctFromVector (pTabOut, in, doAll, factors);
 //
   return pTabOut;
 }
+
+
+
 
 
 SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& coeffs,
@@ -1251,6 +1268,101 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 
 
 // 'private' functions
+
+void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in, 
+                                     Bool toKelvin, Float cFac, Bool doAll) const
+{
+
+// Get header
+
+   SDHeader sh = in.getSDHeader();
+   const uInt nChan = sh.nchan;
+
+// Get instrument
+
+   Bool throwIt = True;
+   Instrument inst = SDMemTable::convertInstrument (sh.antennaname, throwIt);
+
+// Get Diameter (m)
+
+   SDAttr sdAtt;
+
+// Get epoch of first row
+
+   MEpoch dateObs = in.getEpoch(0);
+
+// Generate a Vector of correction factors. One per FreqID
+
+   SDFrequencyTable sdft = in.getSDFreqTable();
+   Vector<uInt> freqIDs;
+//
+   Vector<Float> freqs(sdft.length());
+   for (uInt i=0; i<sdft.length(); i++) {
+      freqs(i) = (nChan/2 - sdft.referencePixel(i))*sdft.increment(i) + sdft.referenceValue(i);
+   }
+//
+   Vector<Float> JyPerK = sdAtt.JyPerK(inst, dateObs, freqs);
+   Vector<Float> factors = cFac * JyPerK;
+   if (toKelvin) factors = Float(1.0) / factors;
+
+// For operations only on specified cursor location
+
+   IPosition start, end;
+   getCursorLocation(start, end, in);
+   const uInt ifAxis = in.getIF();
+
+// Iteration axes
+
+   IPosition axes(asap::nAxes-1,0);
+   for (uInt i=0,j=0; i<asap::nAxes; i++) {
+      if (i!=asap::IFAxis) {
+         axes(j++) = i;
+      }
+   }
+
+// Loop over rows and apply correction factor
+
+   Float factor = 1.0;  
+   const uInt axis = asap::ChanAxis;
+   for (uInt i=0; i < in.nRow(); ++i) {
+
+// Get data
+
+      MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+      Array<Float>& values = dataIn.getRWArray();
+
+// Get SDCOntainer
+
+      SDContainer sc = in.getSDContainer(i);
+
+// Get FreqIDs
+
+      freqIDs = sc.getFreqMap();
+
+// Now the conversion factor depends only upon frequency
+// So we need to iterate through by IF only giving 
+// us BEAM/POL/CHAN cubes
+
+      if (doAll) {
+         ArrayIterator<Float> itIn(values, axes);
+         uInt ax = 0;
+         while (!itIn.pastEnd()) {
+           itIn.array() *= factors(freqIDs(ax));         // Writes back to dataIn
+           itIn.next();
+         }
+      } else {
+         MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference
+         dataIn2 *= factors(freqIDs(ifAxis));
+      }
+
+// Write out
+
+      putDataInSDC(sc, dataIn.getArray(), dataIn.getMask());
+//
+      pTabOut->putSDContainer(sc);
+   }
+}
+
 
 
 SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
@@ -1799,5 +1911,3 @@ void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a,
       a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
    }
 }
-
-

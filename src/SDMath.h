@@ -101,8 +101,8 @@ class SDMath {
                        casa::Float width, casa::Bool doAll) const;
 
 // Flux conversion between Jansky and Kelvin
-   SDMemTable* convertFlux (const SDMemTable& in, casa::Float area, 
-                            casa::Float eta, casa::Bool doAll) const;
+   SDMemTable* convertFlux (const SDMemTable& in, casa::Float D, casa::Float etaAp, 
+                            casa::Float JyPerK, casa::Bool doAll) const;
 
 // Gain-elevation correction
    SDMemTable* gainElevation (const SDMemTable& in, const casa::Vector<casa::Float>& coeffs,
@@ -141,29 +141,9 @@ class SDMath {
                    casa::uInt iTab, casa::uInt iRow, casa::uInt axis, casa::uInt nAxesSub,
                    casa::Bool useMask, WeightType wtType) const;
 
-// Function to fill Scan Container when averaging in time
-
-  void fillSDC (SDContainer& sc, const casa::Array<casa::Bool>& mask,
-                const casa::Array<casa::Float>& data,
-                const casa::Array<casa::Float>& tSys,
-                casa::Int scanID, casa::Double timeStamp,
-                casa::Double interval, const casa::String& sourceName,
-                const casa::Vector<casa::uInt>& freqID) const;
-
-// Put the data and mask into the SDContainer
-   void putDataInSDC (SDContainer& sc, const casa::Array<casa::Float>& data,
-                      const casa::Array<casa::Bool>& mask) const;
-
-// Function to normalize data when averaging in time
-
-  void normalize (casa::MaskedArray<casa::Float>& data,
-                  const casa::Array<casa::Float>& sumSq,
-                  const casa::Array<casa::Float>& nPts,
-                  WeightType wtType, casa::Int axis, casa::Int nAxes) const;
-
-// Function to get the current cursor location
-   void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
-                           const SDMemTable& in) const;
+// Work out conversion factor for converting Jy<->K per IF per row and apply
+   void convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in, 
+                                casa::Bool toKelvin, casa::Float sFac, casa::Bool doAll) const;
 
 // Convert weight string to enum value
 
@@ -191,9 +171,26 @@ class SDMath {
    void correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
                            casa::Bool doAll, const casa::Vector<casa::Float>& factor) const;
 
-// Read ascii file into a Table
+// Convert time String to Epoch
+   casa::MEpoch epochFromString (const casa::String& str, casa::MEpoch::Types timeRef) const;
 
-   casa::Table readAsciiFile (const casa::String& fileName) const;
+// Function to fill Scan Container when averaging in time
+
+  void fillSDC (SDContainer& sc, const casa::Array<casa::Bool>& mask,
+                const casa::Array<casa::Float>& data,
+                const casa::Array<casa::Float>& tSys,
+                casa::Int scanID, casa::Double timeStamp,
+                casa::Double interval, const casa::String& sourceName,
+                const casa::Vector<casa::uInt>& freqID) const;
+
+// Format EPoch
+   casa::String formatEpoch(const casa::MEpoch& epoch)  const;
+
+// Align in Frequency
+   SDMemTable* frequencyAlign (const SDMemTable& in,
+                              casa::MFrequency::Types system,
+                              const casa::String& timeRef,
+                              const casa::String& method) const;
 
 // Generate frequency aligners
    void generateFrequencyAligners (casa::PtrBlock<casa::FrequencyAligner<casa::Float>* >& a,
@@ -212,17 +209,24 @@ class SDMath {
                                const casa::ROScalarColumn<casa::String>& srcCol,
                                const casa::ROArrayColumn<casa::uInt>& fqIDCol) const;
 
-// Align in Frequency
-   SDMemTable* frequencyAlign (const SDMemTable& in,
-                              casa::MFrequency::Types system,
-                              const casa::String& timeRef,
-                              const casa::String& method) const;
+// Function to get the current cursor location
+   void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
+                           const SDMemTable& in) const;
 
-// Convert time String to Epoch
-   casa::MEpoch epochFromString (const casa::String& str, casa::MEpoch::Types timeRef) const;
+// Function to normalize data when averaging in time
 
-// Format EPoch
-   casa::String formatEpoch(const casa::MEpoch& epoch)  const;
+  void normalize (casa::MaskedArray<casa::Float>& data,
+                  const casa::Array<casa::Float>& sumSq,
+                  const casa::Array<casa::Float>& nPts,
+                  WeightType wtType, casa::Int axis, casa::Int nAxes) const;
+
+// Put the data and mask into the SDContainer
+   void putDataInSDC (SDContainer& sc, const casa::Array<casa::Float>& data,
+                      const casa::Array<casa::Bool>& mask) const;
+
+// Read ascii file into a Table
+
+   casa::Table readAsciiFile (const casa::String& fileName) const;
 };
 
 
