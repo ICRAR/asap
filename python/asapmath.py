@@ -198,6 +198,10 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=
         
 def align(scan, insitu=None):
     """
+        Return a scan where all rows have been aligned in velocity. The
+        velocity reference frame (e.gh. LSRK), unit and doppler (e.g. OPTICAL)
+        are those set by functions  set_unit and set_freqframe.  The data 
+        are aligned to the velocity abcissa at the first time present in the data.
         scan:        a scantable
         insitu:      if False a new scantable is returned.
                      Otherwise, the scaling is done in-situ
