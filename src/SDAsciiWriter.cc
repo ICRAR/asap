@@ -36,7 +36,7 @@
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/MVAngle.h>
-
+#include <casa/Utilities/Assert.h>
 
 #include <casa/iostream.h>
 #include <casa/fstream.h>
@@ -93,10 +93,23 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
    IPosition posDir(2,0);
    const Unit RAD(String("rad"));
 
-// Open file
+// Open and write header file
 
-   String fName(fileName);
-   if (fileName.length()==0) fName = String("ascii.txt");
+
+   String rootName(fileName);
+   if (rootName.length()==0) rootName = String("ascii");
+   {
+      String fName = String(rootName) + String("_header.txt");
+      cout << "Writing header to " << fName << endl;
+      ofstream of(fName.chars(), ios::trunc);
+      std::string summary = sdTable.summary(true);
+      of << summary;
+      of.close();
+   }
+
+// Open data file
+
+   String fName = rootName + String(".txt");
    ofstream of(fName.chars(), ios::trunc);
 
 // Write header
@@ -115,12 +128,18 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
       const Array<Float>& values = dataIn.getArray();
       const Array<Bool>& mask = dataIn.getMask();
 
+// Get abcissa
+
+      std::vector<double> abcissa = sdTable.getAbcissa(Int(iRow));
+      const uInt n = abcissa.size();
+
 // Iterate through data in this row by spectra
 
       ReadOnlyVectorIterator<Float> itData(values, asap::ChanAxis);
       ReadOnlyVectorIterator<Bool> itMask(mask, asap::ChanAxis);
       while (!itData.pastEnd()) {
          const IPosition& pos = itData.pos();
+         AlwaysAssert(itData.vector().nelements()==n,AipsError);
 
 // FreqID
 
@@ -143,12 +162,20 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
          of << iRow << "  " << pos(asap::BeamAxis) << " " <<  pos(asap::IFAxis) << " " << 
                pos(asap::PolAxis) << " " <<
                src(iRow) <<  " " << formatDirection(lonLat) << " " << 
-               sdTable.getTime(iRow,True) << " " << itData.vector().nelements() << " ";
+               sdTable.getTime(iRow,True) << " " << n << " ";
+
+// Write abcissa
+
+         of.setf(ios::fixed, ios::floatfield);
+         of.precision(4);
+         for (uInt i=0; i<n; i++) {
+            of << abcissa[i] << " ";
+         }
+
 // Write data
 
          const Vector<Float>& data = itData.vector();
          const Vector<Bool>& mask = itMask.vector();
-         const uInt n = data.nelements();
          for (uInt i=0; i<n; i++) {
             of << data[i] << " ";
          }
