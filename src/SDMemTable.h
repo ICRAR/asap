@@ -191,8 +191,10 @@ public:
   // get a summary of the table
   virtual std::string summary(bool verbose=false) const;
 
-  std::vector<std::string> history(int whichRow=0) const;
-  bool appendHistory(const std::string& hist, int whichRow=0);
+  // get/set the history
+  std::vector<std::string> getHistory() const;
+  void addHistory(const std::string& hist);
+
   // write to disk as aips++ table
   void makePersistent(const std::string& filename);
 
@@ -268,7 +270,7 @@ private:
   void renumber();
 
   // Generate start and end for shape and current cursor selection
-  void setCursorSlice(casa::IPosition& start, casa::IPosition& end, 
+  void getCursorSlice(casa::IPosition& start, casa::IPosition& end, 
 		      const casa::IPosition& shape) const;
 
   // the current cursor into the array
@@ -276,6 +278,8 @@ private:
   std::vector<bool> chanMask_;
   // the underlying memory table
   casa::Table table_;
+  // The current table version
+  static const casa::uInt version_ = 1;
 
   // Cached Columns to avoid reconstructing them for each row get/put
   casa::ScalarColumn<casa::Double> timeCol_, integrCol_;

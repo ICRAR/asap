@@ -98,8 +98,8 @@ void python_SDMemTable() {
     .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
     .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
     .def("_getcoordinfo", &SDMemTableWrapper::getCoordInfo)
-    .def("_history", &SDMemTableWrapper::history,
-         (boost::python::arg("whichRow")=0) )
+    .def("_gethistory", &SDMemTableWrapper::getHistory)
+    .def("_addhistory", &SDMemTableWrapper::addHistory)
     .def("_addfit", &SDMemTableWrapper::addFit)
     .def("_getfit", &SDMemTableWrapper::getSDFitTable)
   ;

@@ -84,6 +84,11 @@ SDMemTable::SDMemTable(const std::string& name) :
   polSel_(0)
 {
   Table tab(name);
+  uInt version;
+  tab.keywordSet().get("VERSION", version);
+  if (version != version_) {
+    throw(AipsError("Unsupported version of ASAP file."));
+  }
   table_ = tab.copyToMemoryTable("dummy");
   //cerr << "hello from C SDMemTable @ " << this << endl;
   attach();
@@ -91,20 +96,22 @@ SDMemTable::SDMemTable(const std::string& name) :
 
 SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
 {
-  IFSel_= other.IFSel_;
-  beamSel_= other.beamSel_;
-  polSel_= other.polSel_;
-  chanMask_ = other.chanMask_;
   table_ = other.table_.copyToMemoryTable(String("dummy"));
   // clear all rows()
   if (clear) {
     table_.removeRow(this->table_.rowNumbers());
+    IFSel_= 0;
+    beamSel_= 0;
+    polSel_= 0;
+    chanMask_.resize(0);
   } else {
-    IFSel_ = other.IFSel_;
-    beamSel_ = other.beamSel_;
-    polSel_ = other.polSel_;
+    IFSel_= other.IFSel_;
+    beamSel_= other.beamSel_;
+    polSel_= other.polSel_;
+    chanMask_.resize(0);
+    chanMask_ = other.chanMask_;
   }
-//
+
   attach();
   //cerr << "hello from CC SDMemTable @ " << this << endl;
 }
@@ -145,7 +152,6 @@ SDMemTable &SDMemTable::operator=(const SDMemTable& other)
      table_ = other.table_.copyToMemoryTable(String("dummy"));
      attach();
   }
-  //cerr << "hello from ASS SDMemTable @ " << this << endl;
   return *this;
 }
 
@@ -160,7 +166,8 @@ void SDMemTable::setup()
 {
   TableDesc td("", "1", TableDesc::Scratch);
   td.comment() = "A SDMemTable";
-  
+  td.rwKeywordSet().define("VERSION", Int(version_));
+
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
   td.addColumn(ScalarColumnDesc<String>("SRCNAME"));
   td.addColumn(ArrayColumnDesc<Float>("SPECTRA"));
@@ -179,26 +186,21 @@ void SDMemTable::setup()
   td.addColumn(ScalarColumnDesc<Float>("ELEVATION"));
   td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
   td.addColumn(ScalarColumnDesc<Int>("REFBEAM"));
-  td.addColumn(ArrayColumnDesc<String>("HISTORY"));
   td.addColumn(ArrayColumnDesc<Int>("FITID"));
 
-
   // Now create Table SetUp from the description.
-
   SetupNewTable aNewTab("dummy", td, Table::New);
 
   // Bind the Stokes Virtual machine to the STOKES column Because we
   // don't know how many polarizations will be in the data at this
   // point, we must bind the Virtual Engine regardless.  The STOKES
   // column won't be accessed if not appropriate (nPol=4)
-
-
-   SDStokesEngine::registerClass();
-   SDStokesEngine stokesEngine(String("STOKES"), String("SPECTRA"));
-   aNewTab.bindColumn ("STOKES", stokesEngine);
-
-   // Create Table
-  table_ = Table(aNewTab, Table::Memory, 0);
+  SDStokesEngine::registerClass();
+  SDStokesEngine stokesEngine(String("STOKES"), String("SPECTRA"));
+  aNewTab.bindColumn("STOKES", stokesEngine);
+  
+  // Create Table
+  table_ = Table(aNewTab, Table::Memory, 0); 
   // add subtable 
   TableDesc tdf("", "1", TableDesc::Scratch);
   tdf.addColumn(ArrayColumnDesc<String>("FUNCTIONS"));
@@ -210,7 +212,11 @@ void SDMemTable::setup()
   Table fitTable(fittab, Table::Memory);
   table_.rwKeywordSet().defineTable("FITS", fitTable);
 
-
+  TableDesc tdh("", "1", TableDesc::Scratch);
+  tdh.addColumn(ScalarColumnDesc<String>("ITEM"));
+  SetupNewTable histtab("hist", tdh, Table::New);
+  Table histTable(histtab, Table::Memory);
+  table_.rwKeywordSet().defineTable("HISTORY", histTable);
 }
 
 void SDMemTable::attach()
@@ -233,7 +239,6 @@ void SDMemTable::attach()
   elCol_.attach(table_, "ELEVATION");
   paraCol_.attach(table_, "PARANGLE");
   rbeamCol_.attach(table_, "REFBEAM");
-  histCol_.attach(table_, "HISTORY");
   fitCol_.attach(table_,"FITID");
 }
 
@@ -358,7 +363,6 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const
 
 std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
 {
-
   Array<Float> arr;
   specCol_.get(whichRow, arr);
   return getFloatSpectrum(arr);
@@ -384,7 +388,7 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol,
     // Set current cursor location
      const IPosition& shape = arr.shape();
      IPosition start, end;
-     setCursorSlice (start, end, shape);
+     getCursorSlice(start, end, shape);
 
      // Get Q and U slices
 
@@ -432,7 +436,7 @@ std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow,
 
   const IPosition& shape = arr.shape();
   IPosition start, end;
-  setCursorSlice(start, end, shape);
+  getCursorSlice(start, end, shape);
 
   // Get I and V slices
 
@@ -1198,7 +1202,6 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc)
   azCol_.put(rno, sdc.azimuth);
   elCol_.put(rno, sdc.elevation);
   paraCol_.put(rno, sdc.parangle);
-  histCol_.put(rno, sdc.getHistory());
   fitCol_.put(rno, sdc.getFitMap());
   return true;
 }
@@ -1225,7 +1228,6 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const
   Array<uChar> flagtrum;
   Vector<uInt> fmap;
   Array<Double> direction;
-  Vector<String> histo;
   Array<Int> fits;
   
   specCol_.get(whichRow, spectrum);
@@ -1240,8 +1242,6 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const
   sdc.putRestFreqMap(fmap);
   dirCol_.get(whichRow, direction);
   sdc.putDirection(direction);
-  histCol_.get(whichRow, histo);
-  sdc.putHistory(histo);
   fitCol_.get(whichRow, fits);
   sdc.putFitMap(fits);
   return sdc;
@@ -1290,8 +1290,9 @@ SDHeader SDMemTable::getSDHeader() const
   return sdh;
 }
 void SDMemTable::makePersistent(const std::string& filename)
-{
+{  
   table_.deepCopy(filename,Table::New);
+
 }
 
 Int SDMemTable::nScan() const {
@@ -1471,7 +1472,17 @@ std::string SDMemTable::summary(bool verbose) const  {
   }
   return String(oss);
 }
-
+/*
+std::string SDMemTable::scanSummary(const std::vector<int>& whichScans) {
+  ostringstream oss;
+  Vector<Int> scanIDs = scanCol_.getColumn();
+  Vector<uInt> startInt, endInt;
+  mathutil::scanBoundaries(startInt, endInt, scanIDs);
+  const uInt nScans = startInt.nelements();
+  std::vector<int>::const_iterator it(whichScans);
+  return String(oss);
+}
+*/
 Int SDMemTable::nBeam() const
 {
   Int n;
@@ -1497,24 +1508,31 @@ Int SDMemTable::nChan() const {
   return n;
 }
 
-bool SDMemTable::appendHistory(const std::string& hist, int whichRow)
+void SDMemTable::addHistory(const std::string& hist)
 {
-  Vector<String> history;
-  histCol_.get(whichRow, history);
-  history.resize(history.nelements()+1,True);
-  history[history.nelements()-1] = hist;
-  histCol_.put(whichRow, history);
+  Table t = table_.rwKeywordSet().asTable("HISTORY");
+  uInt nrow = t.nrow();  
+  t.addRow();
+  ScalarColumn<String> itemCol(t, "ITEM");
+  itemCol.put(nrow, hist);
 }
 
-std::vector<std::string> SDMemTable::history(int whichRow) const
+std::vector<std::string> SDMemTable::getHistory() const
 {
   Vector<String> history;
-  histCol_.get(whichRow, history);
-  std::vector<std::string> stlout = mathutil::tovectorstring(history);
+  const Table& t = table_.keywordSet().asTable("HISTORY");
+  uInt nrow = t.nrow();  
+  ROScalarColumn<String> itemCol(t, "ITEM");
+  std::vector<std::string> stlout;
+  String hist;
+  for (uInt i=0; i<nrow; ++i) {
+    itemCol.get(i, hist);
+    stlout.push_back(hist);
+  }
   return stlout;
 }
 /*
-void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
+  void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 
   std::vector<int>::iterator it;
   ArrayAccessor<uChar, Axis<asap::PolAxis> > j(flags_);
@@ -1533,7 +1551,7 @@ void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 }
 */
 void SDMemTable::flag(int whichRow)
-{
+  {
   Array<uChar> arr;
   flagsCol_.get(whichRow, arr);
 
@@ -1718,7 +1736,7 @@ void SDMemTable::renumber()
 }
 
 
-void SDMemTable::setCursorSlice(IPosition& start, IPosition& end,
+void SDMemTable::getCursorSlice(IPosition& start, IPosition& end,
 				const IPosition& shape) const
 {
   const uInt nDim = shape.nelements();

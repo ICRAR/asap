@@ -478,19 +478,6 @@ Bool SDContainer::putDirection(const Array<Double>& dir) {
   return True;
 }
 
-Bool SDContainer::appendHistory(const String& hist)
-{
-  history_.resize(history_.nelements()+1,True);
-  history_[history_.nelements()-1] = hist;
-  return True;
-}
-Bool SDContainer::putHistory(const Vector<String>& hist)
-{
-  history_.resize();
-  history_ = hist;
-  return True;
-}
-
 Bool SDContainer::putFitMap(const Array<Int>& arr) {
   fitIDMap_.resize();
   fitIDMap_ = arr;

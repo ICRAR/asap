@@ -59,7 +59,7 @@ void SDFitter::clear()
 {
     for (uInt i=0;i< funcs_.nelements();++i) {
         delete funcs_[i]; funcs_[i] = 0;
-    };
+    }
     funcs_.resize(0, True);
     parameters_.resize();
     error_.resize();
@@ -145,7 +145,7 @@ bool SDFitter::setExpression(const std::string& expr, int ncomp)
         funcs_.resize(1);
         funcs_[0] = new Polynomial<Float>(ncomp);
     } else {
-        cerr << " compiled functions not yet implemented" << endl;
+        //cerr << " compiled functions not yet implemented" << endl;
         //funcs_.resize(1);
         //funcs_[0] = new CompiledFunction<Float>();
         //funcs_[0]->setFunction(String(expr));
@@ -284,57 +284,58 @@ bool SDFitter::fit() {
     if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) != 0) {
         //computeEstimates();
         for (uInt i=0; i<funcs_.nelements(); i++) {
-            Gaussian1D<AutoDiff<Float> > gauss;
-            for (uInt j=0; j<funcs_[i]->nparameters(); j++) {
-                gauss[j] = AutoDiff<Float>((*funcs_[i])[j], gauss.nparameters(), j);
-                gauss.mask(j) = funcs_[i]->mask(j);
+            Gaussian1D<AutoDiff<Float> > gauss;//(*funcs_[i]);
+	    
+	    for (uInt j=0; j<funcs_[i]->nparameters(); j++) {
+		gauss[j] = AutoDiff<Float>((*funcs_[i])[j], 
+					   gauss.nparameters(), j);
+		gauss.mask(j) = funcs_[i]->mask(j);
             }
+	    
             func.addFunction(gauss);
         }
     } else if (dynamic_cast<Polynomial<Float>* >(funcs_[0]) != 0) {
-        Polynomial<AutoDiff<Float> > poly(funcs_[0]->nparameters()-1);
-        for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
-            poly[j] = AutoDiff<Float>(0, poly.nparameters(), j);
-            poly.mask(j) = funcs_[0]->mask(j);
-        }
-        func.addFunction(poly);
+	Polynomial<AutoDiff<Float> > poly(funcs_[0]->nparameters()-1);
+	//Polynomial<AutoDiff<Float> > poly(*funcs_[0]);
+	for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
+	    poly[j] = AutoDiff<Float>(0, poly.nparameters(), j);
+	    poly.mask(j) = funcs_[0]->mask(j);
+	}
+	func.addFunction(poly);
     } else if (dynamic_cast<CompiledFunction<Float>* >(funcs_[0]) != 0) {
-
-//         CompiledFunction<AutoDiff<Float> > comp;
-//         for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
+	
+	//         CompiledFunction<AutoDiff<Float> > comp;
+	//         for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
 //             comp[j] = AutoDiff<Float>(0, comp.nparameters(), j);
 //             comp.mask(j) = funcs_[0]->mask(j);
 //         }
 //         func.addFunction(comp);
-
+	
         cout << "NYI." << endl;
     } else {
-        throw (AipsError("Fitter not set up correctly."));
+        throw(AipsError("Fitter not set up correctly."));
     }
     fitter.setFunction(func);
     fitter.setMaxIter(50+funcs_.nelements()*10);
     // Convergence criterium
     fitter.setCriteria(0.001);
+
     // Fit
     Vector<Float> sigma(x_.nelements());
     sigma = 1.0;
-    //Vector<Float> sol;
+
     parameters_.resize();
-    //Vector<Float> err;
-    error_.resize();
     parameters_ = fitter.fit(x_, y_, sigma, &m_);
-    /*
-    CompoundFunction<Float> f;
-    for (uInt i=0; i<funcs_.nelements(); i++) {
-        f.addFunction(*funcs_[i]);
-    }
-    f.parameters().setParameters(parameters_);
-    */
+
+    error_.resize();
     error_ = fitter.errors();
+
     chisquared_ = fitter.getChi2();
+
     residual_.resize();
     residual_ =  y_;
     fitter.residual(residual_,x_);
+
     // use fitter.residual(model=True) to get the model
     thefit_.resize(x_.nelements());
     fitter.residual(thefit_,x_,True);

@@ -166,10 +166,6 @@ public:
   const casa::Vector<casa::uInt>& getRestFreqMap() const 
   { return restfreqidx_; }
   
-  const casa::Vector<casa::String>& getHistory() const { return history_; }
-  casa::Bool putHistory(const casa::Vector<casa::String>& hist);
-  casa::Bool appendHistory(const casa::String& hist);
-
   casa::Bool putFitMap(const casa::Array<casa::Int>& arr);
 
   const casa::Array<casa::Int>& getFitMap() const { return fitIDMap_; }
@@ -209,7 +205,6 @@ private:
 
   //(nBeam,2) maybe use Measures here...
   casa::Array<casa::Double>   direction_;
-  casa::Vector<casa::String> history_;
   casa::Array<casa::Int> fitIDMap_;
 
   void setSlice(casa::IPosition& start, casa::IPosition& end,

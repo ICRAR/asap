@@ -62,7 +62,6 @@ public:
     return SDMemTableWrapper(new SDMemTable(*(this->getCP()), casa::False));
   }
 
-  //SDMemTableWrapper getScan(int scan) {
   SDMemTableWrapper getScan(std::vector<int> scan) {
     casa::String cond("SELECT FROM $1 WHERE SCANID IN ");
     casa::Vector<casa::Int> v(scan);
@@ -76,6 +75,10 @@ public:
     casa::String cond("SELECT * from $1 WHERE SRCNAME == pattern('");
     cond += source;cond += "')";
     return SDMemTableWrapper(*this, cond);
+  }
+
+  SDMemTableWrapper getSQL(const std::string& sqlexpr) {
+    return SDMemTableWrapper(*this, sqlexpr);
   }
 
   std::vector<float> getSpectrum(int whichRow=0) const {
@@ -165,7 +168,7 @@ public:
                                 lines, casa::String(source),
                                 casa::Int(whichIF));
   }
-
+  
   void spectralLines() const {table_->spectralLines();}
 
   std::vector<double> getRestFreqs() {
@@ -186,8 +189,11 @@ public:
     return table_->summary(verbose); 
   }
   
-  std::vector<std::string> history(int whichRow=0) { 
-    return table_->history(whichRow); 
+  std::vector<std::string> getHistory() { 
+    return table_->getHistory(); 
+  }
+  void addHistory(const std::string& hist) { 
+    table_->addHistory(hist); 
   }
 
   void addFit(int whichRow, const std::vector<double>& p,
