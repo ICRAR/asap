@@ -211,7 +211,7 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=
         _gainEl(scan, poly, filename, method, allaxes)
         return
         
-def freq_align(scan, reftime=None, method='cubic', insitu=None):
+def freq_align(scan, reftime=None, method='cubic', perif=False, insitu=None):
     """
         Return a scan where all rows have been aligned in frequency. The
         alignment frequency frame (e.g. LSRK) is that set by function
@@ -221,18 +221,21 @@ def freq_align(scan, reftime=None, method='cubic', insitu=None):
                      the first row of data is used.  
         method:      Interpolation method for regridding the spectra. Choose
                      from "nearest", "linear", "cubic" (default) and "spline"
+        perif:       Generate aligners per freqID (no doppler tracking) or
+                     per IF (scan-based doppler tracking)
         insitu:      if False a new scantable is returned.
                      Otherwise, the scaling is done in-situ
                      The default is taken from .asaprc (False)
     """
     if reftime is None: reftime = ''
     if insitu is None: insitu = rcParams['insitu']
+    perfreqid = not perif
     if not insitu:
         from asap._asap import freq_align as _align
-        return scantable(_align(scan, reftime, method))
+        return scantable(_align(scan, reftime, method, perfreqid))
     else:
         from asap._asap import freq_align_insitu as _align
-        _align(scan, reftime, method)
+        _align(scan, reftime, method, perfreqid)
         return
         
 def opacity(scan, tau, insitu=None, allaxes=None):
