@@ -175,6 +175,23 @@ SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   return CountedPtr<SDMemTable>(sdmt);
 }
 
+CountedPtr<SDMemTable>
+SDMath::add(const CountedPtr<SDMemTable>& in, Float offset) {
+  SDMemTable* sdmt = new SDMemTable(*in);
+  Table t = sdmt->table();
+  ArrayColumn<Float> spec(t,"SPECTRA");
+
+  for (uInt i=0; i < t.nrow(); i++) {
+    // data stuff
+    MaskedArray<Float> marr(sdmt->rowAsMaskedArray(i));
+    marr += offset;
+    spec.put(i, marr.getArray());
+  }
+  return CountedPtr<SDMemTable>(sdmt);
+}
+
+
+
 bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data,
                 const Vector<Bool>& mask,
                 const std::string& fitexpr) {

@@ -45,7 +45,9 @@ namespace SDMath {
   CountedPtr<SDMemTable> quotient(const CountedPtr<SDMemTable>& on, 
 					 const CountedPtr<SDMemTable>& off);
   CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
-					 Float factor);
+				  Float factor);
+  CountedPtr<SDMemTable> add(const CountedPtr<SDMemTable>& in, 
+			     Float offset);
   
   CountedPtr<SDMemTable> baseline(const CountedPtr<SDMemTable>& in,
 					 const std::string& fitexpr,

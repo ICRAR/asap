@@ -57,6 +57,7 @@ namespace asap {
       def("average", &SDMathWrapper::average);
       def("quotient", &SDMathWrapper::quotient);
       def("scale", &SDMathWrapper::scale);
+      def("add", &SDMathWrapper::add);
       def("baseline", &SDMathWrapper::baseline);
       def("hanning", &SDMathWrapper::hanning);
       def("averages", &SDMathWrapper::averages);

@@ -57,6 +57,11 @@ namespace SDMathWrapper {
     return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
 
+  SDMemTableWrapper add(const SDMemTableWrapper& in,
+			Float offset) {
+    return SDMemTableWrapper(SDMath::add(in.getCP(), offset));
+  }
+
   SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
     return SDMemTableWrapper(SDMath::hanning(in.getCP()));
   }
