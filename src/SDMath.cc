@@ -31,6 +31,8 @@
 #include <vector>
 
 #include <casa/aips.h>
+#include <casa/iostream.h>
+#include <casa/iomanip.h>
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/Array.h>
@@ -41,6 +43,7 @@
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/MaskArrLogi.h>
+#include <casa/Arrays/Matrix.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/Containers/Block.h>
 #include <casa/Exceptions.h>
@@ -1259,6 +1262,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    SDHeader sh = in.getSDHeader();
    const uInt nChan = sh.nchan;
    const uInt nRows = in.nRow();
+   const uInt nIF = sh.nif;
 
 // Get Table reference
 
@@ -1269,18 +1273,13 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    ROScalarColumn<Double> mjdCol(tabIn, "TIME");
    ROScalarColumn<String> srcCol(tabIn, "SRCNAME");
    ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
-//
    Vector<Double> times = mjdCol.getColumn();
-   Vector<String> srcNames = srcCol.getColumn();
-   Vector<uInt> freqID;
 
-// Generate Source table
-
-   Vector<String> srcTab;
-   Vector<uInt> srcIdx, firstRow;
-   generateSourceTable (srcTab, srcIdx, firstRow, srcNames);
-   const uInt nSrcTab = srcTab.nelements();
-   cerr << "Found " << srcTab.nelements() << " sources to align " << endl;
+// Generate DataDesc table
+ 
+   Matrix<uInt> ddIdx;
+   SDDataDesc dDesc;
+   generateDataDescTable (ddIdx, dDesc, nIF, in, tabIn, srcCol, fqIDCol);
 
 // Get reference Epoch to time of first row or given String
 
@@ -1299,17 +1298,33 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
    MPosition refPos = in.getAntennaPosition();
 
-// Get Frequency Table
-
-   SDFrequencyTable fTab = in.getSDFreqTable();
-   const uInt nFreqIDs = fTab.length();
-
 // Create FrequencyAligner Block. One VA for each possible
 // source/freqID combination
 
-   PtrBlock<FrequencyAligner<Float>* > a(nFreqIDs*nSrcTab);
-   generateFrequencyAligners (a, in, nChan, nFreqIDs, nSrcTab, firstRow,
-                              freqSystem, refPos, refEpoch);
+   PtrBlock<FrequencyAligner<Float>* > a(dDesc.length());
+   generateFrequencyAligners (a, dDesc, in, nChan, freqSystem, refPos, refEpoch);
+
+// Generate and fill output Frequency Tabke
+
+   SDFrequencyTable freqTabOut = in.getSDFreqTable();
+   freqTabOut.setLength(0);
+   Vector<String> units(1);
+   units = String("Hz");
+   Bool linear=True;
+//
+   for (uInt i=0; i<dDesc.length(); i++) {
+
+// Get Aligned SC in Hz
+
+      SpectralCoordinate sC = a[i]->alignedSpectralCoordinate(linear);
+      sC.setWorldAxisUnits(units);
+
+// Add FreqID
+
+      freqTabOut.addFrequency(sC.referencePixel()[0],
+                              sC.referenceValue()[0],
+                              sC.increment()[0]);
+   }
 
 // Interpolation method
 
@@ -1319,17 +1334,18 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 // New output Table
 
    SDMemTable* pTabOut = new SDMemTable(in,True);
+   pTabOut->putSDFreqTable(freqTabOut);
 
 // Loop over rows in Table
 
-   const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
-
    Bool extrapolate=False;
+   const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
    Bool useCachedAbcissa = False;
    Bool first = True;
    Bool ok;
    Vector<Float> yOut;
    Vector<Bool> maskOut;
+   Vector<uInt> freqID(nIF);
    uInt ifIdx, faIdx;
 //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
@@ -1343,10 +1359,6 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
      MVEpoch mv2(tQ2);
      MEpoch epoch(mv2, epochRef);
 
-// Get FreqID vector.  One freqID per IF
-
-     fqIDCol.get(iRow, freqID);
-
 // Get copy of data
     
      const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
@@ -1358,10 +1370,8 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 // For each row, the Frequency abcissa will be the same regardless
 // of polarization.  For all other axes (IF and BEAM) the abcissa
 // will change.  So we iterate through the data by pol-chan planes
-// to mimimize the work.  At this point, I think the Direction
-// is stored as the same for each beam. DOn't know where the 
-// offsets are or what to do about them right now.  For now
-// all beams get same position and velocoity abcissa.
+// to mimimize the work.  Probably won't work for multiple beams
+// at this point.
 
      ArrayIterator<Float> itValuesPlane(values, polChanAxes);
      ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
@@ -1371,17 +1381,20 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
         const IPosition& pos = itValuesPlane.pos();
         ifIdx = pos(asap::IFAxis);
-        faIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
+        faIdx = ddIdx(iRow,ifIdx);
 //
         VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
         VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
-//
+
+// Iterate through the plane by vector and align
+
         first = True;
         useCachedAbcissa=False;
         while (!itValuesVec.pastEnd()) {     
            ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
                                  itMaskVec.vector(), epoch, useCachedAbcissa,
                                  interp, extrapolate); 
+//
            itValuesVec.vector() = yOut;
            itMaskVec.vector() = maskOut;
 //
@@ -1400,51 +1413,18 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
 // cerr << "values out = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
 
-// Create and put back
+// Create SDContainer and put back
 
     SDContainer sc = in.getSDContainer(iRow);
     putDataInSDC(sc, values, mask);
+    for (uInt i=0; i<nIF; i++) {
+       uInt idx = ddIdx(iRow,i);
+       freqID(i) = dDesc.freqID(idx);
+    }
+    sc.putFreqMap(freqID);
 //
     pTabOut->putSDContainer(sc);
    }
-
-
-// Write out correct frequency table information for output.
-// CLone from input and overwrite
-
-   SDFrequencyTable freqTab = in.getSDFreqTable();
-   freqTab.setLength(0);
-
-// Note that we don't have anyway to hold frequency table information 
-// in the SDMemTable which is source dependent.  Each FrequencyAligner 
-// is generated for an freqID/Source combination.  Don't know what to 
-// do about this apart from to pick the aligned SC from the first source 
-// at the moment.  ASAP really needs to handle data description id 
-// like in aips++ which is a combination of source and freqid. Otherwise
-// all else I can do in this function is disallow multiple sources
-
-   Bool linear=True;
-   Vector<String> units(1);
-   units = String("Hz");
-   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
-      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
-         uInt idx = (iSrc*nFreqIDs) + fqID;
-
-// Get Aligned SC in Hz
-
-         if (iSrc==0) {
-            SpectralCoordinate sC = a[idx]->alignedSpectralCoordinate(linear);
-            sC.setWorldAxisUnits(units);
-
-// Write out frequency table information to SDMemTable
-
-            Int idx = freqTab.addFrequency(sC.referencePixel()[0],
-                                           sC.referenceValue()[0],
-                                           sC.increment()[0]);
-         }
-      }
-   }
-   pTabOut->putSDFreqTable(freqTab);
 
 // Now we must set the base and extra frames to the 
 // input frame
@@ -1756,52 +1736,30 @@ void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
 }
 
 
-void SDMath::generateSourceTable (Vector<String>& srcTab,
-                                  Vector<uInt>& srcIdx,
-                                  Vector<uInt>& firstRow,
-                                  const Vector<String>& srcNames) const
-//
-// This algorithm assumes that if there are multiple beams
-// that the source names are diffent.  Oterwise we would need
-// to look atthe direction for each beam...
-//
+
+
+void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
+                                    SDDataDesc& dDesc,
+                                    uInt nIF,
+                                    const SDMemTable& in,
+                                    const Table& tabIn,
+                                    const ROScalarColumn<String>& srcCol,
+                                    const ROArrayColumn<uInt>& fqIDCol) const
 {
-   const uInt nRow = srcNames.nelements();
-   srcTab.resize(0);
-   srcIdx.resize(nRow);
-   firstRow.resize(0);
+   const uInt nRows = tabIn.nrow();
+   ddIdx.resize(nRows,nIF);
 //
-   uInt nSrc = 0;
-   for (uInt i=0; i<nRow; i++) {
-      String srcName = srcNames[i];
-      
-// Do we have this source already ?
-
-      Int idx = -1;
-      if (nSrc>0) {
-         for (uInt j=0; j<nSrc; j++) {
-           if (srcName==srcTab[j]) {
-              idx = j;
-              break;
-           }
-         }
-      }
-
-// Add new entry if not found
-
-      if (idx==-1) {
-         nSrc++;
-         srcTab.resize(nSrc,True);
-         srcTab(nSrc-1) = srcName;
-         idx = nSrc-1;
+   String srcName;
+   Vector<uInt> freqIDs;
+   for (uInt iRow=0; iRow<nRows; iRow++) {
+      srcCol.get(iRow, srcName);
+      fqIDCol.get(iRow, freqIDs);
+      const MDirection& dir = in.getDirection(iRow);
 //
-         firstRow.resize(nSrc,True);
-         firstRow(nSrc-1) = i;       // First row for which this source occurs
+      for (uInt iIF=0; iIF<nIF; iIF++) {
+         uInt idx = dDesc.addEntry(srcName, freqIDs[iIF], dir);
+         ddIdx(iRow,iIF) = idx;
       }
-
-// Set index for this row
-
-      srcIdx[i] = idx;
    }
 }
 
@@ -1827,20 +1785,18 @@ String SDMath::formatEpoch(const MEpoch& epoch)  const
 
 
 void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a, 
-                                       const SDMemTable& in, uInt nChan,
-                                       uInt nFreqIDs, uInt nSrcTab, 
-                                       const Vector<uInt>& firstRow,
-                                       MFrequency::Types system,
-                                       const MPosition& refPos,
-                                       const MEpoch& refEpoch) const
+                                        const SDDataDesc& dDesc,
+                                        const SDMemTable& in, uInt nChan,
+                                        MFrequency::Types system,
+                                        const MPosition& refPos,
+                                        const MEpoch& refEpoch) const
 {
-   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
-      SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
-      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
-         MDirection refDir = in.getDirection(firstRow[iSrc]);
-         uInt idx = (iSrc*nFreqIDs) + fqID;
-         a[idx] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
-      }
+   for (uInt i=0; i<dDesc.length(); i++) {
+      uInt freqID = dDesc.freqID(i);
+      const MDirection& refDir = dDesc.direction(i);
+//
+      SpectralCoordinate sC = in.getSpectralCoordinate(freqID);
+      a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
    }
 }
 

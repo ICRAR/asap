@@ -43,11 +43,16 @@ class casa::Table;
 class casa::MEpoch;
 class casa::MPosition;
 template<class T> class casa::PtrBlock;
+template<class T> class casa::Matrix;
+template<class T> class casa::ROScalarColumn;
+template<class T> class casa::ROArrayColumn;
+
 
 
 namespace asap {
 
 class SDMemTable;
+class SDDataDesc;
 
 class SDMath {
 
@@ -190,20 +195,22 @@ class SDMath {
 
    casa::Table readAsciiFile (const casa::String& fileName) const;
 
-// Generate source table
-   void generateSourceTable (casa::Vector<casa::String>& srcTab,
-                             casa::Vector<casa::uInt>& srcIdx,
-                             casa::Vector<casa::uInt>& firstRow,
-                             const casa::Vector<casa::String>& srcNames) const;
-
 // Generate frequency aligners
    void generateFrequencyAligners (casa::PtrBlock<casa::FrequencyAligner<casa::Float>* >& a,
+                                   const SDDataDesc& dDesc,
                                    const SDMemTable& in, casa::uInt nChan,
-                                   casa::uInt nFreqIDs, casa::uInt nSrcTab,
-                                   const casa::Vector<casa::uInt>& firstRow,
                                    casa::MFrequency::Types system,
                                    const casa::MPosition& refPos,
                                    const casa::MEpoch& refEpoch) const;
+
+// Generate data description table (combines source and freqID)
+   void generateDataDescTable (casa::Matrix<casa::uInt>& ddIdx,
+                               SDDataDesc& dDesc,
+                               casa::uInt nIF,
+                               const SDMemTable& in,
+                               const casa::Table& tabIn,
+                               const casa::ROScalarColumn<casa::String>& srcCol,
+                               const casa::ROArrayColumn<casa::uInt>& fqIDCol) const;
 
 // Align in Frequency
    SDMemTable* frequencyAlign (const SDMemTable& in,
@@ -217,6 +224,9 @@ class SDMath {
 // Format EPoch
    casa::String formatEpoch(const casa::MEpoch& epoch)  const;
 };
+
+
+
 
 } // namespace
 
