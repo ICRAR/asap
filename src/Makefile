@@ -8,6 +8,7 @@ CXXFLAGS += -fpermissive # This should be removed.
 #CXXFLAGS += -Wall -Wno-parentheses
 
 CFITSIOLIB := /usr/local/lib/libcfitsio.a #-lcfitsio
+CFITSIOINC := -I/usr/local/include/cfitsio
 
 AIPSROOT  := $(word 1, $(AIPSPATH))
 AIPSINC   := -I$(AIPSROOT)/code/include
@@ -26,8 +27,6 @@ BOOSTINC  :=
 
 PYTHONINC := -I/usr/include/python2.2
 PYTHONLIB := -lpython2.2
-
-CFITSIOINC := -I/usr/local/include/cfitsio
 
 INCDIRS   := -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
