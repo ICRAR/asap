@@ -6,7 +6,6 @@ import sys
 from re import match
 import Tkinter as Tk
 
-#print "Importing matplotlib with TkAgg backend."
 import matplotlib
 matplotlib.use("TkAgg")
 
@@ -15,7 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
 	FigureManagerTkAgg
 from matplotlib.figure import Figure, Text
 from matplotlib.numerix import sqrt
-from matplotlib import rc,rcParams
+from matplotlib import rc, rcParams
 
 # Force use of the newfangled toolbar.
 matplotlib.rcParams['toolbar'] = 'toolbar2'
@@ -28,7 +27,7 @@ class ASAPlot:
     ASAP plotting class based on matplotlib.
     """
 
-    def __init__(self, rows=1, cols=0, title='', size=(7,5), buffering=False):
+    def __init__(self, rows=1, cols=0, title='', size=(8,6), buffering=False):
 	"""
 	Create a new instance of the ASAPlot plotting class.
 
@@ -36,16 +35,14 @@ class ASAPlot:
 	the panel layout; refer to the doctext for set_panels().
 	"""
 	self.window = Tk.Tk()
-        self.is_dead = False
-        def dest_callback():
-            self.is_dead = True
-            self.window.destroy()
-        
-        self.window.protocol("WM_DELETE_WINDOW", dest_callback)	
-	#self.frame1 = Tk.Frame(self.window, relief=Tk.RIDGE, borderwidth=4)
-	#self.frame1.pack(fill=Tk.BOTH)
+	self.is_dead = False
+	def dest_callback():
+	    self.is_dead = True
+	    self.window.destroy()
 
-	self.figure = Figure(figsize=size,facecolor='#ddddee')
+	self.window.protocol("WM_DELETE_WINDOW", dest_callback)
+
+	self.figure = Figure(figsize=size, facecolor='#ddddee')
 	self.canvas = FigureCanvasTkAgg(self.figure, master=self.window)
 	self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
@@ -70,7 +67,7 @@ class ASAPlot:
 
 	matplotlib.interactive = True
 	self.buffering = buffering
-        
+
 	self.canvas.show()
 
 
@@ -85,7 +82,7 @@ class ASAPlot:
 	self.axes.clear()
 	self.colours[0] = 1
 	self.lines = []
-	
+
 
     def delete(self, numbers=None):
 	"""
@@ -297,6 +294,19 @@ class ASAPlot:
 	self.show()
 
 
+    def position(self):
+	"""
+	Use the mouse to get a position from a graph.
+	"""
+
+	def position_disable(event):
+	    self.register('button_press', None)
+	    print '%.4f, %.4f' % (event.xdata, event.ydata)
+
+	print 'Press any mouse button...'
+	self.register('button_press', position_disable)
+
+
     def quit(self):
 	"""
 	Destroy the ASAPlot graphics window.
@@ -304,11 +314,53 @@ class ASAPlot:
 	self.window.destroy()
 
 
+    def region(self):
+	"""
+	Use the mouse to get a rectangular region from a plot.
+
+	The return value is [x0, y0, x1, y1] in world coordinates.
+	"""
+
+	def region_start(event):
+	    height = self.canvas.figure.bbox.height()
+	    self.rect = {'fig': None, 'height': height,
+			 'x': event.x, 'y': height - event.y,
+			 'world': [event.xdata, event.ydata,
+				   event.xdata, event.ydata]}
+	    self.register('button_press', None)
+	    self.register('motion_notify', region_draw)
+	    self.register('button_release', region_disable)
+
+	def region_draw(event):
+	    self.canvas._tkcanvas.delete(self.rect['fig'])
+	    self.rect['fig'] = self.canvas._tkcanvas.create_rectangle(
+				self.rect['x'], self.rect['y'],
+				event.x, self.rect['height'] - event.y)
+
+	def region_disable(event):
+	    self.register('motion_notify', None)
+	    self.register('button_release', None)
+
+	    self.canvas._tkcanvas.delete(self.rect['fig'])
+
+	    self.rect['world'][2:4] = [event.xdata, event.ydata]
+	    print '(%.2f, %.2f)  (%.2f, %.2f)' % (self.rect['world'][0],
+		self.rect['world'][1], self.rect['world'][2],
+		self.rect['world'][3])
+
+	self.register('button_press', region_start)
+
+	# This has to be modified to block and return the result (currently
+	# printed by region_disable) when that becomes possible in matplotlib.
+
+	return [0.0, 0.0, 0.0, 0.0]
+
+
     def register(self, type=None, func=None):
 	"""
 	Register, reregister, or deregister events of type 'button_press',
 	'button_release', or 'motion_notify'.
-	
+
 	The specified callback function should have the following signature:
 
 	    def func(event)
@@ -370,6 +422,37 @@ class ASAPlot:
 	self.show()
 
 
+    def save(self, fname=None):
+	"""
+	Save the plot to a file.
+
+	fname is the name of the output file.  The image format is determined
+	from the file suffix; 'png', 'ps', and 'eps' are recognized.  If no
+	file name is specified 'yyyymmdd_hhmmss.png' is created in the current
+	directory.
+	"""
+	if fname is None:
+	    from datetime import datetime
+	    dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
+	    fname = 'asap'+dstr+'.png'
+
+	d = ['png','.ps','eps']
+
+	from os.path import expandvars
+	fname = expandvars(fname)
+
+	if fname[-3:].lower() in d:
+	    try:
+		self.canvas.print_figure(fname)
+		print 'Written file %s' % (fname)
+	    except IOError, msg:
+		print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
+		return
+	else:
+	    print "Invalid image type. Valid types are:"
+	    print "ps, eps, png"
+
+
     def set_axes(self, what=None, *args, **kwargs):
 	"""
 	Set attributes for the axes by calling the relevant Axes.set_*()
@@ -420,6 +503,24 @@ class ASAPlot:
 	self.show()
 
 
+    def set_limits(self, xlim=None, ylim=None):
+	"""
+	Set x-, and y-limits for each subplot.
+
+	xlim = [xmin, xmax] as in axes.set_xlim().
+	ylim = [ymin, ymax] as in axes.set_ylim().
+	"""
+
+	for s in self.subplots:
+	    self.axes  = s['axes']
+	    self.lines = s['lines']
+	    if xlim is not None:
+		self.axes.set_xlim(xlim)
+	    if ylim is not None:
+		self.axes.set_ylim(ylim)
+	return
+
+
     def set_line(self, number=None, **kwargs):
 	"""
 	Set attributes for the specified line, or else the next line(s)
@@ -468,7 +569,7 @@ class ASAPlot:
     def set_panels(self, rows=1, cols=0, n=-1, nplots=-1):
 	"""
 	Set the panel layout.
-	
+
 	rows and cols, if cols != 0, specify the number of rows and columns in
 	a regular layout.   (Indexing of these panels in matplotlib is row-
 	major, i.e. column varies fastest.)
@@ -482,42 +583,66 @@ class ASAPlot:
 	current figure as its next 0-relative panel number (i).  This allows
 	non-regular panel layouts to be constructed via multiple calls.  Any
 	other value of n clears the plot and produces a rectangular array of
-	empty panels.
+	empty panels.  The number of these may be limited by nplots.
 	"""
 	if n < 0 and len(self.subplots):
 	    self.figure.clear()
 	    self.set_title()
 
-	if rows < 1:
-	    rows = 1
-        nel = 1
-	if cols == 0:
-            nel = rows
+	if rows < 1: rows = 1
+
+	if cols <= 0:
 	    i = int(sqrt(rows))
 	    if i*i < rows: i += 1
 	    cols = i
 
 	    if i*(i-1) >= rows: i -= 1
 	    rows = i
-        else:
-            if nplots > -1:
-                nel=nplots
+
 	if 0 <= n < rows*cols:
 	    i = len(self.subplots)
 	    self.subplots.append({})
+
 	    self.subplots[i]['axes']  = self.figure.add_subplot(rows,
 					    cols, n+1)
 	    self.subplots[i]['lines'] = []
 
 	    if i == 0: self.subplot(0)
 
+	    self.rows = 0
+	    self.cols = 0
+
 	else:
 	    self.subplots = []
-	    for i in range(nel):
+
+	    if nplots < 1 or rows*cols < nplots:
+		nplots = rows*cols
+
+	    for i in range(nplots):
 		self.subplots.append({})
+
 		self.subplots[i]['axes']  = self.figure.add_subplot(rows,
 						cols, i+1)
 		self.subplots[i]['lines'] = []
+
+		if rows > 1 or cols > 1:
+		    # Squeeze the plots together.
+		    pos = self.subplots[i]['axes'].get_position()
+		    if cols > 1: pos[2] *= 1.1
+		    if rows > 1: pos[3] *= 1.1
+		    self.subplots[i]['axes'].set_position(pos)
+
+		# Suppress tick labelling for interior subplots.
+		if i <= (rows-1)*cols - 1:
+		    # Suppress x-labels for frames not in the bottom row.
+		    self.subplots[i]['axes'].set_xticklabels([])
+
+		if i%cols:
+		    # Suppress y-labels for frames not in the left column.
+		    self.subplots[i]['axes'].set_yticklabels([])
+
+		self.rows = rows
+		self.cols = cols
 
 	    self.subplot(0)
 
@@ -539,23 +664,25 @@ class ASAPlot:
 	"""
 	if not self.buffering:
 	    if self.loc:
-                for j in range(len(self.subplots)):
-                    lines  = []
-                    labels = []
-                    i = 0
-                    for line in self.subplots[j]['lines']:
-                        i += 1
-                        if line is not None:
-                            lines.append(line[0])
-                            lbl = line[0].get_label()
-                            if lbl == '':
-                                lbl = str(i)
-                            labels.append(lbl)
+		for j in range(len(self.subplots)):
+		    lines  = []
+		    labels = []
+		    i = 0
+		    for line in self.subplots[j]['lines']:
+			i += 1
+			if line is not None:
+			    lines.append(line[0])
+			    lbl = line[0].get_label()
+			    if lbl == '':
+				lbl = str(i)
+			    labels.append(lbl)
 
-                    if len(lines):
-                        self.subplots[j]['axes'].legend(tuple(lines), tuple(labels), self.loc)
-                    else:
-                        self.subplots[j]['axes'].legend((' '))
+		    if len(lines):
+			self.subplots[j]['axes'].legend(tuple(lines),
+							tuple(labels),
+							self.loc)
+		    else:
+			self.subplots[j]['axes'].legend((' '))
 
 	    self.window.wm_deiconify()
 	    self.canvas.show()
@@ -591,54 +718,14 @@ class ASAPlot:
 	Add text to the figure.
 	"""
 	self.figure.text(*args, **kwargs)
-	self.show()        
+	self.show()
+
 
     def unmap(self):
 	"""
 	Hide the ASAPlot graphics window.
 	"""
 	self.window.wm_withdraw()
-
-    def set_limits(self,xlim=None,ylim=None):
-        for s in self.subplots:
-	    self.axes  = s['axes']
-	    self.lines = s['lines']
-            if xlim is not None:
-                self.axes.set_xlim(xlim)
-            if ylim is not None:
-                self.axes.set_ylim(ylim)
-        return
-
-    def save(self, fname=None):
-        """
-        Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
-        Parameters:
-             filename:    The name of the output file. This is optional
-                          and autodetects the image format from the file
-                          suffix. If non filename is specified a file
-                          called 'yyyymmdd_hhmmss.png' is created in the
-                          current directory.
-        """
-        if fname is None:
-            from datetime import datetime
-            dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
-            fname = 'asap'+dstr+'.png'
-            
-        d = ['png','.ps','eps']
-
-        from os.path import expandvars
-        fname = expandvars(fname)
-
-        if fname[-3:].lower() in d:
-            try:
-                self.canvas.print_figure(fname)
-                print 'Written file %s' % (fname)
-            except IOError, msg:
-                print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
-                return
-        else:
-            print "Invalid image type. Valid types are:"
-            print "ps, eps, png"
 
 
 def get_colour(colour='black'):
@@ -683,7 +770,7 @@ def load_colours(filename='/usr/local/lib/rgb.txt'):
     """
     Load the colour dictionary from the specified file.
     """
-    print 'Loading colour dictionary from', file
+    print 'Loading colour dictionary from', filename
     from os.path import expandvars
     filename = expandvars(filename)
     rgb = open(filename, 'r')
