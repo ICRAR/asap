@@ -40,11 +40,11 @@ namespace asap {
     void python_SDReader() {
       class_<SDReaderWrapper>("sdreader")
         .def( init < std::string, int, int > () )
-        .def("open", &SDReaderWrapper::open)
-        .def("read", &SDReaderWrapper::read)
-        .def("reset", &SDReaderWrapper::reset)
-        .def("getdata", &SDReaderWrapper::getSDMemTable)
-        .def("header",  &SDReaderWrapper::pseudoHeader);
+        .def("_open", &SDReaderWrapper::open)
+        .def("_read", &SDReaderWrapper::read)
+        .def("_reset", &SDReaderWrapper::reset)
+        .def("_getdata", &SDReaderWrapper::getSDMemTable)
+        .def("_header",  &SDReaderWrapper::pseudoHeader);
       ;
     };
 

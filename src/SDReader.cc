@@ -45,12 +45,16 @@ using namespace asap;
 
 SDReader::SDReader() :
   reader_(0),
+  header_(0),
+  frequencies_(0),
   table_(new SDMemTable()) {
   cursor_ = 0;
 }
 SDReader::SDReader(const std::string& filename, 
                    int whichIF, int whichBeam) :
   reader_(0),
+  header_(0),
+  frequencies_(0),
   table_(new SDMemTable()) {
   cursor_ = 0;
   open(filename, whichIF, whichBeam);
@@ -58,29 +62,21 @@ SDReader::SDReader(const std::string& filename,
 
 SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
   reader_(0),
+  header_(0),
   table_(tbl) {
   cursor_ = 0;
 }
 
 SDReader::~SDReader() {
-  if (reader_) delete reader_; reader_ = 0;
+  if (reader_) delete reader_;
+  if (header_) delete header_; 
+  if (frequencies_) delete frequencies_;
 }
 
 void SDReader::reset() {
   cursor_ = 0;
   table_ = new SDMemTable();
-  if (reader_) delete reader_; reader_ = 0;
-  // re-create the reader
-  Bool   haveBase, haveSpectra, haveXPol;
-  String format;
-  Vector<Bool> beams;
-  if ((reader_ = getPKSreader(filename_, 0, False, format, beams, nIF_,
-                              nChan_, nPol_, haveBase, haveSpectra,
-                              haveXPol)) == 0)  {
-    throw(AipsError("PKSreader failed"));
-  }
-  // re-enter the header
-  table_->putSDHeader(header_);
+  open(filename_,ifOffset_, beamOffset_);
 }
 
 
@@ -88,31 +84,28 @@ void SDReader::close() {
   cerr << "disabled" << endl;
 }
 
-
-
 void SDReader::open(const std::string& filename, 
                     int whichIF, int whichBeam) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
-//
+
   String inName(filename);
   Path path(inName);
   inName = path.expandedName();
-//
+
   File file(inName);
   if (!file.exists()) {
      throw(AipsError("File does not exist"));
   }
   filename_ = inName;
 
-// Create reader and fill in values for arguments
-
+  // Create reader and fill in values for arguments
   String format;
   Vector<Bool> beams;
   if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
                               nChan_, nPol_, haveBase, haveSpectra,
                               haveXPol)) == 0)  {
-    throw(AipsError("PKSreader failed"));
+    throw(AipsError("Creation of PKSreader failed"));
   }
   if (!haveSpectra) {
     delete reader_;
@@ -120,86 +113,93 @@ void SDReader::open(const std::string& filename,
     throw(AipsError("No spectral data in file."));
     return;
   }
+
   nBeam_ = beams.nelements();
   // Get basic parameters.
   if (haveXPol) {
     cout << "Warning. Ignoring cross polarisation." << endl;
     nPol_--;    
   }
-  header_ = SDHeader();
-  header_.nchan = nChan_;
-  header_.npol = nPol_;
-  header_.nbeam = nBeam_;
-  Int status = reader_->getHeader(header_.observer, header_.project,
-                                  header_.antennaname, header_.antennaposition,
-                                  header_.obstype,header_.equinox,
-                                  header_.freqref,
-                                  header_.utc, header_.reffreq,
-                                  header_.bandwidth);
+  if (header_) delete header_;
+  header_ = new SDHeader();
+  header_->nchan = nChan_;
+  header_->npol = nPol_;
+  header_->nbeam = nBeam_;
+
+  Int status = reader_->getHeader(header_->observer, header_->project,
+                                  header_->antennaname, header_->antennaposition,
+                                  header_->obstype,header_->equinox,
+                                  header_->freqref,
+                                  header_->utc, header_->reffreq,
+                                  header_->bandwidth);
+
   if (status) {
     delete reader_;
     reader_ = 0;
     throw(AipsError("Failed to get header."));
     return;
   }
-  if ((header_.obstype).matches("*SW*")) {
+  if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
     cout << "Header indicates frequency switched observation.\n"
       "setting # of IFs = 1 " << endl;
     nIF_ = 1;
   }
 
-// Determine Telescope and set brightness unit
+  // Determine Telescope and set brightness unit
 
   Bool throwIt = False;
-  Instrument inst = SDMemTable::convertInstrument (header_.antennaname, throwIt);
-  header_.fluxunit = "Jy";
+  Instrument inst = SDMemTable::convertInstrument(header_->antennaname, 
+						  throwIt);
+  header_->fluxunit = "Jy";
   if (inst==ATMOPRA || inst==TIDBINBILLA) {
-     header_.fluxunit = "K";
+     header_->fluxunit = "K";
   }
-//
-  header_.nif = nIF_;
-  header_.epoch = "UTC";
+
+  header_->nif = nIF_;
+  header_->epoch = "UTC";
 
   // Apply selection criteria.
 
   Vector<Int> ref;
   Vector<Bool> beamSel(nBeam_,True);
   Vector<Bool> IFsel(nIF_,True);
-//
+
   ifOffset_ = 0;
   if (whichIF>=0) {
     if (whichIF>=0 && whichIF<nIF_) {
        IFsel = False;
        IFsel(whichIF) = True;
-       header_.nif = 1;
+       header_->nif = 1;
        nIF_ = 1;
        ifOffset_ = whichIF;
     } else {
        throw(AipsError("Illegal IF selection"));
     }
   }
-//
+
   beamOffset_ = 0;
   if (whichBeam>=0) {
      if (whichBeam>=0 && whichBeam<nBeam_) {
         beamSel = False;
         beamSel(whichBeam) = True;
-        header_.nbeam = 1;
+        header_->nbeam = 1;
         nBeam_ = 1;
         beamOffset_ = whichBeam;
      } else {
        throw(AipsError("Illegal Beam selection"));
      }
   }
-//
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
-  table_->putSDHeader(header_);
-  frequencies_.setRefFrame(header_.freqref);
-  frequencies_.setRestFrequencyUnit("Hz");
-  frequencies_.setEquinox(header_.equinox);
+  table_->putSDHeader(*header_);
+
+  if (frequencies_) delete frequencies_;
+  frequencies_ = new SDFrequencyTable();
+  frequencies_->setRefFrame(header_->freqref);
+  frequencies_->setRestFrequencyUnit("Hz");
+  frequencies_->setEquinox(header_->equinox);
 }
 
 int SDReader::read(const std::vector<int>& seq) {
@@ -219,13 +219,14 @@ int SDReader::read(const std::vector<int>& seq) {
   Vector<Complex> xPol;
   uInt n = seq.size();
 
-  uInt stepsize = header_.nif*header_.nbeam;
+  uInt stepsize = header_->nif*header_->nbeam;
   uInt seqi = 0;
   Bool getAll = False;
+
   if (seq[n-1] == -1) getAll = True;
   while ( (cursor_ <= seq[n-1]) || getAll) {
     // only needs to be create if in seq
-    SDContainer sc(header_.nbeam,header_.nif,header_.npol,header_.nchan);
+    SDContainer sc(header_->nbeam,header_->nif,header_->npol,header_->nchan);
     // iterate over one correlator integration cycle = nBeam*nIF
     for (uInt row=0; row < stepsize; row++) {
       // stepsize as well
@@ -240,18 +241,19 @@ int SDReader::read(const std::vector<int>& seq) {
                              tsys, sigma, calFctr, baseLin, baseSub,
                              spectra, flagtra, xCalFctr, xPol);
 
-// Make sure beam/IF numbers are 0-relative - dealing with possible IF or Beam selection
-
+      // Make sure beam/IF numbers are 0-relative - dealing with
+      // possible IF or Beam selection
       beamNo = beamNo - beamOffset_ - 1;      
       IFno = IFno - ifOffset_ - 1;
-//
+
       if (status) {
         if (status == -1) {
           // EOF.
           if (row > 0 && row < stepsize-1) 
 	    cerr << "incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present." << endl;
-          //cerr << "EOF" << endl;
-          table_->putSDFreqTable(frequencies_);
+
+	  // flush frequency table
+          table_->putSDFreqTable(*frequencies_);
           return status;
         }
       }
@@ -272,12 +274,13 @@ int SDReader::read(const std::vector<int>& seq) {
         }
         // add specific info
         // refPix = nChan/2+1 in  1-rel Integer arith.!
-        Int refPix = header_.nchan/2;                                         // 0-rel
-        uInt freqID = frequencies_.addFrequency(refPix, refFreq, freqInc);
-	uInt restFreqID = frequencies_.addRestFrequency(restFreq);
-//   
+        Int refPix = header_->nchan/2;       // 0-rel
+        uInt freqID = frequencies_->addFrequency(refPix, refFreq, freqInc);
+	uInt restFreqID = frequencies_->addRestFrequency(restFreq);
+
         sc.setFrequencyMap(freqID, IFno);
         sc.setRestFrequencyMap(restFreqID, IFno);
+
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
 	sc.parangle = parAngle;
@@ -298,6 +301,6 @@ int SDReader::read(const std::vector<int>& seq) {
     cursor_++;// increment position in file
 
   }
-  table_->putSDFreqTable(frequencies_);
+  table_->putSDFreqTable(*frequencies_);
   return status;
 }

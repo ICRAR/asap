@@ -77,8 +77,8 @@ protected:
 private:
   casa::Int nBeam_,nIF_,nPol_,nChan_;
   PKSreader* reader_;  
-  SDHeader header_;
-  SDFrequencyTable frequencies_;
+  SDHeader* header_;
+  SDFrequencyTable* frequencies_;
   casa::CountedPtr<SDMemTable> table_;
   casa::String filename_;
   casa::uInt cursor_;
