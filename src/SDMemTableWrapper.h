@@ -105,6 +105,11 @@ public:
   SDMemTableWrapper average(const SDMemTableWrapper& sdt) {
     return SDMemTableWrapper(SDMath::average(sdt.getCP()));
   }
+  SDMemTableWrapper quotient(const SDMemTableWrapper& on,
+			     const SDMemTableWrapper& off) {
+    return SDMemTableWrapper(SDMath::quotient(on.getCP(),
+					     off.getCP()));
+  }
 };
 
 } // namespace
