@@ -388,9 +388,22 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol) const
   if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
      throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
   }
+
+// For full conversion we are only supporting linears at the moment
+
+  if (nPol() > 2) {
+     String antName;
+     table_.keywordSet().get("AntennaName", antName);
+     Instrument inst = SDAttr::convertInstrument (antName, True);
+     SDAttr sdAtt;
+     if (sdAtt.feedPolType(inst) != LINEAR) {
+       throw(AipsError("Only linear polarizations are supported"));
+     }
+  }
+//
   Array<Float> arr;
   stokesCol_.get(whichRow, arr);
-
+//
   if (doPol && (polSel_==1 || polSel_==2)) {       //   Q,U --> P, P.A.
 
 // Set current cursor location
@@ -1463,6 +1476,7 @@ std::string SDMemTable::summary(bool verbose) const  {
   const uInt nScans = startInt.nelements();
   String name;
   Vector<uInt> freqIDs, listFQ;
+  Vector<uInt> restFreqIDs, listRestFQ;
   uInt nInt;
 
   for (uInt i=0; i<nScans; i++) {
@@ -1474,10 +1488,16 @@ std::string SDMemTable::summary(bool verbose) const  {
 
     // Find all the FreqIDs in this scan
     listFQ.resize(0);      
+    listRestFQ.resize(0);      
     for (uInt j=startInt(i); j<endInt(i)+1; j++) {
       freqidCol_.get(j, freqIDs);
       for (uInt k=0; k<freqIDs.nelements(); k++) {
 	mathutil::addEntry(listFQ, freqIDs(k));
+      }
+//
+      restfreqidCol_.get(j, restFreqIDs);
+      for (uInt k=0; k<restFreqIDs.nelements(); k++) {
+	mathutil::addEntry(listRestFQ, restFreqIDs(k));
       }
     }
 
@@ -1488,7 +1508,7 @@ std::string SDMemTable::summary(bool verbose) const  {
 	<< setw(10) << time 
 	<< setw(3) << std::right << nInt  << setw(3) << " x " << std::left
 	<< setw(6) <<  tInt
-	<< " " << listFQ << endl;
+	<< " " << listFQ << " " << listRestFQ << endl;
   }
   oss << endl;
   oss << "Table contains " << table_.nrow() << " integration(s) in " 
@@ -1696,6 +1716,7 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
 
    // If multiple restfreqs, must be length nIF. In this
    // case we will just replace the rest frequencies
+   // We can't disinguish scalar and vector of length 1
    const uInt nRestFreqs = restFreqs.nelements();
    Int idx = -1;
    SDFrequencyTable sdft = getSDFreqTable();
@@ -1705,7 +1726,7 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
       if (nRestFreqs != nIFs) {
          throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
       }
-      cout << "Replacing rest frequencies with given list, one per IF" << endl;
+      cout << "Replacing rest frequencies, one per IF, with given list : " << restFreqs << endl;
       sdft.deleteRestFrequencies();
       for (uInt i=0; i<nRestFreqs; i++) {
          Quantum<Double> rf(restFreqs[i], unit);
@@ -1716,7 +1737,11 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
      // Add new rest freq
       Quantum<Double> rf(restFreqs[0], unit);
       idx = sdft.addRestFrequency(rf.getValue("Hz"));
-      cout << "Selecting given rest frequency" << endl;
+      if (whichIF>=0) {
+         cout << "Selecting given rest frequency (" << restFreqs[0] << ") for IF " << whichIF << endl;
+      } else {
+         cout << "Selecting given rest frequency (" << restFreqs[0] << ") for all IFs" << endl;
+      }
    }
    
    // Replace
@@ -1729,7 +1754,6 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
       for (uInt i=0; i<nRow; i++) {
          srcnCol_.get(i, srcName);
          restfreqidCol_.get(i,restFreqIDs);       
-
          if (idx==-1) {
 	   // Replace vector of restFreqs; one per IF.
 	   // No selection possible
