@@ -145,18 +145,26 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
          posDir(1) = 1;
          lonLat[1] = whichDir(posDir);
 
-	 // Write.  This formats the vectors as [,,,,] which we
-	 // probably don't want.
-	 uInt ba = uInt(asap::BeamAxis);
-	 uInt ia = uInt(asap::IFAxis);
-	 uInt pa = uInt(asap::PolAxis);
+// Write preamble
 
-         of << iRow << "  " << pos(ba) << " " 
-	    << pos(ia) << " " << pos(pa) << " "
-	    << src(iRow) <<  " " << formatDirection(lonLat) << " " 
-	    << dTmp << " " 
-	    << itData.vector().nelements() << " " << itData.vector() 
-	    << "  " << itMask.vector() << endl;
+         of << iRow << "  " << pos(asap::BeamAxis) << " " <<  pos(asap::IFAxis) << " " << 
+               pos(asap::PolAxis) << " " <<
+               src(iRow) <<  " " << formatDirection(lonLat) << " " << 
+               dTmp << " " << itData.vector().nelements() << " ";
+// Write data
+
+         const Vector<Float>& data = itData.vector();
+         const Vector<Bool>& mask = itMask.vector();
+         const uInt n = data.nelements();
+         for (uInt i=0; i<n; i++) {
+            of << data[i] << " ";
+         }
+// Write mask
+
+         for (uInt i=0; i<n; i++) {
+            of << mask[i] << " ";
+         }
+         of << endl;
 
 // Next spectrum
 
