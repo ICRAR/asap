@@ -249,11 +249,12 @@ SDMemTableWrapper SDMathWrapper::gainElevation(const SDMemTableWrapper& in,
 }
 
 void SDMathWrapper::frequencyAlignmentInSitu (SDMemTableWrapper& in, const std::string& refTime,
-                                              const std::string& method)
+                                              const std::string& method, bool perFreqID)
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
-  SDMemTable* pOut = sdm.frequencyAlignment(*pIn, String(refTime), String(method));
+  SDMemTable* pOut = sdm.frequencyAlignment(*pIn, String(refTime), String(method),
+                                            Bool(perFreqID));
   *pIn = *pOut;
   delete pOut;
 }
@@ -261,11 +262,13 @@ void SDMathWrapper::frequencyAlignmentInSitu (SDMemTableWrapper& in, const std::
 
 SDMemTableWrapper SDMathWrapper::frequencyAlignment (const SDMemTableWrapper& in,
                                                      const std::string& refTime,
-                                                     const std::string& method)
+                                                     const std::string& method,
+                                                     bool perFreqID)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.frequencyAlignment(*pIn, String(refTime), String(method)));
+  return CountedPtr<SDMemTable>(sdm.frequencyAlignment(*pIn, String(refTime), 
+                                                       String(method), Bool(perFreqID)));
 }
 
 void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)
