@@ -88,7 +88,7 @@ def add(scan, offset, insitu=False, all=True):
         _add(scan, offset, all)
         return
         
-def convertflux(scan, area, eta=1.0, insitu=False, all=True):
+def convert_flux(scan, area, eta=1.0, insitu=False, all=True):
     """
     Return a scan where all spectra are converted to either Jansky or Kelvin
         depending upon the flux units of the scan table.
