@@ -47,7 +47,9 @@ SDReader::SDReader() :
   reader_(0),
   header_(0),
   frequencies_(0),
-  table_(new SDMemTable()) {
+  table_(new SDMemTable()),
+  haveXPol_(False)
+{
   cursor_ = 0;
 }
 SDReader::SDReader(const std::string& filename, 
@@ -55,7 +57,9 @@ SDReader::SDReader(const std::string& filename,
   reader_(0),
   header_(0),
   frequencies_(0),
-  table_(new SDMemTable()) {
+  table_(new SDMemTable()),
+  haveXPol_(False)
+{
   cursor_ = 0;
   open(filename, whichIF, whichBeam);
 }
@@ -63,7 +67,9 @@ SDReader::SDReader(const std::string& filename,
 SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
   reader_(0),
   header_(0),
-  table_(tbl) {
+  table_(tbl),
+  haveXPol_(False)
+{
   cursor_ = 0;
 }
 
@@ -87,7 +93,7 @@ void SDReader::close() {
 void SDReader::open(const std::string& filename, 
                     int whichIF, int whichBeam) {
   if (reader_) delete reader_; reader_ = 0;
-  Bool   haveBase, haveSpectra, haveXPol;
+  Bool   haveBase, haveSpectra;
 
   String inName(filename);
   Path path(inName);
@@ -104,7 +110,7 @@ void SDReader::open(const std::string& filename,
   Vector<Bool> beams;
   if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
                               nChan_, nPol_, haveBase, haveSpectra,
-                              haveXPol)) == 0)  {
+                              haveXPol_)) == 0)  {
     throw(AipsError("Creation of PKSreader failed"));
   }
   if (!haveSpectra) {
@@ -116,10 +122,11 @@ void SDReader::open(const std::string& filename,
 
   nBeam_ = beams.nelements();
   // Get basic parameters.
-  if (haveXPol) {
-    cout << "Warning. Ignoring cross polarisation." << endl;
-    nPol_--;    
+  if (haveXPol_) {
+    cout << "Cross polarization present" << endl;
+    nPol_ += 2;                          // Convert Complex -> 2 Floats
   }
+
   if (header_) delete header_;
   header_ = new SDHeader();
   header_->nchan = nChan_;
@@ -192,7 +199,7 @@ void SDReader::open(const std::string& filename,
   }
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
-  reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol);
+  reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol_);
   table_->putSDHeader(*header_);
 
   if (frequencies_) delete frequencies_;
@@ -287,9 +294,14 @@ int SDReader::read(const std::vector<int>& seq) {
 	sc.parangle = parAngle;
 	sc.refbeam = refBeam-1;//make it 0-based; -1 if nbeams == 1
         sc.scanid = scanNo-1;//make it 0-based
-        sc.setSpectrum(spectra, beamNo, IFno);
-        sc.setFlags(flagtra,  beamNo, IFno);
-        sc.setTsys(tsys, beamNo, IFno);
+        if (haveXPol_) {
+           sc.setSpectrum(spectra, xPol, beamNo, IFno);
+           sc.setFlags(flagtra,  beamNo, IFno, True);
+        } else {
+           sc.setSpectrum(spectra, beamNo, IFno);
+           sc.setFlags(flagtra,  beamNo, IFno, False);
+        }
+        sc.setTsys(tsys, beamNo, IFno, haveXPol_);
         sc.setDirection(direction, beamNo);
       }
     }

@@ -84,6 +84,7 @@ private:
   casa::uInt cursor_;
   casa::Double timestamp_;
   casa::uInt beamOffset_, ifOffset_;
+  casa::Bool haveXPol_;
 };
 
 }// namespace
