@@ -59,6 +59,7 @@
 #include "SDDefs.h"
 #include "SDMemTable.h"
 #include "SDContainer.h"
+#include "MathUtils.h"
 
 
 using namespace casa;
@@ -1017,7 +1018,7 @@ String SDMemTable::formatSec(Double x) const
 {
   Double xcop = x;
   MVTime mvt(xcop/24./3600.);  // make days
-  
+
   if (x < 59.95)
     return  String("      ") + mvt.string(MVTime::TIME_CLEAN_NO_HM, 7)+"s";
   else if (x < 3599.95) 
@@ -1074,23 +1075,6 @@ void SDMemTable::setInstrument(const std::string& name)
 
 std::string SDMemTable::summary() const  {
 
-  // get number of integrations per scan
-  int cIdx = 0;
-  int idx = 0;
-  int scount = 0;
-  std::vector<int> cycles;
-  for (uInt i=0; i<scanCol_.nrow();++i) {
-    while (idx == cIdx && i<scanCol_.nrow()) {
-      scanCol_.getScalar(++i,cIdx);
-      ++scount;
-    }
-    idx = cIdx;
-    cycles.push_back(scount);
-    scount=0;
-    --i;
-  }  
-
-
   ostringstream oss;
   oss << endl;
   oss << "--------------------------------------------------" << endl;
@@ -1127,10 +1111,7 @@ std::string SDMemTable::summary() const  {
   oss << setw(15) << "Cursor:" << "Beam[" << getBeam() << "] "
       << "IF[" << getIF() << "] " << "Pol[" << getPol() << "]" << endl;
   oss << endl;
-  uInt count = 0;
-  String name;
-  Int previous = -1;Int current=0;
-  Int integ = 0;
+//
   String dirtype ="Position ("+
     MDirection::showType(getDirectionReference())+
     ")";
@@ -1138,32 +1119,49 @@ std::string SDMemTable::summary() const  {
       << setw(15) << "Source"
       << setw(26) << dirtype
       << setw(10) << "Time"
-      << setw(13) << "Integration" << endl;
-  oss << "-------------------------------------------------------------------------------" << endl;
+      << setw(18) << "Integration" 
+      << setw(10) << "FreqIDs" << endl;
+  oss << "----------------------------------------------------------------------------------" << endl;
   
-  std::vector<int>::iterator it = cycles.begin();
-  for (uInt i=0; i< scanCol_.nrow();i++) {
-    scanCol_.getScalar(i,current);
-    if (previous != current) {
-      srcnCol_.getScalar(i,name);
-      previous = current;
-      String t = formatSec(Double(getInterval(i)));
-      String posit = formatDirection(getDirection(i,True));
-      oss << setw(6) << count 
-	  << setw(15) << name
+//
+  uInt scanNo = 0;
+  String name;
+  Int lastScanID = 0;
+  Int scanID;
+  uInt firstRow = 0;
+  Vector<uInt> freqIDs, listFQ;
+//
+  uInt nRow = scanCol_.nrow();
+  for (uInt i=0; i<nRow; i++) {
+    scanCol_.getScalar(i,scanID);
+    freqidCol_.get(i, freqIDs);
+//
+    if (i>0 && (i==nRow-1 || scanID!=lastScanID)) {
+      srcnCol_.getScalar(firstRow,name);
+      String t = formatSec(Double(getInterval(firstRow)));
+      String posit = formatDirection(getDirection(firstRow,True));
+      uInt nInt = (i-firstRow);
+      if (i==nRow-1 &&scanID==lastScanID) nInt++;   // Last row but same scan
+//
+      oss << setw(6) << scanNo 
+          << setw(15) << name
 	  << setw(26) << posit
-	  << setw(10) << getTime(i,False)
-	  << setw(3) << std::right << *it << " x "
-          << setw(10) 
-          << t << std::left << endl;
-      count++;
-      it++;
+	  << setw(10) << getTime(firstRow,False)
+	  << setw(3) << nInt  << setw(3) << " x " << setw(6) <<  t 
+          << " " << listFQ << endl;
+//
+      lastScanID = scanID;
+      firstRow = i;
+      scanNo++;
+      listFQ.resize(0);
     } else {
-      integ++;
+      for (uInt j=0; j<freqIDs.nelements(); j++) {
+         mathutil::addEntry(listFQ, freqIDs(j));
+      }
     }
   }
   oss << endl;
-  oss << "Table contains " << table_.nrow() << " integration(s) in " << count << " scan(s)." << endl;
+  oss << "Table contains " << table_.nrow() << " integration(s) in " << scanNo << " scan(s)." << endl;
 
 // Frequency Table
 
@@ -1171,7 +1169,7 @@ std::string SDMemTable::summary() const  {
   SDFrequencyTable sdft = getSDFreqTable();
   oss << endl << endl;
   oss << "FreqID  Frame   RefFreq(Hz)     RefPix   Increment(Hz)" << endl;
-  oss << "-------------------------------------------------------------------------------" << endl;
+  oss << "----------------------------------------------------------------------------------" << endl;
   for (uInt i=0; i<sdft.length(); i++) {
      oss << setw(8) << i << setw(8)
                     << info[3] << setw(16) << setprecision (8)
@@ -1179,7 +1177,7 @@ std::string SDMemTable::summary() const  {
                     << sdft.referencePixel(i) << setw(12)
                     << sdft.increment(i) << endl;
   }
-  oss << "-------------------------------------------------------------------------------" << endl;
+  oss << "----------------------------------------------------------------------------------" << endl;
   return String(oss);
 }
 
