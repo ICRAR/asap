@@ -1,4 +1,5 @@
 from scantable import scantable
+from asap import rcParams
 
 def average_time(*args, **kwargs):
     """
@@ -22,15 +23,15 @@ def average_time(*args, **kwargs):
     scanAv = False
     if kwargs.has_key('scanav'):
        scanAv = kwargs.get('scanav')
-#
+
     weight = 'none'
     if kwargs.has_key('weight'):
        weight = kwargs.get('weight')
-#
+
     mask = ()
     if kwargs.has_key('mask'):
         mask = kwargs.get('mask')
-#
+
     lst = tuple(args)
     from asap._asap import average as _av
     for s in lst:
@@ -55,7 +56,7 @@ def quotient(source, reference, preserve=True):
     from asap._asap import quotient as _quot
     return scantable(_quot(source, reference, preserve))
 
-def b_operate(left, right, op='add'):
+def simple_math(left, right, op='add'):
     """
     Apply simple mathematical binary operations to two 
     scan tables,  returning the result in a new scan table.
@@ -65,49 +66,60 @@ def b_operate(left, right, op='add'):
         right:         the 'right' scan
         op:            the operation: 'add' (default), 'sub', 'mul', 'div'
     """
+    if not isinstance(left,scantable) and not isinstance(right,scantable):
+        print "Please provide two scantables as input"
+        return
     from asap._asap import b_operate as _bop
     return scantable(_bop(left, right, op))
 
-def scale(scan, factor, insitu=False, all=True):
+def scale(scan, factor, insitu=None, allaxes=None):
     """
     Return a scan where all spectra are scaled by the give 'factor'
     Parameters:
         scan:        a scantable
         factor:      the scaling factor
-        insitu:      if False (default) a new scantable is returned.
+        insitu:      if False a new scantable is returned.
                      Otherwise, the scaling is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
-                     apply only to the selected (beam/pol/if)spectra only
+                     The default is taken from .asaprc (False)
+        allaxes:     if True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only.
+                     The default is taken from .asaprc (True)
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import scale as _scale
-        return scantable(_scale(scan, factor, all))
+        return scantable(_scale(scan, factor, allaxes))
     else:
         from asap._asap import scale_insitu as _scale
-        _scale(scan, factor, all)
+        _scale(scan, factor, allaxes)
         return
         
 
-def add(scan, offset, insitu=False, all=True):
+def add(scan, offset, insitu=None, allaxes=None):
     """
     Return a scan where all spectra have the offset added
     Parameters:
         scan:        a scantable
         offset:      the offset
-        insitu:      if False (default) a new scantable is returned.
-                     Otherwise, the addition is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+        allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
+                     The default is taken from .asaprc (True)
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import add as _add
-        return scantable(_add(scan, offset, all))
+        return scantable(_add(scan, offset, allaxes))
     else:
         from asap._asap import add_insitu as _add
-        _add(scan, offset, all)
+        _add(scan, offset, allaxes)
         return
         
-def convert_flux(scan, area, eta=1.0, insitu=False, all=True):
+def convert_flux(scan, area, eta=1.0, insitu=None, allaxes=None):
     """
     Return a scan where all spectra are converted to either Jansky or Kelvin
         depending upon the flux units of the scan table.
@@ -115,20 +127,24 @@ def convert_flux(scan, area, eta=1.0, insitu=False, all=True):
         scan:        a scantable
         area:        the illuminated area of the telescope (m**2)
         eta:         The efficiency of the telescope (default 1.0)        
-        insitu:      if False (default) a new scantable is returned.
-                     Otherwise, the conversion is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+        allaxes:         if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
+                     The default is taken from .asaprc (True)
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import convertflux as _convert
-        return scantable(_convert(scan, area, eta, all))
+        return scantable(_convert(scan, area, eta, allaxes))
     else:
         from asap._asap import convertflux_insitu as _convert
-        _convert(scan, area, eta, all)
+        _convert(scan, area, eta, allaxes)
         return
 
-def gain_el(scan, poly=None, filename="", method="linear", insitu=False, all=True):
+def gain_el(scan, poly=None, filename="", method="linear", insitu=None, allaxes=None):
     """
     Return a scan after applying a gain-elevation correction. The correction
     can be made via either a polynomial or a table-based interpolation 
@@ -139,14 +155,17 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=False, all=Tru
     occur if the instrument is not known).
     Parameters:
         scan:        a scantable
-        poly:        Polynomial coefficients (default None) to compute a gain-elevation
-                     correction as a function of elevation (in degrees).
+        poly:        Polynomial coefficients (default None) to compute a
+                     gain-elevation correction as a function of
+                     elevation (in degrees).
         filename:    The name of an ascii file holding correction factors.
                      The first row of the ascii file must give the column 
                      names and these MUST include columns
-                     "ELEVATION" (degrees) and "FACTOR" (multiply data by this) somewhere.
-                     The second row must give the data type of the column. Use 'R' for 
-                     Real and 'I' for Integer.  An example file would be:
+                     "ELEVATION" (degrees) and "FACTOR" (multiply data by this)
+                     somewhere.
+                     The second row must give the data type of the column. Use
+                     'R' for Real and 'I' for Integer.  An example file
+                     would be:
 
                      TIME ELEVATION FACTOR
                      R R R
@@ -158,48 +177,58 @@ def gain_el(scan, poly=None, filename="", method="linear", insitu=False, all=Tru
                      0.6 90 1.0
         method:      Interpolation method when correcting from a table. Values 
                      are  "nearest", "linear" (default), "cubic" and "spline"
-        insitu:      if False (default) a new scantable is returned.
-                     Otherwise, the conversion is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
-                     apply only to the selected (beam/pol/if)spectra only
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+        allaxes:         if True apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if) spectra only
+                     The default is taken from .asaprc (True)
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
     if poly is None:
        poly = ()
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import gainel as _gainEl
-        return scantable(_gainEl(scan, poly, filename, method, all))
+        return scantable(_gainEl(scan, poly, filename, method, allaxes))
     else:
         from asap._asap import gainel_insitu as _gainEl
-        _gainEl(scan, poly, filename, method, all)
+        _gainEl(scan, poly, filename, method, allaxes)
         return
         
-def opacity(scan, tau, insitu=False, all=True):
+def opacity(scan, tau, insitu=None, allaxes=None):
     """
     Return a scan after applying an opacity correction.
     Parameters:
         scan:        a scantable
         tau:         Opacity from which the correction factor is exp(tau*ZD)
                      where ZD is the zenith-distance
-        insitu:      if False (default) a new scantable is returned.
-                     Otherwise, the conversion is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
+        allaxes:     if True apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
+                     The default is taken from .asaprc (True)
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import opacity as _opacity
-        return scantable(_opacity(scan, tau, all))
+        return scantable(_opacity(scan, tau, allaxes))
     else:
         from asap._asap import opacity_insitu as _opacity
-        _opacity(scan, tau, all)
+        _opacity(scan, tau, allaxes)
         return
         
-def bin(scan, width=5, insitu=False):
+def bin(scan, width=5, insitu=None):
     """
     Return a scan where all spectra have been binned up
         width:       The bin width (default=5) in pixels
-        insitu:      if False (default) a new scantable is returned.
-                     Otherwise, the addition is done in-situ
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
     """
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import bin as _bin
         return scantable(_bin(scan, width))
@@ -208,7 +237,7 @@ def bin(scan, width=5, insitu=False):
         _bin(scan, width)
         return
 
-def average_pol(scan, mask=None, insitu=False):
+def average_pol(scan, mask=None, insitu=None):
     """
     Average the Polarisations together.
     Parameters:
@@ -216,13 +245,15 @@ def average_pol(scan, mask=None, insitu=False):
         mask:        An optional mask defining the region, where the
                      averaging will be applied. The output will have all 
                      specified points masked. 
-        insitu:      If False (default) a new scantable is returned.
-                     Otherwise, the averaging is done in-situ
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
     Example:
         polav = average_pols(myscan)
     """
     if mask is None:
         mask = ()
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import averagepol as _avpol
         return scantable(_avpol(scan, mask))
@@ -231,7 +262,7 @@ def average_pol(scan, mask=None, insitu=False):
         _avpol(scan, mask)
         return
     
-def smooth(scan, kernel="hanning", width=5.0, insitu=False, all=True):
+def smooth(scan, kernel="hanning", width=5.0, insitu=None, allaxes=None):
     """
     Smooth the spectrum by the specified kernel (conserving flux).
     Parameters:
@@ -243,28 +274,35 @@ def smooth(scan, kernel="hanning", width=5.0, insitu=False, all=True):
                     ignored otherwise it defauls to 5 pixels.
                     For 'gaussian' it is the Full Width Half
                     Maximum. For 'boxcar' it is the full width.
-        insitu:     If False (default) a new scantable is returned.
+        insitu:     if False a new scantable is returned.
                     Otherwise, the scaling is done in-situ
-        all:        If True (default) apply to all spectra. Otherwise
+                    The default is taken from .asaprc (False)
+        allaxes:    If True (default) apply to all spectra. Otherwise
                     apply only to the selected (beam/pol/if)spectra only
+                    The default is taken from .asaprc (True)
     Example:
          none
     """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import smooth as _smooth
-        return scantable(_smooth(scan,kernel,width,all))
+        return scantable(_smooth(scan,kernel,width,allaxes))
     else:
         from asap._asap import smooth_insitu as _smooth
-        _smooth(scan,kernel,width,all)
+        _smooth(scan,kernel,width,allaxes)
         return
     
-def poly_baseline(scan, mask=None, order=0):
+def poly_baseline(scan, mask=None, order=0, insitu=None):
     """
     Return a scan which has been baselined (all rows) by a polynomial. 
     Parameters:
         scan:    a scantable
         mask:    an optional mask
         order:   the order of the polynomial (default is 0)
+        insitu:      if False a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+                     The default is taken from .asaprc (False)
     Example:
         # return a scan baselined by a third order polynomial,
         # not using a mask
@@ -278,5 +316,5 @@ def poly_baseline(scan, mask=None, order=0):
     f._verbose(True)
     f.set_scan(scan, mask)
     f.set_function(poly=order)    
-    sf = f.auto_fit()
+    sf = f.auto_fit(insitu)
     return sf
