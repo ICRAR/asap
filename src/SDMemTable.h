@@ -35,10 +35,11 @@
 #include <string>
 #include <vector>
 // AIPS++
-#include <casa/aips.h>
+ #include <casa/aips.h>
 #include <casa/BasicSL/String.h>
 #include <tables/Tables/Table.h>
 #include <casa/Arrays/MaskedArray.h>
+#include "SDDefs.h"
 
 #include <coordinates/Coordinates/SpectralCoordinate.h>
 
@@ -103,6 +104,9 @@ public:
 // Get/Set flux unit
   std::string getFluxUnit() const;
   void setFluxUnit (const std::string& unit);
+
+// Set Instrument
+  void setInstrument (const std::string& instrument);
 
   // set the current value
   virtual bool setIF(casa::Int whichIF=0);
@@ -172,6 +176,10 @@ public:
 
 // Get global Time reference
   casa::MEpoch::Types getTimeReference () const;
+
+// Helper function to check instrument (antenna) name and give enum
+  static Instrument convertInstrument (const casa::String& instrument,
+                                       casa::Bool throwIt);
 
 private:
   // utility func for nice printout

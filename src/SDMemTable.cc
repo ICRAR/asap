@@ -906,6 +906,15 @@ void SDMemTable::setFluxUnit(const std::string& unit)
   }
 }
 
+void SDMemTable::setInstrument(const std::string& name)
+{
+  Bool throwIt = True;
+  Instrument ins = convertInstrument (name, throwIt);
+  String nameU(name);
+  nameU.upcase();
+  table_.rwKeywordSet().define(String("AntennaName"), nameU);
+}
+
 std::string SDMemTable::summary()   {
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
@@ -1084,5 +1093,29 @@ MEpoch::Types SDMemTable::getTimeReference () const
   }
 //
   return met;
+}
+
+
+Instrument SDMemTable::convertInstrument (const String& instrument,
+                                          Bool throwIt)
+{
+   String t(instrument);
+   t.upcase();
+//
+   Instrument inst = asap::UNKNOWN;
+   if (t==String("TID")) {
+      inst = TIDBINBILLA;
+   } else if (t==String("ATPKSMB")) {
+      inst = PKSMULTIBEAM;
+   } else if (t==String("ATPKSSB")) {
+      inst = PKSSINGLEBEAM;
+   } else if (t==String("MOPRA")) {
+      inst = MOPRA;
+   } else {
+      if (throwIt) {
+         throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
+      }
+   }
+   return inst;
 }
 
