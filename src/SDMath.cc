@@ -135,8 +135,6 @@ SDMemTable* SDMath::velocityAlignment (const SDMemTable& in, const String& refTi
    MDoppler::Types doppler;
    MDoppler::getType(doppler, dopplerStr);
 
-// Decide on alignment Epoch
-
 // Do it
 
    return velocityAlign (in, velSystem, velUnit, doppler, refTime);
@@ -571,7 +569,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
   factors(0) = width;
   for (uInt j=0; j<in.nCoordinates(); ++j) {
     CoordinateSystem cSys;
-    cSys.addCoordinate(in.getCoordinate(j));
+    cSys.addCoordinate(in.getSpectralCoordinate(j));
     CoordinateSystem cSysBin = 
       CoordinateUtil::makeBinnedCoordinateSystem(factors, cSys, False);
 //
@@ -1142,17 +1140,13 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    if (refTime.length()>0) {
       refEpoch = epochFromString(refTime, in.getTimeReference());
    } else {
-      Quantum<Double> tQ(times[0], DAY);
-      MVEpoch mve(tQ);
-      refEpoch = MEpoch(mve, epochRef);
+      refEpoch = in.getEpoch(0);
    }
    cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << endl;
 
 // Set Reference Position
 
-   Vector<Double> antPos = sh.antennaposition;
-   MVPosition mvpos(antPos[0], antPos[1], antPos[2]);
-   MPosition refPos(mvpos);
+   MPosition refPos = in.getAntennaPosition();
 
 // Get Frequency Table
 
@@ -1164,7 +1158,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
    PtrBlock<VelocityAligner<Float>* > vA(nFreqIDs*nSrcTab);
    for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
-      SpectralCoordinate sC = in.getCoordinate(fqID);
+      SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
       for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
          MDirection refDir = in.getDirection(firstRow[iSrc]);
          uInt idx = (iSrc*nFreqIDs) + fqID;
