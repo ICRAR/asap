@@ -137,6 +137,7 @@ public:
   }
 
   casa::CountedPtr<SDMemTable> getCP() const {return table_;}
+  SDMemTable* getPtr() {return &(*table_);}
   std::string summary() { return table_->summary(); }
 
 private:

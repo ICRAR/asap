@@ -63,7 +63,9 @@ public:
   // Copy Construct a SDMemTable, give a scanid constraint
   // see also getScan()
   SDMemTable(const casa::Table& tab, const std::string& expr);
-
+  
+  SDMemTable &operator=(const SDMemTable& other);
+  
   virtual ~SDMemTable();
 
   // put data from meta conatiner into the table
@@ -127,7 +129,7 @@ public:
 
   const casa::TableRecord& getHeader() const {return table_.keywordSet();}
   // get a handle to the "raw" aips++ table
-  const casa::Table& table() { return table_; }
+  const casa::Table& table() const { return table_; }
 
   // return the number of values
   casa::Int nBeam() const;

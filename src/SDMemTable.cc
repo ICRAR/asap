@@ -109,6 +109,15 @@ SDMemTable SDMemTable::getScan(Int scanID) {
   return SDMemTable(table_, cond);
 }
 
+SDMemTable &SDMemTable::operator=(const SDMemTable& other) {
+  // reset "cursor"
+  IFSel_ = 0;
+  beamSel_ = 0;
+  polSel_ = 0;
+  table_ = other.table().copyToMemoryTable("dummy");
+  return *this;
+}
+
 SDMemTable SDMemTable::getSource(const std::string& source) {
   String cond("SELECT * from $1 WHERE SRCNAME == ");
   cond += source;
