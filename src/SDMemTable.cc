@@ -47,7 +47,7 @@
 #include <aips/Tables/ScalarColumn.h>
 #include <aips/Tables/ArrayColumn.h>
 #include <aips/Tables/TableRecord.h>
-
+#include <aips/Measures/MFrequency.h>
 
 #include "SDMemTable.h"
 #include "SDContainer.h"
@@ -113,6 +113,7 @@ void SDMemTable::setup() {
   td.addColumn(ArrayColumnDesc<Float>("TSYS"));  
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));  
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));  
+  td.addColumn(ArrayColumnDesc<uInt>("FREQID"));
   // Now create a new table from the description.
 
   SetupNewTable aNewTab("dummy", td, Table::New);
@@ -162,7 +163,7 @@ bool SDMemTable::setMask(const std::vector<int>& whichChans) {
   std::vector<int>::iterator it;
   uInt n = spec.shape(0)(3);
   chanMask_.resize(n,true);
-  for (it = whichChans.begin(); it != whichChans.end(); it++) {
+  for (it = whichChans.begin(); it != whichChans.end(); ++it) {
     if (*it < n)
       chanMask_[*it] = false;
   }
@@ -215,6 +216,60 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) {
   }
   return spectrum;
 }
+
+std::vector<double> SDMemTable::getAbscissa(Int whichRow, 
+					    const std::string& whichUnit,
+					    double restfreq) {
+  std::vector<double> absc(nChan());
+  Vector<Double> absc1(nChan()); 
+  indgen(absc1);
+  ROArrayColumn<uInt> fid(table_, "FREQID");
+  Vector<uInt> v;
+  fid.get(whichRow, v);
+  uInt specidx = v(IFSel_);
+  cerr << "specidx = " << specidx << endl;
+  Unit u;
+  if (whichUnit == "") {
+    // get unit from table
+  } else {
+    u = String(whichUnit);
+  }
+  SpectralCoordinate spc = getCoordinate(specidx);
+  cerr << "debug"  << endl;
+  if ( u == Unit("km/s") ) {
+    cerr << "vel ??? " << restfreq << endl;
+    if (Double(restfreq) >  Double(0.000001)) {
+      cerr << "converting to velocities"<< endl;
+      spc.setRestFrequency(Double(restfreq));
+      spc.setVelocity(u.getName()); 
+      Vector<Double> wrld;
+      spc.pixelToVelocity(wrld,absc1);
+      std::vector<double>::iterator it;
+      uInt i = 0;
+      for (it = absc.begin(); it != absc.end(); ++it) {
+	(*it) = wrld[i];
+	i++;
+      }
+    }
+  } else if (u == Unit("Hz")) {
+    Vector<String> wau(1); wau = u.getName();
+    spc.setWorldAxisUnits(wau);
+    cerr << " converting in frequency" << endl;
+    std::vector<double>::iterator it;
+    Double tmp;
+    uInt i = 0;
+    for (it = absc.begin(); it != absc.end(); ++it) {
+      
+      spc.toWorld(tmp,absc1[i]);
+      (*it) = tmp;
+      i++;
+    }
+    cerr << "converted all pic to world" << endl;
+  }
+  cerr << "exiting getAbscissa" << endl;
+  return absc;
+}
+
 void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow=0) {
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
@@ -323,6 +378,64 @@ Float SDMemTable::getTsys(Int whichRow) const {
   return out;
 }
 
+SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx)  const {
+
+  Table t = table_.keywordSet().asTable("FREQUENCIES");
+  if (whichIdx > t.nrow() ) {
+    cerr << "SDMemTable::getCoordinate - whichIdx out of range" << endl;
+    return;
+  }
+  Double rp,rv,inc;
+  String rf;
+  ROScalarColumn<Double> rpc(t, "REFPIX");
+  ROScalarColumn<Double> rvc(t, "REFVAL");
+  ROScalarColumn<Double> incc(t, "INCREMENT");
+  t.keywordSet().get("REFFRAME",rf);
+  
+  MFrequency::Types mft;
+  if (!MFrequency::getType(mft, rf)) {
+    cerr << "Frequency type unknown assuming TOPO" << endl;
+    mft = MFrequency::TOPO;    
+  }    
+  rpc.get(whichIdx, rp);
+  rvc.get(whichIdx, rv);
+  incc.get(whichIdx, inc);
+  cerr << "creating speccord from " << whichIdx << ": "
+       << rp <<", " << rv << ", " << inc << ", " << mft <<endl;
+  SpectralCoordinate spec(mft,rv,inc,rp);
+  cerr << "debugit" << endl;
+  return spec;
+}
+
+bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft) {
+  TableDesc td("", "1", TableDesc::Scratch);
+  td.addColumn(ScalarColumnDesc<Double>("REFPIX"));
+  td.addColumn(ScalarColumnDesc<Double>("REFVAL"));
+  td.addColumn(ScalarColumnDesc<Double>("INCREMENT"));
+  SetupNewTable aNewTab("freqs", td, Table::New);
+  Table aTable (aNewTab, Table::Memory, sdft.length());
+  ScalarColumn<Double> sc0(aTable, "REFPIX");
+  ScalarColumn<Double> sc1(aTable, "REFVAL");
+  ScalarColumn<Double> sc2(aTable, "INCREMENT");
+  for (uInt i=0; i < sdft.length(); ++i) {
+    sc0.put(i,sdft.referencePixel(i));
+    sc1.put(i,sdft.referenceValue(i));
+    sc2.put(i,sdft.increment(i));
+  }
+  aTable.rwKeywordSet().define("REFFRAME", sdft.refFrame());
+  aTable.rwKeywordSet().define("EQUINOX", sdft.equinox());
+  aTable.rwKeywordSet().define("Unit", String("kms-1"));
+  table_.rwKeywordSet().defineTable ("FREQUENCIES", aTable);
+  cerr << "debug - putSDFreqTable" << endl;
+  return True;
+}
+
+SDFrequencyTable SDMemTable::getSDFreqTable() const  {
+  SDFrequencyTable sdft;
+  
+  return sdft;
+}
+
 bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ScalarColumn<Double> mjd(table_, "TIME");
   ScalarColumn<String> srcn(table_, "SRCNAME");
@@ -331,6 +444,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ArrayColumn<Float> ts(table_, "TSYS");
   ScalarColumn<Int> scan(table_, "SCANID");
   ScalarColumn<Double> integr(table_, "INTERVAL");
+  ArrayColumn<uInt> freqid(table_, "FREQID");
 
   uInt rno = table_.nrow();
   table_.addRow();
@@ -342,6 +456,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ts.put(rno, sdc.getTsys());
   scan.put(rno, sdc.scanid);
   integr.put(rno, sdc.interval);
+  freqid.put(rno, sdc.getFreqMap());
   
   return true;
 }
@@ -354,6 +469,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   ROArrayColumn<Float> ts(table_, "TSYS");
   ROScalarColumn<Int> scan(table_, "SCANID");
   ROScalarColumn<Double> integr(table_, "INTERVAL");
+  ROArrayColumn<uInt> freqid(table_, "FREQID");
 
   SDContainer sdc(nBeam(),nIF(),nPol(),nChan());
   mjd.get(whichRow, sdc.timestamp);
@@ -363,12 +479,15 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   Array<Float> spectrum;
   Array<Float> tsys;
   Array<uChar> flagtrum;
+  Vector<uInt> fmap;
   spec.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
   flags.get(whichRow, flagtrum);
   sdc.putFlags(flagtrum);
   ts.get(whichRow, tsys);
   sdc.putTsys(tsys);
+  freqid.get(whichRow, fmap);
+  sdc.putFreqMap(fmap);
   return sdc;
 }
 bool SDMemTable::putSDHeader(const SDHeader& sdh) {

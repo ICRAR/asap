@@ -40,6 +40,8 @@
 #include <aips/Tables/Table.h>
 #include <aips/Arrays/MaskedArray.h>
 
+#include <trial/Coordinates/SpectralCoordinate.h>
+
 namespace atnf_sd {
 
 class SDContainer;
@@ -65,14 +67,14 @@ public:
   virtual ~SDMemTable();
 
   // put data from meta conatiner into the table
-  virtual bool putSDContainer(const SDContainer& sdc);
-  virtual bool putSDHeader(const SDHeader& sdh);
-  virtual bool putSDFreqTable(const SDFrequencyTable& sdft) {;}
+  bool putSDContainer(const SDContainer& sdc);
+  bool putSDHeader(const SDHeader& sdh);
+  bool putSDFreqTable(const SDFrequencyTable& sdft);
 
   //get the dat wrapped up in a meta container
-  virtual SDContainer getSDContainer(uInt whichRow=0) const;
-  virtual SDHeader getSDHeader() const;
-  
+  SDContainer getSDContainer(uInt whichRow=0) const;
+  SDHeader getSDHeader() const;
+  SDFrequencyTable getSDFreqTable() const;
   // get spectrum,mask and tsys for the given row, at the selected
   // cursor - all as stl vectors
   virtual std::vector<float> getSpectrum(Int whichRow);
@@ -126,6 +128,10 @@ public:
   MaskedArray<Float> rowAsMaskedArray(uInt whichRow,
 				      Bool useSelection = False);
 
+  SpectralCoordinate getCoordinate(uInt whichIdx) const;
+  std::vector<double> getAbscissa(int whichRow, 
+				  const std::string& whichUnit="GHz",
+				  double restfreq=0.0);
 private:
   // set up table structure
   void setup();
