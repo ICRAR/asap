@@ -1350,6 +1350,7 @@ casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, cons
       if (nRestFreqs != nIFs) {
          throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
       }
+      cerr << "Replacing rest frequencies with given list, one per IF" << endl;
 //
       sdft.deleteRestFrequencies();
       for (uInt i=0; i<nRestFreqs; i++) {
@@ -1362,6 +1363,7 @@ casa::Bool SDMemTable::setRestFreqs (const casa::Vector<Double>& restFreqs, cons
 
       Quantum<Double> rf(restFreqs[0], unit);
       idx = sdft.addRestFrequency(rf.getValue("Hz"));
+      cerr << "Selecting given rest frequency" << endl;
    }
 
 // Replace
