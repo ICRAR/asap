@@ -29,7 +29,7 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 #include <atnf/PKSIO/PKSreader.h>
-
+#include <casa/Exceptions.h>
 #include "SDReader.h"
 
 using namespace asap;
@@ -58,7 +58,19 @@ SDReader::~SDReader() {
 
 void SDReader::reset() {
   cursor_ = 0;
-  open(filename_);
+  table_ = new SDMemTable();
+  if (reader_) delete reader_; reader_ = 0;
+  // re-create the reader
+  Bool   haveBase, haveSpectra, haveXPol;
+  String format;
+  Vector<Bool> beams;
+  if ((reader_ = getPKSreader(filename_, 0, False, format, beams, nIF_,
+                              nChan_, nPol_, haveBase, haveSpectra,
+                              haveXPol)) == 0)  {
+    throw(AipsError("PKSreader failed"));
+  }
+  // re-enter the header
+  table_->putSDHeader(header_);
 }
 
 void SDReader::close() {
@@ -69,17 +81,19 @@ void SDReader::open(const std::string& filename) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
   String inName(filename);
+  filename_ = inName;
   String format;
   Vector<Bool> beams;
   if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
                               nChan_, nPol_, haveBase, haveSpectra,
                               haveXPol)) == 0)  {
-    cerr << "PKSreader failed" << endl;
+    throw(AipsError("PKSreader failed"));
+    //cerr << "PKSreader failed" << endl;
   }
   if (!haveSpectra) {
     delete reader_;
     reader_ = 0;
-    cerr << "Spectral data absent." << endl;
+    throw(AipsError("No spectral data in file."));
     return;
   }
   nBeam_ = beams.nelements();
@@ -88,20 +102,18 @@ void SDReader::open(const std::string& filename) {
   header_.nchan = nChan_;
   header_.npol = nPol_;
   header_.nbeam = nBeam_;
-
-  Int status = reader_->getHeader(header_.observer, header_.project, 
-				  header_.antennaname, header_.antennaposition,
-                                  header_.obstype,header_.equinox, 
-				  header_.freqref,
-				  header_.utc, header_.reffreq,
+  Int status = reader_->getHeader(header_.observer, header_.project,
+                                  header_.antennaname, header_.antennaposition,
+                                  header_.obstype,header_.equinox,
+                                  header_.freqref,
+                                  header_.utc, header_.reffreq,
                                   header_.bandwidth);
   if (status) {
     delete reader_;
     reader_ = 0;
-    cerr << "Failed to get data description." << endl;
+    throw(AipsError("Failed to get header."));
     return;
   }
-  //header_.print();  
   if ((header_.obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
     cout << "Header indicates frequency switched observation.\n"
@@ -122,10 +134,10 @@ void SDReader::open(const std::string& filename) {
 }
 
 int SDReader::read(const std::vector<int>& seq) {
-  int status = 0;  
-  
+  int status = 0;
+
   Int    beamNo, IFno, refBeam, scanNo, cycleNo;
-  Float  azimuth, elevation, focusAxi, focusRot, focusTan, 
+  Float  azimuth, elevation, focusAxi, focusRot, focusTan,
     humidity, parAngle, pressure, temperature, windAz, windSpeed;
   Double bandwidth, freqInc, interval, mjd, refFreq, restFreq, srcVel;
   String          fieldName, srcName, tcalTime;
@@ -151,48 +163,48 @@ int SDReader::read(const std::vector<int>& seq) {
     for (uInt row=0; row < stepsize; row++) {
       // stepsize as well
       // spectra(nChan,nPol)!!!
-      status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName, 
-			     srcName, srcDir, srcPM, srcVel, IFno, refFreq,
-			     bandwidth, freqInc, restFreq, tcal, tcalTime, 
-			     azimuth, elevation, parAngle, focusAxi, 
-			     focusTan, focusRot, temperature, pressure, 
-			     humidity, windSpeed, windAz, refBeam, 
-			     beamNo, direction, scanRate,
-			     tsys, sigma, calFctr, baseLin, baseSub, 
-			     spectra, flagtra, xCalFctr, xPol);          
+      status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
+                             srcName, srcDir, srcPM, srcVel, IFno, refFreq,
+                             bandwidth, freqInc, restFreq, tcal, tcalTime,
+                             azimuth, elevation, parAngle, focusAxi,
+                             focusTan, focusRot, temperature, pressure,
+                             humidity, windSpeed, windAz, refBeam,
+                             beamNo, direction, scanRate,
+                             tsys, sigma, calFctr, baseLin, baseSub,
+                             spectra, flagtra, xCalFctr, xPol);
       if (status) {
-	if (status == -1) {
-	  // EOF.
-	  if (row < stepsize-1) cerr << "incomplete integration data." << endl;
-	  cerr << "EOF" << endl;
-	  table_->putSDFreqTable(frequencies_);
-	  return status;
-	}
-      }      
+        if (status == -1) {
+          // EOF.
+          if (row < stepsize-1) cerr << "incomplete integration data." << endl;
+          //cerr << "EOF" << endl;
+          table_->putSDFreqTable(frequencies_);
+          return status;
+        }
+      }
       // if in the given list
       if (cursor_ == seq[seqi] || getAll) {
-	// add integration cycle
-	if (row==0) {
-	  //add invariant info: scanNo, mjd, interval, fieldName,
-	  //srcName, azimuth, elevation, parAngle, focusAxi, focusTan,
-	  //focusRot, temperature, pressure, humidity, windSpeed,
-	  //windAz  srcDir, srcPM, srcVel
-	  sc.timestamp = mjd;
-	  sc.interval = interval;	  
-	  sc.sourcename = srcName;
-	}
-	// add specific info
-	// IFno beamNo are 1-relative
-	// refPix = nChan/2+1 in  Integer arith.!	
-	Int refPix = header_.nchan/2+1; 
-	Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
-	sc.setFrequencyMap(frqslot,IFno-1);
+        // add integration cycle
+        if (row==0) {
+          //add invariant info: scanNo, mjd, interval, fieldName,
+          //srcName, azimuth, elevation, parAngle, focusAxi, focusTan,
+          //focusRot, temperature, pressure, humidity, windSpeed,
+          //windAz  srcDir, srcPM, srcVel
+          sc.timestamp = mjd;
+          sc.interval = interval;
+          sc.sourcename = srcName;
+        }
+        // add specific info
+        // IFno beamNo are 1-relative
+        // refPix = nChan/2+1 in  Integer arith.!
+        Int refPix = header_.nchan/2+1;
+        Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
+        sc.setFrequencyMap(frqslot,IFno-1);
 
-	sc.scanid = scanNo-1;//make it 0-based
-	sc.setSpectrum(spectra, beamNo-1, IFno-1);
-	sc.setFlags(flagtra,  beamNo-1, IFno-1);
-	sc.setTsys(tsys, beamNo-1, IFno-1);
-	sc.setDirection(direction, beamNo-1);
+        sc.scanid = scanNo-1;//make it 0-based
+        sc.setSpectrum(spectra, beamNo-1, IFno-1);
+        sc.setFlags(flagtra,  beamNo-1, IFno-1);
+        sc.setTsys(tsys, beamNo-1, IFno-1);
+        sc.setDirection(direction, beamNo-1);
       }
     }
     if (cursor_ == seq[seqi] || getAll) {
