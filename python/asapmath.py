@@ -41,7 +41,9 @@ def average_time(*args, **kwargs):
 
 def quotient(source, reference, preserve=True):
     """
-    Return the quotient of a 'source' (signal) scan and a 'reference' scan
+    Return the quotient of a 'source' (signal) scan and a 'reference' scan.
+    The reference can have just one row, even if the signal has many. Otherwise
+    they must have the same number of rows.
     Parameters:
         source:        the 'on' scan
         reference:     the 'off' scan
