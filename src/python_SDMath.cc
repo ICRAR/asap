@@ -74,6 +74,9 @@ namespace asap {
       def("smooth", &SDMathWrapper::smooth);
       def("smooth_insitu", &SDMathWrapper::smoothInSitu);
 //
+      def("convertflux", &SDMathWrapper::convertFlux);
+      def("convertflux_insitu", &SDMathWrapper::convertFluxInSitu);
+//
       def("average", &SDMathWrapper::average);
 //
       def("averagepol", &SDMathWrapper::averagePol);
