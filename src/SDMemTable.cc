@@ -236,6 +236,13 @@ bool SDMemTable::setPol(Int whichPol)
   return false;
 }
 
+void SDMemTable::resetCursor () 
+{
+   polSel_ = 0;
+   IFSel_ = 0;
+   beamSel_ = 0;
+}
+
 bool SDMemTable::setMask(std::vector<int> whichChans)
 {
   ROArrayColumn<uChar> spec(table_, "FLAGTRA");

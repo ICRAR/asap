@@ -123,6 +123,9 @@ public:
   virtual bool setBeam(casa::Int whichBeam=0);
   virtual bool setPol(casa::Int whichPol=0);
 
+  // REset cursor to 0
+  virtual void resetCursor();
+
   //sets the user mask applied to all spectra
   virtual bool setMask(std::vector<int> whichChans);
   // Hard flags the current spectrum, not reversible
