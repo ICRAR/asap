@@ -133,12 +133,18 @@ public:
   const Vector<uInt>& getFreqMap() const { return freqidx_; }
   
   Double timestamp;
+  //Double bandwidth;
   String sourcename;
   String fieldname;
   Double interval;
   Int scanid;
+  Vector<Float> tcal;
   String tcaltime;
-  
+  Float azimuth;
+  Float elevation;
+  Float parangle;
+  Int refbeam;
+
 private:
   uInt nBeam_,nIF_,nPol_,nChan_;
 

@@ -28,6 +28,7 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+#include <casa/Exceptions.h>
 #include <tables/Tables/Table.h>
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/ArrayAccessor.h>
@@ -69,6 +70,7 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan)
     direction_(IPosition(2,nBeam,2)) {
   uChar x = 0;
   flags_ = ~x;
+  tcal.resize(2);
 }
 
 SDContainer::SDContainer(IPosition shp) 
@@ -84,6 +86,7 @@ SDContainer::SDContainer(IPosition shp)
   direction_.resize(ip);
   uChar x = 0;
   flags_ = ~x;
+  tcal.resize(2);
 }
 
 SDContainer::~SDContainer() {
@@ -125,7 +128,7 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   IPosition shp0 = spectrum_.shape();
   IPosition shp1 = spec.shape();
   if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
-    cerr << "Arrays not conformant" << endl;      
+    throw(AipsError("Arrays not conformant"));
     return False;
   }
   // assert dimensions are the same....
