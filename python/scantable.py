@@ -48,11 +48,12 @@ class scantable(sdtable):
                 sdtable.__init__(self,tbl2)
                 del r,tbl
 
-    def save(self, name, format='ASAP'):
+    def save(self, name="", format='ASAP'):
         """
         Store the scantable on disk. This can be a asap file or SDFITS/MS2.
         Parameters:
-            name:        the name of the outputfile
+            name:        the name of the outputfile. For format="FITS" this
+                         is the root file name (and can be empty).
             format:      an optional file format. Default is ASAP.
                          Allowed are - 'ASAP' (save as ASAP Table),
                                        'SDFITS' (save as SDFITS file)
