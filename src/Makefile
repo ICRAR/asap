@@ -45,6 +45,7 @@ OBJECTS   := MathUtils.o \
              SDAttr.o \
              SDContainer.o \
              SDPol.o \
+             SDPol2.o \
              SDMemTable.o \
              SDReader.o \
              SDWriter.o \
