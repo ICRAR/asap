@@ -64,6 +64,7 @@ namespace asap {
       def("scale", &SDMathWrapper::scale);
       def("scale_insitu", &SDMathWrapper::scaleInSitu);
       def("add", &SDMathWrapper::add);
+      def("add_insitu", &SDMathWrapper::addInSitu);
       def("hanning", &SDMathWrapper::hanning);
       def("average", &SDMathWrapper::average);
       def("averagepol", &SDMathWrapper::averagePol);
