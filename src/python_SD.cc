@@ -49,6 +49,9 @@ BOOST_PYTHON_MODULE(atnf_sd) {
   std_vector_to_tuple < float > ();
   from_python_sequence < std::vector < float >,  
     variable_capacity_policy > ();
+  std_vector_to_tuple < double > ();
+  from_python_sequence < std::vector < double >,  
+    variable_capacity_policy > ();
   std_vector_to_tuple < std::string > ();
   from_python_sequence < std::vector < std::string >,  
     variable_capacity_policy > ();
