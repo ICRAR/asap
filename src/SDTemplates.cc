@@ -124,6 +124,7 @@ namespace mathutil {
   template void extendLastArrayAxis(Array<Int>&, const Array<Int>&,
 				   const Int& initVal);
 }
-template Array<Float> SDPolUtil::stokesData (Array<Float>& dataIn, Bool);
 template Array<Bool> SDPolUtil::stokesData (Array<Bool>& dataIn, Bool);
+template Array<Float> SDPolUtil::computeStokesDataForWriter (Array<Float>& dataIn, Bool);
+template Array<uChar> SDPolUtil::computeStokesDataForWriter (Array<uChar>& dataIn, Bool);
 
