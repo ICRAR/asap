@@ -79,10 +79,11 @@ namespace SDMathWrapper {
     return SDMath::bin(in.getCP(), width);
   }
 
-  float rms(const SDMemTableWrapper& in,
-            const std::vector<bool>& mask) {
-    return SDMath::rms(in.getCP(), mask);
+  std::vector<float> statistic(const SDMemTableWrapper& in,
+            const std::vector<bool>& mask, const std::string& which) {
+    return SDMath::statistic(in.getCP(), mask, which);
   }
+
 
 };
 
