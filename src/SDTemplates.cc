@@ -91,6 +91,7 @@ template Vector<Float>::Vector(const vector<float> &);
 template Vector<Double>::Vector(const vector<double> &);
 template void Array<float>::tovector(vector<float> &) const;
 template void Array<Bool>::tovector(vector<bool> &) const;
+template void Array<double>::tovector(vector<double> &) const;
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
 #include "MathUtils2.cc"
