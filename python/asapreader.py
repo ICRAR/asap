@@ -74,5 +74,5 @@ class reader(sdreader):
         sdreader.read(self,[-1])
         tbl = sdreader.getdata(self)
         sdreader.reset(self)
-        print tbl.summary()
+        print tbl._summary()
         return
