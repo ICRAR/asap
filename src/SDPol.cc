@@ -166,8 +166,8 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
 //
 // array of shape (nBeam,nIF,nPol,nChan)
 //
-// We use the scaling convention I=(XX+YY) 
-// 
+// We use the scaling convention I=(XX+YY)/2
+
 {
 
 // Checks
@@ -202,7 +202,7 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    Array<Float> I = output(start,end);           // Output : I
 //
    if (nPol==1) {
-      I = Float(2.0)*C1;
+      I = C1;
       return;
    }
 //
@@ -210,7 +210,7 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    end(polAxis) = 1;
    Array<Float> C2 = input2(start,end);          // Input : C1
 //
-   I = C1 + C2;
+   I = Float(0.5) * (C1 + C2);
    if (nPol <= 2) return;
 //
    start(polAxis) = 2;
@@ -224,17 +224,17 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    start(polAxis) = 1;
    end(polAxis) = 1;
    Array<Float> Q = output(start,end);           // Output : Q
-   Q = C1 - C2;
+   Q = Float(0.5) * (C1 - C2);
 //
    start(polAxis) = 2;
    end(polAxis) = 2;
    Array<Float> U = output(start,end);           // Output : U
-   U = Float(2.0)*C3;
+   U = C3;
 //
    start(polAxis) = 3;
    end(polAxis) = 3;
    Array<Float> V = output(start,end);           // Output : V
-   V = Float(2.0)*C4;
+   V = C4;
 }
 
 
@@ -314,11 +314,15 @@ Array<Float> SDPolUtil::getStokesSlice (Array<Float>& in, const IPosition& start
 Array<Float> SDPolUtil::circularPolarizationFromStokes (Array<Float>& I,
                                                         Array<Float>& V, 
                                                         Bool doRR)
+//
+// We use the convention
+//  I = (RR+LL)/2
+//
 {
    if (doRR) {
-      return Float(0.5)*(I+V);
+      return I + V;
    } else {
-      return Float(0.5)*(I-V);
+      return I - V;
    }
 }
 
