@@ -1,0 +1,26 @@
+Release 1.0 Notes
+=================
+
+1) Build asap
+   - ssh zorro ( any debian linux machine with nfs write permissions )
+   - make && make install
+   - updated /nfs/sources/INSTALL.log
+
+2) installed docs by hand - no make targets yet
+   - cd doc
+   - latex cookbook.tex
+   - latex2html cookbook.tex
+   - dvipdf cookbook.tex
+   - cp -r cookbook /nfs/wwwatdocs/computing/software/asap
+   - manually edit index.html and add cookbook
+   - add refman doc
+   - cd /usr/local/lib/python2.3/site-packages
+   - epydoc --html --noframes --inheritance listed -u http://www.atnf.csiro.au/computing/software/asap -o /nfs/wwwatdocs/computing/software/asap/refman asap
+   - epydoc --pdf -o /tmp/refman_pdf asap
+   - cp /tmp/refman_pd/api.pdf /nfs/wwwatdocs/computing/software/asap/refman.pdf
+
+3) cvs branching for release
+   - cvs -R tag Release-1
+   - cvs rtag -r Release-1 -b Release-1-fixes asap
+
+4) Check that asap is rdisted (/nfs/DEBIANlocal) to the sites
