@@ -116,7 +116,7 @@ public:
     static void registerClass();
 
     // Non writable
-    virtual casa::Bool isWritable () const {return casa::False;}
+//    virtual casa::Bool isWritable () const {return casa::False;}
 
 private:
     // Copy constructor is only used by clone().
