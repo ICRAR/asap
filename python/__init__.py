@@ -64,6 +64,7 @@ defaultParams = {
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
     'scantable.allaxes'   : [True, validate_bool],  # apply action to all axes
     'scantable.plotter'   : [True, validate_bool], # use internal plotter
+    'scantable.verbosesummary'   : [False, validate_bool]
 
     # fitter
     }
@@ -104,6 +105,9 @@ def list_rcparameters():
     # use internal plotter
     'scantable.plotter'          : True
 
+    # Control the level of information printed by summary
+    'scantable.verbosesummary'   : False
+    
     # Fitter    
     """
     

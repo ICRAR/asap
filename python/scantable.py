@@ -138,22 +138,30 @@ class scantable(sdtable):
                 s = sdtable._getsource(self,scanid)
                 return scantable(s)
             elif type(scanid) is int:
+                s = sdtable._getscan(self,[scanid])
+                return scantable(s)
+            elif type(scanid) is list:
                 s = sdtable._getscan(self,scanid)
                 return scantable(s)
+            else:
+                print "Illegal scanid type, use 'int' or 'list' if ints."
         except RuntimeError:
             print "Couldn't find any match."
 
     def __str__(self):
-        return sdtable._summary(self)
+        return sdtable._summary(self,True)
 
-    def summary(self,filename=None):
+    def summary(self,filename=None, verbose=None):
         """
         Print a summary of the contents of this scantable.
         Parameters:
             filename:    the name of a file to write the putput to
                          Default - no file output
+            verbose:     print extra info such as the frequency table
+                         The default (False) is taken from .asaprc
         """
-        info = sdtable._summary(self)
+        info = sdtable._summary(self, verbose)
+        if verbose is None: verbose = rcParams['scantable.verbosesummary']
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
