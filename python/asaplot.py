@@ -27,7 +27,7 @@ class ASAPlot:
     ASAP plotting class based on matplotlib.
     """
 
-    def __init__(self, rows=1, cols=0, title='', size=(8,6), buffering=False):
+    def __init__(self, rows=1, cols=0, title='', size=(7,5), buffering=False):
 	"""
 	Create a new instance of the ASAPlot plotting class.
 
@@ -41,11 +41,11 @@ class ASAPlot:
             self.window.destroy()
         
         self.window.protocol("WM_DELETE_WINDOW", dest_callback)	
-	self.frame1 = Tk.Frame(self.window, relief=Tk.RIDGE, borderwidth=4)
-	self.frame1.pack(fill=Tk.BOTH)
+	#self.frame1 = Tk.Frame(self.window, relief=Tk.RIDGE, borderwidth=4)
+	#self.frame1.pack(fill=Tk.BOTH)
 
-	self.figure = Figure(figsize=size, facecolor='#ddddee')
-	self.canvas = FigureCanvasTkAgg(self.figure, master=self.frame1)
+	self.figure = Figure(figsize=size,facecolor='#ddddee')
+	self.canvas = FigureCanvasTkAgg(self.figure, master=self.window)
 	self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
 	# Simply instantiating this is enough to get a working toolbar.
@@ -63,7 +63,7 @@ class ASAPlot:
 
 
 	# Set matplotlib default colour sequence.
-	self.colours = [1, 'b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+	self.colours = [1, 'b', 'g', 'r', 'c', 'm', 'y', 'k']
 	self.attributes = {}
 	self.loc = 1
 
@@ -489,15 +489,16 @@ class ASAPlot:
 
 	if rows < 1:
 	    rows = 1
-
+        nel = 1
 	if cols == 0:
+            nel = rows
 	    i = int(sqrt(rows))
 	    if i*i < rows: i += 1
 	    cols = i
 
 	    if i*(i-1) >= rows: i -= 1
 	    rows = i
-
+            
 	if 0 <= n < rows*cols:
 	    i = len(self.subplots)
 	    self.subplots.append({})
@@ -509,7 +510,7 @@ class ASAPlot:
 
 	else:
 	    self.subplots = []
-	    for i in range(0,rows*cols):
+	    for i in range(0,nel):
 		self.subplots.append({})
 		self.subplots[i]['axes']  = self.figure.add_subplot(rows,
 						cols, i+1)
@@ -535,22 +536,23 @@ class ASAPlot:
 	"""
 	if not self.buffering:
 	    if self.loc:
-		lines  = []
-		labels = []
-		i = 0
-		for line in self.lines:
-		    i += 1
-		    if line is not None:
-			lines.append(line[0])
-			lbl = line[0].get_label()
-			if lbl == '':
-			    lbl = str(i)
-			labels.append(lbl)
+                for j in range(len(self.subplots)):
+                    lines  = []
+                    labels = []
+                    i = 0
+                    for line in self.subplots[j]['lines']:
+                        i += 1
+                        if line is not None:
+                            lines.append(line[0])
+                            lbl = line[0].get_label()
+                            if lbl == '':
+                                lbl = str(i)
+                            labels.append(lbl)
 
-		if len(lines):
-		    self.axes.legend(tuple(lines), tuple(labels), self.loc)
-		else:
-		    self.axes.legend((' '))
+                    if len(lines):
+                        self.subplots[j]['axes'].legend(tuple(lines), tuple(labels), self.loc)
+                    else:
+                        self.subplots[j]['axes'].legend((' '))
 
 	    self.window.wm_deiconify()
 	    self.canvas.show()
@@ -594,6 +596,33 @@ class ASAPlot:
 	Hide the ASAPlot graphics window.
 	"""
 	self.window.wm_withdraw()
+
+    def set_limits(self,xlim=None,ylim=None):
+        for s in self.subplots:
+	    self.axes  = s['axes']
+	    self.lines = s['lines']
+            if xlim is not None:
+                self.axes.set_xlim(xlim)
+            if ylim is not None:
+                self.axes.set_ylim(ylim)
+        return
+
+    def save(self, fname=None):
+        if fname is None:
+            from datetime import datetime
+            dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
+            fname = 'asap'+dstr+'.png'
+            
+        d = ['png','.ps','eps']
+        if fname[-3:].lower() in d:
+            try:
+                self.canvas.print_figure(fname)
+            except IOError, msg:
+                print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
+                return
+        else:
+            print "Invalid image type. Valid types are:"
+            print d
 
 
 def get_colour(colour='black'):
