@@ -259,10 +259,9 @@ int SDReader::read(const std::vector<int>& seq) {
         // refPix = nChan/2+1 in  Integer arith.!
         Int refPix = header_.nchan/2+1;
         uInt frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
-	uInt restFrqSlot = frequencies_.addRestFrequency(restFreq);
+	frequencies_.addRestFrequency(restFreq);
 //   
         sc.setFrequencyMap(frqslot,IFno);
-        sc.setRestFrequencyMap(restFrqSlot,IFno);
 	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
 	sc.tcaltime = tcalTime;
 	sc.parangle = parAngle;
