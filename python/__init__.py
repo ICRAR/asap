@@ -53,11 +53,11 @@ defaultParams = {
     'verbose'             : [True, validate_bool],
     'useplotter'          : [True, validate_bool],
     'insitu'              : [False, validate_bool],
-
+    
     # plotting
     'plotter.stacking'    : ['p', str],
     'plotter.panelling'   : ['s', str],
-
+    
     # scantable
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, validate_bool],
@@ -74,39 +74,39 @@ def list_rcparameters():
     print """
     # general
     # print verbose output
-    'verbose'                    : True
+    verbose                    : True
 
     # preload a default plotter
-    'useplotter'                 : True
+    useplotter                 : True
 
     # apply operations on the input scantable or return new one
-    'insitu'                     : False
+    insitu                     : False
     
     # plotting
     # default mode for colour stacking
-    'plotter.stacking'           : 'Pol'
+    plotter.stacking           : 'Pol'
 
     # default mode for panelling
-    'plotter.panelling'          : 'scan'
+    plotter.panelling          : 'scan'
 
     # scantable
     # default ouput format when saving
-    'scantable.save'             : 'ASAP'
+    scantable.save             : 'ASAP'
     # auto averaging on read
-    'scantable.autoaverage'      : True
+    scantable.autoaverage      : True
 
     # default frequency frame to set when function
     # scantable.set_freqfrmae is called
-    'scantable.freqframe'        : 'LSRK'
+    scantable.freqframe        : 'LSRK'
 
     # apply action to all axes not just the cursor location
-    'scantable.allaxes'          : True 
+    scantable.allaxes          : True 
 
     # use internal plotter
-    'scantable.plotter'          : True
+    scantable.plotter          : True
 
     # Control the level of information printed by summary
-    'scantable.verbosesummary'   : False
+    scantable.verbosesummary   : False
     
     # Fitter    
     """
@@ -154,7 +154,7 @@ def rc_params():
 
     # strip the conveter funcs and return
     ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
-    verbose.report('loaded rc file %s'%fname)
+    print ('loaded rc file %s'%fname)
 
     return ret
 
@@ -203,6 +203,10 @@ from asapreader import reader
 from asapmath import *
 from scantable import *
 from asaplinefind import *
+
+from numarray import logical_and as mask_and
+from numarray import logical_or as mask_or
+from numarray import logical_not as mask_not
 
 if rcParams['useplotter']:
     if os.environ.has_key('DISPLAY'):
@@ -332,6 +336,10 @@ def commands():
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
                               put into $HOME/.asaprc
+        mask_and,mask_or,
+        mask_not            - boolean operations on masks created with
+                              scantable.create_mask
+        
     Note:
         How to use this with help:
                                          # function 'summary'
