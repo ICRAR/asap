@@ -60,6 +60,13 @@ public:
   std::vector<float> getSpectrum(int whichRow) const {
     return table_->getSpectrum(whichRow);
   }
+
+  std::vector<double> getAbscissa(int whichRow, 
+				  const std::string& unit = "GHz",
+				  double restfreq=0.0) const {
+    return table_->getAbscissa(whichRow,unit,restfreq);
+  }
+
   float getTsys(int whichRow) {return table_->getTsys(whichRow);}
   double getTime(int whichRow) {return table_->getTime(whichRow);}
 
@@ -125,11 +132,13 @@ public:
 			     Float factor) {
     return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));    
   }
-  /*
+  
+  SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
+    return SDMemTableWrapper(SDMath::hanning(in.getCP()));    
+  }
   std::vector<float> baseline(const SDMemTableWrapper& in, const std::string& fitexpr) {
     return SDMath::baseline(in.getCP(), fitexpr);
   }
-  */
 };
 
 } // namespace
