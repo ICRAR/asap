@@ -53,17 +53,23 @@ Array<T> SDPolUtil::stokesData (Array<T>& rawData, Bool doLinear)
 // not be worth the effort.
 //
 // Designed for use 
-//   Bool for mask
+//   Bool or uChar for mask
 //   Float for TSys
+//
+// Input arrays should be of shape
+//    [nBeam,nIF,nPol,nChan]
 //
 {
    T* t;
    DataType type = whatType(t);
-   AlwaysAssert(type==TpFloat || type==TpBool, AipsError);
+   AlwaysAssert(type==TpFloat || type==TpBool || type==TpUChar, AipsError);
 //
    IPosition shapeIn = rawData.shape();
-   uInt nPol = shapeIn(asap::PolAxis);
    const uInt nDim = shapeIn.nelements();
+   uInt polAxis = 0;
+   AlwaysAssert(nDim==asap::nAxes, AipsError);
+//
+   uInt nPol = shapeIn(asap::PolAxis);
    Array<T> stokesData;
 //
    IPosition start(nDim,0);
@@ -133,4 +139,109 @@ Array<T> SDPolUtil::stokesData (Array<T>& rawData, Bool doLinear)
 //
    return stokesData;
 }
+
+
+
+template <class T>
+Array<T> SDPolUtil::computeStokesDataForWriter (Array<T>& rawData, Bool doLinear)
+//
+// Generate data for each Stokes parameter from the
+// raw flags.  This is a lot of computational work and may
+// not be worth the effort.  This function is specifically
+// for the SDWriter 
+//
+// Designed for use 
+//   Bool or uChar for mask
+//   Float for TSys
+//
+// Input arrays should be of shape
+//    [nChan,nPol]   Bool/uChar
+//    [nPol]         Float      
+//
+{
+   T* t;
+   DataType type = whatType(t);
+   AlwaysAssert(type==TpFloat || type==TpBool || type==TpUChar, AipsError);
+//
+   IPosition shapeIn = rawData.shape();
+   const uInt nDim = shapeIn.nelements();
+   uInt polAxis = 0;
+   if (type==TpFloat) {
+      AlwaysAssert(nDim==1,AipsError);
+   } else {
+      AlwaysAssert(nDim==2,AipsError);
+      polAxis = 1;
+   }
+//
+   uInt nPol = shapeIn(polAxis);
+   Array<T> stokesData;
+//
+   IPosition start(nDim,0);
+   IPosition end(shapeIn-1);
+   IPosition shapeOut = shapeIn;
+//
+   if (doLinear) {
+      if (nPol==1) {
+         stokesData.resize(shapeOut);
+         stokesData = rawData;
+      } else if (nPol==2 || nPol==4) {
+
+// Set shape of output array
+
+         if (nPol==2) {
+            shapeOut(polAxis) = 1;
+         } else {
+            shapeOut(polAxis) = 4;
+         }
+         stokesData.resize(shapeOut);
+
+// Get reference slices and assign/compute
+
+         start(polAxis) = 0;
+         end(polAxis) = 0;
+         Array<T> M1In = rawData(start,end);
+//
+         start(polAxis) = 1;
+         end(polAxis) = 1;
+         Array<T> M2In = rawData(start,end);
+//
+         start(polAxis) = 0;
+         end(polAxis) = 0;
+         Array<T> M1Out = stokesData(start,end);         
+         M1Out = SDPolUtil::andArrays (M1In, M2In);         // I
+//
+         if (nPol==4) {   
+            start(polAxis) = 2;
+            end(polAxis) = 2;
+            Array<T> M3In = rawData(start,end);
+//
+            start(polAxis) = 3;
+            end(polAxis) = 3;
+            Array<T> M4In = rawData(start,end);
+//
+            start(polAxis) = 1;
+            end(polAxis) = 1;
+            Array<T> M2Out = stokesData(start,end);
+            M2Out = M1Out;                                  // Q
+//
+            start(polAxis) = 2;
+            end(polAxis) = 2;
+            Array<T> M3Out = stokesData(start,end);
+            M3Out = M3In;                                   // U
+//
+            start(polAxis) = 3;
+            end(polAxis) = 3;
+            Array<T> M4Out = stokesData(start,end);
+            M4Out = M4In;                                   // V
+         }
+      } else {
+         throw(AipsError("Can only handle 1,2 or 4 polarizations"));
+      }
+   } else {
+      throw (AipsError("Only implemented for Linear polarizations"));
+   }
+//
+   return stokesData;
+}
+
 

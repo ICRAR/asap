@@ -35,6 +35,7 @@
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/ArrayLogical.h>
+#include <casa/Arrays/VectorIter.h>
 #include <casa/Containers/Record.h>
 #include <casa/BasicSL/Constants.h>
 #include <casa/BasicSL/String.h>
@@ -358,3 +359,47 @@ Stokes::StokesTypes SDPolUtil::convertStokes(Int val, Bool toStokes, Bool linear
 //
    return stokes;
 }
+
+Array<casa::uChar> SDPolUtil::andArrays (const Array<casa::uChar>& in1,
+                                         const Array<casa::uChar>& in2)
+{
+   Array<uChar> out(in1.shape());
+//
+   Array<uChar>::const_iterator in1Iter;
+   Array<uChar>::const_iterator in2Iter;
+   Array<uChar>::iterator outIter;
+//
+   for (in1Iter=in1.begin(),in2Iter=in2.begin(),outIter=out.begin();
+        in1Iter!=in1.end(); ++in1Iter,++in2Iter,++outIter) {  
+      *outIter = *in1Iter & *in2Iter;
+   }
+   return out;
+}
+
+
+Array<Float> SDPolUtil::extractStokesForWriter (Array<Float>& in, const IPosition& start, const IPosition& end)
+//
+// start/end must already have applied the cursor selection of beam and IF
+// Extract specified Stokes for beam/IF and flip nChan and nPol for bloody SDwriter
+//
+{
+   IPosition shapeIn = in.shape();
+   uInt nChan = shapeIn(asap::ChanAxis);
+   uInt nPol = shapeIn(asap::PolAxis);
+//
+   IPosition shapeOut(2,nChan,nPol);
+   Array<Float> out(shapeOut);
+//
+   Array<Float> sliceRef = in(start,end);                        // Beam and IF now degenerate axes
+   ReadOnlyVectorIterator<Float> itIn(sliceRef, asap::ChanAxis);
+   VectorIterator<Float> itOut(out,0);
+   while (!itIn.pastEnd()) {
+      itOut.vector() = itIn.vector();
+// 
+      itIn.next();
+      itOut.next();
+   }
+//
+   return out;
+}
+

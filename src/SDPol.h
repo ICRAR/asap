@@ -154,7 +154,7 @@ class SDPolUtil
   static casa::Array<casa::Float> positionAngle (const casa::Array<casa::Float>& Q,
                                                  const casa::Array<casa::Float>& U);
 
-// Rotate phase of Complex correlation C3+iC4 by phase (degrees)
+ // Rotate phase of Complex correlation C3+iC4 by phase (degrees)
   static void rotateXYPhase (casa::Array<casa::Float>& C3,
                              casa::Array<casa::Float>& C4,
                              casa::Float phase);
@@ -162,7 +162,7 @@ class SDPolUtil
 // Get Stokes slices from the Array.  Start and End should
 // already be setup to access the Array at the current cursor location
 // (beam, IF, Pol; see SDMemTable).   The desired Stokes
-// is specfied in the string from "I", "Q", "U", "V"
+// is specified in the string from "I", "Q", "U", "V"
   static casa::Array<casa::Float> getStokesSlice (casa::Array<casa::Float>& input, const casa::IPosition& start,
                                                   const casa::IPosition& end, const casa::String& stokes);
 
@@ -172,21 +172,51 @@ class SDPolUtil
                                                                   casa::Bool doRR);
 
 
-// Compute value for STokes parameters by combining the raw correlation values
-// The output shape may change from the input shape according to
-// XX or YY          -> I
-// XX,YY             -> I
-// XX,YY,R(XY),I(XY) -> I,Q,U,V
-// Bool for mask
-// Float for TSys 
+// Compute value for auxilliary spectra when converting to Stokes parameters.
+// This combines the raw correlation values, according to what was combined
+// to actually convert to Stokes parameters.   The output shape may change from 
+// the input shape according to
+// XX or YY          -> I             (1 -> 1)
+// XX,YY             -> I             (2 -> 1)
+// XX,YY,R(XY),I(XY) -> I,Q,U,V       (4 -> 4)
+// 
+// It is meant for tSys (FLoat) and masks (Bool or uChar)
+// The input array must be of shape [nBeam,nIF,nPol,nChan]
   template <class T>
   static casa::Array<T> stokesData (casa::Array<T>& rawData, casa::Bool doLinear);
-  
+
+// Find the number of STokes parameters given the input number
+// of raw polarizations
+   static casa::uInt numberStokes (casa::uInt nPol) {casa::uInt nOut = nPol; if (nPol==2) nOut = 1; return nOut;};
 
 // Find the Stokes type for the given polarization axis (0,1,2,3)
-// You can ask for STokes or raw correltions (linear or circular)
+// You can ask for STokes or raw correlations (linear or circular)
    static casa::Stokes::StokesTypes convertStokes(casa::Int val, casa::Bool toStokes, 
                                                   casa::Bool linear);
+
+
+// These two functions are explicitly for the SDWriter
+//
+// Compute value for auxilliary spectra (Tsys and flags) when converting to Stokes parameters.
+// This combines the raw correlation values, according to what was combined
+// to actually convert to Stokes parameters.   The output shape may change from 
+// the input shape according to
+// XX or YY          -> I             (1 -> 1)
+// XX,YY             -> I             (2 -> 1)
+// XX,YY,R(XY),I(XY) -> I,Q,U,V       (4 -> 4)
+// 
+// The input array must be of shape [nChan,nPol]  (flags)
+// The input array must be of shape [nPol]        (tSys)
+//
+  static casa::Array<casa::uChar> computeStokesFlagsForWriter (casa::Array<casa::uChar>& rawData, casa::Bool doLinear)
+                                                         {return computeStokesDataForWriter(rawData,doLinear);};
+  static casa::Array<casa::Float> computeStokesTSysForWriter (casa::Array<casa::Float>& rawData, casa::Bool doLinear)
+                                                         {return computeStokesDataForWriter(rawData,doLinear);};
+
+// This function is explcitrly for SDWriter. It extracts the Beam and IF slice (specified in start
+// and end - must be length 1 in beam and IF) and flips the pol and channel axes.
+  static casa::Array<casa::Float> extractStokesForWriter (casa::Array<casa::Float>& in, const casa::IPosition& start, 
+                                                          const casa::IPosition& end);
 
 private:
   static casa::Array<casa::Float> andArrays (const casa::Array<casa::Float>& in1,
@@ -196,6 +226,11 @@ private:
   static casa::Array<casa::Bool> andArrays (const casa::Array<casa::Bool>& in1,
                                             const casa::Array<casa::Bool>& in2) 
                                             {return in1&&in2;}
+  static casa::Array<casa::uChar> andArrays (const casa::Array<casa::uChar>& in1,
+                                            const casa::Array<casa::uChar>& in2);
+  
+  template <class T>
+  static casa::Array<T> computeStokesDataForWriter (casa::Array<T>& rawData, casa::Bool doLinear);
 };
 
 
