@@ -65,8 +65,8 @@ namespace SDMath {
 
 // Bin up
 
-  casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, 
-                                   casa::Int width);
+  void binInSitu (SDMemTable* in, casa::Int width);
+  casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, casa::Int width);
 
 // Average in time
 
@@ -143,6 +143,10 @@ namespace SDMath {
 // Function to average polarizations
 
   SDMemTable* localAveragePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
+
+// Function to bin up spectra
+
+  SDMemTable* localBin (const SDMemTable& in, casa::Int width);
 };
 
 } // namespace

@@ -61,15 +61,23 @@ namespace asap {
   namespace python {
     void python_SDMath() {
       def("quotient", &SDMathWrapper::quotient);
+//
       def("scale", &SDMathWrapper::scale);
       def("scale_insitu", &SDMathWrapper::scaleInSitu);
+//
       def("add", &SDMathWrapper::add);
       def("add_insitu", &SDMathWrapper::addInSitu);
+//
       def("hanning", &SDMathWrapper::hanning);
+//
       def("average", &SDMathWrapper::average);
+//
       def("averagepol", &SDMathWrapper::averagePol);
       def("averagepol_insitu", &SDMathWrapper::averagePolInSitu);
+//
       def("bin", &SDMathWrapper::bin);
+      def("bin_insitu", &SDMathWrapper::binInSitu);
+//
       def("stats", &SDMathWrapper::statistic);
     };
 

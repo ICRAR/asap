@@ -461,68 +461,22 @@ CountedPtr<SDMemTable> SDMath::averagePol (const CountedPtr<SDMemTable>& in,
   return CountedPtr<SDMemTable>(localAveragePol(*in, mask));
 }
 
-CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in,
-                                   Int width) 
+
+void SDMath::binInSitu (SDMemTable* pIn, int width)
 {
-  SDHeader sh = in->getSDHeader();
-  SDMemTable* sdmt = new SDMemTable(*in,True);
-
-// Bin up SpectralCoordinates
-
-  IPosition factors(1);
-  factors(0) = width;
-  for (uInt j=0; j<in->nCoordinates(); ++j) {
-    CoordinateSystem cSys;
-    cSys.addCoordinate(in->getCoordinate(j));
-    CoordinateSystem cSysBin = 
-      CoordinateUtil::makeBinnedCoordinateSystem (factors, cSys, False);
-//
-    SpectralCoordinate sCBin = cSysBin.spectralCoordinate(0);
-    sdmt->setCoordinate(sCBin, j);
-  }
-
-// Use RebinLattice to find shape
-
-  IPosition shapeIn(1,sh.nchan);
-  IPosition shapeOut = RebinLattice<Float>::rebinShape (shapeIn, factors);
-  sh.nchan = shapeOut(0);
-  sdmt->putSDHeader(sh);
+  const uInt what = 1;
+  SDMemTable* pOut = localBin (*pIn, Int(width));
+  *pIn = *pOut;
+   delete pOut;
+}  
 
 
-// Loop over rows and bin along channel axis
-  
-  const uInt axis = 3;
-  for (uInt i=0; i < in->nRow(); ++i) {
-    SDContainer sc = in->getSDContainer(i);
-//
-    Array<Float> tSys(sc.getTsys());                           // Get it out before sc changes shape
-
-// Bin up spectrum
-
-    MaskedArray<Float> marr(in->rowAsMaskedArray(i));
-    MaskedArray<Float> marrout;
-    LatticeUtilities::bin(marrout, marr, axis, width);
-
-// Put back the binned data and flags
-
-    IPosition ip2 = marrout.shape();
-    sc.resize(ip2);
-//
-    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
-
-// Bin up Tsys.  
-
-    Array<Bool> allGood(tSys.shape(),True);
-    MaskedArray<Float> tSysIn(tSys, allGood, True);
-//
-    MaskedArray<Float> tSysOut;    
-    LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
-    sc.putTsys(tSysOut.getArray());
-//
-    sdmt->putSDContainer(sc);
-  }
-  return CountedPtr<SDMemTable>(sdmt);
+CountedPtr<SDMemTable> SDMath::bin (const CountedPtr<SDMemTable>& in, int width)
+{
+  const uInt what = 1;
+  return CountedPtr<SDMemTable>(localBin(*in, Int(width)));
 }
+
 
 
 
@@ -865,8 +819,6 @@ SDMemTable* SDMath::localAveragePol(const SDMemTable& in, const Vector<Bool>& ma
   const IPosition axes(2, 2, 3);              // pol-channel plane
 // 
   const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
-cerr << "nEl=" << mask.nelements() << endl;
-cerr << "useMask=" << useMask << endl;
 
 // Loop over rows
 
@@ -961,3 +913,67 @@ cerr << "useMask=" << useMask << endl;
 //
   return pTabOut;
 }
+
+SDMemTable* SDMath::localBin (const SDMemTable& in, Int width)
+{
+  SDHeader sh = in.getSDHeader();
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+
+// Bin up SpectralCoordinates
+
+  IPosition factors(1);
+  factors(0) = width;
+  for (uInt j=0; j<in.nCoordinates(); ++j) {
+    CoordinateSystem cSys;
+    cSys.addCoordinate(in.getCoordinate(j));
+    CoordinateSystem cSysBin = 
+      CoordinateUtil::makeBinnedCoordinateSystem (factors, cSys, False);
+//
+    SpectralCoordinate sCBin = cSysBin.spectralCoordinate(0);
+    pTabOut->setCoordinate(sCBin, j);
+  }
+
+// Use RebinLattice to find shape
+
+  IPosition shapeIn(1,sh.nchan);
+  IPosition shapeOut = RebinLattice<Float>::rebinShape (shapeIn, factors);
+  sh.nchan = shapeOut(0);
+  pTabOut->putSDHeader(sh);
+
+
+// Loop over rows and bin along channel axis
+  
+  const uInt axis = 3;
+  for (uInt i=0; i < in.nRow(); ++i) {
+    SDContainer sc = in.getSDContainer(i);
+//
+    Array<Float> tSys(sc.getTsys());                           // Get it out before sc changes shape
+
+// Bin up spectrum
+
+    MaskedArray<Float> marr(in.rowAsMaskedArray(i));
+    MaskedArray<Float> marrout;
+    LatticeUtilities::bin(marrout, marr, axis, width);
+
+// Put back the binned data and flags
+
+    IPosition ip2 = marrout.shape();
+    sc.resize(ip2);
+//
+    putDataInSDC (sc, marrout.getArray(), marrout.getMask());
+
+// Bin up Tsys.  
+
+    Array<Bool> allGood(tSys.shape(),True);
+    MaskedArray<Float> tSysIn(tSys, allGood, True);
+//
+    MaskedArray<Float> tSysOut;    
+    LatticeUtilities::bin(tSysOut, tSysIn, axis, width);
+    sc.putTsys(tSysOut.getArray());
+//
+    pTabOut->putSDContainer(sc);
+  }
+  return pTabOut;
+}
+
+

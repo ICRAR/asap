@@ -88,11 +88,20 @@ def add(scan, offset, insitu=False, all=True):
         _add(scan, offset, all)
         return
         
-def bin(scan, binwidth=5):
+def bin(scan, width=5, insitu=False):
     """
+    Return a scan where all spectra have been binned up
+        width        The bin width (default=5) in pixels
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the addition is done in-situ
     """
-    from asap._asap import bin as _bin
-    return scantable(_bin(scan, binwidth))
+    if not insitu:
+        from asap._asap import bin as _bin
+        return scantable(_bin(scan, width))
+    else:
+        from asap._asap import bin_insitu as _bin
+        _bin(scan, width)
+        return
 
 def average_pol(scan, mask=None, insitu=False):
     """

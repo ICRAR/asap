@@ -55,7 +55,6 @@ namespace SDMathWrapper {
 
   void scaleInSitu(SDMemTableWrapper& in, casa::Float factor, casa::Bool all)
   {
-    SDMemTable* sdmt = in.getPtr();
     SDMath::multiplyInSitu(in.getPtr(),factor, all);
   }
   SDMemTableWrapper scale(const SDMemTableWrapper& in,
@@ -68,7 +67,6 @@ namespace SDMathWrapper {
 
   void addInSitu(SDMemTableWrapper& in, casa::Float offset, casa::Bool all)
   {
-    SDMemTable* sdmt = in.getPtr();
     SDMath::addInSitu(in.getPtr(), offset, all);
   }
   SDMemTableWrapper add(const SDMemTableWrapper& in, casa::Float offset, casa::Bool all) 
@@ -84,9 +82,13 @@ namespace SDMathWrapper {
 
 // Bin up
 
-  SDMemTableWrapper bin(const SDMemTableWrapper& in,
-                        int width) {
-    return SDMath::bin(in.getCP(), width);
+  void binInSitu (SDMemTableWrapper& in, int width) 
+  {
+    SDMath::binInSitu (in.getPtr(), width);
+  }
+  SDMemTableWrapper bin(const SDMemTableWrapper& in, int width) 
+  {
+    return SDMemTableWrapper(SDMath::bin(in.getCP(), width));
   }
 
 // Average in time
