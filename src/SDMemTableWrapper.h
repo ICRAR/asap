@@ -94,6 +94,7 @@ public:
   std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
 
   std::string getFluxUnit() const {return table_->getFluxUnit();}
+  void setFluxUnit(const std::string& unit) {table_->setFluxUnit(unit);}
 
   std::vector<bool> getMask(int whichRow=0) const {
     return table_->getMask(whichRow);
