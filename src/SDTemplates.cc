@@ -28,19 +28,26 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
+#include <aips/Containers/Block.h>
 #include <aips/Exceptions/Error.cc>
 #include <aips/Exceptions/Error2.cc>
 #include <aips/Utilities/CountedPtr.cc>
 #include <aips/Utilities/CountedPtr2.cc>
+#include <aips/Utilities/Copy.cc>
 #include "SDMemTable.h"
 
 namespace atnf_sd {
   template class CountedConstPtr<SDMemTable>;
   template class CountedPtr<SDMemTable>;
+  template class CountedPtr<SDMemTable>;
   template class PtrRep<SDMemTable>;
   template class SimpleCountedConstPtr<SDMemTable>;
   template class SimpleCountedPtr<SDMemTable>;
+  template class Block<CountedPtr<SDMemTable> >;
 }
+template void objcopy(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable> const *, uInt);
+template void objmove(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable> const *, uInt);
+template void objset(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable>, uInt);
 
 #include <aips/Arrays/ArrayLogical.cc>
 #include <aips/Arrays/ArrayMath.cc>
@@ -51,6 +58,9 @@ namespace atnf_sd {
 #include <aips/Mathematics/AutoDiff.h>
 #include <aips/Mathematics/AutoDiffMath.h>
 #include <aips/Arrays/Vector2.cc>
+#include <trial/Images/ImageUtilities2.cc>
+#include <aips/Utilities/PtrHolder.cc>
+#include <aips/Lattices/Lattice.h>
 #include "MathUtils.cc"
 
 template void convertArray(Array<Bool> &, Array<uChar> const &);
@@ -62,9 +72,14 @@ template LogicalArray operator>=(Array<Float> const &, Float const &);
 template Array<Float>& operator/=(Array<Float>&, MaskedArray<Float> const&);
 template MaskedArray<Float> const& operator*=(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> operator-(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> const& operator/=(MaskedArray<Float> const&, Float const&);
+template Float stddev(MaskedArray<Float> const&);
 template class CompiledFunction<AutoDiff<Float> >;
 template class CompiledParam<AutoDiff<Float> >;
+template Vector<Bool>::Vector(const vector<bool> &);
 template void Array<float>::tovector(vector<float> &) const;
 template void Array<float>::tovector(vector<float> &) const;
 template void hanning(Vector<Float>&, Vector<Bool>&, 
 		      const Vector<Float>&, const Vector<Bool>&, Bool, Bool);
+template void ImageUtilities::bin(MaskedArray<float>&, Coordinate&, MaskedArray<float> const&, Coordinate const&, uInt, uInt);
+template class PtrHolder<Lattice<Float> >;
