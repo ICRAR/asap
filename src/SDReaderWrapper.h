@@ -42,8 +42,8 @@ namespace asap {
 class SDReaderWrapper : public SDReader {
 public:
   SDReaderWrapper() {;}
-  SDReaderWrapper(const std::string& filename, const std::string& unit,
-                  int ifSel=-1, int beamSel=-1) : SDReader(filename,unit,ifSel,beamSel) {;}
+  SDReaderWrapper(const std::string& filename, int ifSel=-1, int beamSel=-1) : 
+     SDReader(filename,ifSel,beamSel) {;}
   SDReaderWrapper(SDMemTableWrapper tbl) :
     SDReader(tbl.getCP()){;}
   SDMemTableWrapper getSDMemTable() const {
