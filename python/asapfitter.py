@@ -1,4 +1,5 @@
 import _asap
+from asap import rcParams
 
 class fitter:
     """
@@ -79,8 +80,8 @@ class fitter:
             fitter.set_function(poly=3)  # will fit a 3rd order polynomial
         """
         #default poly order 0
-        self.fitfunc = 'poly'
-        n=0
+        
+
         if kwargs.has_key('poly'):
             self.fitfunc = 'poly'
             n = kwargs.get('poly')
@@ -109,13 +110,13 @@ class fitter:
             return
         else:
             if self.data is not None:
-                self.x = self.data.getabcissa()
-                self.y = self.data.getspectrum()
+                self.x = self.data._getabcissa()
+                self.y = self.data._getspectrum()
                 print "Fitting:"
-                vb = self.data._verbose
-                self.data._verbose(True)
-                s = self.data.get_selection()
-                self.data._verbose(vb)
+                vb = self.data._vb
+                self.data._vb = True
+                s = self.data.get_cursor()
+                self.data._vb = vb
         
         self.fitter.setdata(self.x,self.y,self.mask)
         if self.fitfunc == 'gauss':
@@ -212,7 +213,7 @@ class fitter:
             print "Only works with scantables"
             return
         scan = self.data.copy()
-        scan.setspectrum(self.fitter.getresidual())
+        scan._setspectrum(self.fitter.getresidual())
 
     def plot(self, residual=False):
         """
@@ -234,7 +235,7 @@ class fitter:
         xlab = 'Abcissa'
         if self.data:
             tlab = self.data._getsourcename(0)
-            xlab = self.data.getabcissalabel(0)
+            xlab = self.data._getabcissalabel(0)
         ylab = r'Flux'
         m = self.data.getmask(0)
         self._p.set_line(colour='blue',label='Spectrum')
@@ -251,7 +252,7 @@ class fitter:
         self._p.release()
 
 
-    def auto_fit(self):
+    def auto_fit(self, insitu=None):
         """
         Return a scan where the function is applied to all rows for all Beams/IFs/Pols.
         
@@ -260,10 +261,14 @@ class fitter:
         if not isinstance(self.data,scantable) :
             print "Only works with scantables"
             return
-        scan = self.data.copy()
-        vb = scan._verbose
-        scan._verbose(False)
-        sel = scan.get_selection()
+        if insitu is None: insitu = rcParams['insitu']
+        if not insitu:
+            scan = self.data.copy()
+        else:
+            scan = self.data
+        vb = scan._vb
+        scan._vb = False
+        sel = scan.get_cursor()
         rows = range(scan.nrow())
         for i in range(scan.nbeam()):
             scan.setbeam(i)
@@ -275,12 +280,13 @@ class fitter:
                         print "Fitting:"
                         print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
                     for iRow in rows:
-                        self.x = scan.getabcissa(iRow)
-                        self.y = scan.getspectrum(iRow)
+                        self.x = scan._getabcissa(iRow)
+                        self.y = scan._getspectrum(iRow)
                         self.data = None
                         self.fit()                    
                         x = self.get_parameters()
-                        scan.setspectrum(self.fitter.getresidual(),iRow)
-        scan.set_selection(sel[0],sel[1],sel[2])
-        scan._verbose(vb)
-        return scan
+                        scan._setspectrum(self.fitter.getresidual(),iRow)
+        scan.set_cursor(sel[0],sel[1],sel[2])
+        scan._vb = vb
+        if not insitu:
+            return scan
