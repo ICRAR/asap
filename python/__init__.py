@@ -26,7 +26,7 @@ def asap_fname():
 
      * current working dir
      * environ var ASAPRC
-     * HOME/.matplotlibrc
+     * HOME/.asaprc
      
     """
 
@@ -150,7 +150,7 @@ def rc_params():
 
     # strip the conveter funcs and return
     ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
-    print 'Using rc file %s'%fname
+    verbose.report('loaded rc file %s'%fname)
 
     return ret
 
@@ -217,9 +217,10 @@ if rcParams['useplotter']:
     print "Initialising plotter..."
     import asapplotter 
     plotter = asapplotter.asapplotter()
+#from numarray ones,zeros
 
 __date__ = '$Date$'
-__version__  = '0.2a'
+__version__  = '0.1a'
 
 def list_scans(t = scantable):
     import sys, types
@@ -328,7 +329,7 @@ def commands():
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
-                              put into .asaprc
+                              put into $HOME/.asaprc
     Note:
         How to use this with help:
                                          # function 'summary'
