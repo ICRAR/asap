@@ -137,17 +137,17 @@ Int SDWriter::write(
       // Write it out IF by IF.
       for (Int iIF = 0; iIF < hdr.nif; iIF++) {
         // None of these are stored in SDMemTable by SDReader.
-        String          fieldName = "";
+        //String          fieldName = "";
         //Vector<Double>  srcDir(2, 0.0);
         Vector<Double>  srcPM(2, 0.0);
         Double          srcVel = 0.0;
         Double          freqInc = 0.0;
         Double          restFreq = 0.0;
-        Vector<Float>   tcal(2, 0.0f);
-        String          tcalTime = "";
-        Float           azimuth = 0.0f;
-        Float           elevation = 0.0f;
-        Float           parAngle = 0.0f;
+        //Vector<Float>   tcal(2, 0.0f);
+        //String          tcalTime = "";
+        //Float           azimuth = 0.0f;
+        //Float           elevation = 0.0f;
+        //Float           parAngle = 0.0f;
         Float           focusAxi = 0.0f;
         Float           focusTan = 0.0f;
         Float           focusRot = 0.0f;
@@ -156,7 +156,7 @@ Int SDWriter::write(
         Float           humidity = 0.0f;
         Float           windSpeed = 0.0f;
         Float           windAz = 0.0f;
-        Int             refBeam = 0;
+        //Int             refBeam = 0;
         //Vector<Double>  direction(2, 0.0);
         Vector<Double>  scanRate(2, 0.0);
         Vector<Float>   sigma(nPol, 0.0f);
@@ -166,14 +166,15 @@ Int SDWriter::write(
         Complex         xCalFctr;
         Vector<Complex> xPol;
         if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
-                                    sd.interval, fieldName, sd.sourcename,
+                                    sd.interval, sd.fieldname, sd.sourcename,
                                     sd.getDirection(iBeam),
                                     srcPM, srcVel, iIF+1, hdr.reffreq,
-                                    hdr.bandwidth, freqInc, restFreq, tcal,
-                                    tcalTime, azimuth, elevation, parAngle,
+                                    hdr.bandwidth, freqInc, restFreq, sd.tcal,
+                                    sd.tcaltime, sd.azimuth, sd.elevation, 
+				    sd.parangle,
                                     focusAxi, focusTan, focusRot, temperature,
                                     pressure, humidity, windSpeed, windAz,
-                                    refBeam, iBeam+1,
+                                    sd.refbeam, iBeam+1,
                                     sd.getDirection(iBeam),
                                     scanRate,
                                     sd.getTsys(iBeam, iIF), sigma, calFctr,
