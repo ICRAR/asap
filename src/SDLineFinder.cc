@@ -48,59 +48,6 @@ namespace asap {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// IStatHolder - an abstract class to collect statistics from the running
-//               mean calculator, if necessary.
-//               We define it here, because it is used in LFRunningMean and
-//               SDLineFinder only
-//
-
-struct IStatHolder  {
-   // This function is called for each spectral channel processed by
-   // the running mean calculator. The order of channel numbers may be
-   // arbitrary
-   // ch - a number of channel, corresponding to (approximately) the centre
-   //      of the running box
-   // box_nchan - number of channels in the box
-   //
-   virtual void accumulate(int ch, Float sum, Float sum2, int box_nchan)
-                      throw(AipsError) = 0;		      
-};
-
-//
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// SignAccumulator - a simple class to deal with running mean statistics:
-//                   it stores the sign of the value-mean only
-//
-class SignAccumulator : public IStatHolder {
-   Vector<Int>  sign;                // either +1, -1 or 0
-   const Vector<Float>   &spectrum;  // a reference to the spectrum
-                                     // to calculate the sign   
-public:
-   // all channels >=nchan are ignored
-   SignAccumulator(uInt nchan, const Vector<Float> &in_spectrum);
-   
-   // This function is called for each spectral channel processed by
-   // the running mean calculator. The order of channel numbers may be
-   // arbitrary
-   // ch - a number of channel, corresponding to (approximately) the centre
-   //      of the running box
-   // box_nchan - number of channels in the box
-   //
-   virtual void accumulate(int ch, Float sum, Float, int box_nchan)
-                      throw(AipsError);
-
-   // access to the sign
-   const Vector<Int>& getSigns() const throw();
-};
-
-//
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // RunningBox -    a running box calculator. This class implements 
 //                 interations over the specified spectrum and calculates
 //                 running box filter statistics.
@@ -184,7 +131,7 @@ protected:
 //                    specified threshold at the specified number of
 //                    consequtive channels. Prefix LF stands for Line Finder
 //
-class LFAboveThreshold {
+class LFAboveThreshold : protected LFLineListOperations {
    // temporary line edge channels and flag, which is True if the line
    // was detected in the previous channels.
    std::pair<int,int> cur_line;
@@ -217,8 +164,7 @@ public:
    void findLines(const casa::Vector<casa::Float> &spectrum,
 		  const casa::Vector<casa::Bool> &mask,
 		  const std::pair<int,int> &edge,
-		  int max_box_nchan,
-                  IStatHolder* statholder = NULL) throw(casa::AipsError);
+		  int max_box_nchan) throw(casa::AipsError);
 
 protected:
 
@@ -238,49 +184,6 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////
 
 } // namespace asap
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// SignAccumulator - a simple class to deal with running mean statistics:
-//                   it stores the sign of the value-mean only
-//
-
-// all channels >=nchan are ignored
-SignAccumulator::SignAccumulator(uInt nchan,
-                   const Vector<Float> &in_spectrum) : sign(nchan,0),
-		   spectrum(in_spectrum) {}
-
-
-// This function is called for each spectral channel processed by
-// the running mean calculator. The order of channel numbers may be
-// arbitrary
-// ch - a number of channel, corresponding to (approximately) the centre
-//      of the running box
-// box_nchan - number of channels in the box
-//
-void SignAccumulator::accumulate(int ch, Float sum, Float sum2, int box_nchan)
-                   throw(AipsError)
-{
-   if (ch>=sign.nelements()) return;
-   DebugAssert(ch>=0,AipsError);
-   DebugAssert(ch<=spectrum.nelements(), AipsError);
-   if (box_nchan) {
-       Float buf=spectrum[ch]-sum; ///Float(box_nchan);
-       if (buf>0) sign[ch]=1;
-       else if (buf<0) sign[ch]=-1;
-       else sign[ch]=0;
-   } else sign[ch]=0;    
-}
-
-// access to the sign
-const Vector<Int>& SignAccumulator::getSigns() const throw()
-{
-   return sign;
-}
-
-
-//
-///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -518,8 +421,7 @@ void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
 void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 		              const casa::Vector<casa::Bool> &mask,
 		              const std::pair<int,int> &edge,
-		              int max_box_nchan,
-                              IStatHolder* statholder)
+		              int max_box_nchan)
                         throw(casa::AipsError)
 {
   const int minboxnchan=4;
@@ -530,20 +432,21 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
     
       // actual search algorithm
       is_detected_before=False;
-    
+      Vector<Int> signs(spectrum.nelements(),0);
+          
       for (;running_box->haveMore();running_box->next()) {
            const int ch=running_box->getChannel();
            if (running_box->getNumberOfBoxPoints()>=minboxnchan)
-	       processChannel(mask[ch] && (fabs(spectrum[ch]-
-	          running_box->getLinMean()) >=
+	       processChannel(mask[ch] && (fabs(running_box->aboveMean()) >=
 		  threshold*running_box->getLinVariance()), mask);
 	   else processCurLine(mask); // just finish what was accumulated before
-	   if (statholder!=NULL)
-              statholder->accumulate(running_box->getChannel(),
-	                             running_box->getLinMean(),
-				     running_box->getLinVariance(),
-				     running_box->getNumberOfBoxPoints());
+	   const Float buf=running_box->aboveMean();
+	   if (buf>0) signs[ch]=1;
+	   else if (buf<0) signs[ch]=-1;
+	   else if (buf==0) signs[ch]=0;	   
       }
+      if (lines.size())
+          searchForWings(lines,signs,mask,edge);
   }
   catch (const AipsError &ae) {
       throw;
@@ -558,20 +461,20 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// SDLineFinder::IntersectsWith  -  An auxiliary object function to test
-// whether two lines have a non-void intersection
+// LFLineListOperations::IntersectsWith  -  An auxiliary object function
+//                to test whether two lines have a non-void intersection
 //
 
 
 // line1 - range of the first line: start channel and stop+1
-SDLineFinder::IntersectsWith::IntersectsWith(const std::pair<int,int> &in_line1) :
+LFLineListOperations::IntersectsWith::IntersectsWith(const std::pair<int,int> &in_line1) :
                           line1(in_line1) {}
 
 
 // return true if line2 intersects with line1 with at least one
 // common channel, and false otherwise
 // line2 - range of the second line: start channel and stop+1
-bool SDLineFinder::IntersectsWith::operator()(const std::pair<int,int> &line2)
+bool LFLineListOperations::IntersectsWith::operator()(const std::pair<int,int> &line2)
                           const throw()
 {
   if (line2.second<line1.first) return false; // line2 is at lower channels
@@ -584,17 +487,17 @@ bool SDLineFinder::IntersectsWith::operator()(const std::pair<int,int> &line2)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// SDLineFinder::BuildUnion - An auxiliary object function to build a union
+// LFLineListOperations::BuildUnion - An auxiliary object function to build a union
 // of several lines to account for a possibility of merging the nearby lines
 //
 
 // set an initial line (can be a first line in the sequence)
-SDLineFinder::BuildUnion::BuildUnion(const std::pair<int,int> &line1) :
+LFLineListOperations::BuildUnion::BuildUnion(const std::pair<int,int> &line1) :
                              temp_line(line1) {}
 
 // update temp_line with a union of temp_line and new_line
 // provided there is no gap between the lines
-void SDLineFinder::BuildUnion::operator()(const std::pair<int,int> &new_line)
+void LFLineListOperations::BuildUnion::operator()(const std::pair<int,int> &new_line)
                                    throw()
 {
   if (new_line.first<temp_line.first) temp_line.first=new_line.first;
@@ -602,7 +505,7 @@ void SDLineFinder::BuildUnion::operator()(const std::pair<int,int> &new_line)
 }
 
 // return the result (temp_line)
-const std::pair<int,int>& SDLineFinder::BuildUnion::result() const throw()
+const std::pair<int,int>& LFLineListOperations::BuildUnion::result() const throw()
 {
   return temp_line;
 }
@@ -612,18 +515,18 @@ const std::pair<int,int>& SDLineFinder::BuildUnion::result() const throw()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// SDLineFinder::LaterThan - An auxiliary object function to test whether a
+// LFLineListOperations::LaterThan - An auxiliary object function to test whether a
 // specified line is at lower spectral channels (to preserve the order in
 // the line list)
 //
 
 // setup the line to compare with
-SDLineFinder::LaterThan::LaterThan(const std::pair<int,int> &in_line1) :
+LFLineListOperations::LaterThan::LaterThan(const std::pair<int,int> &in_line1) :
                          line1(in_line1) {}
 
 // return true if line2 should be placed later than line1
 // in the ordered list (so, it is at greater channel numbers)
-bool SDLineFinder::LaterThan::operator()(const std::pair<int,int> &line2)
+bool LFLineListOperations::LaterThan::operator()(const std::pair<int,int> &line2)
                           const throw()
 {
   if (line2.second<line1.first) return false; // line2 is at lower channels
@@ -741,11 +644,8 @@ int SDLineFinder::findLines() throw(casa::AipsError)
      // line find algorithm
      LFAboveThreshold lfalg(new_lines,min_nchan, threshold);
 
-     SignAccumulator sacc(spectrum.nelements(),spectrum);
-
-
      try {
-         lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan,&sacc);
+         lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan);
      }
      catch(const AipsError &ae) {
          if (first_pass) throw;
@@ -753,8 +653,6 @@ int SDLineFinder::findLines() throw(casa::AipsError)
      }
      first_pass=False;
      if (!new_lines.size()) break; // nothing new
-
-     searchForWings(new_lines, sacc.getSigns());
 
      // update the list (lines) merging intervals, if necessary
      addNewSearchResult(new_lines,lines);
@@ -848,9 +746,19 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
   }
 }
 
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFLineListOperations - a class incapsulating  operations with line lists
+//                        The LF prefix stands for Line Finder
+//
+
 // concatenate two lists preserving the order. If two lines appear to
 // be adjacent, they are joined into the new one
-void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines,
+void LFLineListOperations::addNewSearchResult(const std::list<pair<int, int> > &newlines,
                          std::list<std::pair<int, int> > &lines_list) 
                         throw(AipsError)
 {
@@ -887,7 +795,7 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
       throw;
   }  
   catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::addNewSearchResult - STL error: ")+ex.what());
+      throw AipsError(String("LFLineListOperations::addNewSearchResult - STL error: ")+ex.what());
   }
 }
 
@@ -896,8 +804,10 @@ void SDLineFinder::addNewSearchResult(const std::list<pair<int, int> > &newlines
 // This operation is necessary to include line wings, which are below
 // the detection threshold. If lines becomes adjacent, they are
 // merged together. Any masked channel stops the extension
-void SDLineFinder::searchForWings(std::list<std::pair<int, int> > &newlines,
-           const casa::Vector<casa::Int> &signs) throw(casa::AipsError)
+void LFLineListOperations::searchForWings(std::list<std::pair<int, int> > &newlines,
+           const casa::Vector<casa::Int> &signs,
+	   const casa::Vector<casa::Bool> &mask,
+	   const std::pair<int,int> &edge) throw(casa::AipsError)
 {
   try {
       for (std::list<pair<int,int> >::iterator li=newlines.begin();
@@ -927,6 +837,9 @@ void SDLineFinder::searchForWings(std::list<std::pair<int, int> > &newlines,
       throw;
   }  
   catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::extendLines - STL error: ")+ex.what());
+      throw AipsError(String("LFLineListOperations::extendLines - STL error: ")+ex.what());
   }
 }
+
+//
+///////////////////////////////////////////////////////////////////////////////

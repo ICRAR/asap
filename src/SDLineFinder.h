@@ -53,38 +53,13 @@
 
 namespace asap {
 
-// SDLineFinder  -  a class for automated spectral line search
-struct SDLineFinder {
-   SDLineFinder() throw();
-   virtual ~SDLineFinder() throw(casa::AipsError);
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFLineListOperations - a class incapsulating  operations with line lists
+//                        The LF prefix stands for Line Finder
+//
 
-   // set the scan to work with (in_scan parameter), associated mask (in_mask
-   // parameter) and the edge channel rejection (in_edge parameter)
-   //   if in_edge has zero length, all channels chosen by mask will be used
-   //   if in_edge has one element only, it represents the number of
-   //      channels to drop from both sides of the spectrum
-   //   in_edge is introduced for convinience, although all functionality
-   //   can be achieved using a spectrum mask only   
-   void setScan(const SDMemTableWrapper &in_scan,
-                const std::vector<bool> &in_mask,
-		const boost::python::tuple &in_edge) throw(casa::AipsError);
-
-   // search for spectral lines. Number of lines found is returned
-   int findLines() throw(casa::AipsError);
-
-   // get the mask to mask out all lines that have been found (default)
-   // if invert=true, only channels belong to lines will be unmasked
-   // Note: all channels originally masked by the input mask (in_mask
-   //       in setScan) or dropped out by the edge parameter (in_edge
-   //       in setScan) are still excluded regardless on the invert option
-   std::vector<bool> getMask(bool invert=false) const throw(casa::AipsError);
-
-   // get range for all lines found. If defunits is true (default), the
-   // same units as used in the scan will be returned (e.g. velocity
-   // instead of channels). If defunits is false, channels will be returned
-   std::vector<int>   getLineRanges(bool defunits=true)
-                                const throw(casa::AipsError);
-protected:
+struct  LFLineListOperations {
    // concatenate two lists preserving the order. If two lines appear to
    // be adjacent or have a non-void intersection, they are joined into 
    // the new line
@@ -97,10 +72,13 @@ protected:
    // This operation is necessary to include line wings, which are below
    // the detection threshold. If lines becomes adjacent, they are
    // merged together. Any masked channel stops the extension
-   void searchForWings(std::list<std::pair<int, int> > &newlines,
-                           const casa::Vector<casa::Int> &signs)
+   static void searchForWings(std::list<std::pair<int, int> > &newlines,
+                       const casa::Vector<casa::Int> &signs,
+		       const casa::Vector<casa::Bool> &mask,
+		       const std::pair<int,int> &edge)
 			   throw(casa::AipsError);
-			   
+protected:
+	   
    // An auxiliary object function to test whether two lines have a non-void
    // intersection
    class IntersectsWith : public std::unary_function<pair<int,int>, bool> {
@@ -140,6 +118,48 @@ protected:
 	bool operator()(const std::pair<int,int> &line2) const throw();
    }; 
    
+   
+};
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// SDLineFinder  -  a class for automated spectral line search
+//
+//
+
+struct SDLineFinder : protected LFLineListOperations {
+   SDLineFinder() throw();
+   virtual ~SDLineFinder() throw(casa::AipsError);
+
+   // set the scan to work with (in_scan parameter), associated mask (in_mask
+   // parameter) and the edge channel rejection (in_edge parameter)
+   //   if in_edge has zero length, all channels chosen by mask will be used
+   //   if in_edge has one element only, it represents the number of
+   //      channels to drop from both sides of the spectrum
+   //   in_edge is introduced for convinience, although all functionality
+   //   can be achieved using a spectrum mask only   
+   void setScan(const SDMemTableWrapper &in_scan,
+                const std::vector<bool> &in_mask,
+		const boost::python::tuple &in_edge) throw(casa::AipsError);
+
+   // search for spectral lines. Number of lines found is returned
+   int findLines() throw(casa::AipsError);
+
+   // get the mask to mask out all lines that have been found (default)
+   // if invert=true, only channels belong to lines will be unmasked
+   // Note: all channels originally masked by the input mask (in_mask
+   //       in setScan) or dropped out by the edge parameter (in_edge
+   //       in setScan) are still excluded regardless on the invert option
+   std::vector<bool> getMask(bool invert=false) const throw(casa::AipsError);
+
+   // get range for all lines found. If defunits is true (default), the
+   // same units as used in the scan will be returned (e.g. velocity
+   // instead of channels). If defunits is false, channels will be returned
+   std::vector<int>   getLineRanges(bool defunits=true)
+                                const throw(casa::AipsError);
 private:
    casa::CountedConstPtr<SDMemTable> scan; // the scan to work with
    casa::Vector<casa::Bool> mask;          // associated mask
@@ -158,7 +178,10 @@ private:
                                            // channels of the spectral lines
    // a buffer for the spectrum
    mutable casa::Vector<casa::Float>  spectrum;
-
 };
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
 } // namespace asap
 #endif // #ifndef SDLINEFINDER_H
