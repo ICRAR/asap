@@ -168,8 +168,10 @@ struct SDLineFinder : protected LFLineListOperations {
                 const std::vector<bool> &in_mask,
 		const boost::python::tuple &in_edge) throw(casa::AipsError);
 
-   // search for spectral lines. Number of lines found is returned
-   int findLines() throw(casa::AipsError);
+   // search for spectral lines for a row specified by whichRow and
+   // Beam/IF/Pol specified by current cursor set for the scantable
+   // Number of lines found is returned   
+   int findLines(const casa::uInt &whichRow = 0) throw(casa::AipsError);
 
    // get the mask to mask out all lines that have been found (default)
    // if invert=true, only channels belong to lines will be unmasked
@@ -178,11 +180,12 @@ struct SDLineFinder : protected LFLineListOperations {
    //       in setScan) are still excluded regardless on the invert option
    std::vector<bool> getMask(bool invert=false) const throw(casa::AipsError);
 
-   // get range for all lines found. If defunits is true (default), the
-   // same units as used in the scan will be returned (e.g. velocity
-   // instead of channels). If defunits is false, channels will be returned
-   std::vector<int>   getLineRanges(bool defunits=true)
-                                const throw(casa::AipsError);
+   // get range for all lines found. The same units as used in the scan
+   // will be returned (e.g. velocity instead of channels).   
+   std::vector<double>   getLineRanges() const throw(casa::AipsError);
+   // The same as getLineRanges, but channels are always used to specify
+   // the range
+   std::vector<int> getLineRangesInChannels() const throw(casa::AipsError);
 protected:
    // auxiliary function to average adjacent channels and update the mask
    // if at least one channel involved in summation is masked, all
@@ -235,6 +238,8 @@ private:
                                            // more than in_avg_limit
 					   // adjacent channels to search
 					   // for broad lines. see setOptions
+   casa::uInt last_row_used;                // the Row number specified
+                                           // during the last findLines call
    std::list<std::pair<int, int> > lines;  // container of start and stop+1
                                            // channels of the spectral lines
    // a buffer for the spectrum

@@ -44,6 +44,7 @@ namespace asap {
          .def("findlines",&SDLineFinder::findLines)
          .def("getmask",&SDLineFinder::getMask)
          .def("getlineranges",&SDLineFinder::getLineRanges)
+         .def("getlinerangesinchannels",&SDLineFinder::getLineRangesInChannels)
        ;
      };
   } // namespace python

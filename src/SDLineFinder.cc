@@ -672,7 +672,7 @@ void SDLineFinder::setScan(const SDMemTableWrapper &in_scan,
 }
 
 // search for spectral lines. Number of lines found is returned
-int SDLineFinder::findLines() throw(casa::AipsError)
+int SDLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
 { 
   const int minboxnchan=4;
   if (scan.null())
@@ -684,9 +684,10 @@ int SDLineFinder::findLines() throw(casa::AipsError)
   if (max_box_nchan<2)
       throw AipsError("SDLineFinder::findLines - box_size is too small");
 
-  scan->getSpectrum(spectrum);
+  scan->getSpectrum(spectrum, whichRow);
 
   lines.resize(0); // search from the scratch
+  last_row_used=whichRow;
   Vector<Bool> temp_mask(mask);
 
   Bool first_pass=True;
@@ -827,27 +828,40 @@ std::vector<bool> SDLineFinder::getMask(bool invert)
   }
 }
 
-// get range for all lines found. If defunits is true (default), the
-// same units as used in the scan will be returned (e.g. velocity
-// instead of channels). If defunits is false, channels will be returned
-std::vector<int> SDLineFinder::getLineRanges(bool defunits)
+// get range for all lines found. The same units as used in the scan
+// will be returned (e.g. velocity instead of channels).
+std::vector<double> SDLineFinder::getLineRanges()
                              const throw(casa::AipsError)
+{
+  // convert to required abscissa units
+  std::vector<double> vel=scan->getAbcissa(last_row_used);
+  std::vector<int> ranges=getLineRangesInChannels();
+  std::vector<double> res(ranges.size());
+
+  std::vector<int>::const_iterator cri=ranges.begin();
+  std::vector<double>::iterator outi=res.begin();
+  for (;cri!=ranges.end() && outi!=res.end();++cri,++outi)
+       if (uInt(*cri)>=vel.size())
+          throw AipsError("SDLineFinder::getLineRanges - getAbcissa provided less channels than reqired");
+       else *outi=vel[*cri];
+  return res;
+}
+
+// The same as getLineRanges, but channels are always used to specify
+// the range
+std::vector<int> SDLineFinder::getLineRangesInChannels()
+                                   const throw(casa::AipsError)
 {
   try {
        if (scan.null())
-           throw AipsError("SDLineFinder::getLineRanges - a scan should be set first,"
+           throw AipsError("SDLineFinder::getLineRangesInChannels - a scan should be set first,"
                       " use set_scan followed by find_lines");
        DebugAssert(mask.nelements()==scan->nChan(), AipsError);
        
        if (!lines.size())
-           throw AipsError("SDLineFinder::getLineRanges - one have to search for "
+           throw AipsError("SDLineFinder::getLineRangesInChannels - one have to search for "
 	                   "lines first, use find_lines");
        			   
-       // temporary
-       if (defunits)
-           throw AipsError("SDLineFinder::getLineRanges - sorry, defunits=true have not "
-	                   "yet been implemented");
-       //
        std::vector<int> res(2*lines.size());
        // iterator through lines & result
        std::list<std::pair<int,int> >::const_iterator cli=lines.begin();
@@ -856,7 +870,7 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
 	    *ri=cli->first;
 	    if (++ri!=res.end()) 
 	        *ri=cli->second-1;	    
-       }
+       }       
        return res;
   }
   catch (const AipsError &ae) {
@@ -866,6 +880,8 @@ std::vector<int> SDLineFinder::getLineRanges(bool defunits)
       throw AipsError(String("SDLineFinder::getLineRanges - STL error: ")+ex.what());
   }
 }
+
+
 
 // an auxiliary function to remove all lines from the list, except the
 // strongest one (by absolute value). If the lines removed are real,
