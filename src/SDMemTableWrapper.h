@@ -80,6 +80,10 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
+  std::vector<float> getStokesSpectrum(int whichRow=0, bool doPol=false) const {
+    return table_->getStokesSpectrum(whichRow, doPol);
+  }
+
   std::vector<double> getAbcissa(int whichRow=0) const {
     return table_->getAbcissa(whichRow);
   }
@@ -178,9 +182,14 @@ public:
     return table_->history(whichRow); 
   }
 
+  void rotateXYPhase (float value) {
+      table_->rotateXYPhase(value);
+  }
+
 private:
   casa::CountedPtr<SDMemTable> table_;
 };
 
 } // namespace
 #endif
+
