@@ -110,11 +110,13 @@ SDMemTable::SDMemTable(const Table& tab, const std::string& exprs) :
   beamSel_(0),
   polSel_(0)
 {
+  cout << exprs << endl;
   Table t = tableCommand(exprs,tab);
   if (t.nrow() == 0)
       throw(AipsError("Query unsuccessful."));
   table_ = t.copyToMemoryTable("dummy");
   attach();
+  renumber();
 }
 
 SDMemTable::~SDMemTable()
@@ -180,7 +182,7 @@ void SDMemTable::setup()
   table_ = Table(aNewTab, Table::Memory, 0);
 }
 
-void SDMemTable::attach ()
+void SDMemTable::attach()
 {
   timeCol_.attach(table_, "TIME");
   srcnCol_.attach(table_, "SRCNAME");
@@ -261,7 +263,7 @@ bool SDMemTable::setPol(Int whichPol)
   return false;
 }
 
-void SDMemTable::resetCursor () 
+void SDMemTable::resetCursor() 
 {
    polSel_ = 0;
    IFSel_ = 0;
@@ -638,14 +640,21 @@ MDirection SDMemTable::getDirection(Int whichRow, Bool refBeam) const
   Array<Double> posit;
   dirCol_.get(whichRow,posit);
   Vector<Double> wpos(2);
+  Int rb;
+  rbeamCol_.get(whichRow,rb);
   wpos[0] = posit(IPosition(2,beamSel_,0));
   wpos[1] = posit(IPosition(2,beamSel_,1));
+  if (refBeam && rb > -1) {  // use refBeam instead if it exists
+    wpos[0] = posit(IPosition(2,rb,0));
+    wpos[1] = posit(IPosition(2,rb,1));
+  }
+
   Quantum<Double> lon(wpos[0],Unit(String("rad")));
   Quantum<Double> lat(wpos[1],Unit(String("rad")));
   return MDirection(lon, lat, mdr);
 }
 
-MEpoch SDMemTable::getEpoch (Int whichRow) const
+MEpoch SDMemTable::getEpoch(Int whichRow) const
 {
   MEpoch::Types met = getTimeReference();
 //
@@ -696,7 +705,8 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 }
 
 
-SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, uInt whichRow) const
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, 
+						     uInt whichRow) const
 {
 // Create basic SC
 
@@ -1040,8 +1050,7 @@ String SDMemTable::formatDirection(const MDirection& md) const
   String sLon = mvLon.string(MVAngle::TIME,prec);
   MVAngle mvLat(t[1]);
   String sLat = mvLat.string(MVAngle::ANGLE+MVAngle::DIG2,prec);
-
-   return sLon + String(" ") + sLat;
+  return sLon + String(" ") + sLat;
 }
 
 
@@ -1073,13 +1082,13 @@ void SDMemTable::setInstrument(const std::string& name)
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
 }
 
-std::string SDMemTable::summary() const  {
+std::string SDMemTable::summary(bool verbose) const  {
 
   ostringstream oss;
   oss << endl;
-  oss << "--------------------------------------------------" << endl;
+  oss << "--------------------------------------------------------------------------------" << endl;
   oss << " Scan Table Summary" << endl;
-  oss << "--------------------------------------------------" << endl;
+  oss << "--------------------------------------------------------------------------------" << endl;
   oss.flags(std::ios_base::left);
   oss << setw(15) << "Beams:" << setw(4) << nBeam() << endl
       << setw(15) << "IFs:" << setw(4) << nIF() << endl
@@ -1115,13 +1124,13 @@ std::string SDMemTable::summary() const  {
   String dirtype ="Position ("+
     MDirection::showType(getDirectionReference())+
     ")";
-  oss << setw(6) << "Scan"
+  oss << setw(5) << "Scan"
       << setw(15) << "Source"
-      << setw(26) << dirtype
+      << setw(24) << dirtype
       << setw(10) << "Time"
       << setw(18) << "Integration" 
-      << setw(10) << "FreqIDs" << endl;
-  oss << "----------------------------------------------------------------------------------" << endl;
+      << setw(7) << "FreqIDs" << endl;
+  oss << "--------------------------------------------------------------------------------" << endl;
   
 //
   uInt scanNo = 0;
@@ -1146,14 +1155,15 @@ std::string SDMemTable::summary() const  {
 
       if (i==nRow-1 &&scanID==lastScanID)  nInt++;   
       if (nInt==1 && i>1) {
-         for (uInt j=0; j<freqIDs.nelements(); j++) mathutil::addEntry(listFQ, freqIDs(j));
+         for (uInt j=0; j<freqIDs.nelements(); j++) 
+	   mathutil::addEntry(listFQ, freqIDs(j));
       }
-//
-      oss << setw(6) << scanNo 
+      oss << setw(3) << std::right << scanNo << std::left << setw(2) << "  "
           << setw(15) << name
-	  << setw(26) << posit
+	  << setw(24) << posit
 	  << setw(10) << getTime(firstRow,False)
-	  << setw(3) << nInt  << setw(3) << " x " << setw(6) <<  t 
+	  << setw(3) << std::right << nInt  << setw(3) << " x " << std::left
+	  << setw(6) <<  t 
           << " " << listFQ << endl;
 //
       lastScanID = scanID;
@@ -1168,20 +1178,21 @@ std::string SDMemTable::summary() const  {
   oss << "Table contains " << table_.nrow() << " integration(s) in " << scanNo << " scan(s)." << endl;
 
 // Frequency Table
-
-  std::vector<string> info = getCoordInfo();
-  SDFrequencyTable sdft = getSDFreqTable();
-  oss << endl << endl;
-  oss << "FreqID  Frame   RefFreq(Hz)     RefPix   Increment(Hz)" << endl;
-  oss << "----------------------------------------------------------------------------------" << endl;
-  for (uInt i=0; i<sdft.length(); i++) {
-     oss << setw(8) << i << setw(8)
-                    << info[3] << setw(16) << setprecision (8)
-                    << sdft.referenceValue(i) << setw(10)
-                    << sdft.referencePixel(i) << setw(12)
-                    << sdft.increment(i) << endl;
+  if (verbose) {
+    std::vector<string> info = getCoordInfo();
+    SDFrequencyTable sdft = getSDFreqTable();
+    oss << endl << endl;
+    oss << "FreqID  Frame   RefFreq(Hz)     RefPix   Increment(Hz)" << endl;
+    oss << "--------------------------------------------------------------------------------" << endl;
+    for (uInt i=0; i<sdft.length(); i++) {
+      oss << setw(8) << i << setw(8)
+	  << info[3] << setw(16) << setprecision(8)
+	  << sdft.referenceValue(i) << setw(10)
+	  << sdft.referencePixel(i) << setw(12)
+	  << sdft.increment(i) << endl;
+    }
+    oss << "--------------------------------------------------------------------------------" << endl;
   }
-  oss << "----------------------------------------------------------------------------------" << endl;
   return String(oss);
 }
 
@@ -1281,7 +1292,7 @@ MDirection::Types SDMemTable::getDirectionReference() const
   return mdr;
 }
 
-MEpoch::Types SDMemTable::getTimeReference () const
+MEpoch::Types SDMemTable::getTimeReference() const
 {
   MEpoch::Types met;
   String ep;
@@ -1295,8 +1306,8 @@ MEpoch::Types SDMemTable::getTimeReference () const
 }
 
 
-Instrument SDMemTable::convertInstrument (const String& instrument,
-                                          Bool throwIt)
+Instrument SDMemTable::convertInstrument(const String& instrument,
+					 Bool throwIt)
 {
    String t(instrument);
    t.upcase();
@@ -1318,10 +1329,30 @@ Instrument SDMemTable::convertInstrument (const String& instrument,
    } else if (t==String("HOBART")) {
       inst = HOBART;
    } else {
-      if (throwIt) {
-         throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
-      }
+     if (throwIt) {
+       throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
+     }
    }
    return inst;
 }
 
+void SDMemTable::renumber()
+{
+  uInt nRow = scanCol_.nrow();
+  Int newscanid = 0;
+  Int cIdx;// the current scanid
+  // get the first scanid
+  scanCol_.getScalar(0,cIdx);
+  Int pIdx = cIdx;// the scanid of the previous row
+  for (uInt i=0; i<nRow;++i) {
+    scanCol_.getScalar(i,cIdx);
+    if (pIdx == cIdx) {
+      // renumber
+      scanCol_.put(i,newscanid);
+    } else { 
+      ++newscanid;
+      pIdx = cIdx;   // store scanid
+      --i;           // don't increment next loop
+    }
+  }
+}

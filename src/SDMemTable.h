@@ -149,7 +149,7 @@ public:
   virtual casa::Int nScan() const;
 
   // get a summary of the table
-  virtual std::string summary() const;
+  virtual std::string summary(bool verbose=false) const;
 
   std::vector<std::string> history(int whichRow=0) const;
   bool appendHistory(const std::string& hist, int whichRow=0);
@@ -216,6 +216,7 @@ private:
   casa::String formatDirection(const casa::MDirection& md) const;
   void setup();
   void attach();
+  void renumber();
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;

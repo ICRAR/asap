@@ -33,6 +33,7 @@
 
 #include <vector>
 #include <string>
+#include <casa/Arrays/Vector.h>
 
 #include "SDMemTable.h"
 
@@ -59,9 +60,13 @@ public:
     return SDMemTableWrapper(new SDMemTable(*(this->getCP()), casa::False));
   }
 
-  SDMemTableWrapper getScan(int scan) {
-    casa::String cond("SELECT * from $1 WHERE SCANID == ");
-    cond += casa::String::toString(scan);
+  //SDMemTableWrapper getScan(int scan) {
+  SDMemTableWrapper getScan(std::vector<int> scan) {
+    casa::String cond("SELECT FROM $1 WHERE SCANID IN ");
+    casa::Vector<casa::Int> v(scan);
+    casa::ostringstream oss;
+    oss << v;
+    cond += casa::String(oss);
     return SDMemTableWrapper(*this, cond);
   }
 
@@ -156,7 +161,10 @@ public:
 
   casa::CountedPtr<SDMemTable> getCP() const {return table_;}
   SDMemTable* getPtr() {return &(*table_);}
-  std::string summary() const { return table_->summary(); }
+
+  std::string summary(bool verbose=false) const { 
+    return table_->summary(verbose); 
+  }
   
   std::vector<std::string> history(int whichRow=0) { 
     return table_->history(whichRow); 
