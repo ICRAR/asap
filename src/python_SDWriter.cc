@@ -30,12 +30,12 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDWriter.h"
+#include "SDWriterWrapper.h"
 
 using namespace boost::python;
 
 namespace atnf_sd {
-namespace python  {
+  namespace python  {
 
 void python_SDWriter() {
   class_<SDWriterWrapper>("sdwriter")
@@ -47,5 +47,5 @@ void python_SDWriter() {
   ;
 };
 
-} // namespace python
+  } // namespace python
 } // namespace atnf_sd
