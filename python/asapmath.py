@@ -165,7 +165,7 @@ def gain_el(scan, poly=None, filename="", method="linear",
     You specify polynomial coefficients, an ascii table or neither.
     If you specify neither, then a polynomial correction will be made
     with built in coefficients known for certain telescopes (an error will
-    occur if the instrument is not known).   The data are *multiplied* 
+    occur if the instrument is not known).   The data and Tsys are *divided* 
     by the scaling factors.
     Parameters:
         scan:        a scantable
@@ -241,7 +241,8 @@ def freq_align(scan, reftime=None, method='cubic', perif=False, insitu=None):
         
 def opacity(scan, tau, insitu=None, allaxes=None):
     """
-    Return a scan after applying an opacity correction.
+    Return a scan after applying an opacity correction. The data
+    and Tsys are multiplied by the correction factor.
     Parameters:
         scan:        a scantable
         tau:         Opacity from which the correction factor is exp(tau*ZD)
