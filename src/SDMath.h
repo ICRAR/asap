@@ -35,10 +35,15 @@
 #include <vector>
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <coordinates/Coordinates/VelocityAligner.h>
+
 #include "SDDefs.h"
 
 class casa::Table;
 class casa::MEpoch;
+class casa::MPosition;
+template<class T> class casa::PtrBlock;
+//template<class T> class casa::VelocityAligner;
 
 
 namespace asap {
@@ -64,7 +69,8 @@ class SDMath {
 // Binary Table operators. op=ADD, SUB, MUL, DIV, QUOTIENT
    casa::CountedPtr<SDMemTable> binaryOperate (const casa::CountedPtr<SDMemTable>& left,
                                                const casa::CountedPtr<SDMemTable>& right,
-                                               const casa::String& op, casa::Bool preserve) const;
+                                               const casa::String& op, casa::Bool preserve,
+                                               casa::Bool tSys) const;
 
 // Average in time
    casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
@@ -103,7 +109,7 @@ class SDMath {
 
 // Simple unary mathematical operations.  what=0 (mul) or 1 (add)
    SDMemTable* unaryOperate(const SDMemTable& in, casa::Float offset, 
-                            casa::Bool doAll, casa::uInt what) const;
+                            casa::Bool doAll, casa::uInt what, casa::Bool tSys) const;
 
 // Average polarizations
    SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask) const;
@@ -182,6 +188,17 @@ class SDMath {
                              casa::Vector<casa::uInt>& srcIdx,
                              casa::Vector<casa::uInt>& firstRow,
                              const casa::Vector<casa::String>& srcNames) const;
+
+// Generate velocity aligners
+   void generateVelocityAligners (casa::PtrBlock<casa::VelocityAligner<casa::Float>* >& vA,
+                                  const SDMemTable& in, casa::uInt nChan,
+                                  casa::uInt nFreqIDs, casa::uInt nSrcTab,
+                                  const casa::Vector<casa::uInt>& firstRow,
+                                  casa::MFrequency::Types velSystem,
+                                  const casa::String& velUnit,
+                                  casa::MDoppler::Types doppler,
+                                  const casa::MPosition& refPos,
+                                  const casa::MEpoch& refEpoch) const;
 
 // Align in Velocity
    SDMemTable* velocityAlign (const SDMemTable& in,

@@ -113,6 +113,9 @@ SDMemTable* SDMath::velocityAlignment (const SDMemTable& in, const String& refTi
 // Get velocity/frame info from Table
 
    std::vector<std::string> info = in.getCoordInfo();
+
+// Parse unit ("" means channels)
+
    String velUnit(info[0]);
    if (velUnit.length()==0) {
       throw(AipsError("You have not set a velocity abcissa unit - use function set_unit"));
@@ -122,14 +125,18 @@ SDMemTable* SDMath::velocityAlignment (const SDMemTable& in, const String& refTi
          throw(AipsError("Specified abcissa unit is not consistent with km/s - use function set_unit"));
       }
    }
-//
+
+// Parse doppler
+
    String dopplerStr(info[2]);
    String velSystemStr(info[1]);
    String velBaseSystemStr(info[3]);
    if (velBaseSystemStr==velSystemStr) {
       throw(AipsError("You have not set a velocity frame different from the initial - use function set_freqframe"));
    }
-//
+
+// Parse frequency system
+
    MFrequency::Types velSystem;
    MFrequency::getType(velSystem, velSystemStr);
    MDoppler::Types doppler;
@@ -376,7 +383,8 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left,
                                               const CountedPtr<SDMemTable>& right,
-                                              const String& op, Bool preserve)  const
+                                              const String& op, Bool preserve,
+                                              Bool doTSys)  const
 {
 
 // Check operator
@@ -394,6 +402,7 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
      what = 3;
   } else if (op2=="QUOTIENT") {
      what = 4;
+     doTSys = True;
   } else {
     throw( AipsError("Unrecognized operation"));
   }
@@ -415,13 +424,16 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
 
 // TSys columns
 
-  ROArrayColumn<Float> tSysLeft(tLeft, "TSYS");
-  ROArrayColumn<Float> tSysRight(tRight, "TSYS");
+  ROArrayColumn<Float> tSysLeftCol, tSysRightCol;
+  if (doTSys) {
+     tSysLeftCol.attach(tLeft, "TSYS");
+     tSysRightCol.attach(tRight, "TSYS");
+  }
 
 // First row for right
 
   Array<Float> tSysLeftArr, tSysRightArr;
-  tSysRight.get(0, tSysRightArr);
+  if (doTSys) tSysRightCol.get(0, tSysRightArr);
   MaskedArray<Float>* pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(0));
   IPosition shpRight = pMRight->shape();
 
@@ -437,23 +449,25 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
 
      MaskedArray<Float> mLeft(left->rowAsMaskedArray(i));
      IPosition shpLeft = mLeft.shape();
-     tSysLeft.get(i, tSysLeftArr);
+     if (doTSys) tSysLeftCol.get(i, tSysLeftArr);
 //
      if (nRowRight>1) {
         delete pMRight;
         pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(i));
         shpRight = pMRight->shape();
-        tSysRight.get(i, tSysRightArr);
+        if (doTSys) tSysRightCol.get(i, tSysRightArr);
      }
 //
      if (!shpRight.isEqual(shpLeft)) {
         throw(AipsError("left and right scan tables are not conformant"));
      }
-     if (!tSysRightArr.shape().isEqual(tSysRightArr.shape())) {
-        throw(AipsError("left and right Tsys data are not conformant"));
-     }
-     if (!shpRight.isEqual(tSysRightArr.shape())) {
-        throw(AipsError("left and right scan tables are not conformant"));
+     if (doTSys) {
+        if (!tSysRightArr.shape().isEqual(tSysRightArr.shape())) {
+           throw(AipsError("left and right Tsys data are not conformant"));
+        }
+        if (!shpRight.isEqual(tSysRightArr.shape())) {
+           throw(AipsError("left and right scan tables are not conformant"));
+        }
      }
 
 // Make container
@@ -465,19 +479,19 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
      if (what==0) {                               
         MaskedArray<Float> tmp = mLeft + *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        sc.putTsys(tSysLeftArr+tSysRightArr);
+        if (doTSys) sc.putTsys(tSysLeftArr+tSysRightArr);
      } else if (what==1) {
         MaskedArray<Float> tmp = mLeft - *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        sc.putTsys(tSysLeftArr-tSysRightArr);
+        if (doTSys) sc.putTsys(tSysLeftArr-tSysRightArr);
      } else if (what==2) {
         MaskedArray<Float> tmp = mLeft * *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        sc.putTsys(tSysLeftArr*tSysRightArr);
+        if (doTSys) sc.putTsys(tSysLeftArr*tSysRightArr);
      } else if (what==3) {
         MaskedArray<Float> tmp = mLeft / *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        sc.putTsys(tSysLeftArr/tSysRightArr);
+        if (doTSys) sc.putTsys(tSysLeftArr/tSysRightArr);
      } else if (what==4) {
         if (preserve) {     
            MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - tSysRightArr;
@@ -620,26 +634,41 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
 }
 
 SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
-                                 uInt what) const
+                                 uInt what, Bool doTSys) const
 //
 // what = 0   Multiply
 //        1   Add
 {
    SDMemTable* pOut = new SDMemTable(in,False);
    const Table& tOut = pOut->table();
-   ArrayColumn<Float> spec(tOut,"SPECTRA");  
+   ArrayColumn<Float> specCol(tOut,"SPECTRA");  
+   ArrayColumn<Float> tSysCol(tOut,"TSYS");  
+   Array<Float> tSysArr;
 //
    if (doAll) {
       for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Modify data
+
          MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
-//
          if (what==0) {
             dataIn  *= val;
          } else if (what==1) {
             dataIn += val;
          }
-//
-         spec.put(i, dataIn.getArray());
+         specCol.put(i, dataIn.getArray());
+
+// Modify Tsys
+
+         if (doTSys) {
+            tSysCol.get(i, tSysArr);
+            if (what==0) {
+               tSysArr *= val;
+            } else if (what==1) {
+               tSysArr += val;
+            }
+            tSysCol.put(i, tSysArr);
+         }
       }
    } else {
 
@@ -649,16 +678,30 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
       getCursorLocation(start, end, in);
 //
       for (uInt i=0; i < tOut.nrow(); i++) {
+
+// Modify data
+
          MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
          MaskedArray<Float> dataIn2 = dataIn(start,end);    // Reference
-//
          if (what==0) {
             dataIn2 *= val;
          } else if (what==1) {
             dataIn2 += val;
          }
-//
-         spec.put(i, dataIn.getArray());
+         specCol.put(i, dataIn.getArray());
+
+// Modify Tsys
+
+         if (doTSys) {
+            tSysCol.get(i, tSysArr);
+            Array<Float> tSysArr2 = tSysArr(start,end);     // Reference
+            if (what==0) {
+               tSysArr2 *= val;
+            } else if (what==1) {
+               tSysArr2 += val;
+            }
+            tSysCol.put(i, tSysArr);
+         }
       }
    }
 //
@@ -1117,13 +1160,13 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
 // Get Columns from Table
 
-  ROScalarColumn<Double> mjdCol(tabIn, "TIME");
-  ROScalarColumn<String> srcCol(tabIn, "SRCNAME");
-  ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
+   ROScalarColumn<Double> mjdCol(tabIn, "TIME");
+   ROScalarColumn<String> srcCol(tabIn, "SRCNAME");
+   ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
 //
-  Vector<Double> times = mjdCol.getColumn();
-  Vector<String> srcNames = srcCol.getColumn();
-  Vector<uInt> freqID;
+   Vector<Double> times = mjdCol.getColumn();
+   Vector<String> srcNames = srcCol.getColumn();
+   Vector<uInt> freqID;
 
 // Generate Source table
 
@@ -1133,7 +1176,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    const uInt nSrcTab = srcTab.nelements();
    cerr << "Found " << srcTab.nelements() << " sources to align " << endl;
 
-// Set reference Epoch to time of first row or given String
+// Get reference Epoch to time of first row or given String
 
    Unit DAY(String("d"));
    MEpoch::Ref epochRef(in.getTimeReference());
@@ -1145,7 +1188,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    }
    cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << endl;
 
-// Set Reference Position
+// Get Reference Position
 
    MPosition refPos = in.getAntennaPosition();
 
@@ -1158,15 +1201,8 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 // source/freqID combination
 
    PtrBlock<VelocityAligner<Float>* > vA(nFreqIDs*nSrcTab);
-   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
-      SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
-      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
-         MDirection refDir = in.getDirection(firstRow[iSrc]);
-         uInt idx = (iSrc*nFreqIDs) + fqID;
-         vA[idx] = new VelocityAligner<Float>(sC, nChan, refEpoch, refDir, refPos,
-                                              velUnit, doppler, velSystem);
-      }
-   }
+   generateVelocityAligners (vA, in, nChan, nFreqIDs, nSrcTab, firstRow,
+                             velSystem, velUnit, doppler,  refPos, refEpoch);
 
 // New output Table
 
@@ -1174,36 +1210,36 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
 // Loop over rows in Table
 
-  const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
-  VelocityAligner<Float>::Method method = VelocityAligner<Float>::LINEAR;
-  Bool extrapolate=False;
-  Bool useCachedAbcissa = False;
-  Bool first = True;
-  Bool ok;
-  Vector<Float> yOut;
-  Vector<Bool> maskOut;
-  uInt ifIdx, vaIdx;
+   const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
+   VelocityAligner<Float>::Method method = VelocityAligner<Float>::LINEAR;
+   Bool extrapolate=False;
+   Bool useCachedAbcissa = False;
+   Bool first = True;
+   Bool ok;
+   Vector<Float> yOut;
+   Vector<Bool> maskOut;
+   uInt ifIdx, vaIdx;
 //
-  for (uInt iRow=0; iRow<nRows; ++iRow) {
-     if (iRow%10==0) {
-        cerr << "Processing row " << iRow << endl;
-     }
+   for (uInt iRow=0; iRow<nRows; ++iRow) {
+      if (iRow%10==0) {
+         cerr << "Processing row " << iRow << endl;
+      }
 
 // Get EPoch
 
-    Quantum<Double> tQ2(times[iRow],DAY);
-    MVEpoch mv2(tQ2);
-    MEpoch epoch(mv2, epochRef);
+     Quantum<Double> tQ2(times[iRow],DAY);
+     MVEpoch mv2(tQ2);
+     MEpoch epoch(mv2, epochRef);
 
 // Get FreqID vector.  One freqID per IF
 
-    fqIDCol.get(iRow, freqID);
+     fqIDCol.get(iRow, freqID);
 
 // Get copy of data
     
-    const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
-    Array<Float> values = mArrIn.getArray();
-    Array<Bool> mask = mArrIn.getMask(); 
+     const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
+     Array<Float> values = mArrIn.getArray();
+     Array<Bool> mask = mArrIn.getMask(); 
 
 // cerr << "values in = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
 
@@ -1215,40 +1251,40 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 // offsets are or what to do about them right now.  For now
 // all beams get same position and velocoity abcissa.
 
-    ArrayIterator<Float> itValuesPlane(values, polChanAxes);
-    ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
-    while (!itValuesPlane.pastEnd()) {
+     ArrayIterator<Float> itValuesPlane(values, polChanAxes);
+     ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
+     while (!itValuesPlane.pastEnd()) {
 
 // Find the IF index and then the VA PtrBlock index
 
-       const IPosition& pos = itValuesPlane.pos();
-       ifIdx = pos(asap::IFAxis);
-       vaIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
+        const IPosition& pos = itValuesPlane.pos();
+        ifIdx = pos(asap::IFAxis);
+        vaIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
 //
-       VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1);
-       VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+        VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
+        VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
 //
-       first = True;
-       useCachedAbcissa=False;
-       while (!itValuesVec.pastEnd()) {     
-          ok = vA[vaIdx]->align (yOut, maskOut, itValuesVec.vector(),
-                                 itMaskVec.vector(), epoch, useCachedAbcissa,
-                                 method, extrapolate); 
-          itValuesVec.vector() = yOut;
-          itMaskVec.vector() = maskOut;
+        first = True;
+        useCachedAbcissa=False;
+        while (!itValuesVec.pastEnd()) {     
+           ok = vA[vaIdx]->align (yOut, maskOut, itValuesVec.vector(),
+                                  itMaskVec.vector(), epoch, useCachedAbcissa,
+                                  method, extrapolate); 
+           itValuesVec.vector() = yOut;
+           itMaskVec.vector() = maskOut;
 //
-          itValuesVec.next();
-          itMaskVec.next();
+           itValuesVec.next();
+           itMaskVec.next();
 //
-          if (first) {
-             useCachedAbcissa = True;
-             first = False;
-          }
-       }
+           if (first) {
+              useCachedAbcissa = True;
+              first = False;
+           }
+        }
 //
        itValuesPlane.next();
        itMaskPlane.next();
-    }
+     }
 
 // cerr << "values out = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
 
@@ -1258,7 +1294,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
     putDataInSDC(sc, values, mask);
 //
     pTabOut->putSDContainer(sc);
-  }
+   }
 
 // Clean up PointerBlock
 
@@ -1625,5 +1661,27 @@ String SDMath::formatEpoch(const MEpoch& epoch)  const
 {
    MVTime mvt(epoch.getValue());
    return mvt.string(MVTime::YMD) + String(" (") + epoch.getRefString() + String(")");
+}
+
+
+void SDMath::generateVelocityAligners (PtrBlock<VelocityAligner<Float>* >& vA, 
+                                       const SDMemTable& in, uInt nChan,
+                                       uInt nFreqIDs, uInt nSrcTab, 
+                                       const Vector<uInt>& firstRow,
+                                       MFrequency::Types velSystem,
+                                       const String& velUnit,
+                                       MDoppler::Types doppler,
+                                       const MPosition& refPos,
+                                       const MEpoch& refEpoch) const
+{
+   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
+      SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
+      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
+         MDirection refDir = in.getDirection(firstRow[iSrc]);
+         uInt idx = (iSrc*nFreqIDs) + fqID;
+         vA[idx] = new VelocityAligner<Float>(sC, nChan, refEpoch, refDir, refPos,
+                                              velUnit, doppler, velSystem);
+      }
+   }
 }
 
