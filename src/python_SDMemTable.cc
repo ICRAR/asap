@@ -63,7 +63,7 @@ void python_SDMemTable() {
     .def("_setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
-    .def("set_instrument", &SDMemTableWrapper::setInstrument)
+    .def("_setInstrument", &SDMemTableWrapper::setInstrument)
     .def("_getscan", &SDMemTableWrapper::getScan)
     .def("_getsource", &SDMemTableWrapper::getSource)
     .def("_getspectrum", &SDMemTableWrapper::getSpectrum,
