@@ -165,7 +165,8 @@ def gain_el(scan, poly=None, filename="", method="linear",
     You specify polynomial coefficients, an ascii table or neither.
     If you specify neither, then a polynomial correction will be made
     with built in coefficients known for certain telescopes (an error will
-    occur if the instrument is not known).
+    occur if the instrument is not known).   The data are *multiplied* 
+    by the scaling factors.
     Parameters:
         scan:        a scantable
         poly:        Polynomial coefficients (default None) to compute a
@@ -178,16 +179,16 @@ def gain_el(scan, poly=None, filename="", method="linear",
                      somewhere.
                      The second row must give the data type of the column. Use
                      'R' for Real and 'I' for Integer.  An example file
-                     would be:
+                     would be (actual factors are arbitrary) :
 
                      TIME ELEVATION FACTOR
                      R R R
-                     0.1 0 1.5
-                     0.2 20 1.4
-                     0.3 40 1.3
-                     0.4 60 1.2
-                     0.5 80 1.1
-                     0.6 90 1.0
+                     0.1 0 0.8
+                     0.2 20 0.85
+                     0.3 40 0.9
+                     0.4 60 0.85
+                     0.5 80 0.8
+                     0.6 90 0.75
         method:      Interpolation method when correcting from a table. Values 
                      are  "nearest", "linear" (default), "cubic" and "spline"
         insitu:      if False a new scantable is returned.
