@@ -126,23 +126,24 @@ def average_pol(scan, mask=None, insitu=False):
         _avpol(scan, mask)
         return
     
-def hanning(scan, insitu=False):
+def hanning(scan, insitu=False, all=True):
     """
     Hanning smooth the channels.
     Parameters:
         scan:       The input scan
         insitu:     If False (default) a new scantable is returned.
                     Otherwise, the scaling is done in-situ
-
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
     Example:
          none
     """
     if not insitu:
         from asap._asap import hanning as _hann
-        return scantable(_hann(scan))
+        return scantable(_hann(scan,all))
     else:
         from asap._asap import hanning_insitu as _hann
-        _hann(scan)
+        _hann(scan,all)
         return
     
 def poly_baseline(scan, mask=None, order=0):
