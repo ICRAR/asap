@@ -37,11 +37,17 @@
 namespace mathutil {
 
 template <class T>
+
+// Hanning smoothing
 void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask, 
 	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask, 
 	     casa::Bool relaxed=False, casa::Bool ignoreOther=False);
 
-float statistics (const std::string& which,  const casa::MaskedArray<casa::Float>& data);
+// Generate specified statistic
+float statistics (const casa::String& which,  const casa::MaskedArray<casa::Float>& data);
+
+// Replace masked value by zero
+void replaceMaskByZero (casa::Vector<casa::Float>& data, const casa::Vector<casa::Bool>& mask);
 };
 
 #endif

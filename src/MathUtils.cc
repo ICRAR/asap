@@ -30,6 +30,7 @@
 //#---------------------------------------------------------------------------
 
 #include <casa/aips.h>
+#include <casa/Arrays/Vector.h>
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/BasicSL/String.h>
@@ -37,11 +38,10 @@
 #include "MathUtils.h"
 
 using namespace casa;
-//using namespace asap;
 
 
 
-float mathutil::statistics (const std::string& which,  const MaskedArray<Float>& data)
+float mathutil::statistics (const String& which,  const MaskedArray<Float>& data)
 {
    String str(which);
    str.upcase();
@@ -69,3 +69,11 @@ float mathutil::statistics (const std::string& which,  const MaskedArray<Float>&
    }
 }
   
+
+void mathutil::replaceMaskByZero (Vector<Float>& data, const Vector<Bool>& mask)
+{
+   for (uInt i=0; i<data.nelements(); i++) {
+      if (!mask[i]) data[i] = 0.0;
+   }
+}
+
