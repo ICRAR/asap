@@ -30,6 +30,7 @@
 //#---------------------------------------------------------------------------
 
 #include "SDPol.h"
+#include "SDDefs.h"
 
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/ArrayMath.h>
@@ -51,18 +52,17 @@ using namespace asap;
 
 
 
-SDStokesEngine::SDStokesEngine (const String& sourceColumnName,
-			   const String& targetColumnName)
-
-: BaseMappedArrayEngine<Float,Float> (sourceColumnName, targetColumnName)
+SDStokesEngine::SDStokesEngine (const String& outputColumnName,
+			   const String& inputColumnName)
+: BaseMappedArrayEngine<Float,Float> (outputColumnName, inputColumnName)
 {}
 
 
 SDStokesEngine::SDStokesEngine (const Record& spec)
 : BaseMappedArrayEngine<Float,Float> ()
 {
-    if (spec.isDefined("SOURCENAME")  &&  spec.isDefined("TARGETNAME")) {
-        setNames (spec.asString("SOURCENAME"), spec.asString("TARGETNAME"));
+    if (spec.isDefined("OUTPUTNAME")  &&  spec.isDefined("INPUTNAME")) {
+        setNames (spec.asString("OUTPUTNAME"), spec.asString("INPUTNAME"));
     }
 }
 
@@ -99,8 +99,8 @@ String SDStokesEngine::dataManagerName() const
 Record SDStokesEngine::dataManagerSpec() const
 {
     Record spec;
-    spec.define ("SOURCENAME", sourceName());
-    spec.define ("TARGETNAME", targetName());
+    spec.define ("OUTPUTNAME", sourceName());    // Ger uses opposite meaning for source/target
+    spec.define ("INPUTNAME", targetName());
     return spec;
 }
 
@@ -135,83 +135,148 @@ Bool SDStokesEngine::canAccessArrayColumnCells (Bool& reask) const
 }
 
 
-void SDStokesEngine::getArray (uInt rownr, Array<Float>& array)
+void SDStokesEngine::getArray (uInt rownr, Array<Float>& output)
 {
-    Array<Float> target(array.shape());
-    roColumn().get(rownr, target);
+    IPosition inputShape = findInputShape (output.shape());
+    Array<Float> input(inputShape);  
+    roColumn().get(rownr, input);
 //
-    computeOnGet (array, target);
+    computeOnGet (output, input);
 }
 
-void SDStokesEngine::putArray (uInt rownr, const Array<Float>& array)
+void SDStokesEngine::putArray (uInt rownr, const Array<Float>& input)
 {
     throw(AipsError("This Virtual Column is not writable"));
 }
 
 
 
-void SDStokesEngine::computeOnGet(Array<Float>& array,
-                   		 const Array<Float>& target)
+void SDStokesEngine::setShape (uInt rownr, const IPosition& outputShape)   
+{   
+    BaseMappedArrayEngine<Float,Float>::setShape (rownr, findInputShape(outputShape));
+}
+  
+void SDStokesEngine::setShapeColumn (const IPosition& outputShape)
+{
+    BaseMappedArrayEngine<Float,Float>::setShapeColumn (findInputShape(outputShape));
+}
+      
+    
+IPosition SDStokesEngine::shape (uInt rownr)
+{
+   IPosition inputShape = roColumn().shape (rownr);
+   return findOutputShape(inputShape);
+}
+
+
+
+void SDStokesEngine::computeOnGet(Array<Float>& output,
+                   		 const Array<Float>& input)
 //
 // array of shape (nBeam,nIF,nPol,nChan)
 //
 {
-   DebugAssert(target.ndim()==4,AipsError);
+
+// Checks
+
+   const uInt nDim = input.ndim();
+   DebugAssert(nDim==4,AipsError);
    DebugAssert(array.ndim()==4,AipsError);
+   const IPosition inputShape = input.shape();
+   const uInt polAxis = asap::PolAxis;
+   const uInt nPol = inputShape(polAxis);
+   DebugAssert(nPol==1 || nPol==2 || nPol==3, AipsError);
 
 // The silly Array slice operator does not give me back
 // a const reference so have to caste it away
 
-   Array<Float>& target2 = const_cast<Array<Float>&>(target);
+   Array<Float>& input2 = const_cast<Array<Float>&>(input);
 
-// uInt polAxis = asap::PolAxis;
-   uInt polAxis = 2;
-//
-   const uInt nDim = target.ndim();
+// Slice coordnates
+
    IPosition start(nDim,0);
-   IPosition end(target.shape()-1);
+   IPosition end(input.shape()-1);
 
-// Input slices
+// Generate Slices
 
    start(polAxis) = 0;
    end(polAxis) = 0;
-   Array<Float> C1 = target2(start,end);
+   Array<Float> C1 = input2(start,end);          // Input : C1
+//
+   start(polAxis) = 0;
+   end(polAxis) = 0;
+   Array<Float> I = output(start,end);           // Output : I
+//
+   if (nPol==1) {
+      I = C1;
+      return;
+   }
 //
    start(polAxis) = 1;
    end(polAxis) = 1;
-   Array<Float> C2 = target2(start,end);
+   Array<Float> C2 = input2(start,end);          // Input : C1
+//
+   I = Float(0.5)*(C1 + C2);
+   if (nPol <= 2) return;
 //
    start(polAxis) = 2;
    end(polAxis) = 2;
-   Array<Float> C3 = target2(start,end);
+   Array<Float> C3 = input2(start,end);          // Input : C3
 //
    start(polAxis) = 3;
    end(polAxis) = 3;
-   Array<Float> C4 = target2(start,end);
-
-// Compute Output slices
-
-   start(polAxis) = 0;
-   end(polAxis) = 0;
-   Array<Float> I = array(start,end); 
-   I = Float(0.5)*(C1 + C2);
+   Array<Float> C4 = input2(start,end);          // Input : C4
 //
    start(polAxis) = 1;
    end(polAxis) = 1;
-   Array<Float> Q = array(start,end); 
+   Array<Float> Q = output(start,end);           // Output : Q
    Q = Float(0.5)*(C1 - C2);
 //
    start(polAxis) = 2;
    end(polAxis) = 2;
-   Array<Float> U = array(start,end); 
+   Array<Float> U = output(start,end);           // Output : U
    U = C3;
 //
    start(polAxis) = 3;
    end(polAxis) = 3;
-   Array<Float> V = array(start,end); 
+   Array<Float> V = output(start,end);           // Output : V
    V = C4;
 }
 
+
+
+IPosition SDStokesEngine::findInputShape (const IPosition& outputShape) const
+//
+// Don't know how to handle the degeneracy that both
+// XX    -> I
+// XX,YY -> I
+// 
+{
+   uInt axis = asap::PolAxis;
+   uInt nPol = outputShape(axis);
+   IPosition inputShape = outputShape;
+   if (nPol==1) {
+      inputShape(axis) = 2;            // XX YY -> I
+   } else if (nPol==4) {
+      inputShape(axis) = 4;            // XX YY R(XY) I(XY) -> I Q U V
+   }
+   return inputShape;
+}
+
+IPosition SDStokesEngine::findOutputShape (const IPosition& inputShape) const
+{
+   uInt axis = 2;
+   uInt nPol = inputShape(axis);
+   IPosition outputShape = inputShape;
+   if (nPol==1) {
+      outputShape(axis) = 1;            // XX -> I
+   } else if (nPol==2) {
+      outputShape(axis) = 1;            // XX YY -> I
+   } else if (nPol==4) {
+      outputShape(axis) = 4;            // XX YY R(XY) I(XY) -> I Q U V
+   }
+   return outputShape;
+}
 
 
 

@@ -68,13 +68,10 @@ protected:
   using casa::BaseMappedArrayEngine<casa::Float,casa::Float>::rwColumn;
 
 public:
-    // Construct an engine to scale all arrays in a column with
-    // the given offset and scale factor.
-    // TargetColumnName is the name of the column where the scaled
-    // data will be put and must have data type Float.
-    // The source column using this engine must have data type Float.
-    SDStokesEngine (const casa::String& sourceColumnName,
-               const casa::String& targetColumnName);
+    // Construct engine.  The sourveColumnName holds the XX,YY,R(XY),I(XY)
+    // correlations
+    SDStokesEngine (const casa::String& virtualColumnName,
+               const casa::String& sourceColumnName);
 
     // Construct from a record specification as created by getmanagerSpec().
     SDStokesEngine (const casa::Record& spec);
@@ -130,12 +127,22 @@ private:
     // Get an array in the given row.
     void getArray (casa::uInt rownr, casa::Array<casa::Float>& array);
 
-    // Excpetion
+    // Exception
     void putArray (casa::uInt rownr, const casa::Array<casa::Float>& array);
 
-    // Compute STokes parameters
+    // Compute Stokes parameters
     void computeOnGet (casa::Array<casa::Float>& array,
     		     const casa::Array<casa::Float>& target);
+
+    // Set shapes
+    virtual void setShape (casa::uInt rownr, const casa::IPosition& outputShape);
+    virtual void setShapeColumn (const casa::IPosition& outputShape);
+    virtual casa::IPosition shape (casa::uInt rownr);
+
+    // Convert input/output shapes
+    casa::IPosition findInputShape (const casa::IPosition& outputShape) const;
+    casa::IPosition findOutputShape (const casa::IPosition& inputShape) const;
+
 
 
 public:
