@@ -108,6 +108,41 @@ def convert_flux(scan, area, eta=1.0, insitu=False, all=True):
         from asap._asap import convertflux_insitu as _convert
         _convert(scan, area, eta, all)
         return
+
+def gain_el(scan, filename="gainel.txt", method="linear", insitu=False, all=True):
+    """
+    Return a scan after applying a gain-elevation correction via interpolation
+      (and extrapolation if necessary) from values in an ascii file.
+    Parameters:
+        scan:        a scantable
+        filename:    The name of the ASCII file holding the data.  The first row
+                     must give the column names.  These MUST include columns
+                     "ELEVATION" (degrees) and "FACTOR" (multiply data by this) somewhere.  
+                     The second row must give the data type of the column. Use 'R' for 
+                     Real and 'I' for Integer.  An example file would be:
+
+                     ELEVATION FACTOR
+                     R R
+                     0 1.5
+                     20 1.4
+                     40 1.3
+                     60 1.2
+                     80 1.1
+                     90 1.0
+        method:      Interpolation method. "nearest", "linear" (default),
+                     "cubic" and "spline"
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the conversion is done in-situ
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
+    """
+    if not insitu:
+        from asap._asap import gainel as _gainEl
+        return scantable(_gainEl(scan, filename, method, all))
+    else:
+        from asap._asap import gainel_insitu as _gainEl
+        _gainEl(scan, filename, method, all)
+        return
         
 def bin(scan, width=5, insitu=False):
     """
