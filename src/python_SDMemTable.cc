@@ -45,8 +45,10 @@ void python_SDMemTable() {
     .def( init < std::string > () )
     .def( init < SDMemTableWrapper, int > () )
     .def("getscan", &SDMemTableWrapper::getScan)
-    .def("getspectrum", &SDMemTableWrapper::getSpectrum)
-    .def("getmask", &SDMemTableWrapper::getMask)
+    .def("getspectrum", &SDMemTableWrapper::getSpectrum,
+	 (boost::python::arg("whichRow")=0) )
+    .def("getmask", &SDMemTableWrapper::getMask,
+	 (boost::python::arg("whichRow")=0) )
     .def("gettsys", &SDMemTableWrapper::getTsys)
     .def("getsourcename", &SDMemTableWrapper::getSourceName)
     .def("gettime", &SDMemTableWrapper::getTime)
@@ -65,7 +67,6 @@ void python_SDMemTable() {
     .def("setmask", &SDMemTableWrapper::setMask)
     .def("makepersistent",  &SDMemTableWrapper::makePersistent)
     .def("summary",  &SDMemTableWrapper::summary)
-    .def("name",  &SDMemTableWrapper::name)
   ;
 };
 
