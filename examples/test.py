@@ -1,7 +1,7 @@
 #import genera operating system related functions
 import os
-#import atnf_sd module
-from atnf_sd import *
+#import asap module
+from asap import *
 # create a reader
 r = sdreader()
 # open an RPFITS file
@@ -14,16 +14,20 @@ scans = r.getdata()
 # close the reader
 r = None
 # Test sdwriter.
+print 'Writing ASAP table to disk as /tmp/test.tbl...'
+scans.makepersistent('/tmp/test.tbl')
+print "removing /tmp/test.tbl ..."
+os.remove('/tmp/test_SDWriter.sdfits')
 print 'Begin sdwriter tests...'
 # Create an MS2 writer.
 w = sdwriter('MS2')
 # Change to SDFITS output format (the default).
 w.setformat()
 # Write out the spectra.
-w.write(scans, 'test_SDWriter.sdfits')
+w.write(scans, '/tmp/test_SDWriter.sdfits')
 # clean up
 print "removing test_SDWriter.sdfits ..."
-os.remove('test_SDWriter.sdfits')
+os.remove('/tmp/test_SDWriter.sdfits')
 # print a short summary of the data
 scans.summary()
 # get the scan with the number '1'
