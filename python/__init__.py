@@ -270,7 +270,8 @@ def commands():
             flag_spectrum   - flag a whole Beam/IF/Pol
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
-            nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans 
+            nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
+            history         - print the history of the scantable
     [Math]
         average_time       - return the (weighted) time average of a scan 
                              or a list of scans
