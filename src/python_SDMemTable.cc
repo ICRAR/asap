@@ -47,21 +47,6 @@ void python_SDMemTable() {
     .def( init < const SDMemTableWrapper& > () )
     .def( init < const SDMemTableWrapper&, std::string > () )
     .def("_copy", &SDMemTableWrapper::copy)
-    .def("_getscan", &SDMemTableWrapper::getScan)
-    .def("_getsource", &SDMemTableWrapper::getSource)
-    .def("getspectrum", &SDMemTableWrapper::getSpectrum,
-         (boost::python::arg("whichRow")=0) )
-    .def("getabcissa", &SDMemTableWrapper::getAbcissa,
-         (boost::python::arg("whichRow")=0) )
-    .def("getabcissalabel", &SDMemTableWrapper::getAbcissaString,
-         (boost::python::arg("whichRow")=0) )
-    .def("getmask", &SDMemTableWrapper::getMask,
-         (boost::python::arg("whichRow")=0) )
-    .def("_gettsys", &SDMemTableWrapper::getTsys)
-    .def("_getsourcename", &SDMemTableWrapper::getSourceName,
-         (boost::python::arg("whichRow")=0) )
-    .def("_gettime", &SDMemTableWrapper::getTime,
-         (boost::python::arg("whichRow")=0) )
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
     .def("getpol", &SDMemTableWrapper::getPol)
@@ -71,21 +56,38 @@ void python_SDMemTable() {
     .def("nchan", &SDMemTableWrapper::nChan)
     .def("nscan", &SDMemTableWrapper::nScan)
     .def("nrow", &SDMemTableWrapper::nRow)
-    .def("setspectrum",&SDMemTableWrapper::setSpectrum,
-         (boost::python::arg("whichRow")=0) )
     .def("setif", &SDMemTableWrapper::setIF,
          (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)
     .def("setpol", &SDMemTableWrapper::setPol)
-    .def("setmask", &SDMemTableWrapper::setMask)
+    .def("_setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
     .def("set_instrument", &SDMemTableWrapper::setInstrument)
+    .def("_getscan", &SDMemTableWrapper::getScan)
+    .def("_getsource", &SDMemTableWrapper::getSource)
+    .def("_getspectrum", &SDMemTableWrapper::getSpectrum,
+         (boost::python::arg("whichRow")=0) )
+    .def("_setspectrum",&SDMemTableWrapper::setSpectrum,
+         (boost::python::arg("whichRow")=0) )
+
+    .def("_getabcissa", &SDMemTableWrapper::getAbcissa,
+         (boost::python::arg("whichRow")=0) )
+    .def("_getabcissalabel", &SDMemTableWrapper::getAbcissaString,
+         (boost::python::arg("whichRow")=0) )
+    .def("_getmask", &SDMemTableWrapper::getMask,
+         (boost::python::arg("whichRow")=0) )
+    .def("_gettsys", &SDMemTableWrapper::getTsys)
+    .def("_getsourcename", &SDMemTableWrapper::getSourceName,
+         (boost::python::arg("whichRow")=0) )
+    .def("_gettime", &SDMemTableWrapper::getTime,
+         (boost::python::arg("whichRow")=0) )
     .def("_flag", &SDMemTableWrapper::flag,
          (boost::python::arg("whichRow")=-1) )
     .def("_save",  &SDMemTableWrapper::makePersistent)
-    .def("summary",  &SDMemTableWrapper::summary)
+    .def("_summary",  &SDMemTableWrapper::summary)
     .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
+    .def("_getrestfreqs",  &SDMemTableWrapper::getRestFreqs)
     .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
     .def("_getcoordinfo", &SDMemTableWrapper::getCoordInfo)
     .def("_history", &SDMemTableWrapper::history,
