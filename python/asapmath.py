@@ -450,7 +450,28 @@ def rotate_xyphase(scan, angle, allaxes=None):
     """
     if allaxes is None: allaxes = rcParams['scantable.allaxes']
     varlist = vars()
-    from asap._asap import rotate_xyphase as _rotate_xyphase
-    _rotate_xyphase(scan, angle, allaxes)
-    s._add_history("rotate_xyphase", varlist)
+    from asap._asap import _rotate_xyphase as _rotate
+    _rotate(scan, angle, allaxes)
+    scan._add_history("rotate_xyphase", varlist)
     return
+
+def rotate_linpolphase(scan, angle, allaxes=None):
+    """
+    Rotate the phase of the complex polarization O=Q+iU correlation.  
+    This is always done in situ in the raw data.  So if you call this 
+    function more than once then each call rotates the phase further.
+    Parameters:
+        angle:   The angle (degrees) to rotate (add) by.
+        allaxes: If True apply to all spectra. Otherwise
+                 apply only to the selected (beam/pol/if)spectra only.
+                 The default is taken from .asaprc (True if none)
+    Examples:
+        rotate_linpolphase(scan, 2.3)
+    """
+    if allaxes is None: allaxes = rcParams['scantable.allaxes']
+    varlist = vars()
+    from asap._asap import _rotate_linpolphase as _rotate
+    _rotate(scan, angle, allaxes)
+    scan._add_history("rotate_linpolphase", varlist)
+    return
+
