@@ -220,7 +220,7 @@ if rcParams['useplotter']:
 #from numarray ones,zeros
 
 __date__ = '$Date$'
-__version__  = '0.1a'
+__version__  = '0.2a'
 
 def list_scans(t = scantable):
     import sys, types
