@@ -38,7 +38,8 @@ def commands():
             summary         - print info about the scantable contents
             set_selection   - set a specific Beam/IF/Pol for furthrt use
             get_selection   - print out the current selection
-            rms             - get the rms of the spectra in the scantable
+            stats           - get specified statistic of the spectra in the scantable
+            stddev          - get the standard deviation of the spectra in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
             set_unit        - set the units to be used from this point on
@@ -51,9 +52,9 @@ def commands():
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans 
     [Math]
-        average_scans       - return the rms-weighted (time) average of
+        average_time       - return the rms-weighted (time) average of
                               a scan or a list of scans
-        average_pol         - averge the polarisations together.
+        average_pol         - average the polarisations together.
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
@@ -93,7 +94,7 @@ print """Welcome to ASAP - the ATNF Single Dish Analysis Package
 This is a testing pre-release v0.1a
 
 Please report any bugs to:
-Malte.Marquarding@atnf.csiro.au
+Malte.Marquarding@csiro.au
 
 [NOTE: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.
