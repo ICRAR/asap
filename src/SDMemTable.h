@@ -123,6 +123,8 @@ public:
   virtual casa::Int getIF() const { return IFSel_; }
   virtual casa::Int getBeam() const { return beamSel_; }
   virtual casa::Int getPol() const { return polSel_; }
+
+  // returns unit, conversion frame, doppler, base-frame
   virtual std::vector<std::string> getCoordInfo() const;
 
   // number of scans in table

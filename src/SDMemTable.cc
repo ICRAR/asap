@@ -306,6 +306,8 @@ std::vector<string> SDMemTable::getCoordInfo() const
   inf.push_back(sunit);
   inf.push_back(rfrm);
   inf.push_back(dpl);
+  t.keywordSet().get("BASEREFFRAME",rfrm);
+  inf.push_back(rfrm);
   return inf;
 }
 
