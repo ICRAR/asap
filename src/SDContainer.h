@@ -69,9 +69,15 @@ public:
 
   SDFrequencyTable() : nFreq_(0) {;}
   virtual ~SDFrequencyTable() {;}
-  
-  casa::Int length() const { return nFreq_;};// # of stored Frequencies
-  void setLength(casa::Int length) {nFreq_ = length;};
+
+// Add a new entry or match an existing one. Returns the index into the table
+  casa::Int addFrequency(casa::Double refPix, casa::Double refVal, 
+			 casa::Double inc);
+//  
+  casa::Int length() const { return nFreq_;}          // # of stored Frequencies
+  void setLength(casa::Int length) {nFreq_ = length;}
+
+// Get attributes
   casa::Double referencePixel(casa::uInt which) const { return refPix_[which];}
   casa::Double referenceValue(casa::uInt which) const { return refVal_[which];}
   casa::Double increment(casa::uInt which) const { return increment_[which];}
@@ -80,16 +86,11 @@ public:
   void restFrequencies(casa::Vector<casa::Double>& rfs, 
 		       casa::String& rfunit ) const ;
 
-  // returns the index into the table
-  // this creates a new one or returns an existing one
-  casa::Int addFrequency(casa::Double refPix, casa::Double refVal, 
-			 casa::Double inc);
+// Set attributes
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
   void addRestFrequency(casa::Double);
-  void setRestFrequencyUnit(const casa::String& theunit) {
-    restFreqUnit_ = theunit;
-  };
+  void setRestFrequencyUnit(const casa::String& theunit) {restFreqUnit_ = theunit;}
 
 private:
   casa::Int nFreq_;
