@@ -1015,15 +1015,16 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
         coeff = coeffs;
         msg = String("user");
      } else {
-        if (inst==PKSMULTIBEAM) {
-        } else if (inst==PKSSINGLEBEAM) {
+        if (inst==ATPKSMB) {
+        } else if (inst==ATPKSHOH) {
         } else if (inst==TIDBINBILLA) {
            pPoly = new Polynomial<Float>(3);
            coeff.resize(3);
            coeff(0) = 3.58788e-1;
            coeff(1) = 2.87243e-2;
            coeff(2) = -3.219093e-4;
-        } else if (inst==MOPRA) {
+        } else if (inst==ATMOPRA) {
+        } else {
         }
         msg = String("built in");
      }

@@ -1256,14 +1256,18 @@ Instrument SDMemTable::convertInstrument (const String& instrument,
    t.upcase();
 //
    Instrument inst = asap::UNKNOWN;
-   if (t==String("TID")) {
+   if (t==String("DSS-43")) {
       inst = TIDBINBILLA;
    } else if (t==String("ATPKSMB")) {
-      inst = PKSMULTIBEAM;
-   } else if (t==String("ATPKSSB")) {
-      inst = PKSSINGLEBEAM;
-   } else if (t==String("MOPRA")) {
-      inst = MOPRA;
+      inst = ATPKSMB;
+   } else if (t==String("ATPKSHOH")) {
+      inst = ATPKSHOH;
+   } else if (t==String("ATMOPRA")) {
+      inst = ATMOPRA;
+   } else if (t==String("CEDUNA")) {
+      inst = CEDUNA;
+   } else if (t==String("HOBART")) {
+      inst = HOBART;
    } else {
       if (throwIt) {
          throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
