@@ -214,6 +214,7 @@ from asapreader import reader
 from asapmath import *
 from scantable import *
 from asaplinefind import *
+from asapfit import *
 
 from numarray import logical_and as mask_and
 from numarray import logical_or as mask_or
@@ -231,7 +232,7 @@ if rcParams['useplotter']:
 
 
 __date__ = '$Date$'
-__version__  = '0.9'
+__version__  = '0.99'
 
 def list_scans(t = scantable):
     import sys, types
@@ -284,7 +285,7 @@ def commands():
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             history         - print the history of the scantable
-
+            get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan 
                               or a list of scans
             average_pol     - average the polarisations together.
@@ -320,6 +321,7 @@ def commands():
             commit          - return a new scan where the fits have been
                               commited.
             fit             - execute the actual fitting process
+            store_fit       - store the fit paramaters in the data (scantable)
             get_chi2        - get the Chi^2
             set_scan        - set the scantable to be fit
             set_function    - set the fitting function
@@ -338,7 +340,8 @@ def commands():
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
-            set_range       - set the abcissa 'zoom' range
+            set_cursor      - only plot a selected part of the data
+            set_range       - set a 'zoom' window
             set_legend      - specify user labels for the legend indeces
             set_title       - specify user labels for the panel indeces
             set_ordinate    - specify a user label for the ordinate

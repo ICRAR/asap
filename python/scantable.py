@@ -1060,7 +1060,7 @@ class scantable(sdtable):
             # return a scan baselined by a third order polynomial,
             # not using a mask
             bscan = scan.poly_baseline(order=3)
-        """
+        """('', 'TOPO', 'RADIO', 'TOPO')
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
         if mask is None:
@@ -1357,6 +1357,22 @@ class scantable(sdtable):
             return
         s._add_history("operator /", varlist)
         return s
+
+    def get_fit(self, row=0):
+        """
+        Print or return the stored fits for a row in the scantable
+        Parameters:
+            row:    the row which the fit has been applied to.
+        """
+        if row > self.nrow():
+            return
+        from asap import asapfit
+        fit = asapfit(self._getfit(row))
+        if self._vb:
+            print fit
+            return
+        else:
+            return fit.as_dict()
 
     def _add_history(self, funcname, parameters):
         # create date
