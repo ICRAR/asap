@@ -111,8 +111,10 @@ SDMath::~SDMath()
 
 
 
-SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime, 
-                                         const String& method, Bool perFreqID) const
+SDMemTable* SDMath::frequencyAlignment(const SDMemTable& in, 
+				       const String& refTime, 
+				       const String& method, 
+				       Bool perFreqID) const
 {
 // Get frame info from Table
 
@@ -131,7 +133,7 @@ SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refT
 
 // Do it
 
-   return frequencyAlign (in, freqSystem, refTime, method, perFreqID);
+   return frequencyAlign(in, freqSystem, refTime, method, perFreqID);
 }
 
 
@@ -152,7 +154,11 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // Create output Table by cloning from the first table
 
   SDMemTable* pTabOut = new SDMemTable(*in[0],True);
-
+  if (in.nelements() > 1) {
+    for (uInt i=1; i < in.nelements(); ++i) {
+      pTabOut->appendToHistoryTable(in[i]->getHistoryTable());
+    }
+  }
 // Setup
 
   IPosition shp = in[0]->rowAsMaskedArray(0).shape();      // Must not change
@@ -375,10 +381,12 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 
 
-CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left,
-                                              const CountedPtr<SDMemTable>& right,
-                                              const String& op, Bool preserve,
-                                              Bool doTSys)  const
+CountedPtr<SDMemTable> SDMath::binaryOperate(const CountedPtr<SDMemTable>& 
+					     left,
+					     const CountedPtr<SDMemTable>& 
+					     right,
+					     const String& op, Bool preserve,
+					     Bool doTSys) const
 {
 
 // Check operator
@@ -434,7 +442,7 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
 // Output Table cloned from left
 
   SDMemTable* pTabOut = new SDMemTable(*left, True);
-
+  pTabOut->appendToHistoryTable(right->getHistoryTable());
 // Loop over rows
 
   for (uInt i=0; i<nRowLeft; i++) {
@@ -487,14 +495,16 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
         if (doTSys) sc.putTsys(tSysLeftArr/tSysRightArr);
      } else if (what==4) {
-        if (preserve) {     
-           MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - tSysRightArr;
-           putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        } else {
-           MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - tSysLeftArr;
-           putDataInSDC(sc, tmp.getArray(), tmp.getMask());
-        }
-        sc.putTsys(tSysRightArr);
+       if (preserve) {     
+	 MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - 
+	   tSysRightArr;
+	 putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+       } else {
+	 MaskedArray<Float> tmp = (tSysRightArr * mLeft / *pMRight) - 
+	   tSysLeftArr;
+	 putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+       }
+       sc.putTsys(tSysRightArr);
      }
 
 // Put new row in output Table
@@ -503,7 +513,7 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
   }
   if (pMRight) delete pMRight;
   pTabOut->resetCursor();
-//
+
   return CountedPtr<SDMemTable>(pTabOut);
 }
 
@@ -628,8 +638,8 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
   return pTabOut;
 }
 
-SDMemTable* SDMath::resample (const SDMemTable& in, const String& methodStr,
-                              Float width) const
+SDMemTable* SDMath::resample(const SDMemTable& in, const String& methodStr,
+			     Float width) const
 //
 // Should add the possibility of width being specified in km/s. This means
 // that for each freqID (SpectralCoordinate) we will need to convert to an 
@@ -788,8 +798,6 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
 //
    return pOut;
 }
-
-
 
 SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
                                const String& weightStr) const
@@ -1017,8 +1025,8 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 
 
-SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp, 
-                                 Float JyPerK, Bool doAll) const
+SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp, 
+				Float JyPerK, Bool doAll) const
 // 
 // etaAp = aperture efficiency (-1 means find)
 // D     = geometric diameter (m)  (-1 means find)
@@ -1106,9 +1114,10 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
 
 
 
-SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& coeffs,
-                                   const String& fileName,
-                                   const String& methodStr, Bool doAll) const
+SDMemTable* SDMath::gainElevation(const SDMemTable& in, 
+				  const Vector<Float>& coeffs,
+				  const String& fileName,
+				  const String& methodStr, Bool doAll) const
 {
 
 // Get header and clone output table
@@ -1187,7 +1196,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
 
  
 
-SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
+SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll) const
 {
 
 // Get header and clone output table
@@ -1219,7 +1228,7 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 }
 
 
-void SDMath::rotateXYPhase (SDMemTable& in, Float value, Bool doAll)
+void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
 //
 // phase in degrees
 // Applies to all Beams and IFs
@@ -1268,8 +1277,6 @@ void SDMath::rotateXYPhase (SDMemTable& in, Float value, Bool doAll)
       specCol.put(i,data);
    }
 }     
-
-
 
 // 'private' functions
 

@@ -46,6 +46,7 @@
 
 #include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableDesc.h>
+#include <tables/Tables/TableCopy.h>
 #include <tables/Tables/SetupNewTab.h>
 #include <tables/Tables/ScaColDesc.h>
 #include <tables/Tables/ArrColDesc.h>
@@ -1508,6 +1509,20 @@ Int SDMemTable::nChan() const {
   return n;
 }
 
+Table SDMemTable::getHistoryTable() const
+{
+  return table_.keywordSet().asTable("HISTORY");
+}
+
+void SDMemTable::appendToHistoryTable(const Table& otherHist)
+{
+  Table t = table_.rwKeywordSet().asTable("HISTORY");
+  const String sep = "--------------------------------------------------------------------------------";
+  addHistory(sep);
+  TableCopy::copyRows(t, otherHist, t.nrow(), 0, otherHist.nrow());
+  addHistory(sep);
+}
+
 void SDMemTable::addHistory(const std::string& hist)
 {
   Table t = table_.rwKeywordSet().asTable("HISTORY");
@@ -1531,6 +1546,8 @@ std::vector<std::string> SDMemTable::getHistory() const
   }
   return stlout;
 }
+
+
 /*
   void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 

@@ -195,6 +195,9 @@ public:
   std::vector<std::string> getHistory() const;
   void addHistory(const std::string& hist);
 
+  casa::Table getHistoryTable() const;
+  void appendToHistoryTable(const casa::Table& otherHist);
+
   // write to disk as aips++ table
   void makePersistent(const std::string& filename);
 
