@@ -11,13 +11,42 @@ class scantable(sdtable):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
-            filename:    the name of an asap table on disk, or
-                         [advanced] a refernce to an existing
+            filename:    the name of an asap table on disk
+                         or
+                         the name of a rpfits/sdfits/ms file
+                         (integrations within scans are auto averaged
+                         and the whole file is read)
+                         or
+                         [advanced] a reference to an existing
                          scantable
         """
         self._vb = True
         self._p = None
-        sdtable.__init__(self, filename)
+        from os import stat as st
+        import stat
+        if isinstance(filename,sdtable):
+            sdtable.__init__(self, filename)            
+        else:
+            mode = st(filename)[stat.ST_MODE]
+            if stat.S_ISDIR(mode):
+                # crude check if asap table
+                if stat.S_ISREG(st(filename+'/table.info')[stat.ST_MODE]):
+                    sdtable.__init__(self, filename)
+                else:
+                    print 'The given file is not a valid asap table'
+            else:            
+                from asap._asap import sdreader
+                r = sdreader(filename)
+                print 'Importing data...'
+                r.read([-1])
+                tbl = r.getdata()
+                
+                from asap._asap import average
+                tmp = tuple([tbl])
+                print 'Auto averging integrations...'
+                tbl2 = average(tmp,(),True,'none')
+                sdtable.__init__(self,tbl2)
+                del r,tbl
 
     def save(self, name, format='ASAP'):
         """
@@ -25,7 +54,7 @@ class scantable(sdtable):
         Parameters:
             name:        the name of the outputfile
             format:      an optional file format. Default is ASAP.
-                         Alllowed are 'ASAP', 'SDFITS' and 'MS2'
+                         Allowed are 'ASAP', 'SDFITS' and 'MS2'
         Example:
             scan.save('myscan.asap')
             scan.save('myscan.sdfits','SDFITS')
@@ -108,7 +137,7 @@ class scantable(sdtable):
         Example:
             scan.set_selection(0,0,1)
             pol1sig = scan.stats(all=False) # returns std dev for beam=0
-                                         # if=0, pol=1
+                                            # if=0, pol=1
         """
         self.setbeam(thebeam)
         self.setpol(thepol)
@@ -129,6 +158,9 @@ class scantable(sdtable):
         j = self.getif()
         k = self.getpol()
         if self._vb:
+            print "--------------------------------------------------"
+            print " Cursor selection"
+            print "--------------------------------------------------"
             out = 'Beam=%d IF=%d Pol=%d '% (i,j,k)
             print out
         return i,j,k
@@ -157,28 +189,50 @@ class scantable(sdtable):
         if all:
             out = ''
             tmp = []
-            for i in range(self.nbeam()):
-                self.setbeam(i)
-                for j in range(self.nif()):
-                    self.setif(j)
-                    for k in range(self.npol()):
-                        self.setpol(k)
-                        statVal = _stats(self,mask,stat)
-                        tmp.append(statVal)
-#                        out += 'Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,statVal)
-#            if self._vb:
-#                print out
+            for l in range(self.nrow()):
+                tm = self._gettime(l)
+                out += 'Time[%s]:\n' % (tm)
+                for i in range(self.nbeam()):
+                    self.setbeam(i)
+                    if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
+                    for j in range(self.nif()):
+                        self.setif(j)
+                        if self.nif() > 1: out +=  ' IF[%d] ' % (j)
+                        for k in range(self.npol()):
+                            self.setpol(k)
+                            if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
+                            statval = _stats(self,mask,stat)
+                            tmp.append(statval)
+                            out += '= %3.3f\n' % (statval[l])
+                out += "--------------------------------------------------\n"
+
+            if self._vb:
+                print "--------------------------------------------------"
+                print " ",stat
+                out += "--------------------------------------------------\n"
+                print out
             return tmp
 
         else:
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
-            statVal = _stats(self,mask,stat)
-#            out = 'Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,statVal)
-#            if self._vb:
-#                print out
-            return statVal
+            statval = _stats(self,mask,stat)
+            out = ''
+            for l in range(self.nrow()):
+                tm = self._gettime(l)
+                out += 'Time[%s]:\n' % (tm)
+                if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
+                if self.nif() > 1: out +=  ' IF[%d] ' % (j)
+                if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
+                out += '= %3.3f\n' % (statval[l])
+                out +=  "--------------------------------------------------\n"
+            if self._vb:
+                print "--------------------------------------------------"
+                print " ",stat
+                print "--------------------------------------------------"
+                print out
+            return statval
 
     def stddev(self,mask=None, all=True):
         """
@@ -210,34 +264,57 @@ class scantable(sdtable):
             a list of Tsys values.
         """
         if all:
-            tmp = []
             out = ''
-            for i in range(self.nbeam()):
-                self.setbeam(i)
-                for j in range(self.nif()):
-                    self.setif(j)
-                    for k in range(self.npol()):
-                        self.setpol(k)
-                        ts = self._gettsys()
-                        tmp.append(ts)
-#                        out += 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,ts)
-#            if self._vb:
-#                print out
+            tmp = []
+            for l in range(self.nrow()):
+                tm = self._gettime(l)
+                out += 'Time[%s]:\n' % (tm)
+                for i in range(self.nbeam()):
+                    self.setbeam(i)
+                    if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
+                    for j in range(self.nif()):
+                        self.setif(j)
+                        if self.nif() > 1: out +=  ' IF[%d] ' % (j)
+                        for k in range(self.npol()):
+                            self.setpol(k)
+                            if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
+                            ts = self._gettsys()
+                            tmp.append(ts)
+                            out += '= %3.3f\n' % (ts[l])
+                out+= "--------------------------------------------------\n"
+
+            if self._vb:
+                print "--------------------------------------------------"
+                print " Tsys"
+                print "--------------------------------------------------"
+                print out
             return tmp
         else:
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
             ts = self._gettsys()
-#            out = 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,ts)
-#            if self._vb:
-#                print out
+            out = ''
+            for l in range(self.nrow()):
+                tm = self._gettime(l)
+                out += 'Time[%s]:\n' % (tm)
+                if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
+                if self.nif() > 1: out +=  ' IF[%d] ' % (j)
+                if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
+                out += '= %3.3f\n' % (ts[l])
+                out += "--------------------------------------------------\n"
+
+            if self._vb:
+                print "--------------------------------------------------"
+                print " Tsys"
+                print "--------------------------------------------------"
+                print out
             return ts
         
     def get_time(self):
         """
         Get a list of time stamps for the observations.
-        Return a string for each intergration in the scantable.
+        Return a string for each integration in the scantable.
         Parameters:
             none
         Example:
