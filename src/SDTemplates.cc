@@ -61,7 +61,7 @@ template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable>
 #include <scimath/Mathematics/AutoDiff.h>
 #include <scimath/Mathematics/AutoDiffMath.h>
 #include <casa/Arrays/Vector2.cc>
-#include <images/Images/ImageUtilities2.cc>
+#include <lattices/Lattices/LatticeUtilities.cc>
 #include <casa/Utilities/PtrHolder.cc>
 #include <lattices/Lattices/Lattice.h>
 
@@ -76,6 +76,9 @@ template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, 
 template MaskedArray<Float> operator-<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
 template MaskedArray<Float> const& operator/=<Float>(MaskedArray<Float> const&, Float const&);
 template Float stddev<Float>(MaskedArray<Float> const&);
+template Float median<Float>(MaskedArray<Float> const&);
+template Float sumsquares<Float>(MaskedArray<Float> const&);
+template Float avdev<Float>(MaskedArray<Float> const&);
 template class CompiledFunction<AutoDiff<Float> >;
 template class CompiledParam<AutoDiff<Float> >;
 template Vector<Bool>::Vector(const vector<bool> &);
@@ -83,7 +86,7 @@ template Vector<Float>::Vector(const vector<float> &);
 template Vector<Double>::Vector(const vector<double> &);
 template void Array<float>::tovector(vector<float> &) const;
 template void Array<Bool>::tovector(vector<bool> &) const;
-template void ImageUtilities::bin(MaskedArray<float>&, Coordinate&, MaskedArray<float> const&, Coordinate const&, uInt, uInt);
+template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
 #include "MathUtils.cc"
 namespace mathutil {
