@@ -40,6 +40,7 @@ namespace atnf_sd {
 void python_SDMath() {
   class_<SDMathWrapper>("sdmath")
     .def("average", &SDMathWrapper::average)
+    .def("quotient", &SDMathWrapper::quotient)
     ;
 };
 
