@@ -1159,7 +1159,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
   const Table& tab = in.table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
   Vector<Float> x = elev.getColumn();
-  x *= Float(180 / C::pi);
+  x *= Float(180 / C::pi);                        // Degrees
 //
   const uInt nC = coeffs.nelements();
   if (fileName.length()>0 && nC>0) {
@@ -1185,24 +1185,16 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
         coeff = coeffs;
         msg = String("user");
      } else {
-        if (inst==ATPKSMB) {
-        } else if (inst==ATPKSHOH) {
-        } else if (inst==TIDBINBILLA) {
-           pPoly = new Polynomial<Float>(3);
-           coeff.resize(3);
-           coeff(0) = 3.58788e-1;
-           coeff(1) = 2.87243e-2;
-           coeff(2) = -3.219093e-4;
-        } else if (inst==ATMOPRA) {
-        } else {
-        }
+        SDAttr sdAttr;
+        coeff = sdAttr.gainElevationPoly(inst);
+        pPoly = new Polynomial<Float>(3);
         msg = String("built in");
      }
 //
      if (coeff.nelements()>0) {
         pPoly->setCoefficients(coeff);
      } else {
-        throw(AipsError("There is no known gain-el polynomial known for this instrument"));
+        throw(AipsError("There is no known gain-elevation polynomial known for this instrument"));
      }
 //
      cerr << "Making polynomial correction with " << msg << " coefficients" << endl;
@@ -1302,6 +1294,7 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
    }
 //
    Vector<Float> JyPerK = sdAtt.JyPerK(inst, dateObs, freqs);
+   cerr << "Jy/K = " << JyPerK << endl;
    Vector<Float> factors = cFac * JyPerK;
    if (toKelvin) factors = Float(1.0) / factors;
 
