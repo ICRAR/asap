@@ -39,6 +39,7 @@
 
 #include "SDReader.h"
 #include "SDDefs.h"
+#include "SDAttr.h"
 
 using namespace casa;
 using namespace asap;
@@ -156,8 +157,7 @@ void SDReader::open(const std::string& filename,
   // Determine Telescope and set brightness unit
 
   Bool throwIt = False;
-  Instrument inst = SDMemTable::convertInstrument(header_->antennaname, 
-						  throwIt);
+  Instrument inst = SDAttr::convertInstrument(header_->antennaname, throwIt);
   header_->fluxunit = "Jy";
   if (inst==ATMOPRA || inst==TIDBINBILLA) {
      header_->fluxunit = "K";
