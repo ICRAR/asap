@@ -96,6 +96,9 @@ namespace SDMathWrapper {
 // XY Phase rotation
   void rotateXYPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll);
 
+// LinPol Phase rotation
+  void rotateLinPolPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll);
+
 // Apply opacity correction
   void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
   SDMemTableWrapper opacity (const SDMemTableWrapper& in, float tau, bool doAll);
