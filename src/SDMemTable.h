@@ -60,10 +60,11 @@ public:
   // skeleton are copied, otherwise the whole table is copied.
   SDMemTable(const SDMemTable& other, casa::Bool clear=casa::False);
 
-  // Copy Construct a SDMemTable, give a scanid constraint
+  // Copy Construct (copy semantics) a SDMemTable, give a scanid constraint
   // see also getScan()
   SDMemTable(const casa::Table& tab, const std::string& expr);
-  
+
+  // Assignment operator (copy semantics)  
   SDMemTable &operator=(const SDMemTable& other);
   
   virtual ~SDMemTable();
@@ -73,7 +74,7 @@ public:
   bool putSDHeader(const SDHeader& sdh);
   bool putSDFreqTable(const SDFrequencyTable& sdft);
 
-  //get the dat wrapped up in a meta container
+  //get the data wrapped up in a meta container
   SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
   SDFrequencyTable getSDFreqTable() const;
