@@ -205,7 +205,7 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   }  
   return mask;
 }
-std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
+std::vector<float> SDMemTable::getSpectrum(Int whichRow) {
 
   std::vector<float> spectrum;
   ROArrayColumn<Float> spec(table_, "SPECTRA");
@@ -221,6 +221,57 @@ std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
     spectrum.push_back(*i);
   }
   return spectrum;
+}
+void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow=0) {
+  ROArrayColumn<Float> spec(table_, "SPECTRA");
+  Array<Float> arr;
+  spec.get(whichRow, arr);
+  spectrum.resize(arr.shape()(3));
+  ArrayAccessor<Float, Axis<0> > aa0(arr);
+  aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
+  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
+  ArrayAccessor<Float, Axis<2> > aa2(aa1);
+  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+
+  ArrayAccessor<Float, Axis<0> > va(spectrum);
+  for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+    (*va) = (*i);
+    va++;
+  }
+}
+
+void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow=0) const {
+  ROArrayColumn<uChar> spec(table_, "FLAGTRA");
+  Array<uChar> arr;
+  spec.get(whichRow, arr);
+  mask.resize(arr.shape()(3));
+
+  ArrayAccessor<uChar, Axis<0> > aa0(arr);
+  aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
+  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
+  ArrayAccessor<uChar, Axis<2> > aa2(aa1);
+  aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
+
+  Bool useUserMask = ( chanMask_.size() == arr.shape()(3) );
+  
+  ArrayAccessor<Bool, Axis<0> > va(mask);
+  std::vector<bool> tmp;
+  tmp = chanMask_; // WHY the fxxx do I have to make a copy here. The
+		   // iterator should work on chanMask_??
+  std::vector<bool>::iterator miter;
+  miter = tmp.begin();
+
+  for (ArrayAccessor<uChar, Axis<3> > i(aa2); i != i.end(); ++i) {
+    bool out =!static_cast<bool>(*i);
+    if (useUserMask) {
+      out = out && (*miter);
+      miter++;
+    }
+    (*va) = out;
+    va++;
+  }  
 }
 
 MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
@@ -302,6 +353,31 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   return true;
 }
 
+SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
+  ROScalarColumn<Double> mjd(table_, "TIME");
+  ROScalarColumn<String> srcn(table_, "SRCNAME");
+  ROArrayColumn<Float> spec(table_, "SPECTRA");
+  ROArrayColumn<uChar> flags(table_, "FLAGTRA");
+  ROArrayColumn<Float> ts(table_, "TSYS");
+  ROScalarColumn<Int> scan(table_, "SCANID");
+  ROScalarColumn<Double> integr(table_, "INTERVAL");
+
+  SDContainer sdc(nBeam(),nIF(),nPol(),nChan());
+  mjd.get(whichRow, sdc.timestamp);
+  srcn.get(whichRow, sdc.sourcename);
+  integr.get(whichRow, sdc.interval);
+  scan.get(whichRow, sdc.scanid);
+  Array<Float> spectrum;
+  Array<Float> tsys;
+  Array<uChar> flagtrum;
+  spec.get(whichRow, spectrum);
+  sdc.putSpectrum(spectrum);
+  flags.get(whichRow, flagtrum);
+  sdc.putFlags(flagtrum);
+  ts.get(whichRow, tsys);
+  sdc.putTsys(tsys);
+  return sdc;
+}
 bool SDMemTable::putSDHeader(const SDHeader& sdh) {
   table_.lock();
   table_.rwKeywordSet().define("nIF", sdh.nif);
@@ -321,8 +397,26 @@ bool SDMemTable::putSDHeader(const SDHeader& sdh) {
   table_.unlock();
   cerr << "Table Header set" << endl;
   return true;
-}
+}\
 
+SDHeader SDMemTable::getSDHeader() const {
+  SDHeader sdh;
+  table_.keywordSet().get("nBeam",sdh.nbeam);
+  table_.keywordSet().get("nIF",sdh.nif);
+  table_.keywordSet().get("nPol",sdh.npol);
+  table_.keywordSet().get("nChan",sdh.nchan);
+  table_.keywordSet().get("Observer", sdh.observer);
+  table_.keywordSet().get("Project", sdh.project);
+  table_.keywordSet().get("Obstype", sdh.obstype);
+  table_.keywordSet().get("AntennaName", sdh.antennaname);
+  table_.keywordSet().get("AntennaPosition", sdh.antennaposition);
+  table_.keywordSet().get("Equinox", sdh.equinox);
+  table_.keywordSet().get("FreqRefFrame", sdh.freqref);
+  table_.keywordSet().get("FreqRefVal", sdh.reffreq);
+  table_.keywordSet().get("Bandwidth", sdh.bandwidth);
+  table_.keywordSet().get("UTC", sdh.utc);
+  return sdh;
+}
 void SDMemTable::makePersistent(const std::string& filename) {
   table_.deepCopy(filename,Table::New);
 }
@@ -375,7 +469,6 @@ Int SDMemTable::nChan() const {
   table_.keywordSet().get("nChan",n);
   return n;
 }
-
 /*
 void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
   

@@ -68,14 +68,22 @@ public:
   virtual bool putSDContainer(const SDContainer& sdc);
   virtual bool putSDHeader(const SDHeader& sdh);
   virtual bool putSDFreqTable(const SDFrequencyTable& sdft) {;}
+
+  //get the dat wrapped up in a meta container
+  virtual SDContainer getSDContainer(uInt whichRow=0) const;
+  virtual SDHeader getSDHeader() const;
   
   // get spectrum,mask and tsys for the given row, at the selected
-  // cursor
-  virtual std::vector<float> getSpectrum(Int whichRow) const;
+  // cursor - all as stl vectors
+  virtual std::vector<float> getSpectrum(Int whichRow);
   virtual std::vector<bool> getMask(Int whichRow) const;
-  virtual Float getTsys(Int whichRow) const;
 
-  // get info fro current row
+  virtual Float getTsys(Int whichRow) const;
+  // get all as aips++ Vectors
+  virtual void getSpectrum(Vector<Float>& spectrum, Int whichRow=0);
+  virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
+
+  // get info for current row
   virtual Double getTime(Int whichRow) const ;
   virtual std::string getSourceName(Int whichRow) const;
   
@@ -103,7 +111,7 @@ public:
   // get a new SDMemTable containg all rows with the same give SCANID
   SDMemTable getScan(Int scanID);
 
-  const TableRecord& getHeader() const {;}
+  const TableRecord& getHeader() const {return table_.keywordSet();}
   // get a handle to the "raw" aips++ table
   const Table& table() { return table_; }
 
