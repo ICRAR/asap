@@ -8,8 +8,8 @@ def average_time(*args, **kwargs):
     Parameters:
         one scan or comma separated  scans
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
-        scanav:   True (default) averages each scan separately
-                  False averages all scans together,
+        scanav:   True averages each scan separately.
+                  False (default) averages all scans together,
         weight:   Weighting scheme. 'none, 'var' (1/var(spec) 
                   weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
                   (integration time weighted) or 'tintsys' (Tsys 
@@ -20,10 +20,10 @@ def average_time(*args, **kwargs):
         scanav = average_time(scana,scanb)
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
-        scanav = average_time(scan)
+        scanav = average_time(scan, scanav=True)
 
     """
-    scanAv = True
+    scanAv = False
     if kwargs.has_key('scanav'):
        scanAv = kwargs.get('scanav')
     weight = 'tint'
