@@ -1,5 +1,5 @@
 from asap._asap import sdtable
-from numarray import ones
+from numarray import ones,zeros
 import sys
 
 class scantable(sdtable):
@@ -385,25 +385,26 @@ class scantable(sdtable):
     def create_mask(self, *args, **kwargs):
         """
         Compute and return a mask based on [min,max] windows.
-        The specified windows are to be EXCLUDED, when the mask is
+        The specified windows are to be INCLUDED, when the mask is
         applied.
         Parameters:
             [min,max],[min2,max2],...
                 Pairs of start/end points specifying the regions
                 to be masked
-            invert:     return an inverted mask, i.e. the regions
-                        specified are not masked (INCLUDED)
+            invert:     optional argument. If specified as True,
+                        return an inverted mask, i.e. the regions
+                        specified are EXCLUDED
         Example:
             scan.set_unit('channel')
 
             a)
             msk = scan.set_mask([400,500],[800,900])
-            # masks the regions between 400 and 500
+            # masks everything outside 400 and 500
             # and 800 and 900 in the unit 'channel'
 
             b)
             msk = scan.set_mask([400,500],[800,900], invert=True)
-            # masks the regions outside 400 and 500
+            # masks the regions between 400 and 500
             # and 800 and 900 in the unit 'channel'
            
         """
@@ -413,14 +414,14 @@ class scantable(sdtable):
             print "The current mask window unit is", u
         n = self.nchan()
         data = self.getabcissa()
-        msk = ones(n)
+        msk = zeros(n)
         for  window in args:
             if (len(window) != 2 or window[0] > window[1] ):
                 print "A window needs to be defined as [min,max]"
                 return
             for i in range(n):
                 if data[i] >= window[0] and data[i] < window[1]:
-                    msk[i] = 0
+                    msk[i] = 1
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
                 from numarray import logical_not
@@ -474,11 +475,14 @@ class scantable(sdtable):
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
 
         validyax = ['spectrum','tsys']
+        from asap.asaplot import ASAPlot
         if not self._p:
-            from asap.asaplot import ASAPlot
             self._p = ASAPlot()
-#            print "Plotting not enabled"
-#            return
+            #print "Plotting not enabled"
+            #return
+        if self._p.is_dead:
+            del self._p
+            self._p = ASAPlot()
         npan = 1
         x = None
         if what == 'tsys':
