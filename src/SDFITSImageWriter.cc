@@ -36,6 +36,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorIter.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <casa/OS/Directory.h>
 
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <coordinates/Coordinates/CoordinateSystem.h>
@@ -71,7 +72,7 @@ SDFITSImageWriter::~SDFITSImageWriter()
 
 
 Bool SDFITSImageWriter::write(const SDMemTable& sdTable, 
-                              const String& rootName, Bool verbose)
+                              const String& dirName, Bool verbose)
 {
 
 // Get global Header from Table
@@ -89,10 +90,10 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 // Column keywords
 
    Table tab = sdTable.table();
-   ROArrayColumn<Double> dir(tab, String("DIRECTION"));
-   ROScalarColumn<Double> time(tab, "TIME");
-   ROArrayColumn<uInt> freqid(tab, "FREQID");
-   ROScalarColumn<String> src(tab, "SRCNAME");
+   ROArrayColumn<Double> dirCol(tab, String("DIRECTION"));
+   ROScalarColumn<Double> timeCol(tab, "TIME");
+   ROArrayColumn<uInt> freqidCol(tab, "FREQID");
+   ROScalarColumn<String> srcCol(tab, "SRCNAME");
 
 // Output Image Shape; spectral axis to be updated
 
@@ -105,6 +106,16 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    const uInt stokesAxis = asap::PolAxis;
    const uInt chanAxis = asap::ChanAxis;
    const Unit RAD(String("rad"));
+
+// Output Directory
+
+   String dirName2(dirName);
+   if (dirName.length()==0) {
+      dirName2 = String("asap_FITS");
+   }
+   Directory dir(dirName2);
+   dir.create(True);
+   cerr << "Created directory '" << dirName2 << "' for output files" << endl;
 
 // Temps
 
@@ -146,7 +157,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 // Update ObsInfo (time changes per integration)
 
       Double dTmp;
-      time.get(iRow, dTmp);
+      timeCol.get(iRow, dTmp);
       MVEpoch tmp2(Quantum<Double>(dTmp, Unit(String("d"))));
       MEpoch epoch(tmp2, timeRef);
       oi.setObsDate(epoch);
@@ -161,12 +172,12 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 // Form SpectralCoordinate 
 
          Vector<uInt> iTmp;
-         freqid.get(iRow, iTmp);
+         freqidCol.get(iRow, iTmp);
          SpectralCoordinate sC = sdTable.getCoordinate(iTmp(pos(ifAxis)));
 
 // Form DirectionCoordinate
  
-         dir.get(iRow, whichDir);
+         dirCol.get(iRow, whichDir);
          posDir(0) = pos(beamAxis);
          posDir(1) = 0;
          lonLat[0] = whichDir(posDir);
@@ -209,15 +220,11 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
          ostringstream oss;
          oss << "row" << iRow << "_beam" << pos(0) << "_if" 
-	     << pos(1) << "_pol" << pos(2) << "_" << src(iRow) << ".fits";
-         String fileName;
-         if (rootName.length()>0) {
-            fileName = rootName + "_" + String(oss);
-         } else {
-            fileName = String(oss);
-         }
+	     << pos(1) << "_pol" << pos(2) << "_" << srcCol(iRow) << ".fits";
+         String tS(oss);
+         String fileName = dirName2 + String("/") + tS;
          if (verbose) cerr << "Writing row " << iRow 
-			   << " into file " << fileName << endl;
+			   << " into file '" << tS << "'" << endl;
 //
          Bool ok = ImageFITSConverter::ImageToFITS(errMsg, tIm, fileName, 
 						   maxMem, preferVelocity,
