@@ -104,7 +104,7 @@ class fitter:
         """
         Execute the actual fitting process. All the state has to be set.
         Parameters:
-            none
+            row:    specify the row in the scantable
         Example:
             s = scantable('myscan.asap')
             s.set_cursor(thepol=1)        # select second pol
@@ -137,6 +137,9 @@ class fitter:
         return
 
     def store_fit(self):
+        """
+        Store the fit parameters in the scantable.
+        """
         if self.fitted and self.data is not None:
             pars = list(self.fitter.getparameters())
             fixed = list(self.fitter.getfixedparameters())
@@ -144,6 +147,15 @@ class fitter:
                               self.fitfuncs, self.components)
 
     def set_parameters(self, params, fixed=None, component=None):
+        """
+        Set the parameters to be fitted.
+        Parameters:
+              params:    a vector of parameters
+              fixed:     a vector of which parameters are to be held fixed
+                         (default is none)
+              component: in case of multiple gaussians, the index of the
+                         component
+             """
         if self.fitfunc is None:
             print "Please specify a fitting function first."
             return
@@ -172,8 +184,6 @@ class fitter:
         """
         Set the Parameters of a 'Gaussian' component, set with set_function.
         Parameters:
-            component:           The number of the component (Default is the
-                                 first component.
             peak, centre, fhwm:  The gaussian parameters
             peakfixed,
             centerfixed,
@@ -181,6 +191,8 @@ class fitter:
                                  the paramters should be held fixed during
                                  the fitting process. The default is to keep
                                  all parameters flexible.
+            component:           The number of the component (Default is the
+                                 component 0)
         """
         if self.fitfunc != "gauss":
             print "Function only operates on Gaussian components."
@@ -196,7 +208,9 @@ class fitter:
     def get_parameters(self, component=None):
         """
         Return the fit paramters.
-        
+        Parameters:
+             component:    get the parameters for the specified component
+                           only, default is all components
         """
         if not self.fitted:
             print "Not yet fitted."
@@ -281,7 +295,7 @@ class fitter:
 
     def commit(self):
         """
-        Return a new scan where the fits have been commited.
+        Return a new scan where the fits have been commited (subtracted)
         """
         if not self.fitted:
             print "Not yet fitted."
@@ -291,13 +305,17 @@ class fitter:
         scan = self.data.copy()
         scan._setspectrum(self.fitter.getresidual())
 
-    def plot(self, residual=False, components=None, plotparms=False,
-             plotrange=None):
+    def plot(self, residual=False, components=None, plotparms=False):
         """
         Plot the last fit.
         Parameters:
             residual:    an optional parameter indicating if the residual
                          should be plotted (default 'False')
+            components:  a list of components to plot, e.g [0,1],
+                         -1 plots the total fit. Default is to only
+                         plot the total fit.
+            plotparms:   Inidicates if the parameter values should be present
+                         on the plot
         """
         if not self.fitted:
             return
@@ -331,7 +349,8 @@ class fitter:
         if components is not None:
             cs = components
             if isinstance(components,int): cs = [components]
-            self._p.text(0.15,0.15,str(self.get_parameters()[2]),size=8)
+            if plotparms:
+                self._p.text(0.15,0.15,str(self.get_parameters()[2]),size=8)
             n = len(self.components)
             self._p.palette(4)
             for c in cs:
