@@ -77,8 +77,8 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 // Get global Header from Table
 
    SDHeader header = sdTable.getSDHeader();
-   MEpoch::Ref timeRef(MEpoch::UTC);              // Should be in header   
-   MDirection::Types dirRef(MDirection::J2000);   // Should be in header   
+   MEpoch::Ref timeRef(sdTable.getTimeReference());
+   MDirection::Types dirRef = sdTable.getDirectionReference();
 
 // Prepare initial ObsInfo
 
@@ -247,13 +247,13 @@ Int SDFITSImageWriter::convertStokes(Int val)
 {
    Stokes::StokesTypes stokes = Stokes::RR;
    if (val==0) {
-      stokes = Stokes::RR;
+      stokes = Stokes::XX;
    } else if (val==1) {
-      stokes = Stokes::LL;
+      stokes = Stokes::YY;
    } else if (val==2) {
-      stokes = Stokes::RL;
+      stokes = Stokes::XY;
    } else if (val==3) {
-      stokes = Stokes::LR;
+      stokes = Stokes::YX;
    } else {
       stokes = Stokes::Undefined;
    }
