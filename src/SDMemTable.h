@@ -58,7 +58,7 @@ public:
 
   // Copy Construct a SDMemTable, if clear==True only header and
   // skeleton are copied, otherwise the whole table is copied.
-  SDMemTable(const SDMemTable& other, casa::Bool clear);
+  SDMemTable(const SDMemTable& other, casa::Bool clear=casa::False);
 
   // Copy Construct a SDMemTable, give a scanid constraint
   // see also getScan()
