@@ -273,6 +273,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
            tSysSum =0.0;
            timeSum = 0.0;
            intSum = 0.0;
+	   nPts = 0.0; // reset this too!!!
 
 // Increment
 
@@ -283,7 +284,8 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 //
            oldScanID = scanID;
            outScanID += 1;               // Scan ID for next accumulation period
-        }
+
+}
 
 // Accumulate
 
@@ -293,7 +295,7 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 //
        oldSourceName = sourceName;
        oldFreqID = freqID;
-    }
+     }
   }
 
 // OK at this point we have accumulation data which is either
@@ -302,7 +304,6 @@ CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in
 //   - accumulated from the last scan average
 //
 // Normalize data in 'sum' accumulation array according to weighting scheme
-
   normalize (sum, sumSq, nPts, wtType, axis, nAxesSub);
 
 // Create and fill container.  The container we clone will be from
@@ -381,11 +382,11 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
 
 // Fill container for this row
 
-     SDContainer sc = on->getSDContainer();
+     SDContainer sc = on->getSDContainer(i);
 //
      putDataInSDC (sc, out, outflagsb);
      sc.putTsys(tsarr);
-     sc.scanid = 0;
+     sc.scanid = i;
 
 // Put new row in output Table
 
