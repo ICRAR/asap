@@ -29,6 +29,7 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 #include <casa/Exceptions.h>
+#include <casa/OS/Path.h>
 #include <atnf/PKSIO/PKSreader.h>
 
 #include "SDReader.h"
@@ -82,8 +83,12 @@ void SDReader::close() {
 void SDReader::open(const std::string& filename) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra, haveXPol;
+//
   String inName(filename);
+  Path path(inName);
+  inName = path.expandedName();
   filename_ = inName;
+//
   String format;
   Vector<Bool> beams;
   if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
