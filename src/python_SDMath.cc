@@ -37,26 +37,26 @@ using namespace boost::python;
 namespace asap {
   namespace SDMathWrapper {
     SDMemTableWrapper SDMathWrapper::averages(boost::python::tuple tp,
-					      const std::vector<bool>& mask) {
+                                              const std::vector<bool>& mask) {
       int n;
       n = extract<int>(tp.attr("__len__")());
       Block<CountedPtr<asap::SDMemTable> > b(n);
       for (int i=0;i< n;++i) {
-	SDMemTableWrapper sdmw = 
-	  extract<SDMemTableWrapper>( tp.attr("__getitem__")(i) );
-	b[i] = sdmw.getCP();
+        SDMemTableWrapper sdmw =
+          extract<SDMemTableWrapper>( tp.attr("__getitem__")(i) );
+        b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
       return SDMemTableWrapper(SDMath::averages(b,msk));
     };
-    
+
   } // namespace SDMathWrapper
 
   namespace python {
     void python_SDMath() {
       def("average", &SDMathWrapper::average);
       def("quotient", &SDMathWrapper::quotient);
-      def("multiply", &SDMathWrapper::multiply);
+      def("scale", &SDMathWrapper::scale);
       def("baseline", &SDMathWrapper::baseline);
       def("hanning", &SDMathWrapper::hanning);
       def("averages", &SDMathWrapper::averages);
@@ -64,7 +64,7 @@ namespace asap {
       def("bin", &SDMathWrapper::bin);
       def("rms", &SDMathWrapper::rms);
     };
-    
+
   } // python
 } // asap
 

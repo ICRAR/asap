@@ -47,41 +47,41 @@ namespace SDMathWrapper {
   }
 
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
-			     const SDMemTableWrapper& off) {
+                             const SDMemTableWrapper& off) {
     return SDMemTableWrapper(SDMath::quotient(on.getCP(),
-					     off.getCP()));
+                                             off.getCP()));
   }
 
-  SDMemTableWrapper multiply(const SDMemTableWrapper& in,
-			     Float factor) {
-    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));    
+  SDMemTableWrapper scale(const SDMemTableWrapper& in,
+                             Float factor) {
+    return SDMemTableWrapper(SDMath::multiply(in.getCP(),factor));
   }
-  
+
   SDMemTableWrapper hanning(const SDMemTableWrapper& in) {
-    return SDMemTableWrapper(SDMath::hanning(in.getCP()));    
+    return SDMemTableWrapper(SDMath::hanning(in.getCP()));
   }
 
-  SDMemTableWrapper baseline(const SDMemTableWrapper& in, 
-			     const std::string& fitexpr,
-			     const std::vector<bool>& mask) {
+  SDMemTableWrapper baseline(const SDMemTableWrapper& in,
+                             const std::string& fitexpr,
+                             const std::vector<bool>& mask) {
     return SDMath::baseline(in.getCP(), fitexpr, mask);
   }
 
-  SDMemTableWrapper averages(boost::python::tuple tpl, 
-			     const std::vector<bool>& mask);
+  SDMemTableWrapper averages(boost::python::tuple tpl,
+                             const std::vector<bool>& mask);
 
-  SDMemTableWrapper averagePol(const SDMemTableWrapper& in, 
-			       const std::vector<bool>& mask) {
+  SDMemTableWrapper averagePol(const SDMemTableWrapper& in,
+                               const std::vector<bool>& mask) {
     return SDMath::averagePol(in.getCP(), mask);
   }
 
-  SDMemTableWrapper bin(const SDMemTableWrapper& in, 
-			int width) {
+  SDMemTableWrapper bin(const SDMemTableWrapper& in,
+                        int width) {
     return SDMath::bin(in.getCP(), width);
   }
 
-  float rms(const SDMemTableWrapper& in, 
-	    const std::vector<bool>& mask) {
+  float rms(const SDMemTableWrapper& in,
+            const std::vector<bool>& mask) {
     return SDMath::rms(in.getCP(), mask);
   }
 
