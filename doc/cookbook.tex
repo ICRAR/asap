@@ -1143,30 +1143,32 @@ able to calibrate position angle offsets.
 
 \subsection{Simple Calibration}
 
-{\em Currently the receiver position angle is not stored in the rpfits
-file. This serverly hampers correct handling of polarimetry.}
+{\em Currently the receiver position angle is not stored in the RPFITS
+file. This severely hampers correct handling of polarimetry. In the future
+we aim to define a general framework and populate the RPFITS files
+with the data required for transparent polarimetric calibration.}
 
 It is possible that there is a phase offset between polarisation which
-will effect the phase of the cross polarisation correlation, and so
-give rise to spurious polarisation. \cmd{rotate\_xyphase} can be used
-to correct for this error. The user must know how to determine the
-size of the phase offset themselves.
+will effect the phase of the cross polarisation correlation, and so give
+rise to spurious polarisation. \cmd{rotate\_xyphase} can be used to
+correct for this error. At this point, the user must know how to
+determine the size of the phase offset themselves.
 
 \begin{verbatim}
-  ASAP> scans.rotate_xyphase(10.5)
+  ASAP> scans.rotate_xyphase(10.5)            # Degrees
 \end{verbatim}
 
 Note that if this function is run twice, the sum of the two values is
-applied.
+applied because it is done in-situ.
 
-A correction for the receiver paralactic angle may need to be made,
-either because of how it is mounted or if paralactifiying had to track
+A correction for the receiver parallactic angle may need to be made,
+either because of how it is mounted or if parallactifiying had to track
 at 90 degrees rather than 0. Use \cmd{rotate\_linpolphase} to correct
 the position angle. Running this function twice results in the sum of
-the corrections being applied.
+the corrections being applied because it is applied in-situ.
 
 \begin{verbatim}
-  ASAP> scans.rotate_linpolphase(-20) # Correct for receiver mounting
+  ASAP> scans.rotate_linpolphase(-20) # Degrees; correct for receiver mounting
 
   # Receiver was tracking 90 degrees rather than 0
   ASAP> scans.rotate_linpolphase(90)  
@@ -1175,9 +1177,9 @@ the corrections being applied.
 \subsection{Plotting}
 \label{sec:polplot}
 
-To plot stokes values, the plotter \cmd{set\_cursor} function should
+To plot Stokes values, the plotter \cmd{set\_cursor} function should
 be called first using the \cmd{pol} argument. The values which can be
-plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V] or
+plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V], or
 [XX, YY, Real(XY), Imaginary(XY)]. (Plinear and Pangle are the
 percentage and position angle of linear polarisation). Conversion to
 circular polarisations are currently not available.
