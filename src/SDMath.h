@@ -142,7 +142,21 @@ class SDMath {
 // Convert interpolation type string
    void convertInterpString(casa::Int& type, const casa::String& interp) const;
 
-// Read ascii file
+
+// Correct data from an ascii Table
+   SDMemTable* correctFromAsciiTable(SDMemTable* pTabOut, const SDMemTable& in, 
+                                     const casa::String& fileName,
+                                     const casa::String& col0, const casa::String& col1,
+                                     const casa::String& methodStr, casa::Bool doAll,
+                                     const casa::Vector<casa::Float>& xOut);
+
+// Correct data from a Table
+   SDMemTable* correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, const casa::Table& tTable,
+                                const casa::String& col0, const casa::String& col1,
+                                const casa::String& methodStr, casa::Bool doAll,
+                                const casa::Vector<casa::Float>& xOut);
+
+// Read ascii file into a Table
 
    casa::Table readAsciiFile (const casa::String& fileName) const;
                    

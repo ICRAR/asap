@@ -955,81 +955,20 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const String& fileName,
   SDMemTable* pTabOut = new SDMemTable(in, True);
   const uInt nRow = in.nRow();
 
-// Get elevation column from data
+// Get elevation from SDMemTable data
 
   const Table& tab = in.table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
-
-// Read gain-elevation ascii file data into a Table.
-
-  Table geTable = readAsciiFile (fileName);
-  ROScalarColumn<Float> geElCol(geTable, "ELEVATION");
-  ROScalarColumn<Float> geFacCol(geTable, "FACTOR");
-  Vector<Float> xIn = geElCol.getColumn();
-  Vector<Float> yIn = geFacCol.getColumn();
-  Vector<Bool> maskIn(xIn.nelements(),True);
-
-// Get elevation vector from data
-
   Vector<Float> xOut = elev.getColumn();
   xOut *= Float(180 / C::pi);
-
-// Interpolate (and extrapolate) with desired method
-
-   Int method = 0;
-   convertInterpString(method, methodStr);
 //
-   Vector<Float> yOut;
-   Vector<Bool> maskOut;
-   InterpolateArray1D<Float,Float>::interpolate(yOut, maskOut, xOut, 
-                                                xIn, yIn, maskIn, method,
-                                                True, True);
-
-// For operations only on specified cursor location
-
-  IPosition start, end;
-  getCursorLocation(start, end, in);
-
-// Loop over rows and interpolate correction factor
-  
-  const uInt axis = asap::ChanAxis;
-  for (uInt i=0; i < in.nRow(); ++i) {
-
-// Get data
-
-    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
-    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
-    const Array<Bool>& maskIn = dataIn.getMask();  
-
-// Apply factor
-
-    if (doAll) {
-       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
-       while (!itValues.pastEnd()) {
-          itValues.vector() *= yOut(i);                    // Writes back into dataIn
+  String col0("ELEVATION");
+  String col1("FACTOR");
 //
-          itValues.next();
-       }
-    } else {
-       Array<Float> valuesIn2 = valuesIn(start,end);
-       valuesIn2 *= yOut(i);
-       valuesIn(start,end) = valuesIn2;
-    }
-
-// Write out
-
-    SDContainer sc = in.getSDContainer(i);
-    putDataInSDC(sc, valuesIn, maskIn);
-//
-    pTabOut->putSDContainer(sc);
-  }
-
-// Delete temporary gain/el Table
-
-  geTable.markForDelete();
-//  
-  return pTabOut;
+  return correctFromAsciiTable (pTabOut, in, fileName, col0, col1, methodStr, doAll, xOut);
 }
+
+ 
 
 
 
@@ -1237,8 +1176,91 @@ void SDMath::putDataInSDC(SDContainer& sc, const Array<Float>& data,
 
 Table SDMath::readAsciiFile (const String& fileName) const
 {
-   String tableName("___asap_temp.tbl");
-   readAsciiTable (fileName, "", tableName);
-   Table tbl(tableName);
+   String formatString;
+   Table tbl = readAsciiTable (formatString, Table::Memory, fileName, "", "", False);
    return tbl;
 }
+
+
+SDMemTable* SDMath::correctFromAsciiTable(SDMemTable* pTabOut,
+                                          const SDMemTable& in, const String& fileName,
+                                          const String& col0, const String& col1,
+                                          const String& methodStr, Bool doAll,
+                                          const Vector<Float>& xOut)
+{
+
+// Read gain-elevation ascii file data into a Table.
+
+  Table tTable = readAsciiFile (fileName);
+//  tTable.markForDelete();
+//
+  return correctFromTable (pTabOut, in, tTable, col0, col1, methodStr, doAll, xOut);
+}
+
+SDMemTable* SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, const Table& tTable,
+                                     const String& col0, const String& col1,
+                                     const String& methodStr, Bool doAll,
+                                     const Vector<Float>& xOut)
+{
+
+// Get data from Table
+
+  ROScalarColumn<Float> geElCol(tTable, col0);
+  ROScalarColumn<Float> geFacCol(tTable, col1);
+  Vector<Float> xIn = geElCol.getColumn();
+  Vector<Float> yIn = geFacCol.getColumn();
+  Vector<Bool> maskIn(xIn.nelements(),True);
+
+// Interpolate (and extrapolate) with desired method
+
+   Int method = 0;
+   convertInterpString(method, methodStr);
+//
+   Vector<Float> yOut;
+   Vector<Bool> maskOut;
+   InterpolateArray1D<Float,Float>::interpolate(yOut, maskOut, xOut, 
+                                                xIn, yIn, maskIn, method,
+                                                True, True);
+
+// For operations only on specified cursor location
+
+  IPosition start, end;
+  getCursorLocation(start, end, in);
+
+// Loop over rows and interpolate correction factor
+  
+  const uInt axis = asap::ChanAxis;
+  for (uInt i=0; i < in.nRow(); ++i) {
+
+// Get data
+
+    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
+    const Array<Bool>& maskIn = dataIn.getMask();  
+
+// Apply factor
+
+    if (doAll) {
+       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
+       while (!itValues.pastEnd()) {
+          itValues.vector() *= yOut(i);                    // Writes back into dataIn
+//
+          itValues.next();
+       }
+    } else {
+       Array<Float> valuesIn2 = valuesIn(start,end);
+       valuesIn2 *= yOut(i);
+       valuesIn(start,end) = valuesIn2;
+    }
+
+// Write out
+
+    SDContainer sc = in.getSDContainer(i);
+    putDataInSDC(sc, valuesIn, maskIn);
+//
+    pTabOut->putSDContainer(sc);
+  }
+//  
+  return pTabOut;
+}
+
