@@ -65,19 +65,30 @@ class SDFrequencyTable {
 
 public:
 
-  SDFrequencyTable() {;}
-  // returns the index into the table
-  // this creates a new one or returns an existing one
-  Int addFrequency(Double refPix, Double refVal, Double inc) {;}
+  SDFrequencyTable() : nFreq_(0) {;}
+  virtual ~SDFrequencyTable() {;}
   
   Int length() const { return nFreq_;};// # of stored Frequencies
-  // returns a Table with nRows == nFreq, and three cols
+
+  Double referencePixel(uInt which) const { return refPix_[which];}
+  Double referenceValue(uInt which) const { return refVal_[which];}
+  Double increment(uInt which) const { return increment_[which];}
+  Float equinox() const { return equinox_; }
+  String refFrame() const { return refFrame_; }
+
+  // returns the index into the table
+  // this creates a new one or returns an existing one
+  Int addFrequency(Int refPix, Double refVal, Double inc);
+  void setEquinox(Float eq) { equinox_ = eq; }
+  void setRefFrame(const String& reff) { refFrame_ = reff; }
   
 private:
   Int nFreq_;
-  std::vector<double> refPix_;
-  std::vector<double> revVal_;
-  std::vector<double> increment_;
+  Vector<Double> refPix_;
+  Vector<Double> refVal_;
+  Vector<Double> increment_;
+  Float equinox_;
+  String refFrame_;
 };
 
 
@@ -103,15 +114,18 @@ public:
 
   Bool setPointing(const Vector<Double>& point, uInt whichBeam) {;}
 
-  Bool setFrequencyMap(uInt freqslot, uInt whichIF) {;}
+  Bool setFrequencyMap(uInt freqslot, uInt whichIF);
+  Bool putFreqMap(const Vector<uInt>& freqs);
   
+  const Array<Float>& getSpectrum(uInt whichBeam, uInt whichIF) const;
+  const Array<uChar>& getFlags(uInt whichBeam, uInt whichIF) const;
+  const Array<Float>& getTsys(uInt whichBeam, uInt whichIF) const;
+
   const Array<Float>& getSpectrum() const { return spectrum_; }
   const Array<uChar>& getFlags() const { return flags_; }
   const Array<Float>& getTsys() const { return tsys_; }
-  
-  Array<Float> getSpectrum(uInt whichBeam, uInt whichIF) const;
-  Array<uChar> getFlags(uInt whichBeam, uInt whichIF) const;
-  Array<Float> getTsys(uInt whichBeam, uInt whichIF) const;
+
+  const Vector<uInt>& getFreqMap() const { return freqidx_; }
 
   Double timestamp;
   String sourcename;

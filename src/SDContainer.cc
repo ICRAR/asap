@@ -64,7 +64,8 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan)
     nChan_(nChan),
     spectrum_(IPosition(4,nBeam,nIF,nPol,nChan)),
     flags_(IPosition(4,nBeam,nIF,nPol,nChan)),
-    tsys_(IPosition(4,nBeam,nIF,nPol,nChan)) {
+    tsys_(IPosition(4,nBeam,nIF,nPol,nChan)),
+    freqidx_(nIF) {
   uChar x = 0;
   flags_ = ~x;
 }
@@ -76,7 +77,8 @@ SDContainer::SDContainer(IPosition shp)
     nChan_(shp(3)),
     spectrum_(shp),
     flags_(shp),
-    tsys_(shp) {
+    tsys_(shp),
+    freqidx_(shp(1)){
   uChar x = 0;
   flags_ = ~x;
 }
@@ -173,8 +175,7 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   }
 }
 
-Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const
-{
+const Array<Float>& SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const {
   Matrix<Float> spectra(nChan_, nPol_);
 
   // Beam.
@@ -208,7 +209,7 @@ Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const
   return spectra;
 }
 
-Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
+const Array<uChar>& SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
 {
   Matrix<uChar> flagtra(nChan_, nPol_);
 
@@ -243,7 +244,7 @@ Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
   return flagtra;
 }
 
-Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
+const Array<Float>& SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
 {
   Vector<Float> tsys(nPol_);
 
@@ -268,6 +269,43 @@ Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
     i2++;
     o0++;
   }
-
   return tsys;
 }
+
+Bool SDContainer::setFrequencyMap(uInt freqslot, uInt whichIF) {
+  freqidx_[whichIF] = freqslot;
+  return True;
+}
+
+Bool SDContainer::putFreqMap(const Vector<uInt>& freqs) {
+  freqidx_.resize();
+  freqidx_ = freqs;
+  return True;
+}
+
+Int SDFrequencyTable::addFrequency(Int refPix, Double refVal, Double inc) {
+  Int idx = -1;
+  Bool addit = False;
+  if (length() > 0) {
+    for (uInt i=0; i< length();++i) {
+      if ( refVal == refVal_[i] ) { // probably check with tolerance
+	if ( refPix == refPix_[i] )
+	  if ( inc == increment_[i] )
+	    idx = Int(i);
+      }
+    }
+    if (idx >= 0) {
+      return idx;
+    }
+  }
+  nFreq_ += 1;
+  refPix_.resize(nFreq_,True);
+  refVal_.resize(nFreq_,True);
+  increment_.resize(nFreq_,True);
+  refPix_[nFreq_-1] = refPix;
+  refVal_[nFreq_-1] = refVal;
+  increment_[nFreq_-1] = inc;
+  idx = nFreq_-1;
+  return idx;
+}
+
