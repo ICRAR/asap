@@ -1,7 +1,3 @@
-%% TODO
-%% Intro
-%% Fit saving
-
 \documentclass[11pt]{article}
 \usepackage{a4}
 \usepackage[dvips]{graphicx}
@@ -27,11 +23,17 @@
 
 \section{Introduction}
 
+ASAP is a single dish spectral line processing package currently being
+developed by the ATNF. It is intended to process data from all ATNF
+antennas, and can probably be used for other antnnas if they can
+produce ``Single Dish FITS'' format. It is based on the AIPS++
+package.
+
 %\section{Documentation Standards}
 
 %In most of the examples in this document, it has been assumed that the 
 
-\section{Installation and running}
+\section{Installation and Running}
 
 Currently there are installations running on Linux machines at 
 
@@ -46,11 +48,11 @@ To start asap log onto one of these Linux hosts and  enter
 
 \begin{verbatim}
   > cd /my/data/directory
-  > source /nfs/aips++/daily/aipsinit.csh  # Temporary measure
   > asap
 \end{verbatim}
 
-This starts the asap. To quit, you need to type \verb+^+-d (control-d).
+This starts the ASAP. To quit, you need to type \verb+^+-d
+(control-d).
 
 \section{Interface}
 
@@ -74,14 +76,13 @@ disk, to tools used for fitting functions to the data. The following
 main objects are used :
 
 \begin{itemize}
-  \item[scantable] The data container (actual spectra and header information)
-  \item[fitter] A tool used to fit functions to the spectral data
-  \item[plotter] A tool used to plot the spectral line data
-  \item[reader] A tool which can be used to read data from disks
+  \item[\cmd{scantable}] The data container (actual spectra and header
+    information)
+  \item[\cmd{fitter}] A tool used to fit functions to the spectral data
+  \item[\cmd{plotter}] A tool used to plot the spectral line data
+  \item[\cmd{reader}] A tool which can be used to read data from disks
     into a scantable object.
 \end{itemize}
-
-These are all described below.
 
 There can be many objects of the same type. Each object is referred to 
 by a variable name made by the user. The name of this variable is not
@@ -89,7 +90,7 @@ important and can be set to whatever the user prefers (ie ``s'' and
 ``ParkesHOH-20052002'' are equivalent).  However, having a simple and
 consistent naming convention will help you a lot.
 
-\subsection{Member functions(functions)}
+\subsection{Member Functions (functions)}
 
 Following the object oriented approach, objects have associated
 ``member functions'' which can either be used to modify the data in
@@ -101,27 +102,28 @@ command line, the user can execute these functions using the syntax:
 \end{verbatim}
 
 Where \cmd{out} is the name of the returned variable (could be a new
-scantable object, or a vector of data, or a status return),  \cmd{object} is the
-object variable name (set by the user), \cmd{function} is the name of
-the member function and \cmd{arguments} is a list of arguments to the
-function. The arguments can be provided either though position or names.
-A mix of the two can be used.  E.g. 
+scantable object, or a vector of data, or a status return),
+\cmd{object} is the object variable name (set by the user),
+\cmd{function} is the name of the member function and \cmd{arguments}
+is a list of arguments to the function. The arguments can be provided
+either though position or \cmd{name=}.  A mix of the two can be used.
+E.g.
 
 \begin{verbatim}
   ASAP> av = scans(msk,weight='tsys')
   ASAP> av = scans(mask=msk,weight='tsys')
   ASAP> av = scans(msk,True)
-  ASAP> scans.polybaseline(mask=msk, order=0, insitue=True)
+  ASAP> scans.polybaseline(mask=msk, order=0, insitu=True)
   ASAP> scans.polybaseline(msk,0,True)
   ASAP> scans.polybaseline(mask, insitu=True)
 \end{verbatim}
 
 \subsection{Global Functions}
 
-Some functions do not make sense to be implemented as member
-functions, typically functions which operate on more than one scantable
-(e.g. time averaging of many scans). These functions will always be
-referred to as global functions.
+It does not make sense to implement some functions as member
+functions, typically functions which operate on more than one
+scantable (e.g. time averaging of many scans). These functions will
+always be referred to as global functions.
 
 \subsection{Interactive environment}
 
@@ -131,11 +133,11 @@ of for the new user.
 \subsubsection{String completion}
 
 Tab completion is enabled for all function names. If you type the
-first few letters of a function name, then type <TAB> the function
-name will be auto completed if it is un-ambiguous, or a list of
-possibilities will be given. Auto-completion works for the user
-object names as well as function names. It does not work for filenames,
-nor for function arguments.
+first few letters of a function name, then type {\tt <TAB>} the
+function name will be auto completed if it is un-ambiguous, or a list
+of possibilities will be given. Auto-completion works for the user
+object names as well as function names. It does not work for
+filenames, nor for function arguments.
 
 Example
 \begin{verbatim}
@@ -148,14 +150,20 @@ scans.set_fluxunit    scans.set_restfreqs   scans.setif
   ASAP> scans.set_instrument
 \end{verbatim}
 
+\subsubsection{Leading Spaces}
+
+Python uses leading space to mark blocks of code. This means that it
+you start a command line with a space, the command generally will
+fail with an syntax error.
+
 \subsubsection{Unix Interaction}
 
-Basic unix shell commands (pwd, ls, cd etc) can be issued from within
-ASAP. This allows the user to do things list look at files in the
-current directory. The shell command ``cd'' does work within ASAP
-allowing the user to change between data directories. Unix programs
-cannot be run this way, but the shell escape ``$!$'' can be used to run
-arbitrary programs. E.g.
+Basic unix shell commands (\cmd{pwd}, \cmd{ls}, \cmd{cd} etc) can be
+issued from within ASAP. This allows the user to do things like look
+at files in the current directory. The shell command ``\cmd{cd}''
+works within ASAP, allowing the user to change between data
+directories. Unix programs cannot be run this way, but the shell
+escape ``$!$'' can be used to run arbitrary programs. E.g.
 
 \begin{verbatim}
   ASAP> pwd
@@ -182,9 +190,12 @@ the object and function name. E.g.
 
   ASAP> scans = scantable('mydata.asap')
   ASAP> help scans.get_scan # Same as above
+\end{verbatim}
 
-  ASAP> help average_time # Global functions just need their name
+Global functions just need their name
 
+\begin{verbatim}
+  ASAP> help average_time 
 \end{verbatim}
 
 Note that if you just type \cmd{help} the internal ipython help is
@@ -193,11 +204,11 @@ invoked, which is probably {\em not} what you want. Type \verb+^+-d
 
 \subsection{.asaprc}
 
-ASAP use a \cmd{.asaprc} file to control the users preferences of
+ASAP use an \cmd{.asaprc} file to control the user's preference of
 default values for various functions arguments. This includes the
-defaults for aguments such as \cmd{insitu}, scantable \cmd{freqframe}
+defaults for arguments such as \cmd{insitu}, scantable \cmd{freqframe}
 and the plotters \cmd{set\_mode} values. The help on individual
-functons says which agruments can be set default values from the
+functions says which arguments can be set default values from the
 \cmd{.asaprc} file. To get a sample contents for the \cmd{.asaprc}
 file use then command \cmd{list\_rcparameters}.
 
@@ -296,7 +307,9 @@ Example:
   ASAP> scans = scantable('MyData.rpf')
   ASAP> scans.summary()                # Brief listing
   ASAP> scans.summary(verbose=True)    # Include frequency information
-  ASAP> print scan                     # Equivalent to brief summary function call
+
+  # Equivalent to brief summary function call
+  ASAP> print scan                     
 \end{verbatim}
 
 Most of what the \cmd{summary} function  prints out is obvious. However,
@@ -311,14 +324,14 @@ FreqID of 3 say, refers to the fourth row of the frequency table (ASAP
 is 0-relative). The list of rest frequencies, to which the RestFreqIDs
 refer, is always listed.
 
-You can copy one scantable to another with the \cmd{copy} function.
+%You can copy one scantable to another with the \cmd{copy} function.
 
-Example:
+%Example:
 
-\begin{verbatim}
-  ASAP> scans = scantable('MyData.rpf')
-  ASAP> scan2 = scans.copy()
-\end{verbatim}
+%\begin{verbatim}
+%  ASAP> scans = scantable('MyData.rpf')
+%  ASAP> scan2 = scans.copy()
+%\end{verbatim}
 
 \subsection{State}
 
@@ -326,7 +339,7 @@ Each scantable contains "state"; these are properties  applying to all
 of the data in the scantable.  
 
 Examples are the selection of beam, IF and polarisation,  spectral unit
-(e.g. $km/s$) frequency reference frame (e.g. BARY) and velocity Doppler
+(e.g. km/s) frequency reference frame (e.g. BARY) and velocity Doppler
 type (e.g. RADIO).
 
 \subsubsection{Units, Doppler and Frequency Reference Frame}
@@ -335,9 +348,10 @@ The information describing the frequency setup for each integration
 is stored fundamentally in frequency in the reference frame
 of observation (E.g. TOPO).   
 
-When required, this is converted to the desired reference frame (e.g. LSRK),
-Doppler (e.g. OPTICAL) and unit (e.g. $km/s$) on-the-fly.  For example,
-this is important when you are displaying the data or fitting to it.
+When required, this is converted to the desired reference frame
+(e.g. LSRK), Doppler (e.g. OPTICAL) and unit (e.g. km/s) on-the-fly.
+This is important, for example, when you are displaying the data or
+fitting to it.
 
 For units, the user has the choice of frequency, velocity or channel.
 The \cmd{set\_unit} function is used to set the current unit for a
@@ -345,8 +359,8 @@ scantable. All functions will (where relevant) work with the selected
 unit until this changes. This is mainly important for fitting (the fits
 can be computed in any of these units), plotting and mask creation. 
 
-The velocity Doppler can be changed with the \cmd{set\_doppler}
-function, and the frequency reference frame can be changed with the 
+The velocity definition can be changed with the \cmd{set\_doppler}
+function, and the frequency reference frame can be changed with the
 \cmd{set\_freqframe} function.
 
 Example usage:
@@ -459,29 +473,38 @@ the channels to be included in the selection.
 
 When setting the mask in velocity, the conversion from velocity
 to channels is based on the current cursor setting, selected row and
-selected frequency reference frame (**Currently first row only**)
-
+selected frequency reference frame.
 
 Example :
 \begin{verbatim}
 
   # Select channel range for baselining
   ASAP> scans.set_unit('channels')
-  ASAP> msk = q.create_mask([100,400],[600,800])
+  ASAP> msk = scans.create_mask([100,400],[600,800])
  
   # Select velocity range for fitting
   ASAP> scans.set_unit('km/s')
-  ASAP> msk = q.create_mask([-30,-10])
+  ASAP> msk = scans.create_mask([-30,-10])
 \end{verbatim}
 
-
-Sometimes it is more convenient to specify the channels to be 
-excluded, rather included.  You can do this with the ``invert'' argument.
+Sometimes it is more convenient to specify the channels to be
+excluded, rather included.  You can do this with the ``invert''
+argument.
 
 Example :
 \begin{verbatim}
   ASAP> scans.set_unit('channels')
-  ASAP> msk = q.create_mask([0,100],[900-1023], invert=True)   # Excludes specified channels
+  ASAP> msk = scans.create_mask([0,100],[900-1023], invert=True)   
+\end{verbatim}
+
+By default \cmd{create\_mask} uses the frequency setup of the first row
+to convert velocities into a channel mask. If the rows in the data
+cover different velocity ranges, the scantable row to use should be
+specified:
+
+\begin{verbatim}
+  ASAP> scans.set_unit('km/s')
+  ASAP> msk = q.create_mask([-30,-10], row=5)
 \end{verbatim}
 
 Because the mask is stored in a simple python variable, the users is
@@ -518,6 +541,9 @@ Example usage:
 
 \begin{verbatim}
   ASAP> scan = scantable('2004-11-23_1841-P484.rpf')
+
+  # Don't scan average the data
+  ASAP> scan = scantable('2004-11-23_1841-P484.rpf', average=False)
 \end{verbatim}
 
 
@@ -546,9 +572,9 @@ Example usage:
 \section{Basic Processing}
 
 In the following section, a simple data reduction to form a quotient
-spectrum of a single source is followed. In the following it has been
-assume that the \cmd{.asaprc} file has been used to set \cmd{insitu}
-to a default value or \cmd{True}.
+spectrum of a single source is followed.  It has been assume that the
+\cmd{.asaprc} file has {\em not} been used to change the \cmd{insitu}
+default value from \cmd{True}.
 
 %\subsection{Editing}
 
@@ -586,7 +612,7 @@ This uses the rows in scantable \cmd{r} as reference spectra for the
 rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
 (which is applied to all rows in \cmd{s}) or both scantables must have
 the same number of rows. By default the quotient spectra is calculated
-to preserve continuum emission. If you wish to remove continuum
+to preserve continuum emission. If you wish to remove the continuum
 contribution, use the \cmd{preserve} argument:
 
 \begin{verbatim}
@@ -602,23 +628,26 @@ will want to scan-average the quotient spectra together.
  ASAP> av = average_time(q)
 \end{verbatim}
 
-If for some you want to average multiple sets of scan tables together you can:
+If for some you want to average multiple sets of scantables together
+you can:
 
 \begin{verbatim}
  ASAP> av = average_time(q1, q2, q3)
 \end{verbatim}
 
-The default is not to use any weighting, which probably is not what
-you want. The alternative is to use variance or Tsys weighting.
+The default is to use integration time weighting. The alternative is
+to use none, variance , Tsys weighting or Tsys \& integration time.
+
+\begin{verbatim}
+ ASAP> av = average_time(q, weight='tintsys')
+\end{verbatim}
 
 To use variance based weighting, you need to supply a mask saying which
 channel range you want it to calculate the variance from.
 
 \begin{verbatim}
- ASAP> av = average_time(q, weight='tsys')
-
- ASAP> msk = q.create_mask([200,400],[600,800])
- ASAP> av = average_time(q, mask=msk, weight='var')
+ ASAP> msk = scans.create_mask([200,400],[600,800])
+ ASAP> av = average_time(scans, mask=msk, weight='var')
 \end{verbatim}
 
 \subsection{Baseline fitting}
@@ -732,12 +761,12 @@ efficiency, telescope diameter or the Jy/K factor.
 As higher frequencies (particularly $>$20~GHz) it is important to make
 corrections for atmospheric opacity and gain-elevation effects. 
 
-Gain-elevation curves for some telescopes and frequencies and known to
-ASAP (currently only for Tid at 20~GHz).  In these cases making
+Gain-elevation curves for some telescopes and frequencies are known to
+ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases making
 gain-corrections is simple.  If the gain curve for your data is not
-known the user can supply either a gain polynomial or text file
+known, the user can supply either a gain polynomial or text file
 tabulating gain factors at a range of elevations (see \cmd{help
-gain\_el}). 
+scantable.gain\_el}).
 
 Examples:
 
@@ -748,8 +777,7 @@ Examples:
 
 Opacity corrections can be made with the global function
 \cmd{opacity}. This should work on all telescopes as long as a
-measurement of the opacity factor, was made during the
-observation.
+measurement of the opacity factor was made during the observation.
 
 \begin{verbatim}
   ASAP> scans.opacity(0.083)
@@ -757,17 +785,17 @@ observation.
 
 Note that at 3~mm Mopra uses a paddle wheel for Tsys calibration,
 which takes opacity effects into account (to first order). ASAP
-opacity corrections should not then be used for Mopra 3-mm data.
+opacity corrections should not be used for Mopra 3-mm data.
 
 \subsection{Frequency Frame Alignment}
 
-When time averaging a series of scans together, it is possible that the
-velocity scales are not exactly aligned.  This may be for many reasons
-such as not Doppler tracking the observations, errors in the Doppler
-tracking etc.  This mostly affects very long integrations or
-integrations averaged together from different days data.  Before
-averaging such data together, they should be frequency aligned using
-\cmd{freq\_align}. 
+When time averaging a series of scans together, it is possible that
+the velocity scales are not exactly aligned.  This may be for many
+reasons such as not Doppler tracking the observations, errors in the
+Doppler tracking etc.  This mostly affects very long integrations or
+integrations averaged together from different days.  Before averaging
+such data together, they should be frequency aligned using
+\cmd{freq\_align}.
 
 E.g.:
 
@@ -835,8 +863,8 @@ To copy a scantable the following does not work:
   ASAP> ss = scans
 \end{verbatim}
 
-as this just creates a reference to the original scantable. Any changes
-made to \cmd{ss} and also seen in \cmd{scans}. To duplicate a
+as this just creates a reference to the original scantable. Any
+changes made to \cmd{ss} are also seen in \cmd{scans}. To duplicate a
 scantable, use the copy function.
 
 \begin{verbatim}
@@ -850,20 +878,19 @@ into other packages. The formats are:
 
 \begin{itemize}
 \item[ASAP] This is the internal format used for ASAP. It is the only
-format that allows the user to restore the data, fits etc. without
-loosing any information.   As mentioned before, the ASAP scantable 
-is just an AIPS++ Table (a memory-based table).
-This function just converts it to a  disk-based
-Table.  You can the access that Table with the AIPS++ Table browser
-or any other AIPS++ tool.
+  format that allows the user to restore the data, fits etc. without
+  loosing any information.  As mentioned before, the ASAP scantable is
+  an AIPS++ Table (a memory-based table).  This function just converts
+  it to a disk-based Table.  You can the access that Table with the
+  AIPS++ Table browser or any other AIPS++ tool.
 
-\item[SDFITS] The Single Dish FITS format. This format was
-designed to for interchange between packages, but few packages
-actually can read it.
+\item[SDFITS] The Single Dish FITS format. This format was designed to
+  for interchange between packages, but few packages actually can read
+  it.
 
 \item[FITS] This uses simple ``image'' fits to save the data, each row
-being written to a separate fits file. This format is suitable for
-importing the data into CLASS.
+  being written to a separate fits file. This format is suitable for
+  importing the data into CLASS.
 
 \item[ASCII] A simple text based format suitable for the user to
 processing using Perl or, Python, gnuplot etc.
@@ -909,7 +936,7 @@ Typical plotter usage would be:
 \end{verbatim}
 
 This will plot multiple polarisation within each plot panel and each
-scanrow in a separate panel.
+scan row in a separate panel.
 
 Other possibilities include:
 
@@ -936,9 +963,9 @@ panel. If you have data larger than this (or for your own sanity) you
 need to select a subset of this data. This is particularly true for
 multibeam or multi IF data. The plotter \cmd{set\_cursor} function is
 used to select a subset of the data. The arguments \cmd{row},
-\cmd{beam} and \cmd{IF} all accept a vector if indices corresponding
-to tow, beam or IF selection. Only the selected data will be plotted.
-So select on polarisation, see section~\ref{sec:polplot}.
+\cmd{beam} and \cmd{IF} all accept a vector of indices corresponding
+to row, beam or IF selection. Only the selected data will be plotted.
+To select on polarisation, see section~\ref{sec:polplot}.
 
 Examples:
 
@@ -956,7 +983,10 @@ Examples:
   ASAP> plotter.set_cursor(IF=[1], beam=[0,2], row=range(10))
 \end{verbatim}
 
-\subsection{Plot control}
+Note that the plotter cursor selection is independent of the scantable
+cursor.
+
+\subsection{Plot Control}
 
 The plotter window has a row of buttons on the lower left. These can
 be used to control the plotter (mostly for zooming the individual
@@ -984,8 +1014,6 @@ was previously.
 
 \end{itemize}
 
-\subsection{Plot selection}
-
 \subsection{Other control}
 
 The plotter has a number of functions to describe the layout of the
@@ -999,7 +1027,13 @@ To set the exact velocity or channel range to be plotted use the
   ASAP> scans.set_unit('km/s')
   ASAP> plotter.plot(scans)
   ASAP> plotter.set_range(-150,-50)
-  ASAP> plotter.set_range()
+  ASAP> plotter.set_range() # To reset
+\end{verbatim}
+
+Both the range of the ``x'' and ``y'' axis can be set at once, if desired:
+
+\begin{verbatim}
+  ASAP> plotter.set_range(-10,30,-1,6.6)
 \end{verbatim}
 
 To save a hardcopy of the current plot, use the save function, e.g. 
@@ -1045,8 +1079,8 @@ band edge effects or RFI you must set a mask.
   ASAP> f.get_parameters()
 \end{verbatim}
 
-If you wish, the initial parameter guesses can be specified specific
-parameters can be fixed:
+If you wish, the initial parameter guesses can be specified and
+specific parameters can be fixed:
 
 \begin{verbatim}
   ASAP> f = fitter()
@@ -1076,6 +1110,27 @@ Examples:
   ASAP> f.plot(components=[-1,0,2])  # -1 means the compoment sum
 \end{verbatim}
 
+\subsection{Fit saving}
+
+One you are happy with your fit, it is possible to store it as part of
+the scantable.
+
+\begin{verbatim}
+  ASAP> f.storefit()
+\end{verbatim}
+
+This will be saved to disk with the data, if the ``ASAP'' file format
+is selected. Multiple fits to the same data can be stored in the
+scantable. 
+
+The scantable function \cmd{get\_fit} can be used to retrieve the
+stored fits. Currently the fit parameters are just printed to the
+screen.
+
+\begin{verbatim}
+  ASAP> scans.get_fit(4) # Print fits for row 4
+\end{verbatim}
+
 \section{Polarisation}
 
 Currently ASAP only supports polarmetric analysis on linearly
@@ -1083,7 +1138,7 @@ polarised feeds and the cross polarisation products measured. Other
 cases will be added on an as needed basic.
 
 Conversions of linears to Stokes or Circular polarisations are done
-``on-the-fly''. Leakage cannot be corrected for nor are there routines
+``on-the-fly''. Leakage cannot be corrected for nor are these routines
 able to calibrate position angle offsets. 
 
 \subsection{Simple Calibration}
@@ -1092,10 +1147,10 @@ able to calibrate position angle offsets.
 file. This serverly hampers correct handling of polarimetry.}
 
 It is possible that there is a phase offset between polarisation which
-will effect the phase of the cross polarisation
-correlation. \cmd{rotate\_xyphase} can be used to correct for this
-error. The user must know how to determine the size of the phase
-offset.
+will effect the phase of the cross polarisation correlation, and so
+give rise to spurious polarisation. \cmd{rotate\_xyphase} can be used
+to correct for this error. The user must know how to determine the
+size of the phase offset themselves.
 
 \begin{verbatim}
   ASAP> scans.rotate_xyphase(10.5)
@@ -1153,8 +1208,6 @@ Example:
 \section{Function Summary}
 
 \begin{verbatim}
-
-    [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
@@ -1191,8 +1244,8 @@ Example:
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             history         - print the history of the scantable
-
-            average_time    - return the (weighted) time average of a scan
+            get_fit         - get a fit which has been stored witnh the data
+            average_time    - return the (weighted) time average of a scan 
                               or a list of scans
             average_pol     - average the polarisations together.
                               The dimension won't be reduced and
@@ -1200,7 +1253,7 @@ Example:
                               averaged spectrum.
             quotient        - return the on/off quotient
             scale           - return a scan scaled by a given factor
-            add             - return a scan with given value added
+            add             - return a scan with given value added 
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
@@ -1215,10 +1268,11 @@ Example:
                                  polarization O=Q+iU correlation
      [Math] Mainly functions which operate on more than one scantable
 
-            average_time    - return the (weighted) time average
+            average_time    - return the (weighted) time average 
                               of a list of scans
             quotient        - return the on/off quotient
-            simple_math     - simple mathematical operations on two scantables,                              'add', 'sub', 'mul', 'div'
+            simple_math     - simple mathematical operations on two scantables,
+                              'add', 'sub', 'mul', 'div'
      [Fitting]
         fitter
             auto_fit        - return a scan where the function is
@@ -1226,12 +1280,14 @@ Example:
             commit          - return a new scan where the fits have been
                               commited.
             fit             - execute the actual fitting process
+            store_fit       - store the fit paramaters in the data (scantable)
             get_chi2        - get the Chi^2
             set_scan        - set the scantable to be fit
             set_function    - set the fitting function
             set_parameters  - set the parameters for the function(s), and
                               set if they should be held fixed during fitting
-            set_gauss_parameters - same as above but specialised for individual                                   gaussian components
+            set_gauss_parameters - same as above but specialised for individual
+                                   gaussian components
             get_parameters  - get the fitted parameters
             plot            - plot the resulting fit and/or components and
                               residual
@@ -1243,13 +1299,14 @@ Example:
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
-            set_range       - set the abcissa 'zoom' range
+            set_cursor      - only plot a selected part of the data
+            set_range       - set a 'zoom' window
             set_legend      - specify user labels for the legend indeces
             set_title       - specify user labels for the panel indeces
             set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
             set_layout      - specify the multi-panel layout (rows,cols)
-
+            
     [Reading files]
         reader              - access rpfits/sdfits files
             read            - read in integrations
@@ -1264,21 +1321,36 @@ Example:
                               range(3) = [0,1,2], range(2,5) = [2,3,4]
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
-	list_rcparameters   - print out a list of possible values to be
-                              put into \$HOME/.asaprc
+        list_rcparameters   - print out a list of possible values to be
+                              put into .asaprc file
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
-
+        
     Note:
         How to use this with help:
                                          # function 'summary'
         [xxx] is just a category
-        Every 'sub-level' in this list should be replaces by a '.' Period when        using help
+        Every 'sub-level' in this list should be replaces by a '.' Period when
+        using help 
         Example:
             ASAP> help scantable # to get info on ths scantable
             ASAP> help scantable.summary # to get help on the scantable's
             ASAP> help average_time
+
+\end{verbatim}
+
+\section{Scantable Mathematics}
+
+It is possible to to simple mathematics directly on scantables from
+the command line using the \cmd{+, -, *, /} operators as well as their
+cousins \cmd{+=, -= *=, /=}. This works between two scantables or a
+scantable and a float. (Note that it does not work for integers).
+
+\begin{verbatim}
+  ASAP> sum = scan1+scan2
+  ASAP> scan2 = scan1+2.0
+  ASAP> scan *= 1.05
 \end{verbatim}
 
 %\section{Scripting}
