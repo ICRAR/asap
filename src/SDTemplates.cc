@@ -110,4 +110,5 @@ namespace mathutil {
 			const Vector<Float>&, 
 			const Vector<Bool>&, 
 			Bool, Bool);
+  template uInt addEntry(Vector<uInt>&, uInt);
 }
