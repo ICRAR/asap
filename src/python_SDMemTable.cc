@@ -61,6 +61,8 @@ void python_SDMemTable() {
          (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)
     .def("setpol", &SDMemTableWrapper::setPol)
+    .def("rotate_xyphase", &SDMemTableWrapper::rotateXYPhase,
+         (boost::python::arg("angle")=0.0) )
     .def("_setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
@@ -68,10 +70,12 @@ void python_SDMemTable() {
     .def("_getscan", &SDMemTableWrapper::getScan)
     .def("_getsource", &SDMemTableWrapper::getSource)
     .def("_getspectrum", &SDMemTableWrapper::getSpectrum,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichRow")=0))
+    .def("_getstokesspectrum", &SDMemTableWrapper::getStokesSpectrum,
+         (boost::python::arg("whichRow")=0),
+         (boost::python::arg("pol")=false) )
     .def("_setspectrum",&SDMemTableWrapper::setSpectrum,
          (boost::python::arg("whichRow")=0) )
-
     .def("_getabcissa", &SDMemTableWrapper::getAbcissa,
          (boost::python::arg("whichRow")=0) )
     .def("_getabcissalabel", &SDMemTableWrapper::getAbcissaString,
