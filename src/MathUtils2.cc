@@ -36,12 +36,11 @@
 #include "MathUtils.h"
 
 using namespace casa;
-//using namespace asap;
 
 template <class T>
 void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask, 
-	     const Vector<T>& in, const Vector<Bool>& mask, 
-	     Bool relaxed, Bool ignoreOther) {
+		       const Vector<T>& in, const Vector<Bool>& mask, 
+		       Bool relaxed, Bool ignoreOther) {
 
   Vector< Vector<T> > weights(8);
   Vector<Float> vals(3);

@@ -55,6 +55,7 @@
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
 
+#include "Definitions.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 
@@ -99,10 +100,10 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Axes (should be in header)
 
-   const uInt beamAxis = 0;
-   const uInt ifAxis = 1;
-   const uInt stokesAxis = 2;
-   const uInt chanAxis = 3;
+   const uInt beamAxis = asap::BeamAxis;
+   const uInt ifAxis = asap::IFAxis;
+   const uInt stokesAxis = asap::PolAxis;
+   const uInt chanAxis = asap::ChanAxis;
    const Unit RAD(String("rad"));
 
 // Temps
@@ -206,20 +207,23 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Write out as FITS Image file
 
-   
          ostringstream oss;
-         oss << "row" << iRow << "_beam" << pos(0) << "_if" << pos(1) << "_pol" << pos(2) << "_" << src(iRow) << ".fits";
+         oss << "row" << iRow << "_beam" << pos(0) << "_if" 
+	     << pos(1) << "_pol" << pos(2) << "_" << src(iRow) << ".fits";
          String fileName;
          if (rootName.length()>0) {
             fileName = rootName + "_" + String(oss);
          } else {
             fileName = String(oss);
          }
-         if (verbose) cerr << "Writing row " << iRow << " into file " << fileName << endl;
+         if (verbose) cerr << "Writing row " << iRow 
+			   << " into file " << fileName << endl;
 //
-         Bool ok = ImageFITSConverter::ImageToFITS (errMsg, tIm, fileName, maxMem, preferVelocity,
-                                                    opticalVelocity, bitPix, minPix, maxPix, overWrite,
-                                                    degLast, reallyVerbose);
+         Bool ok = ImageFITSConverter::ImageToFITS(errMsg, tIm, fileName, 
+						   maxMem, preferVelocity,
+						   opticalVelocity, bitPix, 
+						   minPix, maxPix, overWrite,
+						   degLast, reallyVerbose);
          if (!ok) {
             cerr << "Error writing fits - " << errMsg << endl;
          }
@@ -239,7 +243,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 }
 
 
-Int SDFITSImageWriter::convertStokes (Int val)
+Int SDFITSImageWriter::convertStokes(Int val)
 {
    Stokes::StokesTypes stokes = Stokes::RR;
    if (val==0) {

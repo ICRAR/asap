@@ -29,8 +29,6 @@
 //# $Id$
 //#---------------------------------------------------------------------------
 
-#include "SDAsciiWriter.h"
-
 #include <casa/aips.h>
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/Vector.h>
@@ -38,6 +36,10 @@
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/MVAngle.h>
+
+
+#include <casa/iostream.h>
+#include <casa/fstream.h>
 
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <coordinates/Coordinates/SpectralCoordinate.h>
@@ -50,12 +52,10 @@
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
 
+#include "Definitions.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
-
-#include <casa/iostream.h>
-#include <casa/fstream.h>
-
+#include "SDAsciiWriter.h"
 
 using namespace casa;
 using namespace asap;
@@ -68,7 +68,7 @@ SDAsciiWriter::~SDAsciiWriter()
 {;}
 
 
-Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
+Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
 {
 
 // Get global Header from Table
@@ -84,13 +84,6 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
    ROScalarColumn<Double> time(tab, "TIME");
    ROArrayColumn<uInt> freqid(tab, "FREQID");
    ROScalarColumn<String> src(tab, "SRCNAME");
-
-// Axes (should be in header)
-
-   const uInt beamAxis = 0;
-   const uInt ifAxis = 1;
-   const uInt polAxis = 2;
-   const uInt chanAxis = 3;
 
 // Temps
 
@@ -108,8 +101,9 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
 
 // Write header
 
-   of << "row beam IF pol source longitude latitude time nchan spectrum mask" << endl;
-
+   of << "row beam IF pol source longitude latitude time nchan spectrum mask" 
+      << endl;
+   
 // Loop over rows
 
    const uInt nRows = sdTable.nRow();
@@ -130,8 +124,8 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
 
 // Iterate through data in this row by spectra
 
-      ReadOnlyVectorIterator<Float> itData(values, chanAxis);
-      ReadOnlyVectorIterator<Bool> itMask(mask, chanAxis);
+      ReadOnlyVectorIterator<Float> itData(values, asap::ChanAxis);
+      ReadOnlyVectorIterator<Bool> itMask(mask, asap::ChanAxis);
       while (!itData.pastEnd()) {
          const IPosition& pos = itData.pos();
 
@@ -143,19 +137,26 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
 // Direction
  
          dir.get(iRow, whichDir);
-         posDir(0) = pos(beamAxis);
+         posDir(0) = pos(asap::BeamAxis);
          posDir(1) = 0;
          lonLat[0] = whichDir(posDir);
 //
-         posDir(0) = pos(beamAxis);
+         posDir(0) = pos(asap::BeamAxis);
          posDir(1) = 1;
          lonLat[1] = whichDir(posDir);
 
-// Write.  This formats the vectors as [,,,,]  which we probably don't want.
+	 // Write.  This formats the vectors as [,,,,] which we
+	 // probably don't want.
+	 uInt ba = uInt(asap::BeamAxis);
+	 uInt ia = uInt(asap::IFAxis);
+	 uInt pa = uInt(asap::PolAxis);
 
-         of << iRow << "  " << pos(beamAxis) << " " <<  pos(ifAxis) << " " << pos(polAxis) << " " <<
-               src(iRow) <<  " " << formatDirection(lonLat) << " " << dTmp << " " << 
-               itData.vector().nelements() << " " << itData.vector() << "  " << itMask.vector() << endl;
+         of << iRow << "  " << pos(ba) << " " 
+	    << pos(ia) << " " << pos(pa) << " "
+	    << src(iRow) <<  " " << formatDirection(lonLat) << " " 
+	    << dTmp << " " 
+	    << itData.vector().nelements() << " " << itData.vector() 
+	    << "  " << itMask.vector() << endl;
 
 // Next spectrum
 
@@ -171,7 +172,7 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable,  const String& fileName)
 }
 
 
-Int SDAsciiWriter::convertStokes (Int val)
+Int SDAsciiWriter::convertStokes(Int val)
 {
    Stokes::StokesTypes stokes = Stokes::RR;
    if (val==0) {
@@ -190,7 +191,7 @@ Int SDAsciiWriter::convertStokes (Int val)
 }
 
 
-String SDAsciiWriter::formatDirection (const Vector<Double>& lonLat)
+String SDAsciiWriter::formatDirection(const Vector<Double>& lonLat)
 { 
    MVAngle x1(lonLat(0));
    String s1 = x1.string(MVAngle::TIME, 12);

@@ -52,8 +52,8 @@ public:
   casa::Bool write(const SDMemTable& table, const casa::String& name);
 
 private:
-   casa::Int convertStokes (casa::Int val);
-   casa::String formatDirection (const casa::Vector<casa::Double>& lonLat);
+   casa::Int convertStokes(casa::Int val);
+   casa::String formatDirection(const casa::Vector<casa::Double>& lonLat);
 };
 
 }// namespace

@@ -51,7 +51,7 @@ public:
                    casa::Bool verbose=casa::True);
 
 private:
-   casa::Int convertStokes (casa::Int val);
+   casa::Int convertStokes(casa::Int val);
 };
 
 }// namespace

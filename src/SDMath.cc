@@ -58,6 +58,7 @@
 #include <coordinates/Coordinates/CoordinateUtil.h>
 
 #include "MathUtils.h"
+#include "Definitions.h"
 #include "SDContainer.h"
 #include "SDMemTable.h"
 
@@ -108,7 +109,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 
 // Setup
 
-  const uInt axis = 3;                                     // Spectral axis
+  const uInt axis = asap::ChanAxis;                      // Spectral axis
   IPosition shp = in[0]->rowAsMaskedArray(0).shape();      // Must not change
   Array<Float> arr(shp);
   Array<Bool> barr(shp);
@@ -478,7 +479,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 
 // Loop over rows and bin along channel axis
   
-  const uInt axis = 3;
+  const uInt axis = asap::ChanAxis;
   for (uInt i=0; i < in.nRow(); ++i) {
     SDContainer sc = in.getSDContainer(i);
 //
@@ -587,8 +588,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask)
 //   convertWeightString(wtType, weight);
 
    const uInt nRows = in.nRow();
-   const uInt polAxis = 2;                     // Polarization axis
-   const uInt chanAxis = 3;                    // Spectrum axis
+   const uInt polAxis = asap::PolAxis;                     // Polarization axis
+   const uInt chanAxis = asap::ChanAxis;                    // Spectrum axis
 
 // Create output Table and reshape number of polarizations
 
@@ -718,7 +719,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 // Number of channels
 
-   const uInt chanAxis = 3;                                     // Spectral axis
+   const uInt chanAxis = asap::ChanAxis;  // Spectral axis
    SDHeader sh = in.getSDHeader();
    const uInt nChan = sh.nchan;
 

@@ -56,21 +56,24 @@ namespace SDMathWrapper {
   SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
 // Smooth
-  void smoothInSitu (SDMemTableWrapper& in, const std::string& kernel, float width, bool doAll);
-  SDMemTableWrapper smooth (const SDMemTableWrapper& in, const std::string& kernel, float width, bool doAll);
+  void smoothInSitu(SDMemTableWrapper& in, const std::string& kernel,
+		     float width, bool doAll);
+  SDMemTableWrapper smooth(const SDMemTableWrapper& in,
+			   const std::string& kernel, float width, bool doAll);
 
 // Bin up
-  void binInSitu (SDMemTableWrapper& in, int width);
+  void binInSitu(SDMemTableWrapper& in, int width);
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
 // Average in time
-  SDMemTableWrapper average (boost::python::tuple tpl,
-                             const std::vector<bool>& mask,
-                             bool scanAv, const std::string& wt);
+  SDMemTableWrapper average(boost::python::tuple tpl,
+			    const std::vector<bool>& mask,
+			    bool scanAv, const std::string& wt);
 
 // Average polarizations
-  void averagePolInSitu (SDMemTableWrapper& in,  const std::vector<bool>& mask);
-  SDMemTableWrapper averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask);
+  void averagePolInSitu(SDMemTableWrapper& in,  const std::vector<bool>& mask);
+  SDMemTableWrapper averagePol(const SDMemTableWrapper& in,
+			       const std::vector<bool>& mask);
 
 // Statistics
   std::vector<float> statistic(const SDMemTableWrapper& in,

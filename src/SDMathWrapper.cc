@@ -51,7 +51,8 @@ void SDMathWrapper::scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll)
   const uInt what = 0;
 //
   SDMath sdm;
-  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(factor), Bool(doAll), what);
+  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(factor), 
+					Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
 }
@@ -62,7 +63,9 @@ SDMemTableWrapper SDMathWrapper::scale(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 0;
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(factor), Bool(doAll), what));
+  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn,
+						  Float(factor), 
+						  Bool(doAll), what));
 }
 
 
@@ -73,7 +76,8 @@ void SDMathWrapper::addInSitu(SDMemTableWrapper& in, float offset, bool doAll)
   const uInt what = 1;
 //
   SDMath sdm;
-  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(offset), Bool(doAll), what);
+  SDMemTable* pOut = sdm.simpleOperate (*pIn, Float(offset), 
+					Bool(doAll), what);
   *pIn = *pOut;
    delete pOut;
 }
@@ -84,26 +88,32 @@ SDMemTableWrapper SDMathWrapper::add(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   const uInt what = 1;
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(offset), Bool(doAll), what));
+  return CountedPtr<SDMemTable>(sdm.simpleOperate(*pIn, Float(offset),
+						  Bool(doAll), what));
 }
 
 
-void SDMathWrapper::smoothInSitu(SDMemTableWrapper& in, const std::string& kernel, float width, bool doAll)
+void SDMathWrapper::smoothInSitu(SDMemTableWrapper& in, 
+				 const std::string& kernel, float width,
+				 bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
-  SDMemTable* pOut = sdm.smooth(*pIn, String(kernel), Float(width), Bool(doAll));
+  SDMemTable* pOut = sdm.smooth(*pIn, String(kernel), 
+				Float(width), Bool(doAll));
   *pIn = *pOut;
    delete pOut;
 }
 
 
-SDMemTableWrapper SDMathWrapper::smooth (const SDMemTableWrapper& in, const std::string& kernel, 
+SDMemTableWrapper SDMathWrapper::smooth (const SDMemTableWrapper& in, 
+					 const std::string& kernel, 
                                          float width, bool doAll)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.smooth(*pIn, String(kernel), Float(width), Bool(doAll)));
+  return CountedPtr<SDMemTable>(sdm.smooth(*pIn, String(kernel), 
+					   Float(width), Bool(doAll)));
 }
 
 
@@ -126,7 +136,8 @@ SDMemTableWrapper SDMathWrapper::bin (const SDMemTableWrapper& in,
 }
 
 
-void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, const std::vector<bool>& mask)
+void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, 
+				     const std::vector<bool>& mask)
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
@@ -135,7 +146,8 @@ void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, const std::vector<bo
    delete pOut;
 }
 
-SDMemTableWrapper SDMathWrapper::averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask)
+SDMemTableWrapper SDMathWrapper::averagePol (const SDMemTableWrapper& in,
+					     const std::vector<bool>& mask)
 
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();

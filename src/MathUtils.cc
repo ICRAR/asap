@@ -39,9 +39,8 @@
 
 using namespace casa;
 
-
-
-float mathutil::statistics (const String& which,  const MaskedArray<Float>& data)
+float mathutil::statistics(const String& which,  
+			   const MaskedArray<Float>& data)
 {
    String str(which);
    str.upcase();
@@ -70,7 +69,7 @@ float mathutil::statistics (const String& which,  const MaskedArray<Float>& data
 }
   
 
-void mathutil::replaceMaskByZero (Vector<Float>& data, const Vector<Bool>& mask)
+void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
 {
    for (uInt i=0; i<data.nelements(); i++) {
       if (!mask[i]) data[i] = 0.0;
