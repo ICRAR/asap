@@ -376,6 +376,7 @@ class scantable(sdtable):
             panel:    set up multiple panels, currently not working.
         """
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
+
         validyax = ['spectrum','tsys']
         if not self._p:
             from asap.asaplot import ASAPlot
@@ -389,20 +390,24 @@ class scantable(sdtable):
             if n < 2:
                 print "Only one integration. Can't plot."
                 return
-        if panel == 'Time':
-            npan = self.nrow()
         self._p.hold()
         self._p.clear()
+        if panel == 'Time':
+            npan = self.nrow()
+            self._p.set_panels(rows=npan)
         xlab,ylab,tlab = None,None,None
-        vb = self._verbose
+        vb = self._verbose()
         self._verbose(False)
         sel = self.get_selection()
         for i in range(npan):
+            self._p.subplot(i)
             for j in range(validcol[col]):
                 x = None
                 y = None
                 m = None
                 tlab = self._getsourcename(i)
+                import re
+                tlab = re.sub('_S','',tlab)
                 if col == 'Beam':
                     self.setbeam(j)
                 elif col == 'IF':
@@ -425,9 +430,9 @@ class scantable(sdtable):
                 llab = col+' '+str(j)
                 self._p.set_line(label=llab)
                 self._p.plot(x,y,m)
-        self._p.set_axes('xlabel',xlab)
-        self._p.set_axes('ylabel',ylab)
-        self._p.set_axes('title',tlab)
+            self._p.set_axes('xlabel',xlab)
+            self._p.set_axes('ylabel',ylab)
+            self._p.set_axes('title',tlab)
         self._p.release()
         self.set_selection(sel[0],sel[1],sel[2])
         self._verbose(vb)
