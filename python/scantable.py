@@ -32,7 +32,6 @@ class scantable(sdtable):
         if isinstance(filename,sdtable):
             sdtable.__init__(self, filename)            
             if unit is not None:
-                print 'Setting brightness unit to ', unit
                 sdtable.set_fluxunit(unit)                       
         else:
             try:
@@ -45,7 +44,6 @@ class scantable(sdtable):
                 if stat.S_ISREG(st(filename+'/table.info')[stat.ST_MODE]):
                     sdtable.__init__(self, filename)
                     if unit is not None:
-                        print 'Setting brightness unit to ', unit
                         self.set_fluxunit(unit)                       
                 else:
                     print 'The given file is not a valid asap table'

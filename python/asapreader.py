@@ -18,7 +18,8 @@ class reader(sdreader):
         del r          # destroys the reader
     """
 
-    def __init__(self, filename,unit=None, theif=None, thebeam=None):
+    def __init__(self, filename, unit=None, theif=None, thebeam=None):
+        self.unit = unit
         """
         Parameters:
             filename:    the name of an rpfits/sdfits/ms file on disk
@@ -30,13 +31,11 @@ class reader(sdreader):
         Example:
             r = reader('/tmp/2001-09-01_0332_P363.rpf', theif=2)
         """
-        if unit is None:
-            unit = ""
         if theif is None:
             theif = -1
         if thebeam is None:
             thebeam = -1
-        sdreader.__init__(self, filename, unit, theif, thebeam)
+        sdreader.__init__(self, filename, theif, thebeam)
 
     def read(self,integrations=None):
         """
@@ -58,6 +57,8 @@ class reader(sdreader):
         print "Reading integrations from disk..."
         sdreader.read(self,integrations)
         tbl = sdreader.getdata(self)
+        if self.unit is not None:
+            tbl.set_fluxunit(self.unit)
         return scantable(tbl)
 
     def summary(self):
