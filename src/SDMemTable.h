@@ -99,6 +99,9 @@ public:
   virtual void setRestFreqs(std::vector<double> freqs, 
 			    const std::string& theunit);
   virtual void setCoordInfo(std::vector<string> theinfo);
+
+  std::string getFluxUnit() const;
+
   // set the current value
   virtual bool setIF(casa::Int whichIF=0);
   virtual bool setBeam(casa::Int whichBeam=0);
@@ -113,14 +116,16 @@ public:
   virtual casa::Int getIF() const { return IFSel_; }
   virtual casa::Int getBeam() const { return beamSel_; }
   virtual casa::Int getPol() const { return polSel_; }
-  virtual std::vector<string> getCoordInfo() const;
+  virtual std::vector<std::string> getCoordInfo() const;
 
   // number of scans in table
   virtual casa::Int nScan() const;
 
-  // print a summary to stdout
+  // get a summary of the table
   virtual std::string summary();
 
+  std::vector<std::string> history(int whichRow=0) const;
+  bool appendHistory(const std::string& hist, int whichRow=0);
   // write to disk as aips++ table
   void makePersistent(const std::string& filename);
 
@@ -144,7 +149,8 @@ public:
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
   casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow,
-						  casa::Bool useSelection = casa::False) const;
+						  casa::Bool useSelection = 
+						  casa::False) const;
 
   casa::SpectralCoordinate getCoordinate(casa::uInt whichIdx) const;
   casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord, 
@@ -152,8 +158,11 @@ public:
 
   casa::Int nCoordinates() const;
 
+
   std::vector<double> getAbcissa(int whichRow=0) const;
   std::string getAbcissaString(casa::Int whichRow=0) const;
+  
+  casa::MDirection getDirection(casa::Int whichRow=0) const; 
 
 private:
   // utility func for nice printout

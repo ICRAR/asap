@@ -29,6 +29,8 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
+#include <map>
+
 #include <casa/aips.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
@@ -37,6 +39,7 @@
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/Vector.h>
 
 #include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableDesc.h>
@@ -53,8 +56,10 @@
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <casa/Quanta/MVTime.h>
 
+#include "Definitions.h"
 #include "SDMemTable.h"
 #include "SDContainer.h"
+
 
 using namespace casa;
 using namespace asap;
@@ -62,18 +67,23 @@ using namespace asap;
 SDMemTable::SDMemTable() :
   IFSel_(0),
   beamSel_(0),
-  polSel_(0) {
+  polSel_(0) 
+{
   setup();
 }
+
 SDMemTable::SDMemTable(const std::string& name) :
   IFSel_(0),
   beamSel_(0),
-  polSel_(0) {
+  polSel_(0)
+{
   Table tab(name);
   table_ = tab.copyToMemoryTable("dummy");
+  //cerr << "hello from C SDMemTable @ " << this << endl;
 }
 
-SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
+SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
+{
   IFSel_= other.IFSel_;
   beamSel_= other.beamSel_;
   polSel_= other.polSel_;
@@ -87,29 +97,34 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear) {
     beamSel_ = other.beamSel_;
     polSel_ = other.polSel_;
   }
+  //cerr << "hello from CC SDMemTable @ " << this << endl;
 }
 
 SDMemTable::SDMemTable(const Table& tab, const std::string& exprs) :
   IFSel_(0),
   beamSel_(0),
-  polSel_(0) {
+  polSel_(0)
+{
   Table t = tableCommand(exprs,tab);
   if (t.nrow() == 0)
       throw(AipsError("Query unsuccessful."));
   table_ = t.copyToMemoryTable("dummy");
 }
 
-SDMemTable::~SDMemTable(){
+SDMemTable::~SDMemTable()
+{
   //cerr << "goodbye from SDMemTable @ " << this << endl;
 }
 
-SDMemTable SDMemTable::getScan(Int scanID) const {
+SDMemTable SDMemTable::getScan(Int scanID) const
+{
   String cond("SELECT * from $1 WHERE SCANID == ");
   cond += String::toString(scanID);
   return SDMemTable(table_, cond);
 }
 
-SDMemTable &SDMemTable::operator=(const SDMemTable& other) {
+SDMemTable &SDMemTable::operator=(const SDMemTable& other)
+{
   if (this != &other) {
      IFSel_= other.IFSel_;
      beamSel_= other.beamSel_;
@@ -117,17 +132,20 @@ SDMemTable &SDMemTable::operator=(const SDMemTable& other) {
      chanMask_.resize(0);
      chanMask_ = other.chanMask_;
      table_ = other.table_.copyToMemoryTable(String("dummy"));
-   }
+  }
+  //cerr << "hello from ASS SDMemTable @ " << this << endl;
   return *this;
 }
 
-SDMemTable SDMemTable::getSource(const std::string& source) const {
+SDMemTable SDMemTable::getSource(const std::string& source) const
+{
   String cond("SELECT * from $1 WHERE SRCNAME == ");
   cond += source;
   return SDMemTable(table_, cond);
 }
 
-void SDMemTable::setup() {
+void SDMemTable::setup()
+{
   TableDesc td("", "1", TableDesc::Scratch);
   td.comment() = "A SDMemTable";
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
@@ -146,6 +164,7 @@ void SDMemTable::setup() {
   td.addColumn(ScalarColumnDesc<Float>("ELEVATION"));
   td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
   td.addColumn(ScalarColumnDesc<Int>("REFBEAM"));
+  td.addColumn(ArrayColumnDesc<String>("HISTORY"));
 
   // Now create a new table from the description.
 
@@ -153,14 +172,16 @@ void SDMemTable::setup() {
   table_ = Table(aNewTab, Table::Memory, 0);
 }
 
-std::string SDMemTable::getSourceName(Int whichRow) const {
+std::string SDMemTable::getSourceName(Int whichRow) const
+{
   ROScalarColumn<String> src(table_, "SRCNAME");
   String name;
   src.get(whichRow, name);
   return name;
 }
 
-std::string SDMemTable::getTime(Int whichRow) const {
+std::string SDMemTable::getTime(Int whichRow) const
+{
   ROScalarColumn<Double> src(table_, "TIME");
   Double tm;
   src.get(whichRow, tm);
@@ -171,14 +192,16 @@ std::string SDMemTable::getTime(Int whichRow) const {
   String str(oss);
   return str;
 }
-double SDMemTable::getInterval(Int whichRow) const {
+double SDMemTable::getInterval(Int whichRow) const
+{
   ROScalarColumn<Double> src(table_, "INTERVAL");
   Double intval;
   src.get(whichRow, intval);
   return intval;
 }
 
-bool SDMemTable::setIF(Int whichIF) {
+bool SDMemTable::setIF(Int whichIF)
+{
   if ( whichIF >= 0 && whichIF < nIF()) {
     IFSel_ = whichIF;
     return true;
@@ -186,7 +209,8 @@ bool SDMemTable::setIF(Int whichIF) {
   return false;
 }
 
-bool SDMemTable::setBeam(Int whichBeam) {
+bool SDMemTable::setBeam(Int whichBeam)
+{
   if ( whichBeam >= 0 && whichBeam < nBeam()) {
     beamSel_ = whichBeam;
     return true;
@@ -194,7 +218,8 @@ bool SDMemTable::setBeam(Int whichBeam) {
   return false;
 }
 
-bool SDMemTable::setPol(Int whichPol) {
+bool SDMemTable::setPol(Int whichPol)
+{
   if ( whichPol >= 0 && whichPol < nPol()) {
     polSel_ = whichPol;
     return true;
@@ -202,7 +227,8 @@ bool SDMemTable::setPol(Int whichPol) {
   return false;
 }
 
-bool SDMemTable::setMask(std::vector<int> whichChans) {
+bool SDMemTable::setMask(std::vector<int> whichChans)
+{
   ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   std::vector<int>::iterator it;
   uInt n = spec.shape(0)(3);
@@ -224,11 +250,11 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
   spec.get(whichRow, arr);
-  ArrayAccessor<uChar, Axis<0> > aa0(arr);
+  ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<uChar, Axis<2> > aa2(aa1);
+  ArrayAccessor<uChar, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
   Bool useUserMask = ( chanMask_.size() == arr.shape()(3) );
@@ -238,7 +264,7 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   std::vector<bool>::iterator miter;
   miter = tmp.begin();
 
-  for (ArrayAccessor<uChar, Axis<3> > i(aa2); i != i.end(); ++i) {
+  for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     bool out =!static_cast<bool>(*i);
     if (useUserMask) {
       out = out && (*miter);
@@ -248,24 +274,25 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
   }
   return mask;
 }
-std::vector<float> SDMemTable::getSpectrum(Int whichRow) const {
-
+std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
+{
   std::vector<float> spectrum;
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   spec.get(whichRow, arr);
-  ArrayAccessor<Float, Axis<0> > aa0(arr);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<Float, Axis<2> > aa2(aa1);
+  ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
-  for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     spectrum.push_back(*i);
   }
   return spectrum;
 }
-std::vector<string> SDMemTable::getCoordInfo() const {
+std::vector<string> SDMemTable::getCoordInfo() const
+{
   String un;
   Table t = table_.keywordSet().asTable("FREQUENCIES");
   String sunit;
@@ -282,15 +309,14 @@ std::vector<string> SDMemTable::getCoordInfo() const {
   return inf;
 }
 
-void SDMemTable::setCoordInfo(std::vector<string> theinfo) {
-
+void SDMemTable::setCoordInfo(std::vector<string> theinfo)
+{
   std::vector<string>::iterator it;
   String un,rfrm,dpl;
   un = theinfo[0];
   rfrm = theinfo[1];
   dpl = theinfo[2];
 
-  //String un(theunit);
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
   Vector<Double> rstf;
   t.keywordSet().get("RESTFREQS",rstf);
@@ -320,7 +346,8 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo) {
 
 }
 
-std::vector<double> SDMemTable::getAbcissa(Int whichRow) const {
+std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
+{
   std::vector<double> absc(nChan());
   Vector<Double> absc1(nChan());
   indgen(absc1);
@@ -330,27 +357,22 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const {
   uInt specidx = v(IFSel_);
   SpectralCoordinate spc = getCoordinate(specidx);
   Table t = table_.keywordSet().asTable("FREQUENCIES");
-  String rf;
-  //t.keywordSet().get("EQUINOX",rf);
-  MDirection::Types mdr;
-  //if (!MDirection::getType(mdr, rf)) {
-  mdr = MDirection::J2000;
-  //cout << "Unknown equinox using J2000" << endl;
-  //}
-  ROArrayColumn<Double> dir(table_, "DIRECTION");
-  Array<Double> posit;
-  dir.get(whichRow,posit);
-  Vector<Double> wpos(2);
-  wpos[0] = posit(IPosition(2,beamSel_,0));
-  wpos[1] = posit(IPosition(2,beamSel_,1));
-  Quantum<Double> lon(wpos[0],Unit(String("rad")));
-  Quantum<Double> lat(wpos[1],Unit(String("rad")));
-  MDirection direct(lon, lat, mdr);
+
+  MDirection direct = getDirection(whichRow);
+
   ROScalarColumn<Double> tme(table_, "TIME");
   Double obstime;
   tme.get(whichRow,obstime);
   MVEpoch tm2(Quantum<Double>(obstime, Unit(String("d"))));
-  MEpoch epoch(tm2);
+  MEpoch::Types met;
+  String ep;
+  table_.keywordSet().get("Epoch",ep);
+  if (!MEpoch::getType(met, ep)) {
+    cerr << "Epoch type uknown - using UTC" << endl;
+    met = MEpoch::UTC;
+  }
+
+  MEpoch epoch(tm2, met);
 
   Vector<Double> antpos;
   table_.keywordSet().get("AntennaPosition", antpos);
@@ -447,7 +469,8 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
   return s;
 }
 
-void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow) {
+void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow)
+{
   ArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   spec.get(whichRow, arr);
@@ -455,35 +478,36 @@ void SDMemTable::setSpectrum(std::vector<float> spectrum, int whichRow) {
     throw(AipsError("Attempting to set spectrum with incorrect length."));
   }
 
-  ArrayAccessor<Float, Axis<0> > aa0(arr);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<Float, Axis<2> > aa2(aa1);
+  ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
   std::vector<float>::iterator it = spectrum.begin();
-  for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     (*i) = Float(*it);
     it++;
   }
   spec.put(whichRow, arr);
 }
 
-void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const {
+void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) const
+{
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   spec.get(whichRow, arr);
   spectrum.resize(arr.shape()(3));
-  ArrayAccessor<Float, Axis<0> > aa0(arr);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<Float, Axis<2> > aa2(aa1);
+  ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
-  ArrayAccessor<Float, Axis<0> > va(spectrum);
-  for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > va(spectrum);
+  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     (*va) = (*i);
     va++;
   }
@@ -495,23 +519,23 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
   spec.get(whichRow, arr);
   mask.resize(arr.shape()(3));
 
-  ArrayAccessor<uChar, Axis<0> > aa0(arr);
+  ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<uChar, Axis<2> > aa2(aa1);
+  ArrayAccessor<uChar, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
   Bool useUserMask = ( chanMask_.size() == arr.shape()(3) );
 
-  ArrayAccessor<Bool, Axis<0> > va(mask);
+  ArrayAccessor<Bool, Axis<asap::BeamAxis> > va(mask);
   std::vector<bool> tmp;
   tmp = chanMask_; // WHY the fxxx do I have to make a copy here. The
                    // iterator should work on chanMask_??
   std::vector<bool>::iterator miter;
   miter = tmp.begin();
 
-  for (ArrayAccessor<uChar, Axis<3> > i(aa2); i != i.end(); ++i) {
+  for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     bool out =!static_cast<bool>(*i);
     if (useUserMask) {
       out = out && (*miter);
@@ -534,27 +558,28 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
   Array<Bool> barr(farr.shape());convertArray(barr, farr);
   MaskedArray<Float> marr;
   if (useSelection) {
-    ArrayAccessor<Float, Axis<0> > aa0(arr);
+    ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(arr);
     aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-    ArrayAccessor<Float, Axis<1> > aa1(aa0);
+    ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
     aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-    ArrayAccessor<Float, Axis<2> > aa2(aa1);
+    ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
     aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
-    ArrayAccessor<Bool, Axis<0> > baa0(barr);
+    ArrayAccessor<Bool, Axis<asap::BeamAxis> > baa0(barr);
     baa0.reset(baa0.begin(uInt(beamSel_)));//go to beam
-    ArrayAccessor<Bool, Axis<1> > baa1(baa0);
+    ArrayAccessor<Bool, Axis<asap::IFAxis> > baa1(baa0);
     baa1.reset(baa1.begin(uInt(IFSel_)));// go to IF
-    ArrayAccessor<Bool, Axis<2> > baa2(baa1);
+    ArrayAccessor<Bool, Axis<asap::PolAxis> > baa2(baa1);
     baa2.reset(baa2.begin(uInt(polSel_)));// go to pol
 
     Vector<Float> a(arr.shape()(3));
     Vector<Bool> b(barr.shape()(3));
-    ArrayAccessor<Float, Axis<0> > a0(a);
-    ArrayAccessor<Bool, Axis<0> > b0(b);
+    ArrayAccessor<Float, Axis<asap::BeamAxis> > a0(a);
+    ArrayAccessor<Bool, Axis<asap::BeamAxis> > b0(b);
 
-    ArrayAccessor<Bool, Axis<3> > j(baa2);
-    for (ArrayAccessor<Float, Axis<3> > i(aa2); i != i.end(); ++i) {
+    ArrayAccessor<Bool, Axis<asap::ChanAxis> > j(baa2);
+    for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); 
+	 i != i.end(); ++i) {
       (*a0) = (*i);
       (*b0) = !(*j);
       j++;
@@ -568,7 +593,8 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
   return marr;
 }
 
-Float SDMemTable::getTsys(Int whichRow) const {
+Float SDMemTable::getTsys(Int whichRow) const
+{
   ROArrayColumn<Float> ts(table_, "TSYS");
   Array<Float> arr;
   ts.get(whichRow, arr);
@@ -579,12 +605,36 @@ Float SDMemTable::getTsys(Int whichRow) const {
   return out;
 }
 
-SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx)  const {
+MDirection SDMemTable::getDirection(Int whichRow) const
+{
+  Float eq;
+  table_.keywordSet().get("Equinox",eq);
+  std::map<float,string> mp;
+  mp[2000.0] = "J2000";
+  mp[1950.0] = "B1950";
+  MDirection::Types mdr;
+  if (!MDirection::getType(mdr, mp[eq])) {
+    mdr = MDirection::J2000;
+    cerr  << "Unknown equinox using J2000" << endl;
+  }
+  ROArrayColumn<Double> dir(table_, "DIRECTION");
+  Array<Double> posit;
+  dir.get(whichRow,posit);
+  Vector<Double> wpos(2);
+  wpos[0] = posit(IPosition(2,beamSel_,0));
+  wpos[1] = posit(IPosition(2,beamSel_,1));
+  Quantum<Double> lon(wpos[0],Unit(String("rad")));
+  Quantum<Double> lat(wpos[1],Unit(String("rad")));
+  MDirection direct(lon, lat, mdr);
+  return direct;
+}
 
+SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx) const
+{
+  
   Table t = table_.keywordSet().asTable("FREQUENCIES");
   if (whichIdx > t.nrow() ) {
-    cerr << "SDMemTable::getCoordinate - whichIdx out of range" << endl;
-    return SpectralCoordinate();
+    throw(AipsError("SDMemTable::getCoordinate - whichIdx out of range"));
   }
 
   Double rp,rv,inc;
@@ -632,7 +682,8 @@ Int SDMemTable::nCoordinates() const
   return table_.keywordSet().asTable("FREQUENCIES").nrow();
 }
 
-void SDMemTable::setRestFreqs(std::vector<double> freqs, const std::string& theunit)
+void SDMemTable::setRestFreqs(std::vector<double> freqs, 
+			      const std::string& theunit)
 {
   Vector<Double> tvec(freqs);
   Quantum<Vector<Double> > q(tvec, String(theunit));
@@ -642,7 +693,8 @@ void SDMemTable::setRestFreqs(std::vector<double> freqs, const std::string& theu
   t.rwKeywordSet().define("RESTFREQS",tvec);
 }
 
-bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft) {
+bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
+{
   TableDesc td("", "1", TableDesc::Scratch);
   td.addColumn(ScalarColumnDesc<Double>("REFPIX"));
   td.addColumn(ScalarColumnDesc<Double>("REFVAL"));
@@ -666,18 +718,25 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft) {
   aTable.rwKeywordSet().define("UNIT", String(""));
   aTable.rwKeywordSet().define("DOPPLER", String("RADIO"));
   Vector<Double> rfvec;
+  String rfunit;
+  sdft.restFrequencies(rfvec,rfunit);
+  Quantum<Vector<Double> > q(rfvec, rfunit);
+  rfvec.resize();
+  rfvec = q.getValue("Hz");
   aTable.rwKeywordSet().define("RESTFREQS", rfvec);
   table_.rwKeywordSet().defineTable ("FREQUENCIES", aTable);
   return True;
 }
 
-SDFrequencyTable SDMemTable::getSDFreqTable() const  {
+SDFrequencyTable SDMemTable::getSDFreqTable() const
+{
   SDFrequencyTable sdft;
 
   return sdft;
 }
 
-bool SDMemTable::putSDContainer(const SDContainer& sdc) {
+bool SDMemTable::putSDContainer(const SDContainer& sdc)
+{
   ScalarColumn<Double> mjd(table_, "TIME");
   ScalarColumn<String> srcn(table_, "SRCNAME");
   ScalarColumn<String> fldn(table_, "FIELDNAME");
@@ -694,6 +753,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   ScalarColumn<Float> az(table_, "AZIMUTH");
   ScalarColumn<Float> el(table_, "ELEVATION");
   ScalarColumn<Float> para(table_, "PARANGLE");
+  ArrayColumn<String> hist(table_, "HISTORY");
 
   uInt rno = table_.nrow();
   table_.addRow();
@@ -714,11 +774,13 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc) {
   az.put(rno, sdc.azimuth);
   el.put(rno, sdc.elevation);
   para.put(rno, sdc.parangle);
+  hist.put(rno, sdc.getHistory());
 
   return true;
 }
 
-SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
+SDContainer SDMemTable::getSDContainer(uInt whichRow) const
+{
   ROScalarColumn<Double> mjd(table_, "TIME");
   ROScalarColumn<String> srcn(table_, "SRCNAME");
   ROScalarColumn<String> fldn(table_, "FIELDNAME");
@@ -735,6 +797,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   ROScalarColumn<Float> az(table_, "AZIMUTH");
   ROScalarColumn<Float> el(table_, "ELEVATION");
   ROScalarColumn<Float> para(table_, "PARANGLE");
+  ROArrayColumn<String> hist(table_, "HISTORY");
 
   SDContainer sdc(nBeam(),nIF(),nPol(),nChan());
   mjd.get(whichRow, sdc.timestamp);
@@ -755,6 +818,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   Array<uChar> flagtrum;
   Vector<uInt> fmap;
   Array<Double> direction;
+  Vector<String> histo;
   spec.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
   flags.get(whichRow, flagtrum);
@@ -765,11 +829,13 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const {
   sdc.putFreqMap(fmap);
   dir.get(whichRow, direction);
   sdc.putDirection(direction);
+  hist.get(whichRow, histo);
+  sdc.putHistory(histo);
   return sdc;
 }
 
-bool SDMemTable::putSDHeader(const SDHeader& sdh) {
-  table_.lock();
+bool SDMemTable::putSDHeader(const SDHeader& sdh)
+{
   table_.rwKeywordSet().define("nIF", sdh.nif);
   table_.rwKeywordSet().define("nBeam", sdh.nbeam);
   table_.rwKeywordSet().define("nPol", sdh.npol);
@@ -784,11 +850,13 @@ bool SDMemTable::putSDHeader(const SDHeader& sdh) {
   table_.rwKeywordSet().define("FreqRefVal", sdh.reffreq);
   table_.rwKeywordSet().define("Bandwidth", sdh.bandwidth);
   table_.rwKeywordSet().define("UTC", sdh.utc);
-  table_.unlock();
+  table_.rwKeywordSet().define("FluxUnit", sdh.fluxunit);
+  table_.rwKeywordSet().define("Epoch", sdh.epoch);
   return true;
 }
 
-SDHeader SDMemTable::getSDHeader() const {
+SDHeader SDMemTable::getSDHeader() const
+{
   SDHeader sdh;
   table_.keywordSet().get("nBeam",sdh.nbeam);
   table_.keywordSet().get("nIF",sdh.nif);
@@ -804,9 +872,12 @@ SDHeader SDMemTable::getSDHeader() const {
   table_.keywordSet().get("FreqRefVal", sdh.reffreq);
   table_.keywordSet().get("Bandwidth", sdh.bandwidth);
   table_.keywordSet().get("UTC", sdh.utc);
+  table_.keywordSet().get("FluxUnit", sdh.fluxunit);
+  table_.keywordSet().get("Epoch", sdh.epoch);
   return sdh;
 }
-void SDMemTable::makePersistent(const std::string& filename) {
+void SDMemTable::makePersistent(const std::string& filename)
+{
   table_.deepCopy(filename,Table::New);
 }
 
@@ -824,13 +895,21 @@ Int SDMemTable::nScan() const {
   return n;
 }
 
-String SDMemTable::formatSec(Double x) {
+String SDMemTable::formatSec(Double x)
+{
   Double xcop = x;
   MVTime mvt(xcop/24./3600.);  // make days
   if (x < 59.95)
     return  String("   ") + mvt.string(MVTime::TIME_CLEAN_NO_HM, 7)+"s";
   return mvt.string(MVTime::TIME_CLEAN_NO_H, 7)+" ";
 };
+
+std::string SDMemTable::getFluxUnit() const
+{
+  String tmp;
+  table_.keywordSet().get("FluxUnit", tmp);
+  return tmp;
+}
 
 std::string SDMemTable::summary()   {
   ROScalarColumn<Int> scans(table_, "SCANID");
@@ -855,6 +934,8 @@ std::string SDMemTable::summary()   {
   oss << setw(15) << "Obs. Type:" << tmp << endl;
   table_.keywordSet().get("AntennaName", tmp);
   oss << setw(15) << "Antenna Name:" << tmp << endl;
+  table_.keywordSet().get("FluxUnit", tmp);
+  oss << setw(15) << "Flux Unit:" << tmp << endl;
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
   Vector<Double> vec;
   t.keywordSet().get("RESTFREQS",vec);
@@ -898,7 +979,8 @@ std::string SDMemTable::summary()   {
   return String(oss);
 }
 
-Int SDMemTable::nBeam() const {
+Int SDMemTable::nBeam() const
+{
   Int n;
   table_.keywordSet().get("nBeam",n);
   return n;
@@ -918,16 +1000,39 @@ Int SDMemTable::nChan() const {
   table_.keywordSet().get("nChan",n);
   return n;
 }
+bool SDMemTable::appendHistory(const std::string& hist, int whichRow)
+{
+  ArrayColumn<String> histo(table_, "HISTORY");
+  Vector<String> history;
+  histo.get(whichRow, history);
+  history.resize(history.nelements()+1,True);
+  history[history.nelements()-1] = hist;
+  histo.put(whichRow, history);
+}
+
+std::vector<std::string> SDMemTable::history(int whichRow) const
+{
+  ROArrayColumn<String> hist(table_, "HISTORY");
+  Vector<String> history;
+  hist.get(whichRow, history);
+  std::vector<std::string> stlout;
+  // there is no Array<String>.tovector(std::vector<std::string>), so
+  // do it by hand
+  for (uInt i=0; i<history.nelements(); ++i) {
+    stlout.push_back(history[i]);
+  }
+  return stlout;
+}
 /*
 void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 
   std::vector<int>::iterator it;
-  ArrayAccessor<uChar, Axis<2> > j(flags_);
+  ArrayAccessor<uChar, Axis<asap::PolAxis> > j(flags_);
   for (it = whichChans.begin(); it != whichChans.end(); it++) {
     j.reset(j.begin(uInt(*it)));
-    for (ArrayAccessor<uChar, Axis<0> > i(j); i != i.end(); ++i) {
-      for (ArrayAccessor<uChar, Axis<1> > ii(i); ii != ii.end(); ++ii) {
-        for (ArrayAccessor<uChar, Axis<3> > iii(ii);
+    for (ArrayAccessor<uChar, Axis<asap::BeamAxis> > i(j); i != i.end(); ++i) {
+      for (ArrayAccessor<uChar, Axis<asap::IFAxis> > ii(i); ii != ii.end(); ++ii) {
+        for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > iii(ii);
              iii != iii.end(); ++iii) {
           (*iii) =
         }
@@ -937,19 +1042,20 @@ void SDMemTable::maskChannels(const std::vector<Int>& whichChans ) {
 
 }
 */
-void SDMemTable::flag(int whichRow) {
+void SDMemTable::flag(int whichRow)
+{
   ArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
   spec.get(whichRow, arr);
 
-  ArrayAccessor<uChar, Axis<0> > aa0(arr);
+  ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(arr);
   aa0.reset(aa0.begin(uInt(beamSel_)));//go to beam
-  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(uInt(IFSel_)));// go to IF
-  ArrayAccessor<uChar, Axis<2> > aa2(aa1);
+  ArrayAccessor<uChar, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
-  for (ArrayAccessor<uChar, Axis<3> > i(aa2); i != i.end(); ++i) {
+  for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     (*i) = uChar(True);
   }
 
