@@ -40,7 +40,7 @@ namespace python  {
 void python_SDWriter() {
   class_<SDWriterWrapper>("sdwriter")
     .def(init <> ())
-    .def(init <string> ())
+    .def(init <std::string> ())
     .def("setformat", &SDWriterWrapper::setFormat,
         (boost::python::arg("format")="SDFITS"))
     .def("write",     &SDWriterWrapper::write);
