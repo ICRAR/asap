@@ -48,7 +48,7 @@ public:
   SDWriter(const string &format = "SDFITS");
   ~SDWriter();
 
-// Format can be "SDIFTS", "FITS", or "MS2"
+// Format can be "SDFITS", "FITS", "MS2" or "ASCII"
   casa::Int setFormat(const string &format = "SDFITS");
   casa::Int write(const casa::CountedPtr<SDMemTable> table,
             const string &filename);

@@ -43,6 +43,7 @@
 #include "SDMemTable.h"
 #include "SDWriter.h"
 #include "SDFITSImageWriter.h"
+#include "SDAsciiWriter.h"
 
 using namespace casa;
 using namespace asap;
@@ -60,6 +61,8 @@ SDWriter::SDWriter(const std::string &format)
   } else if (cFormat == "SDFITS") {
     cWriter = new PKSSDwriter();
   } else if (cFormat == "FITS") {
+    cWriter = 0;
+  } else if (cFormat == "ASCII") {
     cWriter = 0;
   }
 }
@@ -91,6 +94,8 @@ Int SDWriter::setFormat(const std::string &format)
       cWriter = new PKSSDwriter();
     } else if (cFormat == "FITS") {
       cWriter = 0;
+    } else if (cFormat == "ASCII") {
+      cWriter = 0;
     }
   }
   return 0;
@@ -115,7 +120,14 @@ Int SDWriter::write(const CountedPtr<SDMemTable> table,
      } else {
         return 1;
      }
-  } 
+  } else if (cFormat=="ASCII") {
+     SDAsciiWriter iw;
+     if (iw.write(*table, filename)) {
+        return 0;
+     } else {
+        return 1;
+     }
+  }
 
 // MS or SDFITS
 
