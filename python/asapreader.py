@@ -16,6 +16,13 @@ class reader(sdreader):
         scans r.read() # reads in the complete file into 'scans'
         print scans    # summarises the contents
         del r          # destroys the reader
+
+    IMPORTANT: Due to limitations in the rpfits library, only one reader
+               can be created at a time.
+               r = reader('XYZ.rpf')
+               r2 = reader('ABC.rpf')
+               is NOT possible. This is a limitation affecting
+               rpfits ONLY.
     """
 
     def __init__(self, filename, unit=None, theif=None, thebeam=None):
@@ -78,7 +85,7 @@ class reader(sdreader):
         from asap import scantable
         tbl = scantable(sdreader._getdata(self))
         sdreader._reset(self)
-        print tbl.summary(name=name)
+        tbl.summary(name)
         return
 ##     def reset(self):
 ##         """

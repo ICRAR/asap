@@ -166,9 +166,9 @@ class scantable(sdtable):
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
-            from os.path import expandvars, isfile
+            from os.path import expandvars, isdir
             filename = expandvars(filename)
-            if isfile(filename):
+            if not isdir(filename):
                 data = open(filename, 'w')
                 data.write(info)
                 data.close()
