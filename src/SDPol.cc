@@ -479,6 +479,7 @@ String SDPolUtil::polarizationLabel (uInt polIdx, Bool linear, Bool stokes, Bool
               {
                  type = Stokes::LL;
               }
+	      break;
             case 2:
               {
                  type = Stokes::RL;               // Really Real(RL)
