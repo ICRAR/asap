@@ -2,17 +2,20 @@ TARGET   := ../lib/atnf_sd.so
 
 CXX      := g++-3.2.3
 CXXFLAGS := -O -fPIC
-CXXFLAGS += -w -fpermissive # This should be removed.
+CXXFLAGS += -fpermissive # This should be removed.
 #CXXFLAGS += -ansi
 #CXXFLAGS += -pedantic -Wno-long-long
 #CXXFLAGS += -Wall -Wno-parentheses
+
+CFITSIOLIB := /usr/local/lib/libcfitsio.a #-lcfitsio
 
 AIPSROOT  := $(word 1, $(AIPSPATH))
 AIPSINC   := -I$(AIPSROOT)/code/include
 AIPSLIB   := $(AIPSROOT)/linux_gnu/lib
 AIPSPPLIB := $(AIPSLIB)/version.o \
-             -L$(AIPSLIB) -latnf -ltrial -laips -laips_f -lmir -lwcs \
-             -lrpfits -lcfitsio -llapack -lblas -lg2c
+             -L$(AIPSLIB) -latnf -ltrial -laips -laips_f \
+             $(AIPSLIB)/libwcs.a \
+             -lrpfits $(CFITSIOLIB) -llapack -lblas -lg2c
 
 LD        := g++-3.2.3
 LDFLAGS   := -shared -Wl,--soname=$(TARGET)
