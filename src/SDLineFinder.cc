@@ -37,6 +37,7 @@
 #include <functional>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 
 using namespace asap;
 using namespace casa;
@@ -100,15 +101,12 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// LFRunningMean - a running mean algorithm for line detection
-//
+// RunningBox -    a running box calculator. This class implements 
+//                 interations over the specified spectrum and calculates
+//                 running box filter statistics.
 //
 
-// An auxiliary class implementing one pass of the line search algorithm,
-// which uses a running mean. We define this class here because it is
-// used in SDLineFinder only. The incapsulation of this code into a separate
-// class will provide a possibility to add new algorithms with minor changes
-class LFRunningMean {
+class RunningBox {
    // The input data to work with. Use reference symantics to avoid
    // an unnecessary copying   
    const casa::Vector<casa::Float>  &spectrum; // a buffer for the spectrum
@@ -116,13 +114,77 @@ class LFRunningMean {
    const std::pair<int,int>         &edge; // start and stop+1 channels
                                            // to work with
    
-   // statistics for running mean filtering
-   casa::Float sum;       // sum of fluxes
-   casa::Float sumsq;     // sum of squares of fluxes
+   // statistics for running box filtering
+   casa::Float sumf;       // sum of fluxes
+   casa::Float sumf2;     // sum of squares of fluxes
+   casa::Float sumch;       // sum of channel numbers (for linear fit)
+   casa::Float sumch2;     // sum of squares of channel numbers (for linear fit)
+   casa::Float sumfch;     // sum of flux*(channel number) (for linear fit)
+   
    int box_chan_cntr;     // actual number of channels in the box
    int max_box_nchan;     // maximum allowed number of channels in the box
                           // (calculated from boxsize and actual spectrum size)
+   // cache for derivative statistics
+   mutable casa::Bool need2recalculate; // if true, values of the statistics
+                                       // below are invalid
+   mutable casa::Float linmean;  // a value of the linear fit to the
+                                 // points in the running box
+   mutable casa::Float linvariance; // the same for variance
+   int cur_channel;       // the number of the current channel
+   int start_advance;     // number of channel from which the box can
+                          // be moved (the middle of the box, if there is no
+			  // masking)
+public:
+   // set up the object with the references to actual data
+   // as well as the number of channels in the running box
+   RunningBox(const casa::Vector<casa::Float>  &in_spectrum,
+                 const casa::Vector<casa::Bool>   &in_mask,
+		 const std::pair<int,int>         &in_edge,
+		 int in_max_box_nchan) throw(AipsError);
+		 
+   // access to the statistics
+   const casa::Float& getLinMean() const throw(AipsError);
+   const casa::Float& getLinVariance() const throw(AipsError);
+   const casa::Float aboveMean() const throw(AipsError);
+   int getChannel() const throw();
+   
+   // actual number of channels in the box (max_box_nchan, if no channels
+   // are masked)
+   int getNumberOfBoxPoints() const throw();
 
+   // next channel
+   void next() throw(AipsError);
+
+   // checking whether there are still elements
+   casa::Bool haveMore() const throw();
+
+   // go to start
+   void rewind() throw(AipsError);
+ 
+protected:
+   // supplementary function to control running mean calculations.
+   // It adds a specified channel to the running mean box and
+   // removes (ch-maxboxnchan+1)'th channel from there
+   // Channels, for which the mask is false or index is beyond the
+   // allowed range, are ignored
+   void advanceRunningBox(int ch) throw(casa::AipsError);
+
+   // calculate derivative statistics. This function is const, because
+   // it updates the cache only
+   void updateDerivativeStatistics() const throw(AipsError);
+};
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFAboveThreshold   An algorithm for line detection using running box
+//                    statistics.  Line is detected if it is above the
+//                    specified threshold at the specified number of
+//                    consequtive channels. Prefix LF stands for Line Finder
+//
+class LFAboveThreshold {
    // temporary line edge channels and flag, which is True if the line
    // was detected in the previous channels.
    std::pair<int,int> cur_line;
@@ -133,54 +195,48 @@ class LFRunningMean {
 					   // a detection
    casa::Float threshold;                  // detection threshold - the 
                                            // minimal signal to noise ratio
+   std::list<pair<int,int> > &lines;       // list where detections are saved
+                                           // (pair: start and stop+1 channel)
+   RunningBox *running_box;                // running box filter
 public:
-   // set up the object with the references to actual data
-   // as well as the detection criterion (min_nchan and threshold, see above)
-   // and the number of channels in the running box
-   LFRunningMean(const casa::Vector<casa::Float>  &in_spectrum,
-                 const casa::Vector<casa::Bool>   &in_mask,
-		 const std::pair<int,int>         &in_edge,
-		 int in_max_box_nchan, 
-		 int in_min_nchan = 3,
-		 casa::Float in_threshold = 5);
-		 
+
+   // set up the detection criterion
+   LFAboveThreshold(std::list<pair<int,int> > &in_lines,
+                    int in_min_nchan = 3,
+		    casa::Float in_threshold = 5) throw();
+   virtual ~LFAboveThreshold() throw();
+   
    // replace the detection criterion
    void setCriterion(int in_min_nchan, casa::Float in_threshold) throw();
 
    // find spectral lines and add them into list
    // if statholder is not NULL, the accumulate function of it will be
    // called for each channel to save statistics
-   void findLines(std::list<pair<int,int> > &lines,
+   //    spectrum, mask and edge - reference to the data
+   //    max_box_nchan  - number of channels in the running box
+   void findLines(const casa::Vector<casa::Float> &spectrum,
+		  const casa::Vector<casa::Bool> &mask,
+		  const std::pair<int,int> &edge,
+		  int max_box_nchan,
                   IStatHolder* statholder = NULL) throw(casa::AipsError);
-   
-protected:
-   // supplementary function to control running mean calculations.
-   // It adds a specified channel to the running mean box and
-   // removes (ch-maxboxnchan+1)'th channel from there
-   // Channels, for which the mask is false or index is beyond the
-   // allowed range, are ignored
-   void advanceRunningBox(int ch) throw(casa::AipsError);
-   
 
-   // test a channel against current running mean & rms
-   // if channel specified is masked out or beyond the allowed indexes,
-   // false is returned
-   casa::Bool testChannel(int ch) const
-                     throw(std::exception, casa::AipsError);
+protected:
 
    // process a channel: update curline and is_detected before and
    // add a new line to the list, if necessary using processCurLine()
-   void processChannel(std::list<pair<int,int> > &lines,
-                       int ch) throw(casa::AipsError);
+   // detect=true indicates that the current channel satisfies the criterion
+   void processChannel(Bool detect, const casa::Vector<casa::Bool> &mask)
+                                                  throw(casa::AipsError);
 
    // process the interval of channels stored in curline
    // if it satisfies the criterion, add this interval as a new line
-   void processCurLine(std::list<pair<int,int> > &lines) throw(casa::AipsError);
-
+   void processCurLine(const casa::Vector<casa::Bool> &mask)
+                                                 throw(casa::AipsError);
 };
 
 //
 ///////////////////////////////////////////////////////////////////////////////
+
 } // namespace asap
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,14 +258,14 @@ SignAccumulator::SignAccumulator(uInt nchan,
 //      of the running box
 // box_nchan - number of channels in the box
 //
-void SignAccumulator::accumulate(int ch, Float sum, Float, int box_nchan)
+void SignAccumulator::accumulate(int ch, Float sum, Float sum2, int box_nchan)
                    throw(AipsError)
 {
    if (ch>=sign.nelements()) return;
    DebugAssert(ch>=0,AipsError);
    DebugAssert(ch<=spectrum.nelements(), AipsError);
    if (box_nchan) {
-       Float buf=spectrum[ch]-sum/Float(box_nchan);
+       Float buf=spectrum[ch]-sum; ///Float(box_nchan);
        if (buf>0) sign[ch]=1;
        else if (buf<0) sign[ch]=-1;
        else sign[ch]=0;
@@ -226,27 +282,174 @@ const Vector<Int>& SignAccumulator::getSigns() const throw()
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //
-// LFRunningMean - a running mean algorithm for line detection
-//
+// RunningBox -    a running box calculator. This class implements 
+//                 interations over the specified spectrum and calculates
+//                 running box filter statistics.
 //
 
 // set up the object with the references to actual data
-// as well as the detection criterion (min_nchan and threshold, see above)
 // and the number of channels in the running box
-LFRunningMean::LFRunningMean(const casa::Vector<casa::Float>  &in_spectrum,
-                             const casa::Vector<casa::Bool>   &in_mask,
-     	                     const std::pair<int,int>         &in_edge,
-			     int in_max_box_nchan, 
-     	                     int in_min_nchan, casa::Float in_threshold) :
+RunningBox::RunningBox(const casa::Vector<casa::Float>  &in_spectrum,
+                       const casa::Vector<casa::Bool>   &in_mask,
+     	               const std::pair<int,int>         &in_edge,
+		       int in_max_box_nchan) throw(AipsError) :
         spectrum(in_spectrum), mask(in_mask), edge(in_edge),
-	max_box_nchan(in_max_box_nchan),
-	min_nchan(in_min_nchan),threshold(in_threshold) {}
+	max_box_nchan(in_max_box_nchan)
+{
+  rewind();
+}
+
+void RunningBox::rewind() throw(AipsError) {
+  // fill statistics for initial box
+  box_chan_cntr=0; // no channels are currently in the box
+  sumf=0.;           // initialize statistics
+  sumf2=0.;
+  sumch=0.;
+  sumch2=0.;
+  sumfch=0.;
+  int initial_box_ch=edge.first;
+  for (;initial_box_ch<edge.second && box_chan_cntr<max_box_nchan;
+        ++initial_box_ch)
+       advanceRunningBox(initial_box_ch);
+  
+  if (initial_box_ch==edge.second)       
+      throw AipsError("RunningBox::rewind - too much channels are masked");
+
+  cur_channel=edge.first;
+  start_advance=initial_box_ch-max_box_nchan/2;  
+}
+
+// access to the statistics
+const casa::Float& RunningBox::getLinMean() const throw(AipsError)
+{
+  DebugAssert(cur_channel<edge.second, AipsError);
+  if (need2recalculate) updateDerivativeStatistics();
+  return linmean;
+}
+
+const casa::Float& RunningBox::getLinVariance() const throw(AipsError)
+{
+  DebugAssert(cur_channel<edge.second, AipsError);
+  if (need2recalculate) updateDerivativeStatistics();
+  return linvariance;
+}
+
+const casa::Float RunningBox::aboveMean() const throw(AipsError)
+{
+  DebugAssert(cur_channel<edge.second, AipsError);
+  if (need2recalculate) updateDerivativeStatistics();
+  return spectrum[cur_channel]-linmean;
+}
+
+int RunningBox::getChannel() const throw()
+{
+  return cur_channel;
+}
+
+// actual number of channels in the box (max_box_nchan, if no channels
+// are masked)
+int RunningBox::getNumberOfBoxPoints() const throw()
+{
+  return box_chan_cntr;
+}
+
+// supplementary function to control running mean calculations.
+// It adds a specified channel to the running mean box and
+// removes (ch-max_box_nchan+1)'th channel from there
+// Channels, for which the mask is false or index is beyond the
+// allowed range, are ignored
+void RunningBox::advanceRunningBox(int ch) throw(AipsError)
+{
+  if (ch>=edge.first && ch<edge.second)
+      if (mask[ch]) { // ch is a valid channel
+          ++box_chan_cntr;
+          sumf+=spectrum[ch];
+          sumf2+=square(spectrum[ch]);
+	  sumch+=Float(ch);
+	  sumch2+=square(Float(ch));
+	  sumfch+=spectrum[ch]*Float(ch);
+	  need2recalculate=True;
+      }
+  int ch2remove=ch-max_box_nchan;
+  if (ch2remove>=edge.first && ch2remove<edge.second)
+      if (mask[ch2remove]) { // ch2remove is a valid channel
+          --box_chan_cntr;
+          sumf-=spectrum[ch2remove];
+          sumf2-=square(spectrum[ch2remove]);  
+	  sumch-=Float(ch2remove);
+	  sumch2-=square(Float(ch2remove));
+	  sumfch-=spectrum[ch2remove]*Float(ch2remove);
+	  need2recalculate=True;
+      }
+}
+
+// next channel
+void RunningBox::next() throw(AipsError)
+{
+   AlwaysAssert(cur_channel<edge.second,AipsError);
+   ++cur_channel;
+   if (cur_channel+max_box_nchan/2<edge.second && cur_channel>=start_advance)
+       advanceRunningBox(cur_channel+max_box_nchan/2); // update statistics
+}
+
+// checking whether there are still elements
+casa::Bool RunningBox::haveMore() const throw()
+{
+   return cur_channel<edge.second;
+}
+
+// calculate derivative statistics. This function is const, because
+// it updates the cache only
+void RunningBox::updateDerivativeStatistics() const throw(AipsError)
+{
+  AlwaysAssert(box_chan_cntr, AipsError);
+  
+  Float mean=sumf/Float(box_chan_cntr);
+
+  // linear LSF formulae
+  Float meanch=sumch/Float(box_chan_cntr);
+  Float meanch2=sumch2/Float(box_chan_cntr);
+  if (meanch==meanch2 || box_chan_cntr<3) {
+      // vertical line in the spectrum, can't calculate linmean and linvariance
+      linmean=0.;
+      linvariance=0.;
+  } else {
+      Float coeff=(sumfch/Float(box_chan_cntr)-meanch*mean)/
+                (meanch2-square(meanch));
+      linmean=coeff*(Float(cur_channel)-meanch)+mean;
+      linvariance=sqrt(sumf2/Float(box_chan_cntr)-square(mean)-
+                    square(coeff)*(meanch2-square(meanch)));
+  }
+  need2recalculate=False;
+}
+
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFAboveThreshold - a running mean algorithm for line detection
+//
+//
+
+
+// set up the detection criterion
+LFAboveThreshold::LFAboveThreshold(std::list<pair<int,int> > &in_lines,
+                                   int in_min_nchan,
+                                   casa::Float in_threshold) throw() :
+             min_nchan(in_min_nchan), threshold(in_threshold),
+	     lines(in_lines), running_box(NULL) {}
+
+LFAboveThreshold::~LFAboveThreshold() throw()
+{
+  if (running_box!=NULL) delete running_box;
+}
 
 // replace the detection criterion
-void LFRunningMean::setCriterion(int in_min_nchan, casa::Float in_threshold)
+void LFAboveThreshold::setCriterion(int in_min_nchan, casa::Float in_threshold)
                                  throw()
 {
   min_nchan=in_min_nchan;
@@ -254,72 +457,33 @@ void LFRunningMean::setCriterion(int in_min_nchan, casa::Float in_threshold)
 }
 
 
-// supplementary function to control running mean calculations.
-// It adds a specified channel to the running mean box and
-// removes (ch-max_box_nchan+1)'th channel from there
-// Channels, for which the mask is false or index is beyond the
-// allowed range, are ignored
-void LFRunningMean::advanceRunningBox(int ch) throw(AipsError)
-{
-  if (ch>=edge.first && ch<edge.second)
-      if (mask[ch]) { // ch is a valid channel
-          ++box_chan_cntr;
-          sum+=spectrum[ch];
-          sumsq+=square(spectrum[ch]);          
-      }
-  int ch2remove=ch-max_box_nchan;
-  if (ch2remove>=edge.first && ch2remove<edge.second)
-      if (mask[ch2remove]) { // ch2remove is a valid channel
-          --box_chan_cntr;
-          sum-=spectrum[ch2remove];
-          sumsq-=square(spectrum[ch2remove]);  
-      }
-}
-
-// test a channel against current running mean & rms
-// if channel specified is masked out or beyond the allowed indexes,
-// false is returned
-Bool LFRunningMean::testChannel(int ch) const throw(exception, AipsError)
-{
-  if (ch<edge.first || ch>=edge.second) return False;
-  if (!mask[ch]) return False;
-  DebugAssert(box_chan_cntr, AipsError);
-  Float mean=sum/Float(box_chan_cntr);
-  Float variance=sqrt(sumsq/Float(box_chan_cntr)-square(mean));
-  /*
-  if (ch>3900 && ch<4100)
-    cout<<"Tested "<<ch<<" mean="<<mean<<" variance="<<variance<<" sp-mean="<<spectrum[ch]-mean<<endl;
-  */
-  return fabs(spectrum[ch]-mean)>=threshold*variance;
-}
-
 // process a channel: update cur_line and is_detected before and
 // add a new line to the list, if necessary
-void LFRunningMean::processChannel(std::list<pair<int,int> > &lines,
-                                   int ch) throw(casa::AipsError)
+void LFAboveThreshold::processChannel(Bool detect,
+                 const casa::Vector<casa::Bool> &mask) throw(casa::AipsError)
 {
   try {
-       if (testChannel(ch)) {
+       if (detect) {
            if (is_detected_before)
-               cur_line.second=ch+1;
+               cur_line.second=running_box->getChannel()+1;
 	   else {
 	       is_detected_before=True;
-	       cur_line.first=ch;
-	       cur_line.second=ch+1;
+	       cur_line.first=running_box->getChannel();
+	       cur_line.second=running_box->getChannel()+1;
 	   }
-       } else processCurLine(lines);   
+       } else processCurLine(mask);   
   }
   catch (const AipsError &ae) {
       throw;
   }  
   catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::processChannel - STL error: ")+ex.what());
+      throw AipsError(String("LFAboveThreshold::processChannel - STL error: ")+ex.what());
   }
 }
 
 // process the interval of channels stored in cur_line
 // if it satisfies the criterion, add this interval as a new line
-void LFRunningMean::processCurLine(std::list<pair<int,int> > &lines)
+void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
                                    throw(casa::AipsError)
 {
   try {
@@ -346,55 +510,47 @@ void LFRunningMean::processCurLine(std::list<pair<int,int> > &lines)
       throw;
   }  
   catch (const exception &ex) {
-      throw AipsError(String("SDLineFinder::processCurLine - STL error: ")+ex.what());
+      throw AipsError(String("LFAboveThreshold::processCurLine - STL error: ")+ex.what());
   }
 }
 
 // find spectral lines and add them into list
-void LFRunningMean::findLines(std::list<pair<int,int> > &lines,
+void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
+		              const casa::Vector<casa::Bool> &mask,
+		              const std::pair<int,int> &edge,
+		              int max_box_nchan,
                               IStatHolder* statholder)
                         throw(casa::AipsError)
 {
   const int minboxnchan=4;
+  try {
 
-  // fill statistics for initial box
-  box_chan_cntr=0; // no channels are currently in the box
-  sum=0;           // initialize statistics
-  sumsq=0;
-  int initial_box_ch=edge.first;
-  for (;initial_box_ch<edge.second && box_chan_cntr<max_box_nchan;
-        ++initial_box_ch)
-       advanceRunningBox(initial_box_ch);
+      if (running_box!=NULL) delete running_box;
+      running_box=new RunningBox(spectrum,mask,edge,max_box_nchan);
     
-  if (initial_box_ch==edge.second)       
-      throw AipsError("LFRunningMean::findLines - too much channels are masked");
-
-  // actual search algorithm
-  is_detected_before=False;
-
-  if (statholder!=NULL)
-      for (int n=0;n<initial_box_ch-max_box_nchan/2;++n)
-           statholder->accumulate(n,sum,sumsq,box_chan_cntr);
-
-  if (box_chan_cntr>=minboxnchan) 
-      // there is a minimum amount of data. We can search in the
-      // half of the initial box   
-      for (int n=edge.first;n<initial_box_ch-max_box_nchan/2;++n)
-           processChannel(lines,n);           	   
-  
-  // now the box can be moved. n+max_box_nchan/2 is a new index which haven't
-  // yet been included in the running mean.
-  for (int n=initial_box_ch-max_box_nchan/2;n<edge.second;++n) {
-      advanceRunningBox(n+max_box_nchan/2); // update running mean & variance
-      if (statholder!=NULL)
-          statholder->accumulate(n,sum,sumsq,box_chan_cntr);
-      if (box_chan_cntr>=minboxnchan) // have enough data to process
-          processChannel(lines,n);
-      else processCurLine(lines); // just finish what was accumulated before
+      // actual search algorithm
+      is_detected_before=False;
+    
+      for (;running_box->haveMore();running_box->next()) {
+           const int ch=running_box->getChannel();
+           if (running_box->getNumberOfBoxPoints()>=minboxnchan)
+	       processChannel(mask[ch] && (fabs(spectrum[ch]-
+	          running_box->getLinMean()) >=
+		  threshold*running_box->getLinVariance()), mask);
+	   else processCurLine(mask); // just finish what was accumulated before
+	   if (statholder!=NULL)
+              statholder->accumulate(running_box->getChannel(),
+	                             running_box->getLinMean(),
+				     running_box->getLinVariance(),
+				     running_box->getNumberOfBoxPoints());
+      }
   }
-  if (statholder!=NULL)
-      for (int n=edge.second;n<spectrum.nelements();++n)
-           statholder->accumulate(n,sum,sumsq,box_chan_cntr);
+  catch (const AipsError &ae) {
+      throw;
+  }  
+  catch (const exception &ex) {
+      throw AipsError(String("LFAboveThreshold::findLines - STL error: ")+ex.what());
+  }
 }
 
 //
@@ -492,8 +648,8 @@ SDLineFinder::SDLineFinder() throw() : edge(0,0)
 {
   // detection threshold - the minimal signal to noise ratio
   threshold=3.; // 3 sigma is a default
-  box_size=1./16.; // default box size for running mean calculations is
-                  // 1/16 of the whole spectrum
+  box_size=1./5.; // default box size for running mean calculations is
+                  // 1/5 of the whole spectrum
   // A minimum number of consequtive channels, which should satisfy
   // the detection criterion, to be a detection
   min_nchan=3;     // default is 3 channels
@@ -576,17 +732,26 @@ int SDLineFinder::findLines() throw(casa::AipsError)
 
   lines.resize(0); // search from the scratch
   Vector<Bool> temp_mask(mask);
-  
-  while (true) {
-     // line find algorithm
-     LFRunningMean lfalg(spectrum,temp_mask,edge,max_box_nchan,min_nchan,
-                         threshold);
-     SignAccumulator sacc(spectrum.nelements(),spectrum);
 
+  Bool first_pass=True;
+  while (true) {
      // a buffer for new lines found at this iteration
      std::list<pair<int,int> > new_lines;
-     
-     lfalg.findLines(new_lines,&sacc);
+
+     // line find algorithm
+     LFAboveThreshold lfalg(new_lines,min_nchan, threshold);
+
+     SignAccumulator sacc(spectrum.nelements(),spectrum);
+
+
+     try {
+         lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan,&sacc);
+     }
+     catch(const AipsError &ae) {
+         if (first_pass) throw;
+	 break; // nothing new
+     }
+     first_pass=False;
      if (!new_lines.size()) break; // nothing new
 
      searchForWings(new_lines, sacc.getSigns());
