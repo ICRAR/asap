@@ -65,9 +65,15 @@ namespace SDMathWrapper {
   void binInSitu(SDMemTableWrapper& in, int width);
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
-// Convert flux
+// Convert brightness between Jy and K
   void convertFluxInSitu(SDMemTableWrapper& in, float area, float eta, bool doAll);
   SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float area, float eta, bool doAll);
+
+// Apply gain elevation correction
+  void gainElevationInSitu (SDMemTableWrapper& in, const std::string& fileName, 
+                            const std::string& method, bool doAll);
+  SDMemTableWrapper gainElevation(const SDMemTableWrapper& in, const std::string& fileName, 
+                                  const std::string& method, bool doAll);
 
 // Average in time
   SDMemTableWrapper average(boost::python::tuple tpl,
