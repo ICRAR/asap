@@ -184,6 +184,7 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow) {
   Array<uChar> farr;
   spec.get(whichRow, arr);
   flag.get(whichRow, farr);
+  IPosition test(4,0,0,100,0);
   Array<Bool> barr(farr.shape());convertArray(barr, farr);
   MaskedArray<Float> marr;
   marr.setData(arr,!barr);
@@ -197,7 +198,7 @@ Float SDMemTable::getTsys(Int whichRow) const {
   ts.get(whichRow, arr);
   Float out;
   IPosition ip(arr.shape());
-  ip(0) = beamSel_;ip(1) = IFSel_;ip(2) = polSel_;
+  ip(0) = beamSel_;ip(1) = IFSel_;ip(2)=0;ip(3) = polSel_;
   out = arr(ip);
   return out;
 }
