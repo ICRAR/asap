@@ -30,22 +30,24 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDMemTableWrapper.h"
+#include "SDReaderWrapper.h"
 
 using namespace boost::python;
 
 namespace atnf_sd {
   namespace python {
 
-void python_SDReader() {
-  class_<SDReaderWrapper>("sdreader")
-    //.def( init < SDMemTableWrapper > () )
-    .def("open", &SDReaderWrapper::open)
-    .def("read", &SDReaderWrapper::read)
-    .def("gettable", &SDReaderWrapper::getSDMemTable)
-    .def("header",  &SDReaderWrapper::pseudoHeader);
-  ;
-};
+    void python_SDReader() {
+      class_<SDReaderWrapper>("sdreader")
+	.def( init < std::string > () )
+	.def("open", &SDReaderWrapper::open)
+	.def("read", &SDReaderWrapper::read)
+	.def("close", &SDReaderWrapper::close)
+	.def("getdata", &SDReaderWrapper::getSDMemTable)
+	.def("header",  &SDReaderWrapper::pseudoHeader);
+      ;
+    };
 
-  }
-}
+  } //namespace python 
+} // namespace atnf_sd
+
