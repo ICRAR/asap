@@ -287,6 +287,7 @@ def commands():
         opacity             - apply opacity correction
         convert_flux        - convert to and from Jy and Kelvin brightness
                               units
+        rotate_xyphase      - rotate XY phase of cross correlation
 
         fitter
             auto_fit        - return a scan where the function is
