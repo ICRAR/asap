@@ -83,12 +83,29 @@ bool SDFitter::computeEstimate() {
     uInt n = funcs_.nelements();
     SpectralEstimate estimator(n);
     estimator.setQ(5);
+    Int mn,mx;
+    mn = 0;
+    mx = m_.nelements()-1;
+    for (uInt i=0; i<m_.nelements();++i) {
+      if (m_[i]) {
+	mn = i;
+	break;
+      }
+    }
+    for (uInt j=m_.nelements()-1; j>=0;--j) {
+      if (m_[j]) {
+	mx = j;
+	break;
+      }
+    }
+    //mn = 0+x_.nelements()/10;
+    //mx = x_.nelements()-x_.nelements()/10;
+    estimator.setRegion(mn,mx);
     //estimator.setWindowing(True);
     SpectralList listGauss = estimator.estimate(x_, y_);
     Gaussian1D<Float>* g;
     parameters_.resize(n*3);
     uInt count = 0;
-    cout << "n = " << n << endl;
     for (uInt i=0; i<n;i++) {
         g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
         if (g) {
@@ -241,12 +258,16 @@ std::vector<float> SDFitter::getParameters() const {
 }
 
 std::vector<bool> SDFitter::getFixedParameters() const {
-    if (fixedpar_.nelements() == 0)
-        throw (AipsError("No parameter mask set."));
-    Vector<Bool> out = fixedpar_;
-    std::vector<bool> stlout;
-    out.tovector(stlout);
-    return stlout;
+  Vector<Bool> out(parameters_.nelements());
+  if (fixedpar_.nelements() == 0) {
+    out = False;
+    //throw (AipsError("No parameter mask set."));
+  } else {
+    out = fixedpar_;
+  }
+  std::vector<bool> stlout;
+  out.tovector(stlout);
+  return stlout;
 }
 
 float SDFitter::getChisquared() const {
