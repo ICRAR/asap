@@ -632,22 +632,15 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
 //
    if (doAll) {
       for (uInt i=0; i < tOut.nrow(); i++) {
-
-// Get
-
-         MaskedArray<Float> marr(pOut->rowAsMaskedArray(i));
-
-// Operate
-
+         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
+//
          if (what==0) {
-            marr *= val;
+            dataIn  *= val;
          } else if (what==1) {
-            marr += val;
+            dataIn += val;
          }
-
-// Put
-
-         spec.put(i, marr.getArray());
+//
+         spec.put(i, dataIn.getArray());
       }
    } else {
 
@@ -657,27 +650,15 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
       getCursorLocation(start, end, in);
 //
       for (uInt i=0; i < tOut.nrow(); i++) {
-
-// Get
-
          MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
-
-// Modify. More work than we would like to deal with the mask
-
-         Array<Float>& values = dataIn.getRWArray();
-         Array<Bool> mask(dataIn.getMask());
+         MaskedArray<Float> dataIn2 = dataIn(start,end);    // Reference
 //
-         Array<Float> values2 = values(start,end);
-         Array<Bool> mask2 = mask(start,end);
-         MaskedArray<Float> t(values2,mask2);
          if (what==0) {
-            t *= val;
+            dataIn2 *= val;
          } else if (what==1) {
-            t += val;
+            dataIn2 += val;
          }
-         values(start, end) = t.getArray();     // Write back into 'dataIn'
-
-// Put
+//
          spec.put(i, dataIn.getArray());
       }
    }
@@ -981,49 +962,17 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
   }
   cerr << "Applying conversion factor = " << factor << endl;
 
-// For operations only on specified cursor location
+// Generate correction vector.  Apply same factor regardless
+// of beam/pol/IF.  This will need to change somewhen.
 
-  IPosition start, end;
-  getCursorLocation(start, end, in);
+  Vector<Float> factors(in.nRow(), factor);
 
-// Loop over rows and apply factor to spectra
-  
-  const uInt axis = asap::ChanAxis;
-  for (uInt i=0; i < in.nRow(); ++i) {
+// Correct
 
-// Get data
-
-    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
-    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
-    const Array<Bool>& maskIn = dataIn.getMask();  
-
-// Need to apply correct conversion factor (frequency and time dependent)
-// which should be sourced from a Table. For now we just apply the given 
-// factor to everything
-
-    if (doAll) {
-       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
-       while (!itValues.pastEnd()) {
-          itValues.vector() *= factor;                            // Writes back into dataIn
+  correctFromVector (pTabOut, in, doAll, factors);
 //
-          itValues.next();
-       }
-    } else {
-       Array<Float> valuesIn2 = valuesIn(start,end);
-       valuesIn2 *= factor;
-       valuesIn(start,end) = valuesIn2;
-    }
-
-// Write out
-
-    SDContainer sc = in.getSDContainer(i);
-    putDataInSDC(sc, valuesIn, maskIn);
-//
-    pTabOut->putSDContainer(sc);
-  }
   return pTabOut;
 }
-
 
 
 SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& coeffs,
@@ -1578,12 +1527,13 @@ void SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in,
 void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in, 
                                 Bool doAll, const Vector<Float>& factor) const
 {
+
 // For operations only on specified cursor location
 
   IPosition start, end;
   getCursorLocation(start, end, in);
 
-// Loop over rows and interpolate correction factor
+// Loop over rows and apply correction factor
   
   const uInt axis = asap::ChanAxis;
   for (uInt i=0; i < in.nRow(); ++i) {
@@ -1591,27 +1541,20 @@ void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
 // Get data
 
     MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
-    Array<Float>& valuesIn = dataIn.getRWArray();  
-    const Array<Bool>& maskIn = dataIn.getMask();  
 
 // Apply factor
 
     if (doAll) {
-       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
-       while (!itValues.pastEnd()) {
-          itValues.vector() *= factor(i);
-          itValues.next();
-       }
+       dataIn *= factor[i];
     } else {
-       Array<Float> valuesIn2 = valuesIn(start,end);
-       valuesIn2 *= factor(i);
-       valuesIn(start,end) = valuesIn2;
+       MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference
+       dataIn2 *= factor[i];
     }
 
 // Write out
 
     SDContainer sc = in.getSDContainer(i);
-    putDataInSDC(sc, valuesIn, maskIn);
+    putDataInSDC(sc, dataIn.getArray(), dataIn.getMask());
 //
     pTabOut->putSDContainer(sc);
   }
