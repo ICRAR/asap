@@ -6,9 +6,7 @@ class scantable(sdtable):
     """
         The ASAP container for scans
     """
-    def functions(self):
-        return ['copy','get_scan','summary','rms','set_unit','create_mask']
-
+    
     def __init__(self, filename):
         """
         Create a scantable from a saved one or make a reference
@@ -17,19 +15,33 @@ class scantable(sdtable):
                          [advanced] a refernce to an existing
                          scantable
         """
+        self._vb = True
+        self._p = None
         sdtable.__init__(self, filename)
-        self._unit = 'channel'
+
+    def _verbose(self, *args):
+        """
+        Set the verbose level True or False, to indicate if output
+        should be printed as well as returned.
+        """
+        if type(args[0]) is bool:
+            self._vb = args[0]
+            return
+        elif len(args) == 0:
+            return self._vb
+
 
     def copy(self):
         """
         Return a copy of this scantable.
         Parameters:
-
+            none
         Example:
             copiedscan = scan.copy()
         """
-        sd = sdtable._copy(self)
-        return scantable(sd)
+        sd = scantable(sdtable._copy(self))
+        return sd
+
     def get_scan(self, scanid=None):
         """
         Return a specific scan (by scanno) or collection of scans (by
@@ -37,17 +49,17 @@ class scantable(sdtable):
         Parameters:
             scanid:    a scanno or a source name
         Example:
-            scan.getscan('323p459')
+            scan.get_scan('323p459')
             # gets all scans containing the source '323p459'
         """
         if scanid is None:
             print "Please specify a scan no or name to retrieve from the scantable"
         try:
             if type(scanid) is str:
-                s = sdtable.getsource(self,scanid)
+                s = sdtable._getsource(self,scanid)
                 return scantable(s)
             elif type(scanid) is int:
-                s = sdtable.getscan(self,scanid)
+                s = sdtable._getscan(self,scanid)
                 return scantable(s)
         except RuntimeError:
             print "Couldn't find any match."
@@ -85,11 +97,21 @@ class scantable(sdtable):
         return
 
     def get_selection(self):
+        """
+        Return/print a the current 'cursor' into the Beam/IF/Pol cube.
+        Parameters:
+            none
+        Returns:
+            a list of values (currentBeam,currentIF,currentPol)
+        Example:
+            none
+        """
         i = self.getbeam()
         j = self.getif()
         k = self.getpol()
-        out = 'Beam=%d IF=%d Pol=%d '% (i,j,k)
-        print out
+        if self._vb:
+            out = 'Beam=%d IF=%d Pol=%d '% (i,j,k)
+            print out
         return i,j,k
 
     def rms(self,mask=None, all=True):
@@ -104,7 +126,7 @@ class scantable(sdtable):
                      spectrum of Beam/IF/Pol
 
         Example:
-            scan.setuint('channel')
+            scan.set_unit('channel')
             msk = scan.create_mask([100,200],[500,600])
             scan.rms(mask=m)
         """
@@ -123,7 +145,8 @@ class scantable(sdtable):
                         rmsval = _rms(self,mask)
                         tmp.append(rmsval)
                         out += 'Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,rmsval)
-            print out
+            if self._vb:
+                print out
             return tmp
 
         else:
@@ -132,10 +155,21 @@ class scantable(sdtable):
             k = self.getpol()
             rmsval = _rms(self,mask)
             out = 'Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,rmsval)
-            print out
+            if self._vb:
+                print out
             return rmsval
 
     def get_tsys(self, all=True):
+        """
+        Return the System temperatures.
+        Parameters:
+            all:    optional parameter to get the Tsys values for all
+                    Beams/IFs/Pols (default) or just the one selected
+                    with scantable.set_selection()
+                    [True or False]
+        Returns:
+            a list of Tsys values.
+        """
         if all:
             tmp = []
             out = ''
@@ -145,74 +179,150 @@ class scantable(sdtable):
                     self.setif(j)
                     for k in range(self.npol()):
                         self.setpol(k)
-                        ts = self.gettsys()
+                        ts = self._gettsys()
                         tmp.append(ts)
                         out += 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f\n' % (i,j,k,ts)
-            print out
+            if self._vb:
+                print out
             return tmp
         else:
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
-            ts = self.gettsys()
+            ts = self._gettsys()
             out = 'TSys: Beam[%d], IF[%d], Pol[%d] = %3.3f' % (i,j,k,ts)
-            print out
+            if self._vb:
+                print out
             return ts
+        
+    def get_time(self):
+        """
+        Get a list of time stamps for the observations.
+        Return a string for each intergration in the scantable.
+        Parameters:
+            none
+        Example:
+            none
+        """
+        out = []
+        for i in range(self.nrow()):
+            out.append(self._gettime(i))
+        return out
 
     def set_unit(self, unit='channel'):
         """
         Set the unit for all following operations on this scantable
         Parameters:
             unit:    optional unit, default is 'channel'
-                     one of 'GHz','MHz','km/s','channel'
+                     one of '*Hz','km/s','channel', ''
         """
-        units = ['GHz','MHz','km/s','channel','pixel','']
-        if unit in units:
-            if unit in ['','pixel']:
-                unit = 'channel'
-            self._unit = unit
-        else:
-            print "Invalid unit given, please use one of:"
-            print units
 
-    def create_mask(self, *args):
+        if unit in ['','pixel', 'channel']:
+            unit = ''
+        inf = list(self._getcoordinfo())
+        inf[0] = unit
+        self._setcoordinfo(inf)
+        if self._p: self.plot()
+
+    def set_freqframe(self, frame='LSRK'):
+        """
+        Set the frame type of the Spectral Axis.
+        Parameters:
+            frame:   an optional frame type, default 'LSRK'.
+        Examples:
+            scan.set_freqframe('BARY')
+        """
+        valid = ['REST','TOPO','LSRD','LSRK','BARY', \
+                   'GEO','GALACTO','LGROUP','CMB']
+        if frame in valid:
+            inf = list(self._getcoordinfo())
+            inf[1] = frame
+            self._setcoordinfo(inf)
+        else:
+            print "Please specify a valid freq type. Valid types are:\n",valid
+            
+    def get_unit(self):
+        """
+        Get the default unit set in this scantable
+        Parameters:
+        Returns:
+            A unit string
+        """
+        inf = self._getcoordinfo()
+        unit = inf[0]
+        if unit == '': unit = 'channel'
+        return unit
+
+    def get_abscissa(self, rowno=0):
+        """
+        Get the abscissa in the current coordinate setup for the currently
+        selected Beam/IF/Pol
+        Parameters:
+            none
+        Returns:
+            The abscissa values and it's format string.
+        """
+        absc = self.getabscissa(rowno)
+        lbl = self.getabscissalabel(rowno)
+        return absc, lbl
+
+    def create_mask(self, *args, **kwargs):
         """
         Compute and return a mask based on [min,max] windows.
+        The specified windows are to be EXCLUDED, when the mask is
+        applied.
         Parameters:
             [min,max],[min2,max2],...
                 Pairs of start/end points specifying the regions
                 to be masked
+            invert:     return an inverted mask, i.e. the regions
+                        specified are not masked (INCLUDED)
         Example:
-            scan.setunit('channel')
+            scan.set_unit('channel')
+
+            a)
             msk = scan.set_mask([400,500],[800,900])
-            masks the regions between 400 and 500
-            and 800 and 900 in the unit 'channel'
+            # masks the regions between 400 and 500
+            # and 800 and 900 in the unit 'channel'
+
+            b)
+            msk = scan.set_mask([400,500],[800,900], invert=True)
+            # masks the regions outside 400 and 500
+            # and 800 and 900 in the unit 'channel'
+           
         """
-        print "The current mask window unit is", self._unit
+        u = self._getcoordinfo()[0]
+        if self._vb:
+            if u == "": u = "channel"
+            print "The current mask window unit is", u
         n = self.nchan()
-        if self._unit == 'channel':
-            data = range(n)
-        else:
-            data = self.getabscissa(unit=self._unit)
+        data = self.getabscissa()
         msk = ones(n)
         for  window in args:
             if (len(window) != 2 or window[0] > window[1] ):
                 print "A window needs to be defined as [min,max]"
                 return
             for i in range(n):
-                if data[i] > window[0] and data[i] < window[1]:
+                if data[i] >= window[0] and data[i] < window[1]:
                     msk[i] = 0
+        if kwargs.has_key('invert'):
+            if kwargs.get('invert'):
+                from numarray import logical_not
+                msk = logical_not(msk)
         return msk
-    def set_restfrequencies(self, freqs, unit='Hz'):
+    
+    def set_restfreqs(self, freqs, unit='Hz'):
         """
         Set the restfrequency(s) for this scantable.
         Parameters:
             freqs:    one or more frequencies
             unit:     optional 'unit', default 'Hz'
         Example:
-            scan.set_restfrequencies([1000000000.0])
+            scan.set_restfreqs([1000000000.0])
         """
-        self.setrestfreqs(freqs, unit)
+        if type(freqs) is float or int:
+            freqs = (freqs)
+        sdtable._setrestfreqs(self,freqs, unit)
         return
 
     def flag_spectrum(self, thebeam, theif, thepol):
@@ -234,4 +344,71 @@ class scantable(sdtable):
             stable._flag(self)
         else:
             print "Please specify a valid (Beam/IF/Pol)"
+        return
+
+    def plot(self, what='spectrum',col='Pol', panel=None):
+        """
+        Plot the spectra contained in the scan. Alternatively you can also
+        Plot Tsys vs Time
+        Parameters:
+            what:     a choice of 'spectrum' (default) or 'tsys'
+            col:      which out of Beams/IFs/Pols should be colour stacked
+            panel:    set up multiple panels, currently not working.
+        """
+        validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
+        validyax = ['spectrum','tsys']
+        if not self._p:
+            from asap.asaplot import ASAPlot
+            self._p = ASAPlot()
+#            print "Plotting not enabled"
+#            return
+        npan = 1
+        x = None
+        if what == 'tsys':
+            n = self.nrow()
+            if n < 2:
+                print "Only one integration. Can't plot."
+                return
+        if panel == 'Time':
+            npan = self.nrow()
+        self._p.hold()
+        self._p.clear()
+        xlab,ylab,tlab = None,None,None
+        vb = self._verbose
+        self._verbose(False)
+        sel = self.get_selection()
+        for i in range(npan):
+            for j in range(validcol[col]):
+                x = None
+                y = None
+                m = None
+                tlab = self._getsourcename(i)
+                if col == 'Beam':
+                    self.setbeam(j)
+                elif col == 'IF':
+                    self.setif(j)
+                elif col == 'Pol':
+                    self.setpol(j)
+                if what == 'tsys':
+                    x = range(self.nrow())
+                    xlab = 'Time [pixel]'
+                    m = list(ones(len(x)))
+                    y = []
+                    ylab = r'$T_{sys}$'
+                    for k in range(len(x)):
+                        y.append(self._gettsys(k))
+                else:
+                    x,xlab = self.get_abscissa(i)
+                    y = self.getspectrum(i)
+                    ylab = r'Flux'
+                    m = self.getmask(i)
+                llab = col+' '+str(j)
+                self._p.set_line(label=llab)
+                self._p.plot(x,y,m)
+        self._p.set_axes('xlabel',xlab)
+        self._p.set_axes('ylabel',ylab)
+        self._p.set_axes('title',tlab)
+        self._p.release()
+        self.set_selection(sel[0],sel[1],sel[2])
+        self._verbose(vb)
         return

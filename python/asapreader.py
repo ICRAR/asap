@@ -4,6 +4,8 @@ class reader(sdreader):
     """
     This class allows the user to import single dish files
     (rpfits,sdfits,ms).
+    The reader reads in integrations from the file and reamins at
+    the fileposition afterwards.
     Available functions are:
 
     read(integrations)
@@ -32,6 +34,8 @@ class reader(sdreader):
         Parameters:
             integrations:    a 'range' of integration numbers, e.g.
                              range(100) or [0,1,2,3,4,10,11,100]
+                             If not given (default) all integrations
+                             are read in
         Example:
             r.read([0,1,2,3,4])    # reads in the first 5 integatrions
                                    # NOT scans
@@ -40,15 +44,23 @@ class reader(sdreader):
         from asap import scantable
         if integrations is None:
             integrations = [-1]
+        print "Reading intergrations from disk..."
         sdreader.read(self,integrations)
         tbl = sdreader.getdata(self)
         return scantable(tbl)
 
     def summary(self):
-        print "Disabled"
-        return
+        """
+        Print a summary of all scans/integrations. This reads through the
+        whole file once.
+        Parameters:
+             None
+        Example:
+             r.summary()
+        """
         sdreader.reset(self)
-        sdreader.read([-1])
-        sdreader.reset(self)
+        sdreader.read(self,[-1])
         tbl = sdreader.getdata(self)
+        sdreader.reset(self)
         print tbl.summary()
+        return

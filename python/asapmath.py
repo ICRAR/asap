@@ -1,32 +1,40 @@
 from scantable import scantable
-def average_scan(scan):
-    """
-        Return a (time) averaged a scan, i.e. all correlator cycles
-        are averaged into one "scan".
-    """
-    from asap._asap import average as _av
-    return scantable(_av(scan))
 
-
-def average_scans(*args, **kwargs):
+def average_time(*args, **kwargs):
     """
-        Return the (time) average of a list of scans. [in channels only]
-        Parameters:
-            a comma separated list of scans
-            mask:     an optional mask
-        Example:
-            scanav = average_scans(scana,scanb)
-            # return a time averaged scan from scan and scanb
-            # without using a mask
+    Return the (time) average of a scan or list of scans. [in channels only]
+    Parameters:
+        one scan or comma separated  scans
+        mask:     an optional mask
+    Example:
+        # return a time averaged scan from scana and scanb
+        # without using a mask
+        scanav = average_scans(scana,scanb)
+        # return the (time) averaged scan, i.e. the average of
+        # all correlator cycles
+        scanav = average_time(scan)
+        
     """
-
+    lst = args
     if len(args) < 2:
-        print "Please give at least two scantables"
-        return
-
-    from asap._asap import averages as _av
-    d = [args[0].nbeam(),args[0].nif(),args[0].npol(),args[0].nchan()]
-    for s in args:
+        if type(args[0]) is list:
+            if  len(args[0]) < 2:
+                print "Please give at least two scantables"
+                return
+        else:
+            s = args[0]
+            if s.nrow() > 1:
+                from asap._asap import average as _av
+                return scantable(_av(s))
+            else:
+                print "Given scantable is already time averaged"
+                return
+        lst = tuple(args[0])
+    else:
+        lst = tuple(args)
+    from asap._asap import averages as _avs
+    d = [lst[0].nbeam(),lst[0].nif(),lst[0].npol(),lst[0].nchan()]
+    for s in lst:
         if not isinstance(s,scantable):
             print "Please give a list of scantables"
             return
@@ -35,11 +43,11 @@ def average_scans(*args, **kwargs):
             print "All scans have to have the same numer of Beams/IFs/Pols/Chans"
             return
     if kwargs.has_key('mask'):
-        return scantable(_av(args, kwargs.get('mask')))
+        return scantable(_avs(lst, kwargs.get('mask')))
     else:
         from numarray import ones
-        mask = list(ones(d[3]))
-        return scantable(_av((args), mask))
+        mask = tuple(ones(d[3]))
+        return scantable(_avs(lst, mask))
 
 def quotient(source, reference):
     """
@@ -56,12 +64,24 @@ def scale(scan, factor):
     Return a scan where all spectra are scaled by the give 'factor'
     Parameters:
         scan:        a scantable
-        factor:      the sclaing factor
+        factor:      the scaling factor
     Note:
         This currently applies the all beams/IFs/pols
     """
     from asap._asap import scale as _scale
     return scantable(_scale(scan, factor))
+
+def add(scan, offset):
+    """
+    Return a scan where the offset is added.
+    Parameters:
+        scan:        a scantable
+        offset:      the value to add
+    Note:
+        This currently applies the all beams/IFs/pols
+    """
+    from asap._asap import add as _add
+    return scantable(_add(scan, offset))
 
 
 def bin(scan, binwidth=5):
@@ -69,3 +89,58 @@ def bin(scan, binwidth=5):
     """
     from asap._asap import bin as _bin
     return scantable(_bin(scan, binwidth))
+
+def average_pol(scan, mask=None):
+    """
+    Average the Polarisations together.
+    Parameters:
+        scan   - a scantable
+        mask   - an optional mask defining the region, where
+                 the averaging will be applied. The output
+                 will have all specified points masked.
+                 The dimension won't be reduced and
+                 all polarisations will contain the
+                 averaged spectrum.
+    Example:
+        polav = average_pols(myscan)
+    """
+    from asap._asap import averagepol as _avpol
+    from numarray import ones
+    if mask is None:
+        mask = tuple(ones(scan.nchan()))
+    return scantable(_avpol(scan, mask))
+    
+def hanning(scan):
+    """
+    Hanning smooth the channels.
+    Parameters:
+         scan    - the input scan
+    Example:
+         none
+    """
+    from asap._asap import hanning as _han
+    return scantable(_han(scan))
+
+    
+def poly_baseline(scan, mask=None, order=0):
+    """
+    Return a scan which has been baselined by a polynomial.
+    Parameters:
+        scan:    a scantable
+        mask:    an optional mask
+        order:   the order of the polynomial (default is 0)
+    Example:
+        # return a scan baselined by a third order polynomial,
+        # not using a mask
+        bscan = poly_baseline(scan, order=3)
+    """
+    from asap.asapfitter import fitter
+    if mask is None:
+        from numarray import ones
+        mask = tuple(ones(scan.nchan()))
+    f = fitter()
+    f._verbose(True)
+    f.set_scan(scan, mask)
+    f.set_function(poly=order)    
+    sf = f.auto_fit()
+    return sf
