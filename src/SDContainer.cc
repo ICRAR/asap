@@ -34,7 +34,9 @@
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/ArrayAccessor.h>
+#include <casa/BasicMath/Math.h>
 #include <casa/Quanta/MVTime.h>
+
 
 #include "SDDefs.h"
 #include "SDContainer.h"
@@ -354,14 +356,14 @@ Bool SDContainer::putHistory(const Vector<String>& hist)
   return True;
 }
 
-Int SDFrequencyTable::addFrequency(Int refPix, Double refVal, Double inc) {
+Int SDFrequencyTable::addFrequency(Double refPix, Double refVal, Double inc) {
   Int idx = -1;
   Bool addit = False;
   if (length() > 0) {
     for (uInt i=0; i< length();++i) {
-      if ( refVal == refVal_[i] ) { // probably check with tolerance
-	if ( refPix == refPix_[i] )
-	  if ( inc == increment_[i] )
+      if ( near(refVal,refVal_[i]) ) {
+	if (near(refPix,refPix_[i]) )
+	  if ( near(inc,increment_[i]) )
 	    idx = Int(i);
       }
     }
