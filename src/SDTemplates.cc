@@ -60,7 +60,6 @@ template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable>
 #include <casa/Arrays/Vector2.cc>
 #include <casa/Utilities/PtrHolder.cc>
 #include <casa/Utilities/BinarySearch.cc>
-#include <coordinates/Coordinates/VelocityAligner.cc>
 #include <coordinates/Coordinates/FrequencyAligner.cc>
 #include <lattices/Lattices/Lattice.h>
 #include <lattices/Lattices/LatticeUtilities.cc>
@@ -100,7 +99,6 @@ template void Array<Bool>::tovector(vector<bool> &) const;
 template void Array<double>::tovector(vector<double> &) const;
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
-template class VelocityAligner<Float>;
 template class FrequencyAligner<Float>;
 template class InterpolateArray1D<Double, Float>;
 template Int binarySearchBrackets<Vector<Double>,Double>(Bool &, Vector<Double> const &, Double const &, uInt, Int);
