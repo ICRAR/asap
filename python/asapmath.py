@@ -49,6 +49,19 @@ def quotient(source, reference):
     from asap._asap import quotient as _quot
     return scantable(_quot(source, reference))
 
+def b_operate(left, right, op='add'):
+    """
+    Apply simple mathematical binary operations to two 
+    scan tables,  returning the result in a new scan table.
+    The operation is applied to both the correlations and the TSys data
+    Parameters:
+        left:          the 'left' scan
+        right:         the 'right' scan
+        op:            the operation: 'add' (default), 'sub', 'mul', 'div'
+    """
+    from asap._asap import b_operate as _bop
+    return scantable(_bop(left, right, op))
+
 def scale(scan, factor, insitu=False, all=True):
     """
     Return a scan where all spectra are scaled by the give 'factor'
@@ -109,39 +122,69 @@ def convert_flux(scan, area, eta=1.0, insitu=False, all=True):
         _convert(scan, area, eta, all)
         return
 
-def gain_el(scan, filename="gainel.txt", method="linear", insitu=False, all=True):
+def gain_el(scan, poly=None, filename="", method="linear", insitu=False, all=True):
     """
-    Return a scan after applying a gain-elevation correction via interpolation
-      (and extrapolation if necessary) from values in an ascii file.
+    Return a scan after applying a gain-elevation correction. The correction
+    can be made via either a polynomial or a table-based interpolation 
+    (and extrapolation if necessary).
+    You specify polynomial coefficients, an ascii table or neither.
+    If you specify neither, then a polynomial correction will be made
+    with built in coefficients known for certain telescopes (an error will
+    occur if the instrument is not known).
     Parameters:
         scan:        a scantable
-        filename:    The name of the ASCII file holding the data.  The first row
-                     must give the column names.  These MUST include columns
-                     "ELEVATION" (degrees) and "FACTOR" (multiply data by this) somewhere.  
+        poly:        Polynomial coefficients (default None) to compute a gain-elevation
+                     correction as a function of elevation (in degrees).
+        filename:    The name of an ascii file holding correction factors.
+                     The first row of the ascii file must give the column 
+                     names and these MUST include columns
+                     "ELEVATION" (degrees) and "FACTOR" (multiply data by this) somewhere.
                      The second row must give the data type of the column. Use 'R' for 
                      Real and 'I' for Integer.  An example file would be:
 
-                     ELEVATION FACTOR
-                     R R
-                     0 1.5
-                     20 1.4
-                     40 1.3
-                     60 1.2
-                     80 1.1
-                     90 1.0
-        method:      Interpolation method. "nearest", "linear" (default),
-                     "cubic" and "spline"
+                     TIME ELEVATION FACTOR
+                     R R R
+                     0.1 0 1.5
+                     0.2 20 1.4
+                     0.3 40 1.3
+                     0.4 60 1.2
+                     0.5 80 1.1
+                     0.6 90 1.0
+        method:      Interpolation method when correcting from a table. Values 
+                     are  "nearest", "linear" (default), "cubic" and "spline"
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the conversion is done in-situ
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
+    """
+    if poly is None:
+       poly = ()
+    if not insitu:
+        from asap._asap import gainel as _gainEl
+        return scantable(_gainEl(scan, poly, filename, method, all))
+    else:
+        from asap._asap import gainel_insitu as _gainEl
+        _gainEl(scan, poly, filename, method, all)
+        return
+        
+def opacity(scan, tau, insitu=False, all=True):
+    """
+    Return a scan after applying an opacity correction.
+    Parameters:
+        scan:        a scantable
+        tau:         Opacity from which the correction factor is exp(tau*ZD)
+                     where ZD is the zenith-distance
         insitu:      if False (default) a new scantable is returned.
                      Otherwise, the conversion is done in-situ
         all:         if True (default) apply to all spectra. Otherwise
                      apply only to the selected (beam/pol/if)spectra only
     """
     if not insitu:
-        from asap._asap import gainel as _gainEl
-        return scantable(_gainEl(scan, filename, method, all))
+        from asap._asap import opacity as _opacity
+        return scantable(_opacity(scan, tau, all))
     else:
-        from asap._asap import gainel_insitu as _gainEl
-        _gainEl(scan, filename, method, all)
+        from asap._asap import opacity_insitu as _opacity
+        _opacity(scan, tau, all)
         return
         
 def bin(scan, width=5, insitu=False):
