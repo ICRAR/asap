@@ -52,8 +52,8 @@ def commands():
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans 
     [Math]
-        average_time       - return the rms-weighted (time) average of
-                              a scan or a list of scans
+        average_time       - return the (weighted) time average of a scan 
+                             or a list of scans
         average_pol         - average the polarisations together.
                               The dimension won't be reduced and
                               all polarisations will contain the
