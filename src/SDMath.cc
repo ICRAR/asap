@@ -103,7 +103,7 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   
   Table ton = on->table();
   Table toff = off->table();
-  ROArrayColumn<Float> tsys(ton, "TSYS");
+  ROArrayColumn<Float> tsys(toff, "TSYS");
   
   ROScalarColumn<Double> mjd(ton, "TIME");
   ROScalarColumn<String> srcn(ton, "SRCNAME");
