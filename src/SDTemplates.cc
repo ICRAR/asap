@@ -46,6 +46,12 @@ namespace atnf_sd {
 #include <aips/Arrays/ArrayMath.cc>
 #include <aips/Arrays/MaskArrMath.cc>
 #include <aips/Arrays/Array.h>
+#include <trial/Functionals/CompiledFunction.cc>
+#include <trial/Functionals/CompiledParam.cc>
+#include <aips/Mathematics/AutoDiff.h>
+#include <aips/Mathematics/AutoDiffMath.h>
+#include <aips/Arrays/Vector2.cc>
+#include "MathUtils.cc"
 
 template void convertArray(Array<Bool> &, Array<uChar> const &);
 template void convertArray(Array<uChar> &, Array<Bool> const &);
@@ -56,3 +62,9 @@ template LogicalArray operator>=(Array<Float> const &, Float const &);
 template Array<Float>& operator/=(Array<Float>&, MaskedArray<Float> const&);
 template MaskedArray<Float> const& operator*=(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> operator-(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template class CompiledFunction<AutoDiff<Float> >;
+template class CompiledParam<AutoDiff<Float> >;
+template void Array<float>::tovector(vector<float> &) const;
+template void Array<float>::tovector(vector<float> &) const;
+template void hanning(Vector<Float>&, Vector<Bool>&, 
+		      const Vector<Float>&, const Vector<Bool>&, Bool, Bool);
