@@ -38,24 +38,31 @@ SDReader::SDReader() :
   reader_(0),
   table_(new SDMemTable()) {
   cursor_ = 0;
-  timestamp_ = 0;
+}
+SDReader::SDReader(const std::string& filename) :
+  reader_(0),
+  table_(new SDMemTable()) {
+  cursor_ = 0;
+  open(filename);
 }
 
 SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
   reader_(0),
   table_(tbl) {
   cursor_ = 0;
-  timestamp_ = 0;
 }
 
 SDReader::~SDReader() {
-  delete reader_;reader_ =0;
+  if (reader_) delete reader_; reader_ = 0;
 }
 
 void SDReader::reset() {
-  cursor_ = 0; 
-  timestamp_ = 0;
+  cursor_ = 0;
   open(filename_);
+}
+
+void SDReader::close() {
+  cerr << "disabled" << endl;
 }
 
 void SDReader::open(const std::string& filename) {
@@ -94,7 +101,7 @@ void SDReader::open(const std::string& filename) {
     cerr << "Failed to get data description." << endl;
     return;
   }
-  header_.print();  
+  //header_.print();  
   if ((header_.obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
     cout << "Header indicates frequency switched observation.\n"
@@ -182,7 +189,7 @@ int SDReader::read(const std::vector<int>& seq) {
 	Int frqslot = frequencies_.addFrequency(refPix, refFreq, freqInc);
 	sc.setFrequencyMap(frqslot,IFno-1);
 
-	sc.scanid = scanNo;
+	sc.scanid = scanNo-1;//make it 0-based
 	sc.setSpectrum(spectra, beamNo-1, IFno-1);
 	sc.setFlags(flagtra,  beamNo-1, IFno-1);
 	sc.setTsys(tsys, beamNo-1, IFno-1);

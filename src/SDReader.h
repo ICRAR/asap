@@ -36,7 +36,6 @@
 
 #include <aips/aips.h>
 #include <aips/iostream.h>
-#include <aips/iomanip.h>
 #include <aips/Utilities/CountedPtr.h>
 #include <aips/Utilities/String.h>
 #include <aips/Arrays/Vector.h>
@@ -51,10 +50,12 @@ namespace atnf_sd {
 class SDReader {
 public:
   SDReader();
+  SDReader(const std::string& filename);
   SDReader(CountedPtr<SDMemTable> tbl);
   virtual ~SDReader();
 
   void open(const std::string& filename);
+  void close();
   int read(const std::vector<int>& seq);
 
   CountedPtr<SDMemTable> getTable() const { return table_;}
@@ -64,7 +65,7 @@ public:
   std::vector<int> pseudoHeader() const {
     std::vector<int> v;
     v.push_back(nBeam_);v.push_back(nIF_);
-    v.push_back(nChan_);v.push_back(nPol_);
+    v.push_back(nPol_);v.push_back(nChan_);
     return v;
   }
 
