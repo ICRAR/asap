@@ -7,7 +7,7 @@ CXXFLAGS := -O -fPIC
 CXXFLAGS += -pedantic -Wno-long-long
 #CXXFLAGS += -Wall -Wno-parentheses
 
-CFITSIOLIB := /usr/local/lib/libcfitsio.a #-lcfitsio
+CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a #-lcfitsio
 CFITSIOINC := -I/usr/local/include/cfitsio
 
 CASAROOT  := $(word 1, $(AIPSPATH))
@@ -15,7 +15,7 @@ CASAINC   := -I$(CASAROOT)/code/include
 CASALIB   := $(CASAROOT)/linux_gnu/lib
 CASAPPLIB := $(CASALIB)/version.o \
              -L$(CASALIB) \
-	     -latnf -lms -lcomponents -lcoordinates \
+	     -latnf -limages -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
 	     -ltables -lscimath -lscimath_f -lcasa \
               $(CASALIB)/libwcs.a -lmir \
@@ -44,6 +44,7 @@ OBJECTS   := MathUtils.o \
              SDFitter.o \
              SDTemplates.o \
              SDMathWrapper.o \
+             SDFITSImageWriter.o \
              python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
@@ -62,7 +63,9 @@ HEADERS   := SDContainer.h \
              SDMathWrapper.h \
              SDReaderWrapper.h \
              SDWriterWrapper.h \
+             SDFITSImageWriter.h \
              python_SD.h
+
 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
 
