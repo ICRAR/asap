@@ -46,23 +46,22 @@ void python_SDMemTable() {
     .def( init < const SDMemTableWrapper& > () )
     .def( init < const SDMemTableWrapper&, std::string > () )
     .def("_copy", &SDMemTableWrapper::copy)
-    .def("getscan", &SDMemTableWrapper::getScan)
-    .def("getsource", &SDMemTableWrapper::getSource)
+    .def("_getscan", &SDMemTableWrapper::getScan)
+    .def("_getsource", &SDMemTableWrapper::getSource)
     .def("getspectrum", &SDMemTableWrapper::getSpectrum,
          (boost::python::arg("whichRow")=0) )
     .def("getabscissa", &SDMemTableWrapper::getAbscissa,
-         (boost::python::arg("whichRow")=0,
-          boost::python::arg("unit")=std::string("GHz"),
-          boost::python::arg("frame")=std::string("TOPO"),
-          boost::python::arg("restFrequency")=0.0) )
+         (boost::python::arg("whichRow")=0) )
+    .def("getabscissalabel", &SDMemTableWrapper::getAbscissaString,
+         (boost::python::arg("whichRow")=0) )
     .def("getmask", &SDMemTableWrapper::getMask,
          (boost::python::arg("whichRow")=0) )
-    .def("gettsys", &SDMemTableWrapper::getTsys,
+    .def("_gettsys", &SDMemTableWrapper::getTsys,
          (boost::python::arg("whichRow")=0),
          "Return the TSys at the current location" )
-    .def("getsourcename", &SDMemTableWrapper::getSourceName,
+    .def("_getsourcename", &SDMemTableWrapper::getSourceName,
          (boost::python::arg("whichRow")=0) )
-    .def("gettime", &SDMemTableWrapper::getTime,
+    .def("_gettime", &SDMemTableWrapper::getTime,
          (boost::python::arg("whichRow")=0) )
     .def("getif", &SDMemTableWrapper::getIF)
     .def("getbeam", &SDMemTableWrapper::getBeam)
@@ -84,7 +83,9 @@ void python_SDMemTable() {
          (boost::python::arg("whichRow")=-1) )
     .def("save",  &SDMemTableWrapper::makePersistent)
     .def("summary",  &SDMemTableWrapper::summary)
-    .def("setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
+    .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
+    .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
+    .def("_getcoordinfo", &SDMemTableWrapper::getCoordInfo)
   ;
 };
 
