@@ -521,7 +521,8 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 // Specify cursor location
 
   IPosition start, end;
-  getCursorLocation(start, end, *in);
+  Bool doAll = False;
+  setCursorSlice (start, end, doAll, *in);
 
 // Loop over rows
 
@@ -539,14 +540,14 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 
 // Get row and deconstruct
 
-     MaskedArray<Float> marr(in->rowAsMaskedArray(ii));
-     Array<Float> arr = marr.getArray();
-     Array<Bool> barr = marr.getMask();
+     MaskedArray<Float> dataIn = (in->rowAsMaskedArray(ii))(start,end);
+     Array<Float> v = dataIn.getArray().nonDegenerate();
+     Array<Bool>  m = dataIn.getMask().nonDegenerate();
 
 // Access desired piece of data
 
-     Array<Float> v((arr(start,end)).nonDegenerate());
-     Array<Bool> m((barr(start,end)).nonDegenerate());
+//     Array<Float> v((arr(start,end)).nonDegenerate());
+//     Array<Bool> m((barr(start,end)).nonDegenerate());
 
 // Apply OTF mask
 
@@ -751,64 +752,36 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
    ArrayColumn<Float> specCol(tOut,"SPECTRA");  
    ArrayColumn<Float> tSysCol(tOut,"TSYS");  
    Array<Float> tSysArr;
+
+// Get data slice bounds
+
+   IPosition start, end;
+   setCursorSlice (start, end, doAll, in);
 //
-   if (doAll) {
-      for (uInt i=0; i < tOut.nrow(); i++) {
+   for (uInt i=0; i<tOut.nrow(); i++) {
 
 // Modify data
 
-         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
-         if (what==0) {
-            dataIn  *= val;
-         } else if (what==1) {
-            dataIn += val;
-         }
-         specCol.put(i, dataIn.getArray());
-
-// Modify Tsys
-
-         if (doTSys) {
-            tSysCol.get(i, tSysArr);
-            if (what==0) {
-               tSysArr *= val;
-            } else if (what==1) {
-               tSysArr += val;
-            }
-            tSysCol.put(i, tSysArr);
-         }
+      MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
+      MaskedArray<Float> dataIn2 = dataIn(start,end);    // Reference
+      if (what==0) {
+         dataIn2 *= val;
+      } else if (what==1) {
+         dataIn2 += val;
       }
-   } else {
-
-// Get cursor location
-
-      IPosition start, end;
-      getCursorLocation(start, end, in);
-//
-      for (uInt i=0; i < tOut.nrow(); i++) {
-
-// Modify data
-
-         MaskedArray<Float> dataIn(pOut->rowAsMaskedArray(i));
-         MaskedArray<Float> dataIn2 = dataIn(start,end);    // Reference
-         if (what==0) {
-            dataIn2 *= val;
-         } else if (what==1) {
-            dataIn2 += val;
-         }
-         specCol.put(i, dataIn.getArray());
+      specCol.put(i, dataIn.getArray());
 
 // Modify Tsys
 
-         if (doTSys) {
-            tSysCol.get(i, tSysArr);
-            Array<Float> tSysArr2 = tSysArr(start,end);     // Reference
-            if (what==0) {
-               tSysArr2 *= val;
-            } else if (what==1) {
-               tSysArr2 += val;
-            }
-            tSysCol.put(i, tSysArr);
+      if (doTSys) {
+         tSysCol.get(i, tSysArr);
+         Array<Float> tSysArr2 = tSysArr(start,end);     // Reference
+         if (what==0) {
+            tSysArr2 *= val;
+         } else if (what==1) {
+            tSysArr2 += val;
          }
+         tSysCol.put(i, tSysArr);
       }
    }
 //
@@ -966,8 +939,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 // Number of channels
 
-   SDHeader sh = in.getSDHeader();
-   const uInt nChan = sh.nchan;
+   const uInt nChan = in.nChan();
 
 // Generate Kernel
 
@@ -983,83 +955,61 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
    SDMemTable* pTabOut = new SDMemTable(in,True);
 
-// Get cursor location
-         
-  IPosition start, end;
-  getCursorLocation(start, end, in);
-//
-  IPosition shapeOut(4,1);
-
 // Output Vectors
 
-  Vector<Float> valuesOut(nChan);
-  Vector<Bool> maskOut(nChan);
+   Vector<Float> valuesOut(nChan);
+   Vector<Bool> maskOut(nChan);
+
+// Get data slice bounds
+
+   IPosition start, end;
+   setCursorSlice (start, end, doAll, in);
 
 // Loop over rows in Table
 
-  for (uInt ri=0; ri < in.nRow(); ++ri) {
+   for (uInt ri=0; ri < in.nRow(); ++ri) {
 
-// Get copy of data
-    
-    const MaskedArray<Float>& dataIn(in.rowAsMaskedArray(ri));
-    AlwaysAssert(dataIn.shape()(asap::ChanAxis)==nChan, AipsError);
+// Get slice of data
+
+      MaskedArray<Float> dataIn = in.rowAsMaskedArray(ri);
+
+// Deconstruct and get slices which reference these arrays
+
+      Array<Float> valuesIn = dataIn.getArray();
+      Array<Bool> maskIn = dataIn.getMask();
 //
-    Array<Float> valuesIn = dataIn.getArray();
-    Array<Bool> maskIn = dataIn.getMask();
+      Array<Float> valuesIn2 = valuesIn(start,end);       // ref to valuesIn 
+      Array<Bool> maskIn2 = maskIn(start,end);
 
-// Branch depending on whether we smooth all locations or just
-// those pointed at by the current selection cursor
+// Iterate through by spectra
 
-    if (doAll) {
-       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
-       VectorIterator<Bool> itMask(maskIn, asap::ChanAxis);
-       while (!itValues.pastEnd()) {
-
-// Smooth
-          if (kernelType==VectorKernel::HANNING) {
-             mathutil::hanning(valuesOut, maskOut, itValues.vector(), itMask.vector());
-             itMask.vector() = maskOut;
-          } else {
-             mathutil::replaceMaskByZero(itValues.vector(), itMask.vector());
-             conv.linearConv(valuesOut, itValues.vector());
-          }
-//
-          itValues.vector() = valuesOut;
-//
-          itValues.next();
-          itMask.next();
-       }
-    } else {
-
-// Set multi-dim Vector shape
-
-       shapeOut(asap::ChanAxis) = valuesIn.shape()(asap::ChanAxis);
-
-// Stuff about with shapes so that we don't have conformance run-time errors
-
-       Vector<Float> valuesIn2 = valuesIn(start,end).nonDegenerate();
-       Vector<Bool> maskIn2 = maskIn(start,end).nonDegenerate();
-
+      VectorIterator<Float> itValues(valuesIn2, asap::ChanAxis);
+      VectorIterator<Bool> itMask(maskIn2, asap::ChanAxis);
+      while (!itValues.pastEnd()) {
+       
 // Smooth
 
-       if (kernelType==VectorKernel::HANNING) {
-          mathutil::hanning(valuesOut, maskOut, valuesIn2, maskIn2);
-          maskIn(start,end) = maskOut.reform(shapeOut);
-       } else {
-          mathutil::replaceMaskByZero(valuesIn2, maskIn2);
-          conv.linearConv(valuesOut, valuesIn2);
-       }
-//
-       valuesIn(start,end) = valuesOut.reform(shapeOut);
-    }
+         if (kernelType==VectorKernel::HANNING) {
+            mathutil::hanning(valuesOut, maskOut, itValues.vector(), itMask.vector());
+            itMask.vector() = maskOut;
+         } else {
+            mathutil::replaceMaskByZero(itValues.vector(), itMask.vector());
+            conv.linearConv(valuesOut, itValues.vector());
+         }
+//   
+         itValues.vector() = valuesOut;
+// 
+         itValues.next();
+         itMask.next();
+      }
 
 // Create and put back
 
-    SDContainer sc = in.getSDContainer(ri);
-    putDataInSDC(sc, valuesIn, maskIn);
+      SDContainer sc = in.getSDContainer(ri);
+      putDataInSDC(sc, valuesIn, maskIn);
 //
-    pTabOut->putSDContainer(sc);
-  }
+      pTabOut->putSDContainer(sc);
+   }
 //
   return pTabOut;
 }
@@ -1304,10 +1254,10 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
    Vector<Float> factors = cFac * JyPerK;
    if (toKelvin) factors = Float(1.0) / factors;
 
-// For operations only on specified cursor location
+// Get data slice bounds
 
    IPosition start, end;
-   getCursorLocation(start, end, in);
+   setCursorSlice (start, end, doAll, in);
    const uInt ifAxis = in.getIF();
 
 // Iteration axes
@@ -1327,8 +1277,9 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 
 // Get data
 
-      MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
-      Array<Float>& values = dataIn.getRWArray();
+      MaskedArray<Float> dataIn = in.rowAsMaskedArray(i);
+      Array<Float>& values = dataIn.getRWArray();           // Ref to dataIn
+      Array<Float> values2 = values(start,end);             // Ref to values to dataIn
 
 // Get SDCOntainer
 
@@ -1342,16 +1293,11 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 // So we need to iterate through by IF only giving 
 // us BEAM/POL/CHAN cubes
 
-      if (doAll) {
-         ArrayIterator<Float> itIn(values, axes);
-         uInt ax = 0;
-         while (!itIn.pastEnd()) {
-           itIn.array() *= factors(freqIDs(ax));         // Writes back to dataIn
-           itIn.next();
-         }
-      } else {
-         MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference
-         dataIn2 *= factors(freqIDs(ifAxis));
+      ArrayIterator<Float> itIn(values2, axes);
+      uInt ax = 0;
+      while (!itIn.pastEnd()) {
+        itIn.array() *= factors(freqIDs(ax));         // Writes back to dataIn
+        itIn.next();
       }
 
 // Write out
@@ -1713,28 +1659,32 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 }
 
 
-
-
-void SDMath::getCursorLocation(IPosition& start, IPosition& end,
-			       const SDMemTable& in) const
+void SDMath::setCursorSlice (IPosition& start, IPosition& end, Bool doAll, const SDMemTable& in) const
 {
-  const uInt nDim = 4;
-  const uInt i = in.getBeam();
-  const uInt j = in.getIF();
-  const uInt k = in.getPol();
-  const uInt n = in.nChan();
+  const uInt nDim = asap::nAxes;
+  DebugAssert(nDim==4,AipsError);
 //
   start.resize(nDim);
-  start(0) = i;
-  start(1) = j;
-  start(2) = k;
-  start(3) = 0;
-//
   end.resize(nDim);
-  end(0) = i;
-  end(1) = j;
-  end(2) = k;
-  end(3) = n-1;
+  if (doAll) {
+     start = 0;
+     end(0) = in.nBeam()-1;
+     end(1) = in.nIF()-1;
+     end(2) = in.nPol()-1;
+     end(3) = in.nChan()-1;
+  } else {
+     start(0) = in.getBeam();
+     end(0) = start(0);
+//
+     start(1) = in.getIF();
+     end(1) = start(1);
+//
+     start(2) = in.getPol();
+     end(2) = start(2);
+//
+     start(3) = 0;
+     end(3) = in.nChan()-1;
+   }
 }
 
 
@@ -1842,10 +1792,10 @@ void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
                                 Bool doAll, const Vector<Float>& factor) const
 {
 
-// For operations only on specified cursor location
+// Set up data slice
 
   IPosition start, end;
-  getCursorLocation(start, end, in);
+  setCursorSlice (start, end, doAll, in);
 
 // Loop over rows and apply correction factor
   
@@ -1854,23 +1804,19 @@ void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
 
 // Get data
 
-    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+     MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+     MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference to dataIn
 
 // Apply factor
 
-    if (doAll) {
-       dataIn *= factor[i];
-    } else {
-       MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference
-       dataIn2 *= factor[i];
-    }
+     dataIn2 *= factor[i];
 
 // Write out
 
-    SDContainer sc = in.getSDContainer(i);
-    putDataInSDC(sc, dataIn.getArray(), dataIn.getMask());
+     SDContainer sc = in.getSDContainer(i);
+     putDataInSDC(sc, dataIn.getArray(), dataIn.getMask());
 //
-    pTabOut->putSDContainer(sc);
+     pTabOut->putSDContainer(sc);
   }
 }
 

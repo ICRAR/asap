@@ -210,9 +210,9 @@ class SDMath {
                                const casa::ROArrayColumn<casa::uInt>& fqIDCol,
                                casa::Bool perFreqID) const;
 
-// Function to get the current cursor location
-   void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
-                           const SDMemTable& in) const;
+// Set slice to cursor or all axes
+    void setCursorSlice (casa::IPosition& start, casa::IPosition& end, 
+                         casa::Bool doAll, const SDMemTable& in) const;
 
 // Function to normalize data when averaging in time
 
