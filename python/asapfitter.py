@@ -24,10 +24,14 @@ class fitter:
         self.y = None
         self.mask = None
         self.fitfunc = None
+        self.fitfuncs = None
         self.fitted = False
         self.data = None
+        self.components = 0
+        self._fittedrow = 0
         self._p = None
         self._vb = True
+        self._selection = None
 
     def set_data(self, xdat, ydat, mask=None):
         """
@@ -79,30 +83,35 @@ class fitter:
             fitter.set_function(gauss=2) # will fit two gaussians
             fitter.set_function(poly=3)  # will fit a 3rd order polynomial
         """
-        #default poly order 0
-        
-
+        #default poly order 0        
+        n=0
         if kwargs.has_key('poly'):
             self.fitfunc = 'poly'
             n = kwargs.get('poly')
+            self.components = [n]
         elif kwargs.has_key('gauss'):
             n = kwargs.get('gauss')
             self.fitfunc = 'gauss'
-        
+            self.fitfuncs = [ 'gauss' for i in range(n) ]
+            self.components = [ 3 for i in range(n) ]
+        else:
+            print "Invalid function type."
+            return
         self.fitter.setexpression(self.fitfunc,n)
         return
             
-    def fit(self):
+    def fit(self, row=0):
         """
         Execute the actual fitting process. All the state has to be set.
         Parameters:
             none
         Example:
-            s= scantable('myscan.asap')
+            s = scantable('myscan.asap')
+            s.set_cursor(thepol=1)        # select second pol
             f = fitter()
             f.set_scan(s)
             f.set_function(poly=0)
-            f.fit()
+            f.fit(row=0)                  # fit first row 
         """
         if ((self.x is None or self.y is None) and self.data is None) \
                or self.fitfunc is None:
@@ -110,30 +119,81 @@ class fitter:
             return
         else:
             if self.data is not None:
-                self.x = self.data._getabcissa()
-                self.y = self.data._getspectrum()
+                self.x = self.data._getabcissa(row)
+                self.y = self.data._getspectrum(row)
                 print "Fitting:"
                 vb = self.data._vb
                 self.data._vb = True
-                s = self.data.get_cursor()
+                self.selection = self.data.get_cursor()
                 self.data._vb = vb
-        
-        self.fitter.setdata(self.x,self.y,self.mask)
+        self.fitter.setdata(self.x, self.y, self.mask)
         if self.fitfunc == 'gauss':
             ps = self.fitter.getparameters()
             if len(ps) == 0:
                 self.fitter.estimate()
         self.fitter.fit()
+        self._fittedrow = row
         self.fitted = True
         return
 
-    def set_parameters(self, params, fixed=None):
+    def store_fit(self):
+        if self.fitted and self.data is not None:
+            pars = list(self.fitter.getparameters())
+            fixed = list(self.fitter.getfixedparameters())
+            self.data._addfit(self._fittedrow, pars, fixed,
+                              self.fitfuncs, self.components)
+
+    def set_parameters(self, params, fixed=None, component=None):
+        if self.fitfunc is None:
+            print "Please specify a fitting function first."
+            return
+        if self.fitfunc == "gauss" and component is not None:
+            if not self.fitted:
+                from numarray import zeros
+                pars = list(zeros(len(self.components)*3))
+                fxd = list(zeros(len(pars)))
+            else:
+                pars = list(self.fitter.getparameters())              
+                fxd = list(self.fitter.getfixedparameters())
+            i = 3*component
+            pars[i:i+3] = params
+            fxd[i:i+3] = fixed
+            params = pars
+            fixed = fxd          
         self.fitter.setparameters(params)
         if fixed is not None:
             self.fitter.setfixedparameters(fixed)
         return
-    
-    def get_parameters(self):
+
+    def set_gauss_parameters(self, peak, centre, fhwm,
+                             peakfixed=False, centerfixed=False,
+                             fhwmfixed=False,
+                             component=0):
+        """
+        Set the Parameters of a 'Gaussian' component, set with set_function.
+        Parameters:
+            component:           The number of the component (Default is the
+                                 first component.
+            peak, centre, fhwm:  The gaussian parameters
+            peakfixed,
+            centerfixed,
+            fhwmfixed:           Optional parameters to indicate if
+                                 the paramters should be held fixed during
+                                 the fitting process. The default is to keep
+                                 all parameters flexible.
+        """
+        if self.fitfunc != "gauss":
+            print "Function only operates on Gaussian components."
+            return
+        if 0 <= component < len(self.components):
+            self.set_parameters([peak, centre, fhwm],
+                                [peakfixed, centerfixed, fhwmfixed],
+                                component)
+        else:
+            print "Please select a valid  component."
+            return
+        
+    def get_parameters(self, component=None):
         """
         Return the fit paramters.
         
@@ -142,32 +202,49 @@ class fitter:
             print "Not yet fitted."
         pars = list(self.fitter.getparameters())
         fixed = list(self.fitter.getfixedparameters())
+        if component is not None:            
+            if self.fitfunc == "gauss":
+                i = 3*component
+                cpars = pars[i:i+3]
+                cfixed = fixed[i:i+3]
+            else:
+                cpars = pars
+                cfixed = fixed                
+        else:
+            cpars = pars
+            cfixed = fixed
+        fpars = self._format_pars(cpars, cfixed)
         if self._vb:
-            print self._format_pars(pars)
-        return pars,fixed
+            print fpars
+        return cpars, cfixed, fpars
     
-    def _format_pars(self, pars):
+    def _format_pars(self, pars, fixed):
         out = ''
         if self.fitfunc == 'poly':
             c = 0
-            for i in pars:
-                out += '  p%d = %3.3f, ' % (c,i)
+            for i in range(len(pars)):
+                fix = ""
+                if fixed[i]: fix = "(fixed)"
+                out += '  p%d%s= %3.3f,' % (c,fix,pars[i])
                 c+=1
+            out = out[:-1]  # remove trailing ','
         elif self.fitfunc == 'gauss':
             i = 0
             c = 0
-            unit = ''
+            aunit = ''
+            ounit = ''
             if self.data:
-                unit = self.data.get_unit()
+                aunit = self.data.get_unit()
+                ounit = self.data.get_fluxunit()
             while i < len(pars):
-                out += '  %d: peak = %3.3f , centre = %3.3f %s, FWHM = %3.3f %s \n' % (c,pars[i],pars[i+1],unit,pars[i+2],unit)
+                out += '  %d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s \n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit)
                 c+=1
                 i+=3
         return out
         
     def get_estimate(self):
         """
-        Return the paramter estimates (for non-linear functions).
+        Return the parameter estimates (for non-linear functions).
         """
         pars = self.fitter.getestimate()
         if self._vb:
@@ -187,7 +264,6 @@ class fitter:
         """
         Return chi^2.
         """
-        
         if not self.fitted:
             print "Not yet fitted."
         ch2 = self.fitter.getchi2()
@@ -205,7 +281,7 @@ class fitter:
 
     def commit(self):
         """
-        Return a new scan where teh fits have been commited.
+        Return a new scan where the fits have been commited.
         """
         if not self.fitted:
             print "Not yet fitted."
@@ -215,7 +291,8 @@ class fitter:
         scan = self.data.copy()
         scan._setspectrum(self.fitter.getresidual())
 
-    def plot(self, residual=False):
+    def plot(self, residual=False, components=None, plotparms=False,
+             plotrange=None):
         """
         Plot the last fit.
         Parameters:
@@ -231,34 +308,58 @@ class fitter:
             from asap.asaplot import ASAPlot
             self._p = ASAPlot()
         self._p.clear()
+        self._p.set_panels()
+        self._p.palette(1)
         tlab = 'Spectrum'
-        xlab = 'Abcissa'
+        xlab = 'Abcissa'        
+        m = ()
         if self.data:
-            tlab = self.data._getsourcename(0)
-            xlab = self.data._getabcissalabel(0)
-        ylab = r'Flux'
-        m = self.data._getmask(0)
-        self._p.set_line(colour='blue',label='Spectrum')
+            tlab = self.data._getsourcename(self._fittedrow)
+            xlab = self.data._getabcissalabel(self._fittedrow)
+            m = self.data._getmask(self._fittedrow)
+            ylab = r'Flux'
+
+        colours = ["grey60","grey80","red","orange","purple","yellow","magenta", "cyan"]
+        self._p.palette(1,colours)
+        self._p.set_line(label='Spectrum')
         self._p.plot(self.x, self.y, m)
         if residual:
-            self._p.set_line(colour='green',label='Residual')
+            self._p.palette(2)
+            self._p.set_line(label='Residual')
             self._p.plot(self.x, self.get_residual(), m)
-        self._p.set_line(colour='red',label='Fit')
-        self._p.plot(self.x, self.get_fit(), m)
-        
+        self._p.palette(3)
+        if components is not None:
+            cs = components
+            if isinstance(components,int): cs = [components]
+            self._p.text(0.15,0.15,str(self.get_parameters()[2]),size=8)
+            n = len(self.components)
+            self._p.palette(4)
+            for c in cs:
+                if 0 <= c < n:
+                    lab = self.fitfuncs[c]+str(c)
+                    self._p.set_line(label=lab)
+                    self._p.plot(self.x, self.fitter.evaluate(c), m)
+                elif c == -1:
+                    self._p.palette(3)
+                    self._p.set_line(label="Total Fit")
+                    self._p.plot(self.x, self.get_fit(), m)                    
+        else:
+            self._p.palette(3)
+            self._p.set_line(label='Fit')
+            self._p.plot(self.x, self.get_fit(), m)
         self._p.set_axes('xlabel',xlab)
         self._p.set_axes('ylabel',ylab)
         self._p.set_axes('title',tlab)
         self._p.release()
 
-
     def auto_fit(self, insitu=None):
         """
-        Return a scan where the function is applied to all rows for all Beams/IFs/Pols.
+        Return a scan where the function is applied to all rows for
+        all Beams/IFs/Pols.
         
         """
         from asap import scantable
-        if not isinstance(self.data,scantable) :
+        if not isinstance(self.data, scantable) :
             print "Only works with scantables"
             return
         if insitu is None: insitu = rcParams['insitu']
