@@ -78,7 +78,6 @@ template class CompiledFunction<AutoDiff<Float> >;
 template class CompiledParam<AutoDiff<Float> >;
 template Vector<Bool>::Vector(const vector<bool> &);
 template void Array<float>::tovector(vector<float> &) const;
-template void Array<float>::tovector(vector<float> &) const;
 template void hanning(Vector<Float>&, Vector<Bool>&, 
 		      const Vector<Float>&, const Vector<Bool>&, Bool, Bool);
 template void ImageUtilities::bin(MaskedArray<float>&, Coordinate&, MaskedArray<float> const&, Coordinate const&, uInt, uInt);
