@@ -1,4 +1,4 @@
-//#---------------------------------------------------------------------------
+ //#---------------------------------------------------------------------------
 //# SDWriter.cc: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
@@ -42,6 +42,7 @@
 #include "SDContainer.h"
 #include "SDMemTable.h"
 #include "SDWriter.h"
+#include "SDFITSImageWriter.h"
 
 using namespace casa;
 using namespace asap;
@@ -53,11 +54,13 @@ using namespace asap;
 SDWriter::SDWriter(const std::string &format)
 {
   cFormat = format;
-
+//
   if (cFormat == "MS2") {
     cWriter = new PKSMS2writer();
-  } else {
+  } else if (cFormat == "SDFITS") {
     cWriter = new PKSSDwriter();
+  } else if (cFormat == "FITS") {
+    cWriter = 0;
   }
 }
 
@@ -67,27 +70,29 @@ SDWriter::SDWriter(const std::string &format)
 
 SDWriter::~SDWriter()
 {
-  // Nothing.
+   if (cWriter) {
+     delete cWriter;
+   }
 }
 
 //-------------------------------------------------------- SDWriter::setFormat
 
 // Reset the output format.
 
-Int SDWriter::setFormat(
-        const std::string &format)
+Int SDWriter::setFormat(const std::string &format)
 {
   if (format != cFormat) {
-    delete cWriter;
-
+    if (cWriter) delete cWriter;
+//
     cFormat = format;
     if (cFormat == "MS2") {
       cWriter = new PKSMS2writer();
-    } else {
+    } else if (cFormat == "SDFITS") {
       cWriter = new PKSSDwriter();
+    } else if (cFormat == "FITS") {
+      cWriter = 0;
     }
   }
-
   return 0;
 }
 
@@ -96,10 +101,24 @@ Int SDWriter::setFormat(
 // Write an SDMemTable to file in the desired format, closing the file when
 // finished.
 
-Int SDWriter::write(
-        const CountedPtr<SDMemTable> table,
-        const std::string &filename)
+Int SDWriter::write(const CountedPtr<SDMemTable> table,
+                    const std::string &filename)
 {
+
+// Image FITS
+
+  if (cFormat=="FITS") {
+     Bool verbose = True;
+     SDFITSImageWriter iw;
+     if (iw.write(*table, filename, verbose)) {
+        return 0;
+     } else {
+        return 1;
+     }
+  } 
+
+// MS or SDFITS
+
   // Extract the header from the table.
   SDHeader hdr = table->getSDHeader();
   Int nPol  = hdr.npol;
