@@ -195,7 +195,7 @@ class asapplotter:
                 self._plotter.subplot(i)
                 self._plotter.palette(0)
             k=0
-            #j=i
+            j=i
             eval(cdict.get(self._panels))
             for j in range(ncol):
                 if colmode == 's':
