@@ -29,6 +29,8 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 #include <casa/aips.h>
+#include <casa/iostream.h>
+#include <casa/iomanip.h>
 #include <casa/Exceptions.h>
 #include <tables/Tables/Table.h>
 #include <casa/Arrays/IPosition.h>
@@ -442,7 +444,7 @@ void SDDataDesc::summary() const
 {
    cerr << "Source    FreqID" << endl;
    for (uInt i=0; i<n_; i++) {
-      cerr << source_(i) << freqID_(i) << endl;
+      cerr << setw(11) << source_(i) << freqID_(i) << endl;
    }
 }
 
