@@ -227,21 +227,22 @@ SDMemTableWrapper SDMathWrapper::gainElevation(const SDMemTableWrapper& in,
                                                   String(method), Bool(doAll)));
 }
 
-void SDMathWrapper::velocityAlignmentInSitu (SDMemTableWrapper& in)
+void SDMathWrapper::velocityAlignmentInSitu (SDMemTableWrapper& in, const std::string& refTime)
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
-  SDMemTable* pOut = sdm.velocityAlignment(*pIn);
+  SDMemTable* pOut = sdm.velocityAlignment(*pIn, String(refTime));
   *pIn = *pOut;
   delete pOut;
 }
 
 
-SDMemTableWrapper SDMathWrapper::velocityAlignment (const SDMemTableWrapper& in)
+SDMemTableWrapper SDMathWrapper::velocityAlignment (const SDMemTableWrapper& in,
+                                                    const std::string& refTime)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
-  return CountedPtr<SDMemTable>(sdm.velocityAlignment(*pIn));
+  return CountedPtr<SDMemTable>(sdm.velocityAlignment(*pIn, String(refTime)));
 }
 
 void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)

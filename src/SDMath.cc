@@ -48,6 +48,7 @@
 #include <casa/Quanta/Unit.h>
 #include <casa/Quanta/MVEpoch.h>
 #include <casa/Quanta/QC.h>
+#include <casa/Quanta/MVTime.h>
 #include <casa/Utilities/Assert.h>
 
 #include <coordinates/Coordinates/SpectralCoordinate.h>
@@ -106,7 +107,7 @@ SDMath::~SDMath()
 
 
 
-SDMemTable* SDMath::velocityAlignment (const SDMemTable& in) const
+SDMemTable* SDMath::velocityAlignment (const SDMemTable& in, const String& refTime) const
 {
 
 // Get velocity/frame info from Table
@@ -138,7 +139,7 @@ SDMemTable* SDMath::velocityAlignment (const SDMemTable& in) const
 
 // Do it
 
-   return velocityAlign (in, velSystem, velUnit, doppler);
+   return velocityAlign (in, velSystem, velUnit, doppler, refTime);
 }
 
 
@@ -1102,7 +1103,8 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
                                    MFrequency::Types velSystem,
                                    const String& velUnit,
-                                   MDoppler::Types doppler) const
+                                   MDoppler::Types doppler,
+                                   const String& refTime) const
 {
 // Get Header
 
@@ -1131,19 +1133,20 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    generateSourceTable (srcTab, srcIdx, firstRow, srcNames);
    const uInt nSrcTab = srcTab.nelements();
    cerr << "Found " << srcTab.nelements() << " sources to align " << endl;
-/*
-   cerr << "source table = " << srcTab << endl;
-   cerr << "source idx = " << srcIdx << endl;
-   cerr << "first row = " << firstRow << endl;
-*/
 
-// Set reference Epoch to time of first row
+// Set reference Epoch to time of first row or given String
 
-   MEpoch::Ref timeRef = MEpoch::Ref(in.getTimeReference());
    Unit DAY(String("d"));
-   Quantum<Double> tQ(times[0], DAY);
-   MVEpoch mve(tQ);
-   MEpoch refTime(mve, timeRef);
+   MEpoch::Ref epochRef(in.getTimeReference());
+   MEpoch refEpoch;
+   if (refTime.length()>0) {
+      refEpoch = epochFromString(refTime, in.getTimeReference());
+   } else {
+      Quantum<Double> tQ(times[0], DAY);
+      MVEpoch mve(tQ);
+      refEpoch = MEpoch(mve, epochRef);
+   }
+   cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << endl;
 
 // Set Reference Position
 
@@ -1165,7 +1168,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
       for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
          MDirection refDir = in.getDirection(firstRow[iSrc]);
          uInt idx = (iSrc*nFreqIDs) + fqID;
-         vA[idx] = new VelocityAligner<Float>(sC, nChan, refTime, refDir, refPos,
+         vA[idx] = new VelocityAligner<Float>(sC, nChan, refEpoch, refDir, refPos,
                                               velUnit, doppler, velSystem);
       }
    }
@@ -1195,7 +1198,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
     Quantum<Double> tQ2(times[iRow],DAY);
     MVEpoch mv2(tQ2);
-    MEpoch epoch(mv2, timeRef);
+    MEpoch epoch(mv2, epochRef);
 
 // Get FreqID vector.  One freqID per IF
 
@@ -1609,3 +1612,23 @@ void SDMath::generateSourceTable (Vector<String>& srcTab,
       srcIdx[i] = idx;
    }
 }
+
+MEpoch SDMath::epochFromString (const String& str, MEpoch::Types timeRef) const
+{
+   Quantum<Double> qt;
+   if (MVTime::read(qt,str)) {
+      MVEpoch mv(qt);
+      MEpoch me(mv, timeRef);
+      return me;
+   } else {
+      throw(AipsError("Invalid format for Epoch string"));
+   }
+}
+
+
+String SDMath::formatEpoch(const MEpoch& epoch)  const
+{
+   MVTime mvt(epoch.getValue());
+   return mvt.string(MVTime::YMD) + String(" (") + epoch.getRefString() + String(")");
+}
+

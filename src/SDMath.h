@@ -38,6 +38,8 @@
 #include "SDDefs.h"
 
 class casa::Table;
+class casa::MEpoch;
+
 
 namespace asap {
 
@@ -94,7 +96,7 @@ class SDMath {
                               const casa::String& method, casa::Bool doAll) const;
 
 // Velocity Alignment
-   SDMemTable* velocityAlignment (const SDMemTable& in) const;
+   SDMemTable* velocityAlignment (const SDMemTable& in, const casa::String& refTime) const;
 
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
@@ -185,7 +187,14 @@ class SDMath {
    SDMemTable* velocityAlign (const SDMemTable& in,
                               casa::MFrequency::Types velSystem,
                               const casa::String& velUnit,
-                              casa::MDoppler::Types doppler) const;
+                              casa::MDoppler::Types doppler,
+                              const casa::String& timeRef) const;
+
+// Convert time String to Epoch
+   casa::MEpoch epochFromString (const casa::String& str, casa::MEpoch::Types timeRef) const;
+
+// Format EPoch
+   casa::String formatEpoch(const casa::MEpoch& epoch)  const;
 };
 
 } // namespace
