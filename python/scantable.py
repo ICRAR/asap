@@ -497,6 +497,7 @@ class scantable(sdtable):
             freqs = (freqs)
         sdtable._setrestfreqs(self,freqs, unit)
         return
+
     def get_restfreqs(self):
         """
         Get the restfrequency(s) stored in this scantable.
@@ -507,6 +508,25 @@ class scantable(sdtable):
             a list of doubles
         """
         return list(self._getrestfreqs())
+
+    def select_restfreq(self, freq, unit='Hz', source=None, theif=None):
+        """
+        Select the restfrequency for the specified source and IF
+        Parameters:
+            source:  Source name (blank means all)
+            theif:   IF (-1 means all)
+            freq:    rest frequency
+            unit:    unit for rest frequency (default 'Hz')
+        Example:
+            scan.select_restfreq(freq=1.4e9, source='NGC253', theif=2)
+        """
+        if source is None:
+            source = ""
+        if theif is None:
+            theif = -1
+        sdtable._selectrestfreq(self, freq, unit, source, theif)
+        return
+
 
     def flag_spectrum(self, thebeam, theif, thepol):
         """
