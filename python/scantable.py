@@ -58,6 +58,7 @@ class scantable(sdtable):
                          Allowed are - 'ASAP' (save as ASAP Table),
                                        'SDFITS' (save as SDFITS file)
                                        'FITS' (saves each row as a FITS Image) 
+                                       'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++ MeasurementSet V2)
         Example:
             scan.save('myscan.asap')
