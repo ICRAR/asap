@@ -7,7 +7,7 @@ CXX      := g++-3.2.3
 endif
 
 CXXFLAGS := -O -fPIC
-#CXXFLAGS += -fpermissive # This should be removed.
+
 #CXXFLAGS += -ansi
 CXXFLAGS += -pedantic -Wno-long-long
 #CXXFLAGS += -Wall -Wno-parentheses

@@ -174,7 +174,7 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName)
    }
 //
    of.close();
-   cerr << "Wrote " << nRows << " rows into file " << fileName << endl;
+   cout << "Wrote " << nRows << " rows into file " << fileName << endl;
 //   
    return True;
 }

@@ -116,7 +116,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    }
    Directory dir(dirName2);
    dir.create(True);
-   cerr << "Created directory '" << dirName2 << "' for output files" << endl;
+   cout << "Created directory '" << dirName2 << "' for output files" << endl;
 
 // Temps
 
@@ -228,7 +228,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 	     << pos(1) << "_pol" << pos(2) << "_" << srcCol(iRow) << ".fits";
          String tS(oss);
          String fileName = dirName2 + String("/") + tS;
-         if (verbose) cerr << "Writing row " << iRow 
+         if (verbose) cout << "Writing row " << iRow 
 			   << " into file '" << tS << "'" << endl;
 //
          Bool ok = ImageFITSConverter::ImageToFITS(errMsg, tIm, fileName, 
@@ -248,7 +248,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    }
 //
    if (!verbose) {
-      cerr << "Wrote " << nRows << " into individual FITS files" << endl;
+      cout << "Wrote " << nRows << " into individual FITS files" << endl;
    }
 //   
    return True;

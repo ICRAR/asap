@@ -219,6 +219,7 @@ int SDReader::read(const std::vector<int>& seq) {
   Vector<Complex> xPol;
   uInt n = seq.size();
 
+
   uInt stepsize = header_->nif*header_->nbeam;
   uInt seqi = 0;
   Bool getAll = False;

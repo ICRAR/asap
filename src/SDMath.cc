@@ -1088,7 +1088,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
   Bool toKelvin = True;
   Double cFac = 1.0;    
   if (fluxUnit==JY) {
-     cerr << "Converting to K" << endl;
+     cout << "Converting to K" << endl;
 //
      Quantum<Double> t(1.0,fluxUnit);
      Quantum<Double> t2 = t.get(JY);
@@ -1097,7 +1097,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
      toKelvin = True;
      sh.fluxunit = "K";
   } else if (fluxUnit==K) {
-     cerr << "Converting to Jy" << endl;
+     cout << "Converting to Jy" << endl;
 //
      Quantum<Double> t(1.0,fluxUnit);
      Quantum<Double> t2 = t.get(K);
@@ -1120,7 +1120,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
      factor *= JyPerK;
      if (toKelvin) factor = 1.0 / JyPerK;
 //
-     cerr << "Applying supplied conversion factor = " << factor << endl;
+     cout << "Applying supplied conversion factor = " << factor << endl;
      Vector<Float> factors(in.nRow(), factor);
      correctFromVector (pTabOut, in, doAll, factors);
   } else if (etaAp>0.0) {
@@ -1129,7 +1129,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
         factor = 1.0 / factor;
      }
 //
-     cerr << "Applying supplied conversion factor = " << factor << endl;
+     cout << "Applying supplied conversion factor = " << factor << endl;
      Vector<Float> factors(in.nRow(), factor);
      correctFromVector (pTabOut, in, doAll, factors);
   } else {
@@ -1139,7 +1139,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
 // to be computed per IF and may be different and may
 // change per integration.
 
-     cerr << "Looking up conversion factors" << endl;
+     cout << "Looking up conversion factors" << endl;
      convertBrightnessUnits (pTabOut, in, toKelvin, cFac, doAll);
   }
 //
@@ -1203,7 +1203,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
         throw(AipsError("There is no known gain-elevation polynomial known for this instrument"));
      }
 //
-     cerr << "Making polynomial correction with " << msg << " coefficients" << endl;
+     cout << "Making polynomial correction with " << msg << " coefficients" << endl;
      const uInt nRow = in.nRow();
      Vector<Float> factor(nRow);
      for (uInt i=0; i<nRow; i++) {
@@ -1221,7 +1221,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
 
 // Read and correct
 
-     cerr << "Making correction from ascii Table" << endl;
+     cout << "Making correction from ascii Table" << endl;
      correctFromAsciiTable (pTabOut, in, fileName, col0, col1, 
                             methodStr, doAll, x);
    }
@@ -1300,7 +1300,7 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
    }
 //
    Vector<Float> JyPerK = sdAtt.JyPerK(inst, dateObs, freqs);
-   cerr << "Jy/K = " << JyPerK << endl;
+   cout << "Jy/K = " << JyPerK << endl;
    Vector<Float> factors = cFac * JyPerK;
    if (toKelvin) factors = Float(1.0) / factors;
 
@@ -1404,9 +1404,9 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    } else {
       refEpoch = in.getEpoch(0);
    }
-   cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << 
-           " in frame " << MFrequency::showType(freqSystem) << endl;
-
+   cout << "Aligning at reference Epoch " << formatEpoch(refEpoch) 
+	<< " in frame " << MFrequency::showType(freqSystem) << endl;
+   
 // Get Reference Position
 
    MPosition refPos = in.getAntennaPosition();
@@ -1451,7 +1451,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 
 // New output Table
 
-   cerr << "Create output table" << endl;
+   cout << "Create output table" << endl;
    SDMemTable* pTabOut = new SDMemTable(in,True);
    pTabOut->putSDFreqTable(freqTabOut);
 
@@ -1470,7 +1470,7 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
 //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
       if (iRow%10==0) {
-         cerr << "Processing row " << iRow << endl;
+         cout << "Processing row " << iRow << endl;
       }
 
 // Get EPoch

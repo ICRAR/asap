@@ -38,7 +38,7 @@ namespace mathutil {
 
 // Add new entry to list
 template <class T>
-casa::uInt addEntry (casa::Vector<T>& list, T val);
+casa::uInt addEntry(casa::Vector<T>& list, T val);
 
 // Find the scan boundaries from a list of ScanIDs
 void scanBoundaries (casa::Vector<casa::uInt>& startInt,  
@@ -52,10 +52,12 @@ void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask,
 	     casa::Bool relaxed=False, casa::Bool ignoreOther=False);
 
 // Generate specified statistic
-float statistics (const casa::String& which,  const casa::MaskedArray<casa::Float>& data);
+float statistics(const casa::String& which,  
+		 const casa::MaskedArray<casa::Float>& data);
 
 // Replace masked value by zero
-void replaceMaskByZero (casa::Vector<casa::Float>& data, const casa::Vector<casa::Bool>& mask);
+void replaceMaskByZero(casa::Vector<casa::Float>& data, 
+			const casa::Vector<casa::Bool>& mask);
 };
 
 #endif

@@ -519,7 +519,7 @@ void SDDataDesc::summary() const
    if (n_>0) {
       cerr << "Source    ID" << endl;   
       for (uInt i=0; i<n_; i++) {
-         cerr << setw(11) << source_(i) << ID_(i) << endl;
+         cout << setw(11) << source_(i) << ID_(i) << endl;
       }
    }
 }

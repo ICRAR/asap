@@ -1380,7 +1380,7 @@ Bool SDMemTable::setRestFreqs (const Vector<Double>& restFreqsIn,
       if (nRestFreqs != nIFs) {
          throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
       }
-      cerr << "Replacing rest frequencies with given list, one per IF" << endl;
+      cout << "Replacing rest frequencies with given list, one per IF" << endl;
 //
       sdft.deleteRestFrequencies();
       for (uInt i=0; i<nRestFreqs; i++) {
@@ -1393,7 +1393,7 @@ Bool SDMemTable::setRestFreqs (const Vector<Double>& restFreqsIn,
 
       Quantum<Double> rf(restFreqs[0], unit);
       idx = sdft.addRestFrequency(rf.getValue("Hz"));
-      cerr << "Selecting given rest frequency" << endl;
+      cout << "Selecting given rest frequency" << endl;
    }
 
 // Replace
@@ -1437,20 +1437,20 @@ Bool SDMemTable::setRestFreqs (const Vector<Double>& restFreqsIn,
    return ok;
 }
 
-void SDMemTable::spectralLines () const
+void SDMemTable::spectralLines() const
 {
    Vector<String> lines = MeasTable::Lines();
    MFrequency lineFreq;
    Double freq;
 //
-   cerr.flags(std::ios_base::left);
-   cerr << "Line      Frequency (Hz)" << endl;
-   cerr << "-----------------------" << endl;
+   cout.flags(std::ios_base::left);
+   cout << "Line      Frequency (Hz)" << endl;
+   cout << "-----------------------" << endl;
    for (uInt i=0; i<lines.nelements(); i++) {
      MeasTable::Line(lineFreq, lines[i]);
      freq = lineFreq.getValue().getValue();          // Hz
 //
-     cerr << setw(11) << lines[i] << setprecision(10) << freq << endl;
+     cout << setw(11) << lines[i] << setprecision(10) << freq << endl;
    }
 }
 
