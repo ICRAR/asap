@@ -1165,13 +1165,13 @@ std::string SDMemTable::summary() const  {
   std::vector<string> info = getCoordInfo();
   SDFrequencyTable sdft = getSDFreqTable();
   oss << endl << endl;
-  oss << "FreqID  Frame   RefFreq(Hz)  RefPix   Increment(Hz)" << endl;
-  oss << "-------------------------------------------------------------------------------" << endl;
+  oss << "FreqID  Frame   RefFreq(Hz)     RefPix   Increment(Hz)" << endl;
+  oss << "-------------------------------------------------------------------------------" <<$
   for (uInt i=0; i<sdft.length(); i++) {
-     oss << setw(8) << i << setw(8) 
-                    << info[3] << setw(13)
-                    << sdft.referenceValue(i) << setw(10)  
-                    << sdft.referencePixel(i) << setw(12) 
+     oss << setw(8) << i << setw(8)
+                    << info[3] << setw(16) << setprecision (8)
+                    << sdft.referenceValue(i) << setw(10)
+                    << sdft.referencePixel(i) << setw(12)
                     << sdft.increment(i) << endl;
   }
   oss << "-------------------------------------------------------------------------------" << endl;
