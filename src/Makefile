@@ -45,6 +45,7 @@ OBJECTS   := MathUtils.o \
              SDTemplates.o \
              SDMathWrapper.o \
              SDFITSImageWriter.o \
+             SDAsciiWriter.o \
              python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
@@ -64,6 +65,7 @@ HEADERS   := SDContainer.h \
              SDReaderWrapper.h \
              SDWriterWrapper.h \
              SDFITSImageWriter.h \
+             SDAsciiWriter.h \
              python_SD.h
 
 
