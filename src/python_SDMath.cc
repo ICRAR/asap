@@ -72,6 +72,7 @@ namespace asap {
       def("add_insitu", &SDMathWrapper::addInSitu);
 //
       def("hanning", &SDMathWrapper::hanning);
+      def("hanning_insitu", &SDMathWrapper::hanningInSitu);
 //
       def("average", &SDMathWrapper::average);
 //
