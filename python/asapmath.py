@@ -49,37 +49,45 @@ def quotient(source, reference):
     from asap._asap import quotient as _quot
     return scantable(_quot(source, reference))
 
-def scale(scan, factor, insitu=False):
+def scale(scan, factor, insitu=False, all=True):
     """
     Return a scan where all spectra are scaled by the give 'factor'
     Parameters:
         scan:        a scantable
         factor:      the scaling factor
-    Note:
-        This currently applies the all beams/IFs/pols
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the scaling is done in-situ
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
     """
     if not insitu:
         from asap._asap import scale as _scale
-        return scantable(_scale(scan, factor))
+        return scantable(_scale(scan, factor, all))
     else:
         from asap._asap import scale_insitu as _scale
-        _scale(scan, factor)
+        _scale(scan, factor, all)
         return
         
 
-def add(scan, offset):
+def add(scan, offset, insitu=False, all=True):
     """
-    Return a scan where the offset is added.
+    Return a scan where all spectra have the offset added
     Parameters:
         scan:        a scantable
-        offset:      the value to add
-    Note:
-        This currently applies the all beams/IFs/pols
+        offset:      the offset
+        insitu:      if False (default) a new scantable is returned.
+                     Otherwise, the addition is done in-situ
+        all:         if True (default) apply to all spectra. Otherwise
+                     apply only to the selected (beam/pol/if)spectra only
     """
-    from asap._asap import add as _add
-    return scantable(_add(scan, offset))
-
-
+    if not insitu:
+        from asap._asap import add as _add
+        return scantable(_add(scan, offset, all))
+    else:
+        from asap._asap import add_insitu as _add
+        _add(scan, offset, all)
+        return
+        
 def bin(scan, binwidth=5):
     """
     """
