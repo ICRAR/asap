@@ -39,7 +39,6 @@
 namespace atnf_sd {
   template class CountedConstPtr<SDMemTable>;
   template class CountedPtr<SDMemTable>;
-  template class CountedPtr<SDMemTable>;
   template class PtrRep<SDMemTable>;
   template class SimpleCountedConstPtr<SDMemTable>;
   template class SimpleCountedPtr<SDMemTable>;
@@ -82,3 +81,4 @@ template void hanning(Vector<Float>&, Vector<Bool>&,
 		      const Vector<Float>&, const Vector<Bool>&, Bool, Bool);
 template void ImageUtilities::bin(MaskedArray<float>&, Coordinate&, MaskedArray<float> const&, Coordinate const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
+
