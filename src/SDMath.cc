@@ -373,7 +373,7 @@ CountedPtr<SDMemTable> SDMath::quotient(const CountedPtr<SDMemTable>& on,
   const uInt nRowOn = on->nRow();
   const uInt nRowOff = off->nRow();
   Bool ok = (nRowOff==1&&nRowOn>0) ||
-            (nRowOn>0&&nRowOn==nRowOff);
+            (nRowOff>=1&&nRowOn==nRowOff);
   if (!ok) {
      throw (AipsError("The reference Scan Table can have one row or the same number of rows as the source Scan Table"));
   }
@@ -401,24 +401,25 @@ CountedPtr<SDMemTable> SDMath::quotient(const CountedPtr<SDMemTable>& on,
   for (uInt i=0; i<nRowOn; i++) {
      MaskedArray<Float> mOn(on->rowAsMaskedArray(i));
      IPosition shpOn = mOn.shape(); 
+     tSysOn.get(i, tSysOnArr);
 //
      if (nRowOff>1) {
         delete pMOff;
         pMOff = new MaskedArray<Float>(off->rowAsMaskedArray(i));
         shpOff = pMOff->shape();
-        if (!shpOn.isEqual(shpOff)) {
-           throw(AipsError("on/off data are not conformant"));
-        }
-//
         tSysOff.get(i, tSysOffArr);
-        tSysOn.get(i, tSysOnArr);
-        if (!tSysOnArr.shape().isEqual(tSysOffArr.shape())) {
-           throw(AipsError("on/off Tsys data are not conformant"));
-        }
-//
-        if (!shpOn.isEqual(tSysOnArr.shape())) {
-           throw(AipsError("Correlation and Tsys data are not conformant"));
-        }
+     }
+
+// Conformance
+
+     if (!shpOn.isEqual(shpOff)) {
+        throw(AipsError("on/off data are not conformant"));
+     }
+     if (!tSysOnArr.shape().isEqual(tSysOffArr.shape())) {
+        throw(AipsError("on/off Tsys data are not conformant"));
+     }
+     if (!shpOn.isEqual(tSysOnArr.shape())) {
+        throw(AipsError("Correlation and Tsys data are not conformant"));
      }
 
 // Get container
