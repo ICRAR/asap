@@ -75,4 +75,3 @@ void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
       if (!mask[i]) data[i] = 0.0;
    }
 }
-

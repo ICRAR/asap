@@ -36,9 +36,13 @@
 
 namespace mathutil {
 
+// Add new entry to list
 template <class T>
+casa::uInt addEntry (casa::Vector<T>& list, T val);
+
 
 // Hanning smoothing
+template <class T>
 void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask, 
 	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask, 
 	     casa::Bool relaxed=False, casa::Bool ignoreOther=False);

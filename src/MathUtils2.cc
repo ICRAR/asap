@@ -88,3 +88,27 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
     ++outmit;
   }
 }
+
+template <class T>
+uInt mathutil::addEntry (Vector<T>& list, T val)
+{
+   uInt n = list.nelements();
+   if (n>0) {
+      for (uInt i=0; i<n; i++) {
+         if (near(list[i],val)) {
+            return i; 
+         }
+      }
+   }
+//
+   n++;
+   list.resize(n,True);
+   list(n-1) = val;
+   return n-1;
+}
+
+
+ 
+
+
+
