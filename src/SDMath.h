@@ -85,7 +85,7 @@ namespace SDMath {
   std::vector<float> statistic(const casa::CountedPtr<SDMemTable>& in, 
    		                const std::vector<bool>& mask, const std::string& which);
 
-// private (not actually...)
+// private like functions (this is not a class so can't make them private)
 
 // Weighting type for time averaging
 

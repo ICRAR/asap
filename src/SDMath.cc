@@ -61,7 +61,6 @@
 
 using namespace casa;
 using namespace asap;
-//using namespace asap::SDMath;
 
 CountedPtr<SDMemTable> SDMath::average (const Block<CountedPtr<SDMemTable> >& in,
                                         const Vector<Bool>& mask, bool scanAv,
