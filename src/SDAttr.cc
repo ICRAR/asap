@@ -36,6 +36,7 @@
 #include <casa/Exceptions.h>
 #include <casa/Quanta/QC.h>
 #include <casa/Quanta/Quantum.h>
+#include <casa/Quanta/MVTime.h>
 
 #include <measures/Measures/MEpoch.h>
 
@@ -110,11 +111,23 @@ Vector<Float> SDAttr::beamEfficiency (Instrument inst, const MEpoch& dateObs, co
 
 // Look at date where appropriate
 
+   MVTime t(dateObs.getValue());
+   uInt year = t.year();
+//
    Vector<Float> facs(freqs.nelements(),1.0);
    switch (inst) {
       case ATMOPRA:
         {
-           facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_);
+           if (year<2003) {
+              cerr << "There is no beam efficiency data from before 2003 - using 2003 data" << endl;
+              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+           } else if (year==2003) {
+              cerr << "Using beam efficiency data from 2003" << endl;
+              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+           } else {
+              cerr << "Using beam efficiency data from 2004" << endl;
+              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_); 
+           }
         }
         break;
       default:
@@ -131,11 +144,20 @@ Vector<Float> SDAttr::apertureEfficiency (Instrument inst, const MEpoch& dateObs
 
 // Look at date where appropriate
 
+   MVTime t(dateObs.getValue());
+   uInt year = t.year();
+//
    Vector<Float> facs(freqs.nelements(),1.0);
    switch (inst) {
       case ATMOPRA:
         {
-           facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+           if (year<2004) {
+              cerr << "There is no aperture efficiency data from before 2004 - using 2004 data" << endl;
+              facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+           } else {
+              cerr << "Using aperture efficiency data from 2004" << endl;
+              facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+           }
         }
         break;
       default:
