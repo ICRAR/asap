@@ -81,6 +81,7 @@ SDMemTable::SDMemTable(const std::string& name) :
   Table tab(name);
   table_ = tab.copyToMemoryTable("dummy");
   //cerr << "hello from C SDMemTable @ " << this << endl;
+  attach();
 }
 
 SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
@@ -112,6 +113,7 @@ SDMemTable::SDMemTable(const Table& tab, const std::string& exprs) :
   if (t.nrow() == 0)
       throw(AipsError("Query unsuccessful."));
   table_ = t.copyToMemoryTable("dummy");
+  attach();
 }
 
 SDMemTable::~SDMemTable()
