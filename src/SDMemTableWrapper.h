@@ -41,17 +41,24 @@ namespace asap {
 class SDMemTableWrapper {
 
 public:
-  SDMemTableWrapper(const std::string& name) : 
+  SDMemTableWrapper(const std::string& name) :
     table_(new SDMemTable(name)) {;}
-  SDMemTableWrapper() : 
+  SDMemTableWrapper() :
     table_(new SDMemTable()) {;}
-  
+
   SDMemTableWrapper(CountedPtr<SDMemTable> cp) : table_(cp) {;}
-  SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
-  
+  //SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
+  SDMemTableWrapper(const SDMemTableWrapper& mt) :
+    table_(mt.getCP()) {;}
+
   SDMemTableWrapper(const SDMemTableWrapper& mt, const std::string& expr) :
     table_(new SDMemTable(mt.getCP()->table(), expr)) {;}
-  
+
+  SDMemTableWrapper copy() {
+    //CountedPtr<SDMemTable> cp = new SDMemTable(*this, False);
+    return SDMemTableWrapper(new SDMemTable(*(this->getCP()), False));
+  }
+
   SDMemTableWrapper getScan(int scan) {
     String cond("SELECT * from $1 WHERE SCANID == ");
     cond += String::toString(scan);
@@ -68,51 +75,64 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
-  std::vector<double> getAbscissa(int whichRow, 
-				  const std::string& unit = "GHz",
-				  const std::string& frame = "TOPO",
-				  double restfreq=0.0) const {
+  std::vector<double> getAbscissa(int whichRow,
+                                  const std::string& unit = "GHz",
+                                  const std::string& frame = "TOPO",
+                                  double restfreq=0.0) const {
     return table_->getAbscissa(whichRow,unit,frame,restfreq);
   }
 
   float getTsys(int whichRow=0) {return table_->getTsys(whichRow);}
   std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
 
-  std::vector<bool> getMask(int whichRow=0) const { 
-    return table_->getMask(whichRow); 
+  std::vector<bool> getMask(int whichRow=0) const {
+    return table_->getMask(whichRow);
   }
-  bool setMask(const std::vector<int> mvals) const { 
-    return table_->setMask(mvals); 
- }
+  bool setMask(const std::vector<int> mvals) const {
+    return table_->setMask(mvals);
+  }
 
+  void flag(int whichRow=-1) {
+    table_->flag(whichRow);
+  }
   std::string getSourceName(int whichRow=0) {
     return table_->getSourceName(whichRow);
   }
 
+  void setSpectrum(std::vector<float> spectrum, int whichRow=0) {
+      table_->setSpectrum(spectrum, whichRow);
+  }
+
   bool setIF(int whichIF=0) {return table_->setIF(whichIF);}
   bool setBeam(int whichBeam=0) {return table_->setBeam(whichBeam);}
-  bool setPol(int whichPol=0) {return table_->setPol(whichPol);} 
+  bool setPol(int whichPol=0) {return table_->setPol(whichPol);}
 
   int getIF() {return table_->getIF();}
   int getBeam() {return table_->getBeam();}
-  int getPol() {return table_->getPol();} 
+  int getPol() {return table_->getPol();}
 
   int nIF() {return table_->nIF();}
   int nBeam() {return table_->nBeam();}
-  int nPol() {return table_->nPol();} 
-  int nChan() {return table_->nChan();} 
-  int nScans() {return table_->nScans();} 
+  int nPol() {return table_->nPol();}
+  int nChan() {return table_->nChan();}
+  int nScan() {return table_->nScan();}
+  int nRow() {return table_->nRow();}
 
   //sets the mask
   bool setChannels(const std::vector<int>& whichChans) {
-    return setChannels(whichChans); 
+    return setChannels(whichChans);
   }
   void makePersistent(const std::string& fname) {
     table_->makePersistent(fname);
   }
+
+  void setRestFreqs(std::vector<double> freqs, const std::string& theunit) {
+    table_->setRestFreqs(freqs, theunit);
+  }
+
   CountedPtr<SDMemTable> getCP() const {return table_;}
-  void summary() { table_->summary(); }
-  
+  std::string summary() { return table_->summary(); }
+
 private:
   CountedPtr<SDMemTable> table_;
 };
