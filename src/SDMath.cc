@@ -808,13 +808,14 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
 
 
 
-SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) const
+SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
+                               const String& weightStr) const
 //
 // Average all polarizations together, weighted by variance
 //
 {
-//   WeightType wtType = NONE;
-//   convertWeightString(wtType, weight);
+   WeightType wtType = NONE;
+   convertWeightString(wtType, weightStr);
 
    const uInt nRows = in.nRow();
 
@@ -831,6 +832,9 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) c
   const IPosition& shapeIn = in.rowAsMaskedArray(0u, False).shape();
   IPosition shapeOut(shapeIn);
   shapeOut(asap::PolAxis) = 1;                          // Average all polarizations
+  if (shapeIn(asap::PolAxis)==1) {
+     throw(AipsError("The input has only one polarisation"));
+  }
 //
   const uInt nChan = shapeIn(asap::ChanAxis);
   const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
@@ -873,27 +877,27 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) c
         Vector<Float> t1(nChan); t1 = 0.0;
         Vector<Bool> t2(nChan); t2 = True;
         MaskedArray<Float> vecSum(t1,t2);
-        Float varSum = 0.0;
+        Float norm = 0.0;
         {
            ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
            ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
            while (!itDataVec.pastEnd()) {     
 
-// Create MA of data & mask (optionally including OTF mask) and  get variance 
+// Create MA of data & mask (optionally including OTF mask) and  get variance for this spectrum
 
               if (useMask) {
                  const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
+                 if (wtType==VAR) fac = 1.0 / variance(spec);
               } else {
                  const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
+                 if (wtType==VAR) fac = 1.0 / variance(spec);
               }
 
 // Normalize spectrum (without OTF mask) and accumulate
 
               const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
               vecSum += spec;
-              varSum += fac;
+              norm += fac;
 
 // Next
 
@@ -904,7 +908,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) c
 
 // Normalize summed spectrum
 
-        vecSum /= varSum;
+        vecSum /= norm;
 
 // FInd position in input data array.  We are iterating by pol-channel
 // plane so all that will change is beam and IF and that's what we want.

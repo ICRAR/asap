@@ -101,9 +101,11 @@ namespace SDMathWrapper {
 			    bool scanAv, const std::string& wt);
 
 // Average polarizations
-  void averagePolInSitu(SDMemTableWrapper& in,  const std::vector<bool>& mask);
+  void averagePolInSitu(SDMemTableWrapper& in,  const std::vector<bool>& mask,
+                        const std::string& weightStr);
   SDMemTableWrapper averagePol(const SDMemTableWrapper& in,
-			       const std::vector<bool>& mask);
+			       const std::vector<bool>& mask,
+                               const std::string& weightStr);
 
 // Statistics
   std::vector<float> statistic(const SDMemTableWrapper& in,

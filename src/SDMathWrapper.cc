@@ -169,24 +169,25 @@ SDMemTableWrapper SDMathWrapper::resample (const SDMemTableWrapper& in,
 
 
 void SDMathWrapper::averagePolInSitu(SDMemTableWrapper& in, 
-				     const std::vector<bool>& mask)
+				     const std::vector<bool>& mask,
+                                     const std::string& weightStr)
 {
   SDMemTable* pIn = in.getPtr();
   SDMath sdm;
   Vector<Bool> tMask(mask);
-  SDMemTable* pOut = sdm.averagePol (*pIn, tMask);
+  SDMemTable* pOut = sdm.averagePol (*pIn, tMask, String(weightStr));
   *pIn = *pOut;
    delete pOut;
 }
 
 SDMemTableWrapper SDMathWrapper::averagePol (const SDMemTableWrapper& in,
-					     const std::vector<bool>& mask)
-
+					     const std::vector<bool>& mask,
+                                             const std::string& weightStr)
 {
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
   Vector<Bool> tMask(mask);
-  return CountedPtr<SDMemTable>(sdm.averagePol(*pIn, tMask));
+  return CountedPtr<SDMemTable>(sdm.averagePol(*pIn, tMask, String(weightStr)));
 }
 
 

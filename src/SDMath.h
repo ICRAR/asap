@@ -115,7 +115,8 @@ class SDMath {
                             casa::Bool doAll, casa::uInt what, casa::Bool tSys) const;
 
 // Average polarizations
-   SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask) const;
+   SDMemTable* averagePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask,
+                          const casa::String& wtStr) const;
 
  private:
 
