@@ -36,6 +36,8 @@
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 
+class casa::Table;
+
 namespace asap {
 
 class SDMemTable;
@@ -63,7 +65,7 @@ class SDMath {
 // Average in time
    casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                                          const casa::Vector<casa::Bool>& mask,
-                                         casa::Bool scanAverage, const std::string& weightStr);
+                                         casa::Bool scanAverage, const casa::String& weightStr);
 //                                         casa::Bool alignVelocity);
 
 // Statistics
@@ -80,6 +82,10 @@ class SDMath {
 // Flux conversion between Jansky and Kelvin
    SDMemTable* convertFlux (const SDMemTable& in, casa::Float area, 
                             casa::Float eta, casa::Bool doAll);
+
+// Gain-elevation correction
+   SDMemTable* gainElevation (const SDMemTable& in, const casa::String& fileName,
+                              const casa::String& method, casa::Bool doAll);
 
 // Simple mathematical operations.  what=0 (mul) or 1 (add)
    SDMemTable* simpleOperate(const SDMemTable& in, casa::Float offset, 
@@ -103,7 +109,7 @@ class SDMath {
                    const casa::Vector<casa::Bool>& mask, casa::Double time, casa::Double interval,
                    const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                    casa::uInt iTab, casa::uInt iRow, casa::uInt axis, casa::uInt nAxesSub,
-                   casa::Bool useMask, WeightType wtType);
+                   casa::Bool useMask, WeightType wtType) const;
 
 // Function to fill Scan Container when averaging in time
 
@@ -112,26 +118,34 @@ class SDMath {
                 const casa::Array<casa::Float>& tSys,
                 casa::Int scanID, casa::Double timeStamp,
                 casa::Double interval, const casa::String& sourceName,
-                const casa::Vector<casa::uInt>& freqID);
+                const casa::Vector<casa::uInt>& freqID) const;
 
 // Put the data and mask into the SDContainer
    void putDataInSDC (SDContainer& sc, const casa::Array<casa::Float>& data,
-                      const casa::Array<casa::Bool>& mask);
+                      const casa::Array<casa::Bool>& mask) const;
 
 // Function to normalize data when averaging in time
 
   void normalize (casa::MaskedArray<casa::Float>& data,
                   const casa::Array<casa::Float>& sumSq,
                   const casa::Array<casa::Float>& nPts,
-                  WeightType wtType, casa::Int axis, casa::Int nAxes);
+                  WeightType wtType, casa::Int axis, casa::Int nAxes) const;
 
 // Function to get the current cursor location
    void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
-                           const SDMemTable& in);
+                           const SDMemTable& in) const;
 
 // Convert weight string to enum value
 
-   void convertWeightString (WeightType& wt, const std::string& weightStr);
+   void convertWeightString (WeightType& wt, const casa::String& weightStr) const;
+
+// Convert interpolation type string
+   void convertInterpString(casa::Int& type, const casa::String& interp) const;
+
+// Read ascii file
+
+   casa::Table readAsciiFile (const casa::String& fileName) const;
+                   
 };
 
 } // namespace

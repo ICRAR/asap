@@ -77,6 +77,9 @@ namespace asap {
       def("convertflux", &SDMathWrapper::convertFlux);
       def("convertflux_insitu", &SDMathWrapper::convertFluxInSitu);
 //
+      def("gainel", &SDMathWrapper::gainElevation);
+      def("gainel_insitu", &SDMathWrapper::gainElevationInSitu);
+//
       def("average", &SDMathWrapper::average);
 //
       def("averagepol", &SDMathWrapper::averagePol);

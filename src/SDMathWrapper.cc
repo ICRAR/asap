@@ -161,7 +161,7 @@ std::vector<float> SDMathWrapper::statistic(const SDMemTableWrapper& in,
                                             const std::string& which) 
 {
   SDMath sdm;
-  return sdm.statistic(in.getCP(), mask, which);
+  return sdm.statistic(in.getCP(), mask, String(which));
 }
 
 
@@ -182,5 +182,27 @@ SDMemTableWrapper SDMathWrapper::convertFlux(const SDMemTableWrapper& in,
   const CountedPtr<SDMemTable>& pIn = in.getCP();
   SDMath sdm;
   return CountedPtr<SDMemTable>(sdm.convertFlux(*pIn, Float(area), Float(eta), Bool(doAll)));
+}
+
+
+void SDMathWrapper::gainElevationInSitu(SDMemTableWrapper& in, const string& fileName,
+                                        const string& method, bool doAll)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  SDMemTable* pOut = sdm.gainElevation(*pIn, String(fileName), String(method), Bool(doAll));
+  *pIn = *pOut;
+  delete pOut;
+}
+
+
+SDMemTableWrapper SDMathWrapper::gainElevation(const SDMemTableWrapper& in, 
+                                               const string& fileName, 
+                                               const string& method, bool doAll)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.gainElevation(*pIn, String(fileName), 
+                                                  String(method), Bool(doAll)));
 }
 

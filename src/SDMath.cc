@@ -48,10 +48,12 @@
 
 #include <scimath/Mathematics/VectorKernel.h>
 #include <scimath/Mathematics/Convolver.h>
+#include <scimath/Mathematics/InterpolateArray1D.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/ReadAsciiTable.h>
 
 #include <lattices/Lattices/LatticeUtilities.h>
 #include <lattices/Lattices/RebinLattice.h>
@@ -95,7 +97,7 @@ SDMath::~SDMath()
 
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
-				       const std::string& weightStr)
+				       const String& weightStr)
 //Bool alignVelocity)
 //
 // Weighted averaging of spectra from one or more Tables.
@@ -326,8 +328,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 //
            oldScanID = scanID;
            outScanID += 1;               // Scan ID for next accumulation period
-
-}
+        }
 
 // Accumulate
 
@@ -947,6 +948,91 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float a, Float eta, Bool 
 
 
 
+SDMemTable* SDMath::gainElevation (const SDMemTable& in, const String& fileName,
+                                   const String& methodStr, Bool doAll)
+{
+  SDHeader sh = in.getSDHeader();
+  SDMemTable* pTabOut = new SDMemTable(in, True);
+  const uInt nRow = in.nRow();
+
+// Get elevation column from data
+
+  const Table& tab = in.table();
+  ROScalarColumn<Float> elev(tab, "ELEVATION");
+
+// Read gain-elevation ascii file data into a Table.
+
+  Table geTable = readAsciiFile (fileName);
+  ROScalarColumn<Float> geElCol(geTable, "ELEVATION");
+  ROScalarColumn<Float> geFacCol(geTable, "FACTOR");
+  Vector<Float> xIn = geElCol.getColumn();
+  Vector<Float> yIn = geFacCol.getColumn();
+  Vector<Bool> maskIn(xIn.nelements(),True);
+
+// Get elevation vector from data
+
+  Vector<Float> xOut = elev.getColumn();
+  xOut *= Float(180 / C::pi);
+
+// Interpolate (and extrapolate) with desired method
+
+   Int method = 0;
+   convertInterpString(method, methodStr);
+//
+   Vector<Float> yOut;
+   Vector<Bool> maskOut;
+   InterpolateArray1D<Float,Float>::interpolate(yOut, maskOut, xOut, 
+                                                xIn, yIn, maskIn, method,
+                                                True, True);
+
+// For operations only on specified cursor location
+
+  IPosition start, end;
+  getCursorLocation(start, end, in);
+
+// Loop over rows and interpolate correction factor
+  
+  const uInt axis = asap::ChanAxis;
+  for (uInt i=0; i < in.nRow(); ++i) {
+
+// Get data
+
+    MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
+    Array<Float>& valuesIn = dataIn.getRWArray();              // writable reference
+    const Array<Bool>& maskIn = dataIn.getMask();  
+
+// Apply factor
+
+    if (doAll) {
+       VectorIterator<Float> itValues(valuesIn, asap::ChanAxis);
+       while (!itValues.pastEnd()) {
+          itValues.vector() *= yOut(i);                    // Writes back into dataIn
+//
+          itValues.next();
+       }
+    } else {
+       Array<Float> valuesIn2 = valuesIn(start,end);
+       valuesIn2 *= yOut(i);
+       valuesIn(start,end) = valuesIn2;
+    }
+
+// Write out
+
+    SDContainer sc = in.getSDContainer(i);
+    putDataInSDC(sc, valuesIn, maskIn);
+//
+    pTabOut->putSDContainer(sc);
+  }
+
+// Delete temporary gain/el Table
+
+  geTable.markForDelete();
+//  
+  return pTabOut;
+}
+
+
+
 // 'private' functions
 
 void SDMath::fillSDC(SDContainer& sc,
@@ -955,7 +1041,7 @@ void SDMath::fillSDC(SDContainer& sc,
 		     const Array<Float>& tSys,
 		     Int scanID, Double timeStamp,
 		     Double interval, const String& sourceName,
-		     const Vector<uInt>& freqID)
+		     const Vector<uInt>& freqID) const
 {
 // Data and mask
 
@@ -979,7 +1065,7 @@ void SDMath::normalize(MaskedArray<Float>& sum,
                         const Array<Float>& sumSq,
                         const Array<Float>& nPts,
                         WeightType wtType, Int axis,
-                        Int nAxesSub)
+                        Int nAxesSub) const
 {
    IPosition pos2(nAxesSub,0);
 //
@@ -1016,7 +1102,7 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 			const Block<CountedPtr<SDMemTable> >& in,
 			uInt iTab, uInt iRow, uInt axis, 
 			uInt nAxesSub, Bool useMask,
-			WeightType wtType)
+			WeightType wtType) const
 {
 
 // Get data
@@ -1084,7 +1170,7 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 
 
 void SDMath::getCursorLocation(IPosition& start, IPosition& end,
-			       const SDMemTable& in)
+			       const SDMemTable& in) const
 {
   const uInt nDim = 4;
   const uInt i = in.getBeam();
@@ -1106,7 +1192,7 @@ void SDMath::getCursorLocation(IPosition& start, IPosition& end,
 }
 
 
-void SDMath::convertWeightString(WeightType& wtType, const std::string& weightStr)
+void SDMath::convertWeightString(WeightType& wtType, const String& weightStr) const
 {
   String tStr(weightStr);
   tStr.upcase();
@@ -1122,12 +1208,37 @@ void SDMath::convertWeightString(WeightType& wtType, const std::string& weightSt
   }
 }
 
+void SDMath::convertInterpString(Int& type, const String& interp) const
+{
+  String tStr(interp);
+  tStr.upcase();
+  if (tStr.contains(String("NEAR"))) {
+     type = InterpolateArray1D<Float,Float>::nearestNeighbour;
+  } else if (tStr.contains(String("LIN"))) {
+     type = InterpolateArray1D<Float,Float>::linear;
+  } else if (tStr.contains(String("CUB"))) {
+     type = InterpolateArray1D<Float,Float>::cubic;
+  } else if (tStr.contains(String("SPL"))) {
+     type = InterpolateArray1D<Float,Float>::spline;
+  } else {
+    throw(AipsError("Unrecognized interpolation type"));
+  }
+}
+
 void SDMath::putDataInSDC(SDContainer& sc, const Array<Float>& data,
-			  const Array<Bool>& mask)
+			  const Array<Bool>& mask) const
 {
     sc.putSpectrum(data);
 //
     Array<uChar> outflags(data.shape());
     convertArray(outflags,!mask);
     sc.putFlags(outflags);
+}
+
+Table SDMath::readAsciiFile (const String& fileName) const
+{
+   String tableName("___asap_temp.tbl");
+   readAsciiTable (fileName, "", tableName);
+   Table tbl(tableName);
+   return tbl;
 }
