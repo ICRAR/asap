@@ -34,6 +34,7 @@
 #include <atnf/PKSIO/PKSreader.h>
 
 #include "SDReader.h"
+#include "SDDefs.h"
 
 using namespace casa;
 using namespace asap;
@@ -142,8 +143,17 @@ void SDReader::open(const std::string& filename, int whichIF, int whichBeam) {
     nIF_ = 1;
   }
 //
+// Determine Telescope and set units...
+
+  Bool throwIt = False;
+  Instrument inst = SDMemTable::convertInstrument (header_.antennaname, throwIt);
+  header_.fluxunit = "Jy";
+  if (inst==ATMOPRA || inst==TIDBINBILLA) {
+     header_.fluxunit = "K";
+  }
+  cerr << "Assuming brightness units are " << header_.fluxunit << endl;
+//
   header_.nif = nIF_;
-  header_.fluxunit = "K";
   header_.epoch = "UTC";
 
   // Apply selection criteria.
@@ -225,7 +235,7 @@ int SDReader::read(const std::vector<int>& seq) {
                              tsys, sigma, calFctr, baseLin, baseSub,
                              spectra, flagtra, xCalFctr, xPol);
 
-// Make sure beam/IF numbers are 0-relative 
+// Make sure beam/IF numbers are 0-relative - dealing with possible IF or Beam selection
 
       beamNo = beamNo - beamOffset_ - 1;      
       IFno = IFno - ifOffset_ - 1;
