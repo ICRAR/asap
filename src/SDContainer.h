@@ -71,7 +71,7 @@ public:
   virtual ~SDFrequencyTable() {;}
   
   casa::Int length() const { return nFreq_;};// # of stored Frequencies
-
+  void setLength(casa::Int length) {nFreq_ = length;};
   casa::Double referencePixel(casa::uInt which) const { return refPix_[which];}
   casa::Double referenceValue(casa::uInt which) const { return refVal_[which];}
   casa::Double increment(casa::uInt which) const { return increment_[which];}
