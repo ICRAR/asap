@@ -142,6 +142,7 @@ Int SDWriter::write(
         Vector<Double>  srcPM(2, 0.0);
         Double          srcVel = 0.0;
         Double          freqInc = 0.0;
+        Double          restFreq = 0.0;
         Vector<Float>   tcal(2, 0.0f);
         String          tcalTime = "";
         Float           azimuth = 0.0f;
@@ -168,8 +169,8 @@ Int SDWriter::write(
         if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
                                     sd.interval, fieldName, sd.sourcename,
                                     srcDir, srcPM, srcVel, iIF+1, hdr.reffreq,
-                                    hdr.bandwidth, freqInc, tcal, tcalTime,
-                                    azimuth, elevation, parAngle,
+                                    hdr.bandwidth, freqInc, restFreq,
+                                    tcalTime, azimuth, elevation, parAngle,
                                     focusAxi, focusTan, focusRot, temperature,
                                     pressure, humidity, windSpeed, windAz,
                                     refBeam, iBeam+1, direction, scanRate,
