@@ -44,7 +44,7 @@ class reader(sdreader):
         from asap import scantable
         if integrations is None:
             integrations = [-1]
-        print "Reading intergrations from disk..."
+        print "Reading integrations from disk..."
         sdreader.read(self,integrations)
         tbl = sdreader.getdata(self)
         return scantable(tbl)
