@@ -36,7 +36,8 @@ namespace asap {
   enum AxisNo { BeamAxis=0,
 		IFAxis,
 		PolAxis,
-		ChanAxis };
+		ChanAxis, 
+                nAxes};
 
   enum Instrument {UNKNOWN=0,
                    ATPKSMB,
