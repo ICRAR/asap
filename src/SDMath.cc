@@ -1020,8 +1020,8 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp, 
                                  Float JyPerK, Bool doAll) const
 // 
-// etaAp = aperture efficiency
-// D     = geometric diameter (m)
+// etaAp = aperture efficiency (-1 means find)
+// D     = geometric diameter (m)  (-1 means find)
 // JyPerK 
 //
 {
@@ -1071,16 +1071,21 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
      factor *= JyPerK;
      if (toKelvin) factor = 1.0 / JyPerK;
 //
-     cout << "Applying supplied conversion factor = " << factor << endl;
+     cout << "Jy/K = " << JyPerK << endl;
      Vector<Float> factors(in.nRow(), factor);
      correctFromVector (pTabOut, in, doAll, factors);
   } else if (etaAp>0.0) {
-     factor *= SDAttr::findJyPerKFac (etaAp, D);
+     Bool throwIt = True;
+     Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
+     SDAttr sda;
+     if (D < 0) D = sda.diameter(inst);
+     Float JyPerK = SDAttr::findJyPerK (etaAp,D);
+     cout << "Jy/K = " << JyPerK << endl;
+     factor *= JyPerK;
      if (toKelvin) {
         factor = 1.0 / factor;
      }
 //
-     cout << "Applying supplied conversion factor = " << factor << endl;
      Vector<Float> factors(in.nRow(), factor);
      correctFromVector (pTabOut, in, doAll, factors);
   } else {
@@ -1130,7 +1135,7 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
 // Find instrument
 
      Bool throwIt = True;
-     Instrument inst = SDMemTable::convertInstrument (sh.antennaname, throwIt);
+     Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
      
 // Set polynomial
 
@@ -1280,7 +1285,7 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 // Get instrument
 
    Bool throwIt = True;
-   Instrument inst = SDMemTable::convertInstrument (sh.antennaname, throwIt);
+   Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
 
 // Get Diameter (m)
 
