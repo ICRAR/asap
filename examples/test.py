@@ -42,13 +42,13 @@ quot = quotient(scanav,refav)
 # set the cursor to polarisation 0
 quot.set_cursor(thepol=0)
 # get the spectrum for polarisation 0
-v0 = quot.getspectrum()
+v0 = quot._getspectrum()
 #print  the first ten channel
 print v0[0:10]
 # set the cursor to polarisation 1
 quot.set_cursor(thepol=1)
 # get the spectrum for polarisation 1
-v1 = quot.getspectrum()
+v1 = quot._getspectrum()
 #print  the first ten channel
 print v1[0:10]
 # write it to disk for further use
