@@ -36,6 +36,7 @@
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Quanta/MVTime.h>
 
+#include "Definitions.h"
 #include "SDContainer.h"
 
 using namespace casa;
@@ -120,13 +121,13 @@ Bool SDContainer::putTsys(const Array<Float>& tsys) {
 Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 			      uInt whichBeam, uInt whichIF) {
 
-  ArrayAccessor<Float, Axis<0> > aa0(spectrum_);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(spectrum_);
   aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   
   //Vector<Float> pols(nPol);
-  ArrayAccessor<Float, Axis<1> > j(spec);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > j(spec);
   IPosition shp0 = spectrum_.shape();
   IPosition shp1 = spec.shape();
   if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
@@ -134,9 +135,9 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
     return False;
   }
   // assert dimensions are the same....
-  for (ArrayAccessor<Float, Axis<2> > i(aa1);i != i.end(); ++i) {
-    ArrayAccessor<Float, Axis<0> > jj(j);
-    for (ArrayAccessor<Float, Axis<3> > ii(i);ii != ii.end(); ++ii) {
+  for (ArrayAccessor<Float, Axis<asap::PolAxis> > i(aa1);i != i.end(); ++i) {
+    ArrayAccessor<Float, Axis<asap::BeamAxis> > jj(j);
+    for (ArrayAccessor<Float, Axis<asap::ChanAxis> > ii(i);ii != ii.end(); ++ii) {
       (*ii) = (*jj);
       jj++;
     }
@@ -155,12 +156,12 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 Bool SDContainer::setFlags(const Matrix<uChar>& flag,
 			   uInt whichBeam, uInt whichIF) {
 
-  ArrayAccessor<uChar, Axis<0> > aa0(flags_);
+  ArrayAccessor<uChar, Axis<asap::BeamAxis> > aa0(flags_);
   aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<uChar, Axis<1> > aa1(aa0);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   
-  ArrayAccessor<uChar, Axis<1> > j(flag);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > j(flag);
   IPosition shp0 = flags_.shape();
   IPosition shp1 = flag.shape();
   if ( (shp0(2) != shp1(1)) || (shp0(3) != shp1(0)) ) {
@@ -169,9 +170,9 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flag,
   }
 
   // assert dimensions are the same....
-  for (ArrayAccessor<uChar, Axis<2> > i(aa1);i != i.end(); ++i) {
-    ArrayAccessor<uChar, Axis<0> > jj(j);
-    for (ArrayAccessor<uChar, Axis<3> > ii(i);ii != ii.end(); ++ii) {
+  for (ArrayAccessor<uChar, Axis<asap::PolAxis> > i(aa1);i != i.end(); ++i) {
+    ArrayAccessor<uChar, Axis<asap::BeamAxis> > jj(j);
+    for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > ii(i);ii != ii.end(); ++ii) {
       (*ii) = (*jj);
       jj++;
     }
@@ -182,14 +183,14 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flag,
 
 Bool SDContainer::setTsys(const Vector<Float>& tsys,
 			  uInt whichBeam, uInt whichIF) {
-  ArrayAccessor<Float, Axis<0> > aa0(tsys_);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > aa0(tsys_);
   aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Float, Axis<1> > aa1(aa0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > aa1(aa0);
   aa1.reset(aa1.begin(whichIF));
   // assert dimensions are the same....
-  for (ArrayAccessor<Float, Axis<3> > i(aa1);i != i.end(); ++i) {    
-    ArrayAccessor<Float, Axis<0> > j(tsys);
-    for (ArrayAccessor<Float, Axis<2> > ii(i);ii != ii.end(); ++ii) {
+  for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa1);i != i.end(); ++i) {    
+    ArrayAccessor<Float, Axis<asap::BeamAxis> > j(tsys);
+    for (ArrayAccessor<Float, Axis<asap::PolAxis> > ii(i);ii != ii.end(); ++ii) {
       (*ii) = (*j);
       j++;
     }
@@ -201,21 +202,21 @@ Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const
   Matrix<Float> spectra(nChan_, nPol_);
 
   // Beam.
-  ArrayAccessor<Float, Axis<0> > i0(spectrum_);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > i0(spectrum_);
   i0.reset(i0.begin(whichBeam));
 
   // IF.
-  ArrayAccessor<Float, Axis<1> > i1(i0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > i1(i0);
   i1.reset(i1.begin(whichIF));
 
   // Polarization.
-  ArrayAccessor<Float, Axis<2> > i2(i1);
-  ArrayAccessor<Float, Axis<1> > o1(spectra);
+  ArrayAccessor<Float, Axis<asap::PolAxis> > i2(i1);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > o1(spectra);
 
   while (i2 != i2.end()) {
     // Channel.
-    ArrayAccessor<Float, Axis<3> > i3(i2);
-    ArrayAccessor<Float, Axis<0> > o0(o1);
+    ArrayAccessor<Float, Axis<asap::ChanAxis> > i3(i2);
+    ArrayAccessor<Float, Axis<asap::BeamAxis> > o0(o1);
 
     while (i3 != i3.end()) {
       *o0 = *i3;
@@ -237,21 +238,21 @@ Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
   Matrix<uChar> flagtra(nChan_, nPol_);
 
   // Beam.
-  ArrayAccessor<uChar, Axis<0> > i0(flags_);
+  ArrayAccessor<uChar, Axis<asap::BeamAxis> > i0(flags_);
   i0.reset(i0.begin(whichBeam));
 
   // IF.
-  ArrayAccessor<uChar, Axis<1> > i1(i0);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > i1(i0);
   i1.reset(i1.begin(whichIF));
 
   // Polarization.
-  ArrayAccessor<uChar, Axis<2> > i2(i1);
-  ArrayAccessor<uChar, Axis<1> > o1(flagtra);
+  ArrayAccessor<uChar, Axis<asap::PolAxis> > i2(i1);
+  ArrayAccessor<uChar, Axis<asap::IFAxis> > o1(flagtra);
 
   while (i2 != i2.end()) {
     // Channel.
-    ArrayAccessor<uChar, Axis<3> > i3(i2);
-    ArrayAccessor<uChar, Axis<0> > o0(o1);
+    ArrayAccessor<uChar, Axis<asap::ChanAxis> > i3(i2);
+    ArrayAccessor<uChar, Axis<asap::BeamAxis> > o0(o1);
 
     while (i3 != i3.end()) {
       *o0 = *i3;
@@ -272,19 +273,19 @@ Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
   Vector<Float> tsys(nPol_);
 
   // Beam.
-  ArrayAccessor<Float, Axis<0> > i0(tsys_);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > i0(tsys_);
   i0.reset(i0.begin(whichBeam));
 
   // IF.
-  ArrayAccessor<Float, Axis<1> > i1(i0);
+  ArrayAccessor<Float, Axis<asap::IFAxis> > i1(i0);
   i1.reset(i1.begin(whichIF));
 
   // Channel.
-  ArrayAccessor<Float, Axis<3> > i3(i1);
+  ArrayAccessor<Float, Axis<asap::ChanAxis> > i3(i1);
 
   // Polarization.
-  ArrayAccessor<Float, Axis<2> > i2(i3);
-  ArrayAccessor<Float, Axis<0> > o0(tsys);
+  ArrayAccessor<Float, Axis<asap::PolAxis> > i2(i3);
+  ArrayAccessor<Float, Axis<asap::BeamAxis> > o0(tsys);
 
   while (i2 != i2.end()) {
     *o0 = *i2;
@@ -297,10 +298,10 @@ Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
 
 Array<Double> SDContainer::getDirection(uInt whichBeam) const {
   Vector<Double> direct(2);
-  ArrayAccessor<Double, Axis<0> > i0(direction_);
+  ArrayAccessor<Double, Axis<asap::BeamAxis> > i0(direction_);
   i0.reset(i0.begin(whichBeam));
-  ArrayAccessor<Double, Axis<0> > o0(direct);
-  ArrayAccessor<Double, Axis<1> > i1(i0);
+  ArrayAccessor<Double, Axis<asap::BeamAxis> > o0(direct);
+  ArrayAccessor<Double, Axis<asap::IFAxis> > i1(i0);
   while (i1 != i1.end()) {
     *o0 = *i1;
     i1++;
@@ -323,10 +324,10 @@ Bool SDContainer::putFreqMap(const Vector<uInt>& freqs) {
 
 Bool SDContainer::setDirection(const Vector<Double>& point, uInt whichBeam) {
   if (point.nelements() != 2) return False;
-  ArrayAccessor<Double, Axis<0> > aa0(direction_);
+  ArrayAccessor<Double, Axis<asap::BeamAxis> > aa0(direction_);
   aa0.reset(aa0.begin(whichBeam));
-  ArrayAccessor<Double, Axis<0> > jj(point);
-  for (ArrayAccessor<Double, Axis<1> > i(aa0);i != i.end(); ++i) {
+  ArrayAccessor<Double, Axis<asap::BeamAxis> > jj(point);
+  for (ArrayAccessor<Double, Axis<asap::IFAxis> > i(aa0);i != i.end(); ++i) {
     
     (*i) = (*jj);
     jj++;
@@ -337,6 +338,19 @@ Bool SDContainer::setDirection(const Vector<Double>& point, uInt whichBeam) {
 Bool SDContainer::putDirection(const Array<Double>& dir) {
   direction_.resize();
   direction_ = dir;
+  return True;
+}
+
+Bool SDContainer::appendHistory(const String& hist)
+{
+  history_.resize(history_.nelements()+1,True);
+  history_[history_.nelements()-1] = hist;
+  return True;
+}
+Bool SDContainer::putHistory(const Vector<String>& hist)
+{
+  history_.resize();
+  history_ = hist;
   return True;
 }
 
@@ -366,3 +380,29 @@ Int SDFrequencyTable::addFrequency(Int refPix, Double refVal, Double inc) {
   return idx;
 }
 
+void SDFrequencyTable::addRestFrequency(Double val)
+{
+  if (restFreqs_.nelements()  == 0) {
+    restFreqs_.resize(1);
+    restFreqs_[0] = val;
+  } else {
+    Bool found = False;
+    for (uInt i=0;i<restFreqs_.nelements();++i) {
+      if (restFreqs_[i] == val) {
+	found = True;
+	return;
+      }
+    }
+    if (!found) {
+      restFreqs_.resize(restFreqs_.nelements()+1,True);
+      restFreqs_[restFreqs_.nelements()-1] = val;
+    }
+  }
+}
+void SDFrequencyTable::restFrequencies(Vector<Double>& rfs, 
+				       String& rfunit ) const
+{
+  rfs.resize(restFreqs_.nelements());
+  rfs = restFreqs_;
+  rfunit = restFreqUnit_;
+}

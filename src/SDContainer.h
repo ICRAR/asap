@@ -58,6 +58,8 @@ struct SDHeader {
   casa::Double reffreq;
   casa::Double bandwidth;
   casa::Double utc;
+  casa::String fluxunit;
+  casa::String epoch;
   void print() const ;
 };
 
@@ -75,6 +77,8 @@ public:
   casa::Double increment(casa::uInt which) const { return increment_[which];}
   casa::Float equinox() const { return equinox_; }
   casa::String refFrame() const { return refFrame_; }
+  void restFrequencies(casa::Vector<casa::Double>& rfs, 
+		       casa::String& rfunit ) const ;
 
   // returns the index into the table
   // this creates a new one or returns an existing one
@@ -82,7 +86,11 @@ public:
 			 casa::Double inc);
   void setEquinox(casa::Float eq) { equinox_ = eq; }
   void setRefFrame(const casa::String& reff) { refFrame_ = reff; }
-  
+  void addRestFrequency(casa::Double);
+  void setRestFrequencyUnit(const casa::String& theunit) {
+    restFreqUnit_ = theunit;
+  };
+
 private:
   casa::Int nFreq_;
   casa::Vector<casa::Double> refPix_;
@@ -90,6 +98,8 @@ private:
   casa::Vector<casa::Double> increment_;
   casa::Float equinox_;
   casa::String refFrame_;
+  casa::Vector<casa::Double> restFreqs_;
+  casa::String restFreqUnit_;
 };
 
 
@@ -138,6 +148,10 @@ public:
 
   const casa::Vector<casa::uInt>& getFreqMap() const { return freqidx_; }
   
+  const casa::Vector<casa::String>& getHistory() const { return history_; }
+  casa::Bool putHistory(const casa::Vector<casa::String>& hist);
+  casa::Bool appendHistory(const casa::String& hist);
+
   casa::Double timestamp;
   //Double bandwidth;
   casa::String sourcename;
@@ -167,6 +181,7 @@ private:
   casa::Vector<casa::uInt>    freqidx_;
   //(nBeam,2) maybe use Measures here...
   casa::Array<casa::Double>   direction_;
+  casa::Vector<casa::String> history_;
 
 };
 
