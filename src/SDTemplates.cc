@@ -56,14 +56,18 @@ template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable>
 #include <casa/Arrays/ArrayMath.cc>
 #include <casa/Arrays/MaskArrMath.cc>
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/Vector.h>
+#include <casa/Arrays/Vector2.cc>
+#include <casa/Utilities/PtrHolder.cc>
+#include <casa/Utilities/BinarySearch.cc>
+#include <coordinates/Coordinates/VelocityAligner.cc>
+#include <lattices/Lattices/Lattice.h>
+#include <lattices/Lattices/LatticeUtilities.cc>
 #include <scimath/Functionals/CompiledFunction.cc>
 #include <scimath/Functionals/CompiledParam.cc>
 #include <scimath/Mathematics/AutoDiff.h>
 #include <scimath/Mathematics/AutoDiffMath.h>
-#include <casa/Arrays/Vector2.cc>
-#include <lattices/Lattices/LatticeUtilities.cc>
-#include <casa/Utilities/PtrHolder.cc>
-#include <lattices/Lattices/Lattice.h>
+#include <scimath/Mathematics/InterpolateArray1D.cc>
 
 template void convertArray<Bool, uChar>(Array<Bool> &, Array<uChar> const &);
 template void convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
@@ -94,6 +98,10 @@ template void Array<Bool>::tovector(vector<bool> &) const;
 template void Array<double>::tovector(vector<double> &) const;
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
+template class VelocityAligner<Float>;
+template class InterpolateArray1D<Double, Float>;
+template Int binarySearchBrackets<Vector<Double>,Double>(Bool &, Vector<Double> const &, Double const &, uInt, Int);
+//
 #include "MathUtils2.cc"
 namespace mathutil {
   template void hanning(Vector<Float>&, Vector<Bool>&,
