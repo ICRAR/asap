@@ -35,7 +35,7 @@
 #include <vector>
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
-#include <coordinates/Coordinates/VelocityAligner.h>
+#include <coordinates/Coordinates/FrequencyAligner.h>
 
 #include "SDDefs.h"
 
@@ -43,7 +43,6 @@ class casa::Table;
 class casa::MEpoch;
 class casa::MPosition;
 template<class T> class casa::PtrBlock;
-//template<class T> class casa::VelocityAligner;
 
 
 namespace asap {
@@ -77,7 +76,7 @@ class SDMath {
                                          const casa::Vector<casa::Bool>& mask,
                                          casa::Bool scanAverage, 
                                          const casa::String& weightStr,
-                                         casa::Bool alignVelocity=casa::False) const;
+                                         casa::Bool align=casa::False) const;
 
 // Statistics. If row<0, all rows are done otherwise, just the 
 // specified row.
@@ -105,8 +104,8 @@ class SDMath {
                               const casa::String& fileName,
                               const casa::String& method, casa::Bool doAll) const;
 
-// Velocity Alignment
-   SDMemTable* velocityAlignment (const SDMemTable& in, const casa::String& refTime) const;
+// Frequency Alignment
+   SDMemTable* frequencyAlignment (const SDMemTable& in, const casa::String& refTime) const;
 
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
@@ -193,22 +192,18 @@ class SDMath {
                              casa::Vector<casa::uInt>& firstRow,
                              const casa::Vector<casa::String>& srcNames) const;
 
-// Generate velocity aligners
-   void generateVelocityAligners (casa::PtrBlock<casa::VelocityAligner<casa::Float>* >& vA,
-                                  const SDMemTable& in, casa::uInt nChan,
-                                  casa::uInt nFreqIDs, casa::uInt nSrcTab,
-                                  const casa::Vector<casa::uInt>& firstRow,
-                                  casa::MFrequency::Types velSystem,
-                                  const casa::String& velUnit,
-                                  casa::MDoppler::Types doppler,
-                                  const casa::MPosition& refPos,
-                                  const casa::MEpoch& refEpoch) const;
+// Generate frequency aligners
+   void generateFrequencyAligners (casa::PtrBlock<casa::FrequencyAligner<casa::Float>* >& a,
+                                   const SDMemTable& in, casa::uInt nChan,
+                                   casa::uInt nFreqIDs, casa::uInt nSrcTab,
+                                   const casa::Vector<casa::uInt>& firstRow,
+                                   casa::MFrequency::Types system,
+                                   const casa::MPosition& refPos,
+                                   const casa::MEpoch& refEpoch) const;
 
-// Align in Velocity
-   SDMemTable* velocityAlign (const SDMemTable& in,
-                              casa::MFrequency::Types velSystem,
-                              const casa::String& velUnit,
-                              casa::MDoppler::Types doppler,
+// Align in Frequency
+   SDMemTable* frequencyAlign (const SDMemTable& in,
+                              casa::MFrequency::Types system,
                               const casa::String& timeRef) const;
 
 // Convert time String to Epoch

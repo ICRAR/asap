@@ -54,7 +54,7 @@
 #include <coordinates/Coordinates/SpectralCoordinate.h>
 #include <coordinates/Coordinates/CoordinateSystem.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
-#include <coordinates/Coordinates/VelocityAligner.h>
+#include <coordinates/Coordinates/FrequencyAligner.h>
 
 #include <lattices/Lattices/LatticeUtilities.h>
 #include <lattices/Lattices/RebinLattice.h>
@@ -107,51 +107,34 @@ SDMath::~SDMath()
 
 
 
-SDMemTable* SDMath::velocityAlignment (const SDMemTable& in, const String& refTime) const
+SDMemTable* SDMath::frequencyAlignment (const SDMemTable& in, const String& refTime) const
 {
 
-// Get velocity/frame info from Table
+// Get frame info from Table
 
    std::vector<std::string> info = in.getCoordInfo();
 
-// Parse unit ("" means channels)
-
-   String velUnit(info[0]);
-   if (velUnit.length()==0) {
-      throw(AipsError("You have not set a velocity abcissa unit - use function set_unit"));
-   } else {
-      Unit velUnitU(velUnit);
-      if (velUnitU!=Unit(String("m/s"))) {
-         throw(AipsError("Specified abcissa unit is not consistent with km/s - use function set_unit"));
-      }
-   }
-
-// Parse doppler
-
-   String dopplerStr(info[2]);
-   String velSystemStr(info[1]);
-   String velBaseSystemStr(info[3]);
-   if (velBaseSystemStr==velSystemStr) {
-      throw(AipsError("You have not set a velocity frame different from the initial - use function set_freqframe"));
-   }
-
 // Parse frequency system
 
-   MFrequency::Types velSystem;
-   MFrequency::getType(velSystem, velSystemStr);
-   MDoppler::Types doppler;
-   MDoppler::getType(doppler, dopplerStr);
+   String systemStr(info[1]);
+   String baseSystemStr(info[3]);
+   if (baseSystemStr==systemStr) {
+      throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
+   }
+//
+   MFrequency::Types freqSystem;
+   MFrequency::getType(freqSystem, systemStr);
 
 // Do it
 
-   return velocityAlign (in, velSystem, velUnit, doppler, refTime);
+   return frequencyAlign (in, freqSystem, refTime);
 }
 
 
 
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
-				       const String& weightStr, Bool alignVelocity) const
+				       const String& weightStr, Bool alignFreq) const
 //
 // Weighted averaging of spectra from one or more Tables.
 //
@@ -255,7 +238,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   const uInt nTables = in.nelements();
   for (uInt iTab=0; iTab<nTables; iTab++) {
 
-// Should check that the frequency tables don't change if doing VelocityAlignment
+// Should check that the frequency tables don't change if doing FreqAlignment
 
 // Attach columns to Table
 
@@ -645,6 +628,12 @@ SDMemTable* SDMath::resample (const SDMemTable& in, const String& methodStr,
 //
 {
    Bool doVel = False;
+   if (doVel) {
+      for (uInt j=0; j<in.nCoordinates(); ++j) {
+         SpectralCoordinate sC = in.getSpectralCoordinate(j);
+      }
+   } 
+
 
 // Interpolation method
 
@@ -1256,10 +1245,9 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 
 // 'private' functions
 
-SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
-                                   MFrequency::Types velSystem,
-                                   const String& velUnit,
-                                   MDoppler::Types doppler,
+
+SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
+                                   MFrequency::Types freqSystem,
                                    const String& refTime) const
 {
 // Get Header
@@ -1300,7 +1288,8 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    } else {
       refEpoch = in.getEpoch(0);
    }
-   cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << endl;
+   cerr << "Aligning at reference Epoch " << formatEpoch(refEpoch) << 
+           " in frame " << MFrequency::showType(freqSystem) << endl;
 
 // Get Reference Position
 
@@ -1311,12 +1300,12 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
    SDFrequencyTable fTab = in.getSDFreqTable();
    const uInt nFreqIDs = fTab.length();
 
-// Create VelocityAligner Block. One VA for each possible
+// Create FrequencyAligner Block. One VA for each possible
 // source/freqID combination
 
-   PtrBlock<VelocityAligner<Float>* > vA(nFreqIDs*nSrcTab);
-   generateVelocityAligners (vA, in, nChan, nFreqIDs, nSrcTab, firstRow,
-                             velSystem, velUnit, doppler,  refPos, refEpoch);
+   PtrBlock<FrequencyAligner<Float>* > a(nFreqIDs*nSrcTab);
+   generateFrequencyAligners (a, in, nChan, nFreqIDs, nSrcTab, firstRow,
+                              freqSystem, refPos, refEpoch);
 
 // New output Table
 
@@ -1325,14 +1314,14 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 // Loop over rows in Table
 
    const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
-   VelocityAligner<Float>::Method method = VelocityAligner<Float>::LINEAR;
+   FrequencyAligner<Float>::Method method = FrequencyAligner<Float>::LINEAR;
    Bool extrapolate=False;
    Bool useCachedAbcissa = False;
    Bool first = True;
    Bool ok;
    Vector<Float> yOut;
    Vector<Bool> maskOut;
-   uInt ifIdx, vaIdx;
+   uInt ifIdx, faIdx;
 //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
       if (iRow%10==0) {
@@ -1357,7 +1346,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
 // cerr << "values in = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
 
-// For each row, the Velocity abcissa will be the same regardless
+// For each row, the Frequency abcissa will be the same regardless
 // of polarization.  For all other axes (IF and BEAM) the abcissa
 // will change.  So we iterate through the data by pol-chan planes
 // to mimimize the work.  At this point, I think the Direction
@@ -1369,11 +1358,11 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
      ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
      while (!itValuesPlane.pastEnd()) {
 
-// Find the IF index and then the VA PtrBlock index
+// Find the IF index and then the FA PtrBlock index
 
         const IPosition& pos = itValuesPlane.pos();
         ifIdx = pos(asap::IFAxis);
-        vaIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
+        faIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
 //
         VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
         VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
@@ -1381,7 +1370,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
         first = True;
         useCachedAbcissa=False;
         while (!itValuesVec.pastEnd()) {     
-           ok = vA[vaIdx]->align (yOut, maskOut, itValuesVec.vector(),
+           ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
                                   itMaskVec.vector(), epoch, useCachedAbcissa,
                                   method, extrapolate); 
            itValuesVec.vector() = yOut;
@@ -1410,12 +1399,57 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
     pTabOut->putSDContainer(sc);
    }
 
+
+// Write out correct frequency table information for output.
+// CLone from input and overwrite
+
+   SDFrequencyTable freqTab = in.getSDFreqTable();
+   freqTab.setLength(0);
+
+// Note that we don't have anyway to hold frequency table information 
+// in the SDMemTable which is source dependent.  Each FrequencyAligner 
+// is generated for an freqID/Source combination.  Don't know what to 
+// do about this apart from to pick the aligned SC from the first source 
+// at the moment.  ASAP really needs to handle data description id 
+// like in aips++ which is a combination of source and freqid. Otherwise
+// all else I can do in this function is disallow multiple sources
+
+   Bool linear=True;
+   Vector<String> units(1);
+   units = String("Hz");
+   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
+      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
+         uInt idx = (iSrc*nFreqIDs) + fqID;
+
+// Get Aligned SC in Hz
+
+         if (iSrc==0) {
+            SpectralCoordinate sC = a[idx]->alignedSpectralCoordinate(linear);
+            sC.setWorldAxisUnits(units);
+
+// Write out frequency table information to SDMemTable
+
+            Int idx = freqTab.addFrequency(sC.referencePixel()[0],
+                                           sC.referenceValue()[0],
+                                           sC.increment()[0]);
+         }
+      }
+   }
+   pTabOut->putSDFreqTable(freqTab);
+
+// Now we must set the base and extra frames to the 
+// input frame
+
+   std::vector<string> info = pTabOut->getCoordInfo();
+   info[1] = MFrequency::showType(freqSystem);   // Conversion frame
+   info[3] = info[1];                            // Base frame
+   pTabOut->setCoordInfo(info);
+
 // Clean up PointerBlock
 
-  for (uInt i=0; i<vA.nelements(); i++) delete vA[i];
+   for (uInt i=0; i<a.nelements(); i++) delete a[i];
 //
-  pTabOut->resetCursor();
-  return pTabOut;
+   return pTabOut;
 }
 
 
@@ -1779,13 +1813,12 @@ String SDMath::formatEpoch(const MEpoch& epoch)  const
 }
 
 
-void SDMath::generateVelocityAligners (PtrBlock<VelocityAligner<Float>* >& vA, 
+
+void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a, 
                                        const SDMemTable& in, uInt nChan,
                                        uInt nFreqIDs, uInt nSrcTab, 
                                        const Vector<uInt>& firstRow,
-                                       MFrequency::Types velSystem,
-                                       const String& velUnit,
-                                       MDoppler::Types doppler,
+                                       MFrequency::Types system,
                                        const MPosition& refPos,
                                        const MEpoch& refEpoch) const
 {
@@ -1794,9 +1827,9 @@ void SDMath::generateVelocityAligners (PtrBlock<VelocityAligner<Float>* >& vA,
       for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
          MDirection refDir = in.getDirection(firstRow[iSrc]);
          uInt idx = (iSrc*nFreqIDs) + fqID;
-         vA[idx] = new VelocityAligner<Float>(sC, nChan, refEpoch, refDir, refPos,
-                                              velUnit, doppler, velSystem);
+         a[idx] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
       }
    }
 }
+
 
