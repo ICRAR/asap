@@ -352,8 +352,8 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, Float
 //  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
 //
 {
-  if (nPol()!=4) {
-     throw (AipsError("You must have 4 polarizations to get the Stokes parameters"));
+  if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
+     throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
   }
   Array<Float> arr;
   stokesCol_.get(whichRow, arr);
