@@ -47,9 +47,27 @@ public:
   static CountedPtr<SDMemTable> multiply(const CountedPtr<SDMemTable>& in, 
 					 Float factor);
   
-  static std::vector<float> baseline(const CountedPtr<SDMemTable>& in,
-				     const std::string& fitexpr );
+  static CountedPtr<SDMemTable> baseline(const CountedPtr<SDMemTable>& in,
+					 const std::string& fitexpr,
+					 const std::vector<bool>& mask);
   static CountedPtr<SDMemTable> hanning(const CountedPtr<SDMemTable>& in);
+
+  static CountedPtr<SDMemTable> 
+  averages(const Block<CountedPtr<SDMemTable> >& in,
+	   const Vector<Bool>& mask);
+
+  static CountedPtr<SDMemTable> 
+  averagePol(const CountedPtr<SDMemTable>& in, const Vector<Bool>& mask);
+
+  static Float rms(const CountedPtr<SDMemTable>& in, 
+		   const std::vector<bool>& mask);
+  
+  static CountedPtr<SDMemTable> bin(const CountedPtr<SDMemTable>& in, 
+  				    Int width);
+  
+private:
+  static bool fit(Vector<Float>& thefit, const Vector<Float>& data, 
+		  const Vector<Bool>& mask, const std::string& fitexpr);
   
 };
 } // namespace

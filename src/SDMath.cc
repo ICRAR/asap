@@ -49,6 +49,8 @@
 #include <aips/Fitting.h>
 #include <trial/Fitting/LinearFit.h>
 #include <trial/Functionals/CompiledFunction.h>
+#include <trial/Images/ImageUtilities.h>
+#include <trial/Coordinates/SpectralCoordinate.h>
 #include <aips/Mathematics/AutoDiff.h>
 #include <aips/Mathematics/AutoDiffMath.h>
 
@@ -74,6 +76,8 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
 
   Array<Float> tsarr(tsys.shape(0));
   Array<Float> outtsarr(tsys.shape(0));
+  outtsarr =0.0;
+  tsys.get(0, tsarr);// this is probably unneccessary as tsys should
   Double tme = 0.0;
   Double inttime = 0.0;
 
@@ -98,17 +102,17 @@ static CountedPtr<SDMemTable> SDMath::average(const CountedPtr<SDMemTable>& in) 
   Array<Bool> outflagsb = !(nma.getMask());
   Array<uChar> outflags(outflagsb.shape());
   convertArray(outflags,outflagsb);
-  SDContainer sc(ip(0),ip(1),ip(2),ip(3));
-
+  SDContainer sc = in->getSDContainer();
   Int n = t.nrow();
-  outtsarr /= Float(n/2);
-  sc.timestamp = tme/Double(n/2);
-  sc.interval =inttime;
+  outtsarr /= Float(n);
+  sc.timestamp = tme/Double(n);
+  sc.interval = inttime;
   String tstr; srcn.getScalar(0,tstr);// get sourcename of "mid" point
   sc.sourcename = tstr;
   Vector<uInt> tvec;
   freqidc.get(0,tvec);
   sc.putFreqMap(tvec);
+  sc.putTsys(outtsarr);
   sc.scanid = 0;
   sc.putSpectrum(outarr);
   sc.putFlags(outflags);  
@@ -133,12 +137,11 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   MaskedArray<Float> moff(off->rowAsMaskedArray(0));
   IPosition ipon = mon.shape();
   IPosition ipoff = moff.shape();
-  Array<Float> tsarr(tsys.shape(0));
-
+  Array<Float> tsarr;//(tsys.shape(0));
+  tsys.get(0, tsarr);
   if (ipon != ipoff && ipon != tsarr.shape()) 
     cerr << "on/off not conformant" << endl;
  
-  //IPosition test = mon.shape()/2;
   MaskedArray<Float> tmp = (mon-moff);
   Array<Float> out(tmp.getArray()); 
   out /= moff;
@@ -146,25 +149,16 @@ SDMath::quotient(const CountedPtr<SDMemTable>& on,
   Array<Bool> outflagsb = !(mon.getMask() && moff.getMask());
   Array<uChar> outflags(outflagsb.shape());
   convertArray(outflags,outflagsb);
-
-  SDContainer sc(ipon(0),ipon(1),ipon(2),ipon(3));
-  String tstr; srcn.getScalar(0,tstr);// get sourcename of "on" scan
-  sc.sourcename = tstr;
-  Double tme; mjd.getScalar(0,tme);// get time of "on" scan
-  sc.timestamp = tme;
-  integr.getScalar(0,tme);
-  sc.interval = tme;
-  Vector<uInt> tvec;
-  freqidc.get(0,tvec);
-  sc.putFreqMap(tvec);
+  SDContainer sc = on->getSDContainer();
+  sc.putTsys(tsarr);
   sc.scanid = 0;
   sc.putSpectrum(out);
-  sc.putFlags(outflags);  
+  sc.putFlags(outflags);
   SDMemTable* sdmt = new SDMemTable(*on, True);
   sdmt->putSDContainer(sc);
   return CountedPtr<SDMemTable>(sdmt);
-  
 }
+
 static CountedPtr<SDMemTable> 
 SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   SDMemTable* sdmt = new SDMemTable(*in);
@@ -179,33 +173,73 @@ SDMath::multiply(const CountedPtr<SDMemTable>& in, Float factor) {
   }
   return CountedPtr<SDMemTable>(sdmt);
 }
-static std::vector<float> SDMath::baseline(const CountedPtr<SDMemTable>& in,
-					   const std::string& fitexpr) {
-  cout << "Fitting: " << fitexpr << endl;
-  Table t = in->table();
+
+static bool SDMath::fit(Vector<Float>& thefit, const Vector<Float>& data, 
+		      const Vector<Bool>& mask,
+		      const std::string& fitexpr) {
+
   LinearFit<Float> fitter;
-  Vector<Float> y;
-  in->getSpectrum(y, 0);
-  Vector<Bool> m;
-  in->getMask(m, 0);
-  Vector<Float> x(y.nelements());
+  Vector<Float> x(data.nelements());
   indgen(x);
   CompiledFunction<AutoDiff<Float> > fn;
   fn.setFunction(String(fitexpr));
   fitter.setFunction(fn);
   Vector<Float> out,out1;
-  out = fitter.fit(x,y,&m);
-  out1 = y;
-  fitter.residual(out1,x);
-  cout << "solution =" << out << endl;
-  std::vector<float> fitted; 
-  out1.tovector(fitted);
-  return fitted;
+  out = fitter.fit(x,data,&mask);
+  thefit = data;
+  fitter.residual(thefit, x);
+  cout << "Parameter solution = " << out << endl;
+  return True;
+}
+
+static CountedPtr<SDMemTable> 
+SDMath::baseline(const CountedPtr<SDMemTable>& in, 
+		 const std::string& fitexpr,
+		 const std::vector<bool>& mask) {
+  
+  IPosition ip = in->rowAsMaskedArray(0).shape();
+  SDContainer sc = in->getSDContainer();
+  String sname(in->getSourceName());
+  String stim(in->getTime());
+  cout << "Fitting: " << String(fitexpr) << " to "
+       << sname << " [" << stim << "]" << ":" <<endl;
+  MaskedArray<Float> marr(in->rowAsMaskedArray(0));
+  Vector<Bool> inmask(mask);
+  Array<Float> arr = marr.getArray();
+  Array<Bool> barr = marr.getMask();
+  for (uInt i=0; i<in->nBeam();++i) {
+    for (uInt j=0; j<in->nIF();++j) {
+      for (uInt k=0; k<in->nPol();++k) {
+	IPosition start(4,i,j,k,0);
+	IPosition end(4,i,j,k,in->nChan()-1);
+	Array<Float> subArr(arr(start,end));
+	Array<Bool> subMask(barr(start,end));
+	Vector<Float> outv;
+	Vector<Float> v(subArr.nonDegenerate());
+	Vector<Bool> m(subMask.nonDegenerate());
+	cout << "\t Polarisation " << k << "\t";
+	SDMath::fit(outv, v, m&&inmask, fitexpr);
+	ArrayAccessor<Float, Axis<0> > aa0(outv);
+	for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
+	  (*aa) = (*aa0);
+	  aa0++;
+	}
+      }
+    }
+  }
+  Array<uChar> outflags(barr.shape());
+  convertArray(outflags,!barr);
+  sc.putSpectrum(arr);
+  sc.putFlags(outflags);
+  SDMemTable* sdmt = new SDMemTable(*in,True);
+  sdmt->putSDContainer(sc);
+  return CountedPtr<SDMemTable>(sdmt);
 }
 
 
 static CountedPtr<SDMemTable> 
 SDMath::hanning(const CountedPtr<SDMemTable>& in) {
+
   IPosition ip = in->rowAsMaskedArray(0).shape();
   MaskedArray<Float> marr(in->rowAsMaskedArray(0));
 
@@ -246,10 +280,193 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in) {
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-/*
-static Float SDMath::rms(const SDMemTable& in, uInt whichRow) {
-  Table t = in.table();  
-  MaskedArray<Float> marr(in.rowAsMaskedArray(whichRow,True));
+static CountedPtr<SDMemTable> 
+SDMath::averages(const Block<CountedPtr<SDMemTable> >& in,
+		 const Vector<Bool>& mask) {
+  IPosition ip = in[0]->rowAsMaskedArray(0).shape();
+  Array<Float> arr(ip);
+  Array<Bool> barr(ip);
+  Double inttime = 0.0;
   
+  uInt n = in[0]->nChan();
+  for (uInt i=0; i<in[0]->nBeam();++i) {
+    for (uInt j=0; j<in[0]->nIF();++j) {
+      for (uInt k=0; k<in[0]->nPol();++k) {
+	Float stdevsqsum = 0.0;
+	Vector<Float> initvec(n);initvec = 0.0;
+	Vector<Bool> initmask(n);initmask = True;
+	MaskedArray<Float> outmarr(initvec,initmask);
+	for (uInt bi=0; bi< in.nelements(); ++bi) {
+	  MaskedArray<Float> marr(in[bi]->rowAsMaskedArray(0));
+	  inttime += in[bi]->getInterval();
+	  Array<Float> arr = marr.getArray();
+	  Array<Bool> barr = marr.getMask();
+	  IPosition start(4,i,j,k,0);
+	  IPosition end(4,i,j,k,n-1);
+	  Array<Float> subArr(arr(start,end));
+	  Array<Bool> subMask(barr(start,end));
+	  Vector<Float> outv;
+	  Vector<Bool> outm;
+	  Vector<Float> v(subArr.nonDegenerate());
+	  Vector<Bool> m(subMask.nonDegenerate());
+	  MaskedArray<Float> tmparr(v,m);
+	  MaskedArray<Float> tmparr2(tmparr(mask));
+	  Float stdvsq = pow(stddev(tmparr2),2);
+	  stdevsqsum+=1.0/stdvsq;
+	  tmparr /= stdvsq;
+	  outmarr += tmparr;
+	}
+	outmarr /= stdevsqsum;
+	Array<Float> tarr(outmarr.getArray());
+	Array<Bool> tbarr(outmarr.getMask());
+	IPosition start(4,i,j,k,0);
+	IPosition end(4,i,j,k,n-1);
+	Array<Float> subArr(arr(start,end));
+	Array<Bool> subMask(barr(start,end));
+	ArrayAccessor<Float, Axis<0> > aa0(tarr);	
+	ArrayAccessor<Bool, Axis<0> > ba0(tbarr);	
+	ArrayAccessor<Bool, Axis<3> > ba(subMask);	
+	for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
+	  (*aa) = (*aa0);
+	  (*ba) = (*ba0);
+	  aa0++;
+	  ba0++;
+	  ba++;
+	}
+      }
+    }
+  }
+  Array<uChar> outflags(barr.shape());
+  convertArray(outflags,!barr);
+  SDContainer sc = in[0]->getSDContainer();
+  sc.putSpectrum(arr);
+  sc.putFlags(outflags);
+  sc.interval = inttime;
+  SDMemTable* sdmt = new SDMemTable(*in[0],True);
+  sdmt->putSDContainer(sc);
+  return CountedPtr<SDMemTable>(sdmt);
 }
-*/
+
+static CountedPtr<SDMemTable> 
+SDMath::averagePol(const CountedPtr<SDMemTable>& in, 
+		   const Vector<Bool>& mask) {
+  MaskedArray<Float> marr(in->rowAsMaskedArray(0));  
+  uInt n = in->nChan();
+  IPosition ip = marr.shape();
+  Array<Float> arr = marr.getArray();
+  Array<Bool> barr = marr.getMask();
+  for (uInt i=0; i<in->nBeam();++i) {
+    for (uInt j=0; j<in->nIF();++j) {
+      Float stdevsqsum = 0.0;
+      Vector<Float> initvec(n);initvec = 0.0;
+      Vector<Bool> initmask(n);initmask = True;
+      MaskedArray<Float> outmarr(initvec,initmask);
+      for (uInt k=0; k<in->nPol();++k) {
+	IPosition start(4,i,j,k,0);
+	IPosition end(4,i,j,k,in->nChan()-1);
+	Array<Float> subArr(arr(start,end));
+	Array<Bool> subMask(barr(start,end));
+	Vector<Float> outv;
+	Vector<Bool> outm;
+	Vector<Float> v(subArr.nonDegenerate());
+	Vector<Bool> m(subMask.nonDegenerate());
+	MaskedArray<Float> tmparr(v,m);
+	MaskedArray<Float> tmparr2(tmparr(mask));
+	Float stdvsq = pow(stddev(tmparr2),2);
+	stdevsqsum+=1.0/stdvsq;
+	tmparr /= stdvsq;
+	outmarr += tmparr;
+      }
+      outmarr /= stdevsqsum;
+      Array<Float> tarr(outmarr.getArray());
+      Array<Bool> tbarr(outmarr.getMask());
+      // write averaged pol into all pols - fix up to refrom array
+      for (uInt k=0; k<in->nPol();++k) {
+	IPosition start(4,i,j,k,0);
+	IPosition end(4,i,j,k,n-1);
+	Array<Float> subArr(arr(start,end));
+	Array<Bool> subMask(barr(start,end));
+	ArrayAccessor<Float, Axis<0> > aa0(tarr);	
+	ArrayAccessor<Bool, Axis<0> > ba0(tbarr);	
+	ArrayAccessor<Bool, Axis<3> > ba(subMask);	
+	for (ArrayAccessor<Float, Axis<3> > aa(subArr); aa != aa.end();++aa) {
+	  (*aa) = (*aa0);
+	  (*ba) = (*ba0);
+	  aa0++;
+	  ba0++;
+	  ba++;
+	}
+      }
+    }
+  }
+
+  Array<uChar> outflags(barr.shape());
+  convertArray(outflags,!barr);
+  SDContainer sc = in->getSDContainer();
+  sc.putSpectrum(arr);
+  sc.putFlags(outflags);
+  SDMemTable* sdmt = new SDMemTable(*in,True);
+  sdmt->putSDContainer(sc);
+  return CountedPtr<SDMemTable>(sdmt);
+}
+
+
+static Float SDMath::rms(const CountedPtr<SDMemTable>& in,
+			 const std::vector<bool>& mask) {
+  Float rmsval;
+  Vector<Bool> msk(mask);
+  IPosition ip = in->rowAsMaskedArray(0).shape();
+  MaskedArray<Float> marr(in->rowAsMaskedArray(0));
+
+  Array<Float> arr = marr.getArray();
+  Array<Bool> barr = marr.getMask();
+  uInt i,j,k;
+  i = in->getBeam();
+  j = in->getIF();
+  k = in->getPol();
+  IPosition start(4,i,j,k,0);
+  IPosition end(4,i,j,k,in->nChan()-1);
+  Array<Float> subArr(arr(start,end));
+  Array<Bool> subMask(barr(start,end));
+  Array<Float> v(subArr.nonDegenerate());
+  Array<Bool> m(subMask.nonDegenerate());
+  MaskedArray<Float> tmp;
+  if (msk.nelements() == m.nelements() ) {
+    tmp.setData(v,m&&msk);
+  } else {
+    tmp.setData(v,m);
+  }
+  rmsval = stddev(tmp);
+  return rmsval;
+}
+
+static CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in, 
+					  Int width) {
+  
+  MaskedArray<Float> marr(in->rowAsMaskedArray(0)); 
+  SpectralCoordinate coord(in->getCoordinate(0));
+  SDContainer sc = in->getSDContainer();
+  Array<Float> arr = marr.getArray();
+  Array<Bool> barr = marr.getMask();
+  SpectralCoordinate outcoord,outcoord2;
+  MaskedArray<Float> marrout;
+  ImageUtilities::bin(marrout, outcoord, marr, coord, 3, width);
+  IPosition ip = marrout.shape();
+  sc.resize(ip);
+  sc.putSpectrum(marrout.getArray());
+  Array<uChar> outflags(ip);
+  convertArray(outflags,!(marrout.getMask()));  
+  sc.putFlags(outflags);
+  MaskedArray<Float> tsys,tsysout;
+  Array<Bool> dummy(ip);dummy = True;
+  tsys.setData(sc.getTsys(),dummy);
+  ImageUtilities::bin(tsysout, outcoord2, marr, outcoord, 3, width);
+  sc.putTsys(tsysout.getArray());
+  SDHeader sh = in->getSDHeader();
+  sh.nchan = ip(3);
+  SDMemTable* sdmt = new SDMemTable(*in,True);
+  sdmt->setCoordinate(outcoord,0);
+  sdmt->putSDContainer(sc);
+  sdmt->putSDHeader(sh);
+  return CountedPtr<SDMemTable>(sdmt);
+}
