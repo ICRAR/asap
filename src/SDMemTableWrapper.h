@@ -186,8 +186,8 @@ public:
     return table_->history(whichRow); 
   }
 
-  void rotateXYPhase (float value) {
-      table_->rotateXYPhase(value);
+  void rotateXYPhase (float value, bool doAll) {
+      table_->rotateXYPhase(value, doAll);
   }
 
 private:

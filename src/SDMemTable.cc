@@ -1607,7 +1607,7 @@ void SDMemTable::renumber()
 }
 
 
-void SDMemTable::rotateXYPhase (Float value) 
+void SDMemTable::rotateXYPhase (Float value, Bool doAll)
 //
 // phase in degrees
 // Applies to all Beams and IFs
@@ -1625,7 +1625,15 @@ void SDMemTable::rotateXYPhase (Float value)
    Array<Float> data;
    for (uInt i=0; i<nRow;++i) {
       specCol_.get(i,data);
-      end = data.shape()-1;
+      IPosition shape = data.shape();
+
+// Set slice
+
+      if (!doAll) {
+         setCursorSlice (start, end, shape);
+      } else {
+         end = shape-1;
+      }
 
 // Get polarization slice references
 
