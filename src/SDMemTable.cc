@@ -339,9 +339,9 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const {
 
 std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
 {
+
   Array<Float> arr;
   specCol_.get(whichRow, arr);
-//
   return getFloatSpectrum (arr);
 }
 
@@ -352,45 +352,88 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, Bool doPol, Float
 //  doPol=True   : I,P,PA,V   ; P = sqrt(Q**2+U**2), PA = 0.5*atan2(Q,U)
 //
 {
+  AlwaysAssert(asap::nAxes==4,AipsError);
   if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
      throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
   }
   Array<Float> arr;
   stokesCol_.get(whichRow, arr);
 //
-  if (doPol && (polSel_==1 || polSel_==2)) {
+  if (doPol && (polSel_==1 || polSel_==2)) {       //   Q,U --> P, P.A.
+
+// Set current cursor location
+
      const IPosition& shape = arr.shape();
-     IPosition start(asap::nAxes,0);
-     IPosition end(shape-1);
-//
-     start(asap::PolAxis) = 1;                       // Q
-     end (asap::PolAxis) = 1;
-     Array<Float> Q = arr(start,end);
-//
-     start(asap::PolAxis) = 2;                       // U
-     end (asap::PolAxis) = 2;
-     Array<Float> U = arr(start,end);
-//
+     IPosition start, end;
+     setCursorSlice (start, end, shape);
+
+// Get Q and U slices
+
+     Array<Float> Q = SDPolUtil::getStokesSlice (arr,start,end,"Q");
+     Array<Float> U = SDPolUtil::getStokesSlice (arr,start,end,"U");
+
+// Compute output 
+
      Array<Float> out;
      if (polSel_==1) {                                        // P
         out = SDPolUtil::polarizedIntensity(Q,U);
      } else if (polSel_==2) {                                 // P.A.
         out = SDPolUtil::positionAngle(Q,U) + paOffset;
      }
-//
+
+// Copy to output
+
      IPosition vecShape(1,shape(asap::ChanAxis));
      Vector<Float> outV = out.reform(vecShape);
-     std::vector<float> spectrum(out.nelements());
-     for (uInt i=0; i<out.nelements(); i++) {
-        spectrum[i] = outV[i];
-     }
-     return spectrum;
+     return convertVector(outV);
   } else {
-     return getFloatSpectrum (arr);
+
+// Selects at the cursor location
+
+    return getFloatSpectrum (arr);
   }
 }
 
+std::vector<float> SDMemTable::getCircularSpectrum(Int whichRow, Bool doRR) const 
+//
+// Gets
+//  RR = I + V
+//  LL = I - V
+//
+{
+  AlwaysAssert(asap::nAxes==4,AipsError);
+  if (nPol()!=4) {
+     throw (AipsError("You must have 4 polarizations to get RR or LL"));
+  }
+  Array<Float> arr;
+  stokesCol_.get(whichRow, arr);
+
+// Set current cursor location
+
+  const IPosition& shape = arr.shape();
+  IPosition start, end;
+  setCursorSlice (start, end, shape);
+
+// Get I and V slices
+
+  Array<Float> I = SDPolUtil::getStokesSlice (arr,start,end,"I");
+  Array<Float> V = SDPolUtil::getStokesSlice (arr,start,end,"V");
+
+// Compute output 
+
+  Array<Float> out = SDPolUtil::circularPolarizationFromStokes (I, V, doRR);
+
+// Copy to output
+
+  IPosition vecShape(1,shape(asap::ChanAxis));
+  Vector<Float> outV = out.reform(vecShape);
+  return convertVector(outV);
+}
+
 std::vector<float> SDMemTable::getFloatSpectrum (const Array<Float>& arr) const
+//
+// Get spectrum at cursor location
+//
 {
 
 // Iterate and extract
@@ -1567,6 +1610,8 @@ void SDMemTable::renumber()
 void SDMemTable::rotateXYPhase (Float value) 
 //
 // phase in degrees
+// Applies to all Beams and IFs
+// Might want to optionally select on Beam/IF
 //
 {
    if (nPol() != 4) {
@@ -1601,3 +1646,35 @@ void SDMemTable::rotateXYPhase (Float value)
       specCol_.put(i,data);
    }
 }
+
+
+void SDMemTable::setCursorSlice (IPosition& start, IPosition& end,
+                                 const IPosition& shape) const
+{
+   const uInt nDim = shape.nelements();
+   start.resize(nDim);
+   end.resize(nDim);
+//
+   start(asap::BeamAxis) = beamSel_;
+   end(asap::BeamAxis) = beamSel_;
+//
+   start(asap::IFAxis) = IFSel_;
+   end(asap::IFAxis) = IFSel_;
+//
+   start(asap::PolAxis) = polSel_;
+   end(asap::PolAxis) = polSel_;
+//
+   start(asap::ChanAxis) = 0;
+   end(asap::ChanAxis) = shape(asap::ChanAxis) - 1;
+}
+
+
+std::vector<float> SDMemTable::convertVector (const Vector<Float>& in) const
+{
+   std::vector<float> out(in.nelements());
+   for (uInt i=0; i<in.nelements(); i++) {
+      out[i] = in[i];
+   }
+   return out;
+}
+

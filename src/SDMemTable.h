@@ -93,11 +93,26 @@ public:
   // cursor - all as stl vectors
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
   virtual std::vector<bool> getMask(casa::Int whichRow=0) const;
-  // Get STokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
+
+
+  // When we can handle input correlations being either circular or
+  // linear, we should probably have functions; getLinear, getCircular, getStokes
+  // since one can inter-convert between all three regardless of the input
+  // provided there are 4 polarizations. For now, we are assuming, if
+  // there are 4 polarizations, that we have linears.  getSpectrum 
+  // is then 'getLinear', getStokesSpectrum is 'getStokes' and getCircularSpectrum
+  // is 'getCircular'  
+
+
+  // Get Stokes at cursor location. One of either I,Q,U,V or I,P,PA,V (doPol=True)
   // If the latter, you can add a PA offset (degrees)
   virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
                                                casa::Bool doPol=casa::False,
                                                casa::Float paOffset=0.0) const;
+
+  // Get RR or LL at cursor location (not polSel_)
+  virtual std::vector<float> getCircularSpectrum(casa::Int whichRow=0, 
+                                                 casa::Bool rr=casa::True) const;
 
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
   // get all as aips++ Vectors
@@ -237,6 +252,14 @@ private:
   void setup();
   void attach();
   void renumber();
+
+  // Generate start and end for shape and current cursor selection
+  void setCursorSlice(casa::IPosition& start, casa::IPosition& end, const casa::IPosition& shape) const;
+
+  // Convert Vector to vector
+  std::vector<float> convertVector (const casa::Vector<casa::Float>& in) const;
+
+
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;
   std::vector<bool> chanMask_;
