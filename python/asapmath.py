@@ -4,6 +4,7 @@ from asap import rcParams
 def average_time(*args, **kwargs):
     """
     Return the (time) average of a scan or list of scans. [in channels only]
+    The cursor of the output scan is set to 0
     Parameters:
         one scan or comma separated  scans
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
@@ -45,6 +46,7 @@ def quotient(source, reference, preserve=True):
     Return the quotient of a 'source' (signal) scan and a 'reference' scan.
     The reference can have just one row, even if the signal has many. Otherwise
     they must have the same number of rows.
+    The cursor of the output scan is set to 0
     Parameters:
         source:        the 'on' scan
         reference:     the 'off' scan
@@ -61,6 +63,7 @@ def simple_math(left, right, op='add', tsys=True):
     Apply simple mathematical binary operations to two 
     scan tables,  returning the result in a new scan table.
     The operation is applied to both the correlations and the TSys data
+    The cursor of the output scan is set to 0
     Parameters:
         left:          the 'left' scan
         right:         the 'right' scan
@@ -285,6 +288,7 @@ def resample(scan, width=5, method='cubic', insitu=None):
 def average_pol(scan, mask=None, insitu=None):
     """
     Average the Polarisations together.
+    The polarisation cursor of the output scan is set to 0
     Parameters:
         scan:        The scantable
         mask:        An optional mask defining the region, where the
