@@ -1187,9 +1187,23 @@ std::string SDMemTable::summary() const  {
     }
   }
   oss << endl;
-  oss << "Table contains " << table_.nrow() << " integration(s)." << endl;
-  oss << "in " << count << " scan(s)." << endl;
-  oss << "-------------------------------------------------------------------------------";
+  oss << "Table contains " << table_.nrow() << " integration(s) in " << count << " scan(s)." << endl;
+
+// Frequency Table
+
+  std::vector<string> info = getCoordInfo();
+  SDFrequencyTable sdft = getSDFreqTable();
+  oss << endl << endl;
+  oss << "FreqID  Frame   RefFreq(Hz)  RefPix   Increment(Hz)" << endl;
+  oss << "-------------------------------------------------------------------------------" << endl;
+  for (uInt i=0; i<sdft.length(); i++) {
+     oss << setw(8) << i << setw(8) 
+                    << info[3] << setw(13)
+                    << sdft.referenceValue(i) << setw(10)  
+                    << sdft.referencePixel(i) << setw(12) 
+                    << sdft.increment(i) << endl;
+  }
+  oss << "-------------------------------------------------------------------------------" << endl;
   return String(oss);
 }
 
