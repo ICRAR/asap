@@ -712,7 +712,7 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, uInt whichRow)
 
 // Select rest freq
 
-    if (IFSel_+1 < vec.nelements()) {
+    if (IFSel_ < vec.nelements()) {
        spec.selectRestFrequency(uInt(IFSel_));
     } else {
        cerr << "There is no rest frequency for this IF; selecting rest freq for IF=0" << endl;
