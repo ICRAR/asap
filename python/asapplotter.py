@@ -34,8 +34,6 @@ class asapplotter:
         self._stacking = None
         self.set_panelling()
         self.set_stacking()
-        print rcParams
-        print self._panelling, self._stacking
         self._rows = None
         self._cols = None
         self._autoplot = False
