@@ -84,6 +84,7 @@ class scantable(sdtable):
         suffix = '.'+format.lower()
         if name is None or name =="":
             name = 'scantable'+suffix
+            print "No filename given. Using default name %s..." % name
         from os import path
         if path.isfile(name) or path.isdir(name):
             if not overwrite:
@@ -508,6 +509,8 @@ class scantable(sdtable):
             col:      which out of Beams/IFs/Pols should be colour stacked
             panel:    set up multiple panels, currently not working.
         """
+        print "Warning! Not fully functional. Use plotter.plot() instead"
+        
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
 
         validyax = ['spectrum','tsys']
