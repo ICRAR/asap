@@ -1,0 +1,353 @@
+Quick and Dirty ATNF Spectra line Analysis Package Cookbook
+
+
+The following "cookbook" is intended to help asap testers get up and
+running. It is not intended to be a comprehensive user guide. If
+anything is not clear please get in contact with
+Chris.Phillips@csiro.au or Malte.Marquarding@csiro.au.
+
+***********
+* General *
+***********
+
+The asap user interface is the python scripting language (ipython to
+be exact). It currently uses an object oriented approach for the user
+interface. One job of the testers is to give feed back to how they
+like this or what they would prefer as the command line interface.
+
+The main object in use is a scantable which initially contains the
+scans from a set of observations as individual correlator
+cycles. There are currently some limitations on how this data can be
+averaged. For practical purposes at the moment each scan has to be
+copied from the initial scan table before averaging or other
+reduction.
+
+Asap comes with built in help (help functionname), see the examples
+further down in this document. ipython allows you to run shell
+built-ins (ls, pwd, cd, etc). It also allows tab completion of function
+names etc, so if you cannot remember full command name you can just
+type the first few characters and type tab (eg pol<tab>).
+
+Asap unses "zero-based" indexing. This means the first scan in a
+scantable is scan 0. The first IF, polarisation and beam would have
+index [0,0,0].
+
+****************
+* Running asap *
+****************
+
+Currently in the testing phase, asap only runs on Linux at the ATNF.
+
+Ssh onto brage or vulcan at Epping.
+
+ > source /nfs/aips++/weekly/aipsinit.csh  # Tempory measure
+ > asap
+
+This will start up the asap ipython interpretor.
+
+****************
+* Reading data *
+****************
+
+To read data from disk, a reader object needs to be created then the
+scans copied into a scan table. This scan table will contain the
+averaged (!) correlator cycles for every scan in the rpfits file.
+
+ ASAP> scans = scantable('2003-03-16_082048_t0002.rpf')
+
+The scantable contains all the data from the rpfits file. To reduce
+the data you need to separate the individual scans. Before you do this
+is is advisable to set the restfrequency etc on all scans.
+
+ ASAP> scans.set_restfreqs([1665.4018], 'MHz')
+ ASAP> scans.set_freqframe('LSRK')
+
+This will set the rest frequency and tell asap to use LSR velocity
+reference.
+
+
+********************************************
+* Extract scans and make a quotient spectra *
+********************************************
+
+ ASAP> q = scans.get_scan(0)
+ ASAP> s = scans.get_scan(1)
+
+ This copies the data for the first and second scan.
+
+ ASAP> scan = quotient(s, q)
+
+ "scan" now contains the quotient spectrum, which you might want to look at.
+ The default display is to have polarisation colour stacked and scans across panels.
+
+  ASAP> plotter.plot(scan)
+
+ *******************************
+* Time average separate scans *
+*******************************
+
+If you have observed the source with multiple source/reference cycles you
+will want to average the quotient spectra together.
+**Note** - You have to have time_averaged the individual scans before you
+           average different scans. But you had to time average the individual
+           scans before you do the quotient spectra, so you should be OK.
+          - When time averaging multiple scans, asap uses rms weighting.
+            Generally you have to set a mask so it can calculate the rms.
+          - The default setting for a mask it to specify the channel
+            range you want to *include* in the fit. The "invert=True" option
+            below lets to choose the range you want to exclude (rather than
+            include).
+
+ ASAP> msk = s1.create_mask([0,100],[450,550],[900,1024]) # Include these
+ ASAP> msk = s1.create_mask([250,450],[550,750],invert=True) # or exclude these
+
+ ASAP> av = average_time(s1, s2, s3, mask=msk)
+
+*******************
+* Baseline fitting *
+********************
+
+To make a baseline fit, you must first create a mask of channels to
+use in the baseline fit. Remember that the default is the range to
+exclude, not include.
+
+ ASAP> msk = scan.create_mask([1600,1700],[1900,2000])
+ ASAP> scan2 = poly_baseline(scan, msk, 1)
+
+This will fit and subtract a first order polynomial to the masked region
+
+*****************************
+* Average the polarisations *
+*****************************
+
+If you are just interested in highest SNR for total intensity you
+want to average the parallel polarisations together.
+
+ ASAP> iav = average_pol(s)
+
+
+*********************
+* Plotting the data *
+*********************
+
+You can plot the data at any time.
+ ASAP> plotter.plot(s)
+
+This will bring up a plot window (a separate one for each scantable at
+the moment).
+
+The plot window has 6 buttons on the bottom left hand side.
+
+- Home: This will unzoom the window to the original zoom factor. A current
+        bug means that if you change the axis units (say from channel
+        to velocity) strange things happen
+
+- Plot history (left ad right arrow). The left arrow sets the plot zoom
+        to the previous value. The right arrow returns it. This allows you
+        to zoom in on one feature then return the plot to how it was
+        previously.
+
+- Pan: The Cross sets the cursor to pan, or scroll mode allowing you to shift
+       the plot within the window. Useful when zoomed in on a feature.
+
+- Zoom (the letter with the magnifying glass) lets you draw a rectangle around
+       a region of interest then zooms in on that region. Use the plot
+       history to unzoom again.
+       plotter.set_range(100,500)
+       sets a permanent viewing window on the abcissa between in the range 100 to 500 in the current unit.
+       plotter.set_range()
+       resets this
+
+- Save (floppy disk). Save the plot as a postscript or .png file.
+       plotter.save('myfile.ps') doers the same from the command line
+
+
+***********
+* Fitting *
+***********
+
+Currently multicomponent Gaussian function is available. This is done
+by creating a fitting object, setting up the fit and actually fitting
+the data.
+
+ ASAP> f = fitter()
+ ASAP> f.set_function(gauss=1)
+ ASAP> f.set_scan(s)
+ ASAP> f.fit()
+ ASAP> f.plot()
+ ASAP> f.get_parameters()
+
+If you want to confine the fitting to a smaller range (e.g. to avoid
+band edge effects or RFI
+
+ ASAP> f = fitter()
+ ASAP> f.set_function(gauss=2)
+ ASAP> msk = s.create_mask([2000,2100])
+ ASAP> f.set_scan(s,msk)
+ ASAP> f.fit()
+ ASAP> f.plot()
+ ASAP> f.get_parameters()
+
+If you want to set the initial paramter guesses and fix specific parameters:
+
+ ASAP> f = fitter()
+ ASAP> f.set_function(gauss=2)
+ ASAP> f.set_scan(s,msk)
+ ASAP> f.fit()
+ ASAP> p = [1.2,160.,50.,0.7,280.,100]
+       # order is: [peak0,centre0,FWHM0,peak1,centre1,FWHM1]
+ ASAP> fxd = [0,1,0,0,1,0] # fix the centres
+ ASAP> f.set_parameters(p,fxd) # set the parameters
+ ASAP> f.fit()
+
+*********
+* Units *
+*********
+
+Restfrequency, preferred velocity frame and active units need to be set
+for plotting etc to give sensible velocity units.
+
+* Set the rest frequency of the transition (in MHz, GHz etc).
+
+ ASAP> s.set_restfreqs([1666.4018], 'MHz')
+
+* Set the preferred velocity reference frame ('REST', 'TOPO', 'LSRD',
+'LSRK', 'BARY', 'GEO', 'GALACTO', 'LGROUP', 'CMB')
+
+ ASAP> s.set_freqframe('LSRK')
+
+* Set the units for plotting, mask selection etc ('km/s', 'channel', 'MHz')
+
+ ASAP> s.set_unit('km/s')
+
+**NOTE** When the unit has been set to, say, km/s then this is the unit used
+         for the create_mask function etc, ie give the mask range in km/s
+         and not channels.
+
+***************************
+* Miscellaneous reduction *
+***************************
+
+* Scale a spectra by a fixed amount
+
+ ASAP> ss = scale(s, 1.2)
+
+* Hanning smooth the spectrum
+
+ ASAP> ss = hanning(s)
+
+* Bin average the spectrum and reduce the number of spectral points
+
+ ASAP> ss = bin(s, 4)
+
+* Save a scan
+
+ ASAP> s.save('scan.asap')
+
+* Read a saved scan from disk
+
+ASAP> s = scantable('scan.asap')
+
+* Execute a python script named 'myscript'
+
+ ASAP> execfile('myscript')
+
+* To see a summary of a individual or set of scans
+
+ ASAP> print s
+
+  or alternatively:
+
+ ASAP> s.summary()
+
+* Get all (reference) scans which match the pattern '*_R':
+
+ ASAP> s = scans.get_scan('*_R')
+
+* Or just and individual:
+
+ ASAP> s = scans.get_scan('232p621_S')
+
+
+*******************
+* Object clean up *
+*******************
+
+A asap session has the potential to create a lot of scantable
+objects. To list the current objects and remove unneeded ones use the
+list_scan and del functions. Overwriting deletes the old one automatically
+
+ ASAP> list_scan
+----> list_scans()
+The user created scantables are:
+['av', 'q1', 's2', 'scans', 'q2', 's', 'ss', 'r1', 'r2', 's1']
+
+ ASAP> del s1
+ ASAP> del s2
+ ASAP> del q1
+ ASAP> del q2
+
+****************
+* Builtin help *
+****************
+
+All asap functions have built-in documentation. To get a summary of
+all functions use
+
+ ASAP> commands
+
+To get help on individual tasks use the help command. For the Maths
+functions do this as:
+
+ ASAP> help quotient
+
+For the scantable or fitter functions use the syntax
+
+ ASAP> help scantable.set_freqframe
+ ASAP> help fitter.set_scan
+
+**NOTE** If you type "help" only, you get ipython help. To exit this mode
+         you need to type ^-d (control-d).
+
+* Notes
+
+- Only does one IF/Pol/Beam. Need to change cursor
+
+
+******************
+* Worked example *
+******************
+
+commands
+scans = scantable('2001-10-07_0337.rpf')
+# data is auto-averaged
+print scans
+scans.set_restfreqs([90.663543], 'GHz')
+scans.set_freqframe('LSRK')
+r1 = scans.get_scan(0)
+s1 = scans.get_scan(1)
+r2 = scans.get_scan(2)
+s2 = scans.get_scan(3)
+q1 = quotient(s1,r1)
+q2 = quotient(s2,r2)
+del s1,s2
+del r1,r2
+plotter.plot(q1)
+msk = q1.create_mask([100,500],[620,1024])
+help scantable.average_time
+av = average_time(q1, q2, mask=msk)
+plotter.plot(av)
+# reuse the old mask as data range hasn't changed
+s = poly_baseline(av,msk,1)
+plotter.plot(s)
+ss = average_pol(s)
+plotter.plot(ss)
+ss.save('asap.test')
+
+f = fitter()
+f.set_function(gauss=1)
+f.set_scan(ss)
+f.fit()
+f.plot()
+f.get_parameters()
+^d
