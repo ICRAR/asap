@@ -26,7 +26,7 @@ LDFLAGS   := -shared -Wl,--soname=$(TARGET)
 LDFLAGS   += -s
 
 BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python2.3-gcc-mt.a
-BOOSTINC  :=
+BOOSTINC  := -I/usr/local/include/boost
 
 PYTHONINC := -I/usr/local/include/python2.3
 PYTHONLIB := -lpython2.3
@@ -54,7 +54,8 @@ OBJECTS   := MathUtils.o \
              python_SD.o
 
 
-HEADERS   := SDContainer.h \
+HEADERS   := SDDefs.h \
+             SDContainer.h \
              SDMemTable.h \
              SDReader.h \
              SDWriter.h \
