@@ -76,8 +76,8 @@ namespace SDMathWrapper {
                              float width);
 
 // Convert brightness between Jy and K
-  void convertFluxInSitu(SDMemTableWrapper& in, float area, float eta, bool doAll);
-  SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float area, float eta, bool doAll);
+  void convertFluxInSitu(SDMemTableWrapper& in, float D, float eta, float JyPerK, bool doAll);
+  SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float D, float eta, float JyPerK, bool doAll);
 
 // Apply gain elevation correction
   void gainElevationInSitu (SDMemTableWrapper& in, const std::vector<float>& coeffs,
