@@ -12,6 +12,31 @@ class linefinder:
 	self.finder = _asap.linefinder()
 	return
 
+    def set_options(self,threshold=1.7320508075688772,min_nchan=3,
+        avg_limit=8,box_size=0.2):
+	"""
+	Set the parameters of the algorithm
+	Parameters:
+	     threshold    a single channel S/N ratio above which the 
+	                  channel is considered to be a detection
+			  Default is sqrt(3), which together with
+			  min_nchan=3 gives a 3-sigma criterion
+	     min_nchan    a minimal number of consequtive channels, 
+                          which should satisfy a threshold criterion to
+			  be a detection. Default is 3.
+	     avg_limit    A number of consequtive channels not greater than
+	                  this parameter can be averaged to search for
+			  broad lines. Default is 8.
+	     box_size     A running mean box size specified as a fraction
+                          of the total spectrum length. Default is 1/5
+	Note:  For bad baselines threshold should be increased, 
+	       and avg_limit decreased (or even switched off completely by
+	       setting this parameter to 1) to avoid detecting baseline
+	       undulations instead of real lines.  
+        """
+        self.finder.setoptions(threshold,min_nchan,avg_limit,box_size)
+	return
+	     
     def set_scan(self,scan,mask=None,edge=(0,0)):
 	"""
 	Set the 'data' (scantable) to work with.

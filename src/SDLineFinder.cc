@@ -32,6 +32,7 @@
 
 // ASAP
 #include "SDLineFinder.h"
+#include "SDFitter.h"
 
 // STL
 #include <functional>
@@ -433,19 +434,20 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
       
       // determine the off-line variance first
       // an assumption made: lines occupy a small part of the spectrum
-
+       
       std::vector<float> variances(edge.second-edge.first);
       DebugAssert(variances.size(),AipsError);
-
+      
       for (;running_box->haveMore();running_box->next()) 
            variances[running_box->getChannel()-edge.first]=
 	                        running_box->getLinVariance();
-				
+	
       // in the future we probably should do a proper Chi^2 estimation
       // now a simple 80% of smaller values will be used.
       // it may degrade the performance of the algorithm for weak lines
       // due to a bias of the Chi^2 distribution.
       stable_sort(variances.begin(),variances.end());
+      
       Float offline_variance=0;
       uInt offline_cnt=uInt(0.8*variances.size());      
       if (!offline_cnt) offline_cnt=variances.size(); // no much else left,
@@ -458,7 +460,7 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
       is_detected_before=False;
       Vector<Int> signs(spectrum.nelements(),0);
 
-      ofstream os("dbg.dat");
+      //ofstream os("dbg.dat");
       for (running_box->rewind();running_box->haveMore();
                                  running_box->next()) {
            const int ch=running_box->getChannel();
@@ -470,8 +472,8 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 	   if (buf>0) signs[ch]=1;
 	   else if (buf<0) signs[ch]=-1;
 	   else if (buf==0) signs[ch]=0;
-	   os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
-	                threshold*offline_variance<<endl;
+	//   os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
+	  //              threshold*offline_variance<<endl;
       }
       if (lines.size())
           searchForWings(lines,signs,mask,edge);
@@ -577,14 +579,36 @@ bool LFLineListOperations::LaterThan::operator()(const std::pair<int,int> &line2
 
 SDLineFinder::SDLineFinder() throw() : edge(0,0)
 {
-  // detection threshold - the minimal signal to noise ratio
-  threshold=sqrt(3.); // 3 sigma and 3 channels is a default -> sqrt(3) in
-                     // a single channel
-  box_size=1./5.; // default box size for running mean calculations is
-                  // 1/5 of the whole spectrum
-  // A minimum number of consequtive channels, which should satisfy
-  // the detection criterion, to be a detection
-  min_nchan=3;     // default is 3 channels
+  setOptions();
+}
+
+// set the parameters controlling algorithm
+// in_threshold a single channel threshold default is sqrt(3), which
+//              means together with 3 minimum channels at least 3 sigma
+//              detection criterion
+//              For bad baseline shape, in_threshold may need to be
+//              increased
+// in_min_nchan minimum number of channels above the threshold to report
+//              a detection, default is 3
+// in_avg_limit perform the averaging of no more than in_avg_limit
+//              adjacent channels to search for broad lines
+//              Default is 8, but for a bad baseline shape this 
+//              parameter should be decreased (may be even down to a
+//              minimum of 1 to disable this option) to avoid
+//              confusing of baseline undulations with a real line.
+//              Setting a very large value doesn't usually provide 
+//              valid detections. 
+// in_box_size  the box size for running mean calculation. Default is
+//              1./5. of the whole spectrum size
+void SDLineFinder::setOptions(const casa::Float &in_threshold,
+                              const casa::Int &in_min_nchan,
+     	                      const casa::Int &in_avg_limit,
+                              const casa::Float &in_box_size) throw()
+{
+  threshold=in_threshold;
+  min_nchan=in_min_nchan;
+  avg_limit=in_avg_limit;
+  box_size=in_box_size;
 }
 
 SDLineFinder::~SDLineFinder() throw(AipsError) {}
@@ -634,7 +658,7 @@ void SDLineFinder::setScan(const SDMemTableWrapper &in_scan,
 	                           "number of channels to drop");
                edge.second=scan->nChan()-edge.second;
 	   } else edge.second=scan->nChan()-edge.first;
-           if (edge.second<0 || (edge.second+edge.first)>scan->nChan())
+           if (edge.second<0 || (edge.first>=edge.second))
 	       throw AipsError("SDLineFinder::setScan - all channels are rejected by the in_edge parameter");
        }       
   }
@@ -673,10 +697,10 @@ int SDLineFinder::findLines() throw(casa::AipsError)
   while (true) {
      // a buffer for new lines found at this iteration
      std::list<pair<int,int> > new_lines;     
-     // line find algorithm
-     LFAboveThreshold lfalg(new_lines,avg_factor*min_nchan, threshold);
 
      try {
+         // line find algorithm
+         LFAboveThreshold lfalg(new_lines,avg_factor*min_nchan, threshold);
          lfalg.findLines(spectrum,temp_mask,edge,max_box_nchan);
          first_pass=False;
          if (!new_lines.size())
@@ -687,10 +711,12 @@ int SDLineFinder::findLines() throw(casa::AipsError)
          if (first_pass) throw;
          // nothing new - proceed to the next step of averaging, if any
 	 // (to search for broad lines)
+	 if (avg_factor>avg_limit) break; // averaging up to avg_limit
+	                                  // adjacent channels,
+	                                  // stop after that
 	 avg_factor*=2; // twice as more averaging
+	 subtractBaseline(temp_mask,9);
 	 averageAdjacentChannels(temp_mask,avg_factor);
-	 if (avg_factor>8) break; // averaging up to 8 adjacent channels,
-	                          // stop after that
 	 continue; 
      }
      keepStrongestOnly(temp_mask,new_lines,max_box_nchan);
@@ -700,6 +726,28 @@ int SDLineFinder::findLines() throw(casa::AipsError)
      temp_mask=getMask();     
   }
   return int(lines.size());
+}
+
+// auxiliary function to fit and subtract a polynomial from the current
+// spectrum. It uses the SDFitter class. This action is required before
+// reducing the spectral resolution if the baseline shape is bad
+void SDLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
+                      const casa::Int &order) throw(casa::AipsError)
+{
+  AlwaysAssert(spectrum.nelements(),AipsError);
+  // use the fact that temp_mask excludes channels rejected at the edge
+  SDFitter sdf;
+  std::vector<float> absc(spectrum.nelements());
+  for (Int i=0;i<absc.size();++i)
+       absc[i]=float(i)/float(spectrum.nelements());
+  std::vector<float> spec;
+  spectrum.tovector(spec);
+  std::vector<bool> std_mask;
+  temp_mask.tovector(std_mask);
+  sdf.setData(absc,spec,std_mask);
+  sdf.setExpression("poly",order);
+  if (!sdf.fit()) return; // fit failed, use old spectrum
+  spectrum=casa::Vector<casa::Float>(sdf.getResidual());    
 }
 
 // auxiliary function to average adjacent channels and update the mask

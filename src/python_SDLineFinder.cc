@@ -39,6 +39,7 @@ namespace asap {
      void python_SDLineFinder() {
        class_<SDLineFinder>("linefinder")
          .def( init <> () )
+	 .def("setoptions",&SDLineFinder::setOptions)
          .def("setscan",&SDLineFinder::setScan)
          .def("findlines",&SDLineFinder::findLines)
          .def("getmask",&SDLineFinder::getMask)

@@ -134,6 +134,29 @@ struct SDLineFinder : protected LFLineListOperations {
    SDLineFinder() throw();
    virtual ~SDLineFinder() throw(casa::AipsError);
 
+   // set the parameters controlling algorithm
+   // in_threshold a single channel threshold default is sqrt(3), which
+   //              means together with 3 minimum channels at least 3 sigma
+   //              detection criterion
+   //              For bad baseline shape, in_threshold may need to be
+   //              increased
+   // in_min_nchan minimum number of channels above the threshold to report
+   //              a detection, default is 3
+   // in_avg_limit perform the averaging of no more than in_avg_limit
+   //              adjacent channels to search for broad lines
+   //              Default is 8, but for a bad baseline shape this 
+   //              parameter should be decreased (may be even down to a
+   //              minimum of 1 to disable this option) to avoid
+   //              confusing of baseline undulations with a real line.
+   //              Setting a very large value doesn't usually provide 
+   //              valid detections. 
+   // in_box_size  the box size for running mean calculation. Default is
+   //              1./5. of the whole spectrum size
+   void setOptions(const casa::Float &in_threshold=sqrt(3.),
+                   const casa::Int &in_min_nchan=3,
+		   const casa::Int &in_avg_limit=8,
+                   const casa::Float &in_box_size=0.2) throw();
+
    // set the scan to work with (in_scan parameter), associated mask (in_mask
    // parameter) and the edge channel rejection (in_edge parameter)
    //   if in_edge has zero length, all channels chosen by mask will be used
@@ -170,6 +193,12 @@ protected:
    void averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update,
                                const casa::Int &boxsize)
                                throw(casa::AipsError);
+
+   // auxiliary function to fit and subtract a polynomial from the current
+   // spectrum. It uses the SDFitter class. This action is required before
+   // reducing the spectral resolution if the baseline shape is bad
+   void subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
+                         const casa::Int &order) throw(casa::AipsError);
    
    // an auxiliary function to remove all lines from the list, except the
    // strongest one (by absolute value). If the lines removed are real,
@@ -202,6 +231,10 @@ private:
                                            // channels, which should satisfy
 					   // the detection criterion, to be
 					   // a detection
+   casa::Int   avg_limit;                  // perform the averaging of no
+                                           // more than in_avg_limit
+					   // adjacent channels to search
+					   // for broad lines. see setOptions
    std::list<std::pair<int, int> > lines;  // container of start and stop+1
                                            // channels of the spectral lines
    // a buffer for the spectrum
