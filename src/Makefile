@@ -1,4 +1,4 @@
-TARGET   := ../lib/asap.so
+TARGET   := ../lib/_asap.so
 
 CXX      := g++-3.2.3
 CXXFLAGS := -O -fPIC
@@ -40,11 +40,13 @@ OBJECTS   := MathUtils.o \
              SDReader.o \
              SDWriter.o \
              SDMath.o \
+             SDFitter.o \
              SDTemplates.o \
              python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
              python_SDMath.o \
+             python_SDFitter.o \
              python_SD.o
 
 
@@ -53,6 +55,7 @@ HEADERS   := SDContainer.h \
              SDReader.h \
              SDWriter.h \
              SDMath.h \
+             SDFitter.h \
              SDMemTableWrapper.h \
              SDMathWrapper.h \
              SDReaderWrapper.h \
