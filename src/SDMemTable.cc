@@ -70,7 +70,6 @@ SDMemTable::SDMemTable() :
   polSel_(0) 
 {
   setup();
-cerr << "Call SDMemTable::attach" << endl;
   attach();
 }
 
