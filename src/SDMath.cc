@@ -447,141 +447,19 @@ SDMath::hanning(const CountedPtr<SDMemTable>& in)
   return CountedPtr<SDMemTable>(sdmt);
 }
 
-
-CountedPtr<SDMemTable>
-SDMath::averagePol(const CountedPtr<SDMemTable>& in,
-                   const Vector<Bool>& mask)
-//
-// Average all polarizations together, weighted by variance
-//
+void SDMath::averagePolInSitu (SDMemTable* pIn, const Vector<Bool>& mask)
 {
-//   WeightType wtType = NONE;
-//   convertWeightString (wtType, weight);
+  SDMemTable* pOut = localAveragePol (*pIn, mask);
+  *pIn = *pOut;
+   delete pOut;
+}  
 
-   const uInt nRows = in->nRow();
-   const uInt polAxis = 2;                     // Polarization axis
-   const uInt chanAxis = 3;                    // Spectrum axis
 
-// Create output Table and reshape number of polarizations
-
-  Bool clear=True;
-  SDMemTable* pTabOut = new SDMemTable(*in, clear);
-  SDHeader header = pTabOut->getSDHeader();
-  header.npol = 1;
-  pTabOut->putSDHeader(header);
-
-// Shape of input and output data 
-
-  const IPosition shapeIn = in->rowAsMaskedArray(0).shape();
-  IPosition shapeOut(shapeIn);
-  shapeOut(polAxis) = 1;                          // Average all polarizations
-//
-  const uInt nChan = shapeIn(chanAxis);
-  const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
-  IPosition start(4), end(4);
-
-// Output arrays
-
-  Array<Float> outData(shapeOut, 0.0);
-  Array<Bool> outMask(shapeOut, True);
-  const IPosition axes(2, 2, 3);              // pol-channel plane
-// 
-  const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
-
-// Loop over rows
-
-   for (uInt iRow=0; iRow<nRows; iRow++) {
-
-// Get data for this row
-
-      MaskedArray<Float> marr(in->rowAsMaskedArray(iRow));
-      Array<Float>& arr = marr.getRWArray();
-      const Array<Bool>& barr = marr.getMask();
-
-// Make iterators to iterate by pol-channel planes
-
-      ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
-      ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
-
-// Accumulations
-
-      Float fac = 1.0;
-      Vector<Float> vecSum(nChan,0.0);
-
-// Iterate through data by pol-channel planes
-
-      while (!itDataPlane.pastEnd()) {
-
-// Iterate through plane by polarization  and accumulate Vectors
-
-        Vector<Float> t1(nChan); t1 = 0.0;
-        Vector<Bool> t2(nChan); t2 = True;
-        MaskedArray<Float> vecSum(t1,t2);
-        Float varSum = 0.0;
-        {
-           ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
-           ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
-           while (!itDataVec.pastEnd()) {     
-
-// Create MA of data & mask (optionally including OTF mask) and  get variance 
-
-              if (useMask) {
-                 const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
-              } else {
-                 const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
-                 fac = 1.0 / variance(spec);
-              }
-
-// Normalize spectrum (without OTF mask) and accumulate
-
-              const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
-              vecSum += spec;
-              varSum += fac;
-
-// Next
-
-              itDataVec.next();
-              itMaskVec.next();
-           }
-        }
-
-// Normalize summed spectrum
-
-        vecSum /= varSum;
-
-// FInd position in input data array.  We are iterating by pol-channel
-// plane so all that will change is beam and IF and that's what we want.
-
-        IPosition pos = itDataPlane.pos();
-
-// Write out data. This is a bit messy. We have to reform the Vector 
-// accumulator into an Array of shape (1,1,1,nChan)
-
-        start = pos;
-        end = pos; 
-        end(chanAxis) = nChan-1;
-        outData(start,end) = vecSum.getArray().reform(vecShapeOut);
-        outMask(start,end) = vecSum.getMask().reform(vecShapeOut);
-
-// Step to next beam/IF combination
-
-        itDataPlane.next();
-        itMaskPlane.next();
-      }
-
-// Generate output container and write it to output table
-
-      SDContainer sc = in->getSDContainer();
-      sc.resize(shapeOut);
-//
-      putDataInSDC (sc, outData, outMask);
-      pTabOut->putSDContainer(sc);
-   }
-//
-  return CountedPtr<SDMemTable>(pTabOut);
+CountedPtr<SDMemTable> SDMath::averagePol (const CountedPtr<SDMemTable>& in, 
+                                           const Vector<Bool>& mask)
+{
+  return CountedPtr<SDMemTable>(localAveragePol(*in, mask));
 }
-
 
 CountedPtr<SDMemTable> SDMath::bin(const CountedPtr<SDMemTable>& in,
                                    Int width) 
@@ -947,4 +825,139 @@ void SDMath::putDataInSDC (SDContainer& sc, const Array<Float>& data,
     Array<uChar> outflags(data.shape());
     convertArray(outflags,!mask);
     sc.putFlags(outflags);
+}
+
+
+SDMemTable* SDMath::localAveragePol(const SDMemTable& in, const Vector<Bool>& mask)
+//
+// Average all polarizations together, weighted by variance
+//
+{
+//   WeightType wtType = NONE;
+//   convertWeightString (wtType, weight);
+
+   const uInt nRows = in.nRow();
+   const uInt polAxis = 2;                     // Polarization axis
+   const uInt chanAxis = 3;                    // Spectrum axis
+
+// Create output Table and reshape number of polarizations
+
+  Bool clear=True;
+  SDMemTable* pTabOut = new SDMemTable(in, clear);
+  SDHeader header = pTabOut->getSDHeader();
+  header.npol = 1;
+  pTabOut->putSDHeader(header);
+
+// Shape of input and output data 
+
+  const IPosition& shapeIn = in.rowAsMaskedArray(0u, False).shape();
+  IPosition shapeOut(shapeIn);
+  shapeOut(polAxis) = 1;                          // Average all polarizations
+//
+  const uInt nChan = shapeIn(chanAxis);
+  const IPosition vecShapeOut(4,1,1,1,nChan);     // A multi-dim form of a Vector shape
+  IPosition start(4), end(4);
+
+// Output arrays
+
+  Array<Float> outData(shapeOut, 0.0);
+  Array<Bool> outMask(shapeOut, True);
+  const IPosition axes(2, 2, 3);              // pol-channel plane
+// 
+  const Bool useMask = (mask.nelements() == shapeIn(chanAxis));
+cerr << "nEl=" << mask.nelements() << endl;
+cerr << "useMask=" << useMask << endl;
+
+// Loop over rows
+
+   for (uInt iRow=0; iRow<nRows; iRow++) {
+
+// Get data for this row
+
+      MaskedArray<Float> marr(in.rowAsMaskedArray(iRow));
+      Array<Float>& arr = marr.getRWArray();
+      const Array<Bool>& barr = marr.getMask();
+
+// Make iterators to iterate by pol-channel planes
+
+      ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
+      ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
+
+// Accumulations
+
+      Float fac = 1.0;
+      Vector<Float> vecSum(nChan,0.0);
+
+// Iterate through data by pol-channel planes
+
+      while (!itDataPlane.pastEnd()) {
+
+// Iterate through plane by polarization  and accumulate Vectors
+
+        Vector<Float> t1(nChan); t1 = 0.0;
+        Vector<Bool> t2(nChan); t2 = True;
+        MaskedArray<Float> vecSum(t1,t2);
+        Float varSum = 0.0;
+        {
+           ReadOnlyVectorIterator<Float> itDataVec(itDataPlane.array(), 1);
+           ReadOnlyVectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+           while (!itDataVec.pastEnd()) {     
+
+// Create MA of data & mask (optionally including OTF mask) and  get variance 
+
+              if (useMask) {
+                 const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
+                 fac = 1.0 / variance(spec);
+              } else {
+                 const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
+                 fac = 1.0 / variance(spec);
+              }
+
+// Normalize spectrum (without OTF mask) and accumulate
+
+              const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
+              vecSum += spec;
+              varSum += fac;
+
+// Next
+
+              itDataVec.next();
+              itMaskVec.next();
+           }
+        }
+
+// Normalize summed spectrum
+
+        vecSum /= varSum;
+
+// FInd position in input data array.  We are iterating by pol-channel
+// plane so all that will change is beam and IF and that's what we want.
+
+        IPosition pos = itDataPlane.pos();
+
+// Write out data. This is a bit messy. We have to reform the Vector 
+// accumulator into an Array of shape (1,1,1,nChan)
+
+        start = pos;
+        end = pos; 
+        end(chanAxis) = nChan-1;
+        outData(start,end) = vecSum.getArray().reform(vecShapeOut);
+        outMask(start,end) = vecSum.getMask().reform(vecShapeOut);
+
+// Step to next beam/IF combination
+
+        itDataPlane.next();
+        itMaskPlane.next();
+      }
+
+// Generate output container and write it to output table
+
+      SDContainer sc = in.getSDContainer();
+      sc.resize(shapeOut);
+//
+      putDataInSDC (sc, outData, outMask);
+      pTabOut->putSDContainer(sc);
+   }
+//
+  return pTabOut;
 }

@@ -68,6 +68,7 @@ namespace asap {
       def("hanning", &SDMathWrapper::hanning);
       def("average", &SDMathWrapper::average);
       def("averagepol", &SDMathWrapper::averagePol);
+      def("averagepol_insitu", &SDMathWrapper::averagePolInSitu);
       def("bin", &SDMathWrapper::bin);
       def("stats", &SDMathWrapper::statistic);
     };

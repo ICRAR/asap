@@ -66,19 +66,19 @@ namespace SDMath {
 // Bin up
 
   casa::CountedPtr<SDMemTable> bin(const casa::CountedPtr<SDMemTable>& in, 
-			     casa::Int width);
+                                   casa::Int width);
 
 // Average in time
 
-  casa::CountedPtr<SDMemTable>
-  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
-           const casa::Vector<casa::Bool>& mask,
-           bool scanAverage, const std::string& weightStr);
+  casa::CountedPtr<SDMemTable>  average (const casa::Block<casa::CountedPtr<SDMemTable> >& in,
+                                         const casa::Vector<casa::Bool>& mask,
+                                         bool scanAverage, const std::string& weightStr);
 
 // Average polarizations
 
-  casa::CountedPtr<SDMemTable> 
-  averagePol(const casa::CountedPtr<SDMemTable>& in, const casa::Vector<casa::Bool>& mask);
+  void averagePolInSitu (SDMemTable* in, const casa::Vector<casa::Bool>& mask);
+  casa::CountedPtr<SDMemTable> averagePol(const casa::CountedPtr<SDMemTable>& in, 
+                                          const casa::Vector<casa::Bool>& mask);
 
 // Statistics
 
@@ -134,13 +134,17 @@ namespace SDMath {
 // Convert weight string to enum value
 
    void convertWeightString (WeightType& wt, const std::string& weightStr);
+
+// Function for simple mathematical operations.  what=0 (mul) or 1 (add)
+
+  SDMemTable* localOperate (const SDMemTable& in, casa::Float offset, 
+                            casa::Bool doAll, casa::uInt what);
+
+// Function to average polarizations
+
+  SDMemTable* localAveragePol(const SDMemTable& in, const casa::Vector<casa::Bool>& mask);
 };
 
 } // namespace
 
 #endif
-
-
-
-
-

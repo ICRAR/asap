@@ -97,9 +97,14 @@ namespace SDMathWrapper {
 
 // Average polarizations
 
-  SDMemTableWrapper averagePol(const SDMemTableWrapper& in,
-                               const std::vector<bool>& mask) {
-    return SDMath::averagePol(in.getCP(), mask);
+  void averagePolInSitu (SDMemTableWrapper& in,  const std::vector<bool>& mask) 
+  {
+    SDMemTable* sdmt = in.getPtr();
+    SDMath::averagePolInSitu(in.getPtr(), mask);
+  }
+  SDMemTableWrapper averagePol (const SDMemTableWrapper& in, const std::vector<bool>& mask)
+  {
+    return SDMemTableWrapper(SDMath::averagePol(in.getCP(), mask));
   }
 
 // Statistics
