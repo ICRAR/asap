@@ -194,6 +194,10 @@ class SDPolUtil
    static casa::Stokes::StokesTypes convertStokes(casa::Int val, casa::Bool toStokes, 
                                                   casa::Bool linear);
 
+// Return a label for the given polarization index (0-3).   
+   static casa::String polarizationLabel (casa::uInt polIdx, casa::Bool linear, 
+                                          casa::Bool stokes, casa::Bool linPol);
+
 
 // These two functions are explicitly for the SDWriter
 //
@@ -219,10 +223,13 @@ class SDPolUtil
                                                           const casa::IPosition& end);
 
 private:
+// Return a label for the given StokesType
+   static casa::String stokesString (casa::Stokes::StokesTypes stokes);
+
+// specializations
   static casa::Array<casa::Float> andArrays (const casa::Array<casa::Float>& in1,
                                              const casa::Array<casa::Float>& in2) 
                                              {return (in1+in2)/casa::Float(2.0);}
-
   static casa::Array<casa::Bool> andArrays (const casa::Array<casa::Bool>& in1,
                                             const casa::Array<casa::Bool>& in2) 
                                             {return in1&&in2;}

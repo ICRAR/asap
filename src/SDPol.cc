@@ -327,7 +327,7 @@ Stokes::StokesTypes SDPolUtil::convertStokes(Int val, Bool toStokes, Bool linear
    Stokes::StokesTypes stokes = Stokes::Undefined;
    if (toStokes) {
       if (val==0) {
-         stokes = Stokes::I;
+          stokes = Stokes::I;
       } else if (val==1) {
          stokes = Stokes::Q;
       } else if (val==2) {
@@ -359,6 +359,121 @@ Stokes::StokesTypes SDPolUtil::convertStokes(Int val, Bool toStokes, Bool linear
 //
    return stokes;
 }
+
+
+
+String SDPolUtil::polarizationLabel (uInt polIdx, Bool linear, Bool stokes, Bool linPol)
+{   
+   Stokes::StokesTypes type = Stokes::Undefined;
+   if (stokes) {
+      switch (polIdx) {
+         case 0:
+           {
+              type = Stokes::I;
+           }
+           break;
+         case 1:
+           {
+              if (linPol) {
+                 type = Stokes::Plinear;
+              } else {
+                 type = Stokes::Q;
+              }
+           }
+           break;
+         case 2:
+           {
+              if (linPol) {
+                 type = Stokes::Pangle;
+              } else {
+                 type = Stokes::U;
+              }
+           }
+           break;
+         case 3:
+           {
+              type = Stokes::V;
+           }
+           break;
+         default:  
+           {
+               throw(AipsError("Unknown Stokes type"));
+           }
+      }
+   } else {
+      if (linear) {
+         switch (polIdx) {
+            case 0:
+              {
+                 type = Stokes::XX;
+              }
+              break;
+            case 1:
+              {
+                 type = Stokes::YY;
+              }
+              break;
+            case 2:
+              {
+                 type = Stokes::XY;              // Really Real(XY)
+                 return String("Real(XY)");
+              }
+              break;
+            case 3:
+              {
+                 type = Stokes::YX;              // Really Imag(XY)
+                 return String("Imag(XY)");
+              }
+              break;
+            default:  
+              {
+                  throw(AipsError("Unknown linear polarization type"));
+              }
+         }
+      } else {  
+         switch (polIdx) {
+            case 0:
+              {
+                 type = Stokes::RR;
+              }
+              break;
+            case 1:
+              {
+                 type = Stokes::LL;
+              }
+            case 2:
+              {
+                 type = Stokes::RL;               // Really Real(RL)
+                 return String("Real(RL)");
+              }
+              break;
+            case 3:
+              {
+                 type = Stokes::LR;               // Really Imag(RL)
+                 return String("Imag(RL)");
+              }
+              break;
+            default:  
+              {
+                  throw(AipsError("Unknown circular polarization type"));
+              }
+         }
+      }
+   }
+//
+   return SDPolUtil::stokesString(type);
+} 
+
+
+
+
+// private
+
+String SDPolUtil::stokesString (Stokes::StokesTypes type)
+{
+  return Stokes::name (type);
+}
+
 
 Array<casa::uChar> SDPolUtil::andArrays (const Array<casa::uChar>& in1,
                                          const Array<casa::uChar>& in2)
@@ -402,4 +517,8 @@ Array<Float> SDPolUtil::extractStokesForWriter (Array<Float>& in, const IPositio
 //
    return out;
 }
+
+
+
+
 
