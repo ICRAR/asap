@@ -88,7 +88,7 @@ template void Array<float>::tovector(vector<float> &) const;
 template void Array<Bool>::tovector(vector<bool> &) const;
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 template class PtrHolder<Lattice<Float> >;
-#include "MathUtils.cc"
+#include "MathUtils2.cc"
 namespace mathutil {
   template void hanning(Vector<Float>&, Vector<Bool>&,
 			const Vector<Float>&, 

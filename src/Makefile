@@ -35,6 +35,7 @@ INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(CASAPPLIB)
 
 OBJECTS   := MathUtils.o \
+             MathUtils2.o \
              SDContainer.o \
              SDMemTable.o \
              SDReader.o \
