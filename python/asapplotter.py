@@ -328,7 +328,7 @@ class asapplotter:
                         sel = eval(cdict2.get(k))
                         i = sel[0]
                         if k == "p":
-                            which = self._cursor["p"].index(j)
+                            which = self._cursor["p"].index(i)
                             polmode = self._polmode[which]
                             i = which                        
                         eval(cdict.get(k))
