@@ -82,8 +82,8 @@ namespace asap {
       def("gainel", &SDMathWrapper::gainElevation);
       def("gainel_insitu", &SDMathWrapper::gainElevationInSitu);
 //
-      def("align", &SDMathWrapper::velocityAlignment);
-      def("align_insitu", &SDMathWrapper::velocityAlignmentInSitu);
+      def("freq_align", &SDMathWrapper::frequencyAlignment);
+      def("freq_align_insitu", &SDMathWrapper::frequencyAlignmentInSitu);
 //
       def("opacity", &SDMathWrapper::opacity);
       def("opacity_insitu", &SDMathWrapper::opacityInSitu);
