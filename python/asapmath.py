@@ -236,8 +236,8 @@ def gain_el(scan, poly=None, filename="", method="linear",
         
 def freq_align(scan, reftime=None, method='cubic', perif=False, insitu=None):
     """
-        Return a scan where all rows have been aligned in frequency. The
-        alignment frequency frame (e.g. LSRK) is that set by function
+        Return a scan where all rows have been aligned in frequency/velocity.
+	The alignment frequency frame (e.g. LSRK) is that set by function
         set_freqframe.  
         scan:        a scantable
         reftime:     reference time to align at. By default, the time of
