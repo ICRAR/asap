@@ -39,6 +39,7 @@
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/VectorIter.h>
 #include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/ArrayMath.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/Quanta/MVTime.h>
 
@@ -130,19 +131,72 @@ Bool SDContainer::putTsys(const Array<Float>& tsys) {
 }
 
 Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
+                              const Vector<Complex>& cSpec,
+			      uInt whichBeam, uInt whichIF) 
+//
+// spec is [nChan,nPol] 
+// cspec is [nChan]
+// spectrum_ is [,,,nChan]
+//
+// nPOl_ = 4  - xx, yy, real(xy), imag(xy)
+//
+{
+  AlwaysAssert(nPol_==4,AipsError);
+
+// Get slice  and check dim
+
+  Bool tSys = False;
+  Bool xPol = True;
+  IPosition start, end;
+  setSlice (start, end, spec.shape(), spectrum_.shape(),
+            whichBeam, whichIF, tSys, xPol);
+
+// Get a reference to the Pol/Chan slice we are interested in
+
+  Array<Float> subArr = spectrum_(start,end);
+
+// Iterate through pol-chan plane and fill
+
+  ReadOnlyVectorIterator<Float> inIt(spec,0);
+  VectorIterator<Float> outIt(subArr,asap::ChanAxis);
+  while (!outIt.pastEnd()) {
+     const IPosition& pos = outIt.pos();
+     if (pos(asap::PolAxis)<2) {
+        outIt.vector() = inIt.vector();
+        inIt.next();
+     } else if (pos(asap::PolAxis)==2) {
+        outIt.vector() = real(cSpec);
+     } else if (pos(asap::PolAxis)==3) {
+        outIt.vector() = imag(cSpec);
+     }
+//
+     outIt.next();
+  }
+
+  // unset flags for this spectrum, they might be set again by the
+  // setFlags method
+
+  Array<uChar> arr(flags_(start,end));
+  arr = uChar(0);
+//
+  return True;
+}
+
+
+Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 			      uInt whichBeam, uInt whichIF) 
 //
 // spec is [nChan,nPol] 
 // spectrum_ is [,,,nChan]
 // How annoying.
-//
+// nPol==2 
 {
 
 // Get slice and check dim
 
   IPosition start, end;
   setSlice (start, end, spec.shape(), spectrum_.shape(),
-            whichBeam, whichIF, False);
+            whichBeam, whichIF, False, False);
 
 // Get a reference to the Pol/Chan slice we are interested in
 
@@ -152,7 +206,7 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 
   ReadOnlyVectorIterator<Float> inIt(spec,0);
   VectorIterator<Float> outIt(subArr,asap::ChanAxis);
-  while (!inIt.pastEnd()) {
+  while (!outIt.pastEnd()) {
      outIt.vector() = inIt.vector();
 //
      inIt.next();
@@ -169,32 +223,62 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 }
 
 
+
+
 Bool SDContainer::setFlags (const Matrix<uChar>& flags,
-                            uInt whichBeam, uInt whichIF) 
+                            uInt whichBeam, uInt whichIF,
+                            Bool hasXPol)
 //
 // flags is [nChan,nPol] 
 // flags_ is [,,,nChan]
 // How annoying.
+// there are no separate flags for XY so make
+// them up from X and Y
 //
 {
+  if (hasXPol) AlwaysAssert(nPol_==4,AipsError);
+
 // Get slice and check dim
 
   IPosition start, end;
   setSlice (start, end, flags.shape(), flags_.shape(),
-            whichBeam, whichIF, False);
+            whichBeam, whichIF, False, hasXPol);
 
 // Get a reference to the Pol/Chan slice we are interested in
 
   Array<uChar> subArr = flags_(start,end);
 
-// Iterate through it and fill
+// Iterate through pol/chan plane  and fill
 
   ReadOnlyVectorIterator<uChar> inIt(flags,0);
   VectorIterator<uChar> outIt(subArr,asap::ChanAxis);
-  while (!inIt.pastEnd()) {
-     outIt.vector() = inIt.vector();
 //
-     inIt.next();
+  Vector<uChar> maskPol0;
+  Vector<uChar> maskPol1;
+  Vector<uChar> maskPol01;
+  while (!outIt.pastEnd()) {
+     const IPosition& pos = outIt.pos();
+     if (pos(asap::PolAxis)<2) {
+        outIt.vector() = inIt.vector();
+//
+        if (hasXPol) {
+           if (pos(asap::PolAxis)==0) {
+              maskPol0 = inIt.vector();
+           } else if (pos(asap::PolAxis)==1) {
+              maskPol1 = inIt.vector();
+//
+              maskPol01.resize(maskPol0.nelements());
+              for (uInt i=0; i<maskPol01.nelements(); i++) maskPol01[i] = maskPol0[i]&maskPol1[i];
+           }
+        }
+//
+        inIt.next();
+     } else if (pos(asap::PolAxis)==2) {
+        outIt.vector() = maskPol01;
+     } else if (pos(asap::PolAxis)==3) { 
+        outIt.vector() = maskPol01;
+     }
+//
      outIt.next();
   }
 //
@@ -203,10 +287,13 @@ Bool SDContainer::setFlags (const Matrix<uChar>& flags,
 
 
 Bool SDContainer::setTsys(const Vector<Float>& tsys,
-			  uInt whichBeam, uInt whichIF) 
+			  uInt whichBeam, uInt whichIF,
+                          Bool hasXpol)
 //
 // Tsys does not depend upon channel but is replicated
-// for simplicity of use
+// for simplicity of use.
+// There is no Tsys measurement for the cross polarization
+// so I have set TSys for XY to sqrt(Tx*Ty)
 //
 {
 
@@ -214,7 +301,7 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
 
   IPosition start, end;
   setSlice (start, end, tsys.shape(), tsys_.shape(),
-            whichBeam, whichIF, True);
+            whichBeam, whichIF, True, hasXpol);
 
 // Get a reference to the Pol/Chan slice we are interested in
 
@@ -225,7 +312,14 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   VectorIterator<Float> outIt(subArr,asap::ChanAxis);
   uInt i=0;
   while (!outIt.pastEnd()) {
-     outIt.vector() = tsys(i++);
+     const IPosition& pos = outIt.pos();
+//
+     if (pos(asap::PolAxis)<2) {
+       outIt.vector() = tsys(i++);
+     } else {
+       outIt.vector() = sqrt(tsys[0]*tsys[1]);
+     }
+//
      outIt.next();
   }
 }
@@ -400,20 +494,26 @@ Bool SDContainer::putHistory(const Vector<String>& hist)
 
 void SDContainer::setSlice (IPosition& start, IPosition& end,
                             const IPosition& shpIn, const IPosition& shpOut,
-                            uInt whichBeam, uInt whichIF, Bool tSys) const
+                            uInt whichBeam, uInt whichIF, Bool tSys,
+                            Bool xPol) const
 //
 // tSYs
 //   shpIn [nPol]
 // else
 //   shpIn [nCHan,nPol]
 //
+// if xPol present, the output nPol = 4 but
+// the input spectra are nPol=2 (tSys) or nPol=2 (spectra)
+//
 {
   AlwaysAssert(asap::nAxes==4,AipsError);
+  uInt pOff = 0;
+  if (xPol) pOff += 2;
   if (tSys) {
-     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(0),AipsError);     // pol
+     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(0)+pOff,AipsError);     // pol
   } else {
-     AlwaysAssert(shpOut(asap::ChanAxis)==shpIn(0),AipsError);    // chan
-     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(1),AipsError);     // pol
+     AlwaysAssert(shpOut(asap::ChanAxis)==shpIn(0),AipsError);       // chan
+     AlwaysAssert(shpOut(asap::PolAxis)==shpIn(1)+pOff,AipsError);   // pol
   }
 //
   start.resize(asap::nAxes);

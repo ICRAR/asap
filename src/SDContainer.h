@@ -122,14 +122,19 @@ public:
 
   casa::Bool setSpectrum(const casa::Matrix<casa::Float>& spec,
 		   casa::uInt whichBeam, casa::uInt whichIF);
+  casa::Bool setSpectrum(const casa::Matrix<casa::Float>& spec,
+		         const casa::Vector<casa::Complex>& cSpec,
+                         casa::uInt whichBeam, casa::uInt whichIF);
   casa::Bool putSpectrum(const casa::Array<casa::Float>& spec);
 
   casa::Bool setFlags(const casa::Matrix<casa::uChar>& flgs,
-		      casa::uInt whichBeam, casa::uInt whichIF);
+		      casa::uInt whichBeam, casa::uInt whichIF,
+                      casa::Bool hasXPol=casa::False);
   casa::Bool putFlags(const casa::Array<casa::uChar>& spec);
 
   casa::Bool setTsys(const casa::Vector<casa::Float>& ts, 
-	       casa::uInt whichBeam, casa::uInt whichIF);
+	       casa::uInt whichBeam, casa::uInt whichIF,
+               casa::Bool hasXpol);
   casa::Bool putTsys(const casa::Array<casa::Float>& spec);
 
   casa::Bool setDirection(const casa::Vector<casa::Double>& point, 
@@ -196,7 +201,8 @@ private:
   casa::Vector<casa::String> history_;
   void setSlice (casa::IPosition& start, casa::IPosition& end,
                  const casa::IPosition& shpIn, const casa::IPosition& shpOut,
-                 casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol) const;
+                 casa::uInt whichBeam, casa::uInt whichIF, casa::Bool checkPol,
+                 casa::Bool xPol) const;
 };
 
 
