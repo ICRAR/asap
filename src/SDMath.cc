@@ -1073,7 +1073,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
 //
      cout << "Jy/K = " << JyPerK << endl;
      Vector<Float> factors(in.nRow(), factor);
-     correctFromVector (pTabOut, in, doAll, factors);
+     scaleByVector(pTabOut, in, doAll, factors, False);
   } else if (etaAp>0.0) {
      Bool throwIt = True;
      Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
@@ -1087,7 +1087,7 @@ SDMemTable* SDMath::convertFlux (const SDMemTable& in, Float D, Float etaAp,
      }
 //
      Vector<Float> factors(in.nRow(), factor);
-     correctFromVector (pTabOut, in, doAll, factors);
+     scaleByVector(pTabOut, in, doAll, factors, False);
   } else {
 
 // OK now we must deal with automatic look up of values.
@@ -1163,11 +1163,11 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
      const uInt nRow = in.nRow();
      Vector<Float> factor(nRow);
      for (uInt i=0; i<nRow; i++) {
-        factor[i] = (*pPoly)(x[i]);
+        factor[i] = 1.0 / (*pPoly)(x[i]);
      }
      delete pPoly;
 //
-     correctFromVector (pTabOut, in, doAll, factor);
+     scaleByVector (pTabOut, in, doAll, factor, True);
   } else {
 
 // Indicate which columns to read from ascii file
@@ -1178,8 +1178,8 @@ SDMemTable* SDMath::gainElevation (const SDMemTable& in, const Vector<Float>& co
 // Read and correct
 
      cout << "Making correction from ascii Table" << endl;
-     correctFromAsciiTable (pTabOut, in, fileName, col0, col1, 
-                            methodStr, doAll, x);
+     scaleFromAsciiTable (pTabOut, in, fileName, col0, col1, 
+                          methodStr, doAll, x, True);
    }
 //
    return pTabOut;
@@ -1213,7 +1213,7 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 
 // Correct
 
-  correctFromVector (pTabOut, in, doAll, factor);
+  scaleByVector (pTabOut, in, doAll, factor, True);
 //
   return pTabOut;
 }
@@ -1798,25 +1798,25 @@ Table SDMath::readAsciiFile (const String& fileName) const
 
 
 
-void SDMath::correctFromAsciiTable(SDMemTable* pTabOut,
-                                   const SDMemTable& in, const String& fileName,
-                                   const String& col0, const String& col1,
-                                   const String& methodStr, Bool doAll,
-                                   const Vector<Float>& xOut) const
+void SDMath::scaleFromAsciiTable(SDMemTable* pTabOut,
+                                 const SDMemTable& in, const String& fileName,
+                                 const String& col0, const String& col1,
+                                 const String& methodStr, Bool doAll,
+                                 const Vector<Float>& xOut, Bool doTSys) const
 {
 
 // Read gain-elevation ascii file data into a Table.
 
   Table geTable = readAsciiFile (fileName);
 //
-  correctFromTable (pTabOut, in, geTable, col0, col1, methodStr, doAll, xOut);
+  scaleFromTable (pTabOut, in, geTable, col0, col1, methodStr, doAll, xOut, doTSys);
 }
 
-void SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
-                              const Table& tTable, const String& col0, 
-                              const String& col1,
-                              const String& methodStr, Bool doAll,
-                              const Vector<Float>& xOut) const
+void SDMath::scaleFromTable(SDMemTable* pTabOut, const SDMemTable& in, 
+                            const Table& tTable, const String& col0, 
+                            const String& col1,
+                            const String& methodStr, Bool doAll,
+                            const Vector<Float>& xOut, Bool doTsys) const
 {
 
 // Get data from Table
@@ -1840,18 +1840,25 @@ void SDMath::correctFromTable(SDMemTable* pTabOut, const SDMemTable& in,
                                                 True, True);
 // Apply 
 
-   correctFromVector (pTabOut, in, doAll, yOut);
+   scaleByVector(pTabOut, in, doAll, Float(1.0)/yOut, doTsys);
 }
 
 
-void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in, 
-                                Bool doAll, const Vector<Float>& factor) const
+void SDMath::scaleByVector(SDMemTable* pTabOut, const SDMemTable& in, 
+                           Bool doAll, const Vector<Float>& factor,
+                           Bool doTSys) const
 {
 
 // Set up data slice
 
   IPosition start, end;
   setCursorSlice (start, end, doAll, in);
+
+// Get Tsys column
+
+  const Table& tIn = in.table();
+  ArrayColumn<Float> tSysCol(tIn, "TSYS");
+  Array<Float> tSys;
 
 // Loop over rows and apply correction factor
   
@@ -1862,6 +1869,12 @@ void SDMath::correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
 
      MaskedArray<Float> dataIn(in.rowAsMaskedArray(i));
      MaskedArray<Float> dataIn2 = dataIn(start,end);  // reference to dataIn
+//
+     if (doTSys) {
+        tSysCol.get(i, tSys);
+        Array<Float> tSys2 = tSys(start,end) * factor[i];
+        tSysCol.put(i, tSys);
+     }
 
 // Apply factor
 
@@ -1969,4 +1982,18 @@ void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a,
          a[i] = new FrequencyAligner<Float>(sC, nChan, refEpoch, refDir, refPos, system);
       }
    }
+}
+
+Vector<uInt> SDMath::getRowRange (const SDMemTable& in) const
+{
+   Vector<uInt> range(2);
+   range[0] = 0;
+   range[1] = in.nRow()-1;
+   return range;
+}
+   
+
+Bool SDMath::rowInRange (uInt i, const Vector<uInt>& range) const
+{
+   return (i>=range[0] && i<=range[1]);
 }

@@ -158,22 +158,23 @@ class SDMath {
    void convertInterpString(casa::InterpolateArray1D<casa::Double,casa::Float>::InterpolationMethod& method,  
                              const casa::String& interp) const;
 
-// Correct data from an ascii Table
-   void correctFromAsciiTable(SDMemTable* pTabOut, const SDMemTable& in, 
+// Scale data with values from an ascii Table
+   void scaleFromAsciiTable(SDMemTable* pTabOut, const SDMemTable& in, 
                               const casa::String& fileName,
                               const casa::String& col0, const casa::String& col1,
                               const casa::String& methodStr, casa::Bool doAll,
-                              const casa::Vector<casa::Float>& xOut) const;
+                              const casa::Vector<casa::Float>& xOut, casa::Bool doTSys) const;
 
-// Correct data from a Table
-   void correctFromTable(SDMemTable* pTabOut, const SDMemTable& in, const casa::Table& tTable,
+// Scale data with values from a Table
+   void scaleFromTable(SDMemTable* pTabOut, const SDMemTable& in, const casa::Table& tTable,
                          const casa::String& col0, const casa::String& col1,
                          const casa::String& methodStr, casa::Bool doAll,
-                         const casa::Vector<casa::Float>& xOut) const;
+                         const casa::Vector<casa::Float>& xOut, casa::Bool doTSys) const;
 
-// Correct data from a Vector
-   void correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
-                           casa::Bool doAll, const casa::Vector<casa::Float>& factor) const;
+// Scale data and optionally TSys by values in a Vector
+   void scaleByVector (SDMemTable* pTabOut, const SDMemTable& in,
+                       casa::Bool doAll, const casa::Vector<casa::Float>& factor,
+                       casa::Bool doTSys) const;
 
 // Convert time String to Epoch
    casa::MEpoch epochFromString (const casa::String& str, casa::MEpoch::Types timeRef) const;
@@ -213,6 +214,12 @@ class SDMath {
                                const casa::ROScalarColumn<casa::String>& srcCol,
                                const casa::ROArrayColumn<casa::uInt>& fqIDCol,
                                casa::Bool perFreqID) const;
+
+// Get row range from SDMemTable state
+   casa::Vector<casa::uInt> getRowRange (const SDMemTable& in) const;
+
+// Is row in the row range ?
+   casa::Bool rowInRange (casa::uInt i, const casa::Vector<casa::uInt>& range) const;
 
 // Set slice to cursor or all axes
     void setCursorSlice (casa::IPosition& start, casa::IPosition& end, 
