@@ -30,12 +30,12 @@ class fitter:
 
     def set_data(self, xdat, ydat, mask=None):
         """
-        Set the abscissa and ordinate for the fit. Also set the mask
+        Set the absissa and ordinate for the fit. Also set the mask
         indicationg valid points.
         This can be used for data vectors retrieved from a scantable.
         For scantable fitting use 'fitter.set_scan(scan, mask)'.
         Parameters:
-            xdat:    the abscissa values
+            xdat:    the abcissa values
             ydat:    the ordinate values
             mask:    an optional mask
         
@@ -109,7 +109,7 @@ class fitter:
             return
         else:
             if self.data is not None:
-                self.x = self.data.getabscissa()
+                self.x = self.data.getabcissa()
                 self.y = self.data.getspectrum()
                 print "Fitting:"
                 vb = self.data._verbose
@@ -228,10 +228,10 @@ class fitter:
             self._p = ASAPlot()
         self._p.clear()
         tlab = 'Spectrum'
-        xlab = 'Abscissa'
+        xlab = 'Abcissa'
         if self.data:
             tlab = self.data._getsourcename(0)
-            xlab = self.data.getabscissalabel(0)
+            xlab = self.data.getabcissalabel(0)
         ylab = r'Flux'
         m = self.data.getmask(0)
         self._p.set_line(colour='blue',label='Spectrum')
@@ -267,7 +267,7 @@ class fitter:
                 scan.setif(j)
                 for k in range(scan.npol()):
                     scan.setpol(k)
-                    self.x = scan.getabscissa()
+                    self.x = scan.getabcissa()
                     self.y = scan.getspectrum()
                     self.data = None
                     self.fit()                    

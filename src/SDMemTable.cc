@@ -320,7 +320,7 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo) {
 
 }
 
-std::vector<double> SDMemTable::getAbscissa(Int whichRow) {
+std::vector<double> SDMemTable::getAbcissa(Int whichRow) {
   std::vector<double> absc(nChan());
   Vector<Double> absc1(nChan());
   indgen(absc1);
@@ -415,7 +415,7 @@ std::vector<double> SDMemTable::getAbscissa(Int whichRow) {
   return absc;
 }
 
-std::string SDMemTable::getAbscissaString(Int whichRow)
+std::string SDMemTable::getAbcissaString(Int whichRow)
 {
   ROArrayColumn<uInt> fid(table_, "FREQID");
   Table t = table_.keywordSet().asTable("FREQUENCIES");
@@ -863,7 +863,7 @@ std::string SDMemTable::summary()  {
   } else {
       oss << "None set" << endl;
   }
-  oss << setw(15) << "Abscissa:" << getAbscissaString() << endl;
+  oss << setw(15) << "Abcissa:" << getAbcissaString() << endl;
   oss << setw(15) << "Cursor:" << "Beam[" << getBeam() << "] "
       << "IF[" << getIF() << "] " << "Pol[" << getPol() << "]" << endl;
   oss << endl;

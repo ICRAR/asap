@@ -151,8 +151,8 @@ public:
 
   casa::Int nCoordinates() const;
 
-  std::vector<double> getAbscissa(int whichRow=0);
-  std::string getAbscissaString(casa::Int whichRow=0);
+  std::vector<double> getAbcissa(int whichRow=0);
+  std::string getAbcissaString(casa::Int whichRow=0);
 
 private:
   // utility func for nice printout

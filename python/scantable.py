@@ -292,18 +292,18 @@ class scantable(sdtable):
         if unit == '': unit = 'channel'
         return unit
 
-    def get_abscissa(self, rowno=0):
+    def get_abcissa(self, rowno=0):
         """
-        Get the abscissa in the current coordinate setup for the currently
+        Get the abcissa in the current coordinate setup for the currently
         selected Beam/IF/Pol
         Parameters:
             none
         Returns:
-            The abscissa values and it's format string.
+            The abcissa values and it's format string.
         """
-        absc = self.getabscissa(rowno)
-        lbl = self.getabscissalabel(rowno)
-        return absc, lbl
+        abc = self.getabcissa(rowno)
+        lbl = self.getabcissalabel(rowno)
+        return abc, lbl
 
     def create_mask(self, *args, **kwargs):
         """
@@ -335,7 +335,7 @@ class scantable(sdtable):
             if u == "": u = "channel"
             print "The current mask window unit is", u
         n = self.nchan()
-        data = self.getabscissa()
+        data = self.getabcissa()
         msk = ones(n)
         for  window in args:
             if (len(window) != 2 or window[0] > window[1] ):
@@ -442,7 +442,7 @@ class scantable(sdtable):
                     for k in range(len(x)):
                         y.append(self._gettsys(k))
                 else:
-                    x,xlab = self.get_abscissa(i)
+                    x,xlab = self.get_abcissa(i)
                     y = self.getspectrum(i)
                     ylab = r'Flux'
                     m = self.getmask(i)

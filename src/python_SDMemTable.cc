@@ -51,9 +51,9 @@ void python_SDMemTable() {
     .def("_getsource", &SDMemTableWrapper::getSource)
     .def("getspectrum", &SDMemTableWrapper::getSpectrum,
          (boost::python::arg("whichRow")=0) )
-    .def("getabscissa", &SDMemTableWrapper::getAbscissa,
+    .def("getabcissa", &SDMemTableWrapper::getAbcissa,
          (boost::python::arg("whichRow")=0) )
-    .def("getabscissalabel", &SDMemTableWrapper::getAbscissaString,
+    .def("getabcissalabel", &SDMemTableWrapper::getAbcissaString,
          (boost::python::arg("whichRow")=0) )
     .def("getmask", &SDMemTableWrapper::getMask,
          (boost::python::arg("whichRow")=0) )

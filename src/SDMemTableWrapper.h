@@ -75,11 +75,11 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
-  std::vector<double> getAbscissa(int whichRow=0) const {
-    return table_->getAbscissa(whichRow);
+  std::vector<double> getAbcissa(int whichRow=0) const {
+    return table_->getAbcissa(whichRow);
   }
-  std::string getAbscissaString(int whichRow=0) const {
-    return table_->getAbscissaString(whichRow);
+  std::string getAbcissaString(int whichRow=0) const {
+    return table_->getAbcissaString(whichRow);
   }
 
   std::vector<float> getTsys() {
