@@ -93,6 +93,9 @@ class SDMath {
                               const casa::String& fileName,
                               const casa::String& method, casa::Bool doAll) const;
 
+// Velocity Alignment
+   SDMemTable* velocityAlignment (const SDMemTable& in) const;
+
 // Opacity correction
    SDMemTable* opacity (const SDMemTable& in, casa::Float tau, casa::Bool doAll) const;
 
@@ -168,11 +171,16 @@ class SDMath {
    void correctFromVector (SDMemTable* pTabOut, const SDMemTable& in,
                            casa::Bool doAll, const casa::Vector<casa::Float>& factor) const;
 
-
-
 // Read ascii file into a Table
 
    casa::Table readAsciiFile (const casa::String& fileName) const;
+
+// Generate source table
+   void generateSourceTable (casa::Vector<casa::String>& srcTab,
+                             casa::Vector<casa::uInt>& srcIdx,
+                             casa::Vector<casa::uInt>& firstRow,
+                             const casa::Vector<casa::String>& srcNames) const;
+
 };
 
 } // namespace

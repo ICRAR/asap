@@ -83,6 +83,9 @@ namespace SDMathWrapper {
                                   const std::string& fileName, 
                                   const std::string& method, bool doAll);
 
+// Apply velocity alignment
+  SDMemTableWrapper velocityAlignment(const SDMemTableWrapper& in);
+
 // Apply opacity correction
   void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
   SDMemTableWrapper opacity (const SDMemTableWrapper& in, float tau, bool doAll);

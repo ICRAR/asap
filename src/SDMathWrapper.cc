@@ -227,6 +227,13 @@ SDMemTableWrapper SDMathWrapper::gainElevation(const SDMemTableWrapper& in,
                                                   String(method), Bool(doAll)));
 }
 
+SDMemTableWrapper SDMathWrapper::velocityAlignment (const SDMemTableWrapper& in)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.velocityAlignment(*pIn));
+}
+
 void SDMathWrapper::opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll)
 {
   SDMemTable* pIn = in.getPtr();
