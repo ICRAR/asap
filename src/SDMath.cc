@@ -109,7 +109,7 @@ SDMath::~SDMath()
 SDMemTable* SDMath::velocityAlignment (const SDMemTable& in) const
 {
 
-// Get velocity/frame info
+// Get velocity/frame info from Table
 
    std::vector<std::string> info = in.getCoordInfo();
    String velUnit(info[0]);
@@ -126,176 +126,21 @@ SDMemTable* SDMath::velocityAlignment (const SDMemTable& in) const
    String velSystemStr(info[1]);
    String velBaseSystemStr(info[3]);
    if (velBaseSystemStr==velSystemStr) {
-      throw(AipsError("You have not set a velocity frame different from the initial - use function set_frame"));
+      throw(AipsError("You have not set a velocity frame different from the initial - use function set_freqframe"));
    }
-
-cerr << "unit, frame, doppler, baseframe = " << velUnit << ", " << velSystemStr << ", " << 
-               dopplerStr << ", " << velBaseSystemStr << endl;
 //
    MFrequency::Types velSystem;
    MFrequency::getType(velSystem, velSystemStr);
    MDoppler::Types doppler;
    MDoppler::getType(doppler, dopplerStr);
 
-// Get Header
+// Decide on alignment Epoch
 
-   SDHeader sh = in.getSDHeader();
-   const uInt nChan = sh.nchan;
-   const uInt nRows = in.nRow();
+// Do it
 
-// Get Table reference
-
-   const Table& tabIn = in.table();
-
-// Get Columns from Table
-
-  ROScalarColumn<Double> mjdCol(tabIn, "TIME");
-  ROScalarColumn<String> srcCol(tabIn, "SRCNAME");
-  ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
-//
-  Vector<Double> times = mjdCol.getColumn();
-  Vector<String> srcNames = srcCol.getColumn();
-  Vector<uInt> freqID;
-
-// Generate Source table
-
-   Vector<String> srcTab;
-   Vector<uInt> srcIdx, firstRow;
-   generateSourceTable (srcTab, srcIdx, firstRow, srcNames);
-   const uInt nSrcTab = srcTab.nelements();
-/*
-   cerr << "source table = " << srcTab << endl;
-   cerr << "source idx = " << srcIdx << endl;
-   cerr << "first row = " << firstRow << endl;
-*/
-
-// Set reference Epoch to time of first row
-
-   MEpoch::Ref timeRef = MEpoch::Ref(in.getTimeReference());
-   Unit DAY(String("d"));
-   Quantum<Double> tQ(times[0], DAY);
-   MVEpoch mve(tQ);
-   MEpoch refTime(mve, timeRef);
-
-// Set Reference Position
-
-   Vector<Double> antPos = sh.antennaposition;
-   MVPosition mvpos(antPos[0], antPos[1], antPos[2]);
-   MPosition refPos(mvpos);
-
-// Get Frequency Table
-
-   SDFrequencyTable fTab = in.getSDFreqTable();
-   const uInt nFreqIDs = fTab.length();
-
-// Create VelocityAligner Block. One VA for each possible
-// source/freqID combination
-
-   PtrBlock<VelocityAligner<Float>* > vA(nFreqIDs*nSrcTab);
-   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
-      SpectralCoordinate sC = in.getCoordinate(fqID);
-      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
-         MDirection refDir = in.getDirection(firstRow[iSrc]);
-         uInt idx = (iSrc*nFreqIDs) + fqID;
-         vA[idx] = new VelocityAligner<Float>(sC, nChan, refTime, refDir, refPos,
-                                              velUnit, doppler, velSystem);
-      }
-   }
-
-// New output Table
-
-   SDMemTable* pTabOut = new SDMemTable(in,True);
-
-// Loop over rows in Table
-
-  const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
-  VelocityAligner<Float>::Method method = VelocityAligner<Float>::LINEAR;
-  Bool extrapolate=False;
-  Bool useCachedAbcissa = False;
-  Bool first = True;
-  Vector<Float> yOut;
-  Vector<Bool> maskOut;
-//
-  for (uInt iRow=0; iRow<nRows; ++iRow) {
-
-// Get EPoch
-
-   Quantum<Double> tQ2(times[iRow],DAY);
-   MVEpoch mv2(tQ2);
-   MEpoch epoch(mv2, timeRef);
-
-// Get FreqID vector.  One freqID per IF
-
-    fqIDCol.get(iRow, freqID);
-
-// Get copy of data
-    
-    const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
-    Array<Float> values = mArrIn.getArray();
-    Array<Bool> mask = mArrIn.getMask(); 
-
-// cerr << "values in = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
-
-// For each row, the Velocity abcissa will be the same regardless
-// of polarization.  For all other axes (IF and BEAM) the abcissa
-// will change.  So we iterate through the data by pol-chan planes
-// to mimimize the work.  At this point, I think the Direction
-// is stored as the same for each beam. DOn't know where the 
-// offsets are or what to do about them right now.  For now
-// all beams get same position and velocoity abcissa.
-
-    ArrayIterator<Float> itValuesPlane(values, polChanAxes);
-    ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
-    while (!itValuesPlane.pastEnd()) {
-
-// Find the IF index and then the VA PtrBlock index
-
-       const IPosition& pos = itValuesPlane.pos();
-       uInt ifIdx = pos(asap::IFAxis);
-       uInt vaIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
-//cerr << "VA idx = " << vaIdx << endl;
-//
-       VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1);
-       VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
-//
-       first = True;
-       useCachedAbcissa=False;
-       while (!itValuesVec.pastEnd()) {     
-          Bool ok = vA[vaIdx]->align (yOut, maskOut, itValuesVec.vector(),
-                                      itMaskVec.vector(), epoch, useCachedAbcissa,
-                                      method, extrapolate); 
-          itValuesVec.vector() = yOut;
-          itMaskVec.vector() = maskOut;
-//
-          itValuesVec.next();
-          itMaskVec.next();
-//
-          if (first) {
-             useCachedAbcissa = True;
-             first = False;
-          }
-       }
-//
-       itValuesPlane.next();
-       itMaskPlane.next();
-    }
-
-// cerr << "values out = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
-
-// Create and put back
-
-    SDContainer sc = in.getSDContainer(iRow);
-    putDataInSDC(sc, values, mask);
-//
-    pTabOut->putSDContainer(sc);
-  }
-
-// Clean up PointerBlock
-
-  for (uInt i=0; i<vA.nelements(); i++) delete vA[i];
-//
-  return pTabOut;
+   return velocityAlign (in, velSystem, velUnit, doppler);
 }
+
 
 
 CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
@@ -1304,6 +1149,177 @@ SDMemTable* SDMath::opacity (const SDMemTable& in, Float tau, Bool doAll) const
 
 
 // 'private' functions
+
+SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
+                                   MFrequency::Types velSystem,
+                                   const String& velUnit,
+                                   MDoppler::Types doppler) const
+{
+// Get Header
+
+   SDHeader sh = in.getSDHeader();
+   const uInt nChan = sh.nchan;
+   const uInt nRows = in.nRow();
+
+// Get Table reference
+
+   const Table& tabIn = in.table();
+
+// Get Columns from Table
+
+  ROScalarColumn<Double> mjdCol(tabIn, "TIME");
+  ROScalarColumn<String> srcCol(tabIn, "SRCNAME");
+  ROArrayColumn<uInt> fqIDCol(tabIn, "FREQID");
+//
+  Vector<Double> times = mjdCol.getColumn();
+  Vector<String> srcNames = srcCol.getColumn();
+  Vector<uInt> freqID;
+
+// Generate Source table
+
+   Vector<String> srcTab;
+   Vector<uInt> srcIdx, firstRow;
+   generateSourceTable (srcTab, srcIdx, firstRow, srcNames);
+   const uInt nSrcTab = srcTab.nelements();
+   cerr << "Found " << srcTab.nelements() << " sources to align " << endl;
+/*
+   cerr << "source table = " << srcTab << endl;
+   cerr << "source idx = " << srcIdx << endl;
+   cerr << "first row = " << firstRow << endl;
+*/
+
+// Set reference Epoch to time of first row
+
+   MEpoch::Ref timeRef = MEpoch::Ref(in.getTimeReference());
+   Unit DAY(String("d"));
+   Quantum<Double> tQ(times[0], DAY);
+   MVEpoch mve(tQ);
+   MEpoch refTime(mve, timeRef);
+
+// Set Reference Position
+
+   Vector<Double> antPos = sh.antennaposition;
+   MVPosition mvpos(antPos[0], antPos[1], antPos[2]);
+   MPosition refPos(mvpos);
+
+// Get Frequency Table
+
+   SDFrequencyTable fTab = in.getSDFreqTable();
+   const uInt nFreqIDs = fTab.length();
+
+// Create VelocityAligner Block. One VA for each possible
+// source/freqID combination
+
+   PtrBlock<VelocityAligner<Float>* > vA(nFreqIDs*nSrcTab);
+   for (uInt fqID=0; fqID<nFreqIDs; fqID++) {
+      SpectralCoordinate sC = in.getCoordinate(fqID);
+      for (uInt iSrc=0; iSrc<nSrcTab; iSrc++) {
+         MDirection refDir = in.getDirection(firstRow[iSrc]);
+         uInt idx = (iSrc*nFreqIDs) + fqID;
+         vA[idx] = new VelocityAligner<Float>(sC, nChan, refTime, refDir, refPos,
+                                              velUnit, doppler, velSystem);
+      }
+   }
+
+// New output Table
+
+   SDMemTable* pTabOut = new SDMemTable(in,True);
+
+// Loop over rows in Table
+
+  const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
+  VelocityAligner<Float>::Method method = VelocityAligner<Float>::LINEAR;
+  Bool extrapolate=False;
+  Bool useCachedAbcissa = False;
+  Bool first = True;
+  Bool ok;
+  Vector<Float> yOut;
+  Vector<Bool> maskOut;
+  uInt ifIdx, vaIdx;
+//
+  for (uInt iRow=0; iRow<nRows; ++iRow) {
+     if (iRow%10==0) {
+        cerr << "Processing row " << iRow << endl;
+     }
+
+// Get EPoch
+
+    Quantum<Double> tQ2(times[iRow],DAY);
+    MVEpoch mv2(tQ2);
+    MEpoch epoch(mv2, timeRef);
+
+// Get FreqID vector.  One freqID per IF
+
+    fqIDCol.get(iRow, freqID);
+
+// Get copy of data
+    
+    const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
+    Array<Float> values = mArrIn.getArray();
+    Array<Bool> mask = mArrIn.getMask(); 
+
+// cerr << "values in = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
+
+// For each row, the Velocity abcissa will be the same regardless
+// of polarization.  For all other axes (IF and BEAM) the abcissa
+// will change.  So we iterate through the data by pol-chan planes
+// to mimimize the work.  At this point, I think the Direction
+// is stored as the same for each beam. DOn't know where the 
+// offsets are or what to do about them right now.  For now
+// all beams get same position and velocoity abcissa.
+
+    ArrayIterator<Float> itValuesPlane(values, polChanAxes);
+    ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
+    while (!itValuesPlane.pastEnd()) {
+
+// Find the IF index and then the VA PtrBlock index
+
+       const IPosition& pos = itValuesPlane.pos();
+       ifIdx = pos(asap::IFAxis);
+       vaIdx = (srcIdx[iRow]*nFreqIDs) + freqID[ifIdx];
+//
+       VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1);
+       VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+//
+       first = True;
+       useCachedAbcissa=False;
+       while (!itValuesVec.pastEnd()) {     
+          ok = vA[vaIdx]->align (yOut, maskOut, itValuesVec.vector(),
+                                 itMaskVec.vector(), epoch, useCachedAbcissa,
+                                 method, extrapolate); 
+          itValuesVec.vector() = yOut;
+          itMaskVec.vector() = maskOut;
+//
+          itValuesVec.next();
+          itMaskVec.next();
+//
+          if (first) {
+             useCachedAbcissa = True;
+             first = False;
+          }
+       }
+//
+       itValuesPlane.next();
+       itMaskPlane.next();
+    }
+
+// cerr << "values out = " << values(IPosition(4,0,0,0,0),IPosition(4,0,0,0,9)) << endl;
+
+// Create and put back
+
+    SDContainer sc = in.getSDContainer(iRow);
+    putDataInSDC(sc, values, mask);
+//
+    pTabOut->putSDContainer(sc);
+  }
+
+// Clean up PointerBlock
+
+  for (uInt i=0; i<vA.nelements(); i++) delete vA[i];
+//
+  return pTabOut;
+}
+
 
 void SDMath::fillSDC(SDContainer& sc,
 		     const Array<Bool>& mask,

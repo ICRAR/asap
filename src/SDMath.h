@@ -181,6 +181,11 @@ class SDMath {
                              casa::Vector<casa::uInt>& firstRow,
                              const casa::Vector<casa::String>& srcNames) const;
 
+// Align in Velocity
+   SDMemTable* velocityAlign (const SDMemTable& in,
+                              casa::MFrequency::Types velSystem,
+                              const casa::String& velUnit,
+                              casa::MDoppler::Types doppler) const;
 };
 
 } // namespace
