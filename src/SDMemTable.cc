@@ -852,8 +852,6 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
 
 SDFrequencyTable SDMemTable::getSDFreqTable() const
 {
-cerr << "ENter SDMemTbale::getSDFreqTable" << endl;
-
   const Table& t = table_.keywordSet().asTable("FREQUENCIES");
   SDFrequencyTable sdft;
 
@@ -891,13 +889,10 @@ cerr << "ENter SDMemTbale::getSDFreqTable" << endl;
 
   Vector<Double> restFreqs;
   t.keywordSet().get("RESTFREQS", restFreqs);
-cerr << "old restfreqs from Table = " << restFreqs << endl;
-cerr << "add them to SDFreqTable" << endl;
   for (uInt i=0; i<restFreqs.nelements(); i++) {
      sdft.addRestFrequency(restFreqs[i]);
   }
   sdft.setRestFrequencyUnit(String("Hz"));
-cerr << "Exit getSDFreqTable" << endl;
 //
   return sdft;
 }
@@ -1302,7 +1297,7 @@ MEpoch::Types SDMemTable::getTimeReference() const
   String ep;
   table_.keywordSet().get("Epoch",ep);
   if (!MEpoch::getType(met, ep)) {
-    cerr << "Epoch type uknown - using UTC" << endl;
+    cerr << "Epoch type unknown - using UTC" << endl;
     met = MEpoch::UTC;
   }
 //
