@@ -38,6 +38,12 @@ namespace asap {
 		PolAxis,
 		ChanAxis };
 
+  enum Instrument {UNKNOWN=0,
+                   PKSMULTIBEAM,
+                   PKSSINGLEBEAM,
+                   MOPRA,
+                   TIDBINBILLA,
+                   N_INSTRUMENTS};
 }
 
 #endif
