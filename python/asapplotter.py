@@ -18,10 +18,10 @@ class asapplotter:
         self._idict = {'IF':'i','if':'i','i':'i','I':'i'}
         self._pdict = {'Pol':'p','pol':'p','p':'p'}
         self._sdict = {'scan':'s','Scan':'s','s':'s','S':'s'}
-        self._cdict = {'t':'scan.nrow()',
-                       'b':'scan.nbeam()',
-                       'i':'scan.nif()',
-                       'p':'scan.npol()',
+        self._cdict = {'t':'len(self._cursor["t"])',
+                       'b':'len(self._cursor["b"])',
+                       'i':'len(self._cursor["i"])',
+                       'p':'len(self._cursor["p"])',
                        's':'len(scans)'}
         self._ldict = {'b':'Beam',
                        'i':'IF',
@@ -35,12 +35,16 @@ class asapplotter:
         self._rows = None
         self._cols = None
         self._autoplot = False
-        self._minmax = None
+        self._minmaxx = None
+        self._minmaxy = None
         self._data = None
         self._lmap = []
         self._title = None
         self._ordinate = None
         self._abcissa = None
+        self._cursor = {'t':None, 'b':None,
+                        'i':None, 'p':None
+                        }
 
     def _translate(self, name):
         for d in self._dicts:
@@ -48,7 +52,7 @@ class asapplotter:
                 return d[name]
         return None
         
-    def plot(self,*args):
+    def plot(self, *args):
         """
         Plot a (list of) scantables.
         Parameters:
@@ -56,7 +60,7 @@ class asapplotter:
         Note:
             If a (list) of scantables was specified in a previous call
             to plot, no argument has to be given to 'replot'
-            NO checking is done that the abscissas of the scantables
+            NO checking is done that the abcissas of the scantables
             are consistent e.g. all 'channel' or all 'velocity' etc.
         """
         if self._plotter.is_dead:
@@ -64,28 +68,40 @@ class asapplotter:
         self._plotter.clear()
         self._plotter.hold()
         if len(args) > 0:
-            self._data = tuple(args)            
+            if self._data is not None:                
+                if list(args) != self._data:
+                    self._data = list(args)
+                    # reset cursor
+                    self.set_cursor()
+            else:
+                self._data = list(args)
+                self.set_cursor()
         if self._panels == 't':
-            if self._data[0].nrow() > 25:
-                print "Scan to be plotted contains more than 25 rows.\nCan't plot that many panels..."
+            if self._data[0].nrow() > 49:
+                print "Scan to be plotted contains more than 25 rows.\n \
+                Can't plot that many panels..."
                 return
             self._plot_time(self._data[0], self._stacking)
         elif self._panels == 's':
             self._plot_scans(self._data, self._stacking)
         else:
             self._plot_other(self._data, self._stacking)
-        if self._minmax is not None:
-            self._plotter.set_limits(xlim=self._minmax)
+        if self._minmaxx is not None or self._minmaxy is not None:
+            self._plotter.set_limits(xlim=self._minmaxx,ylim=self._minmaxy)
         self._plotter.release()
         return
 
     def _plot_time(self, scan, colmode):
         if colmode == 't':
             return
-        n = scan.nrow()
+        n = len(self._cursor["t"])
         cdict = {'b':'scan.setbeam(j)',
                  'i':'scan.setif(j)',
                  'p':'scan.setpol(j)'}
+        cdict2 = {'b':'self._cursor["b"]',
+                  'i':'self._cursor["i"]',
+                  'p':'self._cursor["p"]'}
+        ncol = 1
         if self._stacking is not None:
             ncol = eval(self._cdict.get(colmode))
         self._plotter.set_panels()
@@ -96,34 +112,67 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        for i in range(n):
+        rows = self._cursor["t"]
+        self._plotter.palette(1)
+        for rowsel in rows:
+            i = self._cursor["t"].index(rowsel)
             if n > 1:
                 self._plotter.palette(1)
                 self._plotter.subplot(i)
-            for j in range(ncol):
+            colvals = eval(cdict2.get(colmode))
+            for j in colvals:
+                polmode = "raw"
+                jj = colvals.index(j)
+                savej = j
+                for k in cdict.keys():
+                    sel = eval(cdict2.get(k))                    
+                    j = sel[0]
+                    if k == "p":
+                        which = self._cursor["p"].index(j)
+                        polmode = self._polmode[which]
+                        j = which
+                    eval(cdict.get(k))
+                j = savej
+                if colmode == "p":
+                    polmode = self._polmode[self._cursor["p"].index(j)]
+                    j = jj
                 eval(cdict.get(colmode))
                 x = None
                 y = None
                 m = None
                 if not self._title:
-                    tlab = scan._getsourcename(i)                    
+                    tlab = scan._getsourcename(rowsel)                    
                 else:
                     if len(self._title) == n:
-                        tlab = self._title[i]
+                        tlab = self._title[rowsel]
                     else:
-                        tlab = scan._getsourcename(i)                   
-                x,xlab = scan.get_abcissa(i)
+                        tlab = scan._getsourcename(rowsel)
+                x,xlab = scan.get_abcissa(rowsel)
                 if self._abcissa: xlab = self._abcissa
-                y = scan._getspectrum(i)
+                y = None
+                if polmode == "stokes":
+                    y = scan._getstokesspectrum(rowsel)
+                elif polmode == "stokes2":
+                    y = scan._getstokesspectrum(rowsel,True)
+                else:
+                    y = scan._getspectrum(rowsel)
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
                     ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan._getmask(i)
+                m = scan._getmask(rowsel)
                 if self._lmap and len(self._lmap) > 0:
-                    llab = self._lmap[j]
+                    llab = self._lmap[jj]
                 else:
-                    llab = self._ldict.get(colmode)+' '+str(j)
+                    if colmode == 'p':
+                        if polmode == "stokes":
+                            llab = scan._getpolarizationlabel(0,1,0)
+                        elif polmode == "stokes2":
+                            llab = scan._getpolarizationlabel(0,1,1)
+                        else:
+                            llab = scan._getpolarizationlabel(1,0,0)
+                    else:                    
+                        llab = self._ldict.get(colmode)+' '+str(j)
                 self._plotter.set_line(label=llab)
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
@@ -133,13 +182,19 @@ class asapplotter:
             self._plotter.set_axes('title',tlab)            
         return
 
-    def _plot_scans(self, scans, colmode):        
+    def _plot_scans(self, scans, colmode):
+        print "Can only plot one row per scan."
         if colmode == 's':
             return
         cdict = {'b':'scan.setbeam(j)',
                  'i':'scan.setif(j)',
                  'p':'scan.setpol(j)'}
+        cdict2 = {'b':'self._cursor["b"]',
+                  'i':'self._cursor["i"]',
+                  'p':'self._cursor["p"]'}
+        
         n = len(scans)
+        ncol = 1
         if self._stacking is not None:
             scan = scans[0]
             ncol = eval(self._cdict.get(colmode))
@@ -151,31 +206,61 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        i = 0
+        self._plotter.palette(1)
         for scan in scans:
             if n > 1:
-                self._plotter.subplot(i)
+                self._plotter.subplot(scans.index(scan))
                 self._plotter.palette(1)
-            for j in range(ncol):
+            colvals = eval(cdict2.get(colmode))
+            rowsel = self._cursor["t"][0]
+            for j in colvals:
+                polmode = "raw"
+                jj = colvals.index(j)
+                savej = j
+                for k in cdict.keys():
+                    sel = eval(cdict2.get(k))                    
+                    j = sel[0]
+                    eval(cdict.get(k))
+                    if k == "p":
+                        which = self._cursor["p"].index(j)
+                        polmode = self._polmode[which]
+                        j = which
+                j = savej
+                if colmode == "p":
+                    polmode = self._polmode[self._cursor["p"].index(j)]
+                    j = jj
                 eval(cdict.get(colmode))
                 x = None
                 y = None
                 m = None
                 tlab = self._title
                 if not self._title:
-                    tlab = scan._getsourcename()
-                x,xlab = scan.get_abcissa()
+                    tlab = scan._getsourcename(rowsel)
+                x,xlab = scan.get_abcissa(rowsel)
                 if self._abcissa: xlab = self._abcissa
-                y = scan._getspectrum()
+                if polmode == "stokes":
+                    y = scan._getstokesspectrum(rowsel)
+                elif polmode == "stokes2":
+                    y = scan._getstokesspectrum(rowsel,True)
+                else:
+                    y = scan._getspectrum(rowsel)
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
                     ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan._getmask()
+                m = scan._getmask(rowsel)
                 if self._lmap and len(self._lmap) > 0:
-                    llab = self._lmap[j]
+                    llab = self._lmap[jj]
                 else:
-                    llab = self._ldict.get(colmode)+' '+str(j)
+                    if colmode == 'p':
+                        if polmode == "stokes":
+                            llab = scan._getpolarizationlabel(0,1,0)
+                        elif polmode == "stokes2":
+                            llab = scan._getpolarizationlabel(0,1,1)
+                        else:
+                            llab = scan._getpolarizationlabel(1,0,0)
+                    else:
+                        llab = self._ldict.get(colmode)+' '+str(j)
                 self._plotter.set_line(label=llab)
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
@@ -184,18 +269,22 @@ class asapplotter:
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)
             self._plotter.set_axes('title',tlab)
-            i += 1
         return
     
     def _plot_other(self,scans,colmode):
         if colmode == self._panels:
             return
-        cdict = {'b':'scan.setbeam(j)',
-                 'i':'scan.setif(j)',
-                 'p':'scan.setpol(j)',
-                 's':'scans[j]'}
+        cdict = {'b':'scan.setbeam(i)',
+                 'i':'scan.setif(i)',
+                 'p':'scan.setpol(i)'}
+        cdict2 = {'b':'self._cursor["b"]',
+                  'i':'self._cursor["i"]',
+                  'p':'self._cursor["p"]',
+                  's': 'scans',
+                  't': 'self._cursor["t"]'}
         scan = scans[0]
         n = eval(self._cdict.get(self._panels))
+        ncol=1
         if self._stacking is not None:            
             ncol = eval(self._cdict.get(colmode))
         self._plotter.set_panels()
@@ -205,51 +294,92 @@ class asapplotter:
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                print n
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        for i in range(n):
+        self._plotter.palette(1)
+        panels = self._cursor[self._panels]        
+        for i in panels:
+            polmode = "raw"
+            ii = self._cursor[self._panels].index(i)
             if n>1:
-                self._plotter.subplot(i)
-                self._plotter.palette(1)
-            k=0
-            j=i
-            eval(cdict.get(self._panels))
-            for j in range(ncol):
+                self._plotter.subplot(ii)
+            if self._panels == "p":
+                polmode = self._polmode[ii]
+                eval(cdict.get(self._panels))
+            else:
+                eval(cdict.get(self._panels))
+            colvals = eval(cdict2.get(colmode))
+            for j in colvals:
+                rowsel = self._cursor["t"][0]
+                jj = colvals.index(j)
+                savei = i
+                for k in cdict.keys():
+                    if k != self._panels:
+                        sel = eval(cdict2.get(k))
+                        i = sel[0]
+                        if k == "p":
+                            which = self._cursor["p"].index(j)
+                            polmode = self._polmode[which]
+                            i = which                        
+                        eval(cdict.get(k))
+                i = savei
                 if colmode == 's':
-                    scan = eval(cdict.get(colmode))
+                    scan = j
                 elif colmode == 't':
-                    k = j
+                    rowsel = j                    
                 else:
+                    savei = i
+                    if colmode == 'p':
+                        polmode = self._polmode[self._cursor["p"].index(j)]
+                    i = j
                     eval(cdict.get(colmode))
+                    i = savei
                 x = None
                 y = None
                 m = None
-                x,xlab = scan.get_abcissa(k)
+                x,xlab = scan.get_abcissa(rowsel)
                 if self._abcissa: xlab = self._abcissa
-                y = scan._getspectrum(k)
+                if polmode == "stokes":
+                    y = scan._getstokesspectrum(rowsel)
+                elif polmode == "stokes2":
+                    y = scan._getstokesspectrum(rowsel,True)
+                else:
+                    y = scan._getspectrum(rowsel)
+
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
                     ylab = 'Flux ('+scan.get_fluxunit()+')'
-                m = scan._getmask(k)
+                m = scan._getmask(rowsel)
                 if colmode == 's' or colmode == 't':
-                    if not self._title:
+                    if self._title and len(self._title) > 0:
+                        tlab = self._title[ii]
+                    else:                        
                         tlab = self._ldict.get(self._panels)+' '+str(i)
-                    else:
-                        if len(self.title) == n:
-                            tlab = self._title[i]
-                        else:
-                            tlab = self._ldict.get(self._panels)+' '+str(i)
-                    llab = scan._getsourcename(k)
+                    llab = scan._getsourcename(rowsel)
                 else:
                     if self._title and len(self._title) > 0:
-                        tlab = self._title[i]
+                        tlab = self._title[ii]
                     else:
                         tlab = self._ldict.get(self._panels)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
-                        llab = self._lmap[j]
+                        llab = self._lmap[jj]
                     else:
-                        llab = self._ldict.get(colmode)+' '+str(j)
+                        if colmode == 'p':
+                            if polmode == "stokes":
+                                llab = scan._getpolarizationlabel(0,1,0)
+                            elif polmode == "stokes2":
+                                llab = scan._getpolarizationlabel(0,1,1)
+                            else:
+                                llab = scan._getpolarizationlabel(1,0,0)
+                        else:
+                            llab = self._ldict.get(colmode)+' '+str(j)
+                if self._panels == 'p':
+                    if polmode == "stokes":
+                        tlab = scan._getpolarizationlabel(0,1,0)
+                    elif polmode == "stokes2":
+                        tlab = scan._getpolarizationlabel(0,1,1)
+                    else:
+                        tlab = scan._getpolarizationlabel(1,0,0)
                 self._plotter.set_line(label=llab)
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
@@ -288,8 +418,6 @@ class asapplotter:
         return
 
     def set_panels(self, what=None):
-        """        
-        """
         if not what:
              what = rcParams['plotter.panelling']
         md = self._translate(what)
@@ -325,22 +453,27 @@ class asapplotter:
             return True
         return False
 
-    def set_range(self,start=None,end=None):
+    def set_range(self,xstart=None,xend=None,ystart=None,yend=None):
         """
         Set the range of interest on the abcissa of the plot
         Parameters:
-            start,end:    The start an end point of the 'zoom' window
+            [x,y]start,[x,y]end:  The start and end points of the 'zoom' window
         Note:
             These become non-sensical when the unit changes.
             use plotter.set_range() without parameters to reset
 
         """
-        if start is None and end is None:
-            self._minmax = None
+        if xstart is None and xend is None:
+            self._minmaxx = None
             if self._data: self.plot()
-        else:
-            self._minmax = [start,end]
+            return
+        if ystart is None and yend is None:
+            self._minmaxy = None
             if self._data: self.plot()
+            return
+        self._minmaxx = [xstart,xend]
+        self._minmaxy = [ystart,yend]
+        if self._data: self.plot()
         return
     
     def set_legend(self, mp=None):
@@ -390,6 +523,108 @@ class asapplotter:
         """
         self._plotter.save(filename)
         return
+    
+    def set_cursor(self, row=None,beam=None,IF=None,pol=None):
+        """
+        Specify a 'cursor' for plotting selected spectra. Time (rows),
+        Beam, IF, Polarisation ranges can be specified.
+        Parameters:
+            Default for all paramaters is to select all available
+            row:    selects the rows (time stamps) to be plotted, this has
+                    to be a vector of row indices, e.g. row=[0,2,5] or row=[2]
+            beam:   select a range of beams
+            IF:     select a range of IFs
+            pol:    select Polarisations for plotting these can be by index
+                    (raw polarisations (default)) or by names any of:
+                    ["I", "Q", "U", "V"] or
+                    ["I", "Plinear", "Pangle", "V"] or
+                    ["XX", "YY", "Real(XY)", "Imag(XY)"]
+                    Circular polarisation are not handled yet.
+        Example:
+            plotter.set_mode('pol','time')
+            plotter.plot(myscan) # plots all raw polarisations colour stacked
+            plotter.set_cursor(pol=["I"]) # plot "I" only for all rows
+            # plot "I" only for two time stamps row=0 and row=2
+            plotter.set_cursor(row=[0,2],pol=["I"])
 
+        Note:
+            Be careful to select only exisiting polarisations.            
+        """
+        if not self._data:
+            print "Can only set cursor after a first call to plot()"
+            return
+        
+        n = self._data[0].nrow()
+        if row is None:
+            self._cursor["t"] = range(n)
+        else:
+            for i in row:
+                if 0 > i >= n:
+                    print "Row index '%d' out of range" % i
+                    return
+            self._cursor["t"] = row
+
+        n = self._data[0].nbeam()
+        if beam is None:
+            self._cursor["b"] = range(n)
+        else:
+            for i in beam:
+                if 0 > i >= n:
+                    print "Beam index '%d' out of range" % i
+                    return            
+            self._cursor["b"] = beam
+
+        n = self._data[0].nif()
+        if IF is None:
+            self._cursor["i"] = range(n)
+        else:
+            for i in IF:
+                if 0 > i >= n:
+                    print "IF index '%d' out of range" %i
+                    return            
+            self._cursor["i"] = IF            
+
+        n = self._data[0].npol()
+        dstokes = {"I":0,"Q":1,"U":2,"V":3}
+        dstokes2 = {"I":0,"Plinear":1,"Pangle":2,"V":3}
+        draw = {"XX":0, "YY":1,"Real(XY)":2, "Imag(XY)":3}
+        dcirc = { "RR":0,"LL":1,"RL":2,"LR":3}
+        
+        if pol is None:
+            self._cursor["p"] = range(n)
+            self._polmode = ["raw" for i in range(n)]
+        else:
+            if isinstance(pol,str):
+                pol = pol.split()
+            polmode = []
+            pols = []
+            for i in pol:
+                if isinstance(i,str):
+                    if draw.has_key(i):
+                        pols.append(draw.get(i))
+                        polmode.append("raw")
+                    elif dstokes.has_key(i):
+                        pols.append(dstokes.get(i))
+                        polmode.append("stokes")
+                    elif dstokes2.has_key(i):
+                        pols.append(dstokes2.get(i))
+                        polmode.append("stokes2")
+                    elif dcirc.has_key(i):
+                        pols.append(dcirc.get(i))
+                        polmode.append("cricular")
+                    else:
+                        "Pol type '%s' not valid" %i
+                        return
+                elif 0 > i >= n:
+                    print "Pol index '%d' out of range" %i
+                    return
+                else:
+                    pols.append(i)
+                    polmode.append("raw")
+            self._cursor["p"] = pols
+            self._polmode = polmode
+        if self._data: self.plot()
+
+            
 if __name__ == '__main__':
     plotter = asapplotter()
