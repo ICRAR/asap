@@ -31,10 +31,10 @@
 
 #include <string>
 
-#include <aips/aips.h>
-#include <aips/Arrays.h>
-#include <aips/Mathematics/Complex.h>
-#include <aips/Utilities/CountedPtr.h>
+#include <casa/aips.h>
+#include <casa/Arrays.h>
+#include <casa/BasicSL/Complex.h>
+#include <casa/Utilities/CountedPtr.h>
 
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>

@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMATHWRAPPER_H_
-#define _SDMATHWRAPPER_H_
+#ifndef _SDMATHWRAPPER_H
+#define _SDMATHWRAPPER_H
 
 #include <vector>
 #include <string>

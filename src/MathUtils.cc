@@ -29,8 +29,8 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
-#include <aips/Arrays/Vector.h>
-#include <aips/Arrays/VectorSTLIterator.h>
+#include <casa/Arrays/Vector.h>
+#include <casa/Arrays/VectorSTLIterator.h>
 
 template <class T>
 void hanning(Vector<T>& out, Vector<Bool>& outmask, 

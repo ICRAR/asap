@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDWRITERWRAPPER_H_
-#define _SDWRITERWRAPPER_H_
+#ifndef _SDWRITERWRAPPER_H
+#define _SDWRITERWRAPPER_H
 
 #include <vector>
 #include <string>

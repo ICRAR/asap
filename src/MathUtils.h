@@ -28,11 +28,11 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _MATHUTILS_H_
-#define _MATHUTILS_H_
+#ifndef _MATHUTILS_H
+#define _MATHUTILS_H
 
-#include <aips/aips.h>
-#include <aips/Arrays/Vector.h>
+#include <casa/aips.h>
+#include <casa/Arrays/Vector.h>
 
 template <class T>
 void hanning(Vector<T>& out, Vector<Bool>& outmask, 

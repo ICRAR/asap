@@ -28,12 +28,12 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDMATH_H_
-#define _SDMATH_H_
+#ifndef _SDMATH_H
+#define _SDMATH_H
 
 #include <string>
 #include <vector>
-#include <aips/Utilities/CountedPtr.h>
+#include <casa/Utilities/CountedPtr.h>
 
 namespace atnf_sd {
 

@@ -28,15 +28,15 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDCONTAINER_H_
-#define _SDCONTAINER_H_
+#ifndef _SDCONTAINER_H
+#define _SDCONTAINER_H
 
 #include <vector>
 
-#include <aips/aips.h>
-#include <aips/Utilities/String.h>
-#include <aips/Arrays/Array.h>
-#include <aips/Arrays/Vector.h>
+#include <casa/aips.h>
+#include <casa/BasicSL/String.h>
+#include <casa/Arrays/Array.h>
+#include <casa/Arrays/Vector.h>
 
 template<class T> class Matrix;
 
@@ -134,8 +134,10 @@ public:
   
   Double timestamp;
   String sourcename;
+  String fieldname;
   Double interval;
   Int scanid;
+  String tcaltime;
   
 private:
   uInt nBeam_,nIF_,nPol_,nChan_;

@@ -28,17 +28,17 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef _PYTHON_SD_H_
-#define _PYTHON_SD_H_
+#ifndef _PYTHON_SD_H
+#define _PYTHON_SD_H
 
 namespace atnf_sd {
   namespace python {
 
-void python_SDMemTable();
-void python_SDReader();
-void python_SDWriter();
-void python_SDMath();
-
+    void python_SDMemTable();
+    void python_SDReader();
+    void python_SDWriter();
+    void python_SDMath();
+    
   } // python
 } //atnf_sd
 

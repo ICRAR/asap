@@ -30,29 +30,29 @@
 //#---------------------------------------------------------------------------
 #include <vector>
 
-#include <aips/aips.h>
-#include <aips/Utilities/String.h>
-#include <aips/Arrays/IPosition.h>
-#include <aips/Arrays/Array.h>
-#include <aips/Arrays/ArrayAccessor.h>
-#include <aips/Arrays/Slice.h>
-#include <aips/Arrays/ArrayMath.h>
-#include <aips/Arrays/ArrayLogical.h>
-#include <aips/Arrays/MaskedArray.h>
-#include <aips/Arrays/MaskArrMath.h>
-#include <aips/Arrays/MaskArrLogi.h>
+#include <casa/aips.h>
+#include <casa/BasicSL/String.h>
+#include <casa/Arrays/IPosition.h>
+#include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/Slice.h>
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/ArrayLogical.h>
+#include <casa/Arrays/MaskedArray.h>
+#include <casa/Arrays/MaskArrMath.h>
+#include <casa/Arrays/MaskArrLogi.h>
 
-#include <aips/Tables/Table.h>
-#include <aips/Tables/ScalarColumn.h>
-#include <aips/Tables/ArrayColumn.h>
+#include <tables/Tables/Table.h>
+#include <tables/Tables/ScalarColumn.h>
+#include <tables/Tables/ArrayColumn.h>
 
-#include <aips/Fitting.h>
-#include <trial/Fitting/LinearFit.h>
-#include <trial/Functionals/CompiledFunction.h>
-#include <trial/Images/ImageUtilities.h>
-#include <trial/Coordinates/SpectralCoordinate.h>
-#include <aips/Mathematics/AutoDiff.h>
-#include <aips/Mathematics/AutoDiffMath.h>
+#include <scimath/Fitting.h>
+#include <scimath/Fitting/LinearFit.h>
+#include <scimath/Functionals/CompiledFunction.h>
+#include <images/Images/ImageUtilities.h>
+#include <coordinates/Coordinates/SpectralCoordinate.h>
+#include <scimath/Mathematics/AutoDiff.h>
+#include <scimath/Mathematics/AutoDiffMath.h>
 
 #include "MathUtils.h"
 #include "SDContainer.h"

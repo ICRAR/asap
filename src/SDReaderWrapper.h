@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDREADERWRAPPER_H_
-#define _SDREADERWRAPPER_H_
+#ifndef _SDREADERWRAPPER_H
+#define _SDREADERWRAPPER_H
 
 #include <vector>
 #include <string>

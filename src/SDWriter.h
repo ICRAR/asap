@@ -28,13 +28,13 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef _SDWRITER_H_
-#define _SDWRITER_H_
+#ifndef _SDWRITER_H
+#define _SDWRITER_H
 
 #include <string>
 
-#include <aips/aips.h>
-#include <aips/Utilities/CountedPtr.h>
+#include <casa/aips.h>
+#include <casa/Utilities/CountedPtr.h>
 
 #include <SDMemTable.h>
 #include <SDMemTableWrapper.h>

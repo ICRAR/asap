@@ -28,12 +28,12 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#include <aips/Containers/Block.h>
-#include <aips/Exceptions/Error.cc>
-#include <aips/Exceptions/Error2.cc>
-#include <aips/Utilities/CountedPtr.cc>
-#include <aips/Utilities/CountedPtr2.cc>
-#include <aips/Utilities/Copy.cc>
+#include <casa/Containers/Block.h>
+#include <casa/Exceptions/Error.cc>
+#include <casa/Exceptions/Error2.cc>
+#include <casa/Utilities/CountedPtr.cc>
+#include <casa/Utilities/CountedPtr2.cc>
+#include <casa/Utilities/Copy.cc>
 #include "SDMemTable.h"
 
 namespace atnf_sd {
@@ -48,18 +48,18 @@ template void objcopy(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDM
 template void objmove(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable> const *, uInt);
 template void objset(CountedPtr<atnf_sd::SDMemTable> *, CountedPtr<atnf_sd::SDMemTable>, uInt);
 
-#include <aips/Arrays/ArrayLogical.cc>
-#include <aips/Arrays/ArrayMath.cc>
-#include <aips/Arrays/MaskArrMath.cc>
-#include <aips/Arrays/Array.h>
-#include <trial/Functionals/CompiledFunction.cc>
-#include <trial/Functionals/CompiledParam.cc>
-#include <aips/Mathematics/AutoDiff.h>
-#include <aips/Mathematics/AutoDiffMath.h>
-#include <aips/Arrays/Vector2.cc>
-#include <trial/Images/ImageUtilities2.cc>
-#include <aips/Utilities/PtrHolder.cc>
-#include <aips/Lattices/Lattice.h>
+#include <casa/Arrays/ArrayLogical.cc>
+#include <casa/Arrays/ArrayMath.cc>
+#include <casa/Arrays/MaskArrMath.cc>
+#include <casa/Arrays/Array.h>
+#include <scimath/Functionals/CompiledFunction.cc>
+#include <scimath/Functionals/CompiledParam.cc>
+#include <scimath/Mathematics/AutoDiff.h>
+#include <scimath/Mathematics/AutoDiffMath.h>
+#include <casa/Arrays/Vector2.cc>
+#include <images/Images/ImageUtilities2.cc>
+#include <casa/Utilities/PtrHolder.cc>
+#include <lattices/Lattices/Lattice.h>
 #include "MathUtils.cc"
 
 template void convertArray(Array<Bool> &, Array<uChar> const &);

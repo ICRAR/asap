@@ -28,17 +28,17 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef _SDREADER_H_
-#define _SDREADER_H_
+#ifndef _SDREADER_H
+#define _SDREADER_H
 
 #include <vector>
 #include <string>
 
-#include <aips/aips.h>
-#include <aips/iostream.h>
-#include <aips/Utilities/CountedPtr.h>
-#include <aips/Utilities/String.h>
-#include <aips/Arrays/Vector.h>
+#include <casa/aips.h>
+#include <casa/iostream.h>
+#include <casa/Utilities/CountedPtr.h>
+#include <casa/BasicSL/String.h>
+#include <casa/Arrays/Vector.h>
 
 #include "SDMemTable.h"
 #include "SDContainer.h"

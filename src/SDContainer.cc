@@ -28,11 +28,11 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#include <aips/Tables/Table.h>
-#include <aips/Arrays/IPosition.h>
-#include <aips/Arrays/ArrayAccessor.h>
-#include <aips/Arrays/Matrix.h>
-#include <aips/Quanta/MVTime.h>
+#include <tables/Tables/Table.h>
+#include <casa/Arrays/IPosition.h>
+#include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/Matrix.h>
+#include <casa/Quanta/MVTime.h>
 
 #include "SDContainer.h"
 
