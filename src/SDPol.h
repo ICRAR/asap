@@ -154,10 +154,20 @@ class SDPolUtil
   static casa::Array<casa::Float> positionAngle (const casa::Array<casa::Float>& Q,
                                                  const casa::Array<casa::Float>& U);
 
- // Rotate phase of Complex correlation C3+iC4 by phase (degrees)
-  static void rotateXYPhase (casa::Array<casa::Float>& C3,
-                             casa::Array<casa::Float>& C4,
-                             casa::Float phase);
+ // Rotate phase of Complex correlation R+iI by phase (degrees)
+  static void rotatePhase (casa::Array<casa::Float>& R,
+                           casa::Array<casa::Float>& I,
+                           casa::Float phase);
+
+ // Rotate phase of P=(Q+iU) by phase (degrees), but do this by applying 
+ // the corrections to the raw linear polarizations
+  static void rotateLinPolPhase (casa::Array<casa::Float>& C1,
+                                 casa::Array<casa::Float>& C2,
+                                 casa::Array<casa::Float>& C3,
+                                 casa::Array<casa::Float>& I,
+                                 casa::Array<casa::Float>& Q,
+                                 casa::Array<casa::Float>& U,
+                                 casa::Float phase);
 
 // Get Stokes slices from the Array.  Start and End should
 // already be setup to access the Array at the current cursor location

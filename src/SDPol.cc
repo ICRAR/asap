@@ -270,20 +270,54 @@ Array<Float> SDPolUtil::polarizedIntensity (const Array<Float>& Q,
 Array<Float> SDPolUtil::positionAngle (const Array<Float>& Q,
                                        const Array<Float>& U)
 {
-   return Float(180.0/C::pi/2.0)*atan2(Q,U);       // Degrees
+   return Float(180.0/C::pi/2.0)*atan2(U,Q);       // Degrees
 }
 
 
-void SDPolUtil::rotateXYPhase (Array<Float>& C3,
-                               Array<Float>& C4,
-                               Float phase)
+void SDPolUtil::rotatePhase (Array<Float>& R,
+                             Array<Float>& I,
+                             Float phase)
+//
+// Apply phase rotation to Z = (R + iI)
+//
 {
    Float cosVal = cos(C::pi/180.0*phase);
    Float sinVal = sin(C::pi/180.0*phase);
 //
-   C3 = C3*cosVal - C4*sinVal;
-   C4 = C3*sinVal + C4*cosVal;
+   Array<Float> R2 = R*cosVal - I*sinVal;
+   I =  R*sinVal + I*cosVal;
+   R = R2;
 }
+
+
+void SDPolUtil::rotateLinPolPhase (Array<Float>& C1,
+                                   Array<Float>& C2,
+                                   Array<Float>& C3,
+                                   Array<Float>& I,
+                                   Array<Float>& Q,
+                                   Array<Float>& U,
+                                   Float phase)
+//
+// Rotate P = Q + iU but do it directly on the  linear
+// correlations.
+//
+// We are using I=(XX+YY)/2 convention
+// C1 = XX; C2 = YY, C3 = Real(XY)
+//
+{
+// Rotate Q & U (factor of 2 for polarization)
+
+   rotatePhase(Q, U, 2.0*phase);
+
+// Now recompute C1,C2,C3 
+// C4 unchanged 
+
+   C1 = I + Q;
+   C2 = I - Q;
+   C3 = U;
+}
+
+
 
 
 
