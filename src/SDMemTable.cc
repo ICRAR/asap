@@ -367,6 +367,8 @@ std::vector<double> SDMemTable::getAbscissa(Int whichRow) {
     Vector<Double> rstf;
     t.keywordSet().get("RESTFREQS",rstf);
     if (rstf.nelements() > 0) {
+      if (rstf.nelements() >= nIF())
+	spc.selectRestFrequency(uInt(IFSel_));
       spc.setVelocity(u.getName());
       Vector<Double> wrld;
       spc.pixelToVelocity(wrld,absc1);
