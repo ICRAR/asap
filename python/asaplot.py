@@ -14,6 +14,7 @@ from matplotlib.backends import new_figure_manager, show
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
 	FigureManagerTkAgg
 from matplotlib.figure import Figure, Text
+from matplotlib.numerix import sqrt
 
 # Force use of the newfangled toolbar.
 matplotlib.rcParams['toolbar'] = 'toolbar2'
@@ -26,7 +27,7 @@ class ASAPlot:
     ASAP plotting class based on matplotlib.
     """
 
-    def __init__(self, rowcol='11', title='', size=(8,6), buffering=False):
+    def __init__(self, rows=1, cols=0, title='', size=(8,6), buffering=False):
 	"""
 	Create a new instance of the ASAPlot plotting class.
 	"""
@@ -43,21 +44,10 @@ class ASAPlot:
 	self.figmgr = FigureManagerTkAgg(self.canvas, 1, self.window)
 	self.window.wm_title('ASAPlot graphics window')
 
-	self.figure.text(0.5, 0.95, title, horizontalalignment='center')
-
-	self.rows = int(rowcol[0])
-	self.cols = int(rowcol[1])
+	self.set_title(title)
 	self.subplots = []
-	for i in range(0,self.rows*self.cols):
-	    self.subplots.append({})
-	    self.subplots[i]['axes']  = self.figure.add_subplot(self.rows,
-					    self.cols, i+1)
-	    self.subplots[i]['lines'] = []
-
-	self.figmgr.toolbar.set_active([0])
-
-	self.axes  = self.subplots[0]['axes']
-	self.lines = self.subplots[0]['lines']
+	if rows > 0:
+	    self.set_panels(rows, cols)
 
 
 	# Set matplotlib default colour sequence.
@@ -374,6 +364,71 @@ class ASAPlot:
 	if redraw: self.show()
 
 
+    def set_panels(self, rows=1, cols=0, n=-1):
+	"""
+	Set the panel layout.
+	
+	rows and cols, if cols != 0, specify the number of rows and columns in
+	a regular layout.   (Indexing of these panels in matplotlib is row-
+	major, i.e. column varies fastest.)
+
+	cols == 0 is interpreted as a retangular layout that accomodates
+	'rows' panels, e.g. rows == 6, cols == 0 is equivalent to
+	rows == 2, cols == 3.
+
+	0 <= n < rows*cols is interpreted as the 0-relative panel number in
+	the configuration specified by rows and cols to be added to the
+	current figure as its next 0-relative panel number (i).  This allows
+	non-regular panel layouts to be constructed via multiple calls.  Any
+	other value of n clears the plot and produces a rectangular array of
+	empty panels.
+	"""
+	if n < 0 and len(self.subplots):
+	    self.figure.clear()
+	    self.set_title()
+
+	if rows < 1:
+	    rows = 1
+
+	if cols == 0:
+	    i = int(sqrt(rows))
+	    if i*i < rows: i += 1
+	    cols = i
+
+	    if i*(i-1) >= rows: i -= 1
+	    rows = i
+
+	if 0 <= n < rows*cols:
+	    i = len(self.subplots)
+	    self.subplots.append({})
+	    self.subplots[i]['axes']  = self.figure.add_subplot(rows,
+					    cols, n+1)
+	    self.subplots[i]['lines'] = []
+
+	    if i == 0: self.subplot()
+
+	else:
+	    self.subplots = []
+	    for i in range(0,rows*cols):
+		self.subplots.append({})
+		self.subplots[i]['axes']  = self.figure.add_subplot(rows,
+						cols, i+1)
+		self.subplots[i]['lines'] = []
+
+	    self.subplot()
+
+
+    def set_title(self, title=None):
+	"""
+	Set the title of the plot window.  Use the previous title if title is
+	omitted.
+	"""
+	if title is not None:
+	    self.title = title
+
+	self.figure.text(0.5, 0.95, self.title, horizontalalignment='center')
+
+
     def show(self):
 	"""
 	Show graphics dependent on the current buffering state.
@@ -401,14 +456,16 @@ class ASAPlot:
 	    self.canvas.show()
 
 
-    def subplot(self, col=0, row=0):
+    def subplot(self, i=0):
 	"""
-	Set the subplot; 0-relative column and row numbers.  Overrange column
-	numbers map onto successive rows.
+	Set the subplot to the 0-relative panel number as defined by one or
+	more invokations of set_panels().
 	"""
-	i = (self.cols*row + col)%(self.rows*self.cols)
-	self.axes  = self.subplots[i]['axes']
-	self.lines = self.subplots[i]['lines']
+	l = len(self.subplots)
+	if l:
+	    i = i%l
+	    self.axes  = self.subplots[i]['axes']
+	    self.lines = self.subplots[i]['lines']
 
 
     def terminate(self):
