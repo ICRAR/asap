@@ -375,6 +375,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
   fillSDC(sc, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
            timeSum/nR, intSum, sourceNameStart, freqIDStart);
   pTabOut->putSDContainer(sc);
+  pTabOut->resetCursor();
 //
   return CountedPtr<SDMemTable>(pTabOut);
 }
@@ -508,6 +509,7 @@ CountedPtr<SDMemTable> SDMath::binaryOperate (const CountedPtr<SDMemTable>& left
      pTabOut->putSDContainer(sc);
   }
   if (pMRight) delete pMRight;
+  pTabOut->resetCursor();
 //
   return CountedPtr<SDMemTable>(pTabOut);
 }
@@ -692,7 +694,6 @@ SDMemTable* SDMath::resample (const SDMemTable& in, const String& methodStr,
   }
   const uInt nChanOut = i;
   xOut.resize(nChanOut,True);
-cerr << "width, shape in, out = " << width << ", " << nChanIn << ", " << nChanOut << endl;
 //
   IPosition shapeIn(in.rowAsMaskedArray(0).shape());
   sh.nchan = nChanOut;
@@ -944,6 +945,10 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask) c
       putDataInSDC(sc, outData, outMask);
       pTabOut->putSDContainer(sc);
    }
+
+// Set polarization cursor to 0
+
+  pTabOut->setPol(0);
 //
   return pTabOut;
 }
@@ -1409,6 +1414,7 @@ SDMemTable* SDMath::velocityAlign (const SDMemTable& in,
 
   for (uInt i=0; i<vA.nelements(); i++) delete vA[i];
 //
+  pTabOut->resetCursor();
   return pTabOut;
 }
 
