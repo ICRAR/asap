@@ -220,7 +220,7 @@ if rcParams['useplotter']:
 #from numarray ones,zeros
 
 __date__ = '$Date$'
-__version__  = '0.2a'
+__version__  = '0.2'
 
 def list_scans(t = scantable):
     import sys, types
@@ -347,7 +347,7 @@ def commands():
     return
 
 print """Welcome to ASAP - the ATNF Single Dish Analysis Package
-This is a testing pre-release v0.1a
+This is a testing pre-release v0.2
 
 Please report any bugs to:
 Malte.Marquarding@csiro.au
