@@ -42,6 +42,12 @@ if [ ! -x "$p" ]; then
     exit 1
 fi
 
+# at the moment we need AIPS++ for measures tables and endian detection
+aroot='/nfs/aips++/weekly'
+if [ "${AIPSPATH}" == "" ]; then
+    . ${aroot}/aipsinit.sh
+fi
+
 #
 # FIXME - allow more than one argument and handle args gracefuly.
 #
