@@ -126,24 +126,31 @@ def average_pol(scan, mask=None, insitu=False):
         _avpol(scan, mask)
         return
     
-def hanning(scan, insitu=False, all=True):
+def smooth(scan, kernel="hanning", width=5.0, insitu=False, all=True):
     """
-    Hanning smooth the channels.
+    Smooth the spectrum by the specified kernel (conserving flux).
     Parameters:
         scan:       The input scan
+        kernel:     The type of smoothing kernel. Select from
+                    'hanning' (default), 'gaussian' and 'boxcar'.
+                    The first three characters are sufficient.
+        width:      The width of the kernel in pixels. For hanning this is
+                    ignored otherwise it defauls to 5 pixels.
+                    For 'gaussian' it is the Full Width Half
+                    Maximum. For 'boxcar' it is the full width.
         insitu:     If False (default) a new scantable is returned.
                     Otherwise, the scaling is done in-situ
-        all:         if True (default) apply to all spectra. Otherwise
-                     apply only to the selected (beam/pol/if)spectra only
+        all:        If True (default) apply to all spectra. Otherwise
+                    apply only to the selected (beam/pol/if)spectra only
     Example:
          none
     """
     if not insitu:
-        from asap._asap import hanning as _hann
-        return scantable(_hann(scan,all))
+        from asap._asap import smooth as _smooth
+        return scantable(_smooth(scan,kernel,width,all))
     else:
-        from asap._asap import hanning_insitu as _hann
-        _hann(scan,all)
+        from asap._asap import smooth_insitu as _smooth
+        _smooth(scan,kernel,width,all)
         return
     
 def poly_baseline(scan, mask=None, order=0):
