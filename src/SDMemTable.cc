@@ -716,7 +716,7 @@ MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
 
      Array<Bool> tMask(farr.shape());
      convertArray(tMask, farr);
-     mask = SDPolUtil::stokesMask (tMask, True);
+     mask = SDPolUtil::stokesData (tMask, True);
   } else {
      specCol_.get(whichRow, arr);
      mask.resize(farr.shape());
