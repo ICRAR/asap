@@ -79,9 +79,9 @@ public:
   SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
 
-  // Get SD Frequency table.  Note that this function is largely
-  // unimplemented.  Only the number of freqIDs is filled in presently.
+  // Get SD Frequency table.  
   SDFrequencyTable getSDFreqTable() const;
+
   // get spectrum,mask and tsys for the given row, at the selected
   // cursor - all as stl vectors
   virtual std::vector<float> getSpectrum(casa::Int whichRow=0) const;
@@ -174,7 +174,8 @@ public:
 						  casa::False) const;
 
   // Return SC, setting only the basic construction state (i.e.
-  // no conversion or velocity or rest frequency state)
+  // no conversion or velocity or rest frequency state).
+  // Specify the index of the FreqID you want
   casa::SpectralCoordinate getSpectralCoordinate(casa::uInt whichIdx) const;
 
   // Return SC. Set velocity conversion state (unit,doppler), 

@@ -330,14 +330,17 @@ std::vector<string> SDMemTable::getCoordInfo() const
 void SDMemTable::setCoordInfo(std::vector<string> theinfo)
 {
   std::vector<string>::iterator it;
-  String un,rfrm,dpl;
-  un = theinfo[0];
-  rfrm = theinfo[1];
-  dpl = theinfo[2];
-
+  String un,rfrm, brfrm,dpl;
+  un = theinfo[0];              // Abcissa unit
+  rfrm = theinfo[1];            // Active (or conversion) frame
+  dpl = theinfo[2];             // Doppler
+  brfrm = theinfo[3];           // Base frame
+//
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
+//
   Vector<Double> rstf;
   t.keywordSet().get("RESTFREQS",rstf);
+//
   Bool canDo = True;
   Unit u1("km/s");Unit u2("Hz");
   if (Unit(un) == u1) {
@@ -369,6 +372,15 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
   } else {
     t.rwKeywordSet().define("DOPPLER",dpl);
   }
+//
+  if (!MFrequency::getType(mdr, brfrm)) {
+     Int a,b;const uInt* c;
+     const String* valid = MFrequency::allMyTypes(a, b, c);
+     String pfix = "Please specify a legal frame type. Types are\n";
+     throw(AipsError(pfix+(*valid)));
+   } else {
+    t.rwKeywordSet().define("BASEREFFRAME",brfrm);
+   }
 }
 
 
@@ -818,10 +830,48 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
 
 SDFrequencyTable SDMemTable::getSDFreqTable() const
 {
-  // TODO !!!!! implement this properly USE with care
   const Table& t = table_.keywordSet().asTable("FREQUENCIES");
   SDFrequencyTable sdft;
-  sdft.setLength(t.nrow());
+
+// Add refpix/refval/incr.  What are the units ? Hz I suppose
+// but it's nowhere described...
+
+  Vector<Double> refPix, refVal, incr;
+  ScalarColumn<Double> refPixCol(t, "REFPIX");
+  ScalarColumn<Double> refValCol(t, "REFVAL");
+  ScalarColumn<Double> incrCol(t, "INCREMENT");
+  refPix = refPixCol.getColumn();
+  refVal = refValCol.getColumn();
+  incr = incrCol.getColumn();
+//
+  uInt n = refPix.nelements();
+  for (uInt i=0; i<n; i++) {
+     sdft.addFrequency(refPix[i], refVal[i], incr[i]);
+  }
+
+// Frequency reference frame.  I don't know if this
+// is the correct frame.  It might be 'REFFRAME'
+// rather than 'BASEREFFRAME' ?
+
+  String baseFrame;
+  t.keywordSet().get("BASEREFFRAME",baseFrame);
+  sdft.setRefFrame(baseFrame);
+
+// Equinox
+
+  Float equinox;
+  t.keywordSet().get("EQUINOX", equinox);
+  sdft.setEquinox(equinox);
+
+// Rest Frequency
+
+  Vector<Double> restFreqs;
+  t.keywordSet().get("RESTFREQS", restFreqs);
+  for (uInt i=0; i<restFreqs.nelements(); i++) {
+     sdft.addRestFrequency(restFreqs[i]);
+  }
+  sdft.setRestFrequencyUnit(String("Hz"));
+//
   return sdft;
 }
 
