@@ -48,9 +48,11 @@ namespace atnf_sd {
 #include <aips/Arrays/Array.h>
 
 template void convertArray(Array<Bool> &, Array<uChar> const &);
-//template void convertArray(Array<uChar> &, Array<Bool> const &);
+template void convertArray(Array<uChar> &, Array<Bool> const &);
 template LogicalArray operator!=(Array<Float> const &, Float const &);
 template LogicalArray operator==(Array<Float> const &, Float const &);
 template LogicalArray operator>(Array<Float> const &, Float const &);
 template LogicalArray operator>=(Array<Float> const &, Float const &);
 template Array<Float>& operator/=(Array<Float>&, MaskedArray<Float> const&);
+//template Array<Float> const& operator*=(Array<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> operator-(MaskedArray<Float> const&, MaskedArray<Float> const&);
