@@ -109,9 +109,9 @@ public:
   virtual void flag(int whichRow);
 
   // return the currently selected values
-  virtual casa::Int getIF() { return IFSel_; }
-  virtual casa::Int getBeam() { return beamSel_; }
-  virtual casa::Int getPol() { return polSel_; }
+  virtual casa::Int getIF() const { return IFSel_; }
+  virtual casa::Int getBeam() const { return beamSel_; }
+  virtual casa::Int getPol() const { return polSel_; }
   virtual std::vector<string> getCoordInfo() const;
 
   // number of scans in table
