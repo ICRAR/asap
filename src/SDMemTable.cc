@@ -171,7 +171,7 @@ bool SDMemTable::setPol(Int whichPol) {
   return false;
 }
 
-bool SDMemTable::setMask(const std::vector<int>& whichChans) {
+bool SDMemTable::setMask(std::vector<int> whichChans) {
   ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   
   std::vector<int>::iterator it;
@@ -278,7 +278,7 @@ std::vector<double> SDMemTable::getAbscissa(Int whichRow,
   return absc;
 }
 
-void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow=0) {
+void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow) {
   ROArrayColumn<Float> spec(table_, "SPECTRA");
   Array<Float> arr;
   spec.get(whichRow, arr);
@@ -297,7 +297,7 @@ void SDMemTable::getSpectrum(Vector<Float>& spectrum, Int whichRow=0) {
   }
 }
 
-void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow=0) const {
+void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
   ROArrayColumn<uChar> spec(table_, "FLAGTRA");
   Array<uChar> arr;
   spec.get(whichRow, arr);
@@ -391,7 +391,7 @@ SpectralCoordinate SDMemTable::getCoordinate(uInt whichIdx)  const {
   Table t = table_.keywordSet().asTable("FREQUENCIES");
   if (whichIdx > t.nrow() ) {
     cerr << "SDMemTable::getCoordinate - whichIdx out of range" << endl;
-    return;
+    return SpectralCoordinate();
   }
   Double rp,rv,inc;
   String rf;
@@ -419,7 +419,7 @@ Bool SDMemTable::setCoordinate(const SpectralCoordinate& speccord,
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
   if (whichIdx > t.nrow() ) {
     cerr << "SDMemTable::setCoordinate - whichIdx out of range" << endl;
-    return;
+    return False;
   }
   ScalarColumn<Double> rpc(t, "REFPIX");
   ScalarColumn<Double> rvc(t, "REFVAL");

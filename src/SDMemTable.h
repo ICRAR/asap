@@ -95,7 +95,7 @@ public:
   virtual bool setBeam(Int whichBeam=0);
   virtual bool setPol(Int whichPol=0);    
   //sets the user mask
-  virtual bool setMask(const std::vector<int>& whichChans);
+  virtual bool setMask(std::vector<int> whichChans);
  
   // return the currently selected values
   virtual Int getIF() { return IFSel_; }
