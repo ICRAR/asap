@@ -75,3 +75,36 @@ void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
       if (!mask[i]) data[i] = 0.0;
    }
 }
+
+
+void mathutil::scanBoundaries (Vector<uInt>& startInt,
+                               Vector<uInt>& endInt,
+                               const Vector<Int>& scanIDs) 
+// 
+// FInd integrations start and end for each Scan
+//
+{
+   uInt nInt = scanIDs.nelements();
+   startInt.resize(nInt);
+   endInt.resize(nInt);
+//
+   startInt(0) = 0;
+   uInt j = 0;
+   Int currScanID = scanIDs(0);
+   for (uInt i=0; i<nInt; i++) {
+      if (scanIDs(i) != currScanID) {  
+         endInt(j) = i-1;
+         currScanID = scanIDs(i);
+//
+         j += 1;
+         startInt(j) = i;
+         if (i==nInt-1) {
+            endInt(j) = i;
+         }   
+      } else {
+         if (i==nInt-1) endInt(j) = i;
+      }
+   }
+   startInt.resize(j+1,True);
+   endInt.resize(j+1,True);
+}

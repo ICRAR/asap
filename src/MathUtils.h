@@ -40,6 +40,10 @@ namespace mathutil {
 template <class T>
 casa::uInt addEntry (casa::Vector<T>& list, T val);
 
+// FInd the scan boundaries from a list of ScanIDs
+void scanBoundaries (casa::Vector<casa::uInt>& startInt,  
+                     casa::Vector<casa::uInt>& endInt,
+                     const casa::Vector<casa::Int>& scanIDs);
 
 // Hanning smoothing
 template <class T>
