@@ -88,6 +88,7 @@ void python_SDMemTable() {
     .def("_summary",  &SDMemTableWrapper::summary)
     .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
     .def("_getrestfreqs",  &SDMemTableWrapper::getRestFreqs)
+    .def("_selectrestfreq",  &SDMemTableWrapper::selectRestFreq)
     .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
     .def("_getcoordinfo", &SDMemTableWrapper::getCoordInfo)
     .def("_history", &SDMemTableWrapper::history,

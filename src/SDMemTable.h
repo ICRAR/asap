@@ -82,6 +82,7 @@ public:
   bool putSDFreqTable(const SDFrequencyTable& sdft);
 
   //get the data wrapped up in a meta container
+
   SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
 
@@ -116,6 +117,13 @@ public:
   virtual void setRestFreqs(std::vector<double> freqs, 
 			    const std::string& theunit);
   virtual void setCoordInfo(std::vector<string> theinfo);
+
+// Select RestFreqID.  FInds the restFreq ID for specified restFreq,
+// and updates RESTFREQID column of table for specified IF index
+// (-1 means all IFs) and source combination
+  virtual casa::Bool selectRestFreq (casa::Double restFreq, const casa::String& unit,
+                                     const casa::String& source,
+                                     casa::Int whichIF=-1);
 
 // Get/Set flux unit
   std::string getFluxUnit() const;
@@ -184,10 +192,12 @@ public:
   // Specify the index of the FreqID you want
   casa::SpectralCoordinate getSpectralCoordinate(casa::uInt whichIdx) const;
 
-  // Return SC. Set velocity conversion state (unit,doppler), 
-  // set rest frequencies.  If row number given (>-0), also set
+  // Return SC. Set velocity conversion state (unit,doppler), and
+  // rest frequency.  If row number given (>=0), also set
   // frame conversion layer (needs direction & time which require row)
-  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt whichIdx, casa::uInt row) const;
+  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt freqID, 
+                                                 casa::uInt restFreqID,
+                                                 casa::uInt row) const;
 
   // Set just the reference value, pixel and increment into the table
   // No other state is extracted.
@@ -231,7 +241,7 @@ private:
   casa::ArrayColumn<casa::Float> specCol_, tsCol_, tcalCol_;
   casa::ArrayColumn<casa::Double> dirCol_;
   casa::ArrayColumn<casa::uChar> flagsCol_;
-  casa::ArrayColumn<casa::uInt> freqidCol_;
+  casa::ArrayColumn<casa::uInt> freqidCol_, restfreqidCol_;
   casa::ArrayColumn<casa::String> histCol_;
 };
 

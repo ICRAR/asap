@@ -148,6 +148,13 @@ public:
     table_->setRestFreqs(freqs, theunit);
   }
 
+  bool selectRestFreq(double freq, const std::string& unit, 
+                      const std::string& source, int whichIF) {
+    return table_->selectRestFreq(casa::Double(freq), casa::String(unit),
+                                  casa::String(source),
+                                  casa::Int(whichIF));
+  }
+
   std::vector<double> getRestFreqs() {
     return table_->getRestFreqs();
   }

@@ -166,6 +166,7 @@ void SDMemTable::setup()
   td.addColumn(ScalarColumnDesc<Int>("SCANID"));
   td.addColumn(ScalarColumnDesc<Double>("INTERVAL"));
   td.addColumn(ArrayColumnDesc<uInt>("FREQID"));
+  td.addColumn(ArrayColumnDesc<uInt>("RESTFREQID"));
   td.addColumn(ArrayColumnDesc<Double>("DIRECTION"));
   td.addColumn(ScalarColumnDesc<String>("FIELDNAME"));
   td.addColumn(ScalarColumnDesc<String>("TCALTIME"));
@@ -192,6 +193,7 @@ void SDMemTable::attach()
   scanCol_.attach(table_, "SCANID");
   integrCol_.attach(table_, "INTERVAL");
   freqidCol_.attach(table_, "FREQID");
+  restfreqidCol_.attach(table_, "RESTFREQID");
   dirCol_.attach(table_, "DIRECTION");
   fldnCol_.attach(table_, "FIELDNAME");
   tcaltCol_.attach(table_, "TCALTIME");
@@ -433,16 +435,18 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
     return abc;
   }
 
-// Continue with km/s or Hz.  Get FreqID
+// Continue with km/s or Hz.  Get FreqIDs
 
   Vector<uInt> freqIDs;
   freqidCol_.get(whichRow, freqIDs);
   uInt freqID = freqIDs(IFSel_);
+  restfreqidCol_.get(whichRow, freqIDs);
+  uInt restFreqID = freqIDs(IFSel_);
 
 // Get SpectralCoordinate, set reference frame conversion,
 // velocity conversion, and rest freq state
 
-  SpectralCoordinate spc = getSpectralCoordinate(freqID, whichRow);
+  SpectralCoordinate spc = getSpectralCoordinate(freqID, restFreqID, whichRow);
   Vector<Double> pixel(nChan());
   indgen(pixel);
 //
@@ -485,11 +489,13 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
 //
   Vector<uInt> freqIDs;
   freqidCol_.get(whichRow, freqIDs);
-  uInt freqID = freqIDs(IFSel_);
+  uInt freqID = freqIDs(IFSel_);  
+  restfreqidCol_.get(whichRow, freqIDs);
+  uInt restFreqID = freqIDs(IFSel_);
 
 // Get SpectralCoordinate, with frame, velocity, rest freq state set
 
-  SpectralCoordinate spc = getSpectralCoordinate(freqID, whichRow);
+  SpectralCoordinate spc = getSpectralCoordinate(freqID, restFreqID, whichRow);
 //
   String s = "Channel";
   if (u == Unit("km/s")) { 
@@ -704,8 +710,8 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 }
 
 
-SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, 
-						     uInt whichRow) const
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, uInt restFreqID,
+                                                     uInt whichRow) const
 {
 
 // Create basic SC
@@ -714,21 +720,12 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID,
 //
   Table t = table_.keywordSet().asTable("FREQUENCIES");
 
-// Get rest frequencies from table, one per IF ???
+// Set rest frequency
 
-  Vector<Double> vec;
-  t.keywordSet().get("RESTFREQS",vec);
-  if (vec.nelements() > 0) {
-    spec.setRestFrequencies(vec);
-
-// Select rest freq
-
-    if (IFSel_ < vec.nelements()) {
-       spec.selectRestFrequency(uInt(IFSel_));
-    } else {
-       cerr << "There is no rest frequency for this IF; selecting rest freq for IF=0" << endl;
-       spec.selectRestFrequency(0u);
-    }
+  Vector<Double> restFreqIDs;
+  t.keywordSet().get("RESTFREQS",restFreqIDs);
+  if (restFreqID < restFreqIDs.nelements()) {                  // SHould always be true
+    spec.setRestFrequency(restFreqIDs(restFreqID),True);
   }
 
 // Set up frame conversion layer
@@ -855,6 +852,8 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
 
 SDFrequencyTable SDMemTable::getSDFreqTable() const
 {
+cerr << "ENter SDMemTbale::getSDFreqTable" << endl;
+
   const Table& t = table_.keywordSet().asTable("FREQUENCIES");
   SDFrequencyTable sdft;
 
@@ -892,10 +891,13 @@ SDFrequencyTable SDMemTable::getSDFreqTable() const
 
   Vector<Double> restFreqs;
   t.keywordSet().get("RESTFREQS", restFreqs);
+cerr << "old restfreqs from Table = " << restFreqs << endl;
+cerr << "add them to SDFreqTable" << endl;
   for (uInt i=0; i<restFreqs.nelements(); i++) {
      sdft.addRestFrequency(restFreqs[i]);
   }
   sdft.setRestFrequencyUnit(String("Hz"));
+cerr << "Exit getSDFreqTable" << endl;
 //
   return sdft;
 }
@@ -904,8 +906,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc)
 {
   uInt rno = table_.nrow();
   table_.addRow();
-
-//  mjd.put(rno, sdc.timestamp);
+//
   timeCol_.put(rno, sdc.timestamp);
   srcnCol_.put(rno, sdc.sourcename);
   fldnCol_.put(rno, sdc.fieldname);
@@ -915,6 +916,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc)
   scanCol_.put(rno, sdc.scanid);
   integrCol_.put(rno, sdc.interval);
   freqidCol_.put(rno, sdc.getFreqMap());
+  restfreqidCol_.put(rno, sdc.getRestFreqMap());
   dirCol_.put(rno, sdc.getDirection());
   rbeamCol_.put(rno, sdc.refbeam);
   tcalCol_.put(rno, sdc.tcal);
@@ -923,7 +925,7 @@ bool SDMemTable::putSDContainer(const SDContainer& sdc)
   elCol_.put(rno, sdc.elevation);
   paraCol_.put(rno, sdc.parangle);
   histCol_.put(rno, sdc.getHistory());
-
+//
   return true;
 }
 
@@ -943,12 +945,14 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const
   tcalCol_.get(whichRow, tc);
   sdc.tcal[0] = tc[0];sdc.tcal[1] = tc[1];
   tcaltCol_.get(whichRow, sdc.tcaltime);
+//
   Array<Float> spectrum;
   Array<Float> tsys;
   Array<uChar> flagtrum;
   Vector<uInt> fmap;
   Array<Double> direction;
   Vector<String> histo;
+//
   specCol_.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
   flagsCol_.get(whichRow, flagtrum);
@@ -957,6 +961,8 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const
   sdc.putTsys(tsys);
   freqidCol_.get(whichRow, fmap);
   sdc.putFreqMap(fmap);
+  restfreqidCol_.get(whichRow, fmap);
+  sdc.putRestFreqMap(fmap);
   dirCol_.get(whichRow, direction);
   sdc.putDirection(direction);
   histCol_.get(whichRow, histo);
@@ -1334,6 +1340,52 @@ Instrument SDMemTable::convertInstrument(const String& instrument,
    return inst;
 }
 
+casa::Bool SDMemTable::selectRestFreq (casa::Double restFreq, const String& unit,
+                                       const casa::String& source,
+                                       casa::Int whichIF)
+{
+   const Int nIFs = nIF();
+   if (whichIF>=nIFs) {
+      throw(AipsError("Illegal IF index"));
+   }
+
+// Find rest frequency.  Add it if necessary
+
+   SDFrequencyTable sdft = getSDFreqTable();
+   Quantum<Double> rf(restFreq, Unit(unit));
+   uInt idx = sdft.addRestFrequency(rf.getValue("Hz"));
+
+// Replace
+
+   Bool empty = source.empty();
+   Bool ok = False;
+   if (putSDFreqTable(sdft)) {
+      const uInt nRow = table_.nrow();
+      String srcName;
+      Vector<uInt> restFreqIDs;
+      for (uInt i=0; i<nRow; i++) {
+         srcnCol_.get(i, srcName);
+         restfreqidCol_.get(i,restFreqIDs);       
+//
+         if (empty || source==srcName) {
+            if (whichIF<0) {
+               restFreqIDs = idx;
+            } else {              
+               restFreqIDs(whichIF) = idx;
+            }
+         }
+//
+         restfreqidCol_.put(i,restFreqIDs);       
+      }
+      ok = True;
+   } else {
+      ok = False;
+   }
+//
+   return ok;
+}
+
+
 void SDMemTable::renumber()
 {
   uInt nRow = scanCol_.nrow();
@@ -1354,3 +1406,4 @@ void SDMemTable::renumber()
     }
   }
 }
+
