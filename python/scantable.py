@@ -180,8 +180,8 @@ class scantable(sdtable):
                      'var', 'stddev', 'avdev', 'rms', 'median'
             mask:    an optional mask specifying where the statistic
                      should be determined.
-            all:     optional flag to show all (default or .asaprc) or a
-                     cursor selected spectrum of Beam/IF/Pol
+            all:     if true show all (default or .asaprc) rather
+                     that the cursor selected spectrum of Beam/IF/Pol
 
         Example:
             scan.set_unit('channel')
@@ -207,9 +207,9 @@ class scantable(sdtable):
                         for k in range(self.npol()):
                             self.setpol(k)
                             if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
-                            statval = _stats(self,mask,stat)
+                            statval = _stats(self,mask,stat,l)
                             tmp.append(statval)
-                            out += '= %3.3f\n' % (statval[l])
+                            out += '= %3.3f\n' % (statval[0])
                 out += "--------------------------------------------------\n"
             if self._vb:
                 print "--------------------------------------------------"
@@ -222,7 +222,7 @@ class scantable(sdtable):
             i = self.getbeam()
             j = self.getif()
             k = self.getpol()
-            statval = _stats(self,mask,stat)
+            statval = _stats(self,mask,stat,-1)
             out = ''
             for l in range(self.nrow()):
                 tm = self._gettime(l)
