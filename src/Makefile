@@ -1,6 +1,11 @@
 TARGET   := ../lib/_asap.so
 
+ifdef NARRABRI_ASAP
+CXX      := /usr/bin/g++
+else
 CXX      := g++-3.2.3
+endif
+
 CXXFLAGS := -O -fPIC
 #CXXFLAGS += -fpermissive # This should be removed.
 #CXXFLAGS += -ansi
@@ -27,6 +32,7 @@ LDFLAGS   += -s
 
 BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python2.3-gcc-mt.a
 BOOSTINC  := -I/usr/local/include/boost
+
 
 PYTHONINC := -I/usr/local/include/python2.3
 PYTHONLIB := -lpython2.3

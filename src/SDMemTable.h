@@ -129,7 +129,7 @@ public:
   virtual casa::Int nScan() const;
 
   // get a summary of the table
-  virtual std::string summary();
+  virtual std::string summary() const;
 
   std::vector<std::string> history(int whichRow=0) const;
   bool appendHistory(const std::string& hist, int whichRow=0);
@@ -184,7 +184,7 @@ public:
 
 private:
   // utility func for nice printout
-  casa::String formatSec(casa::Double x);
+  casa::String formatSec(casa::Double x) const;
   void setup();
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;

@@ -891,7 +891,7 @@ Int SDMemTable::nScan() const {
   return n;
 }
 
-String SDMemTable::formatSec(Double x)
+String SDMemTable::formatSec(Double x) const
 {
   Double xcop = x;
   MVTime mvt(xcop/24./3600.);  // make days
@@ -927,7 +927,7 @@ void SDMemTable::setInstrument(const std::string& name)
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
 }
 
-std::string SDMemTable::summary()   {
+std::string SDMemTable::summary() const  {
   ROScalarColumn<Int> scans(table_, "SCANID");
   ROScalarColumn<String> srcs(table_, "SRCNAME");
   ostringstream oss;
@@ -952,7 +952,7 @@ std::string SDMemTable::summary()   {
   oss << setw(15) << "Antenna Name:" << tmp << endl;
   table_.keywordSet().get("FluxUnit", tmp);
   oss << setw(15) << "Flux Unit:" << tmp << endl;
-  Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
+  Table t = table_.keywordSet().asTable("FREQUENCIES");
   Vector<Double> vec;
   t.keywordSet().get("RESTFREQS",vec);
   oss << setw(15) << "Rest Freqs:";

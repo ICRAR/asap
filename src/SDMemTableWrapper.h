@@ -156,7 +156,7 @@ public:
 
   casa::CountedPtr<SDMemTable> getCP() const {return table_;}
   SDMemTable* getPtr() {return &(*table_);}
-  std::string summary() { return table_->summary(); }
+  std::string summary() const { return table_->summary(); }
   
   std::vector<std::string> history(int whichRow=0) { 
     return table_->history(whichRow); 
