@@ -155,6 +155,8 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   IPosition end(4,whichBeam,whichIF,shp(2)-1,shp(3)-1);
   Array<uChar> arr(flags_(start,end));
   arr = uChar(0);
+//
+  return True;
 }
 
 Bool SDContainer::setFlags(const Matrix<uChar>& flag,
