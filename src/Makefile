@@ -52,11 +52,13 @@ OBJECTS   := MathUtils.o \
              SDMathWrapper.o \
              SDFITSImageWriter.o \
              SDAsciiWriter.o \
+	     SDLineFinder.o \
              python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
              python_SDMath.o \
              python_SDFitter.o \
+	     python_SDLineFinder.o \
              python_SD.o
 
 
@@ -73,6 +75,7 @@ HEADERS   := SDDefs.h \
              SDWriterWrapper.h \
              SDFITSImageWriter.h \
              SDAsciiWriter.h \
+	     SDLineFinder.h \
              python_SD.h
 
 

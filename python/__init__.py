@@ -213,6 +213,7 @@ from asapfitter import *
 from asapreader import reader
 from asapmath import *
 from scantable import *
+from asaplinefind import *
 
 if rcParams['useplotter']:
     if os.environ.has_key('DISPLAY'):

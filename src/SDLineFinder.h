@@ -1,0 +1,141 @@
+//#---------------------------------------------------------------------------
+//# SDLineFinder.h: A class for automated spectral line search
+//#---------------------------------------------------------------------------
+//# Copyright (C) 2004
+//# ATNF
+//#
+//# This program is free software; you can redistribute it and/or modify it
+//# under the terms of the GNU General Public License as published by the Free
+//# Software Foundation; either version 2 of the License, or (at your option)
+//# any later version.
+//#
+//# This program is distributed in the hope that it will be useful, but
+//# WITHOUT ANY WARRANTY; without even the implied warranty of
+//# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+//# Public License for more details.
+//#
+//# You should have received a copy of the GNU General Public License along
+//# with this program; if not, write to the Free Software Foundation, Inc.,
+//# 675 Massachusetts Ave, Cambridge, MA 02139, USA.
+//#
+//# Correspondence concerning this software should be addressed as follows:
+//#        Internet email: Malte.Marquarding@csiro.au
+//#        Postal address: Malte Marquarding,
+//#                        Australia Telescope National Facility,
+//#                        P.O. Box 76,
+//#                        Epping, NSW, 2121,
+//#                        AUSTRALIA
+//#
+//# $Id:
+//#---------------------------------------------------------------------------
+#ifndef SDLINEFINDER_H
+#define SDLINEFINDER_H
+
+// STL
+#include <vector>
+#include <list>
+#include <utility>
+#include <exception>
+
+// boost
+#include <boost/python.hpp>
+
+// AIPS++
+#include <casa/aips.h>
+#include <casa/Exceptions/Error.h>
+#include <casa/Arrays/Vector.h>
+#include <casa/Utilities/Assert.h>
+#include <casa/Utilities/CountedPtr.h>
+
+// ASAP
+#include "SDMemTableWrapper.h"
+#include "SDMemTable.h"
+
+namespace asap {
+
+// SDLineFinder  -  a class for automated spectral line search
+struct SDLineFinder {
+   SDLineFinder() throw();
+   virtual ~SDLineFinder() throw(casa::AipsError);
+
+   // set the scan to work with (in_scan parameter), associated mask (in_mask
+   // parameter) and the edge channel rejection (in_edge parameter)
+   //   if in_edge has zero length, all channels chosen by mask will be used
+   //   if in_edge has one element only, it represents the number of
+   //      channels to drop from both sides of the spectrum
+   //   in_edge is introduced for convinience, although all functionality
+   //   can be achieved using a spectrum mask only   
+   void setScan(const SDMemTableWrapper &in_scan,
+                const std::vector<bool> &in_mask,
+		const boost::python::tuple &in_edge) throw(casa::AipsError);
+
+   // search for spectral lines. Number of lines found is returned
+   int findLines() throw(casa::AipsError);
+
+   // get the mask to mask out all lines that have been found (default)
+   // if invert=true, only channels belong to lines will be unmasked
+   // Note: all channels originally masked by the input mask (in_mask
+   //       in setScan) or dropped out by the edge parameter (in_edge
+   //       in setScan) are still excluded regardless on the invert option
+   std::vector<bool> getMask(bool invert=false) const throw(casa::AipsError);
+
+   // get range for all lines found. If defunits is true (default), the
+   // same units as used in the scan will be returned (e.g. velocity
+   // instead of channels). If defunits is false, channels will be returned
+   std::vector<int>   getLineRanges(bool defunits=true)
+                                const throw(casa::AipsError);
+   
+protected:
+   // supplementary function to control running mean calculations.
+   // It adds a specified channel to the running mean box and
+   // removes (ch-maxboxnchan+1)'th channel from there
+   // Channels, for which the mask is false or index is beyond the
+   // allowed range, are ignored
+   void advanceRunningBox(int ch) throw(casa::AipsError);
+   
+
+   // test a channel against current running mean & rms
+   // if channel specified is masked out or beyond the allowed indexes,
+   // false is returned
+   casa::Bool testChannel(int ch) throw(std::exception, casa::AipsError);
+
+   // process a channel: update curline and is_detected before and
+   // add a new line to the list, if necessary using processCurLine()
+   void processChannel(int ch) throw(casa::AipsError);
+
+   // process the interval of channels stored in curline
+   // if it satisfies the criterion, add this interval as a new line
+   void processCurLine() throw(casa::AipsError);
+   
+private:
+   casa::CountedConstPtr<SDMemTable> scan; // the scan to work with
+   casa::Vector<casa::Bool> mask;          // associated mask
+   std::pair<int,int> edge;                // start and stop+1 channels
+                                           // to work with
+   casa::Float threshold;                  // detection threshold - the 
+                                           // minimal signal to noise ratio
+   casa::Double box_size;	           // size of the box for running
+                                           // mean calculations, specified as
+					   // a fraction of the whole spectrum
+   int  min_nchan;                         // A minimum number of consequtive
+                                           // channels, which should satisfy
+					   // the detection criterion, to be
+					   // a detection
+   std::list<std::pair<int, int> > lines;  // container of start and stop+1
+                                           // channels of the spectral lines
+   // statistics for running mean filtering
+   casa::Float sum;       // sum of fluxes
+   casa::Float sumsq;     // sum of squares of fluxes
+   int box_chan_cntr;     // actual number of channels in the box
+   int max_box_nchan;     // maximum allowed number of channels in the box
+                          // (calculated from boxsize and actual spectrum size)
+   // a buffer for the spectrum
+   mutable casa::Vector<casa::Float>  spectrum;
+
+   // temporary line edge channels and flag, which is True if the line
+   // was detected in the previous channels.
+   std::pair<int,int> cur_line;
+   casa::Bool is_detected_before;
+};
+} // namespace asap
+#endif // #ifndef SDLINEFINDER_H

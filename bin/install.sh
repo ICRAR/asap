@@ -6,15 +6,23 @@
 #                                      #
 ########################################
 
+# temporary check to allow the same file for Narrabri and Epping
+if [ x"$NARRABRI_ASAP" = xyes ];
+then
+ASAPDIR='/DATA/KAPUTAR_2/vor010/ASAP/site-packages/asap'
+SRCDIR='/DATA/KAPUTAR_2/vor010/ASAP/asap'
+else
 ASAPDIR='/usr/local/lib/python2.3/site-packages/asap'
 SRCDIR='/u/mar637/brage/singledish/asap'
+fi
+# 
 
 # where the source python files are
 pydir='python'
 # where the library modules is
 libdir='lib'
 # the python files to install
-srcfiles="__init__.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapplotter.py"
+srcfiles="__init__.py asapmath.py scantable.py asapreader.py asaplot.py asapfitter.py asapplotter.py asaplinefind.py"
 # the libraries to install
 libfiles='_asap.so'
 

@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SD.h: python module for single dish package
+//# python_SDLineFinder.cc: python exposure of C++ SDLineFinder class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,24 +26,24 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id$
+//# $Id:
 //#---------------------------------------------------------------------------
-#ifndef PYTHON_SD_H
-#define PYTHON_SD_H
+#include <boost/python.hpp>
 
-class casa::AipsError;
+#include "SDLineFinder.h"
+
+using namespace boost::python;
 
 namespace asap {
   namespace python {
-    void translate_ex(const casa::AipsError& e);
-    void python_SDMemTable();
-    void python_SDReader();
-    void python_SDWriter();
-    void python_SDMath();
-    void python_SDFitter();
-    void python_SDLineFinder();
-
-  } // python
-} //asap
-
-#endif
+     void python_SDLineFinder() {
+       class_<SDLineFinder>("linefinder")
+         .def( init <> () )
+         .def("setscan",&SDLineFinder::setScan)
+         .def("findlines",&SDLineFinder::findLines)
+         .def("getmask",&SDLineFinder::getMask)
+         .def("getlineranges",&SDLineFinder::getLineRanges)
+       ;
+     };
+  } // namespace python
+} // namespace asap
