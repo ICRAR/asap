@@ -65,6 +65,10 @@ namespace SDMathWrapper {
   void binInSitu(SDMemTableWrapper& in, int width);
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
+// Convert flux
+  void convertFluxInSitu(SDMemTableWrapper& in, float area, float eta, bool doAll);
+  SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float area, float eta, bool doAll);
+
 // Average in time
   SDMemTableWrapper average(boost::python::tuple tpl,
 			    const std::vector<bool>& mask,

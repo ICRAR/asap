@@ -163,3 +163,24 @@ std::vector<float> SDMathWrapper::statistic(const SDMemTableWrapper& in,
   SDMath sdm;
   return sdm.statistic(in.getCP(), mask, which);
 }
+
+
+void SDMathWrapper::convertFluxInSitu(SDMemTableWrapper& in, 
+                                      float area, float eta, bool doAll)
+{
+  SDMemTable* pIn = in.getPtr();
+  SDMath sdm;
+  SDMemTable* pOut = sdm.convertFlux (*pIn, Float(area), Float(eta), Bool(doAll));
+  *pIn = *pOut;
+  delete pOut;
+}
+
+
+SDMemTableWrapper SDMathWrapper::convertFlux(const SDMemTableWrapper& in, 
+                                             float area, float eta, bool doAll)
+{
+  const CountedPtr<SDMemTable>& pIn = in.getCP();
+  SDMath sdm;
+  return CountedPtr<SDMemTable>(sdm.convertFlux(*pIn, Float(area), Float(eta), Bool(doAll)));
+}
+
