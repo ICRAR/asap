@@ -42,6 +42,8 @@ void python_SDMath() {
     .def("average", &SDMathWrapper::average)
     .def("quotient", &SDMathWrapper::quotient)
     .def("multiply", &SDMathWrapper::multiply)
+    .def("baseline", &SDMathWrapper::baseline)
+    .def("hanning", &SDMathWrapper::hanning)
     ;
 };
 
