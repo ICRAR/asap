@@ -1,3 +1,4 @@
+#test the $Date$ field
 #import genera operating system related functions
 import os
 #import asap module
