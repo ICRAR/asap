@@ -19,6 +19,26 @@ class scantable(sdtable):
         self._p = None
         sdtable.__init__(self, filename)
 
+    def save(self, name, format='ASAP'):
+        """
+        Store the scantable on disk. This can be a asap file or SDFITS/MS2.
+        Parameters:
+            name:        the name of the outputfile
+            format:      an optional file format. Default is ASAP.
+                         Alllowed are 'ASAP', 'SDFITS' and 'MS2'
+        Example:
+            scan.save('myscan.asap')
+            scan.save('myscan.sdfits','SDFITS')
+        """
+        if format == 'ASAP':
+            self._save(name)
+        else:
+            from asap._asap import sdwriter as _sw
+            w = _sw()
+            if format == 'SDFITS':
+                w.write(self, name)
+        return
+
     def _verbose(self, *args):
         """
         Set the verbose level True or False, to indicate if output

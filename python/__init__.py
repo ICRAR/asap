@@ -47,7 +47,8 @@ def commands():
             create_mask     - return a mask in thecurrent unit
             set_restfreqs   - give a list of rest frequencies
             flag_spectrum   - flag a whole Beam/IF/Pol
-            save            - save the scantable to disk
+            save            - save the scantable to disk as either 'ASAP'
+                              or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans 
     [Math]
         average_scans       - return the rms-weighted (time) average of
