@@ -119,9 +119,9 @@ public:
   Bool setFrequencyMap(uInt freqslot, uInt whichIF);
   Bool putFreqMap(const Vector<uInt>& freqs);
   
-  const Array<Float>& getSpectrum(uInt whichBeam, uInt whichIF) const;
-  const Array<uChar>& getFlags(uInt whichBeam, uInt whichIF) const;
-  const Array<Float>& getTsys(uInt whichBeam, uInt whichIF) const;
+  Array<Float> getSpectrum(uInt whichBeam, uInt whichIF) const;
+  Array<uChar> getFlags(uInt whichBeam, uInt whichIF) const;
+  Array<Float> getTsys(uInt whichBeam, uInt whichIF) const;
 
   const Array<Float>& getSpectrum() const { return spectrum_; }
   const Array<uChar>& getFlags() const { return flags_; }

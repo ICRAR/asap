@@ -186,7 +186,7 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
   }
 }
 
-const Array<Float>& SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const {
+Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const {
   Matrix<Float> spectra(nChan_, nPol_);
 
   // Beam.
@@ -217,10 +217,10 @@ const Array<Float>& SDContainer::getSpectrum(uInt whichBeam, uInt whichIF) const
     o1++;
   }
 
-  return spectra;
+  return spectra.copy();
 }
 
-const Array<uChar>& SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
+Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
 {
   Matrix<uChar> flagtra(nChan_, nPol_);
 
@@ -252,10 +252,10 @@ const Array<uChar>& SDContainer::getFlags(uInt whichBeam, uInt whichIF) const
     o1++;
   }
 
-  return flagtra;
+  return flagtra.copy();
 }
 
-const Array<Float>& SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
+Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
 {
   Vector<Float> tsys(nPol_);
 
@@ -280,7 +280,7 @@ const Array<Float>& SDContainer::getTsys(uInt whichBeam, uInt whichIF) const
     i2++;
     o0++;
   }
-  return tsys;
+  return tsys.copy();
 }
 
 Bool SDContainer::setFrequencyMap(uInt freqslot, uInt whichIF) {
