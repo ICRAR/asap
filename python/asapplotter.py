@@ -30,7 +30,7 @@ class asapplotter:
         self._dicts = [self._tdict,self._bdict,
                        self._idict,self._pdict,
                        self._sdict]
-        self._panels = 's'
+        self._panels = rcParams['plotter.panelling']
         self._stacking = rcParams['plotter.stacking']
         self._rows = None
         self._cols = None
@@ -72,15 +72,16 @@ class asapplotter:
                 if list(args) != self._data:
                     self._data = list(args)
                     # reset cursor
-                    self.set_cursor()
+                    self.set_cursor(refresh=False)
             else:
                 self._data = list(args)
-                self.set_cursor()
+                self.set_cursor(refresh=False)
         if self._panels == 't':
-            if self._data[0].nrow() > 49:
-                print "Scan to be plotted contains more than 25 rows.\n \
-                Can't plot that many panels..."
-                return
+            maxrows = 9
+            if self._data[0].nrow() > maxrows:
+                print "Scan to be plotted contains more than %d rows.\n" \
+                      "Selecting first %d rows..." % (maxrows,maxrows)
+                self._cursor["t"] = range(maxrows)
             self._plot_time(self._data[0], self._stacking)
         elif self._panels == 's':
             self._plot_scans(self._data, self._stacking)
@@ -154,6 +155,8 @@ class asapplotter:
                     y = scan._getstokesspectrum(rowsel)
                 elif polmode == "stokes2":
                     y = scan._getstokesspectrum(rowsel,True)
+                elif polmode == "circular":
+                    y = scan._stokestopolspectrum(rowsel,False,-1)
                 else:
                     y = scan._getspectrum(rowsel)
                 if self._ordinate:
@@ -169,6 +172,8 @@ class asapplotter:
                             llab = scan._getpolarizationlabel(0,1,0)
                         elif polmode == "stokes2":
                             llab = scan._getpolarizationlabel(0,1,1)
+                        elif polmode == "circular":
+                            llab = scan._getpolarizationlabel(0,0,0)
                         else:
                             llab = scan._getpolarizationlabel(1,0,0)
                     else:                    
@@ -206,8 +211,8 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        self._plotter.palette(1)
         for scan in scans:
+            self._plotter.palette(1)
             if n > 1:
                 self._plotter.subplot(scans.index(scan))
                 self._plotter.palette(1)
@@ -242,6 +247,8 @@ class asapplotter:
                     y = scan._getstokesspectrum(rowsel)
                 elif polmode == "stokes2":
                     y = scan._getstokesspectrum(rowsel,True)
+                elif polmode == "circular":
+                    y = scan._stokestopolspectrum(rowsel,False,-1)
                 else:
                     y = scan._getspectrum(rowsel)
                 if self._ordinate:
@@ -257,6 +264,8 @@ class asapplotter:
                             llab = scan._getpolarizationlabel(0,1,0)
                         elif polmode == "stokes2":
                             llab = scan._getpolarizationlabel(0,1,1)
+                        elif polmode == "circular":
+                            llab = scan._getpolarizationlabel(0,0,0)
                         else:
                             llab = scan._getpolarizationlabel(1,0,0)
                     else:
@@ -295,9 +304,9 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
-        self._plotter.palette(1)
         panels = self._cursor[self._panels]        
         for i in panels:
+            self._plotter.palette(1)
             polmode = "raw"
             ii = self._cursor[self._panels].index(i)
             if n>1:
@@ -342,6 +351,8 @@ class asapplotter:
                     y = scan._getstokesspectrum(rowsel)
                 elif polmode == "stokes2":
                     y = scan._getstokesspectrum(rowsel,True)
+                elif polmode == "circular":
+                    y = scan._stokestopolspectrum(rowsel,False,-1)
                 else:
                     y = scan._getspectrum(rowsel)
 
@@ -369,6 +380,8 @@ class asapplotter:
                                 llab = scan._getpolarizationlabel(0,1,0)
                             elif polmode == "stokes2":
                                 llab = scan._getpolarizationlabel(0,1,1)
+                            elif polmode == "circular":
+                                llab = scan._getpolarizationlabel(0,0,0)
                             else:
                                 llab = scan._getpolarizationlabel(1,0,0)
                         else:
@@ -378,6 +391,8 @@ class asapplotter:
                         tlab = scan._getpolarizationlabel(0,1,0)
                     elif polmode == "stokes2":
                         tlab = scan._getpolarizationlabel(0,1,1)
+                    elif polmode == "circular":
+                        tlab = scan._getpolarizationlabel(0,0,0)
                     else:
                         tlab = scan._getpolarizationlabel(1,0,0)
                 self._plotter.set_line(label=llab)
@@ -524,7 +539,7 @@ class asapplotter:
         self._plotter.save(filename)
         return
     
-    def set_cursor(self, row=None,beam=None,IF=None,pol=None):
+    def set_cursor(self, row=None,beam=None,IF=None,pol=None, refresh=True):
         """
         Specify a 'cursor' for plotting selected spectra. Time (rows),
         Beam, IF, Polarisation ranges can be specified.
@@ -538,8 +553,8 @@ class asapplotter:
                     (raw polarisations (default)) or by names any of:
                     ["I", "Q", "U", "V"] or
                     ["I", "Plinear", "Pangle", "V"] or
-                    ["XX", "YY", "Real(XY)", "Imag(XY)"]
-                    Circular polarisation are not handled yet.
+                    ["XX", "YY", "Real(XY)", "Imag(XY)"] or
+                    ["RR", "LL"]
         Example:
             plotter.set_mode('pol','time')
             plotter.plot(myscan) # plots all raw polarisations colour stacked
@@ -588,7 +603,7 @@ class asapplotter:
         dstokes = {"I":0,"Q":1,"U":2,"V":3}
         dstokes2 = {"I":0,"Plinear":1,"Pangle":2,"V":3}
         draw = {"XX":0, "YY":1,"Real(XY)":2, "Imag(XY)":3}
-        dcirc = { "RR":0,"LL":1,"RL":2,"LR":3}
+        dcirc = { "RR":0,"LL":1}#,"Real(RL)":2,"Image(RL)":3}
         
         if pol is None:
             self._cursor["p"] = range(n)
@@ -611,7 +626,7 @@ class asapplotter:
                         polmode.append("stokes2")
                     elif dcirc.has_key(i):
                         pols.append(dcirc.get(i))
-                        polmode.append("cricular")
+                        polmode.append("circular")
                     else:
                         "Pol type '%s' not valid" %i
                         return
@@ -623,7 +638,7 @@ class asapplotter:
                     polmode.append("raw")
             self._cursor["p"] = pols
             self._polmode = polmode
-        if self._data: self.plot()
+        if self._data and refresh: self.plot()
 
             
 if __name__ == '__main__':
