@@ -1,3 +1,5 @@
+#import genera operating system related functions
+import os
 #import atnf_sd module
 from atnf_sd import *
 # create a reader
@@ -11,7 +13,6 @@ r.read(integrations)
 scans = r.getdata()
 # close the reader
 r = None
-
 # Test sdwriter.
 print 'Begin sdwriter tests...'
 # Create an MS2 writer.
@@ -20,42 +21,47 @@ w = sdwriter('MS2')
 w.setformat()
 # Write out the spectra.
 w.write(scans, 'test_SDWriter.sdfits')
-
+# clean up
+print "removing test_SDWriter.sdfits ..."
+os.remove('test_SDWriter.sdfits')
 # print a short summary of the data
 scans.summary()
 # get the scan with the number '1'
-scan = scans.getscan(1)
+scan = scans.getscan(0)
 # get the scan with the number '1'
-ref = scans.getscan(2)
+ref = scans.getscan(1)
 # close the data table
 scans = None
 # open the math server
-m = sdmath()
 # average the "on" scan
-scanav = m.average(scan)
+scanav = average(scan)
 # get rid of the original scan
 scan = None
 # print a summary of the scan
 scanav.summary()
 # average the "off" scan
-refav = m.average(ref)
+refav = average(ref)
 # get rid of the original scan
 ref = None
 # print a summary of the scan
 refav.summary()
 # form the quotione spectrum
-quot = m.quotient(scanav,refav)
+quot = quotient(scanav,refav)
 # set the cursor to polarisation 0
 quot.setpol(0)
 # get the spectrum for polarisation 0
 v0 = quot.getspectrum()
 #print  the first ten channel
 print v0[0:10]
-# set the cursor to polarisation 0
+# set the cursor to polarisation 1
 quot.setpol(1)
-# get the spectrum for polarisation 0
+# get the spectrum for polarisation 1
 v1 = quot.getspectrum()
 #print  the first ten channel
 print v1[0:10]
 # write it to disk for further use
 quot.makepersistent('/tmp/myfirstquotient.tbl')
+# cleanup
+print "removing /tmp/myfirstquotient.tbl ..."
+os.system('rm -rf /tmp/myfirstquotient.tbl')
+print "Test successful."
