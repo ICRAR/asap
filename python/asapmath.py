@@ -1,6 +1,6 @@
 from scantable import scantable
 
-def average_time(*args, **kwargs):
+def average_time(*args,**kwargs):
     """
     Return the (time) average of a scan or list of scans. [in channels only]
     Parameters:
@@ -59,7 +59,7 @@ def quotient(source, reference):
     from asap._asap import quotient as _quot
     return scantable(_quot(source, reference))
 
-def scale(scan, factor):
+def scale(scan, factor, insitu=False):
     """
     Return a scan where all spectra are scaled by the give 'factor'
     Parameters:
@@ -68,8 +68,14 @@ def scale(scan, factor):
     Note:
         This currently applies the all beams/IFs/pols
     """
-    from asap._asap import scale as _scale
-    return scantable(_scale(scan, factor))
+    if not insitu:
+        from asap._asap import scale as _scale
+        return scantable(_scale(scan, factor))
+    else:
+        from asap._asap import scale_insitu as _scale
+        _scale(scan, factor)
+        return
+        
 
 def add(scan, offset):
     """
