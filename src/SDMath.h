@@ -89,7 +89,7 @@ namespace SDMath {
 
 // Weighting type for time averaging
 
-  enum weightType {NONE,VAR,TSYS};
+  enum WeightType {NONE,VAR,TSYS};
 
 // Function to use accumulate data during time averaging
 
@@ -100,7 +100,7 @@ namespace SDMath {
                    const casa::Vector<casa::Bool>& mask, casa::Double time, casa::Double interval,
                    const casa::Block<casa::CountedPtr<SDMemTable> >& in,
                    casa::uInt iTab, casa::uInt iRow, casa::uInt axis, casa::uInt nAxesSub,
-                   casa::Bool useMask, weightType wtType);
+                   casa::Bool useMask, WeightType wtType);
 
 // Function to fill Scan Container when averaging in time
 
@@ -111,12 +111,16 @@ namespace SDMath {
                 casa::Double interval, const casa::String& sourceName,
                 const casa::Vector<casa::uInt>& freqID);
 
+// Put the data and mask into the SDContainer
+   void putDataInSDC (SDContainer& sc, const casa::Array<casa::Float>& data,
+                      const casa::Array<casa::Bool>& mask);
+
 // Function to normalize data when averaging in time
 
   void normalize (casa::MaskedArray<casa::Float>& data,
                   const casa::Array<casa::Float>& sumSq,
                   const casa::Array<casa::Float>& nPts,
-                  weightType wtType, casa::Int axis, casa::Int nAxes);
+                  WeightType wtType, casa::Int axis, casa::Int nAxes);
 
 // Functions for simple mathematical operations.  what=0 (mul) or 1 (add)
 
@@ -126,6 +130,10 @@ namespace SDMath {
 // Function to get the current cursor location
    void getCursorLocation (casa::IPosition& start, casa::IPosition& end,
                            const SDMemTable& in);
+
+// Convert weight string to enum value
+
+   void convertWeightString (WeightType& wt, const std::string& weightStr);
 };
 
 } // namespace
