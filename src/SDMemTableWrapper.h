@@ -85,9 +85,8 @@ public:
     return table_->getSpectrum(whichRow);
   }
 //
-  std::vector<float> getStokesSpectrum(int whichRow=0, bool linPol=false, 
-				       float paOff=0.0) const {
-    return table_->getStokesSpectrum(whichRow, linPol, paOff);
+  std::vector<float> getStokesSpectrum(int whichRow=0, bool linPol=false) const {
+    return table_->getStokesSpectrum(whichRow, linPol);
   }
 
   std::vector<float> stokesToPolSpectrum (int whichRow, bool linear,

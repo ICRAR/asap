@@ -72,8 +72,7 @@ void python_SDMemTable() {
     .def("nstokes", &SDMemTableWrapper::nStokes)
     .def("_getstokesspectrum", &SDMemTableWrapper::getStokesSpectrum,
          (boost::python::arg("whichRow")=0),
-         (boost::python::arg("linpol")=false),
-         (boost::python::arg("pa")=0.0) )
+         (boost::python::arg("linpol")=false) )
     .def("_stokestopolspectrum", &SDMemTableWrapper::stokesToPolSpectrum,
          (boost::python::arg("whichRow")=0),
          (boost::python::arg("linear")=false),
