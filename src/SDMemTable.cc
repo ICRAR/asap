@@ -439,17 +439,19 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow,
   }
 }
 
-std::string SDMemTable::getPolarizationLabel (Bool linear, Bool stokes, Bool linPol, Int polIdx) const
+std::string SDMemTable::getPolarizationLabel(Bool linear, Bool stokes, 
+					      Bool linPol, Int polIdx) const
 {
    uInt idx = polSel_;   
    if (polIdx >=0) idx = polIdx;
-//
-   return SDPolUtil::polarizationLabel (idx, linear, stokes, linPol);
+   return SDPolUtil::polarizationLabel(idx, linear, stokes, linPol);
 }
 
 
 
-std::vector<float> SDMemTable::stokesToPolSpectrum (Int whichRow, Bool toLinear, uInt polIdx) const
+std::vector<float> SDMemTable::stokesToPolSpectrum(Int whichRow, 
+						   Bool toLinear, 
+						   Int polIdx) const
 //
 // polIdx
 //   0:3 -> RR,LL,Real(RL),Imag(RL)
@@ -480,23 +482,22 @@ std::vector<float> SDMemTable::stokesToPolSpectrum (Int whichRow, Bool toLinear,
   if (toLinear) {
      throw(AipsError("Conversion to linears not yet supported"));
   } else {
-     Bool doRR = (polIdx==0);
-     if(polIdx>1) {
-        throw(AipsError("Only conversion to RR & LL is currently supported"));
-     }
-
-// Get I and V slices
-
-     Array<Float> I = SDPolUtil::getStokesSlice(arr,start,end,"I");
-     Array<Float> V = SDPolUtil::getStokesSlice(arr,start,end,"V");
-
-// Compute output 
-
-     out = SDPolUtil::circularPolarizationFromStokes(I, V, doRR);
-   }
-
-// Copy to output
-
+    uInt selection = polSel_;
+    if (polIdx > -1) selection = polIdx;
+    Bool doRR = (selection==0);
+    if (selection>1) {
+      throw(AipsError("Only conversion to RR & LL is currently supported"));
+    }
+    
+    // Get I and V slices    
+    Array<Float> I = SDPolUtil::getStokesSlice(arr,start,end,"I");
+    Array<Float> V = SDPolUtil::getStokesSlice(arr,start,end,"V");
+    
+    // Compute output     
+    out = SDPolUtil::circularPolarizationFromStokes(I, V, doRR);
+  }
+  
+  // Copy to output
    IPosition vecShape(1,shape(asap::ChanAxis));
    Vector<Float> outV = out.reform(vecShape);
    std::vector<float> stlout;

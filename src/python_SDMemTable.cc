@@ -76,7 +76,7 @@ void python_SDMemTable() {
     .def("_stokestopolspectrum", &SDMemTableWrapper::stokesToPolSpectrum,
          (boost::python::arg("whichRow")=0),
          (boost::python::arg("linear")=false),
-         (boost::python::arg("thepol")=0) )
+         (boost::python::arg("thepol")=-1) )
     .def("_getpolarizationlabel", &SDMemTableWrapper::getPolarizationLabel,
          (boost::python::arg("linear")=false),
          (boost::python::arg("stokes")=false),

@@ -116,7 +116,7 @@ public:
   // supported.
   virtual std::vector<float> stokesToPolSpectrum(casa::Int whichRow,
 						 casa::Bool toLinear,
-						 casa::uInt polIdx) const;
+						 casa::Int polIdx) const;
 
   // Get all Stokes at the specified Beam/IF cursor location (ignoring
   // the internal cursor).  -1 means all on that axis.  Really, this function
