@@ -334,7 +334,7 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
         throw(AipsError("Unit not conformant with Spectral Coordinates"));
   }
   t.rwKeywordSet().define("UNIT", un);
-
+//
   MFrequency::Types mdr;
   if (!MFrequency::getType(mdr, rfrm)) {
     
@@ -345,7 +345,14 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
   } else {
     t.rwKeywordSet().define("REFFRAME",rfrm);
   }
-
+//
+  MDoppler::Types dtype;
+  dpl.upcase();
+  if (!MDoppler::getType(dtype, dpl)) {
+    throw(AipsError("Doppler type unknown"));
+  } else {
+    t.rwKeywordSet().define("DOPPLER",dpl);
+  }
 }
 
 std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
@@ -385,8 +392,13 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
   if (dpl == "") dpl = "RADIO";
   MFrequency::Types mtype;
   if (!MFrequency::getType(mtype, frm)) {
-    cout << "Frequency type unknown assuming TOPO" << endl;
+    cout << "Frequency type unknown assuming TOPO" << endl;       // SHould never happen
     mtype = MFrequency::TOPO;
+  }
+  MDoppler::Types dtype;
+  if (!MDoppler::getType(dtype, dpl)) {
+    cout << "Doppler type unknown assuming RADIO" << endl;        // SHould never happen
+    dtype = MDoppler::RADIO;
   }
   
   if (!spc.setReferenceConversion(mtype,epoch,pos,direct)) {
@@ -399,7 +411,7 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
     if (rstf.nelements() > 0) {
       if (rstf.nelements() >= nIF())
         spc.selectRestFrequency(uInt(IFSel_));
-      spc.setVelocity(u.getName());
+      spc.setVelocity(u.getName(),dtype);
       Vector<Double> wrld;
       spc.pixelToVelocity(wrld,absc1);
       std::vector<double>::iterator it;
@@ -446,15 +458,22 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
   SpectralCoordinate spc = getCoordinate(specidx);
   String frm;
   t.keywordSet().get("REFFRAME",frm);
+//
   MFrequency::Types mtype;
   if (!MFrequency::getType(mtype, frm)) {
     cout << "Frequency type unknown assuming TOPO" << endl;
     mtype = MFrequency::TOPO;
   }
   spc.setFrequencySystem(mtype);
+//
+  String dpl;
+  t.keywordSet().get("DOPPLER",dpl);
+  MDoppler::Types dtype;
+  MDoppler::getType(dtype, dpl);         // Can't fail
+//
   String s = "Channel";
   if (u == Unit("km/s")) { 
-    spc.setVelocity(u.getName());
+    spc.setVelocity(u.getName(), dtype);
     s = CoordinateUtil::axisLabel(spc,0,True,True,True);
   } else if (u == Unit("Hz")) {
     Vector<String> wau(1);wau = u.getName();
@@ -919,6 +938,7 @@ void SDMemTable::setFluxUnit(const std::string& unit)
      throw AipsError("Illegal unit - must be compatible with Jy or K");
   }
 }
+
 
 void SDMemTable::setInstrument(const std::string& name)
 {
