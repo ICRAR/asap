@@ -421,21 +421,19 @@ CountedPtr<SDMemTable> SDMath::quotient(const CountedPtr<SDMemTable>& on,
         }
      }
 
-// Compute quotient
-
-     MaskedArray<Float> tmp = (mOn-*pMOff);
-     Array<Float> out(tmp.getArray());
-     out /= *pMOff;
-     out *= tSysOffArr;
-
-//     MaskedArray<Float> tmp2 = (tSysOnArr * mOn / *pMOff) - tSysOffArr;
-
-
-// Fill container for this row
+// Get container
 
      SDContainer sc = on->getSDContainer(i);
-//
-     putDataInSDC(sc, out, tmp.getMask());
+
+// Compute and put quotient into container
+
+     if (preserveContinuum) {     
+        MaskedArray<Float> tmp = (tSysOffArr * mOn / *pMOff) - tSysOffArr;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+     } else {
+        MaskedArray<Float> tmp = (tSysOffArr * mOn / *pMOff) - tSysOnArr;
+        putDataInSDC(sc, tmp.getArray(), tmp.getMask());
+     }
      sc.putTsys(tSysOffArr);
      sc.scanid = i;
 

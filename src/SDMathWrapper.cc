@@ -38,10 +38,11 @@ using namespace asap;
 using namespace casa;
 
 SDMemTableWrapper SDMathWrapper::quotient(const SDMemTableWrapper& on,
-                                          const SDMemTableWrapper& off)
+                                          const SDMemTableWrapper& off,
+                                          Bool preserveContinuum)
 {
     SDMath sdm;
-    return SDMemTableWrapper(sdm.quotient(on.getCP(), off.getCP()));
+    return SDMemTableWrapper(sdm.quotient(on.getCP(), off.getCP(), preserveContinuum));
 }
 
 

@@ -44,7 +44,8 @@ namespace SDMathWrapper {
 
 // Quotient
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
-                             const SDMemTableWrapper& off);
+                             const SDMemTableWrapper& off,
+                             casa::Bool preserveContinuum);
 
 // Simple binary operations
   SDMemTableWrapper simpleBinaryOperate (const SDMemTableWrapper& left,
