@@ -52,106 +52,104 @@ SDFitter::SDFitter()
 
 SDFitter::~SDFitter()
 {
-    reset();
+  reset();
 }
 
 void SDFitter::clear()
 {
-    for (uInt i=0;i< funcs_.nelements();++i) {
-        delete funcs_[i]; funcs_[i] = 0;
-    }
-    funcs_.resize(0, True);
-    parameters_.resize();
-    error_.resize();
-    thefit_.resize();
-    estimate_.resize();
-    chisquared_ = 0.0;
+  for (uInt i=0;i< funcs_.nelements();++i) {
+    delete funcs_[i]; funcs_[i] = 0;
+  }
+  parameters_.resize();
+  error_.resize();
+  thefit_.resize();
+  estimate_.resize();
+  chisquared_ = 0.0;
 }
+
 void SDFitter::reset()
 {
-    clear();
-    x_.resize();
-    y_.resize();
-    m_.resize();
+  clear();
+  x_.resize();
+  y_.resize();
+  m_.resize();
 }
 
 
 bool SDFitter::computeEstimate() {
-    if (x_.nelements() == 0 || y_.nelements() == 0)
-        throw (AipsError("No x/y data specified."));
+  if (x_.nelements() == 0 || y_.nelements() == 0)
+    throw (AipsError("No x/y data specified."));
 
-    if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) == 0)
-        return false;
-    uInt n = funcs_.nelements();
-    SpectralEstimate estimator(n);
-    estimator.setQ(5);
-    Int mn,mx;
-    mn = 0;
-    mx = m_.nelements()-1;
-    for (uInt i=0; i<m_.nelements();++i) {
-      if (m_[i]) {
-	mn = i;
-	break;
-      }
+  if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) == 0)
+    return false;
+  uInt n = funcs_.nelements();
+  SpectralEstimate estimator(n);
+  estimator.setQ(5);
+  Int mn,mx;
+  mn = 0;
+  mx = m_.nelements()-1;
+  for (uInt i=0; i<m_.nelements();++i) {
+    if (m_[i]) {
+      mn = i;
+      break;
     }
-    for (uInt j=m_.nelements()-1; j>=0;--j) {
-      if (m_[j]) {
-	mx = j;
-	break;
-      }
+  }
+  for (uInt j=m_.nelements()-1; j>=0;--j) {
+    if (m_[j]) {
+      mx = j;
+      break;
     }
-    //mn = 0+x_.nelements()/10;
-    //mx = x_.nelements()-x_.nelements()/10;
-    estimator.setRegion(mn,mx);
-    //estimator.setWindowing(True);
-    SpectralList listGauss = estimator.estimate(x_, y_);
-    Gaussian1D<Float>* g;
-    parameters_.resize(n*3);
-    uInt count = 0;
-    for (uInt i=0; i<n;i++) {
-        g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
-        if (g) {
-            (*g)[0] = listGauss[i].getAmpl();
-            (*g)[1] = listGauss[i].getCenter();
-            (*g)[2] = listGauss[i].getFWHM();
-            ++count;
-        }
+  }
+  mn = 0+x_.nelements()/10;
+  mx = x_.nelements()-x_.nelements()/10;
+  estimator.setRegion(mn,mx);
+  //estimator.setWindowing(True);
+  SpectralList listGauss = estimator.estimate(x_, y_);
+  parameters_.resize(n*3);
+  Gaussian1D<Float>* g = 0;
+  for (uInt i=0; i<n;i++) {
+    g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
+    if (g) {
+      (*g)[0] = listGauss[i].getAmpl();
+      (*g)[1] = listGauss[i].getCenter();
+      (*g)[2] = listGauss[i].getFWHM();
     }
-    estimate_.resize();
-    listGauss.evaluate(estimate_,x_);
-    return true;
+  }
+  estimate_.resize();
+  listGauss.evaluate(estimate_,x_);
+  return true;
 }
 
 std::vector<float> SDFitter::getEstimate() const
 {
-    if (estimate_.nelements() == 0)
-        throw (AipsError("No estimate set."));
-    std::vector<float> stlout;
-    estimate_.tovector(stlout);
-    return stlout;
+  if (estimate_.nelements() == 0)
+    throw (AipsError("No estimate set."));
+  std::vector<float> stlout;
+  estimate_.tovector(stlout);
+  return stlout;
 }
 
 
 bool SDFitter::setExpression(const std::string& expr, int ncomp)
 {
-    clear();
-    if (expr == "gauss") {
-        if (ncomp < 1) throw (AipsError("Need at least one gaussian to fit."));
-        funcs_.resize(ncomp);
-        for (Int k=0; k<ncomp; ++k) {
-            funcs_[k] = new Gaussian1D<Float>();
-        }
-    } else if (expr == "poly") {
-        funcs_.resize(1);
-        funcs_[0] = new Polynomial<Float>(ncomp);
-    } else {
-        //cerr << " compiled functions not yet implemented" << endl;
-        //funcs_.resize(1);
-        //funcs_[0] = new CompiledFunction<Float>();
-        //funcs_[0]->setFunction(String(expr));
-        return false;
-    };
-    return true;
+  clear();
+  if (expr == "gauss") {
+    if (ncomp < 1) throw (AipsError("Need at least one gaussian to fit."));
+    funcs_.resize(ncomp);
+    for (Int k=0; k<ncomp; ++k) {
+      funcs_[k] = new Gaussian1D<Float>();
+    }
+  } else if (expr == "poly") {
+    funcs_.resize(1);
+    funcs_[0] = new Polynomial<Float>(ncomp);
+  } else {
+    cerr << " compiled functions not yet implemented" << endl;
+    //funcs_.resize(1);
+    //funcs_[0] = new CompiledFunction<Float>();
+    //funcs_[0]->setFunction(String(expr));
+    return false;
+  }
+  return true;
 }
 
 bool SDFitter::setData(std::vector<float> absc, std::vector<float> spec,
@@ -277,67 +275,53 @@ float SDFitter::getChisquared() const {
 }
 
 bool SDFitter::fit() {
-    NonLinearFitLM<Float> fitter;
-    //CompiledFunction<AutoDiff<Float> > comp;
-    //Polynomial<AutoDiff<Float> > poly;
-    CompoundFunction<AutoDiff<Float> > func;
-    if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) != 0) {
-        //computeEstimates();
-        for (uInt i=0; i<funcs_.nelements(); i++) {
-            Gaussian1D<AutoDiff<Float> > gauss;//(*funcs_[i]);
-	    
-	    for (uInt j=0; j<funcs_[i]->nparameters(); j++) {
-		gauss[j] = AutoDiff<Float>((*funcs_[i])[j], 
-					   gauss.nparameters(), j);
-		gauss.mask(j) = funcs_[i]->mask(j);
-            }
-	    
-            func.addFunction(gauss);
-        }
-    } else if (dynamic_cast<Polynomial<Float>* >(funcs_[0]) != 0) {
-	Polynomial<AutoDiff<Float> > poly(funcs_[0]->nparameters()-1);
-	//Polynomial<AutoDiff<Float> > poly(*funcs_[0]);
-	for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
-	    poly[j] = AutoDiff<Float>(0, poly.nparameters(), j);
-	    poly.mask(j) = funcs_[0]->mask(j);
-	}
-	func.addFunction(poly);
-    } else if (dynamic_cast<CompiledFunction<Float>* >(funcs_[0]) != 0) {
-	
-	//         CompiledFunction<AutoDiff<Float> > comp;
-	//         for (uInt j=0; j<funcs_[0]->nparameters(); j++) {
-//             comp[j] = AutoDiff<Float>(0, comp.nparameters(), j);
-//             comp.mask(j) = funcs_[0]->mask(j);
-//         }
-//         func.addFunction(comp);
-	
-        cout << "NYI." << endl;
-    } else {
-        throw(AipsError("Fitter not set up correctly."));
-    }
-    fitter.setFunction(func);
-    fitter.setMaxIter(50+funcs_.nelements()*10);
-    // Convergence criterium
-    fitter.setCriteria(0.001);
-
-    // Fit
-    Vector<Float> sigma(x_.nelements());
-    sigma = 1.0;
-
-    parameters_.resize();
-    parameters_ = fitter.fit(x_, y_, sigma, &m_);
-
-    error_.resize();
-    error_ = fitter.errors();
-
-    chisquared_ = fitter.getChi2();
-
-    residual_.resize();
-    residual_ =  y_;
-    fitter.residual(residual_,x_);
-
-    // use fitter.residual(model=True) to get the model
-    thefit_.resize(x_.nelements());
-    fitter.residual(thefit_,x_,True);
-    return true;
+  NonLinearFitLM<Float> fitter;
+  CompoundFunction<Float> func;
+  const uInt n = funcs_.nelements();
+  for (uInt i=0; i<n; ++i) {
+    func.addFunction(*funcs_[i]);
+  }
+  fitter.setFunction(func);
+  fitter.setMaxIter(50+n*10);
+  // Convergence criterium
+  fitter.setCriteria(0.001);
+  
+  // Fit
+  Vector<Float> sigma(x_.nelements());
+  sigma = 1.0;
+  
+  parameters_.resize();
+  parameters_ = fitter.fit(x_, y_, sigma, &m_);
+  std::vector<float> ps;
+  parameters_.tovector(ps);
+  setParameters(ps);
+  error_.resize();
+  error_ = fitter.errors();
+  
+  chisquared_ = fitter.getChi2();
+  
+  residual_.resize();
+  residual_ =  y_;
+  fitter.residual(residual_,x_);
+  
+  // use fitter.residual(model=True) to get the model
+  thefit_.resize(x_.nelements());
+  fitter.residual(thefit_,x_,True);
+  return true;
 }
+
+
+std::vector<float> SDFitter::evaluate(int whichComp) const
+{  
+  std::vector<float> stlout;
+  uInt idx = uInt(whichComp); 
+  Float y;
+  if ( idx < funcs_.nelements() ) {
+    for (uInt i=0; i<x_.nelements(); ++i) {
+      y = (*funcs_[idx])(x_[i]);
+      stlout.push_back(float(y));
+    }
+  }
+  return stlout;
+}
+

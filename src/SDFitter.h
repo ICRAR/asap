@@ -43,44 +43,44 @@ namespace asap {
 
 class SDFitter {
 public:
-    SDFitter();
-    virtual ~SDFitter();
-    // allowed "gauss" and "poly". ncomp is either numvber of gaussions
-    // or order of the polynomial
-    bool setExpression(const std::string& expr, int ncomp=1);
-    bool setData(std::vector<float> absc, std::vector<float> spec,
-                 std::vector<bool> mask);
-    bool setParameters(std::vector<float> params);
-    bool setFixedParameters(std::vector<bool> fixed);
-
-    std::vector<float> getResidual() const;
-    std::vector<float> getFit() const;
-    std::vector<float> getParameters() const;
-    std::vector<bool> getFixedParameters() const;
-
-    std::vector<float> getEstimate() const;
-    std::vector<float> getErrors() const;
-    float getChisquared() const;
-    void reset();
-    bool fit();
-    bool computeEstimate();
-    //std::vector<float> getEstimate() const;
+  SDFitter();
+  virtual ~SDFitter();
+  // allowed "gauss" and "poly". ncomp is either numvber of gaussions
+  // or order of the polynomial
+  bool setExpression(const std::string& expr, int ncomp=1);
+  bool setData(std::vector<float> absc, std::vector<float> spec,
+	       std::vector<bool> mask);
+  bool setParameters(std::vector<float> params);
+  bool setFixedParameters(std::vector<bool> fixed);
+  
+  std::vector<float> getResidual() const;
+  std::vector<float> getFit() const;
+  std::vector<float> getParameters() const;
+  std::vector<bool> getFixedParameters() const;
+  
+  std::vector<float> getEstimate() const;
+  std::vector<float> getErrors() const;
+  float getChisquared() const;
+  void reset();
+  bool fit();
+  bool computeEstimate();
+  
+  std::vector<float> evaluate(int whichComp) const;
 private:
-    void clear();
-    casa::Vector<casa::Float> x_;
-    casa::Vector<casa::Float> y_;
-    casa::Vector<casa::Bool> m_;
-    casa::PtrBlock<casa::Function<casa::Float>* > funcs_;
-    casa::CompoundFunction<casa::Float> cfunc_;
-    //Bool estimateSet_;
-    casa::Float chisquared_;
-    casa::Vector<casa::Float> parameters_;
-    casa::Vector<casa::Bool> fixedpar_;
-
-    casa::Vector<casa::Float> error_;
-    casa::Vector<casa::Float> thefit_;
-    casa::Vector<casa::Float> residual_;
-    casa::Vector<casa::Float> estimate_;
+  void clear();
+  casa::Vector<casa::Float> x_;
+  casa::Vector<casa::Float> y_;
+  casa::Vector<casa::Bool> m_;
+  casa::PtrBlock<casa::Function<casa::Float>* > funcs_;
+  //Bool estimateSet_;
+  casa::Float chisquared_;
+  casa::Vector<casa::Float> parameters_;
+  casa::Vector<casa::Bool> fixedpar_;
+  
+  casa::Vector<casa::Float> error_;
+  casa::Vector<casa::Float> thefit_;
+  casa::Vector<casa::Float> residual_;
+  casa::Vector<casa::Float> estimate_;
 };
 
 } // namespace
