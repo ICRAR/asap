@@ -41,8 +41,7 @@
 
 namespace atnf_sd {
 
-class SDMathWrapper {
-public:
+namespace SDMathWrapper {
   SDMemTableWrapper average(const SDMemTableWrapper& sdt) {
     return SDMemTableWrapper(SDMath::average(sdt.getCP()));
   }
@@ -82,7 +81,7 @@ public:
   }
 
   float rms(const SDMemTableWrapper& in, 
-			const std::vector<bool>& mask) {
+	    const std::vector<bool>& mask) {
     return SDMath::rms(in.getCP(), mask);
   }
 
