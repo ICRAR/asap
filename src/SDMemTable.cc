@@ -443,7 +443,6 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
 // velocity conversion, and rest freq state
 
   SpectralCoordinate spc = getSpectralCoordinate(freqID, whichRow);
-//
   Vector<Double> pixel(nChan());
   indgen(pixel);
 //
@@ -708,6 +707,7 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, 
 						     uInt whichRow) const
 {
+
 // Create basic SC
 
   SpectralCoordinate spec = getSpectralCoordinate (freqID);
@@ -1084,6 +1084,8 @@ void SDMemTable::setInstrument(const std::string& name)
 
 std::string SDMemTable::summary(bool verbose) const  {
 
+// Format header info
+
   ostringstream oss;
   oss << endl;
   oss << "--------------------------------------------------------------------------------" << endl;
@@ -1121,9 +1123,7 @@ std::string SDMemTable::summary(bool verbose) const  {
       << "IF[" << getIF() << "] " << "Pol[" << getPol() << "]" << endl;
   oss << endl;
 //
-  String dirtype ="Position ("+
-    MDirection::showType(getDirectionReference())+
-    ")";
+  String dirtype ="Position ("+ MDirection::showType(getDirectionReference()) + ")";
   oss << setw(5) << "Scan"
       << setw(15) << "Source"
       << setw(24) << dirtype
@@ -1132,52 +1132,50 @@ std::string SDMemTable::summary(bool verbose) const  {
       << setw(7) << "FreqIDs" << endl;
   oss << "--------------------------------------------------------------------------------" << endl;
   
+// Generate list of scan start and end integrations
+
+  Vector<Int> scanIDs = scanCol_.getColumn();
+  Vector<uInt> startInt, endInt;
+  mathutil::scanBoundaries(startInt, endInt, scanIDs);
 //
-  uInt scanNo = 0;
+  const uInt nScans = startInt.nelements();
   String name;
-  Int lastScanID = 0;
-  Int scanID;
-  uInt firstRow = 0;
   Vector<uInt> freqIDs, listFQ;
+  uInt nInt;
 //
-  uInt nRow = scanCol_.nrow();
-  for (uInt i=0; i<nRow; i++) {
-    scanCol_.getScalar(i,scanID);
-    freqidCol_.get(i, freqIDs);
-//
-    if (i>0 && (i==nRow-1 || scanID!=lastScanID)) {
-      srcnCol_.getScalar(firstRow,name);
-      String t = formatSec(Double(getInterval(firstRow)));
-      String posit = formatDirection(getDirection(firstRow,True));
-      uInt nInt = (i-firstRow);
+  for (uInt i=0; i<nScans; i++) {
 
-// Special case adjustments
+// Get things from first integration of scan
 
-      if (i==nRow-1 &&scanID==lastScanID)  nInt++;   
-      if (nInt==1 && i>1) {
-         for (uInt j=0; j<freqIDs.nelements(); j++) 
-	   mathutil::addEntry(listFQ, freqIDs(j));
+      String time = getTime(startInt(i),False);
+      String tInt = formatSec(Double(getInterval(startInt(i))));
+      String posit = formatDirection(getDirection(startInt(i),True));
+      srcnCol_.getScalar(startInt(i),name);
+
+// Find all the FreqIDs in this scan
+
+      listFQ.resize(0);      
+      for (uInt j=startInt(i); j<endInt(i)+1; j++) {
+         freqidCol_.get(j, freqIDs);
+         for (uInt k=0; k<freqIDs.nelements(); k++) {
+            mathutil::addEntry(listFQ, freqIDs(k));
+         }
       }
-      oss << setw(3) << std::right << scanNo << std::left << setw(2) << "  "
+//
+      nInt = endInt(i) - startInt(i) + 1;
+      oss << setw(3) << std::right << i << std::left << setw(2) << "  "
           << setw(15) << name
 	  << setw(24) << posit
-	  << setw(10) << getTime(firstRow,False)
+	  << setw(10) << time 
 	  << setw(3) << std::right << nInt  << setw(3) << " x " << std::left
-	  << setw(6) <<  t 
+	  << setw(6) <<  tInt
           << " " << listFQ << endl;
-//
-      lastScanID = scanID;
-      firstRow = i;
-      scanNo++;
-      listFQ.resize(0);
-    } else {
-       for (uInt j=0; j<freqIDs.nelements(); j++) mathutil::addEntry(listFQ, freqIDs(j));
-    }
   }
   oss << endl;
-  oss << "Table contains " << table_.nrow() << " integration(s) in " << scanNo << " scan(s)." << endl;
+  oss << "Table contains " << table_.nrow() << " integration(s) in " << nScans << " scan(s)." << endl;
 
 // Frequency Table
+
   if (verbose) {
     std::vector<string> info = getCoordInfo();
     SDFrequencyTable sdft = getSDFreqTable();
