@@ -1,4 +1,4 @@
-TARGET    = atnf_sd.so
+TARGET    = ../lib/atnf_sd.so
 
 CXX	  = g++-3.2.3
 CXXFLAGS  = -fPIC -w -g -fpermissive -O2
@@ -18,7 +18,7 @@ AIPSPPLIB = -L$(AIPSLIB) \
         $(AIPSLIB)/libaips_f.a \
         $(AIPSLIB)/libaips.a \
         -llapack -lblas -lg2c -lcfitsio -lrpfits \
-        -lglish -ledit -lsos -lnpd
+        -lglish -ledit -lsos -lnpd -lwcs
 
 LINK      = g++-3.2.3
 LFLAGS    = -shared -Wl,-soname,$(TARGET)
@@ -36,9 +36,10 @@ CFITSIOINC = -I/usr/local/include/cfitsio
 INCDIRS   = -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBDIRS   = $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
 
-OBJECTS   = SDContainer.o \
-            SDMemTable.o \
-            SDReader.o \
+OBJECTS   = MathUtils.o \
+	    SDContainer.o \
+	    SDMemTable.o \
+	    SDReader.o \
             SDWriter.o \
             SDMath.o \
             SDTemplates.o \
