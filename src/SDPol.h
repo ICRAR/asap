@@ -52,6 +52,18 @@ class SDPolUtil
   static void rotateXYPhase (casa::Array<casa::Float>& C3,
                              casa::Array<casa::Float>& C4,
                              casa::Float phase);
+
+// Get Stokes slices from the Array.  Start and End should
+// already be setup to access the Array at the current cursor location
+// (beam, IF, chanells; see SDMemTable).  This function will modify the asap::PolAxis
+// location to access the desired Stokes slice ("I", "Q", "U", "V")
+  static casa::Array<casa::Float> getStokesSlice (casa::Array<casa::Float>& input, const casa::IPosition& start,
+                                                  const casa::IPosition& end, const casa::String& stokes);
+
+// Compute Circular polarization RR or LL from I and V
+  static casa::Array<casa::Float> circularPolarizationFromStokes (casa::Array<casa::Float>& I, 
+                                                                  casa::Array<casa::Float>& V, 
+                                                                  casa::Bool doRR);
 };
 
 

@@ -175,6 +175,8 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
 //
 // array of shape (nBeam,nIF,nPol,nChan)
 //
+// We use the scaling convention I=(XX+YY) 
+// 
 {
 
 // Checks
@@ -208,7 +210,7 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    Array<Float> I = output(start,end);           // Output : I
 //
    if (nPol==1) {
-      I = C1;
+      I = Float(2.0)*C1;
       return;
    }
 //
@@ -216,7 +218,7 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    end(polAxis) = 1;
    Array<Float> C2 = input2(start,end);          // Input : C1
 //
-   I = Float(0.5)*(C1 + C2);
+   I = C1 + C2;
    if (nPol <= 2) return;
 //
    start(polAxis) = 2;
@@ -230,17 +232,17 @@ void SDStokesEngine::computeOnGet(Array<Float>& output,
    start(polAxis) = 1;
    end(polAxis) = 1;
    Array<Float> Q = output(start,end);           // Output : Q
-   Q = Float(0.5)*(C1 - C2);
+   Q = C1 - C2;
 //
    start(polAxis) = 2;
    end(polAxis) = 2;
    Array<Float> U = output(start,end);           // Output : U
-   U = C3;
+   U = Float(2.0)*C3;
 //
    start(polAxis) = 3;
    end(polAxis) = 3;
    Array<Float> V = output(start,end);           // Output : V
-   V = C4;
+   V = Float(2.0)*C4;
 }
 
 
@@ -310,4 +312,39 @@ void SDPolUtil::rotateXYPhase (Array<Float>& C3,
 }
 
 
+
+Array<Float> SDPolUtil::getStokesSlice (Array<Float>& in, const IPosition& start,
+                                        const IPosition& end, const String& stokes)
+{
+   IPosition s(start);
+   IPosition e(end);
+//
+   if (stokes=="I") {
+      s(asap::PolAxis) = 0;
+      e(asap::PolAxis) = 0;
+   } else if (stokes=="Q") {
+      s(asap::PolAxis) = 1;
+      e(asap::PolAxis) = 1;
+   } else if (stokes=="U") {
+      s(asap::PolAxis) = 2;
+      e(asap::PolAxis) = 2;
+   } else if (stokes=="V") {
+      s(asap::PolAxis) = 3;
+      e(asap::PolAxis) = 3;
+   }
+//
+   return in(s,e);
+}
  
+
+Array<Float> SDPolUtil::circularPolarizationFromStokes (Array<Float>& I,
+                                                        Array<Float>& V, 
+                                                        Bool doRR)
+{
+   if (doRR) {
+      return Float(0.5)*(I+V);
+   } else {
+      return Float(0.5)*(I-V);
+   }
+}
+
