@@ -46,12 +46,12 @@ using namespace asap;
 
 SDAttr::SDAttr ()
 {
-   init();
+   initData();
 }
 
 SDAttr::SDAttr(const SDAttr& other)
 {
-   init();                                 // state just private 'static' data
+   initData();                                 // state just private 'static' data
 }
 
 SDAttr& SDAttr::operator=(const SDAttr& other) 
@@ -184,10 +184,11 @@ Vector<Float> SDAttr::interp (const Vector<Float>& xOut, const Vector<Float>& xI
    return yOut;
 }
 
-void SDAttr::init () 
+void SDAttr::initData () 
 {
-// Beam efficiencies
-
+//
+// Mopra data from online Mopra guide.
+//
    MopEtaBeamX_.resize(3);
    MopEtaBeamX_(0) = 86.0;
    MopEtaBeamX_(1) = 100.0;
@@ -201,11 +202,8 @@ void SDAttr::init ()
    MopEtaBeam2004Y_.resize(3);
    MopEtaBeam2004Y_(0) = 0.49;
    MopEtaBeam2004Y_(1) = 0.44;
-   MopEtaBeam2004Y_(2) = 0.42;                // replicated from (1)
-
-
-// Aperture efficiency
-
+   MopEtaBeam2004Y_(2) = 0.42;
+//
    MopEtaApX_.resize(2);
    MopEtaApX_(0) = 86.0;
    MopEtaApX_(1) = 115.0;

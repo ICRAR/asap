@@ -87,7 +87,7 @@ class SDAttr {
    casa::Vector<casa::Float> MopEtaAp2004Y_;
 
 // Init private data
-   void init();
+   void initData();
 
 // Linear interpolation
    casa::Vector<casa::Float> interp (const casa::Vector<casa::Float>& xOut, const casa::Vector<casa::Float>& xIn, 
