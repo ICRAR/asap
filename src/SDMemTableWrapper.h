@@ -66,8 +66,8 @@ public:
   }
 
   SDMemTableWrapper getSource(const std::string& source) {
-    casa::String cond("SELECT * from $1 WHERE SRCNAME == '");
-    cond += source;cond += "'";
+    casa::String cond("SELECT * from $1 WHERE SRCNAME == pattern('");
+    cond += source;cond += "')";
     return SDMemTableWrapper(*this, cond);
   }
 
@@ -147,7 +147,7 @@ public:
   casa::CountedPtr<SDMemTable> getCP() const {return table_;}
   SDMemTable* getPtr() {return &(*table_);}
   std::string summary() { return table_->summary(); }
-
+  
 private:
   casa::CountedPtr<SDMemTable> table_;
 };
