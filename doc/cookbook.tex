@@ -41,7 +41,7 @@ Currently there are installations running on Linux machines at
 \begin{itemize}
 \item Epping - use hosts {\tt draco} or {\tt hydra}
 \item Narrabri - use host {\tt kaputar}
-\item Parkes - use host ***
+\item Parkes - use host {\tt bourbon}
 \item Mopra - use host {\tt minos}
 \end{itemize}
 
@@ -203,10 +203,10 @@ changed via the {\tt .asaprc} resource file.
 
 \subsubsection {Contents}
 
-A scantable has header information and data.  It is actually an AIPS++
-Table and it is stored in Memory when you are maipulating it with ASAP.
+A scantable has header information and data (a scantable is actually an AIPS++
+Table and it is stored in Memory when you are manipulating it with ASAP.
 You can store it to disk and then browse it with the AIPS++
-Table browser (if you know how to do that !).  
+Table browser if you know how to do that !).
 
 The data are stored in columns (the length of a column is the number of
 rows/integrations of course).  
@@ -251,7 +251,7 @@ Example:
   ASAP> scans = scantable('MyData.rpf')
   ASAP> scans.summary()                # Brief listing
   ASAP> scans.summary(verbose=True)    # Include frequency information
-  ASAP> print scan                    # Equivalent to brief summary function call
+  ASAP> print scan                     # Equivalent to brief summary function call
 \end{verbatim}
 
 Most of what the \cmd{summary} function  prints out is obvious. However,
@@ -802,14 +802,14 @@ into other packages. The formats are:
 
 \begin{itemize}
 \item[ASAP] This is the internal format used for ASAP. It is the only
-format that allows the user to restore the data, fits etc without
+format that allows the user to restore the data, fits etc. without
 loosing any information.   As mentioned before, the ASAP scantable 
 is just an AIPS++ Table (a memory-based table).
 This function just converts it to a  disk-based
 Table.  You can the access that Table with the AIPS++ Table browser
 or any other AIPS++ tool.
 
-\item[SDFITS] The Single Dish FITS format. This format has been
+\item[SDFITS] The Single Dish FITS format. This format was
 designed to for interchange between packages, but few packages
 actually can read it.
 
