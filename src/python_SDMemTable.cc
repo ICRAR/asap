@@ -53,7 +53,8 @@ void python_SDMemTable() {
 	  boost::python::arg("restFrequency")=0.0) )
     .def("getmask", &SDMemTableWrapper::getMask,
 	 (boost::python::arg("whichRow")=0) )
-    .def("gettsys", &SDMemTableWrapper::getTsys)
+    .def("gettsys", &SDMemTableWrapper::getTsys,
+	 (boost::python::arg("whichRow")=0) )
     .def("getsourcename", &SDMemTableWrapper::getSourceName,
 	 (boost::python::arg("whichRow")=0) )
     .def("gettime", &SDMemTableWrapper::getTime,
@@ -65,6 +66,7 @@ void python_SDMemTable() {
     .def("nbeam", &SDMemTableWrapper::nBeam)
     .def("npol", &SDMemTableWrapper::nPol)
     .def("nchan", &SDMemTableWrapper::nChan)
+    .def("nscans", &SDMemTableWrapper::nScans)
 
     .def("setif", &SDMemTableWrapper::setIF,
 	 (boost::python::arg("whichIF")=0) )
