@@ -58,7 +58,7 @@ class scantable(sdtable):
                 else:
                     sdtable.__init__(self,tbl)
 
-    def save(self, name="", format=None):
+    def save(self, name=None, format=None, overwrite=False):
         """
         Store the scantable on disk. This can be a asap file or SDFITS/MS2.
         Parameters:
@@ -71,11 +71,22 @@ class scantable(sdtable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
+            overwrite:   if the file should be overwritten if it exists.
+                         The default False is to return with warning
+                         without writing the output
         Example:
             scan.save('myscan.asap')
             scan.save('myscan.sdfits','SDFITS')
         """
         if format is None: format = rcParams['scantable.save']
+        suffix = '.'+format.lower()
+        if name is None or name =="":
+            name = 'scantable'+suffix
+        from os import path
+        if path.isfile(name) or path.isdir(name):
+            if not overwrite:
+                print "File %s already exists." % name
+                return
         if format == 'ASAP':
             self._save(name)
         else:
@@ -118,7 +129,7 @@ class scantable(sdtable):
             print "Couldn't find any match."
 
     def __str__(self):
-        return sdtable.summary(self)
+        return sdtable._summary(self)
 
     def summary(self,filename=None):
         """
@@ -127,20 +138,22 @@ class scantable(sdtable):
             filename:    the name of a file to write the putput to
                          Default - no file output
         """
-        info = sdtable.summary(self)
+        info = sdtable._summary(self)
         if filename is not None:
+            if filename is "":
+                filename = 'scantable_summary.txt'
             data = open(filename, 'w')
             data.write(info)
             data.close()
         print info
 
-    def set_selection(self, thebeam=0,theif=0,thepol=0):
+    def set_cursor(self, thebeam=0,theif=0,thepol=0):
         """
         Set the spectrum for individual operations.
         Parameters:
             thebeam,theif,thepol:    a number
         Example:
-            scan.set_selection(0,0,1)
+            scan.set_cursor(0,0,1)
             pol1sig = scan.stats(all=False) # returns std dev for beam=0
                                             # if=0, pol=1
         """
@@ -149,7 +162,7 @@ class scantable(sdtable):
         self.setif(theif)
         return
 
-    def get_selection(self):
+    def get_cursor(self):
         """
         Return/print a the current 'cursor' into the Beam/IF/Pol cube.
         Parameters:
@@ -164,7 +177,7 @@ class scantable(sdtable):
         k = self.getpol()
         if self._vb:
             print "--------------------------------------------------"
-            print " Cursor selection"
+            print " Cursor position"
             print "--------------------------------------------------"
             out = 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
             print out
@@ -190,38 +203,31 @@ class scantable(sdtable):
         """
         if all is None: all = rcParams['scantable.allaxes']
         from asap._asap import stats as _stats
+        from numarray import array,zeros,Float
         if mask == None:
             mask = ones(self.nchan())
+        axes = ['Beam','IF','Pol','Time']
+
         if all:
-            out = ''
-            tmp = []
-            for l in range(self.nrow()):
-                tm = self._gettime(l)
-                out += 'Time[%s]:\n' % (tm)
-                for i in range(self.nbeam()):
-                    self.setbeam(i)
-                    if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
-                    for j in range(self.nif()):
-                        self.setif(j)
-                        if self.nif() > 1: out +=  ' IF[%d] ' % (j)
-                        for k in range(self.npol()):
-                            self.setpol(k)
-                            if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
-                            statval = _stats(self,mask,stat,l)
-                            tmp.append(statval)
-                            out += '= %3.3f\n' % (statval[0])
-                out += "--------------------------------------------------\n"
+            n = self.nbeam()*self.nif()*self.npol()*self.nrow()
+            shp = [self.nbeam(),self.nif(),self.npol(),self.nrow()]
+            arr = array(zeros(n),shape=shp,type=Float)
+
+            for i in range(self.nbeam()):
+                self.setbeam(i)
+                for j in range(self.nif()):
+                    self.setif(j)
+                    for k in range(self.npol()):
+                        self.setpol(k)
+                        arr[i,j,k,:] = _stats(self,mask,stat,-1)
+            retval = {'axes': axes, 'data': arr, 'cursor':None}
+            tm = [self._gettime(val) for val in range(self.nrow())]
             if self._vb:
-                print "--------------------------------------------------"
-                print " ",stat
-                out += "--------------------------------------------------\n"
-                print out
-            return tmp
+                self._print_values(retval,stat,tm)
+            return retval
 
         else:
-            i = self.getbeam()
-            j = self.getif()
-            k = self.getpol()
+            i,j,k = (self.getbeam(),self.getif(),self.getpol())
             statval = _stats(self,mask,stat,-1)
             out = ''
             for l in range(self.nrow()):
@@ -238,7 +244,8 @@ class scantable(sdtable):
                 print " ",stat
                 print "--------------------------------------------------"
                 print out
-            return statval
+            retval = {'axes': axes, 'data': array(statval), 'cursor':(i,j,k)}
+            return retval
 
     def stddev(self,mask=None, all=None):
         """
@@ -266,42 +273,36 @@ class scantable(sdtable):
         Parameters:
             all:    optional parameter to get the Tsys values for all
                     Beams/IFs/Pols (default) or just the one selected
-                    with scantable.set_selection()
+                    with scantable.set_cursor()
                     [True or False]
         Returns:
             a list of Tsys values.
         """
         if all is None: all = rcParams['scantable.allaxes']
+        from numarray import array,zeros,Float
+        axes = ['Beam','IF','Pol','Time']
+
         if all:
-            out = ''
-            tmp = []
-            for l in range(self.nrow()):
-                tm = self._gettime(l)
-                out += 'Time[%s]:\n' % (tm)
-                for i in range(self.nbeam()):
-                    self.setbeam(i)
-                    if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
-                    for j in range(self.nif()):
-                        self.setif(j)
-                        if self.nif() > 1: out +=  ' IF[%d] ' % (j)
-                        for k in range(self.npol()):
-                            self.setpol(k)
-                            if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
-                            ts = self._gettsys()
-                            tmp.append(ts)
-                            out += '= %3.3f\n' % (ts[l])
-                out+= "--------------------------------------------------\n"
+            n = self.nbeam()*self.nif()*self.npol()*self.nrow()
+            shp = [self.nbeam(),self.nif(),self.npol(),self.nrow()]
+            arr = array(zeros(n),shape=shp,type=Float)
+
+            for i in range(self.nbeam()):
+                self.setbeam(i)
+                for j in range(self.nif()):
+                    self.setif(j)
+                    for k in range(self.npol()):
+                        self.setpol(k)
+                        arr[i,j,k,:] = self._gettsys()
+            retval = {'axes': axes, 'data': arr, 'cursor':None}
+            tm = [self._gettime(val) for val in range(self.nrow())]
             if self._vb:
-                print "--------------------------------------------------"
-                print " Tsys"
-                print "--------------------------------------------------"
-                print out
-            return tmp
+                self._print_values(retval,'Tsys',tm)
+            return retval
+
         else:
-            i = self.getbeam()
-            j = self.getif()
-            k = self.getpol()
-            ts = self._gettsys()
+            i,j,k = (self.getbeam(),self.getif(),self.getpol())
+            statval = self._gettsys()
             out = ''
             for l in range(self.nrow()):
                 tm = self._gettime(l)
@@ -309,14 +310,16 @@ class scantable(sdtable):
                 if self.nbeam() > 1: out +=  ' Beam[%d] ' % (i)
                 if self.nif() > 1: out +=  ' IF[%d] ' % (j)
                 if self.npol() > 1: out +=  ' Pol[%d] ' % (k)
-                out += '= %3.3f\n' % (ts[l])
-                out += "--------------------------------------------------\n"
+                out += '= %3.3f\n' % (statval[l])
+                out +=  "--------------------------------------------------\n"
+
             if self._vb:
                 print "--------------------------------------------------"
-                print " Tsys"
+                print " TSys"
                 print "--------------------------------------------------"
                 print out
-            return ts
+            retval = {'axes': axes, 'data': array(statval), 'cursor':(i,j,k)}
+            return retval
         
     def get_time(self):
         """
@@ -387,8 +390,8 @@ class scantable(sdtable):
         Returns:
             The abcissa values and it's format string.
         """
-        abc = self.getabcissa(rowno)
-        lbl = self.getabcissalabel(rowno)
+        abc = self._getabcissa(rowno)
+        lbl = self._getabcissalabel(rowno)
         return abc, lbl
 
     def create_mask(self, *args, **kwargs):
@@ -422,7 +425,7 @@ class scantable(sdtable):
             if u == "": u = "channel"
             print "The current mask window unit is", u
         n = self.nchan()
-        data = self.getabcissa()
+        data = self._getabcissa()
         msk = zeros(n)
         for  window in args:
             if (len(window) != 2 or window[0] > window[1] ):
@@ -450,6 +453,16 @@ class scantable(sdtable):
             freqs = (freqs)
         sdtable._setrestfreqs(self,freqs, unit)
         return
+    def get_restfreqs(self):
+        """
+        Get the restfrequency(s) stored in this scantable.
+        The return value(s) are always of unit 'Hz'
+        Parameters:
+            none
+        Returns:
+            a list of doubles
+        """
+        return list(self._getrestfreqs())
 
     def flag_spectrum(self, thebeam, theif, thepol):
         """
@@ -506,7 +519,7 @@ class scantable(sdtable):
             self._p.set_panels(rows=npan)
         xlab,ylab,tlab = None,None,None
         self._vb = False
-        sel = self.get_selection()        
+        sel = self.get_cursor()        
         for i in range(npan):
             if npan > 1:
                 self._p.subplot(i)
@@ -533,9 +546,9 @@ class scantable(sdtable):
                         y.append(self._gettsys(k))
                 else:
                     x,xlab = self.get_abcissa(i)
-                    y = self.getspectrum(i)
+                    y = self._getspectrum(i)
                     ylab = r'Flux'
-                    m = self.getmask(i)
+                    m = self._getmask(i)
                 llab = col+' '+str(j)
                 self._p.set_line(label=llab)
                 self._p.plot(x,y,m)
@@ -543,6 +556,29 @@ class scantable(sdtable):
             self._p.set_axes('ylabel',ylab)
             self._p.set_axes('title',tlab)
         self._p.release()
-        self.set_selection(sel[0],sel[1],sel[2])
+        self.set_cursor(sel[0],sel[1],sel[2])
         self._vb = rcParams['verbose']
         return
+
+        print out 
+
+    def _print_values(self, dat, label='', timestamps=[]):
+        d = dat['data']
+        a = dat['axes']
+        shp = d.getshape()
+        out = ''
+        for i in range(shp[3]):
+            out += '%s [%s]:\n' % (a[3],timestamps[i])
+            t = d[:,:,:,i]
+            for j in range(shp[0]):
+                if shp[0] > 1: out +=  ' %s[%d] ' % (a[0],j)
+                for k in range(shp[1]):
+                    if shp[1] > 1: out +=  ' %s[%d] ' % (a[1],k)
+                    for l in range(shp[2]):
+                        if shp[2] > 1: out +=  ' %s[%d] ' % (a[2],l)
+                        out += '= %3.3f\n' % (t[j,k,l])
+            out += "--------------------------------------------------\n"
+        print "--------------------------------------------------"
+        print " ", label
+        print "--------------------------------------------------"
+        print out 
