@@ -32,30 +32,45 @@
 #include <vector>
 #include <boost/python.hpp>
 #include <boost/python/pyconversions.h>
+#include <boost/python/exception_translator.hpp>
+#include <casa/Exceptions.h>
 
 #include "python_SD.h"
 
+namespace asap {
+  namespace python {
+void translate_ex(AipsError const& e)
+{
+  // Use the Python 'C' API to set up an exception object
+  PyErr_SetString(PyExc_RuntimeError, e.what());
+}
+
+  }
+}
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(asap) {
+BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_SDMemTable();
   asap::python::python_SDReader();
   asap::python::python_SDWriter();
   asap::python::python_SDMath();
+  asap::python::python_SDFitter();
+
+  register_exception_translator<AipsError>(&asap::python::translate_ex);
 
   std_vector_to_tuple < int > ();
-  from_python_sequence < std::vector < int >,  
+  from_python_sequence < std::vector < int >,
     variable_capacity_policy > ();
   std_vector_to_tuple < float > ();
-  from_python_sequence < std::vector < float >,  
+  from_python_sequence < std::vector < float >,
     variable_capacity_policy > ();
   std_vector_to_tuple < double > ();
-  from_python_sequence < std::vector < double >,  
+  from_python_sequence < std::vector < double >,
     variable_capacity_policy > ();
   std_vector_to_tuple < std::string > ();
-  from_python_sequence < std::vector < std::string >,  
+  from_python_sequence < std::vector < std::string >,
     variable_capacity_policy > ();
   std_vector_to_tuple < bool> ();
-  from_python_sequence < std::vector < bool >,  
+  from_python_sequence < std::vector < bool >,
     variable_capacity_policy > ();
 }
