@@ -22,11 +22,11 @@ LD        := g++-3.2.3
 LDFLAGS   := -shared -Wl,--soname=$(TARGET)
 LDFLAGS   += -s
 
-BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python-gcc-mt.a
+BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python2.3-gcc-mt.a
 BOOSTINC  :=
 
-PYTHONINC := -I/usr/include/python2.2
-PYTHONLIB := -lpython2.2
+PYTHONINC := -I/usr/local/include/python2.3
+PYTHONLIB := -lpython2.3
 
 INCDIRS   := -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
