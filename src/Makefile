@@ -2,20 +2,23 @@ TARGET   := ../lib/atnf_sd.so
 
 CXX      := g++-3.2.3
 CXXFLAGS := -O -fPIC
-CXXFLAGS += -fpermissive # This should be removed.
+#CXXFLAGS += -fpermissive # This should be removed.
 #CXXFLAGS += -ansi
-#CXXFLAGS += -pedantic -Wno-long-long
+CXXFLAGS += -pedantic -Wno-long-long
 #CXXFLAGS += -Wall -Wno-parentheses
 
 CFITSIOLIB := /usr/local/lib/libcfitsio.a #-lcfitsio
 CFITSIOINC := -I/usr/local/include/cfitsio
 
-AIPSROOT  := $(word 1, $(AIPSPATH))
-AIPSINC   := -I$(AIPSROOT)/code/include
-AIPSLIB   := $(AIPSROOT)/linux_gnu/lib
-AIPSPPLIB := $(AIPSLIB)/version.o \
-             -L$(AIPSLIB) -latnf -ltrial -laips -laips_f \
-             $(AIPSLIB)/libwcs.a \
+CASAROOT  := $(word 1, $(AIPSPATH))
+CASAINC   := -I$(CASAROOT)/code/include
+CASALIB   := $(CASAROOT)/linux_gnu/lib
+CASAPPLIB := $(CASALIB)/version.o \
+             -L$(CASALIB) \
+	     -latnf -lms -limages -lcomponents -lcoordinates \
+	     -llattices -lfits -lmeasures -lmeasures_f \
+	     -ltables -lscimath -lscimath_f -lcasa \
+              $(CASALIB)/libwcs.a -lmir \
              -lrpfits $(CFITSIOLIB) -llapack -lblas -lg2c
 
 LD        := g++-3.2.3
@@ -28,8 +31,8 @@ BOOSTINC  :=
 PYTHONINC := -I/usr/local/include/python2.3
 PYTHONLIB := -lpython2.3
 
-INCDIRS   := -I. $(AIPSINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
-LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(AIPSPPLIB)
+INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
+LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(CASAPPLIB)
 
 OBJECTS   := MathUtils.o \
              SDContainer.o \
