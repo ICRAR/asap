@@ -285,7 +285,7 @@ def resample(scan, width=5, method='cubic', insitu=None):
         _resample(scan, method, width)
         return
 
-def average_pol(scan, mask=None, insitu=None):
+def average_pol(scan, mask=None, weight='none', insitu=None):
     """
     Average the Polarisations together.
     The polarisation cursor of the output scan is set to 0
@@ -294,6 +294,8 @@ def average_pol(scan, mask=None, insitu=None):
         mask:        An optional mask defining the region, where the
                      averaging will be applied. The output will have all 
                      specified points masked. 
+        weight:      Weighting scheme. 'none' (default), or 'var' (variance
+                     weighted)
         insitu:      if False a new scantable is returned.
                      Otherwise, the scaling is done in-situ
                      The default is taken from .asaprc (False)
@@ -305,10 +307,10 @@ def average_pol(scan, mask=None, insitu=None):
     if insitu is None: insitu = rcParams['insitu']
     if not insitu:
         from asap._asap import averagepol as _avpol
-        return scantable(_avpol(scan, mask))
+        return scantable(_avpol(scan, mask, weight))
     else:
         from asap._asap import averagepol_insitu as _avpol
-        _avpol(scan, mask)
+        _avpol(scan, mask, weight)
         return
     
 def smooth(scan, kernel="hanning", width=5.0, insitu=None, allaxes=None):
