@@ -17,6 +17,19 @@ SRCDIR='/u/mar637/brage/singledish/asap'
 fi
 # 
 
+# check to allow setup via command line parameters
+if [ x"$1" != x ];
+then
+ASAPDIR=$1
+echo "ASAP will be installed into "$ASAPDIR
+fi
+
+if [ x"$2" != x ];
+then
+SRCDIR=$2
+echo "from "$SRCDIR
+fi
+
 # where the source python files are
 pydir='python'
 # where the library modules is
