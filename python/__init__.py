@@ -384,11 +384,11 @@ def commands():
     print x
     return
 
-print """Welcome to ASAP v%s - the ATNF Spectral Analysis Package
+print """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
 
 Please report any bugs to:
 asap@atnf.csiro.au
 
 [IMPORTANT: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.
-""" % (__version__)
+""" % (__version__, __date__)
