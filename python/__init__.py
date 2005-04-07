@@ -231,7 +231,7 @@ if rcParams['useplotter']:
 #from numarray ones,zeros
 
 
-__date__ = '$Date$'
+__date__ = '$Date$'.split()[1]
 __version__  = '1.0'
 
 def list_scans(t = scantable):
