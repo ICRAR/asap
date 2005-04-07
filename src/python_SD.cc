@@ -32,12 +32,12 @@
 #include <vector>
 
 #include <boost/python.hpp>
-#include <boost/python/pyconversions.h>
 #include <boost/python/exception_translator.hpp>
 
 #include <casa/aips.h>
 #include <casa/Exceptions/Error.h>
 
+#include "pyconversions.h"
 #include "python_SD.h"
 
 namespace asap {
