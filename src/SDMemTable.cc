@@ -1449,7 +1449,7 @@ std::string SDMemTable::summary(bool verbose) const  {
   t.keywordSet().get("RESTFREQS",vec);
   oss << setw(15) << "Rest Freqs:";
   if (vec.nelements() > 0) {
-      oss << setprecision(0) << vec << " [Hz]" << endl;
+      oss << setprecision(10) << vec << " [Hz]" << endl;
   } else {
       oss << "None set" << endl;
   }
