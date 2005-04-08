@@ -243,8 +243,8 @@ def list_scans(t = scantable):
     #    t = meta_t
     globs = sys.modules['__main__'].__dict__.iteritems()
     print "The user created scantables are:"
-    x = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
-    print x
+    sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
+    print filter(lambda x: not x.startswith('_'), sts)
 
 def commands():
     x = """    
