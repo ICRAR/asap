@@ -1060,7 +1060,7 @@ class scantable(sdtable):
             # return a scan baselined by a third order polynomial,
             # not using a mask
             bscan = scan.poly_baseline(order=3)
-        """('', 'TOPO', 'RADIO', 'TOPO')
+        """
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
         if mask is None:
