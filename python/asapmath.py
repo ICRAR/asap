@@ -58,8 +58,8 @@ def quotient(source, reference, preserve=True):
         reference:     the 'off' scan
         preserve:      you can preserve (default) the continuum or 
                        remove it.  The equations used are 
-                          preserve - Output = Tref * (sig/ref) - Tref
-                          remove   - Output = Tref * (sig/ref) - Tsig
+                          preserve:  Output = Toff * (on/off) - Toff
+                          remove:    Output = Toff * (on/off) - Ton
     """
     varlist = vars()
     from asap._asap import quotient as _quot

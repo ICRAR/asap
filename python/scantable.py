@@ -1257,18 +1257,19 @@ class scantable(sdtable):
 
     def quotient(self, other, isreference=True, preserve=True):
         """
-        Return the quotient of a 'source' (signal) scan and a 'reference' scan.
+        Return the quotient of a 'source' (on) scan and a 'reference' (off)
+        scan.
         The reference can have just one row, even if the signal has many.
         Otherwise they must have the same number of rows.
         The cursor of the output scan is set to 0
         Parameters:
-            source:         the 'other' scan
+            other:          the 'other' scan
             isreference:    if the 'other' scan is the reference (default)
                             or source
             preserve:       you can preserve (default) the continuum or 
                             remove it.  The equations used are 
-                            preserve - Output = Tref * (sig/ref) - Tref
-                            remove   - Output = Tref * (sig/ref) - Tsig
+                            preserve: Output = Toff * (on/off) - Toff
+                            remove:   Output = Tref * (on/off) - Ton
         Example:
             # src is a scantable for an 'on' scan, ref for an 'off' scantable
             q1 = src.quotient(ref)
