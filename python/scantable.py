@@ -431,7 +431,9 @@ class scantable(sdtable):
         """
         Set the frame type of the Spectral Axis.
         Parameters:
-            frame:   an optional frame type, default 'LSRK'.
+            frame:   an optional frame type, default 'LSRK'. Valid frames are:
+                     'REST','TOPO','LSRD','LSRK','BARY',
+                     'GEO','GALACTO','LGROUP','CMB'
         Examples:
             scan.set_freqframe('BARY')
         """
@@ -439,6 +441,7 @@ class scantable(sdtable):
         varlist = vars()
         valid = ['REST','TOPO','LSRD','LSRK','BARY', \
                    'GEO','GALACTO','LGROUP','CMB']
+
         if frame in valid:
             inf = list(self._getcoordinfo())
             inf[1] = frame
