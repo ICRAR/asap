@@ -986,7 +986,6 @@ class scantable(sdtable):
         Average the Polarisations together.
         The polarisation cursor of the output scan is set to 0
         Parameters:
-            scan:        The scantable
             mask:        An optional mask defining the region, where the
                          averaging will be applied. The output will have all
                          specified points masked.
@@ -995,8 +994,6 @@ class scantable(sdtable):
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
-        Example:
-            polav = average_pols(myscan)
         """
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
