@@ -67,8 +67,8 @@ class asapplotter:
         """
         if self._plotter.is_dead:
             self._plotter = ASAPlot()
-        self._plotter.clear()
         self._plotter.hold()
+        self._plotter.clear()
         if len(args) > 0:
             if self._data is not None:                
                 if list(args) != self._data:
@@ -107,7 +107,6 @@ class asapplotter:
         ncol = 1
         if self._stacking is not None:
             ncol = eval(self._cdict.get(colmode))
-        self._plotter.set_panels()
         if n > 1:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
@@ -115,6 +114,8 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
+        else:
+            self._plotter.set_panels()
         rows = self._cursor["t"]
         self._plotter.palette(1)
         for rowsel in rows:
@@ -205,7 +206,6 @@ class asapplotter:
         if self._stacking is not None:
             scan = scans[0]
             ncol = eval(self._cdict.get(colmode))
-        self._plotter.set_panels()
         if n > 1:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
@@ -213,6 +213,8 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panel(rows=n,cols=0,nplots=n)
+        else:
+            self._plotter.set_panels()
         for scan in scans:
             self._plotter.palette(1)
             if n > 1:
@@ -298,7 +300,6 @@ class asapplotter:
         ncol=1
         if self._stacking is not None:            
             ncol = eval(self._cdict.get(colmode))
-        self._plotter.set_panels()
         if n > 1:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
@@ -306,6 +307,8 @@ class asapplotter:
                                          nplots=n)
             else:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
+        else:
+            self._plotter.set_panels()            
         panels = self._cursor[self._panelling]        
         for i in panels:
             self._plotter.palette(1)
@@ -484,14 +487,12 @@ class asapplotter:
         """
         if xstart is None and xend is None:
             self._minmaxx = None
-            if self._data: self.plot()
-            return
+        else:
+            self._minmaxx = [xstart,xend]
         if ystart is None and yend is None:
             self._minmaxy = None
-            if self._data: self.plot()
-            return
-        self._minmaxx = [xstart,xend]
-        self._minmaxy = [ystart,yend]
+        else:
+            self._minmaxy = [ystart,yend]            
         if self._data: self.plot()
         return
     
