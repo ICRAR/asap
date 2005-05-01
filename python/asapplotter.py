@@ -40,7 +40,7 @@ class asapplotter:
         self._minmaxx = None
         self._minmaxy = None
         self._data = None
-        self._lmap = []
+        self._lmap = None
         self._title = None
         self._ordinate = None
         self._abcissa = None
@@ -360,7 +360,10 @@ class asapplotter:
                         tlab = self._title[ii]
                     else:                        
                         tlab = self._ldict.get(self._panelling)+' '+str(i)
-                    llab = scan._getsourcename(rowsel)
+                    if self._lmap and len(self._lmap) > 0:
+                        llab = self._lmap[jj]
+                    else:
+                        llab = scan._getsourcename(rowsel)
                 else:
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
