@@ -81,9 +81,12 @@ class asapplotter:
         if self._panelling == 't':
             maxrows = 9
             if self._data[0].nrow() > maxrows:
-                print "Scan to be plotted contains more than %d rows.\n" \
-                      "Selecting first %d rows..." % (maxrows,maxrows)
-                self._cursor["t"] = range(maxrows)
+                if self._cursor["t"] is None or \
+                       (isinstance(self._cursor["t"],list) and \
+                        len(self._cursor["t"]) > maxrows ):
+                    print "Scan to be plotted contains more than %d rows.\n" \
+                          "Selecting first %d rows..." % (maxrows,maxrows)
+                    self._cursor["t"] = range(maxrows)
             self._plot_time(self._data[0], self._stacking)
         elif self._panelling == 's':
             self._plot_scans(self._data, self._stacking)
@@ -171,14 +174,7 @@ class asapplotter:
                     llab = self._lmap[jj]
                 else:
                     if colmode == 'p':
-                        if polmode == "stokes":
-                            llab = scan._getpolarizationlabel(0,1,0)
-                        elif polmode == "stokes2":
-                            llab = scan._getpolarizationlabel(0,1,1)
-                        elif polmode == "circular":
-                            llab = scan._getpolarizationlabel(0,0,0)
-                        else:
-                            llab = scan._getpolarizationlabel(1,0,0)
+                        llab = self._get_pollabel(scan, polmode)
                     else:                    
                         llab = self._ldict.get(colmode)+' '+str(j)
                 self._plotter.set_line(label=llab)
@@ -264,14 +260,7 @@ class asapplotter:
                     llab = self._lmap[jj]
                 else:
                     if colmode == 'p':
-                        if polmode == "stokes":
-                            llab = scan._getpolarizationlabel(0,1,0)
-                        elif polmode == "stokes2":
-                            llab = scan._getpolarizationlabel(0,1,1)
-                        elif polmode == "circular":
-                            llab = scan._getpolarizationlabel(0,0,0)
-                        else:
-                            llab = scan._getpolarizationlabel(1,0,0)
+                        llab = self._get_pollabel(scan, polmode)
                     else:
                         llab = self._ldict.get(colmode)+' '+str(j)
                 self._plotter.set_line(label=llab)
@@ -376,30 +365,17 @@ class asapplotter:
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
                     else:
-                        tlab = self._ldict.get(self._panelling)+' '+str(i)
+                        if self._panelling == 'p':
+                            tlab = self._get_pollabel(scan, polmode)
+                        else:
+                            tlab = self._ldict.get(self._panelling)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[jj]
                     else:
                         if colmode == 'p':
-                            if polmode == "stokes":
-                                llab = scan._getpolarizationlabel(0,1,0)
-                            elif polmode == "stokes2":
-                                llab = scan._getpolarizationlabel(0,1,1)
-                            elif polmode == "circular":
-                                llab = scan._getpolarizationlabel(0,0,0)
-                            else:
-                                llab = scan._getpolarizationlabel(1,0,0)
+                            llab = self._get_pollabel(scan, polmode)
                         else:
                             llab = self._ldict.get(colmode)+' '+str(j)
-                if self._panelling == 'p':
-                    if polmode == "stokes":
-                        tlab = scan._getpolarizationlabel(0,1,0)
-                    elif polmode == "stokes2":
-                        tlab = scan._getpolarizationlabel(0,1,1)
-                    elif polmode == "circular":
-                        tlab = scan._getpolarizationlabel(0,0,0)
-                    else:
-                        tlab = scan._getpolarizationlabel(1,0,0)
                 self._plotter.set_line(label=llab)
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
@@ -645,6 +621,17 @@ class asapplotter:
             self._polmode = polmode
         if self._data and refresh: self.plot()
 
+    def _get_pollabel(self, scan, polmode):
+        tlab = ""
+        if polmode == "stokes":
+            tlab = scan._getpolarizationlabel(0,1,0)
+        elif polmode == "stokes2":
+            tlab = scan._getpolarizationlabel(0,1,1)
+        elif polmode == "circular":
+            tlab = scan._getpolarizationlabel(0,0,0)
+        else:
+            tlab = scan._getpolarizationlabel(1,0,0)
+        return tlab
             
 if __name__ == '__main__':
     plotter = asapplotter()
