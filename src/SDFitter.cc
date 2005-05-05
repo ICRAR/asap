@@ -60,6 +60,7 @@ void SDFitter::clear()
   for (uInt i=0;i< funcs_.nelements();++i) {
     delete funcs_[i]; funcs_[i] = 0;
   }
+  funcs_.resize(0,True);
   parameters_.resize();
   error_.resize();
   thefit_.resize();
@@ -277,15 +278,17 @@ float SDFitter::getChisquared() const {
 bool SDFitter::fit() {
   NonLinearFitLM<Float> fitter;
   CompoundFunction<Float> func;
-  const uInt n = funcs_.nelements();
+
+  uInt n = funcs_.nelements();
   for (uInt i=0; i<n; ++i) {
     func.addFunction(*funcs_[i]);
   }
+
   fitter.setFunction(func);
   fitter.setMaxIter(50+n*10);
   // Convergence criterium
   fitter.setCriteria(0.001);
-  
+
   // Fit
   Vector<Float> sigma(x_.nelements());
   sigma = 1.0;
@@ -295,15 +298,16 @@ bool SDFitter::fit() {
   std::vector<float> ps;
   parameters_.tovector(ps);
   setParameters(ps);
+
   error_.resize();
   error_ = fitter.errors();
-  
+
   chisquared_ = fitter.getChi2();
   
   residual_.resize();
   residual_ =  y_;
   fitter.residual(residual_,x_);
-  
+
   // use fitter.residual(model=True) to get the model
   thefit_.resize(x_.nelements());
   fitter.residual(thefit_,x_,True);
