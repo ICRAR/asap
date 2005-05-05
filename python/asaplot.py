@@ -64,7 +64,7 @@ class ASAPlot:
 	# Set matplotlib default colour sequence.
 	self.colours = [1, 'b', 'g', 'r', 'c', 'm', 'y', 'k']
 	self.attributes = {}
-	self.loc = 1
+	self.loc = 0
 
 	matplotlib.interactive = True
 	self.buffering = buffering
@@ -79,7 +79,6 @@ class ASAPlot:
 
 	for i in range(1,len(self.lines)+1):
 	   self.delete(i)
-
 	self.axes.clear()
 	self.colours[0] = 1
 	self.lines = []
@@ -102,9 +101,7 @@ class ASAPlot:
 		    for line in self.lines[number]:
 			line.set_linestyle('None')
 			self.lines[number] = None
-
-	self.show()
-
+        self.show()        
 
     def get_line(self):
 	"""
@@ -149,7 +146,7 @@ class ASAPlot:
 	self.buffering = hold
 
 
-    def legend(self, loc=1):
+    def legend(self, loc=None):
 	"""
 	Add a legend to the plot.
 
@@ -166,8 +163,9 @@ class ASAPlot:
 	    10: center
 
 	"""
-	if 1 > loc > 10: loc = 0
-	self.loc = loc
+        if isinstance(loc,int):
+            if 0 > loc > 10: loc = 0
+            self.loc = loc
 	self.show()
 
 
@@ -511,15 +509,22 @@ class ASAPlot:
 	xlim = [xmin, xmax] as in axes.set_xlim().
 	ylim = [ymin, ymax] as in axes.set_ylim().
 	"""
-
 	for s in self.subplots:
 	    self.axes  = s['axes']
 	    self.lines = s['lines']
-	    if xlim is not None:
-		self.axes.set_xlim(xlim)
-	    if ylim is not None:
-		self.axes.set_ylim(ylim)
-	return
+            oldxlim =  list(self.axes.get_xlim())
+            oldylim =  list(self.axes.get_ylim())
+            if xlim is not None:
+                for i in range(len(xlim)):
+                    if xlim[i] is not None:
+                        oldxlim[i] = xlim[i]
+            if ylim is not None:                        
+                for i in range(len(ylim)):
+                    if ylim[i] is not None:
+                        oldylim[i] = ylim[i]
+            self.axes.set_xlim(oldxlim)
+            self.axes.set_ylim(oldylim)
+        return
 
 
     def set_line(self, number=None, **kwargs):
@@ -567,7 +572,7 @@ class ASAPlot:
 	if redraw: self.show()
 
 
-    def set_panels(self, rows=1, cols=0, n=-1, nplots=-1):
+    def set_panels(self, rows=1, cols=0, n=-1, nplots=-1, ganged=True):
 	"""
 	Set the panel layout.
 
@@ -625,30 +630,39 @@ class ASAPlot:
 		self.subplots[i]['axes']  = self.figure.add_subplot(rows,
 						cols, i+1)
 		self.subplots[i]['lines'] = []
+                xfsize = self.subplots[i]['axes'].xaxis.label.get_size()-cols/2
+                yfsize = self.subplots[i]['axes'].yaxis.label.get_size()-rows/2
+                self.subplots[i]['axes'].xaxis.label.set_size(xfsize)
+                self.subplots[i]['axes'].yaxis.label.set_size(yfsize)
+                
+                if ganged:
+                    if rows > 1 or cols > 1:
+                        # Squeeze the plots together.
+                        pos = self.subplots[i]['axes'].get_position()
+                        if cols > 1: pos[2] *= 1.2
+                        if rows > 1: pos[3] *= 1.2
+                        self.subplots[i]['axes'].set_position(pos)
 
-		if rows > 1 or cols > 1:
-		    # Squeeze the plots together.
-		    pos = self.subplots[i]['axes'].get_position()
-		    if cols > 1: pos[2] *= 1.1
-		    if rows > 1: pos[3] *= 1.1
-		    self.subplots[i]['axes'].set_position(pos)
-
-		# Suppress tick labelling for interior subplots.
-		if i <= (rows-1)*cols - 1:
-		    # Suppress x-labels for frames not in the bottom row.
-		    for tick in self.subplots[i]['axes'].xaxis.majorTicks:
-			tick.label1On = False
-
-		if i%cols:
-		    # Suppress y-labels for frames not in the left column.
-		    for tick in self.subplots[i]['axes'].yaxis.majorTicks:
-			tick.label1On = False
+                    # Suppress tick labelling for interior subplots.
+                    if i <= (rows-1)*cols - 1:
+                        if i+cols < nplots:
+                            # Suppress x-labels for frames width
+                            # adjacent frames
+                            for tick in \
+                                    self.subplots[i]['axes'].xaxis.majorTicks:
+                                tick.label1On = False
+                                self.subplots[i]['axes'].xaxis.label.set_visible(False)
+                    if i%cols:
+                        # Suppress y-labels for frames not in the left column.
+                        for tick in self.subplots[i]['axes'].yaxis.majorTicks:
+                            tick.label1On = False
+                        self.subplots[i]['axes'].yaxis.label.set_visible(False)
+                        
 
 		self.rows = rows
 		self.cols = cols
 
 	    self.subplot(0)
-
 
     def set_title(self, title=None):
 	"""
@@ -666,7 +680,7 @@ class ASAPlot:
 	Show graphics dependent on the current buffering state.
 	"""
 	if not self.buffering:
-	    if self.loc:
+	    if self.loc is not None:
 		for j in range(len(self.subplots)):
 		    lines  = []
 		    labels = []
@@ -689,7 +703,6 @@ class ASAPlot:
 
 	    self.window.wm_deiconify()
 	    self.canvas.show()
-
 
     def subplot(self, i=None, inc=None):
 	"""
