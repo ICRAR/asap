@@ -1065,7 +1065,7 @@ class scantable(sdtable):
         varlist = vars()
         if mask is None:
             from numarray import ones
-            mask = list(ones(scan.nchan()))
+            mask = list(ones(self.nchan()))
         from asap.asapfitter import fitter
         f = fitter()
         f._verbose(True)
@@ -1427,3 +1427,13 @@ class scantable(sdtable):
             segments.append([i,j])
             i = j        
         return segments
+    def _get_ordinate_label(self):
+        fu = "("+self.get_fluxunit()+")"
+        import re
+        lbl = "Intensity"
+        if re.match(".K.",fu):
+            lbl = "Brightness Temperature "+ fu
+        elif re.match(".Jy.",fu):
+            lbl = "Flux density "+ fu
+        return lbl
+        

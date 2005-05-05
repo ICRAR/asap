@@ -131,7 +131,10 @@ class fitter:
             ps = self.fitter.getparameters()
             if len(ps) == 0:
                 self.fitter.estimate()
-        self.fitter.fit()
+        try:
+            self.fitter.fit()
+        except RuntimeError, msg:
+            print msg            
         self._fittedrow = row
         self.fitted = True
         return
@@ -335,9 +338,9 @@ class fitter:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
             m = self.data._getmask(self._fittedrow)
-            ylab = r'Flux'
+            ylab = self.data._get_ordinate_label()
 
-        colours = ["grey60","grey80","red","orange","purple","yellow","magenta", "cyan"]
+        colours = ["grey60","grey80","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(1,colours)
         self._p.set_line(label='Spectrum')
         self._p.plot(self.x, self.y, m)

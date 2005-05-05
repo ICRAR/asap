@@ -79,7 +79,7 @@ class asapplotter:
                 self._data = list(args)
                 self.set_cursor(refresh=False)
         if self._panelling == 't':
-            maxrows = 9
+            maxrows = 25
             if self._data[0].nrow() > maxrows:
                 if self._cursor["t"] is None or \
                        (isinstance(self._cursor["t"],list) and \
@@ -147,10 +147,10 @@ class asapplotter:
                 x = None
                 y = None
                 m = None
-                if not self._title:
+                if self._title is None:
                     tlab = scan._getsourcename(rowsel)                    
                 else:
-                    if len(self._title) == n:
+                    if len(self._title) >= n:
                         tlab = self._title[rowsel]
                     else:
                         tlab = scan._getsourcename(rowsel)
@@ -168,7 +168,7 @@ class asapplotter:
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
-                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                    ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
                 if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[jj]
@@ -205,12 +205,13 @@ class asapplotter:
         if n > 1:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
-                self._plotter.set_panel(rows=self._rows,cols=self._cols,
+                self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n)
             else:
-                self._plotter.set_panel(rows=n,cols=0,nplots=n)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n)
         else:
             self._plotter.set_panels()
+
         for scan in scans:
             self._plotter.palette(1)
             if n > 1:
@@ -254,7 +255,7 @@ class asapplotter:
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
-                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                    ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
                 if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[jj]
@@ -353,7 +354,7 @@ class asapplotter:
                 if self._ordinate:
                     ylab = self._ordinate
                 else:
-                    ylab = 'Flux ('+scan.get_fluxunit()+')'
+                    ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
                 if colmode == 's' or colmode == 't':
                     if self._title and len(self._title) > 0:
