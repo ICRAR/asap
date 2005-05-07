@@ -281,7 +281,7 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
            spectra = sd.getSpectrum(iBeam,iIF);        
         }
 //
-        if (status = cWriter->write(sd.scanid, cycleNo, sd.timestamp,
+        if (status = cWriter->write(sd.scanid+1, cycleNo, sd.timestamp,
                                     sd.interval, sd.fieldname, sd.sourcename,
                                     sd.getDirection(iBeam),
                                     srcPM, srcVel, iIF+1, refFreqNew,
