@@ -42,18 +42,21 @@ if [ ! -x "$p" ]; then
     exit 1
 fi
 
-# at the moment we need AIPS++ for measures tables and endian detection
-aroot='/nfs/aips++'
-if [ "${AIPSPATH}" == "" ]; then
 
-    if test -d ${aroot}/weekly ; then
+# at the moment we need AIPS++ for measures tables and endian detection
+if [ "${AIPSPATH}" == "" ]; then
+    aroot='/nfs/aips++'
+    ASAPDATA='/usr/local/share/asap/data'
+    if test -d ${ASAPDATA} ; then
+	AIPSPATH="${ASAPDATA} linux_gnu somewhere localhost"	
+    elif test -d ${aroot}/weekly ; then
 	. ${aroot}/weekly/aipsinit.sh
     elif  test -d ${aroot}/daily ; then
 	. ${aroot}/daily/aipsinit.sh
     elif  test -d /nfs/aips++/pks ; then
 	. /nfs/aips++/pks/aipsinit.sh
-    else 
-	echo "Cannot locate aips++ installation"
+    else
+	echo "Cannot locate casa installation or ASAP data directory"
 	exit 0
     fi
 fi
