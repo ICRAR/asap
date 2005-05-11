@@ -1,19 +1,16 @@
-TARGET   := ../lib/_asap.so
-
-ifdef NARRABRI_ASAP
-CXX      := /usr/bin/g++
-else
-CXX      := g++-3.2.3
+TARGET   := _asap.so
+ifndef CXX
+   CXX      := g++
 endif
-
-CXXFLAGS := -O -fPIC
-
-#CXXFLAGS += -ansi
+CXXFLAGS := -O3 -fPIC
+CXXFLAGS += -ansi
 CXXFLAGS += -pedantic -Wno-long-long
-#CXXFLAGS += -Wall -Wno-parentheses
 
-CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a #-lcfitsio
-CFITSIOINC := -I/usr/local/include/cfitsio
+CFITSIOROOT := /usr
+# If aips++ is build with LFS
+# CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a
+CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
+CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
 
 CASAROOT  := $(word 1, $(AIPSPATH))
 CASAINC   := -I$(CASAROOT)/code/include
@@ -23,19 +20,20 @@ CASAPPLIB := $(CASALIB)/version.o \
 	     -latnf -limages -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
 	     -ltables -lscimath -lscimath_f -lcasa \
-              $(CASALIB)/libwcs.a -lmir \
+              $(CASALIB)/libwcs.a \
              -lrpfits $(CFITSIOLIB) -llapack -lblas -lg2c
 
-LD        := g++-3.2.3
+LD        := $(CXX)
 LDFLAGS   := -shared -Wl,--soname=$(TARGET)
 LDFLAGS   += -s
 
-BOOSTLIB  := /nfs/atapplic/boost/linux/lib/libboost_python2.3-gcc-mt.a
-BOOSTINC  := -I/usr/local/include/boost
+BOOSTROOT := /usr
+BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python2.3
+BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
-
-PYTHONINC := -I/usr/local/include/python2.3
-PYTHONLIB := -lpython2.3
+PYTHONROOT := /usr
+PYTHONINC := -I$(PYTHONROOT)/include/python2.3
+PYTHONLIB := -L$(PYTHONROOT)/lib -lpython2.3
 
 INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(CASAPPLIB)
