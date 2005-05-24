@@ -8,7 +8,7 @@
 %\usepackage{multido}
 \usepackage[dvips]{graphicx}
 
-\def\complete{yes}
+\def\complete{no}
 
 % Adjust the page size
 \addtolength{\oddsidemargin}{-0.4in}
@@ -303,18 +303,20 @@ The user must be able to specify:
 
 \subrequirement{Colours}{Started}{1}{}
 
+\subrequirement{Line styles}{Not started}{1}{}
+
 \subrequirement{Position of axis ticks}{Done1}{2}{}
 
 \subrequirement{Hard Copies}{Done1}{1}{Producing hard copies
 in postscript and .png format. Other formats may be added on an as
 need basic.}
 
-\subrequirement{Non-interactive hard copiers}{Not started}{1} 
+\subrequirement{Non-interactive hard copies}{Not started}{1} 
 {It must be possible to produce hard copiers without an interactive
 (i.e X11) plotter starting}.
 
-\subrequirement{Sctriptable ploting}{Not started}{1} {All aspects of
-the plotter (zooming etc) must be settable from the command line for
+\subrequirement{Scriptable plotting}{Done1}{1} {All aspects of
+the plotter (zooming etc) must be setable from the command line for
 scripting}
 
 \requirement{Arbitrary plots}{Not started}{3}
@@ -438,17 +440,20 @@ initial values and ranges used for fitting functions etc. The use of
 keyboard ``shortcuts'' or other similar ``power user'' features should
 be available to save the time of experienced users. 
 
+{\em The following requirements are deferred as they require a version
+of Matplotlib not yet available.}
+
 The plotter should be used to set the following values:
 
-\requirement{Interactive channel selection}{Not started}{1}{Range of
+\requirement{Interactive channel selection}{Deferred}{1}{Range of
  spectral channels needed for specific tasks (ie the channel mask)
  (See requirement \reqref{ref:chansel})}
 
-\requirement{Interactive line fitting}{Not started}{1}{Initial
+\requirement{Interactive line fitting}{Deferred}{1}{Initial
 Gaussian parameters (velocity, width, amplitude) for profile
 fitting.}
 
-\requirement{Plotter change fit values}{Not started}{1}
+\requirement{Plotter change fit values}{Deferred}{1}
 {Change the parameter values of existing line profile
 fits, or channel ranges used for baseline fits.}
 
@@ -644,10 +649,6 @@ Gaussian to be added in the future, possible user specified.}
 (e.g. for baseline removal or Gaussian fits) should be retained as an
 integral part of the data and stored permanently on disk.}
 
-\requirement{Export fit parameters}{Not started}{1}
-{It must be possible to export fitting values in an appropriate
-form. (i.e. ASCIIs text format)}
-
 \requirement{Undo subtracted fits}{Not started}{3}
 {It should be possible to ``undo'' functions which have been
 subtracted from the data (e.g. baseline polynomials).}
@@ -735,16 +736,22 @@ disrupt the reference/source sequence.
 
 \requirement{Spectra flagging}{Started}{1}
 {The user must be able to set an entire spectra or part thereof
-(individual polarisation, IF etc) as being invalid. The effected
-channels should either be blanked or interpolated depending on the
-user wishes. When blanked data is plotted, the plotting routine should
-also either interpolate the data on the fly or show a blank in the
-spectrum, depending on the users preferences.}
+(individual polarisation, IF etc) as being invalid.}
 
 \requirement{Channel flagging}{Started}{1}
 {The user must be able to indicate an individual spectral point or
 range of spectral points are invalid. This should be applied to an
 individual spectra, or set of spectra.}
+
+\subrequirement{Flagged channel plotting}{???}{1} {When plotting data
+with flagged spectral channels, the plotting should left a gap (blank)
+in the plotted data|}.
+
+\subrequirement{Flagged channel interpolatin}{Not started}{2} 
+{When plotting or processing data (e.g. quotient spectra), the users
+should be able to request that the values for flagged data are
+obtained by interpolation from good data either side of the flagged
+points.}
 
 \requirement{Plot average flux vs time}{Not started}{3}
 {The user should be able to plot the average spectral flux across the
@@ -894,7 +901,7 @@ circular \& stokes and single, dual \& cross polarisations.}
 {It must be possible to calculate stokes I from single or dual
 polarisation observations.}
 
-\requirement{Average mixed pol data}{Not started}{1}
+\requirement{Average mixed pol data}{Not started}{2}
 {Average a mixture of dual polarisation and single polarisation data
 and form average stokes I (e.g. for a long observation of a source, in
 which one polarisation is missing for some time.}
@@ -973,19 +980,27 @@ disjoint channel ranges. For some tasks (such as baseline subtraction
 and statistical values), the channel range should be retained and be
 available as a plot overlay.}
 
-\requirement{Auto-identify reference spectra}{Not started}{2}
-{When performing sky subtraction on many spectra
-simultaneously, the software should have a mechanism for identifying
-``on'' and ``off'' spectra and automatically selecting the signal and
-quotient spectra. The algorithm needs to cope with on/off/on/off
-sequences as well as off/on/on/off. If an individual quotient spectra
-has been marked as invalid, an alternative should be found. User specified preference such as ``closest in time'' to ``first reference before source'' should be accommodated.}
+\requirement{Auto-identify reference spectra}{Not started}{1}
+{When performing sky subtraction on many spectra simultaneously, the
+software should have a mechanism for identifying ``on'' and ``off''
+spectra and automatically selecting the signal and quotient
+spectra. The algorithm needs to cope with on/off/on/off sequences as
+well as off/on/on/off. If an individual quotient spectra has been
+marked as invalid, an alternative should be found. User specified
+preference such as ``closest in time'' to ``first reference before
+source'' should be accommodated.}
 
-\requirement{Select source via header values}{Started}{1}{The software
-should be able to select sets of sources based on simple regular
-expression type filtering (wild cards) on a range of header
-values. Examples include G309$*$ or G309$*$w to select on source name,
-or NH3$*$ to select on molecule name.}
+\requirement{Select source via header values}{Started}{1}
+{The software should be able to select sets of sources based on simple
+regular expression type filtering (wild cards) on a range of header
+values. }
+
+\subrequirment{Select on source name}{Done1}{1}
+{The use should be able to select dana on source name, e.g G309$*$ or
+G309$*$w}
+
+\subrequirment{Select on molecule}{Done1}{2}
+{The use should be able to select data on molecule name, e.g. NH3$*$.}
 
 \subsection{Plugins}
 
@@ -1157,8 +1172,8 @@ which is used for exporting data, simple mapping output etc. J2000,
 B1950 and Galactic should be supported. The default should be the frame
 in what the data was recorded.}
 
-\requirement{Positional Reference Frame (other type - Malte defn?}{Not
-Started}{2} {Positional frames such as Az-El should be supported.}
+\requirement{Non-conformist Positional Reference Frame}{Not Started}{2} 
+{Non-confirmist positional frames such as Az-El should be supported.}
 
 \subsection{Meta-data}
 
