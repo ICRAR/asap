@@ -299,20 +299,20 @@ GUI and software interface.
 \requirement{High quality plots}{Done1}{}{}{}{}{It must be able to
 produce plots of publishable quality.}
 
-\subrequirement{Histogram plots}{Not started}{1}{}{}{} {As well as line
+\subrequirement{Histogram plots}{Not started}{1}{0.5d}{}{} {As well as line
 plots, there needs to be an option to plot spectra in ``Histogram''
 mode}
 
 
 The user must be able to specify:
 
-\subrequirement{Line Thickness}{Started}{1}{}{}{}{}
+\subrequirement{Line Thickness}{Started}{1}{0.1d}{}{}{}
 
-\subrequirement{Character size}{Not started}{1}{}{}{}{}
+\subrequirement{Character size}{Not started}{1}{0.1d}{}{}{}
 
-\subrequirement{Colours}{Started}{1}{}{}{}{}
+\subrequirement{Colours}{Started}{1}{0.75d}{}{}{}
 
-\subrequirement{Line styles}{Not started}{1}{}{}{}{}
+\subrequirement{Line styles}{Not started}{1}{0.5d}{}{}{}
 
 \subrequirement{Position of axis ticks}{Done1}{2}{}{}{}{}
 
@@ -320,7 +320,7 @@ The user must be able to specify:
 in postscript and .png format. Other formats may be added on an as
 need basic.}
 
-\subrequirement{Non-interactive hard copies}{Not started}{1}{}{}{} 
+\subrequirement{Non-interactive hard copies}{Not started}{1}{2d}{}{} 
 {It must be possible to produce hard copiers without an interactive
 (i.e X11) plotter starting}.
 
@@ -401,7 +401,7 @@ time/velocity of the pixel beneath the cursor.}
 {It should be possible to export the ``waterfall'' plot images as a
 FITs file, for user specific analysis.}
 
-\requirement{Plot line catalog overlays}{Not started}{1}{}{}{} {Line markers overlays,
+\requirement{Plot line catalog overlays}{Not started}{1}{3d}{}{} {Line markers overlays,
 read from a catalogue should be optionally available. This would
 include the full Lovas catalogue, the JPL line catalogue and radio
 recombination lines. The lines would be Doppler corrected to a
@@ -417,7 +417,7 @@ fit). If multiple components (e.g. Gaussian) have been fit, it should
 be possible to show the individual functions or the sum of the
 components}
 
-\requirement{Plot residual data}{Started}{1}{}{}{}
+\requirement{Plot residual data}{Started}{1}{0.5d}{}{}
 {It should be possible to plot the residual data with or without
 subtraction of fit functions. This includes plotting the spectra with
 or without baseline removal and the residual after subtracting
@@ -499,7 +499,7 @@ set of routines to translate these formats to SDFITs would suffice.}
 
 \requirement{Read PSRFITS}{Deferred}{}{}{}{}{PSRFIT for pulsar spectroscopy.}
 
-\requirement{Read online data}{Not started}{1}{}{}{}
+\requirement{Read online data}{Not started}{1}{0.1d}{}{}
 {For online analysis, the software should be able to read an rpfits
 file which is is still currently open for writing by the telescope
 backend processor.}
@@ -524,7 +524,7 @@ postfix.}
 {Simple ASCIIs format, suitable for use with programs such as Perl,
 Python, SuperMongo etc.}
 
-\requirement{Header writing}{Started}{1}{}{}{}
+\requirement{Header writing}{Started}{1}{0d}{}{}
 {The exported data should retain as much header data as possible. It
 should also be possible to request specific data be written in the
 desired form (B1950 coordinates, optical velocity definition etc).}
@@ -534,7 +534,7 @@ desired form (B1950 coordinates, optical velocity definition etc).}
 those which are time dependent) to specific telescopes. See
 $\S$\ref{sec:issues} for a list of currently known issues.}
 
-\requirement{Append output files}{Not started}{1}{}{}{} {It must be possible
+\requirement{Append output files}{Not started}{1}{3d}{}{} {It must be possible
 to append spectra to existing output files, specifically sdfits and
 asap output files.}
 
@@ -630,7 +630,7 @@ give a statistically significant improvement to the fit.}
 {For multiple polarisation data, the individual stokes parameters or
 polarisation products should be fit independently.}
 
-\requirement{Export fit parameters}{Not started}{1}{}{}{}
+\requirement{Export fit parameters}{Not started}{1}{1d}{}{}
 {There should be an easy way of exporting the fit parameter from
 multiple spectra, e.g. as an ASCII table.}
 
@@ -640,7 +640,7 @@ hyperfine components, e.g. the NH$_3$ hyperfine components. (The
 constraints may be either the frequency separation of the individual
 components or the amplitude ratio etc.)}
 
-\subrequirement{Specific constrained fitting}{Not started}{1}{}{}{}
+\subrequirement{Specific constrained fitting}{Not started}{1}{4d}{}{}
 {Before arbitrary constrained fitting is available, support for
 specific cases, such as the NH$_3$ hyperfine transition, should e
 added on a case-by-case basis.}
@@ -667,7 +667,7 @@ integral part of the data and stored permanently on disk.}
 {It should be possible to ``undo'' functions which have been
 subtracted from the data (e.g. baseline polynomials).}
 
-\requirement{Gaussian line area}{Not started}{1}{}{}{} 
+\requirement{Gaussian line area}{Not started}{1}{0.2d}{}{} 
 {Optionally the area under a fitted Gaussian should be calculated for
 the user.}
 
@@ -748,16 +748,16 @@ needs to be able to easily flag individual spectra or channels. This
 may affect other routines such as sky-subtraction, as this will
 disrupt the reference/source sequence.
 
-\requirement{Spectra flagging}{Started}{1}{}{}{}
+\requirement{Spectra flagging}{Started}{1}{1d}{}{}
 {The user must be able to set an entire spectra or part thereof
 (individual polarisation, IF etc) as being invalid.}
 
-\requirement{Channel flagging}{Started}{1}{}{}{}
+\requirement{Channel flagging}{Started}{1}{0.5d}{}{}
 {The user must be able to indicate an individual spectral point or
 range of spectral points are invalid. This should be applied to an
 individual spectra, or set of spectra.}
 
-\subrequirement{Flagged channel plotting}{???}{1}{}{}{} {When plotting data
+\subrequirement{Flagged channel plotting}{Done1}{1}{}{}{} {When plotting data
 with flagged spectral channels, the plotting should left a gap (blank)
 in the plotted data|}.
 
@@ -805,7 +805,7 @@ The spectral manipulations which should be available are:
 {Averaging multiple spectra, with optional weighting based on Tsys,
 integration or rms.}
 
-\subrequirement{Average spectra with velocity shift}{Not started}{1}{}{}{}
+\subrequirement{Average spectra with velocity shift}{Not started}{1}{0.2d}{}{}
 {If the velocity of the spectra to be averaged is different, the data
 should be aligned in velocity. The user should be able to turn this
 feature on or off.}
@@ -869,7 +869,7 @@ the autocorrelation function.}
 spectra. The result should be a standard ``spectra'', which can be
 displayed and analysed using other functions (max, rms etc).}
 
-\requirement{Spectral calculator}{Started}{1}{}{}{}
+\requirement{Spectral calculator}{Started}{1}{?}{}{}
 {Complex experiment specific processing can often be done using a
 series of the simple of basic functions. A spectral calculator options
 should be added to the CLI to perform a series of manipulations on a
@@ -882,16 +882,16 @@ specify specific polarisations or IF would be an implementation and
 interface nightmare. The simplest solution is to allow the data to be
 ``split'' into separate spectra.
 
-\requirement{Slice data}{Not started}{1}{}{}{} {It must be possible to
+\requirement{Slice data}{Not started}{1}{10d}{}{} {It must be possible to
 take multi IF, multibeam or polarisation data and split out the a
 splice of individual spectral portions to form self contained
 spectra.}
 
-\requirement{Slice spectral channels}{Not started}{1}{}{}{} {It must be
+\requirement{Slice spectral channels}{Not started}{1}{0d}{}{} {It must be
 possible to select a range of spectral channels to form self contained
 spectra. The channel selection may be different for different IFs.}
 
-\requirement{Merge scantables}{Not started}{1}{}{}{}
+\requirement{Merge scantables}{Not started}{1}{5d}{}{}
 {It must be possible to append rows from one scantable onto another}
 
 \subsection{Polarimetry}
@@ -906,7 +906,7 @@ stokes parameters with or without solving for leakage terms.
 %\makenote{It is debatable whether stokes I is the sum or average or
 %two dual polarisation measurements.}
 
-\requirement{Support polarimetry}{Started}{1}{}{}{}
+\requirement{Support polarimetry}{Started}{1}{?}{}{}
 {All functions on the data (calibration, sky subtraction spectral
 mathematics) must support arbitrary, multiple polarisation (linear,
 circular \& stokes and single, dual \& cross polarisations.}
@@ -974,12 +974,12 @@ multiple spectra at once (e.g. baselining a sequence of on/off
 observations of the same source which will later be averaged
 together).
 
-\requirement{Spectra selection}{Started}{1}{}{}{}
+\requirement{Spectra selection}{Started}{1}{0d}{}{}
 {The software needs an easy-to-use mechanism to select either
 individual or multiple spectra for viewing, parallel processing
 etc.}
 
-\requirement{Beam/IF selection}{Started}{1}{}{}{}
+\requirement{Beam/IF selection}{Started}{1}{0d}{}{}
 {An easy-to-use mechanism to select individual IFs, beams or
 polarisations is needed.}
 
@@ -994,7 +994,7 @@ disjoint channel ranges. For some tasks (such as baseline subtraction
 and statistical values), the channel range should be retained and be
 available as a plot overlay.}
 
-\requirement{Auto-identify reference spectra}{Not started}{1}{}{}{}
+\requirement{Auto-identify reference spectra}{Not started}{1}{5d+}{}{}
 {When performing sky subtraction on many spectra simultaneously, the
 software should have a mechanism for identifying ``on'' and ``off''
 spectra and automatically selecting the signal and quotient
@@ -1018,7 +1018,7 @@ G309$*$w}
 
 \subsection{Plugins}
 
-\requirement{Plugins}{Started}{1}{}{}{}
+\requirement{Plugins}{Started}{1}{?}{}{}
 {The package should support ``plugins'', user definable
 functions for specific processing. The plugin code must have full
 access (read/write) to the spectra data and headers.}
@@ -1180,7 +1180,7 @@ handled: \setlength{\parindent}{0pt}
 {It should be clear to the user what coordinate frame (velocity,
 position etc) the data is being presented as.}
 
-\requirement{Positional Reference Frame}{Not started}{1}{}{}{} {The user
+\requirement{Positional Reference Frame}{Not started}{1}{0.2d}{}{} {The user
 should be able to specify the reference frame (Epoch,Equinox etc) for
 which is used for exporting data, simple mapping output etc. J2000,
 B1950 and Galactic should be supported. The default should be the frame
@@ -1195,7 +1195,7 @@ A comprehensive set of header data should be read from the input data
 files. In general all meta-data available in the rpfits file should be
 retained. The user may wish to enter some specific values by hand.
 
-\requirement{View and edit header data}{Started}{1}{}{}{}
+\requirement{View and edit header data}{Started}{1}{?}{}{}
 {All header data should be viewable and editable by the user. This
 includes changes such as scaling the given Tsys values.}
 
@@ -1268,17 +1268,17 @@ currently ``active'' rest-frequency.}
 
 \section{Installation}
 
-\requirement{Easy installation}{Started}{1}{}{}{}
+\requirement{Easy installation}{Started}{1}{?}{}{}
 {It must be possible for astronomers to install the software at their
 own institute with either a moderate amount of OS experience or some
 help from the local system administrators. This includes installation
-on a central ``NFS'' server as well as local desk-tops.}
+on a central ``NFS'' server as well as local desktops.}
 
-\requirement{Linux Support}{Started}{1}{}{}{}
+\requirement{Linux Support}{Started}{1}{3d}{}{}
 {The software must run on major flavours of Linux
 (Fedora/Redhat, Debian, etc).}
 
-\subrequirement{Solaris Support}{Started}{1}{}{}{}
+\subrequirement{Solaris Support}{Started}{1}{?}{}{}
 {The software must run on Solaris}
 
 \requirement{Run on laptop}{Done1}{}{}{}{}
@@ -1289,7 +1289,7 @@ laptops and run with no network connection.}
 {It should be relatively easy to upgrade to the latest version of the
 software.}
 
-\requirement{MacOS/X support}{Not started}{1}{}{}{}
+\requirement{MacOS/X support}{Not started}{1}{3+d}{}{}
 {The software should run on MacOS/X}
 
 \requirement{Windows support}{Not started}{3}{}{}{}
