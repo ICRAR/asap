@@ -5,7 +5,7 @@
 \usepackage{smartref}
 \usepackage{longtable}
 
-\def\complete{yes}
+\def\complete{no}
 
 % Adjust the page size
 \addtolength{\oddsidemargin}{-0.4in}
@@ -64,6 +64,9 @@
 %\newcounter{numreq}
 
 \newcommand{\requirement}[7]{
+  \setcounter{subrequirement}{0}
+  \stepcounter{requirement}
+
   \ifthenelse{\equal{\complete}{yes}}
 	     {\dorequirement{#1}{#2}{#3}{#4}{#5}{#6}{#7}}
 	     {\ifthenelse{\equal{#2}{Done1} 
@@ -73,7 +76,20 @@
 	       {\dorequirement{#1}{#2}{#3}{#4}{#5}{#6}{#7}}}
 }
 
+\newcommand{\dorequirement}[7]{
+  \hspace*{2mm}\begin{minipage}{\textwidth-2mm}
+    \setlength{\parindent}{-2mm}
+      {\bf \showreqcounter\ \bf #1} \\ 
+    #7 \\
+    \hspace*{1cm} \status{#2}{#3}
+  \end{minipage}
+
+  \typeout{REQUIREMENT: \showreqcounter & #1 & #2 & #3 & #4 & #5 & #6 :ENDREQ}
+}
+
 \newcommand{\subrequirement}[7]{
+  \stepcounter{subrequirement}
+
   \ifthenelse{\equal{\complete}{yes}}
 	     {\dosubrequirement{#1}{#2}{#3}{#4}{#5}{#6}{#7}}
 	     {\ifthenelse{\equal{#2}{Done1} 
@@ -83,21 +99,17 @@
 	       {\dosubrequirement{#1}{#2}{#3}{#4}{#5}{#6}{#7}}}
 }
 
-
-\newcommand{\dorequirement}[7]{
-
-  \setcounter{subrequirement}{0}
-
+\newcommand{\dosubrequirement}[7]{
   \hspace*{2mm}\begin{minipage}{\textwidth-2mm}
     \setlength{\parindent}{-2mm}
-    \stepcounter{requirement}
-    {\bf \showreqcounter\ \bf #1} \\ 
+    {\bf \showsubreqcounter\ \bf #1} \\ 
     #7 \\
     \hspace*{1cm} \status{#2}{#3}
   \end{minipage}
 
-  \typeout{REQUIREMENT: \showreqcounter & #1 & #2 & #3 & #4 & #5 & #6 :ENDREQ}
+  \typeout{REQUIREMENT: \showsubreqcounter & #1 & #2 & #3  & #4 & #5 & #6 :ENDREQ}
 }
+
 
 \newcommand{\extendedrequirement}[7]{
   \setcounter{subrequirement}{0}
@@ -113,17 +125,6 @@
   \typeout{REQUIREMENT: \showreqcounter & #1 & #2 & #3 & #4 & #5 & #6 :ENDREQ}
 }
 
-\newcommand{\dosubrequirement}[7]{
-  \hspace*{2mm}\begin{minipage}{\textwidth-2mm}
-    \setlength{\parindent}{-2mm}
-    \stepcounter{subrequirement}
-    {\bf \showsubreqcounter\ \bf #1} \\ 
-    #7 \\
-    \hspace*{1cm} \status{#2}{#3}
-  \end{minipage}
-
-  \typeout{REQUIREMENT: \showsubreqcounter & #1 & #2 & #3  & #4 & #5 & #6 :ENDREQ}
-}
 
 \newcommand{\reqeqn}[1]{\\\hspace*{1cm} $#1$}
 
@@ -136,6 +137,10 @@
 \begin{document}
 
 \maketitle
+
+
+%\tableofcontents
+%\newpage
 
 \section{Introduction}
 
@@ -210,7 +215,7 @@ an as-needed basic.
 
 \subsection{Graphical User Interface}
 
-At this stage the ASAP GUI has been deferred to a later date.
+At this stage a general ASAP GUI has been deferred to a later date.
 
 \smallskip
 
@@ -240,6 +245,10 @@ shows the current parameter values (amplitude, velocity etc) for each
 line fitted and allow the user to change these parameters or set the
 current value as fixed. This GUI should stay synchronised with any CLI
 changes to these values.}
+
+\requirement{Mopra online GUI}{Not started}{1}{}{}{} 
+{A simple GUI to do very basic online reduction of Mopra data should
+be available. This should include averaging data, quotient }
 
 \subsection{Command Line Interface}
 
@@ -273,6 +282,10 @@ of data in a routine manner and also to automatically reproduce
 specific plots etc (So the scripting must have full control of the
 plotter). Preferably the scripting ``language'' and the CLI would be
 the same.}
+
+\requirement{Standard scripts}{Not started}{1}{}{}{} {ASAP should come
+with sample scripts which users can use for standard observing modes
+(e.g. standard Mopra observing, Parkes polarimetry etc)}
 
 %\requirement{Scripts from History}{Duplicate}{}{}{}{}{It would be worthwhile
 %having a method to auto-generate scripts (for reduction or plotting)
@@ -339,7 +352,7 @@ scan for plotting (for data thats has not already been scan averaged)}
 grid. It must be possible to easily change the number of plots per
 page, ie define the ``n'' and ``m'' values.}
 
-\subrequirement{Step between plots}{Not started}{1}{}{}{}
+\subrequirement{Step between plots}{Not started}{2}{}{}{}
 {If more spectra than can fit on the plot matrix are to be plotted,
 then it must be possible to step back and forth between the viewable
 spectra (i.e. ``multi-page'' plots). This includes stepping through a
@@ -388,14 +401,14 @@ time/velocity of the pixel beneath the cursor.}
 {It should be possible to export the ``waterfall'' plot images as a
 FITs file, for user specific analysis.}
 
-\requirement{Plot overlays}{Not started}{1}{}{}{} {Line markers overlays,
+\requirement{Plot line catalog overlays}{Not started}{1}{}{}{} {Line markers overlays,
 read from a catalogue should be optionally available. This would
 include the full Lovas catalogue, the JPL line catalogue and radio
 recombination lines. The lines would be Doppler corrected to a
 specified velocity. The user must be able to plot just a sub-section
 of the lines in any specific catalogue (to avoid clutter).}
 
-\subrequirement{Plot overlays}{Not started}{2}{}{}{}
+\subrequirement{Plot user catalog overlays}{Not started}{2}{}{}{}
 {Simple user definable catalogue should be definable for plot overlays}
 
 \requirement{Plot fitted functions}{Done1}{}{}{}{}
@@ -511,7 +524,7 @@ postfix.}
 {Simple ASCIIs format, suitable for use with programs such as Perl,
 Python, SuperMongo etc.}
 
-\requirement{Header Writing}{Not started}{1}{}{}{}
+\requirement{Header writing}{Started}{1}{}{}{}
 {The exported data should retain as much header data as possible. It
 should also be possible to request specific data be written in the
 desired form (B1950 coordinates, optical velocity definition etc).}
@@ -617,15 +630,20 @@ give a statistically significant improvement to the fit.}
 {For multiple polarisation data, the individual stokes parameters or
 polarisation products should be fit independently.}
 
-\requirement{Export fits}{Not started}{1}{}{}{}
+\requirement{Export fit parameters}{Not started}{1}{}{}{}
 {There should be an easy way of exporting the fit parameter from
 multiple spectra, e.g. as an ASCII table.}
 
-\requirement{Constrained fitting}{Not started}{1}{}{}{}
+\requirement{Constrained fitting}{Not started}{2}{}{}{}
 {It should be also possible to do constrained fitting of multiple
 hyperfine components, e.g. the NH$_3$ hyperfine components. (The
 constraints may be either the frequency separation of the individual
 components or the amplitude ratio etc.)}
+
+\subrequirement{Specific constrained fitting}{Not started}{1}{}{}{}
+{Before arbitrary constrained fitting is available, support for
+specific cases, such as the NH$_3$ hyperfine transition, should e
+added on a case-by-case basis.}
 
 \requirement{Edit fits parameters}{Done1}{}{}{}{}
 {It must be possible to alter the line profile fit parameter values by
@@ -743,7 +761,7 @@ individual spectra, or set of spectra.}
 with flagged spectral channels, the plotting should left a gap (blank)
 in the plotted data|}.
 
-\subrequirement{Flagged channel interpolatin}{Not started}{2}{}{}{} 
+\subrequirement{Flagged channel interpolation}{Not started}{2}{}{}{} 
 {When plotting or processing data (e.g. quotient spectra), the users
 should be able to request that the values for flagged data are
 obtained by interpolation from good data either side of the flagged
@@ -864,12 +882,12 @@ specify specific polarisations or IF would be an implementation and
 interface nightmare. The simplest solution is to allow the data to be
 ``split'' into separate spectra.
 
-\requirement{Splice data}{Not started}{1}{}{}{}
-{It must be possible to take multi IF, multibeam or polarisation data
-and split out the individual spectral portions to form self contained
+\requirement{Slice data}{Not started}{1}{}{}{} {It must be possible to
+take multi IF, multibeam or polarisation data and split out the a
+splice of individual spectral portions to form self contained
 spectra.}
 
-\requirement{Splice spectral channels}{Not started}{1}{}{}{} {It must be
+\requirement{Slice spectral channels}{Not started}{1}{}{}{} {It must be
 possible to select a range of spectral channels to form self contained
 spectra. The channel selection may be different for different IFs.}
 
@@ -888,9 +906,9 @@ stokes parameters with or without solving for leakage terms.
 %\makenote{It is debatable whether stokes I is the sum or average or
 %two dual polarisation measurements.}
 
-\requirement{Support polarimetry}{Done1}{}{}{}{}
+\requirement{Support polarimetry}{Started}{1}{}{}{}
 {All functions on the data (calibration, sky subtraction spectral
-mathematics) must support arbitrary, multiple, polarisation (linear,
+mathematics) must support arbitrary, multiple polarisation (linear,
 circular \& stokes and single, dual \& cross polarisations.}
 
 \requirement{Calculate stokes I}{Done1}{}{}{}{}
