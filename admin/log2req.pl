@@ -25,7 +25,7 @@ while ($log =~ /REQUIREMENT:\s*(R.*?):.?E.?N.?D.?R.?E.?Q/sg) {
   s/& Done1 & /& Completed &/;
   s/& Done & /& Completed &/;
 
-  s/(&[^&]*){3}$//;
+  s/(&[^&]*){2}$//;
 
   print "$_ \\\\\n";
 }
