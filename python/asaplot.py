@@ -20,9 +20,6 @@ from matplotlib import rc, rcParams
 # Force use of the newfangled toolbar.
 matplotlib.rcParams['toolbar'] = 'toolbar2'
 
-# Colour dictionary.
-colours = {}
-
 class ASAPlot:
     """
     ASAP plotting class based on matplotlib.
@@ -62,7 +59,8 @@ class ASAPlot:
 
 
 	# Set matplotlib default colour sequence.
-	self.colours = [1, 'b', 'g', 'r', 'c', 'm', 'y', 'k']
+	self.colormap = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'orange', 'pink']
+        self.color = 0;
 	self.attributes = {}
 	self.loc = 0
 
@@ -77,12 +75,18 @@ class ASAPlot:
 	Delete all lines from the plot.  Line numbering will restart from 1.
 	"""
 
-	for i in range(1,len(self.lines)+1):
+	for i in range(len(self.lines)):
 	   self.delete(i)
 	self.axes.clear()
-	self.colours[0] = 1
+	self.color = 0
 	self.lines = []
 
+
+    def palette(self, color, colormap=None):
+        if colormap:
+            self.colormap = colormap
+        if 0 <= color < len(self.colormap):
+            self.color = color
 
     def delete(self, numbers=None):
 	"""
@@ -178,52 +182,6 @@ class ASAPlot:
 	self.window.lift()
 
 
-    def palette(self, pen=None, colours=None):
-	"""
-	Redefine the colour sequence.
-
-	pen is the pen number to use for the next plot; this will be auto-
-	incremented.
-
-	colours is the list of pen colours.  Colour may be specified via
-	the single letter values understood by matplotlib:
-
-	    b: blue
-	    g: green
-	    r: red
-	    c: cyan
-	    m: magenta
-	    y: yellow
-	    k: black
-	    w: white
-
-	or via the full name as listed in the colour dictionary which is
-	loaded by default by load_colours() from rgb.txt and listed by
-	list_colours().
-	"""
-
-	if pen is None and colours is None:
-	    self.colours = []
-	    return
-
-	if pen is None:
-	    if not len(self.colours):
-		self.colours = [1]
-	else:
-	    self.colours[0] = pen
-
-	if colours is None:
-	    return
-
-	cols = []
-	for col in colours:
-	    cols.append(get_colour(col))
-
-	self.colours[1:] = cols
-
-	if 0 > self.colours[0] > len(self.colours):
-	    self.colours[0] = 1
-
 
     def plot(self, x=None, y=None, mask=None, fmt=None, add=None):
 	"""
@@ -282,13 +240,13 @@ class ASAPlot:
 	    for segment in self.lines[i]:
 		getattr(segment, "set_%s"%k)(v)
 
-	if not gotcolour and len(self.colours):
+	if not gotcolour and len(self.colormap):
 	    for segment in self.lines[i]:
-		getattr(segment, "set_color")(self.colours[self.colours[0]])
+		getattr(segment, "set_color")(self.colormap[self.color])
 
-	    self.colours[0] += 1
-	    if self.colours[0] >= len(self.colours):
-		self.colours[0] = 1
+	    self.color += 1
+	    if self.color >= len(self.colormap):
+		self.color = 0
 
 	self.show()
 
@@ -463,13 +421,10 @@ class ASAPlot:
 	if what[-6:] == 'colour': what = what[:-6] + 'color'
 
 	newargs = {}
+        
 	for k, v in kwargs.iteritems():
 	    k = k.lower()
 	    if k == 'colour': k = 'color'
-
-	    if k == 'color':
-		v = get_colour(v)
-
 	    newargs[k] = v
 
 	getattr(self.axes, "set_%s"%what)(*args, **newargs)
@@ -485,17 +440,13 @@ class ASAPlot:
 
 	if what is None: return
 	if what[-6:] == 'colour': what = what[:-6] + 'color'
-	if what[-5:] == 'color' and len(args):
-	    args = (get_colour(args[0]),)
+	#if what[-5:] == 'color' and len(args):
+	#    args = (get_colour(args[0]),)
 
 	newargs = {}
 	for k, v in kwargs.iteritems():
 	    k = k.lower()
 	    if k == 'colour': k = 'color'
-
-	    if k == 'color':
-		v = get_colour(v)
-
 	    newargs[k] = v
 
 	getattr(self.figure, "set_%s"%what)(*args, **newargs)
@@ -554,9 +505,6 @@ class ASAPlot:
 	for k, v in kwargs.iteritems():
 	    k = k.lower()
 	    if k == 'colour': k = 'color'
-
-	    if k == 'color':
-		v = get_colour(v)
 
 	    if 0 <= number < len(self.lines):
 		if self.lines[number] is not None:
@@ -742,64 +690,3 @@ class ASAPlot:
 	Hide the ASAPlot graphics window.
 	"""
 	self.window.wm_withdraw()
-
-
-def get_colour(colour='black'):
-    """
-    Look up a colour by name in the colour dictionary.  Matches are
-    case-insensitive, insensitive to blanks, and 'gray' matches 'grey'.
-    """
-
-    if colour is None: return None
-
-    if match('[rgbcmykw]$', colour): return colour
-    if match('#[\da-fA-F]{6}$', colour): return colour
-
-    if len(colours) == 0: load_colours()
-
-    # Try a quick match.
-    if colours.has_key(colour): return colours[colour]
-
-    colour = colour.replace(' ','').lower()
-    colour = colour.replace('gray','grey')
-    for name in colours.keys():
-	if name.lower() == colour:
-	    return colours[name]
-
-    return '#000000'
-
-
-def list_colours():
-    """
-    List the contents of the colour dictionary sorted by name.
-    """
-
-    if len(colours) == 0: load_colours()
-
-    names = colours.keys()
-    names.sort()
-    for name in names:
-	print colours[name], name
-
-
-def load_colours(filename='/usr/local/lib/rgb.txt'):
-    """
-    Load the colour dictionary from the specified file.
-    """
-    print 'Loading colour dictionary from', filename
-    from os.path import expandvars
-    filename = expandvars(filename)
-    rgb = open(filename, 'r')
-
-    while True:
-	line = rgb.readline()
-	if line == '': break
-	tmp = line.split()
-
-	if len(tmp) == 4:
-	    if tmp[3][:4] == 'gray': continue
-	    if tmp[3].lower().find('gray') != -1: continue
-
-	    name = tmp[3][0].upper() + tmp[3][1:]
-	    r, g, b = int(tmp[0]), int(tmp[1]), int(tmp[2])
-	    colours[name] = '#%2.2x%2.2x%2.2x' % (r, g, b)

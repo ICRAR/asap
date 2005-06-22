@@ -120,11 +120,11 @@ class asapplotter:
         else:
             self._plotter.set_panels()
         rows = self._cursor["t"]
-        self._plotter.palette(1)
+        self._plotter.palette(0)
         for rowsel in rows:
             i = self._cursor["t"].index(rowsel)
             if n > 1:
-                self._plotter.palette(1)
+                self._plotter.palette(0)
                 self._plotter.subplot(i)
             colvals = eval(cdict2.get(colmode))
             for j in colvals:
@@ -213,10 +213,9 @@ class asapplotter:
             self._plotter.set_panels()
 
         for scan in scans:
-            self._plotter.palette(1)
+            self._plotter.palette(0)
             if n > 1:
                 self._plotter.subplot(scans.index(scan))
-                self._plotter.palette(1)
             colvals = eval(cdict2.get(colmode))
             rowsel = self._cursor["t"][0]
             for j in colvals:
@@ -301,7 +300,7 @@ class asapplotter:
             self._plotter.set_panels()            
         panels = self._cursor[self._panelling]        
         for i in panels:
-            self._plotter.palette(1)
+            self._plotter.palette(0)
             polmode = "raw"
             ii = self._cursor[self._panelling].index(i)
             if n>1:
@@ -359,8 +358,11 @@ class asapplotter:
                 if colmode == 's' or colmode == 't':
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
-                    else:                        
-                        tlab = self._ldict.get(self._panelling)+' '+str(i)
+                    else:
+                        if self._panelling == 'p':
+                            tlab = self._get_pollabel(scan, polmode)
+                        else:
+                            tlab = self._ldict.get(self._panelling)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[jj]
                     else:
@@ -511,7 +513,7 @@ class asapplotter:
         if self._data: self.plot()
         return
 
-    def save(self, filename=None):
+    def save(self, filename=None, orientation='landscape'):
         """
         Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
         Parameters:
@@ -520,8 +522,10 @@ class asapplotter:
                           suffix. If non filename is specified a file
                           called 'yyyymmdd_hhmmss.png' is created in the
                           current directory.
+             orientation: optional parameter for postscript. 'landscape'
+                          (default) and 'portrait' are valid.
         """
-        self._plotter.save(filename)
+        self._plotter.save(filename,orientation)
         return
     
     def set_cursor(self, row=None,beam=None,IF=None,pol=None, refresh=True):
@@ -613,7 +617,7 @@ class asapplotter:
                         pols.append(dcirc.get(i))
                         polmode.append("circular")
                     else:
-                        "Pol type '%s' not valid" %i
+                        print "Pol type '%s' not valid" %i
                         return
                 elif 0 > i >= n:
                     print "Pol index '%d' out of range" %i

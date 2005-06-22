@@ -330,7 +330,7 @@ class fitter:
             self._p = ASAPlot()
         self._p.clear()
         self._p.set_panels()
-        self._p.palette(1)
+        self._p.palette(0)
         tlab = 'Spectrum'
         xlab = 'Abcissa'        
         m = ()
@@ -341,32 +341,32 @@ class fitter:
             ylab = self.data._get_ordinate_label()
 
         colours = ["grey60","grey80","red","orange","purple","green","magenta", "cyan"]
-        self._p.palette(1,colours)
+        self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
         self._p.plot(self.x, self.y, m)
         if residual:
-            self._p.palette(2)
+            self._p.palette(1)
             self._p.set_line(label='Residual')
             self._p.plot(self.x, self.get_residual(), m)
-        self._p.palette(3)
+        self._p.palette(2)
         if components is not None:
             cs = components
             if isinstance(components,int): cs = [components]
             if plotparms:
                 self._p.text(0.15,0.15,str(self.get_parameters()[2]),size=8)
             n = len(self.components)
-            self._p.palette(4)
+            self._p.palette(3)
             for c in cs:
                 if 0 <= c < n:
                     lab = self.fitfuncs[c]+str(c)
                     self._p.set_line(label=lab)
                     self._p.plot(self.x, self.fitter.evaluate(c), m)
                 elif c == -1:
-                    self._p.palette(3)
+                    self._p.palette(2)
                     self._p.set_line(label="Total Fit")
                     self._p.plot(self.x, self.get_fit(), m)                    
         else:
-            self._p.palette(3)
+            self._p.palette(2)
             self._p.set_line(label='Fit')
             self._p.plot(self.x, self.get_fit(), m)
         self._p.set_axes('xlabel',xlab)
