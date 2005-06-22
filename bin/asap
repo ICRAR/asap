@@ -46,9 +46,10 @@ fi
 # at the moment we need AIPS++ for measures tables and endian detection
 if [ "${AIPSPATH}" == "" ]; then
     aroot='/nfs/aips++'
-    ASAPDATA='/usr/local/share/asap/data'
+    ASAPDATA='/usr/local/share/asap'
     if test -d ${ASAPDATA} ; then
 	AIPSPATH="${ASAPDATA} linux_gnu somewhere localhost"	
+	export AIPSPATH
     elif test -d ${aroot}/weekly ; then
 	. ${aroot}/weekly/aipsinit.sh
     elif  test -d ${aroot}/daily ; then
