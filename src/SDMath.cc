@@ -45,7 +45,6 @@
 #include <casa/Arrays/MaskArrLogi.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/BasicMath/Math.h>
-#include <casa/Containers/Block.h>
 #include <casa/Exceptions.h>
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/Unit.h>
@@ -138,7 +137,7 @@ SDMemTable* SDMath::frequencyAlignment(const SDMemTable& in,
 
 
 
-CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
+CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> >& in,
 				       const Vector<Bool>& mask, Bool scanAv,
 				       const String& weightStr, Bool alignFreq) const
 //
@@ -154,8 +153,8 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // Create output Table by cloning from the first table
 
   SDMemTable* pTabOut = new SDMemTable(*in[0],True);
-  if (in.nelements() > 1) {
-    for (uInt i=1; i < in.nelements(); ++i) {
+  if (in.size() > 1) {
+    for (uInt i=1; i < in.size(); ++i) {
       pTabOut->appendToHistoryTable(in[i]->getHistoryTable());
     }
   }
@@ -251,7 +250,7 @@ CountedPtr<SDMemTable> SDMath::average(const Block<CountedPtr<SDMemTable> >& in,
 // Loop over tables
 
   Float fac = 1.0;
-  const uInt nTables = in.nelements();
+  const uInt nTables = in.size();
   for (uInt iTab=0; iTab<nTables; iTab++) {
 
 // Should check that the frequency tables don't change if doing FreqAlignment
@@ -1772,7 +1771,7 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
                         Array<Float>& tSysSqSum,
 			const Array<Float>& tSys, const Array<Float>& nInc, 
 			const Vector<Bool>& mask, Double time, Double interval,
-			const Block<CountedPtr<SDMemTable> >& in,
+			const std::vector<CountedPtr<SDMemTable> >& in,
 			uInt iTab, uInt iRow, uInt axis, 
 			uInt nAxesSub, Bool useMask,
 			WeightType wtType) const

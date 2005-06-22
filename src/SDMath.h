@@ -77,11 +77,12 @@ class SDMath {
                                                casa::Bool tSys) const;
 
 // Average in time
-   casa::CountedPtr<SDMemTable>  average(const casa::Block<casa::CountedPtr<SDMemTable> >& in,
-                                         const casa::Vector<casa::Bool>& mask,
-                                         casa::Bool scanAverage, 
-                                         const casa::String& weightStr,
-                                         casa::Bool align=casa::False) const;
+   casa::CountedPtr<SDMemTable> 
+   average(const std::vector<casa::CountedPtr<SDMemTable> >& in,
+	   const casa::Vector<casa::Bool>& mask,
+	   casa::Bool scanAverage, 
+	   const casa::String& weightStr,
+	   casa::Bool align=casa::False) const;
 
 // Statistics. If row<0, all rows are done otherwise, just the 
 // specified row.
@@ -139,15 +140,21 @@ class SDMath {
 
 // Function to use accumulate data during time averaging
 
-  void accumulate (casa::Double& timeSum, casa::Double& intSum, casa::Int& nAccum,
-                   casa::MaskedArray<casa::Float>& sum, casa::Array<casa::Float>& sumSq,
-                   casa::Array<casa::Float>& nPts, casa::Array<casa::Float>& tSysSum,
-		   casa::Array<casa::Float>& tSysSqSum,
-                   const casa::Array<casa::Float>& tSys,  const casa::Array<casa::Float>& nInc,
-                   const casa::Vector<casa::Bool>& mask, casa::Double time, casa::Double interval,
-                   const casa::Block<casa::CountedPtr<SDMemTable> >& in,
-                   casa::uInt iTab, casa::uInt iRow, casa::uInt axis, casa::uInt nAxesSub,
-                   casa::Bool useMask, WeightType wtType) const;
+  void accumulate(casa::Double& timeSum, casa::Double& intSum, 
+		  casa::Int& nAccum,
+		  casa::MaskedArray<casa::Float>& sum, 
+		  casa::Array<casa::Float>& sumSq,
+		  casa::Array<casa::Float>& nPts, 
+		  casa::Array<casa::Float>& tSysSum,
+		  casa::Array<casa::Float>& tSysSqSum,
+		  const casa::Array<casa::Float>& tSys,  
+		  const casa::Array<casa::Float>& nInc,
+		  const casa::Vector<casa::Bool>& mask, 
+		  casa::Double time, casa::Double interval,
+		  const std::vector<casa::CountedPtr<SDMemTable> >& in,
+		  casa::uInt iTab, casa::uInt iRow, 
+		  casa::uInt axis, casa::uInt nAxesSub,
+		  casa::Bool useMask, WeightType wtType) const;
 
 // Work out conversion factor for converting Jy<->K per IF per row and apply
    void convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in, 
@@ -200,7 +207,8 @@ class SDMath {
    SDMemTable* frequencyAlign (const SDMemTable& in,
                               casa::MFrequency::Types system,
                               const casa::String& timeRef,
-                              const casa::String& method, casa::Bool perIF) const;
+                              const casa::String& method, 
+			       casa::Bool perIF) const;
 
 // Generate frequency aligners
    void generateFrequencyAligners (casa::PtrBlock<casa::FrequencyAligner<casa::Float>* >& a,
@@ -208,7 +216,8 @@ class SDMath {
                                    const SDMemTable& in, casa::uInt nChan,
                                    casa::MFrequency::Types system,
                                    const casa::MPosition& refPos,
-                                   const casa::MEpoch& refEpoch, casa::Bool perFreqID) const;
+                                   const casa::MEpoch& refEpoch, 
+				   casa::Bool perFreqID) const;
 
 // Generate data description table (combines source and freqID)
    void generateDataDescTable (casa::Matrix<casa::uInt>& ddIdx,

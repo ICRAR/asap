@@ -29,6 +29,7 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
+#include <vector>
 
 #include <casa/aips.h>
 #include <casa/Containers/Block.h>
@@ -48,14 +49,15 @@ namespace asap {
                                              const std::string& weightStr) {
       int n;
       n = extract<int>(tp.attr("__len__")());
-      Block<CountedPtr<asap::SDMemTable> > b(n);
+      std::vector<CountedPtr<asap::SDMemTable> > b(n);
+      //Block<CountedPtr<asap::SDMemTable> > b(n);
       for (int i=0;i< n;++i) {
         SDMemTableWrapper sdmw =
           extract<SDMemTableWrapper>( tp.attr("__getitem__")(i) );
         b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
-//
+      //
       SDMath sdm;
       return SDMemTableWrapper(sdm.average(b, msk, Bool(scanAv), weightStr));
     };
@@ -64,7 +66,7 @@ namespace asap {
   namespace python {
     void python_SDMath() {
       def("b_operate", &SDMathWrapper::binaryOperate);
-//
+      //
       def("quotient", &SDMathWrapper::quotient);
 //
       def("scale", &SDMathWrapper::scale);
