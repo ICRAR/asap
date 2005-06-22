@@ -6,39 +6,43 @@ CXXFLAGS := -O3 -fPIC
 CXXFLAGS += -ansi
 CXXFLAGS += -pedantic -Wno-long-long
 
-CFITSIOROOT := /usr
-# If aips++ is build with LFS
+CFITSIOROOT := /usr/local If aips++ is build with LFS you need to have
+# libcfitsio with lfs support
 # CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a
 CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
 CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
 
 CASAROOT  := $(word 1, $(AIPSPATH))
+CASAARCH  := $(word 2, $(AIPSPATH))
 CASAINC   := -I$(CASAROOT)/code/include
-CASALIB   := $(CASAROOT)/linux_gnu/lib
+CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
+# This assumes all casa libs are static only (*.a)
+# if not than there might by symbol resolution errors.
 CASAPPLIB := $(CASALIB)/version.o \
-             -L$(CASALIB) \
+             -L$(CASALIB) -static \
 	     -latnf -limages -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
-	     -ltables -lscimath -lscimath_f -lcasa \
-              $(CASALIB)/libwcs.a \
-             -lrpfits $(CFITSIOLIB) -llapack -lblas -lg2c
+	     -ltables -lscimath -lscimath_f -lcasa -lwcs \
+	      -lrpfits $(CFITSIOLIB) -dy -llapack -lblas -lg2c
 
 LD        := $(CXX)
-LDFLAGS   := -shared -Wl,--soname=$(TARGET)
-LDFLAGS   += -s
+LDFLAGS   := -shared -Wl$(TARGET) -s
+
+PYVERSION := 2.3
+PYTHONROOT := /usr
+PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
+PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION) 
+
 
 BOOSTROOT := /usr
-BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python2.3
+BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python$(PYVERSION)
 BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
-PYTHONROOT := /usr
-PYTHONINC := -I$(PYTHONROOT)/include/python2.3
-PYTHONLIB := -L$(PYTHONROOT)/lib -lpython2.3
 
 INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
-LIBS      := $(BOOSTLIB) $(PYTHONLIB) $(CASAPPLIB)
+LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
-OBJECTS   := MathUtils.o \
+CCOBJECTS := MathUtils.o \
              MathUtils2.o \
              SDAttr.o \
              SDContainer.o \
@@ -54,8 +58,8 @@ OBJECTS   := MathUtils.o \
              SDMathWrapper.o \
              SDFITSImageWriter.o \
              SDAsciiWriter.o \
-	     SDLineFinder.o \
-             python_SDMemTable.o \
+	     SDLineFinder.o 
+PYOBJECTS := python_SDMemTable.o \
              python_SDReader.o \
              python_SDWriter.o \
              python_SDMath.o \
@@ -64,6 +68,7 @@ OBJECTS   := MathUtils.o \
 	     python_SDLineFinder.o \
              python_SD.o
 
+OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 
 HEADERS   := SDDefs.h \
              SDAttr.h \
@@ -84,6 +89,8 @@ HEADERS   := SDDefs.h \
 	     SDLineFinder.h \
              python_SD.h
 
+STATICCCLIB := libasap.a
+MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
 
@@ -117,6 +124,8 @@ $(TARGET) : $(OBJECTS)
 	   $(LD) $(LDFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
+
+staticlib: $(MEMBERS)
 
 clean :
 	-rm -f $(OBJECTS)
