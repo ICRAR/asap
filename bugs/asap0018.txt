@@ -1,0 +1,14 @@
+asap0018
+========
+
+Bug: Missing template when buit against latest aips++
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+
+
+The template for 
+void Array<std::complex<float> >::reference(const Array<std::complex<float> >&)
+is missing from SDTemplates.cc
+
+Also, the footprint for median has changed.

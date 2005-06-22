@@ -1,0 +1,14 @@
+asap0007
+========
+
+enhancement/bugs from session with Malte on Mopra data
+
+From: 
+Juergen Ott <Juergen.Ott@atnf.csiro.au>
+
+
+To: 
+<asap@atnf.csiro.au>
+
+help in average_pol has scantable argument
+

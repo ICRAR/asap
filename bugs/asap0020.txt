@@ -1,0 +1,12 @@
+asap0020
+========
+Date: Sun, 8 May 2005 09:42:07 +1000 (EST)
+From: Malte Marquarding <Malte.Marquarding@atnf.csiro.au>
+To: asap@atnf.csiro.au
+Subject: Bug: SFITS written with asap is not read back in correctly by
+asap
+
+The scantable is corrupted and shows an extra row.
+ 
+
+

@@ -1,0 +1,14 @@
+asap0011
+========
+
+enhancement/bugs from session with Malte on Mopra data
+
+From: 
+Juergen Ott <Juergen.Ott@atnf.csiro.au>
+
+
+To: 
+<asap@atnf.csiro.au>
+
+
+plotter: if multipanel y-axis is not labelled

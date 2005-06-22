@@ -1,0 +1,12 @@
+asap0002
+========
+Bug: list_scans list ipython variables
+
+From: 
+Malte Marquarding <Malte.Marquarding@atnf.csiro.au>
+
+
+Date: 
+Today 09:55:42
+
+Filter out all _* vars.

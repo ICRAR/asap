@@ -1,0 +1,17 @@
+asap0005
+========
+Bug: scantable.poly_baseline doesn't work
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+
+
+To: 
+asap@atnf.csiro.au
+
+
+Date: 
+Yesterday 15:16:10
+
+A simple paste error in the source code.
+There is some non-sensicla text pasted in right after the closing """

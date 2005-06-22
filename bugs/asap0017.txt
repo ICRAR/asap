@@ -1,0 +1,8 @@
+asap0017
+========
+
+Bug: Fitter crashes during fit when set_function(gauss=n) was called with different n's
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+

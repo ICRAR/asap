@@ -1,0 +1,7 @@
+asap0016 - CLOSED
+========
+Bug: plotter.set_legend doesn't work when "time" is selected
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+

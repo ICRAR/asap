@@ -1,0 +1,7 @@
+asap0015
+========
+Bug: plotter doesn't plot more than 9 panels even when cursor is set
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+

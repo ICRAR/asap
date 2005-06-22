@@ -1,0 +1,18 @@
+asap0014
+========
+Bug: Plotter takes a long time to replot on set_mode
+
+From: 
+Malte Marquarding <Malte.Marquarding@csiro.au>  (ATNF)
+
+
+To: 
+asap@atnf.csiro.au
+
+
+Date: 
+Today 13:27:23
+
+the last panel seems to be refreshing rather than being on "hold" and 
+"release"
+
