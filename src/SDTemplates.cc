@@ -32,12 +32,10 @@
 
 #include <casa/aips.h>
 #include <casa/namespace.h>
-#include <casa/Containers/Block.h>
 #include <casa/Exceptions/Error.cc>
 #include <casa/Exceptions/Error2.cc>
 #include <casa/Utilities/CountedPtr.cc>
 #include <casa/Utilities/CountedPtr2.cc>
-#include <casa/Utilities/Copy.cc>
 
 namespace asap {
   template class casa::CountedConstPtr<SDMemTable>;
@@ -45,12 +43,7 @@ namespace asap {
   template class casa::PtrRep<SDMemTable>;
   template class casa::SimpleCountedConstPtr<SDMemTable>;
   template class casa::SimpleCountedPtr<SDMemTable>;
-  template class casa::Block<CountedPtr<SDMemTable> >;
 }
-
-template void objcopy<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable> const *, uInt);
-template void objmove<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable> const *, uInt);
-template void objset<CountedPtr<asap::SDMemTable> >(CountedPtr<asap::SDMemTable> *, CountedPtr<asap::SDMemTable>, uInt);
 
 #include <casa/Arrays/ArrayLogical.cc>
 #include <casa/Arrays/ArrayMath.cc>
@@ -126,6 +119,6 @@ namespace mathutil {
 				   const Int& initVal);
 }
 template Array<Bool> SDPolUtil::stokesData (Array<Bool>& dataIn, Bool);
-template Array<Float> SDPolUtil::computeStokesDataForWriter (Array<Float>& dataIn, Bool);
-template Array<uChar> SDPolUtil::computeStokesDataForWriter (Array<uChar>& dataIn, Bool);
+template Array<Float> SDPolUtil::computeStokesDataForWriter(Array<Float>& dataIn, Bool);
+template Array<uChar> SDPolUtil::computeStokesDataForWriter(Array<uChar>& dataIn, Bool);
 
