@@ -379,7 +379,7 @@ class ASAPlot:
 	self.show()
 
 
-    def save(self, fname=None):
+    def save(self, fname=None, orientation='landscape'):
 	"""
 	Save the plot to a file.
 
@@ -400,7 +400,7 @@ class ASAPlot:
 
 	if fname[-3:].lower() in d:
 	    try:
-		self.canvas.print_figure(fname)
+		self.canvas.print_figure(fname,orientation=orientation)
 		print 'Written file %s' % (fname)
 	    except IOError, msg:
 		print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)

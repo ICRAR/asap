@@ -21,7 +21,6 @@ def average_time(*args, **kwargs):
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
         scanav = average_time(scan, scanav=True)
-
     """
     scanAv = False
     if kwargs.has_key('scanav'):
@@ -33,7 +32,13 @@ def average_time(*args, **kwargs):
     if kwargs.has_key('mask'):
         mask = kwargs.get('mask')
     varlist = vars()
-    lst = tuple(args)
+    if isinstance(args[0],list):
+        lst = tuple(args[0])
+    elif isinstance(args[0],tuple):
+        lst = args[0]
+    else:
+        lst = tuple(args)
+        
     del varlist["kwargs"]
     varlist["args"] = "%d scantables" % len(lst)
     # need special formatting her for history...

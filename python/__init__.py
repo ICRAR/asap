@@ -232,7 +232,7 @@ if rcParams['useplotter']:
 
 
 __date__ = '$Date$'.split()[1]
-__version__  = '1.0'
+__version__  = '1.1'
 
 def list_scans(t = scantable):
     import sys, types
