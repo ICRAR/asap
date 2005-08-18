@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<?php include("base.inc"); ?>
+<title>ASAP - ATNF Spectral line Analysis Package</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="DC.Creator" lang="en" content="personalName=Marquarding,Malte" />
+<meta name="ATNF.Maintainer" content="contactName=Marquarding,Malte" />
+<meta name="DC.Title" lang="en" content="Homepage of Malte Marquarding" />
+<meta name="DC.Title.alt" lang="en" content="" />
+<meta name="DC.Subject" lang="en" content="spectral line" />
+<meta name="DC.Description" lang="en"
+content="Just some links and conatact details" />
+<meta name="DC.Date.created" scheme="ISO8601" content="2004-11-12" />
+<meta name="ATNF.Site" content="Marsfield" />
+<meta name="ATNF.AccessPermission" content="Public" />
+<meta name="ATNF.MetaVersion" content="1.0" />
+<?php standard_head(); ?>
+<STYLE TYPE="text/css">
+<!--
+B.asap {
+ text-align: center;
+ color: blue;
+}
+B.note {
+ color: red;
+}
+-->
+</STYLE>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<?php
+title_bar("atnf");
+?>
+<!-- Start Content -->
+<h1>ASAP Homepage</h1>
+<div align="center">
+<img src="images/asap.png">
+</div>
+<h2>Introduction</h2>
+The <b class='asap'>A</b>TNF <b class='asap'>S</b>pectral <b
+class='asap'>A</b>nalysis <b class='asap'>P</b>ackage is a new
+software package to reduce <em>single-dish, single-pointing spectral
+line observations</em>. At this stage it is tuned towards data from
+ATNF instruments and reads/writes <em>rpfits, sdfits and ms</em> data.
+A release 1.1 of ASAP is available on linux systems at ATNF
+<a href="intro.html">more...<a>
+
+<h2>Screenshots</h2>
+<a href="screenshots.html">Here</a> are some example plots.
+
+<h2>How to run</h2>
+To get started, simply type "asap" at the *nix command line prompt.
+<pre style="color: blue">
+Loading ASAP...
+Initialising plotter...
+Welcome to ASAP v1.1 (2005/06/22) - the ATNF Spectral Analysis Package
+
+Please report any bugs to:
+asap@atnf.csiro.au
+
+[NOTE: ASAP is 0-based]
+Type commands() to get a list of all available ASAP commands.
+
+ASAP>
+</pre>
+
+<h2>Documentation</h2>
+ASAP has a cookbook for general use, and a reference manual for people
+who want to write scripts to reduce and analyse their data.
+<ul>
+  <li> List of commands <a href="commands.html">(html)</a> </li>
+  <li> Cookbook  <a href="cookbook/">(html)</a> or Cookbook <a href="cookbook.pdf">(pdf)</a></li>
+  <li> Reference manual <a href="refman/">(html)</a> <a href="refman.pdf">(pdf)</a></li>
+  <li><a href="tutorials/">Tutorials</a></li>
+</ul>
+<p>
+More detailed help is available via the <b>help</b> function.
+<p>
+
+<h2>Download</h2>
+
+<ul>
+  <li> The current release source code snapshot <a
+      href="ftp://ftp.atnf.csiro.au/pub/software/asap/asap20050622src.tar.gz">asap source</a> </li>
+  <li> A binary tar archive <a
+      href=ftp://ftp.atnf.csiro.au/pub/software/asap/asap_linux.tar.bz2>linux binary</a>.
+      You will need to have the following libraries:<br>
+      gcc-3.3, blas, lapack, g2c, boost_python and of course
+      python2.3.<br>
+      The matplotlib python module has to be installed too.      
+  </li>
+  <li>For Mac OSX 10.4 follow <a href="./osx.html">these instructions.</a>
+</ul>
+<p>
+
+<h2>Important</h2>
+ASAP is 0-based, i.e. all ranges (vectors) go from
+0..n-1, if n is the number of elements.
+<br>
+<!-- End Content -->
+<?php footer(); ?>
+</body>
+</html>

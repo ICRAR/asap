@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<?php include("base.inc"); ?>
+<title>ASAP - ATNF Spectral line Analysis Package</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="DC.Creator" lang="en" content="personalName=Marquarding,Malte" />
+<meta name="ATNF.Maintainer" content="contactName=Marquarding,Malte" />
+<meta name="DC.Title" lang="en" content="Homepage of Malte Marquarding" />
+<meta name="DC.Title.alt" lang="en" content="" />
+<meta name="DC.Subject" lang="en" content="spectral line" />
+<meta name="DC.Description" lang="en"
+content="Just some links and conatact details" />
+<meta name="DC.Date.created" scheme="ISO8601" content="2004-11-12" />
+<meta name="ATNF.Site" content="Marsfield" />
+<meta name="ATNF.AccessPermission" content="Public" />
+<meta name="ATNF.MetaVersion" content="1.0" />
+<?php standard_head(); ?>
+<STYLE TYPE="text/css">
+<!--
+B.asap {
+ text-align: center;
+ color: blue;
+}
+B.note {
+ color: red;
+}
+PRE.commands {
+ color: blue;
+ font-size: smaller;
+}
+-->
+</STYLE>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<?php
+title_bar("atnf");
+title_crumbs("/computing/software/");
+?>
+<!-- Start Content -->
+<h1><a href="index.html">ASAP</a> 'commands'</h1>
+<pre class="commands">
+ASAP> commands()
+
+    [The scan container]
+        scantable           - a container for integrations/scans
+                              (can open asap/rpfits/sdfits and ms files)
+            copy            - returns a copy of a scan
+            get_scan        - gets a specific scan out of a scantable
+            summary         - print info about the scantable contents
+            set_cursor      - set a specific Beam/IF/Pol 'cursor' for
+                              further use
+            get_cursor      - print out the current cursor position
+            stats           - get specified statistic of the spectra in
+                              the scantable
+            stddev          - get the standard deviation of the spectra
+                              in the scantable
+            get_tsys        - get the TSys
+            get_time        - get the timestamps of the integrations
+            get_unit        - get the currnt unit
+            set_unit        - set the abcissa unit to be used from this
+                              point on
+            get_abcissa     - get the abcissa values and name for a given
+                              row (time)
+            set_freqframe   - set the frame info for the Spectral Axis
+                              (e.g. 'LSRK')
+            set_doppler     - set the doppler to be used from this point on
+            set_instrument  - set the instrument name
+            get_fluxunit    - get the brightness flux unit
+            set_fluxunit    - set the brightness flux unit
+            create_mask     - return an mask in the current unit
+                              for the given region. The specified regions
+                              are NOT masked
+            get_restfreqs   - get the current list of rest frequencies
+            set_restfreqs   - set a list of rest frequencies
+            lines           - print list of known spectral lines
+            flag_spectrum   - flag a whole Beam/IF/Pol
+            save            - save the scantable to disk as either 'ASAP'
+                              or 'SDFITS'
+            nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
+            history         - print the history of the scantable
+            get_fit         - get a fit which has been stored witnh the data
+            average_time    - return the (weighted) time average of a scan
+                              or a list of scans
+            average_pol     - average the polarisations together.
+                              The dimension won't be reduced and
+                              all polarisations will contain the
+                              averaged spectrum.
+            quotient        - return the on/off quotient
+            scale           - return a scan scaled by a given factor
+            add             - return a scan with given value added
+            bin             - return a scan with binned channels
+            resample        - return a scan with resampled channels
+            smooth          - return the spectrally smoothed scan
+            poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
+            auto_poly_baseline - automatically fit a polynomial baseline
+            gain_el         - apply gain-elevation correction
+            opacity         - apply opacity correction
+            convert_flux    - convert to and from Jy and Kelvin brightness
+                              units
+            freq_align      - align spectra in frequency frame
+            rotate_xyphase  - rotate XY phase of cross correlation
+            rotate_linpolphase - rotate the phase of the complex
+                                 polarization O=Q+iU correlation
+     [Math] Mainly functions which operate on more than one scantable
+
+            average_time    - return the (weighted) time average
+                              of a list of scans
+            quotient        - return the on/off quotient
+            simple_math     - simple mathematical operations on two scantables,
+                              'add', 'sub', 'mul', 'div'
+     [Fitting]
+        fitter
+            auto_fit        - return a scan where the function is
+                              applied to all Beams/IFs/Pols.
+            commit          - return a new scan where the fits have been
+                              commited.
+            fit             - execute the actual fitting process
+            store_fit       - store the fit paramaters in the data (scantable)
+            get_chi2        - get the Chi^2
+            set_scan        - set the scantable to be fit
+            set_function    - set the fitting function
+            set_parameters  - set the parameters for the function(s), and
+                              set if they should be held fixed during fitting
+            set_gauss_parameters - same as above but specialised for individual
+                                   gaussian components
+            get_parameters  - get the fitted parameters
+            plot            - plot the resulting fit and/or components and
+                              residual
+    [Plotter]
+        asapplotter         - a plotter for asap, default plotter is
+                              called 'plotter'
+            plot            - plot a (list of) scantable
+            save            - save the plot to a file ('png' ,'ps' or 'eps')
+            set_mode        - set the state of the plotter, i.e.
+                              what is to be plotted 'colour stacked'
+                              and what 'panelled'
+            set_cursor      - only plot a selected part of the data
+            set_range       - set a 'zoom' window
+            set_legend      - specify user labels for the legend indeces
+            set_title       - specify user labels for the panel indeces
+            set_ordinate    - specify a user label for the ordinate
+            set_abcissa     - specify a user label for the abcissa
+            set_layout      - specify the multi-panel layout (rows,cols)
+
+    [Reading files]
+        reader              - access rpfits/sdfits files
+            read            - read in integrations
+            summary         - list info about all integrations
+
+    [General]
+        commands            - this command
+        print               - print details about a variable
+        list_scans          - list all scantables created bt the user
+        del                 - delete the given variable from memory
+        range               - create a list of values, e.g.
+                              range(3) = [0,1,2], range(2,5) = [2,3,4]
+        help                - print help for one of the listed functions
+        execfile            - execute an asap script, e.g. execfile('myscript')
+        list_rcparameters   - print out a list of possible values to be
+                              put into $HOME/.asaprc
+        mask_and,mask_or,
+        mask_not            - boolean operations on masks created with
+                              scantable.create_mask
+
+    Note:
+        How to use this with help:
+                                         # function 'summary'
+        [xxx] is just a category
+        Every 'sub-level' in this list should be replaces by a '.' Period when
+        using help
+        Example:
+            ASAP> help scantable # to get info on ths scantable
+            ASAP> help scantable.summary # to get help on the scantable's
+            ASAP> help average_time
+
+</pre>
+<!-- End Content -->
+<?php footer(); ?>
+</body>
+</html>
