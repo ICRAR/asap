@@ -340,7 +340,7 @@ class fitter:
             m = self.data._getmask(self._fittedrow)
             ylab = self.data._get_ordinate_label()
 
-        colours = ["grey60","grey80","red","orange","purple","green","magenta", "cyan"]
+        colours = ["#777777","#bbbbbb","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
         self._p.plot(self.x, self.y, m)
