@@ -1194,7 +1194,7 @@ class scantable(sdtable):
         """
         if allaxes is None: allaxes = rcParams['scantable.allaxes']
         varlist = vars()
-        from asap._asap import rotate_xyphase as _rotate_xyphase
+        from asap._asap import _rotate_xyphase
         _rotate_xyphase(self, angle, allaxes)
         self._add_history("rotate_xyphase", varlist)
         return
@@ -1254,7 +1254,36 @@ class scantable(sdtable):
             self._add_history("scale",varlist)
             return
 
-
+    def auto_quotient(self, mode='suffix', preserve=True):
+        """
+        This function allows to build quotients automatically.
+        It assumes the observation to have the same numer of
+        "ons" and "offs"
+        It will support "closest off in time" in the future
+        Parameters:
+            mode:           the on/off detection mode; 'suffix' (default)
+                            'suffix' identifies 'off' scans by the
+                            trailing '_R' (Mopra/Parkes) or
+                            '_e'/'_w' (Tid)
+            preserve:       you can preserve (default) the continuum or 
+                            remove it.  The equations used are 
+                            preserve: Output = Toff * (on/off) - Toff
+                            remove:   Output = Tref * (on/off) - Ton
+        """
+        modes = ["suffix","time"]
+        print mode
+        if not mode in modes:
+            print "please provide valid mode. Valid modes are %s" % (modes)
+            return None
+        from asap._asap import quotient as _quot
+        if mode == "suffix":
+            srcs = self.get_scan("*[^_ewR]")
+            refs = self.get_scan("*[_ewR]")
+            return scantable(_quot(srcs,refs, preserve))       
+        else:
+            print "not yet implemented"
+            return None
+        
     def quotient(self, other, isreference=True, preserve=True):
         """
         Return the quotient of a 'source' (on) scan and a 'reference' (off)
