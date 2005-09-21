@@ -350,13 +350,13 @@ Array<Float> SDPolUtil::circularPolarizationFromStokes (Array<Float>& I,
                                                         Bool doRR)
 //
 // We use the convention
-//  I = (RR+LL)/2
+//  I = (RR+LL)  // definition changed
 //
 {
    if (doRR) {
-      return I + V;
+      return (I + V)/2.0;
    } else {
-      return I - V;
+      return (I - V)/2.0;
    }
 }
 
