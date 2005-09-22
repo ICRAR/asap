@@ -1,28 +1,33 @@
-TARGET   := _asap.so
+TARGET   := /tmp/_asap.so
 ifndef CXX
    CXX      := g++
 endif
 CXXFLAGS := -O3 -fPIC
 CXXFLAGS += -ansi
 CXXFLAGS += -pedantic -Wno-long-long
+CXXOPTS := -DAIPS_NO_TEMPLATE_SRC
 
 CFITSIOROOT := /usr/local If aips++ is build with LFS you need to have
 # libcfitsio with lfs support
-# CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a
-CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
-CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
+CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a
+#CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
+#CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
+
 
 CASAROOT  := $(word 1, $(AIPSPATH))
 CASAARCH  := $(word 2, $(AIPSPATH))
-CASAINC   := -I$(CASAROOT)/code/include
+CASAINC   := -I$(CASAROOT)/code/include -I$(CASAROOT)/code/casa/wcslib
 CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
+
+
 # This assumes all casa libs are static only (*.a)
 # if not than there might by symbol resolution errors.
 CASAPPLIB := $(CASALIB)/version.o \
              -L$(CASALIB) -static \
 	     -latnf -limages -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
-	     -ltables -lscimath -lscimath_f -lcasa -lwcs \
+	     -ltables -lscimath -lscimath_f -lcasa  \
+	     $(CASALIB)/libwcs.a \
 	      -lrpfits $(CFITSIOLIB) -dy -llapack -lblas -lg2c
 
 LD        := $(CXX)
@@ -35,7 +40,7 @@ PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION)
 
 
 BOOSTROOT := /usr
-BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python$(PYVERSION)
+BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python
 BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
 
@@ -96,19 +101,19 @@ MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
 
 .cpp.o:
 	-@ echo
-	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .cc.o:
 	-@ echo
-	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .cxx.o:
 	-@ echo
-	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .C.o:
 	-@ echo
-	   $(CXX) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 
 .PHONY : all clean objects realclean relink
