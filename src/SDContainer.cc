@@ -86,16 +86,16 @@ SDContainer::SDContainer(uInt nBeam, uInt nIF, uInt nPol, uInt nChan)
 }
 
 SDContainer::SDContainer(IPosition shp) 
-  : nBeam_(shp(0)),
-    nIF_(shp(1)),
-    nPol_(shp(2)),
-    nChan_(shp(3)),
+  : nBeam_(shp(asap::BeamAxis)),
+    nIF_(shp(asap::IFAxis)),
+    nPol_(shp(asap::PolAxis)),
+    nChan_(shp(asap::ChanAxis)),
     spectrum_(shp),
     flags_(shp),
     tsys_(shp),
-    freqidx_(shp(1)),
-    restfreqidx_(shp(1)) {
-  IPosition ip(2,shp(0),2);
+    freqidx_(shp(asap::IFAxis)),
+    restfreqidx_(shp(asap::IFAxis)) {
+  IPosition ip(2,shp(asap::BeamAxis),2);
   direction_.resize(ip);
   uChar x = 0;
   flags_ = ~x;
@@ -106,16 +106,16 @@ SDContainer::~SDContainer() {
 }
 
 Bool SDContainer::resize(IPosition shp) {
-  nBeam_ = shp(0);
-  nIF_ = shp(1);
-  nPol_ = shp(2);
-  nChan_ = shp(3);
+  nBeam_ = shp(asap::BeamAxis);
+  nIF_ = shp(asap::IFAxis);
+  nPol_ = shp(asap::PolAxis);
+  nChan_ = shp(asap::ChanAxis);
   spectrum_.resize(shp);
   flags_.resize(shp);
   tsys_.resize(shp);
-  freqidx_.resize(shp(1));
-  restfreqidx_.resize(shp(1));
-  IPosition ip(2,shp(0),2);
+  freqidx_.resize(shp(asap::IFAxis));
+  restfreqidx_.resize(shp(asap::IFAxis));
+  IPosition ip(2,shp(asap::BeamAxis),2);
   direction_.resize(ip);
 }
 
@@ -147,7 +147,7 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   Bool tSys = False;
   Bool xPol = True;
   IPosition start, end;
-  setSlice (start, end, spec.shape(), spectrum_.shape(),
+  setSlice(start, end, spec.shape(), spectrum_.shape(),
             whichBeam, whichIF, tSys, xPol);
 
 // Get a reference to the Pol/Chan slice we are interested in
@@ -193,7 +193,7 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
 // Get slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, spec.shape(), spectrum_.shape(),
+  setSlice(start, end, spec.shape(), spectrum_.shape(),
             whichBeam, whichIF, False, False);
 
 // Get a reference to the Pol/Chan slice we are interested in
@@ -220,9 +220,6 @@ Bool SDContainer::setSpectrum(const Matrix<Float>& spec,
   return True;
 }
 
-
-
-
 Bool SDContainer::setFlags(const Matrix<uChar>& flags,
 			   uInt whichBeam, uInt whichIF,
 			   Bool hasXPol)
@@ -240,7 +237,7 @@ Bool SDContainer::setFlags(const Matrix<uChar>& flags,
 // Get slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, flags.shape(), flags_.shape(),
+  setSlice(start, end, flags.shape(), flags_.shape(),
             whichBeam, whichIF, False, hasXPol);
 
 // Get a reference to the Pol/Chan slice we are interested in
@@ -309,7 +306,7 @@ Bool SDContainer::setTsys(const Vector<Float>& tsys,
 // Get slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, tsys.shape(), tsys_.shape(),
+  setSlice(start, end, tsys.shape(), tsys_.shape(),
             whichBeam, whichIF, True, hasXpol);
 
 // Get a reference to the Pol/Chan slice we are interested in
@@ -349,7 +346,7 @@ Array<Float> SDContainer::getSpectrum(uInt whichBeam, uInt whichIF)
 // Get reference to slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, spectrum_.shape(), whichBeam, whichIF);
+  setSlice(start, end, spectrum_.shape(), whichBeam, whichIF);
 //
   Array<Float> dataIn = spectrum_(start,end);
   Array<Float> dataOut(IPosition(2, nChan_, nPol_));
@@ -378,7 +375,7 @@ Array<uChar> SDContainer::getFlags(uInt whichBeam, uInt whichIF)
 // Get reference to slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, flags_.shape(), whichBeam, whichIF);
+  setSlice(start, end, flags_.shape(), whichBeam, whichIF);
 //
   Array<uChar> dataIn = flags_(start,end);
   Array<uChar> dataOut(IPosition(2, nChan_, nPol_));
@@ -404,7 +401,7 @@ Array<Float> SDContainer::getTsys(uInt whichBeam, uInt whichIF)
 // Get reference to slice and check dim
 
   IPosition start, end;
-  setSlice (start, end, spectrum_.shape(), whichBeam, whichIF);
+  setSlice(start, end, spectrum_.shape(), whichBeam, whichIF);
 //
   Array<Float> dataIn = tsys_(start,end);
   Vector<Float> dataOut(nPol_);
