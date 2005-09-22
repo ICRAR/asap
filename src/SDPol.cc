@@ -354,9 +354,9 @@ Array<Float> SDPolUtil::circularPolarizationFromStokes (Array<Float>& I,
 //
 {
    if (doRR) {
-      return (I + V)/2.0;
+     return (I + V)/Float(2.0);
    } else {
-      return (I - V)/2.0;
+     return (I - V)/Float(2.0);
    }
 }
 
