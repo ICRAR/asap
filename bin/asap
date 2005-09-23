@@ -27,43 +27,57 @@
 #                        Epping, NSW, 2121,
 #                        AUSTRALIA
 #
-# $Id:
+# $Id$
 #---------------------------------------------------------------------------
 [ -x /usr/bin/clear ] && /usr/bin/clear
 
 echo "Loading ASAP..."
 
-inprompt='ASAP>'
-outprompt='asap>'
+prefix='/usr/local'
 
-p="`which ipython`"
-if [ ! -x "$p" ]; then
-    echo "Can't find, or no execute permissions for 'ipython'"
+# check if user set
+if [ "x${ASAPDATA}" == "x" ]; then
+    ASAPDATA="${prefix}/share/asap"
+    export ASAPDATA
+fi
+
+if [ ! -d "${ASAPDATA}" ]; then
+    echo "Couldn't locate the asap data directory"
+    ASAPDATA="/nfs/aips++"
+    #export ASAPDATA
+    #exit 1
+fi
+
+# Keep casa measures happy
+if test -d "${ASAPDATA}/data" ; then
+    platform='Linux'
+    if [ `uname -s` == 'Darwin' ]; then
+	platform='darwin'
+    fi
+    AIPSPATH="${ASAPDATA} ${platform} somewhere localhost"	
+    export AIPSPATH
+else
+    echo "Couldn't find the ASAP data directory"
     exit 1
 fi
 
-
-# at the moment we need AIPS++ for measures tables and endian detection
-if [ "${AIPSPATH}" == "" ]; then
-    aroot='/nfs/aips++'
-    ASAPDATA='/usr/local/share/asap'
-    if test -d ${ASAPDATA} ; then
-	AIPSPATH="${ASAPDATA} linux_gnu somewhere localhost"	
-	export AIPSPATH
-    elif test -d ${aroot}/weekly ; then
-	. ${aroot}/weekly/aipsinit.sh
-    elif  test -d ${aroot}/daily ; then
-	. ${aroot}/daily/aipsinit.sh
-    elif  test -d /nfs/aips++/pks ; then
-	. /nfs/aips++/pks/aipsinit.sh
-    else
-	echo "Cannot locate casa installation or ASAP data directory"
-	exit 0
-    fi
+# started for the first time
+ASAPUSERDIR="${HOME}/.asap"
+if [ ! -d ${ASAPUSERDIR} ]; then
+    echo 'First time ASAP use. Setting up ~/.asap'
+    mkdir "${ASAPUSERDIR}"
+    cp "/tmp/ipythonrc-asap" "${ASAPUSERDIR}/"
+    #cp "${ASAPDATA}/ipythonrc-asap" "${ASAPUSERDIR}/"
+    touch "${ASAPUSERDIR}/asapuserfuncs.py"
 fi
 
-#
-# FIXME - allow more than one argument and handle args gracefuly.
-#
+ip="`which ipython`"
 
-$p -pi1 $inprompt -po $outprompt -nobanner -xmode "Plain" -c "from asap import *" $1
+if [ ! -x "$ip" ]; then
+    echo "Can't find, or no execute permissions for 'ipython'"
+    echo "Running asap through 'python':"
+    p="`which python`"
+    $p -c 'from asap import *'
+else    
+    $ip -ipythondir "${ASAPUSERDIR}" -p 'asap' $*
+fi
