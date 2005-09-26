@@ -43,7 +43,7 @@ fi
 
 if [ ! -d "${ASAPDATA}" ]; then
     echo "Couldn't locate the asap data directory"
-    ASAPDATA="/nfs/aips++"
+    #ASAPDATA="/nfs/aips++"
     #export ASAPDATA
     #exit 1
 fi
@@ -54,7 +54,7 @@ if test -d "${ASAPDATA}/data" ; then
     if [ `uname -s` == 'Darwin' ]; then
 	platform='darwin'
     fi
-    AIPSPATH="${ASAPDATA} ${platform} somewhere localhost"	
+    AIPSPATH="${ASAPDATA} ${platform} somewhere localhost"
     export AIPSPATH
 else
     echo "Couldn't find the ASAP data directory"
@@ -62,12 +62,12 @@ else
 fi
 
 # started for the first time
-ASAPUSERDIR="${HOME}/.asap"
+ASAPUSERDIR="${HOME}/.asap"; export ASAPUSERDIR
 if [ ! -d ${ASAPUSERDIR} ]; then
     echo 'First time ASAP use. Setting up ~/.asap'
     mkdir "${ASAPUSERDIR}"
-    cp "/tmp/ipythonrc-asap" "${ASAPUSERDIR}/"
-    #cp "${ASAPDATA}/ipythonrc-asap" "${ASAPUSERDIR}/"
+    cp "${ASAPDATA}/ipythonrc-asap" "${ASAPUSERDIR}/"
+    echo "#Dummy placeholder. All info is in ipythonrc-asap" > "${ASAPUSERDIR}/ipythonrc"
     touch "${ASAPUSERDIR}/asapuserfuncs.py"
 fi
 
@@ -78,6 +78,6 @@ if [ ! -x "$ip" ]; then
     echo "Running asap through 'python':"
     p="`which python`"
     $p -c 'from asap import *'
-else    
+else
     $ip -ipythondir "${ASAPUSERDIR}" -p 'asap' $*
 fi
