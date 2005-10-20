@@ -358,11 +358,8 @@ class asapplotter:
                 if colmode == 's' or colmode == 't':
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
-                    else:
-                        if self._panelling == 'p':
-                            tlab = self._get_pollabel(scan, polmode)
-                        else:
-                            tlab = self._ldict.get(self._panelling)+' '+str(i)
+                    else:                        
+                        tlab = self._ldict.get(self._panelling)+' '+str(i)
                     if self._lmap and len(self._lmap) > 0:
                         llab = self._lmap[jj]
                     else:
