@@ -16,6 +16,7 @@ from matplotlib.figure import Figure, Text
 from matplotlib.font_manager import FontProperties
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
+from asap import rcParams as asaprcParams
 
 # Force use of the newfangled toolbar.
 matplotlib.rcParams['toolbar'] = 'toolbar2'
@@ -57,10 +58,35 @@ class ASAPlot:
 	if rows > 0:
 	    self.set_panels(rows, cols)
 
+        # Set matplotlib default colour sequence.
+        self.colormap = "green red black cyan magenta orange blue purple yellow pink".split()
+        
+        c = asaprcParams['plotter.colours']
+        if isinstance(c,str) and len(c) > 0:
+            self.colormap = c.split()
 
-	# Set matplotlib default colour sequence.
-	self.colormap = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'orange', 'pink']
+        self.lsalias = {"line":  [1,0],
+                        "dashdot": [4,2,1,2],
+                        "dashed" : [4,2,4,2],
+                        "dotted" : [1,2],
+                        "dashdotdot": [4,2,1,2,1,2],
+                        "dashdashdot": [4,2,4,2,1,2]
+                        }
+
+        styles = "line dashed dotted dashdot".split()
+        c = asaprcParams['plotter.linestyles']
+        if isinstance(c,str) and len(c) > 0:
+            styles = c.split()
+        s = []
+        for ls in styles:
+            if self.lsalias.has_key(ls):
+                s.append(self.lsalias.get(ls))
+            else:
+                s.append('-')
+        self.linestyles = s
+
         self.color = 0;
+        self.linestyle = 0;
 	self.attributes = {}
 	self.loc = 0
 
@@ -79,14 +105,30 @@ class ASAPlot:
 	   self.delete(i)
 	self.axes.clear()
 	self.color = 0
+	self.linestyle = 0
 	self.lines = []
 
-
-    def palette(self, color, colormap=None):
+    def palette(self, color, colormap=None, linestyle=0, linestyles=None):
         if colormap:
-            self.colormap = colormap
+            if isinstance(colormap,list):
+                self.colormap = colormap
+            elif isinstance(colormap,str):
+                self.colormap = colormap.split()
         if 0 <= color < len(self.colormap):
             self.color = color
+        if linestyles:
+            self.linestyles = []
+            if isinstance(linestyles,list):
+                styles = linestyles
+            elif isinstance(linestyles,str):
+                styles = linestyles.split()
+            for ls in styles:
+                if self.lsalias.has_key(ls):
+                    self.linestyles.append(self.lsalias.get(ls))
+                else:
+                    self.linestyles.append(self.lsalias.get('line'))
+        if 0 <= linestyle < len(self.linestyles):
+            self.linestyle = linestyle
 
     def delete(self, numbers=None):
 	"""
@@ -243,10 +285,16 @@ class ASAPlot:
 	if not gotcolour and len(self.colormap):
 	    for segment in self.lines[i]:
 		getattr(segment, "set_color")(self.colormap[self.color])
-
+                if len(self.colormap)  == 1:
+                    getattr(segment, "set_dashes")(self.linestyles[self.linestyle])
 	    self.color += 1
 	    if self.color >= len(self.colormap):
 		self.color = 0
+
+            if len(self.colormap) == 1:
+                self.linestyle += 1
+ 	    if self.linestyle >= len(self.linestyles):
+		self.linestyle = 0               
 
 	self.show()
 
@@ -379,7 +427,7 @@ class ASAPlot:
 	self.show()
 
 
-    def save(self, fname=None, orientation='landscape'):
+    def save(self, fname=None, orientation=None):
 	"""
 	Save the plot to a file.
 
@@ -400,14 +448,38 @@ class ASAPlot:
 
 	if fname[-3:].lower() in d:
 	    try:
-		self.canvas.print_figure(fname,orientation=orientation)
-		print 'Written file %s' % (fname)
+                if fname[-3:].lower() == ".ps":
+                    w = self.figure.figwidth.get()
+                    h = self.figure.figheight.get()                        
+                    a4w = 8.25
+                    a4h = 11.25
+                    
+                    if orientation is None:
+                        # auto oriented
+                        if w > h:
+                            orientation = 'landscape'
+                        else:
+                            orientation = 'portrait'
+                    ds = None
+                    if orientation == 'landscape':
+                        ds = min(a4h/w,a4w/h)
+                        #self.figure.set_figsize_inches((a4h,a4w))
+                    else:
+                        ds = min(a4w/w,a4h/h)
+                    ow = ds * w
+                    oh = ds * h
+                    self.figure.set_figsize_inches((ow,oh))
+                    self.canvas.print_figure(fname,orientation=orientation)
+                    print 'Written file %s' % (fname)
+                else:                    
+                    self.canvas.print_figure(fname)
+                    print 'Written file %s' % (fname)
 	    except IOError, msg:
 		print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
 		return
 	else:
 	    print "Invalid image type. Valid types are:"
-	    print "ps, eps, png"
+	    print "'ps', 'eps', 'png'"
 
 
     def set_axes(self, what=None, *args, **kwargs):

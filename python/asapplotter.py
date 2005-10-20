@@ -211,7 +211,6 @@ class asapplotter:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n)
         else:
             self._plotter.set_panels()
-
         for scan in scans:
             self._plotter.palette(0)
             if n > 1:
