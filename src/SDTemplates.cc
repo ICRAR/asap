@@ -74,12 +74,16 @@ template LogicalArray operator><Float>(Array<Float> const &, Float const &);
 template LogicalArray operator>=<Float>(Array<Float> const &, Float const &);
 template Array<Float>& operator/=<Float>(Array<Float>&, MaskedArray<Float> const&);
 template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Float const&);
+template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Array<Float> const&);
+template MaskedArray<Float> const& operator/=<Float>(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> operator+<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
 template MaskedArray<Float> operator-<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator*<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator/<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> const& operator/=<Float>(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> operator-<Float>(MaskedArray<Float> const&, Array<Float> const&);
+
+template MaskedArray<Float> operator/<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+
+template MaskedArray<Float> operator*<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> operator*<Float>(MaskedArray<Float> const&, Array<Float> const&);
 template MaskedArray<Float> operator*<Float>(Array<Float> const&, MaskedArray<Float> const&);
 template Float stddev<Float>(MaskedArray<Float> const&);
 template Float median<Float>(MaskedArray<Float> const&, Bool, Bool);

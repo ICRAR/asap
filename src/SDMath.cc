@@ -109,64 +109,53 @@ SDMath::~SDMath()
 {;}
 
 
-
 SDMemTable* SDMath::frequencyAlignment(const SDMemTable& in, 
 				       const String& refTime, 
 				       const String& method, 
 				       Bool perFreqID) const
 {
-// Get frame info from Table
-
+  // Get frame info from Table
    std::vector<std::string> info = in.getCoordInfo();
 
-// Parse frequency system
-
+   // Parse frequency system
    String systemStr(info[1]);
    String baseSystemStr(info[3]);
    if (baseSystemStr==systemStr) {
-      throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
+     throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
    }
-//
+
    MFrequency::Types freqSystem;
    MFrequency::getType(freqSystem, systemStr);
-
-// Do it
 
    return frequencyAlign(in, freqSystem, refTime, method, perFreqID);
 }
 
 
 
-CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> >& in,
-				       const Vector<Bool>& mask, Bool scanAv,
-				       const String& weightStr, Bool alignFreq) const
-//
+CountedPtr<SDMemTable> 
+SDMath::average(const std::vector<CountedPtr<SDMemTable> >& in,
+		const Vector<Bool>& mask, Bool scanAv,
+		const String& weightStr, Bool alignFreq) const
 // Weighted averaging of spectra from one or more Tables.
-//
 {
-
-// Convert weight type
-  
+  // Convert weight type  
   WeightType wtType = NONE;
   convertWeightString(wtType, weightStr, True);
 
-// Create output Table by cloning from the first table
-
+  // Create output Table by cloning from the first table
   SDMemTable* pTabOut = new SDMemTable(*in[0],True);
   if (in.size() > 1) {
     for (uInt i=1; i < in.size(); ++i) {
       pTabOut->appendToHistoryTable(in[i]->getHistoryTable());
     }
   }
-// Setup
-
+  // Setup
   IPosition shp = in[0]->rowAsMaskedArray(0).shape();      // Must not change
   Array<Float> arr(shp);
   Array<Bool> barr(shp);
   const Bool useMask = (mask.nelements() == shp(asap::ChanAxis));
 
-// Columns from Tables
-
+  // Columns from Tables
   ROArrayColumn<Float> tSysCol;
   ROScalarColumn<Double> mjdCol;
   ROScalarColumn<String> srcNameCol;
@@ -174,10 +163,11 @@ CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> 
   ROArrayColumn<uInt> fqIDCol;
   ROScalarColumn<Int> scanIDCol;
 
-// Create accumulation MaskedArray. We accumulate for each channel,if,pol,beam
-// Note that the mask of the accumulation array will ALWAYS remain ALL True.
-// The MA is only used so that when data which is masked Bad is added to it,
-// that data does not contribute.
+  // Create accumulation MaskedArray. We accumulate for each
+  // channel,if,pol,beam Note that the mask of the accumulation array
+  // will ALWAYS remain ALL True.  The MA is only used so that when
+  // data which is masked Bad is added to it, that data does not
+  // contribute.
 
   Array<Float> zero(shp);
   zero=0.0;
@@ -185,17 +175,15 @@ CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> 
   good = True;
   MaskedArray<Float> sum(zero,good);
 
-// Counter arrays
-
+  // Counter arrays
   Array<Float> nPts(shp);             // Number of points
   nPts = 0.0;
   Array<Float> nInc(shp);             // Increment
   nInc = 1.0;
 
-// Create accumulation Array for variance. We accumulate for
-// each if,pol,beam, but average over channel.  So we need
-// a shape with one less axis dropping channels.
-
+  // Create accumulation Array for variance. We accumulate for each
+  // if,pol,beam, but average over channel.  So we need a shape with
+  // one less axis dropping channels.
   const uInt nAxesSub = shp.nelements() - 1;
   IPosition shp2(nAxesSub);
   for (uInt i=0,j=0; i<(nAxesSub+1); i++) {
@@ -208,33 +196,30 @@ CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> 
   sumSq = 0.0;
   IPosition pos2(nAxesSub,0);                        // For indexing
 
-// Time-related accumulators
-
+  // Time-related accumulators
   Double time;
   Double timeSum = 0.0;
   Double intSum = 0.0;
   Double interval = 0.0;
 
-// To get the right shape for the Tsys accumulator we need to
-// access a column from the first table.  The shape of this
-// array must not change.  Note however that since the TSysSqSum
-// array is used in a normalization process, and that I ignore the
-// channel axis replication of values for now, it loses a dimension
+  // To get the right shape for the Tsys accumulator we need to access
+  // a column from the first table.  The shape of this array must not
+  // change.  Note however that since the TSysSqSum array is used in a
+  // normalization process, and that I ignore the channel axis
+  // replication of values for now, it loses a dimension
 
   Array<Float> tSysSum, tSysSqSum;
   {
     const Table& tabIn = in[0]->table();
     tSysCol.attach(tabIn,"TSYS");
     tSysSum.resize(tSysCol.shape(0));
-//
     tSysSqSum.resize(shp2);
   }
-  tSysSum =0.0;
+  tSysSum = 0.0;
   tSysSqSum = 0.0;
   Array<Float> tSys;
 
-// Scan and row tracking
-
+  // Scan and row tracking
   Int oldScanID = 0;
   Int outScanID = 0;
   Int scanID = 0;
@@ -242,21 +227,19 @@ CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> 
   Int nAccum = 0;
   Int tableStart = 0;
 
-// Source and FreqID
-
+  // Source and FreqID
   String sourceName, oldSourceName, sourceNameStart;
   Vector<uInt> freqID, freqIDStart, oldFreqID;
 
-// Loop over tables
-
+  // Loop over tables
   Float fac = 1.0;
   const uInt nTables = in.size();
   for (uInt iTab=0; iTab<nTables; iTab++) {
 
-// Should check that the frequency tables don't change if doing FreqAlignment
-
-// Attach columns to Table
-
+    // Should check that the frequency tables don't change if doing
+    // FreqAlignment
+    
+    // Attach columns to Table
      const Table& tabIn = in[iTab]->table();
      tSysCol.attach(tabIn, "TSYS");
      mjdCol.attach(tabIn, "TIME");
@@ -265,135 +248,126 @@ CountedPtr<SDMemTable> SDMath::average(const std::vector<CountedPtr<SDMemTable> 
      fqIDCol.attach(tabIn, "FREQID");
      scanIDCol.attach(tabIn, "SCANID");
 
-// Loop over rows in Table
-
+     // Loop over rows in Table
      const uInt nRows = in[iTab]->nRow();
      for (uInt iRow=0; iRow<nRows; iRow++) {
-
-// Check conformance
-
+       // Check conformance
         IPosition shp2 = in[iTab]->rowAsMaskedArray(iRow).shape();
         if (!shp.isEqual(shp2)) {
+	  delete pTabOut;
            throw (AipsError("Shapes for all rows must be the same"));
         }
 
-// If we are not doing scan averages, make checks for source and
-// frequency setup and warn if averaging across them
-
+	// If we are not doing scan averages, make checks for source
+	// and frequency setup and warn if averaging across them
         scanIDCol.getScalar(iRow, scanID);
 
-// Get quantities from columns
-
+	// Get quantities from columns
         srcNameCol.getScalar(iRow, sourceName);
         mjdCol.get(iRow, time);
         tSysCol.get(iRow, tSys);
         intCol.get(iRow, interval);
         fqIDCol.get(iRow, freqID);
 
-// Initialize first source and freqID
-
+	// Initialize first source and freqID
         if (iRow==0 && iTab==0) {
           sourceNameStart = sourceName;
           freqIDStart = freqID;
         }
 
-// If we are doing scan averages, see if we are at the end of an
-// accumulation period (scan).  We must check soutce names too,
-// since we might have two tables with one scan each but different
-// source names; we shouldn't average different sources together
-
+	// If we are doing scan averages, see if we are at the end of
+	// an accumulation period (scan).  We must check soutce names
+	// too, since we might have two tables with one scan each but
+	// different source names; we shouldn't average different
+	// sources together
         if (scanAv && ( (scanID != oldScanID)  ||
                         (iRow==0 && iTab>0 && sourceName!=oldSourceName))) {
 
-// Normalize data in 'sum' accumulation array according to weighting scheme
+	  // Normalize data in 'sum' accumulation array according to
+	  // weighting scheme
+           normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, 
+		     asap::ChanAxis, nAxesSub);
 
-           normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, asap::ChanAxis, nAxesSub);
-
-// Get ScanContainer for the first row of this averaged Scan
-
+	   // Get ScanContainer for the first row of this averaged Scan
            SDContainer scOut = in[iTab]->getSDContainer(rowStart);
 
-// Fill scan container. The source and freqID come from the
-// first row of the first table that went into this average (
-// should be the same for all rows in the scan average)
+	   // Fill scan container. The source and freqID come from the
+	   // first row of the first table that went into this average
+	   // ( should be the same for all rows in the scan average)
 
            Float nR(nAccum);
            fillSDC(scOut, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
-                    timeSum/nR, intSum, sourceNameStart, freqIDStart);
-
-// Write container out to Table
-
+		   timeSum/nR, intSum, sourceNameStart, freqIDStart);
+	   
+	   // Write container out to Table
            pTabOut->putSDContainer(scOut);
-
-// Reset accumulators
-
+	   
+	   // Reset accumulators	   
            sum = 0.0;
            sumSq = 0.0;
            nAccum = 0;
-//
+
            tSysSum =0.0;
            tSysSqSum =0.0;
            timeSum = 0.0;
            intSum = 0.0;
 	   nPts = 0.0;
 
-// Increment
-
+	   // Increment
            rowStart = iRow;              // First row for next accumulation
            tableStart = iTab;            // First table for next accumulation
-           sourceNameStart = sourceName; // First source name for next accumulation
+           sourceNameStart = sourceName; // First source name for next
+					 // accumulation
            freqIDStart = freqID;         // First FreqID for next accumulation
-//
+
            oldScanID = scanID;
-           outScanID += 1;               // Scan ID for next accumulation period
+           outScanID += 1;               // Scan ID for next
+					 // accumulation period
         }
 
-// Accumulate
-
-        accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, tSysSum, tSysSqSum,
-                   tSys, nInc, mask, time, interval, in, iTab, iRow, asap::ChanAxis, 
+	// Accumulate
+        accumulate(timeSum, intSum, nAccum, sum, sumSq, nPts, 
+		   tSysSum, tSysSqSum, tSys, 
+		   nInc, mask, time, interval, in, iTab, iRow, asap::ChanAxis, 
                    nAxesSub, useMask, wtType);
-//
-       oldSourceName = sourceName;
-       oldFreqID = freqID;
+	oldSourceName = sourceName;
+	oldFreqID = freqID;
      }
   }
 
-// OK at this point we have accumulation data which is either
-//   - accumulated from all tables into one row
-// or
-//   - accumulated from the last scan average
-//
-// Normalize data in 'sum' accumulation array according to weighting scheme
+  // OK at this point we have accumulation data which is either
+  //   - accumulated from all tables into one row
+  // or
+  //   - accumulated from the last scan average
+  //
+  // Normalize data in 'sum' accumulation array according to weighting
+  // scheme
 
-  normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, asap::ChanAxis, nAxesSub);
+  normalize(sum, sumSq, tSysSqSum, nPts, intSum, wtType, 
+	    asap::ChanAxis, nAxesSub);
 
-// Create and fill container.  The container we clone will be from
-// the last Table and the first row that went into the current
-// accumulation.  It probably doesn't matter that much really...
-
+  // Create and fill container.  The container we clone will be from
+  // the last Table and the first row that went into the current
+  // accumulation.  It probably doesn't matter that much really...
   Float nR(nAccum);
   SDContainer scOut = in[tableStart]->getSDContainer(rowStart);
   fillSDC(scOut, sum.getMask(), sum.getArray(), tSysSum/nR, outScanID,
-           timeSum/nR, intSum, sourceNameStart, freqIDStart);
+	  timeSum/nR, intSum, sourceNameStart, freqIDStart);
   pTabOut->putSDContainer(scOut);
   pTabOut->resetCursor();
-//
+
   return CountedPtr<SDMemTable>(pTabOut);
 }
 
 
 
-CountedPtr<SDMemTable> SDMath::binaryOperate(const CountedPtr<SDMemTable>& 
-					     left,
-					     const CountedPtr<SDMemTable>& 
-					     right,
-					     const String& op, Bool preserve,
-					     Bool doTSys) const
+CountedPtr<SDMemTable> 
+SDMath::binaryOperate(const CountedPtr<SDMemTable>& left,
+		      const CountedPtr<SDMemTable>& right,
+		      const String& op, Bool preserve, Bool doTSys) const
 {
 
-// Check operator
-
+  // Check operator
   String op2(op);
   op2.upcase();
   uInt what = 0;
@@ -412,75 +386,75 @@ CountedPtr<SDMemTable> SDMath::binaryOperate(const CountedPtr<SDMemTable>&
     throw( AipsError("Unrecognized operation"));
   }
 
-// Check rows
-
+  // Check rows
   const uInt nRowLeft = left->nRow();
   const uInt nRowRight = right->nRow();
-  Bool ok = (nRowRight==1&&nRowLeft>0) ||
-            (nRowRight>=1&&nRowLeft==nRowRight);
+  Bool ok = (nRowRight==1 && nRowLeft>0) ||
+            (nRowRight>=1 && nRowLeft==nRowRight);
   if (!ok) {
      throw (AipsError("The right Scan Table can have one row or the same number of rows as the left Scan Table"));
   }
 
-// Input Tables 
-
+  // Input Tables 
   const Table& tLeft = left->table();
   const Table& tRight = right->table();
 
-// TSys columns
-
+  // TSys columns
   ROArrayColumn<Float> tSysLeftCol, tSysRightCol;
   if (doTSys) {
-     tSysLeftCol.attach(tLeft, "TSYS");
-     tSysRightCol.attach(tRight, "TSYS");
+    tSysLeftCol.attach(tLeft, "TSYS");
+    tSysRightCol.attach(tRight, "TSYS");
   }
 
-// First row for right
-
+  // First row for right
   Array<Float> tSysLeftArr, tSysRightArr;
   if (doTSys) tSysRightCol.get(0, tSysRightArr);
-  MaskedArray<Float>* pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(0));
+  MaskedArray<Float>* pMRight = 
+    new MaskedArray<Float>(right->rowAsMaskedArray(0));
+
   IPosition shpRight = pMRight->shape();
 
-// Output Table cloned from left
-
+  // Output Table cloned from left
   SDMemTable* pTabOut = new SDMemTable(*left, True);
   pTabOut->appendToHistoryTable(right->getHistoryTable());
-// Loop over rows
 
+  // Loop over rows
   for (uInt i=0; i<nRowLeft; i++) {
+    
+    // Get data 
+    MaskedArray<Float> mLeft(left->rowAsMaskedArray(i));
+    IPosition shpLeft = mLeft.shape();
+    if (doTSys) tSysLeftCol.get(i, tSysLeftArr);
+    
+    if (nRowRight>1) {
+      delete pMRight;
+      pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(i));
+      shpRight = pMRight->shape();
+      if (doTSys) tSysRightCol.get(i, tSysRightArr);
+    }
 
-// Get data 
+    if (!shpRight.isEqual(shpLeft)) {
+      delete pTabOut;
+      delete pMRight;
+      throw(AipsError("left and right scan tables are not conformant"));
+    }
+    if (doTSys) {
+      if (!tSysRightArr.shape().isEqual(tSysRightArr.shape())) {
+	delete pTabOut;
+	delete pMRight;
+	throw(AipsError("left and right Tsys data are not conformant"));
+      }
+      if (!shpRight.isEqual(tSysRightArr.shape())) {
+	delete pTabOut;
+	delete pMRight;
+	throw(AipsError("left and right scan tables are not conformant"));
+      }
+    }
 
-     MaskedArray<Float> mLeft(left->rowAsMaskedArray(i));
-     IPosition shpLeft = mLeft.shape();
-     if (doTSys) tSysLeftCol.get(i, tSysLeftArr);
-//
-     if (nRowRight>1) {
-        delete pMRight;
-        pMRight = new MaskedArray<Float>(right->rowAsMaskedArray(i));
-        shpRight = pMRight->shape();
-        if (doTSys) tSysRightCol.get(i, tSysRightArr);
-     }
-//
-     if (!shpRight.isEqual(shpLeft)) {
-        throw(AipsError("left and right scan tables are not conformant"));
-     }
-     if (doTSys) {
-        if (!tSysRightArr.shape().isEqual(tSysRightArr.shape())) {
-           throw(AipsError("left and right Tsys data are not conformant"));
-        }
-        if (!shpRight.isEqual(tSysRightArr.shape())) {
-           throw(AipsError("left and right scan tables are not conformant"));
-        }
-     }
-
-// Make container
-
+    // Make container
      SDContainer sc = left->getSDContainer(i);
 
-// Operate on data and TSys
-
+     // Operate on data and TSys
      if (what==0) {                               
         MaskedArray<Float> tmp = mLeft + *pMRight;
         putDataInSDC(sc, tmp.getArray(), tmp.getMask());
@@ -510,16 +484,14 @@ CountedPtr<SDMemTable> SDMath::binaryOperate(const CountedPtr<SDMemTable>&
        sc.putTsys(tSysRightArr);
      }
 
-// Put new row in output Table
-
+     // Put new row in output Table
      pTabOut->putSDContainer(sc);
   }
   if (pMRight) delete pMRight;
   pTabOut->resetCursor();
-
+  
   return CountedPtr<SDMemTable>(pTabOut);
 }
-
 
 
 std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
@@ -827,7 +799,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
   IPosition shapeOut(shapeIn);
   shapeOut(asap::PolAxis) = 1;                          // Average all polarizations
   if (shapeIn(asap::PolAxis)==1) {
-     throw(AipsError("The input has only one polarisation"));
+    delete  pTabOut;
+    throw(AipsError("The input has only one polarisation"));
   }
 //
   const uInt nRows = in.nRow();
@@ -875,7 +848,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
       ReadOnlyArrayIterator<Float> itDataPlane(arr, axes);
       ReadOnlyArrayIterator<Bool> itMaskPlane(barr, axes);
       ReadOnlyArrayIterator<Float>* pItTsysPlane = 0;
-      if (wtType==TSYS) pItTsysPlane = new ReadOnlyArrayIterator<Float>(tSys, axes);
+      if (wtType==TSYS) 
+	pItTsysPlane = new ReadOnlyArrayIterator<Float>(tSys, axes);
 
 // Accumulations
 
@@ -899,7 +873,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 //
            ReadOnlyVectorIterator<Float>* pItTsysVec = 0;
 	   if (wtType==TSYS) {
-              pItTsysVec = new ReadOnlyVectorIterator<Float>(pItTsysPlane->array(), 1);
+              pItTsysVec = 
+		new ReadOnlyVectorIterator<Float>(pItTsysPlane->array(), 1);
            }	         
 //
            while (!itDataVec.pastEnd()) {     
@@ -907,7 +882,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 // Create MA of data & mask (optionally including OTF mask) and  get variance for this spectrum
 
               if (useMask) {
-                 const MaskedArray<Float> spec(itDataVec.vector(),mask&&itMaskVec.vector());
+                 const MaskedArray<Float> spec(itDataVec.vector(),
+					       mask&&itMaskVec.vector());
                  if (wtType==VAR) {
                     fac = 1.0 / variance(spec);
                  } else if (wtType==TSYS) {
@@ -915,7 +891,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
                     fac = 1.0 / tSys / tSys;
                  }		      
               } else {
-                 const MaskedArray<Float> spec(itDataVec.vector(),itMaskVec.vector());
+                 const MaskedArray<Float> spec(itDataVec.vector(),
+					       itMaskVec.vector());
                  if (wtType==VAR) {
                     fac = 1.0 / variance(spec);
                  } else if (wtType==TSYS) {
@@ -926,7 +903,8 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
 // Normalize spectrum (without OTF mask) and accumulate
 
-              const MaskedArray<Float> spec(fac*itDataVec.vector(), itMaskVec.vector());
+              const MaskedArray<Float> spec(fac*itDataVec.vector(),
+					    itMaskVec.vector());
               vecSum += spec;
               norm += fac;
 
@@ -1000,80 +978,68 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 //
 {
 
-// Number of channels
-
+  // Number of channels
    const uInt nChan = in.nChan();
 
-// Generate Kernel
-
+   // Generate Kernel
    VectorKernel::KernelTypes type = VectorKernel::toKernelType(kernelType);
    Vector<Float> kernel = VectorKernel::make(type, width, nChan, True, False);
 
-// Generate Convolver
-
+   // Generate Convolver
    IPosition shape(1,nChan);
    Convolver<Float> conv(kernel, shape);
 
-// New Table
-
+   // New Table
    SDMemTable* pTabOut = new SDMemTable(in,True);
 
-// Output Vectors
-
+   // Output Vectors
    Vector<Float> valuesOut(nChan);
    Vector<Bool> maskOut(nChan);
 
-// Get data slice bounds
-
+   // Get data slice bounds
    IPosition start, end;
    setCursorSlice (start, end, doAll, in);
 
-// Loop over rows in Table
-
+   // Loop over rows in Table
    for (uInt ri=0; ri < in.nRow(); ++ri) {
 
-// Get slice of data
-
+     // Get slice of data
       MaskedArray<Float> dataIn = in.rowAsMaskedArray(ri);
 
-// Deconstruct and get slices which reference these arrays
-
+      // Deconstruct and get slices which reference these arrays
       Array<Float> valuesIn = dataIn.getArray();
       Array<Bool> maskIn = dataIn.getMask();
-//
+
       Array<Float> valuesIn2 = valuesIn(start,end);       // ref to valuesIn 
       Array<Bool> maskIn2 = maskIn(start,end);
 
-// Iterate through by spectra
-
+      // Iterate through by spectra
       VectorIterator<Float> itValues(valuesIn2, asap::ChanAxis);
       VectorIterator<Bool> itMask(maskIn2, asap::ChanAxis);
       while (!itValues.pastEnd()) {
-       
-// Smooth
+	
+	// Smooth
+	if (kernelType==VectorKernel::HANNING) {
+	  mathutil::hanning(valuesOut, maskOut, itValues.vector(), 
+			    itMask.vector());
+	  itMask.vector() = maskOut;
+	} else {
+	  mathutil::replaceMaskByZero(itValues.vector(), itMask.vector());
+	  conv.linearConv(valuesOut, itValues.vector());
+	}
 
-         if (kernelType==VectorKernel::HANNING) {
-            mathutil::hanning(valuesOut, maskOut, itValues.vector(), itMask.vector());
-            itMask.vector() = maskOut;
-         } else {
-            mathutil::replaceMaskByZero(itValues.vector(), itMask.vector());
-            conv.linearConv(valuesOut, itValues.vector());
-         }
-//   
-         itValues.vector() = valuesOut;
-// 
-         itValues.next();
-         itMask.next();
+	itValues.vector() = valuesOut;
+	itValues.next();
+	itMask.next();
       }
-
-// Create and put back
-
+      
+      // Create and put back
       SDContainer sc = in.getSDContainer(ri);
       putDataInSDC(sc, valuesIn, maskIn);
-//
+
       pTabOut->putSDContainer(sc);
    }
-//
+
   return pTabOut;
 }
 
@@ -1090,82 +1056,75 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
 
-// Find out how to convert values into Jy and K (e.g. units might be mJy or mK)
-// Also automatically find out what we are converting to according to the
-// flux unit
-
+  // Find out how to convert values into Jy and K (e.g. units might be
+  // mJy or mK) Also automatically find out what we are converting to
+  // according to the flux unit
   Unit fluxUnit(sh.fluxunit); 
   Unit K(String("K"));
   Unit JY(String("Jy"));
-//
+
   Bool toKelvin = True;
   Double cFac = 1.0;    
   if (fluxUnit==JY) {
-     cout << "Converting to K" << endl;
-//
-     Quantum<Double> t(1.0,fluxUnit);
-     Quantum<Double> t2 = t.get(JY);
-     cFac = (t2 / t).getValue();               // value to Jy
-//
-     toKelvin = True;
-     sh.fluxunit = "K";
+    cout << "Converting to K" << endl;
+    
+    Quantum<Double> t(1.0,fluxUnit);
+    Quantum<Double> t2 = t.get(JY);
+    cFac = (t2 / t).getValue();               // value to Jy
+    
+    toKelvin = True;
+    sh.fluxunit = "K";
   } else if (fluxUnit==K) {
-     cout << "Converting to Jy" << endl;
-//
-     Quantum<Double> t(1.0,fluxUnit);
-     Quantum<Double> t2 = t.get(K);
-     cFac = (t2 / t).getValue();              // value to K
-//
-     toKelvin = False;
-     sh.fluxunit = "Jy";
+    cout << "Converting to Jy" << endl;
+    
+    Quantum<Double> t(1.0,fluxUnit);
+    Quantum<Double> t2 = t.get(K);
+    cFac = (t2 / t).getValue();              // value to K
+    
+    toKelvin = False;
+    sh.fluxunit = "Jy";
   } else {
-     throw(AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K"));
+    throw(AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K"));
   }
   pTabOut->putSDHeader(sh);
-
-// Make sure input values are converted to either Jy or K first...
-
+  
+  // Make sure input values are converted to either Jy or K first...
   Float factor = cFac;
 
-// Select method
-
+  // Select method
   if (JyPerK>0.0) {
-     factor *= JyPerK;
-     if (toKelvin) factor = 1.0 / JyPerK;
-//
-     cout << "Jy/K = " << JyPerK << endl;
-     Vector<Float> factors(in.nRow(), factor);
-     scaleByVector(pTabOut, in, doAll, factors, False);
+    factor *= JyPerK;
+    if (toKelvin) factor = 1.0 / JyPerK;
+    cout << "Jy/K = " << JyPerK << endl;
+    Vector<Float> factors(in.nRow(), factor);
+    scaleByVector(pTabOut, in, doAll, factors, False);
   } else if (etaAp>0.0) {
-     Bool throwIt = True;
-     Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
-     SDAttr sda;
-     if (D < 0) D = sda.diameter(inst);
-     Float JyPerK = SDAttr::findJyPerK (etaAp,D);
-     cout << "Jy/K = " << JyPerK << endl;
-     factor *= JyPerK;
-     if (toKelvin) {
-        factor = 1.0 / factor;
-     }
-//
-     Vector<Float> factors(in.nRow(), factor);
-     scaleByVector(pTabOut, in, doAll, factors, False);
+    Bool throwIt = True;
+    Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
+    SDAttr sda;
+    if (D < 0) D = sda.diameter(inst);
+    Float JyPerK = SDAttr::findJyPerK (etaAp,D);
+    cout << "Jy/K = " << JyPerK << endl;
+    factor *= JyPerK;
+    if (toKelvin) {
+      factor = 1.0 / factor;
+    }
+
+    Vector<Float> factors(in.nRow(), factor);
+    scaleByVector(pTabOut, in, doAll, factors, False);
   } else {
-
-// OK now we must deal with automatic look up of values.
-// We must also deal with the fact that the factors need
-// to be computed per IF and may be different and may
-// change per integration.
-
-     cout << "Looking up conversion factors" << endl;
-     convertBrightnessUnits (pTabOut, in, toKelvin, cFac, doAll);
+    
+    // OK now we must deal with automatic look up of values.
+    // We must also deal with the fact that the factors need
+    // to be computed per IF and may be different and may
+    // change per integration.
+    
+    cout << "Looking up conversion factors" << endl;
+    convertBrightnessUnits (pTabOut, in, toKelvin, cFac, doAll);
   }
-//
+
   return pTabOut;
 }
-
-
-
 
 
 SDMemTable* SDMath::gainElevation(const SDMemTable& in, 
@@ -1174,86 +1133,78 @@ SDMemTable* SDMath::gainElevation(const SDMemTable& in,
 				  const String& methodStr, Bool doAll) const
 {
 
-// Get header and clone output table
-
+  // Get header and clone output table
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
 
-// Get elevation data from SDMemTable and convert to degrees
-
+  // Get elevation data from SDMemTable and convert to degrees
   const Table& tab = in.table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
   Vector<Float> x = elev.getColumn();
   x *= Float(180 / C::pi);                        // Degrees
-//
+  
   const uInt nC = coeffs.nelements();
   if (fileName.length()>0 && nC>0) {
-     throw(AipsError("You must choose either polynomial coefficients or an ascii file, not both"));
+    throw(AipsError("You must choose either polynomial coefficients or an ascii file, not both"));
   }
-
-// Correct
-
+  
+  // Correct
   if (nC>0 || fileName.length()==0) {
-
-// Find instrument
-
+    // Find instrument
      Bool throwIt = True;
      Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
      
-// Set polynomial
-
+     // Set polynomial
      Polynomial<Float>* pPoly = 0;
      Vector<Float> coeff;
      String msg;
      if (nC>0) {
-        pPoly = new Polynomial<Float>(nC);
-        coeff = coeffs;
-        msg = String("user");
+       pPoly = new Polynomial<Float>(nC);
+       coeff = coeffs;
+       msg = String("user");
      } else {
-        SDAttr sdAttr;
-        coeff = sdAttr.gainElevationPoly(inst);
-        pPoly = new Polynomial<Float>(3);
-        msg = String("built in");
+       SDAttr sdAttr;
+       coeff = sdAttr.gainElevationPoly(inst);
+       pPoly = new Polynomial<Float>(3);
+       msg = String("built in");
      }
-//
+     
      if (coeff.nelements()>0) {
-        pPoly->setCoefficients(coeff);
+       pPoly->setCoefficients(coeff);
      } else {
-        throw(AipsError("There is no known gain-elevation polynomial known for this instrument"));
+       delete pPoly;
+       throw(AipsError("There is no known gain-elevation polynomial known for this instrument"));
      }
-//
      cout << "Making polynomial correction with " << msg << " coefficients" << endl;
      const uInt nRow = in.nRow();
      Vector<Float> factor(nRow);
      for (uInt i=0; i<nRow; i++) {
-        factor[i] = 1.0 / (*pPoly)(x[i]);
+       factor[i] = 1.0 / (*pPoly)(x[i]);
      }
      delete pPoly;
-//
      scaleByVector (pTabOut, in, doAll, factor, True);
+
   } else {
+    
+    // Indicate which columns to read from ascii file
+    String col0("ELEVATION");
+    String col1("FACTOR");
+    
+    // Read and correct
+    
+    cout << "Making correction from ascii Table" << endl;
+    scaleFromAsciiTable (pTabOut, in, fileName, col0, col1, 
+			 methodStr, doAll, x, True);
+  }
 
-// Indicate which columns to read from ascii file
-
-     String col0("ELEVATION");
-     String col1("FACTOR");
-
-// Read and correct
-
-     cout << "Making correction from ascii Table" << endl;
-     scaleFromAsciiTable (pTabOut, in, fileName, col0, col1, 
-                          methodStr, doAll, x, True);
-   }
-//
-   return pTabOut;
+  return pTabOut;
 }
-
  
 
 SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll) const
 {
 
-// Get header and clone output table
+  // Get header and clone output table
 
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
@@ -1277,7 +1228,7 @@ SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll) const
 // Correct
 
   scaleByVector (pTabOut, in, doAll, factor, True);
-//
+
   return pTabOut;
 }
 
@@ -1288,10 +1239,10 @@ void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
 // assumes linear correlations
 //
 {
-   if (in.nPol() != 4) {
-      throw(AipsError("You must have 4 polarizations to run this function"));
-   }
-//
+  if (in.nPol() != 4) {
+    throw(AipsError("You must have 4 polarizations to run this function"));
+  }
+
    SDHeader sh = in.getSDHeader();
    Instrument inst = SDAttr::convertInstrument (sh.antennaname, False);
    SDAttr sdAtt;
@@ -1323,21 +1274,17 @@ void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
       specCol.get(i,data);
       IPosition shape = data.shape();
  
-// Get polarization slice references
-  
+      // Get polarization slice references
       Array<Float> C3 = data(start3,end3);
       Array<Float> C4 = data(start4,end4);
     
-// Rotate
- 
+      // Rotate
       SDPolUtil::rotatePhase(C3, C4, value);
    
-// Put
-    
+      // Put
       specCol.put(i,data);
    }
 }     
-
 
 
 void SDMath::rotateLinPolPhase(SDMemTable& in, Float value, Bool doAll)
@@ -1522,7 +1469,7 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 
 
 
-SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
+SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
                                    MFrequency::Types freqSystem,
                                    const String& refTime, 
                                    const String& methodStr,
@@ -1550,71 +1497,75 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
  
    Matrix<uInt> ddIdx;
    SDDataDesc dDesc;
-   generateDataDescTable (ddIdx, dDesc, nIF, in, tabIn, srcCol, fqIDCol, perFreqID);
+   generateDataDescTable(ddIdx, dDesc, nIF, in, tabIn, srcCol, 
+			  fqIDCol, perFreqID);
 
 // Get reference Epoch to time of first row or given String
-
+   
    Unit DAY(String("d"));
    MEpoch::Ref epochRef(in.getTimeReference());
    MEpoch refEpoch;
    if (refTime.length()>0) {
-      refEpoch = epochFromString(refTime, in.getTimeReference());
+     refEpoch = epochFromString(refTime, in.getTimeReference());
    } else {
-      refEpoch = in.getEpoch(0);
+     refEpoch = in.getEpoch(0);
    }
    cout << "Aligning at reference Epoch " << formatEpoch(refEpoch) 
 	<< " in frame " << MFrequency::showType(freqSystem) << endl;
    
-// Get Reference Position
-
+   // Get Reference Position
+   
    MPosition refPos = in.getAntennaPosition();
-
-// Create FrequencyAligner Block. One FA for each possible
-// source/freqID (perFreqID=True) or source/IF (perFreqID=False) combination
-
+   
+   // Create FrequencyAligner Block. One FA for each possible
+   // source/freqID (perFreqID=True) or source/IF (perFreqID=False)
+   // combination
+   
    PtrBlock<FrequencyAligner<Float>* > a(dDesc.length());
    generateFrequencyAligners (a, dDesc, in, nChan, freqSystem, refPos, 
                               refEpoch, perFreqID);
-
-// Generate and fill output Frequency Table.  WHen perFreqID=True, there is one output FreqID
-// for each entry in the SDDataDesc table.  However, in perFreqID=False mode, there may be
-// some degeneracy, so we need a little translation map
-
+   
+   // Generate and fill output Frequency Table.  WHen perFreqID=True,
+   // there is one output FreqID for each entry in the SDDataDesc
+   // table.  However, in perFreqID=False mode, there may be some
+   // degeneracy, so we need a little translation map
+   
    SDFrequencyTable freqTabOut = in.getSDFreqTable();
    freqTabOut.setLength(0);
    Vector<String> units(1);
    units = String("Hz");
    Bool linear=True;
-//
+   //
    Vector<uInt> ddFQTrans(dDesc.length(),0);
    for (uInt i=0; i<dDesc.length(); i++) {
 
-// Get Aligned SC in Hz
-
-      SpectralCoordinate sC = a[i]->alignedSpectralCoordinate(linear);
-      sC.setWorldAxisUnits(units);
-
-// Add FreqID
-
-      uInt idx = freqTabOut.addFrequency(sC.referencePixel()[0],
-                                         sC.referenceValue()[0],
-                                         sC.increment()[0]);
-      ddFQTrans(i) = idx;                                       // output FreqID = ddFQTrans(ddIdx)
+     // Get Aligned SC in Hz
+     
+     SpectralCoordinate sC = a[i]->alignedSpectralCoordinate(linear);
+     sC.setWorldAxisUnits(units);
+     
+     // Add FreqID
+     
+     uInt idx = freqTabOut.addFrequency(sC.referencePixel()[0],
+					sC.referenceValue()[0],
+					sC.increment()[0]);
+     // output FreqID = ddFQTrans(ddIdx)
+     ddFQTrans(i) = idx;
    }
-
-// Interpolation method
-
+   
+   // Interpolation method
+   
    InterpolateArray1D<Double,Float>::InterpolationMethod interp;
    convertInterpString(interp, methodStr);
-
-// New output Table
-
+   
+   // New output Table
+   
    cout << "Create output table" << endl;
    SDMemTable* pTabOut = new SDMemTable(in,True);
    pTabOut->putSDFreqTable(freqTabOut);
-
-// Loop over rows in Table
-
+   
+   // Loop over rows in Table
+   
    Bool extrapolate=False;
    const IPosition polChanAxes(2, asap::PolAxis, asap::ChanAxis);
    Bool useCachedAbcissa = False;
@@ -1625,119 +1576,170 @@ SDMemTable* SDMath::frequencyAlign (const SDMemTable& in,
    Vector<uInt> freqID(nIF);
    uInt ifIdx, faIdx;
    Vector<Double> xIn;
-//
+   //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
-      if (iRow%10==0) {
-         cout << "Processing row " << iRow << endl;
-      }
-
-// Get EPoch
-
+     if (iRow%10==0) {
+       cout << "Processing row " << iRow << endl;
+     }
+     
+     // Get EPoch
+     
      Quantum<Double> tQ2(times[iRow],DAY);
      MVEpoch mv2(tQ2);
      MEpoch epoch(mv2, epochRef);
-
-// Get copy of data
-    
+     
+     // Get copy of data
+     
      const MaskedArray<Float>& mArrIn(in.rowAsMaskedArray(iRow));
      Array<Float> values = mArrIn.getArray();
      Array<Bool> mask = mArrIn.getMask(); 
-
-// For each row, the Frequency abcissa will be the same regardless
-// of polarization.  For all other axes (IF and BEAM) the abcissa
-// will change.  So we iterate through the data by pol-chan planes
-// to mimimize the work.  Probably won't work for multiple beams
-// at this point.
-
+     
+     // For each row, the Frequency abcissa will be the same
+     // regardless of polarization.  For all other axes (IF and BEAM)
+     // the abcissa will change.  So we iterate through the data by
+     // pol-chan planes to mimimize the work.  Probably won't work for
+     // multiple beams at this point.
+     
      ArrayIterator<Float> itValuesPlane(values, polChanAxes);
      ArrayIterator<Bool> itMaskPlane(mask, polChanAxes);
      while (!itValuesPlane.pastEnd()) {
 
-// Find the IF index and then the FA PtrBlock index
-
-        const IPosition& pos = itValuesPlane.pos();
-        ifIdx = pos(asap::IFAxis);
-        faIdx = ddIdx(iRow,ifIdx);
-
-// Generate abcissa for perIF.  Could cache this in a Matrix
-// on a per scan basis.   Pretty expensive doing it for every row.
-
-        if (!perFreqID) {
-           xIn.resize(nChan);
-           uInt fqID = dDesc.secID(ddIdx(iRow,ifIdx));
-           SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
+       // Find the IF index and then the FA PtrBlock index
+       
+       const IPosition& pos = itValuesPlane.pos();
+       ifIdx = pos(asap::IFAxis);
+       faIdx = ddIdx(iRow,ifIdx);
+       
+       // Generate abcissa for perIF.  Could cache this in a Matrix on
+       // a per scan basis.  Pretty expensive doing it for every row.
+       
+       if (!perFreqID) {
+	 xIn.resize(nChan);
+	 uInt fqID = dDesc.secID(ddIdx(iRow,ifIdx));
+	 SpectralCoordinate sC = in.getSpectralCoordinate(fqID);
            Double w;
            for (uInt i=0; i<nChan; i++) {
-              sC.toWorld(w,Double(i));
+	     sC.toWorld(w,Double(i));
               xIn[i] = w;
            }
-        }
-//
-        VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
-        VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
+       }
+       
+       VectorIterator<Float> itValuesVec(itValuesPlane.array(), 1); 
+       VectorIterator<Bool> itMaskVec(itMaskPlane.array(), 1);
 
-// Iterate through the plane by vector and align
-
+       // Iterate through the plane by vector and align
+       
         first = True;
         useCachedAbcissa=False;
         while (!itValuesVec.pastEnd()) {     
-           if (perFreqID) {
-              ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
-                                    itMaskVec.vector(), epoch, useCachedAbcissa,
-                                    interp, extrapolate); 
-           } else {
-              ok = a[faIdx]->align (yOut, maskOut, xIn, itValuesVec.vector(),
-                                    itMaskVec.vector(), epoch, useCachedAbcissa,
-                                    interp, extrapolate); 
-           }
-//
-           itValuesVec.vector() = yOut;
-           itMaskVec.vector() = maskOut;
-//
-           itValuesVec.next();
-           itMaskVec.next();
-//
-           if (first) {
-              useCachedAbcissa = True;
-              first = False;
-           }
+	  if (perFreqID) {
+	    ok = a[faIdx]->align (yOut, maskOut, itValuesVec.vector(),
+				  itMaskVec.vector(), epoch, useCachedAbcissa,
+				  interp, extrapolate); 
+	  } else {
+	    ok = a[faIdx]->align (yOut, maskOut, xIn, itValuesVec.vector(),
+				  itMaskVec.vector(), epoch, useCachedAbcissa,
+				  interp, extrapolate); 
+	  }
+	  //
+	  itValuesVec.vector() = yOut;
+	  itMaskVec.vector() = maskOut;
+	  //
+	  itValuesVec.next();
+	  itMaskVec.next();
+	  //
+	  if (first) {
+	    useCachedAbcissa = True;
+	    first = False;
+	  }
         }
-//
-       itValuesPlane.next();
-       itMaskPlane.next();
+	//
+	itValuesPlane.next();
+	itMaskPlane.next();
      }
-
-// Create SDContainer and put back
-
-    SDContainer sc = in.getSDContainer(iRow);
-    putDataInSDC(sc, values, mask);
-
-// Set output FreqIDs
-
-    for (uInt i=0; i<nIF; i++) {
+     
+     // Create SDContainer and put back
+     
+     SDContainer sc = in.getSDContainer(iRow);
+     putDataInSDC(sc, values, mask);
+     
+     // Set output FreqIDs
+     
+     for (uInt i=0; i<nIF; i++) {
        uInt idx = ddIdx(iRow,i);               // Index into SDDataDesc table
        freqID(i) = ddFQTrans(idx);             // FreqID in output FQ table
-    }
-    sc.putFreqMap(freqID);
-//
-    pTabOut->putSDContainer(sc);
+     }
+     sc.putFreqMap(freqID);
+     //
+     pTabOut->putSDContainer(sc);
    }
-
-// Now we must set the base and extra frames to the 
-// input frame
-
+   
+   // Now we must set the base and extra frames to the input frame
    std::vector<string> info = pTabOut->getCoordInfo();
    info[1] = MFrequency::showType(freqSystem);   // Conversion frame
    info[3] = info[1];                            // Base frame
    pTabOut->setCoordInfo(info);
 
-// Clean up PointerBlock
-
+   // Clean up PointerBlock   
    for (uInt i=0; i<a.nelements(); i++) delete a[i];
-//
+
    return pTabOut;
 }
 
+
+SDMemTable* SDMath::frequencySwitch(const SDMemTable& in) const
+{
+  if (in.nIF() != 2) {
+    throw(AipsError("nIF != 2 "));
+  }
+  Bool clear = True;
+  SDMemTable* pTabOut = new SDMemTable(in, clear);
+  const Table& tabIn = in.table();
+
+  // Shape of input and output data 
+  const IPosition& shapeIn = in.rowAsMaskedArray(0).shape();
+
+  const uInt nRows = in.nRow();
+  AlwaysAssert(asap::nAxes==4,AipsError);
+
+  ROArrayColumn<Float> tSysCol;
+  Array<Float> tsys;
+  tSysCol.attach(tabIn,"TSYS");
+
+  for (uInt iRow=0; iRow<nRows; iRow++) {
+    // Get data for this row
+    MaskedArray<Float> marr(in.rowAsMaskedArray(iRow));
+    tSysCol.get(iRow, tsys);
+
+    // whole Array for IF 0
+    IPosition start(asap::nAxes,0);
+    IPosition end = shapeIn-1;
+    end(asap::IFAxis) = 0;
+
+    MaskedArray<Float> on = marr(start,end);
+    Array<Float> ton = tsys(start,end);
+    // Make a copy as "src" is a refrence which is manipulated.
+    // oncopy is needed for the inverse quotient
+    MaskedArray<Float> oncopy = on.copy();
+
+    // whole Array for IF 1
+    start(asap::IFAxis) = 1;
+    end(asap::IFAxis) = 1;
+
+    MaskedArray<Float> off = marr(start,end);
+    Array<Float> toff = tsys(start,end);
+
+    on /= off; on -= 1.0f;
+    on *= ton;
+    off /= oncopy; off -= 1.0f;
+    off *= toff;
+
+    SDContainer sc = in.getSDContainer(iRow);
+    putDataInSDC(sc, marr.getArray(), marr.getMask());
+    pTabOut->putSDContainer(sc);
+  }
+  return pTabOut;
+}
 
 void SDMath::fillSDC(SDContainer& sc,
 		     const Array<Bool>& mask,
@@ -2162,7 +2164,7 @@ void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
 
 
 
-MEpoch SDMath::epochFromString (const String& str, MEpoch::Types timeRef) const
+MEpoch SDMath::epochFromString(const String& str, MEpoch::Types timeRef) const
 {
    Quantum<Double> qt;
    if (MVTime::read(qt,str)) {
@@ -2183,13 +2185,13 @@ String SDMath::formatEpoch(const MEpoch& epoch)  const
 
 
 
-void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a, 
-                                        const SDDataDesc& dDesc,
-                                        const SDMemTable& in, uInt nChan,
-                                        MFrequency::Types system,
-                                        const MPosition& refPos,
-                                        const MEpoch& refEpoch,
-                                        Bool perFreqID) const
+void SDMath::generateFrequencyAligners(PtrBlock<FrequencyAligner<Float>* >& a, 
+				       const SDDataDesc& dDesc,
+				       const SDMemTable& in, uInt nChan,
+				       MFrequency::Types system,
+				       const MPosition& refPos,
+				       const MEpoch& refEpoch,
+				       Bool perFreqID) const
 {
    for (uInt i=0; i<dDesc.length(); i++) {
       uInt ID = dDesc.ID(i);
@@ -2213,7 +2215,7 @@ void SDMath::generateFrequencyAligners (PtrBlock<FrequencyAligner<Float>* >& a,
    }
 }
 
-Vector<uInt> SDMath::getRowRange (const SDMemTable& in) const
+Vector<uInt> SDMath::getRowRange(const SDMemTable& in) const
 {
    Vector<uInt> range(2);
    range[0] = 0;
@@ -2222,7 +2224,8 @@ Vector<uInt> SDMath::getRowRange (const SDMemTable& in) const
 }
    
 
-Bool SDMath::rowInRange (uInt i, const Vector<uInt>& range) const
+Bool SDMath::rowInRange(uInt i, const Vector<uInt>& range) const
 {
    return (i>=range[0] && i<=range[1]);
 }
+
