@@ -27,7 +27,7 @@ def _asap_fname():
      * current working dir
      * environ var ASAPRC
      * HOME/.asaprc
-     
+
     """
 
     fname = os.path.join( os.getcwd(), '.asaprc')
@@ -46,20 +46,21 @@ def _asap_fname():
         if os.path.exists(fname):
             return fname
     return None
-        
+
 
 defaultParams = {
     # general
     'verbose'             : [True, _validate_bool],
     'useplotter'          : [True, _validate_bool],
     'insitu'              : [True, _validate_bool],
-    
+
     # plotting
+    'plotter.gui'         : [True, _validate_bool],
     'plotter.stacking'    : ['p', str],
     'plotter.panelling'   : ['s', str],
     'plotter.colours'     : ['', str],
     'plotter.linestyles'  : ['', str],
-
+    
     # scantable
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, _validate_bool],
@@ -72,7 +73,7 @@ defaultParams = {
     }
 
 def list_rcparameters():
-    
+
     print """
     # general
     # print verbose output
@@ -83,8 +84,12 @@ def list_rcparameters():
 
     # apply operations on the input scantable or return new one
     insitu                     : True
-    
+
     # plotting
+    
+    # do we want a GUI or plot to a file
+    plotter.gui                : True
+    
     # default mode for colour stacking
     plotter.stacking           : Pol
 
@@ -93,7 +98,7 @@ def list_rcparameters():
 
     # default colours/linestyles
     plotter.colours            :
-    plotter.linestyles         : 
+    plotter.linestyles         :
 
     # scantable
     # default ouput format when saving
@@ -106,28 +111,28 @@ def list_rcparameters():
     scantable.freqframe        : LSRK
 
     # apply action to all axes not just the cursor location
-    scantable.allaxes          : True 
+    scantable.allaxes          : True
 
     # use internal plotter
     scantable.plotter          : True
 
     # Control the level of information printed by summary
     scantable.verbosesummary   : False
-    
-    # Fitter    
+
+    # Fitter
     """
-    
+
 def rc_params():
     'Return the default params updated from the values in the rc file'
-    
+
     fname = _asap_fname()
-    
+
     if fname is None or not os.path.exists(fname):
         message = 'could not find rc file; returning defaults'
         ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
         #print message
         return ret
-        
+
     cnt = 0
     for line in file(fname):
         cnt +=1
@@ -138,13 +143,13 @@ def rc_params():
         if len(tup) !=2:
             print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
             continue
-        
+
         key, val = tup
         key = key.strip()
         if not defaultParams.has_key(key):
             print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
             continue
-        
+
         default, converter =  defaultParams[key]
 
         ind = val.find('#')
@@ -166,7 +171,7 @@ def rc_params():
 
 
 # this is the instance used by the asap classes
-rcParams = rc_params() 
+rcParams = rc_params()
 
 rcParamsDefault = dict(rcParams.items()) # a copy
 
@@ -180,20 +185,20 @@ def rc(group, **kwargs):
       rc('scantable', save='SDFITS')
 
     sets the current rc params and is equivalent to
-    
+
       rcParams['scantable.save'] = 'SDFITS'
 
     Use rcdefaults to restore the default rc params after changes.
     """
 
     aliases = {}
-    
+
     for k,v in kwargs.items():
         name = aliases.get(k) or k
         key = '%s.%s' % (group, name)
         if not rcParams.has_key(key):
             raise KeyError('Unrecognized key "%s" for group "%s" and name "%s"' % (key, group, name))
-        
+
         rcParams[key] = v
 
 
@@ -227,26 +232,28 @@ from numarray import logical_or as mask_or
 from numarray import logical_not as mask_not
 
 if rcParams['useplotter']:
-    if os.environ.has_key('DISPLAY'):
-        print "Initialising asapplotter with the name 'plotter' ..."
-        import asapplotter 
-        plotter = asapplotter.asapplotter()
-    else:
-        print "No $DISPLAY set. Disabling plotter.\n"
-
+    from  asapplotter import *
+    if rcParams['verbose']:
+        print "Initialising GUI asapplotter with the name 'plotter' ..."
+    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+    plotter = asapplotter(gui)
 
 __date__ = '$Date$'.split()[1]
-__version__  = '1.1'
+__version__  = '1.2'
 
-def list_scans(t = scantable):
-    import sys, types
-    globs = sys.modules['__main__'].__dict__.iteritems()
-    print "The user created scantables are:"
-    sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
-    print filter(lambda x: not x.startswith('_'), sts)
+if rcParams['verbose']:
+    def list_scans(t = scantable):
+        import sys, types
+        globs = sys.modules['__main__'].__dict__.iteritems()
+        print "The user created scantables are:"
+        sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
+        print filter(lambda x: not x.startswith('_'), sts)
+        return
+else:
+    pass
 
 def commands():
-    x = """    
+    x = """
     [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
@@ -285,7 +292,7 @@ def commands():
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
-            average_time    - return the (weighted) time average of a scan 
+            average_time    - return the (weighted) time average of a scan
                               or a list of scans
             average_pol     - average the polarisations together.
                               The dimension won't be reduced and
@@ -295,12 +302,12 @@ def commands():
                               automatic detection of the on/off scans
             quotient        - return the on/off quotient
             scale           - return a scan scaled by a given factor
-            add             - return a scan with given value added 
+            add             - return a scan with given value added
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
-            auto_poly_baseline - automatically fit a polynomial baseline 
+            auto_poly_baseline - automatically fit a polynomial baseline
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness
@@ -311,7 +318,7 @@ def commands():
                                  polarization O=Q+iU correlation
      [Math] Mainly functions which operate on more than one scantable
 
-            average_time    - return the (weighted) time average 
+            average_time    - return the (weighted) time average
                               of a list of scans
             quotient        - return the on/off quotient
             simple_math     - simple mathematical operations on two scantables,
@@ -349,7 +356,7 @@ def commands():
             set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
             set_layout      - specify the multi-panel layout (rows,cols)
-            
+
     [Reading files]
         reader              - access rpfits/sdfits files
             read            - read in integrations
@@ -369,13 +376,13 @@ def commands():
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
-        
+
     Note:
         How to use this with help:
                                          # function 'summary'
         [xxx] is just a category
         Every 'sub-level' in this list should be replaces by a '.' Period when
-        using help 
+        using help
         Example:
             ASAP> help scantable # to get info on ths scantable
             ASAP> help scantable.summary # to get help on the scantable's
@@ -385,11 +392,11 @@ def commands():
     print x
     return
 
-print """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
+def welcome():
+    return """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
 
 Please report any bugs to:
 asap@atnf.csiro.au
 
 [IMPORTANT: ASAP is 0-based]
-Type commands() to get a list of all available ASAP commands.
-""" % (__version__, __date__)
+Type commands() to get a list of all available ASAP commands.""" % (__version__, __date__)
