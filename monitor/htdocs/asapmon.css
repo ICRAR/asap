@@ -1,0 +1,88 @@
+
+body {
+    font-family: verdana,sans-serif;
+    font-size: 8pt;
+}
+
+input, select {
+    font-size: 8pt;
+}
+
+input.plot {
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-style: solid;
+    border-right-style: solid;
+    border-bottom-style: solid;
+    border-left-style: solid;
+    border-top-color: gray;
+    border-right-color: gray;
+    border-bottom-color: gray;
+    border-left-color: gray;
+}
+
+legend {
+        color: white;
+        border: solid #8F8FB3;
+        border-width: 1px;
+        padding: 0.3em;
+        margin-bottom: 0.2em;
+        background-color: #ADADD9;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        font-size: smaller;
+}
+
+fieldset {
+
+        border: 1px solid;
+        border-top-width: 2px;
+        border-color: rgb(230,230,230);
+        border-top-color: #ABB8C7;
+        padding: 0 0 1em 1em;
+        background-color: #F4F4F4;
+        width: auto;
+        margin-right: 0.5em;
+}
+
+fieldset.velocity {
+   height: 45px;
+}
+
+#plotrange {
+width:250px;
+
+}
+
+#rangeunit {
+//float:left;
+}
+
+#velunit {
+//width:195px;
+padding-left:0px;
+float:left;
+}
+#velframe {
+//width:145px;
+padding-left:5px;
+float:left;
+display: none;
+
+}
+#veldoppler {
+//width:135px;
+padding-left:5px;
+float:left;
+display: none;
+}
+
+#velrest {
+//width:130px;
+padding-left:5px;
+float:left;
+display: none;
+}
+

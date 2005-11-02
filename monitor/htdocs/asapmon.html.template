@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <title tal:content="title">ASAP Online Monitor</title>
+        <link rel="stylesheet" href="/asapmon/asapmon.css" type="text/css">
+        <script type="text/javascript" src="/asapmon/prototype.js"></script>
+        <script type="text/javascript" src="/asapmon/asapmon.js"></script>
+
+    </head>
+
+<body>
+    <h1 tal:content="title">ASAP Online Monitor</h1>
+    <form name="specplot" action="/cgi-bin/asapmon/asapmon.py">
+        <fieldset>
+        <legend>File selection</legend>
+            Directory:
+            <select id="directory" name="dlist">
+            <option tal:repeat="entry fields/directories" tal:content="entry" tal:attributes=" value repeat/entry/index;selected python: int(fields['cdir'])==int(repeat['entry'].getIndex()) and 'selected' or None">
+            somewhere over the rainbow</option>
+            </select>
+           <input class="plot" type="button" name="flist" onClick="insertFields();" value="Update --&gt;"></input>
+            File:
+            <select id="filelist" name="list">
+                <option tal:repeat="entry fields/files" tal:content="entry" tal:attributes=" value repeat/entry/index;selected python: int(fields['cfile'])==int(repeat['entry'].getIndex()) or None">---</option>
+            </select>
+        </fieldset>
+        <p>
+        <fieldset>
+        <legend>Plot parameters</legend>
+            <div id="velunit">
+            <fieldset class="velocity">
+                <legend>Unit</legend>
+                <label>Channel
+                    <input type="radio" checked name="unit" onclick="unitswitch('channel');" value="channel">
+                </label>
+                <label>km/s
+                    <input type="radio" name="unit" onclick="unitswitch('km/s');" value="km/s">
+                </label>
+                <label>GHz
+                    <input type="radio" name="unit" onclick="unitswitch('GHz');" value="GHz">
+                </label>
+            </fieldset>
+            </div>
+            <div id="velframe">
+            <fieldset class="velocity">
+                <legend>Frame</legend>
+                <label>LSRK
+                    <input type="radio" checked name="frame" value="LSRK">
+                </label>
+                <label>BARY
+                    <input type="radio" name="frame" value="BARY">
+                </label>
+            </fieldset>
+            </div>
+            <div id="veldoppler">
+            <fieldset class="velocity">
+                <legend>Doppler</legend>
+                <label>optical
+                    <input type="radio" name="doppler" value="OPTICAL">
+                </label>
+                <label>radio
+                    <input type="radio" checked name="doppler" value="RADIO">
+                </label>
+            </fieldset>
+            </div>
+            <div id="velrest">
+            <fieldset class="velocity">
+                <legend>Rest Frequencies</legend>
+                <label>IF 1
+                <select name="rest1">
+                <option tal:repeat="line fields/restfreqs" tal:content="line" tal:attributes="value line"></option>
+                </select>
+                </label>&nbsp;
+                <label>IF 2
+                <select name="rest2">
+                <option tal:repeat="line fields/restfreqs" tal:content="line" tal:attributes="value line"></option>
+                </select>
+                </label>
+            </fieldset>
+            </div>
+            <div style="clear: both;">
+                &nbsp;
+            </div>
+            <div id="plotrange">
+            <fieldset>
+                <legend>Plot Range</legend>
+                <label id="plotlbl"><input id="plotwindow" name="plotwindow" value=""></input></label>
+                <label id ="prangeunit"></label>
+            </fieldset>
+            </div>
+        </fieldset>
+        <p>
+        <fieldset>
+        <legend>Processing</legend>
+            <div style="float: left;padding-left:0.5em;">
+            <label>Quotient
+                <input type="checkbox" name="quotient" value="True">
+            </label>
+            </div>
+            <div style="float: left;padding-left:0.5em;">
+            <label>Baseline
+                <input type="checkbox" name="baseline" value="True" onClick="baselineswitch(this);">
+            </label>
+            </div>
+            <div id="polyorder" style="float: left;display:none;padding-left:0.5em;">
+                <label>Order &nbsp;</label>
+                <select name="polyorder">
+                <option tal:repeat="order fields/border" tal:content="order" tal:attributes=" value order"></option>
+                </select>
+            </div>
+            <div id="baselinerange" style="float: left;display:none;padding-left:0.5em;">
+                <label id="brange">Baseline range<input id="brangewindow" name="brangewindow" value=""></input></label>
+                <label id ="brangeunit"></label>
+            </div>
+        <div style="clear: both;">
+        </div>
+        </fieldset>
+        <p>
+        <div align="center">
+            <input class="plot" type="submit" name="plot" value="plot">
+        </div>
+    </form>
+    <div align="center">
+        <img tal:attributes="src fields/imagename">
+    </div>
+</body>
+</html>
