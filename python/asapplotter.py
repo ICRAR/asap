@@ -11,13 +11,10 @@ class asapplotter:
         other variables.
     """
     def __init__(self, visible=True):
-        
-        if visible:
-            from asap.asaplotgui import asaplotgui as asaplot
-        else:
-            from asap.asaplot import asaplot
-        self._plotter = asaplot()
-            
+
+        self._visible = visible
+        self._plotter = self._newplotter()
+
         self._tdict = {'Time':'t','time':'t','t':'t','T':'t'}
         self._bdict = {'Beam':'b','beam':'b','b':'b','B':'b'}
         self._idict = {'IF':'i','if':'i','i':'i','I':'i'}
@@ -44,7 +41,7 @@ class asapplotter:
         self._autoplot = False
         self._minmaxx = None
         self._minmaxy = None
-	self._datamask = None
+        self._datamask = None
         self._data = None
         self._lmap = None
         self._title = None
@@ -54,6 +51,16 @@ class asapplotter:
         self._cursor = {'t':None, 'b':None,
                         'i':None, 'p':None
                         }
+        self._usermask = None
+        self._usermaskspectra = None
+
+    def _newplotter(self):
+        if self._visible:
+            from asap.asaplotgui import asaplotgui as asaplot
+        else:
+            from asap.asaplot import asaplot
+        return asaplot()
+
 
     def _translate(self, name):
         for d in self._dicts:
@@ -72,25 +79,28 @@ class asapplotter:
             NO checking is done that the abcissas of the scantables
             are consistent e.g. all 'channel' or all 'velocity' etc.
         """
-	if self._plotter.is_dead:
-            self._plotter = ASAPlot()
+        if self._plotter.is_dead:
+            self._plotter = self._newplotter()
         self._plotter.hold()
         self._plotter.clear()
         if len(args) > 0:
             if self._data is not None:
                 if list(args) != self._data:
                     self._data = list(args)
-                    # reset cursor
-                    self.set_cursor(refresh=False)
+                    # reset
+                    self._reset()
             else:
-                self._data = list(args)
-                self.set_cursor(refresh=False)
+                if isinstance(args[0], list):
+                    self._data = args[0]
+                else:
+                    self._data = list(args)
+                self._reset()
         # ranges become invalid when unit changes
         if self._abcunit != self._data[0].get_unit():
             self._minmaxx = None
             self._minmaxy = None
             self._abcunit = self._data[0].get_unit()
-	    self._datamask = None
+            self._datamask = None
         if self._panelling == 't':
             maxrows = 25
             if self._data[0].nrow() > maxrows:
@@ -124,12 +134,13 @@ class asapplotter:
         if self._stacking is not None:
             ncol = eval(self._cdict.get(colmode))
         if n > 1:
+            ganged = rcParams['plotter.ganged']
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
-                                         nplots=n)
+                                         nplots=n,ganged=ganged)
             else:
-                self._plotter.set_panels(rows=n,cols=0,nplots=n)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n,ganged=ganged)
         else:
             self._plotter.set_panels()
         rows = self._cursor["t"]
@@ -170,6 +181,9 @@ class asapplotter:
                 x,xlab = scan.get_abcissa(rowsel)
                 if self._abcissa: xlab = self._abcissa
                 y = None
+                m = scan._getmask(rowsel)
+                if self._usermask and self._usermask.count(j):
+                    m  = logical_and(self._usermask, m)
                 if polmode == "stokes":
                     y = scan._getstokesspectrum(rowsel)
                 elif polmode == "stokes2":
@@ -183,9 +197,9 @@ class asapplotter:
                 else:
                     ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
-		if self._datamask is not None:
-		    if len(m) == len(self._datamask):
-		    	m = logical_and(m,self._datamask)
+                if self._datamask is not None:
+                    if len(m) == len(self._datamask):
+                        m = logical_and(m,self._datamask)
                 if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[jj]
                 else:
@@ -199,18 +213,23 @@ class asapplotter:
                     x = x[s:e]
                     y = y[s:e]
                     m = m[s:e]
+                if len(x) > 1024 and rcParams['plotter.decimate']:
+                    fac = len(x)/1024
+                    x = x[::fac]
+                    m = m[::fac]
+                    y = y[::fac]
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
-		    xlim = self._minmaxx
-		self._plotter.axes.set_xlim(xlim)
+                    xlim = self._minmaxx
+                self._plotter.axes.set_xlim(xlim)
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)
             self._plotter.set_axes('title',tlab)
         return
 
     def _plot_scans(self, scans, colmode):
-        print "Can only plot one row per scan."
+        print "Plotting mode is scans across panels. Can only plot one row per scan."
         if colmode == 's':
             return
         cdict = {'b':'scan.setbeam(j)',
@@ -226,12 +245,13 @@ class asapplotter:
             scan = scans[0]
             ncol = eval(self._cdict.get(colmode))
         if n > 1:
+            ganged = rcParams['plotter.ganged']
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
-                                         nplots=n)
+                                         nplots=n,ganged=ganged)
             else:
-                self._plotter.set_panels(rows=n,cols=0,nplots=n)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n,ganged=ganged)
         else:
             self._plotter.set_panels()
 
@@ -279,9 +299,8 @@ class asapplotter:
                 else:
                     ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
-		if self._datamask is not None:
-		    if len(m) == len(self._datamask):
-		    	m = logical_and(m,self._datamask)
+                if self._usermask and self._usermask.count(j):
+                    m  = logical_and(self._usermask, m)
                 if self._lmap and len(self._lmap) > 0:
                     llab = self._lmap[jj]
                 else:
@@ -295,11 +314,15 @@ class asapplotter:
                     x = x[s:e]
                     y = y[s:e]
                     m = m[s:e]
-
+                if len(x) > 1024 and rcParams['plotter.decimate']:
+                    fac = len(x)/1024
+                    x = x[::fac]
+                    m = m[::fac]
+                    y = y[::fac]
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
-		    xlim = self._minmaxx
+                    xlim = self._minmaxx
                 self._plotter.axes.set_xlim(xlim)
 
             self._plotter.set_axes('xlabel',xlab)
@@ -324,12 +347,13 @@ class asapplotter:
         if self._stacking is not None:
             ncol = eval(self._cdict.get(colmode))
         if n > 1:
+            ganged = rcParams['plotter.ganged']
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
-                                         nplots=n)
+                                         nplots=n,ganged=ganged)
             else:
-                self._plotter.set_panels(rows=n,cols=0,nplots=n)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n,ganged=ganged)
         else:
             self._plotter.set_panels()
         panels = self._cursor[self._panelling]
@@ -389,9 +413,9 @@ class asapplotter:
                 else:
                     ylab = scan._get_ordinate_label()
                 m = scan._getmask(rowsel)
-		if self._datamask is not None:
-		    if len(m) == len(self._datamask):
-		    	m = logical_and(m,self._datamask)
+                if self._usermask and self._usermask.count(j):
+                    m  = logical_and(self._usermask, m)
+
                 if colmode == 's' or colmode == 't':
                     if self._title and len(self._title) > 0:
                         tlab = self._title[ii]
@@ -425,11 +449,15 @@ class asapplotter:
                     x = x[s:e]
                     y = y[s:e]
                     m = m[s:e]
-
+                if len(x) > 1024 and rcParams['plotter.decimate']:
+                    fac = len(x)/1024
+                    x = x[::fac]
+                    m = m[::fac]
+                    y = y[::fac]
                 self._plotter.plot(x,y,m)
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
-		    xlim = self._minmaxx
+                    xlim = self._minmaxx
                 self._plotter.axes.set_xlim(xlim)
 
             self._plotter.set_axes('xlabel',xlab)
@@ -444,7 +472,7 @@ class asapplotter:
         Set the plots look and feel, i.e. what you want to see on the plot.
         Parameters:
             stacking:     tell the plotter which variable to plot
-                          as line colour overlays (default 'pol')
+                          as line color overlays (default 'pol')
             panelling:    tell the plotter which variable to plot
                           across multiple panels (default 'scan'
         Note:
@@ -530,35 +558,96 @@ class asapplotter:
         Parameters:
              mp:    a list of 'strings'. This should have the same length
                     as the number of elements on the legend and then maps
-                    to the indeces in order
+                    to the indeces in order. It is possible to uses latex
+                    math expression. These have to be enclosed in r'', e.g. r'$x^{2}$'
 
         Example:
              If the data has two IFs/rest frequencies with index 0 and 1
              for CO and SiO:
              plotter.set_stacking('i')
-             plotter.set_legend_map(['CO','SiO'])
+             plotter.set_legend(['CO','SiO'])
              plotter.plot()
+             plotter.set_legend([r'$^{12}CO$', r'SiO'])
         """
         self._lmap = mp
         if self._data: self.plot()
         return
 
     def set_title(self, title=None):
+        """
+        Set the title of the plot. If multiple panels are plotted,
+        multiple titles have to be specified.
+        Example:
+             # two panels are visible on the plotter
+             plotter.set_title(["First Panel","Second Panel"])
+        """
         self._title = title
         if self._data: self.plot()
         return
 
     def set_ordinate(self, ordinate=None):
+        """
+        Set the y-axis label of the plot. If multiple panels are plotted,
+        multiple labels have to be specified.
+        Example:
+             # two panels are visible on the plotter
+             plotter.set_ordinate(["First Y-Axis","Second Y-Axis"])
+        """
         self._ordinate = ordinate
         if self._data: self.plot()
         return
 
     def set_abcissa(self, abcissa=None):
+        """
+        Set the x-axis label of the plot. If multiple panels are plotted,
+        multiple labels have to be specified.
+        Example:
+             # two panels are visible on the plotter
+             plotter.set_ordinate(["First X-Axis","Second X-Axis"])
+        """
         self._abcissa = abcissa
         if self._data: self.plot()
         return
 
-    def save(self, filename=None, orientation=None,dpi=None):
+    def set_colors(self, colormap):
+        """
+        Set the colors to be used. The plotter will cycle through
+        these colors when lines are overlaid (stacking mode).
+        Example:
+             plotter.set_colors("red green blue")
+             # If for example four lines are overlaid e.g I Q U V
+             # 'I' will be 'red', 'Q' will be 'green', U will be 'blue'
+             # and 'V' will be 'red' again.
+        """
+        if isinstance(colormap,str):
+            colormap = colormap.split()
+        self._plotter.palette(0,colormap=colormap)
+        if self._data: self.plot()
+
+    def set_linestyles(self, linestyles):
+        """
+        Parameters:
+             linestyles:     a list of linestyles to use.
+                             'line', 'dashed', 'dotted', 'dashdot',
+                             'dashdotdot' and 'dashdashdot' are
+                             possible
+
+        Set the linestyles to be used. The plotter will cycle through
+        these linestyles when lines are overlaid (stacking mode) AND
+        only one color has been set.
+        Example:
+             plotter.set_colors("black")
+             plotter.set_linestyles("line dashed dotted dashdot")
+             # If for example four lines are overlaid e.g I Q U V
+             # 'I' will be 'solid', 'Q' will be 'dashed',
+             # U will be 'dotted' and 'V' will be 'dashdot'.
+        """
+        if isinstance(linestyles,str):
+            linestyles = linestyles.split()
+        self._plotter.palette(color=0,linestyle=0,linestyles=linestyles)
+        if self._data: self.plot()
+
+    def save(self, filename=None, orientation=None, dpi=None):
         """
         Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
         Parameters:
@@ -571,6 +660,7 @@ class asapplotter:
                           'landscape', 'portrait' or None (default) are valid.
                           If None is choosen for 'ps' output, the plot is
                           automatically oriented to fill the page.
+             dpi:         The dpi of the output non-ps plot
         """
         self._plotter.save(filename,orientation,dpi)
         return
@@ -639,7 +729,7 @@ class asapplotter:
         dstokes = {"I":0,"Q":1,"U":2,"V":3}
         dstokes2 = {"I":0,"Plinear":1,"Pangle":2,"V":3}
         draw = {"XX":0, "YY":1,"Real(XY)":2, "Imag(XY)":3}
-        dcirc = { "RR":0,"LL":1}#,"Real(RL)":2,"Image(RL)":3}
+        dcirc = { "RR":0,"LL":1}#,"Real(RL)":2,"Imag(RL)":3}
 
         if pol is None:
             self._cursor["p"] = range(n)
@@ -676,6 +766,34 @@ class asapplotter:
             self._polmode = polmode
         if self._data and refresh: self.plot()
 
+    def set_mask(self, mask=None, pol=None):
+        if not self._data:
+            print "Can only set cursor after a first call to plot()"
+            return
+        if isinstance(mask, array):
+            self._usermask = mask
+        if isinstance(mask, list):
+            self._usermask = array(mask)
+        if mask is None and pol is None:
+            self._usermask = None
+            self._usermaskspectra = None
+
+        dstokes = {"I":0,"Q":1,"U":2,"V":3}
+        dstokes2 = {"I":0,"Plinear":1,"Pangle":2,"V":3}
+        draw = {"XX":0, "YY":1,"Real(XY)":2, "Imag(XY)":3}
+        dcirc = { "RR":0,"LL":1}#,"Real(RL)":2,"Imag(RL)":3}
+        if isinstance(pol, str):
+            pol = pol.split()
+        if isinstance(pol, list):
+            if isinstance(pol[0], str):
+                pass
+            else:
+                cpos = self._cursor[self._stacking]
+                self._usermaskspectra =filter(lambda i: filter(lambda j: j==i ,cpos),pol)
+        else:
+            return
+        self.plot()
+
     def _get_pollabel(self, scan, polmode):
         tlab = ""
         if polmode == "stokes":
@@ -710,5 +828,7 @@ class asapplotter:
             return end,start
         return start,end
 
-#if __name__ == '__main__':
-#    plotter = asapplotter()
+    def _reset(self):
+        self._usermask = None
+        self._usermaskspectra = None
+        self.set_cursor(refresh=False)

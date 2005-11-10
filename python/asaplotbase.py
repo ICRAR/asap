@@ -11,6 +11,7 @@ from matplotlib.figure import Figure, Text
 from matplotlib.font_manager import FontProperties
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
+from asap import rcParams as asaprcParams
 
 class asaplotbase:
     """
@@ -33,9 +34,35 @@ class asaplotbase:
 	if rows > 0:
 	    self.set_panels(rows, cols)
 
-	# Set matplotlib default colour sequence.
-	self.colormap = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'orange', 'pink']
+        # Set matplotlib default colour sequence.
+        self.colormap = "green red black cyan magenta orange blue purple yellow pink".split()
+        
+        c = asaprcParams['plotter.colours']
+        if isinstance(c,str) and len(c) > 0:
+            self.colormap = c.split()
+
+        self.lsalias = {"line":  [1,0],
+                        "dashdot": [4,2,1,2],
+                        "dashed" : [4,2,4,2],
+                        "dotted" : [1,2],
+                        "dashdotdot": [4,2,1,2,1,2],
+                        "dashdashdot": [4,2,4,2,1,2]
+                        }
+
+        styles = "line dashed dotted dashdot".split()
+        c = asaprcParams['plotter.linestyles']
+        if isinstance(c,str) and len(c) > 0:
+            styles = c.split()
+        s = []
+        for ls in styles:
+            if self.lsalias.has_key(ls):
+                s.append(self.lsalias.get(ls))
+            else:
+                s.append('-')
+        self.linestyles = s
+
         self.color = 0;
+        self.linestyle = 0;
 	self.attributes = {}
 	self.loc = 0
 
@@ -52,12 +79,27 @@ class asaplotbase:
 	self.color = 0
 	self.lines = []
 
-
-    def palette(self, color, colormap=None):
+    def palette(self, color, colormap=None, linestyle=0, linestyles=None):
         if colormap:
-            self.colormap = colormap
+            if isinstance(colormap,list):
+                self.colormap = colormap
+            elif isinstance(colormap,str):
+                self.colormap = colormap.split()
         if 0 <= color < len(self.colormap):
             self.color = color
+        if linestyles:
+            self.linestyles = []
+            if isinstance(linestyles,list):
+                styles = linestyles
+            elif isinstance(linestyles,str):
+                styles = linestyles.split()
+            for ls in styles:
+                if self.lsalias.has_key(ls):
+                    self.linestyles.append(self.lsalias.get(ls))
+                else:
+                    self.linestyles.append(self.lsalias.get('line'))
+        if 0 <= linestyle < len(self.linestyles):
+            self.linestyle = linestyle
 
     def delete(self, numbers=None):
 	"""
@@ -204,10 +246,16 @@ class asaplotbase:
 	if not gotcolour and len(self.colormap):
 	    for segment in self.lines[i]:
 		getattr(segment, "set_color")(self.colormap[self.color])
-
+                if len(self.colormap)  == 1:
+                    getattr(segment, "set_dashes")(self.linestyles[self.linestyle])
 	    self.color += 1
 	    if self.color >= len(self.colormap):
 		self.color = 0
+
+            if len(self.colormap) == 1:
+                self.linestyle += 1
+ 	    if self.linestyle >= len(self.linestyles):
+		self.linestyle = 0               
 
 	self.show()
 

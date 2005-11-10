@@ -7,7 +7,7 @@ class scantable(sdtable):
     """
         The ASAP container for scans
     """
-    
+
     def __init__(self, filename, average=None, unit=None):
         """
         Create a scantable from a saved one or make a reference
@@ -26,46 +26,52 @@ class scantable(sdtable):
                          Over-rides the default selected by the reader
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
-        """        
+        """
         if average is None or type(average) is not bool:
-            average = rcParams['scantable.autoaverage']            
+            average = rcParams['scantable.autoaverage']
 
         varlist = vars()
         self._vb = rcParams['verbose']
         self._p = None
-
+        from asap import asaplog
         if isinstance(filename,sdtable):
-            sdtable.__init__(self, filename)            
+            sdtable.__init__(self, filename)
             if unit is not None:
-                self.set_fluxunit(unit)                       
+                self.set_fluxunit(unit)
         else:
             import os.path
             if not os.path.exists(filename):
-                print "File '%s' not found." % (filename)
-                return
+                s = "File '%s' not found." % (filename)
+                if rcParams['verbose']:
+                    asaplog.push(s)
+                    print asaplog.pop().strip()
+                    return
+                raise IOError(s)
             filename = os.path.expandvars(filename)
             if os.path.isdir(filename):
                 # crude check if asap table
                 if os.path.exists(filename+'/table.info'):
                     sdtable.__init__(self, filename)
                     if unit is not None:
-                        self.set_fluxunit(unit)                       
+                        self.set_fluxunit(unit)
                 else:
                     print "The given file '%s'is not a valid asap table." % (filename)
                     return
-            else:            
+            else:
                 from asap._asap import sdreader
                 ifSel = -1
                 beamSel = -1
-                r = sdreader(filename,ifSel,beamSel)
-                print 'Importing data...'
+                r = sdreader()
+                r._setlog(asaplog)
+                r._open(filename,ifSel,beamSel)
+                asaplog.push('Importing data...')
                 r._read([-1])
                 tbl = r._getdata()
                 if unit is not None:
                     tbl.set_fluxunit(unit)
                 if average:
                     from asap._asap import average as _av
-                    print 'Auto averaging integrations...'
+                    asaplog.push('Auto averaging integrations...')
                     tbl2 = _av((tbl,),(),True,'none')
                     sdtable.__init__(self,tbl2)
                     del tbl2
@@ -73,10 +79,12 @@ class scantable(sdtable):
                     sdtable.__init__(self,tbl)
                 del r,tbl
                 self._add_history("scantable", varlist)
+                log = asaplog.pop()
+                if len(log): print log
 
     def save(self, name=None, format=None, stokes=False, overwrite=False):
         """
-        Store the scantable on disk. This can be an asap (aips++) Table, SDFITS, 
+        Store the scantable on disk. This can be an asap (aips++) Table, SDFITS,
         Image FITS or MS2 format.
         Parameters:
             name:        the name of the outputfile. For format="FITS" this
@@ -87,7 +95,7 @@ class scantable(sdtable):
             format:      an optional file format. Default is ASAP.
                          Allowed are - 'ASAP' (save as ASAP [aips++] Table),
                                        'SDFITS' (save as SDFITS file)
-                                       'FITS' (saves each row as a FITS Image) 
+                                       'FITS' (saves each row as a FITS Image)
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
@@ -191,7 +199,7 @@ class scantable(sdtable):
             else:
                 print "Illegal file name '%s'." % (filename)
         print info
-            
+
     def set_cursor(self, beam=0, IF=0, pol=0):
         """
         Set the spectrum for individual operations.
@@ -369,7 +377,7 @@ class scantable(sdtable):
                 print out
             retval = {'axes': axes, 'data': array(statval), 'cursor':(i,j,k)}
             return retval
-        
+
     def get_time(self, row=-1):
         """
         Get a list of time stamps for the observations.
@@ -408,7 +416,7 @@ class scantable(sdtable):
         """
         Set the instrument for subsequent processing
         Parameters:
-            instr:    Select from 'ATPKSMB', 'ATPKSHOH', 'ATMOPRA', 
+            instr:    Select from 'ATPKSMB', 'ATPKSHOH', 'ATMOPRA',
                       'DSS-43' (Tid), 'CEDUNA', and 'HOBART'
         """
         self._setInstrument(instr)
@@ -426,7 +434,7 @@ class scantable(sdtable):
         self._setcoordinfo(inf)
         if self._p: self.plot()
         self._add_history("set_doppler",vars())
- 
+
     def set_freqframe(self, frame=None):
         """
         Set the frame type of the Spectral Axis.
@@ -449,7 +457,7 @@ class scantable(sdtable):
             self._add_history("set_freqframe",varlist)
         else:
             print "Please specify a valid freq type. Valid types are:\n",valid
-            
+
     def get_unit(self):
         """
         Get the default unit set in this scantable
@@ -473,7 +481,7 @@ class scantable(sdtable):
             The abcissa values and it's format string (as a dictionary)
         """
         abc = self._getabcissa(rowno)
-        lbl = self._getabcissalabel(rowno)        
+        lbl = self._getabcissalabel(rowno)
         return abc, lbl
         #return {'abcissa':abc,'label':lbl}
 
@@ -504,7 +512,7 @@ class scantable(sdtable):
             msk = scan.set_mask([400,500],[800,900], invert=True)
             # masks the regions between 400 and 500
             # and 800 and 900 in the unit 'channel'
-           
+
         """
         row = 0
         if kwargs.has_key("row"):
@@ -516,7 +524,12 @@ class scantable(sdtable):
             print "The current mask window unit is", u
         n = self.nchan()
         msk = zeros(n)
-        for window in args:
+        # test if args is a 'list' or a 'normal *args - UGLY!!!
+
+        ws = (isinstance(args[-1][-1],int) or isinstance(args[-1][-1],float)) and args or args[0]
+        print ws
+        for window in ws:
+            print window
             if (len(window) != 2 or window[0] > window[1] ):
                 print "A window needs to be defined as [min,max]"
                 return
@@ -526,9 +539,9 @@ class scantable(sdtable):
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
                 from numarray import logical_not
-                msk = logical_not(msk)            
+                msk = logical_not(msk)
         return msk
-    
+
     def get_restfreqs(self):
         """
         Get the restfrequency(s) stored in this scantable.
@@ -557,10 +570,10 @@ class scantable(sdtable):
         source and IF combination.   If the 'freqs' argument holds
         a vector, then it MUST be of length the number of IFs
         (and the available restfrequencies will be replaced by
-        this vector).  In this case, *all* data ('source' and 
-        'theif' are ignored) have the restfrequency set per IF according 
-        to the corresponding value you give in the 'freqs' vector.  
-        E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and 
+        this vector).  In this case, *all* data ('source' and
+        'theif' are ignored) have the restfrequency set per IF according
+        to the corresponding value you give in the 'freqs' vector.
+        E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and
         IF 1 gets restfreq 2e9.
 
         You can also specify the frequencies via known line names
@@ -595,7 +608,7 @@ class scantable(sdtable):
            lines = []
         sdtable._setrestfreqs(self, freqs, unit, lines, source, theif)
         self._add_history("set_restfreqs", varlist)
-        
+
 
 
     def flag_spectrum(self, thebeam, theif, thepol):
@@ -632,7 +645,7 @@ class scantable(sdtable):
             panel:    set up multiple panels, currently not working.
         """
         print "Warning! Not fully functional. Use plotter.plot() instead"
-        
+
         validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
 
         validyax = ['spectrum','tsys']
@@ -658,7 +671,7 @@ class scantable(sdtable):
             self._p.set_panels(rows=npan)
         xlab,ylab,tlab = None,None,None
         self._vb = False
-        sel = self.get_cursor()        
+        sel = self.get_cursor()
         for i in range(npan):
             if npan > 1:
                 self._p.subplot(i)
@@ -699,7 +712,7 @@ class scantable(sdtable):
         self._vb = rcParams['verbose']
         return
 
-        print out 
+        print out
 
     def _print_values(self, dat, label='', timestamps=[]):
         d = dat['data']
@@ -721,7 +734,7 @@ class scantable(sdtable):
         print "-"*80
         print " ", label
         print "-"*80
-        print out 
+        print out
 
     def history(self):
         hist = list(self._gethistory())
@@ -734,7 +747,7 @@ class scantable(sdtable):
                 date = items[0]
                 func = items[1]
                 items = items[2:]
-                print date            
+                print date
                 print "Function: %s\n  Parameters:" % (func)
                 for i in items:
                     s = i.split("=")
@@ -764,16 +777,16 @@ class scantable(sdtable):
                       The default is 'tint'
         Example:
             # time average the scantable without using a mask
-            newscan = scan.average_time()            
+            newscan = scan.average_time()
         """
         varlist = vars()
         if weight is None: weight = 'tint'
         if mask is None: mask = ()
-        from asap._asap import average as _av        
+        from asap._asap import average as _av
         s = scantable(_av((self,), mask, scanav, weight))
         s._add_history("average_time",varlist)
         return s
-        
+
     def convert_flux(self, jyperk=None, eta=None, d=None, insitu=None,
                      allaxes=None):
         """
@@ -872,7 +885,7 @@ class scantable(sdtable):
             _gainEl(self, poly, filename, method, allaxes)
             self._add_history("gain_el", varlist)
             return
-    
+
     def freq_align(self, reftime=None, method='cubic', perif=False,
                    insitu=None):
         """
@@ -956,7 +969,7 @@ class scantable(sdtable):
             self._add_history("bin",varlist)
             return
 
-    
+
     def resample(self, width=5, method='cubic', insitu=None):
         """
         Return a scan where all spectra have been binned up
@@ -1110,11 +1123,11 @@ class scantable(sdtable):
         from asap.asapfitter import fitter
         from asap.asaplinefind import linefinder
         from asap import _is_sequence_or_number as _is_valid
-        
+
         if not _is_valid(edge, int):
             raise RuntimeError, "Parameter 'edge' has to be an integer or a \
             pair of integers specified as a tuple"
-        
+
         # setup fitter
         f = fitter()
         f._verbose(True)
@@ -1160,8 +1173,8 @@ class scantable(sdtable):
 
     def rotate_linpolphase(self, angle, allaxes=None):
         """
-        Rotate the phase of the complex polarization O=Q+iU correlation.  
-        This is always done in situ in the raw data.  So if you call this 
+        Rotate the phase of the complex polarization O=Q+iU correlation.
+        This is always done in situ in the raw data.  So if you call this
         function more than once then each call rotates the phase further.
         Parameters:
             angle:   The angle (degrees) to rotate (add) by.
@@ -1177,7 +1190,7 @@ class scantable(sdtable):
         _rotate(self, angle, allaxes)
         self._add_history("rotate_linpolphase", varlist)
         return
-    
+
 
     def rotate_xyphase(self, angle, allaxes=None):
         """
@@ -1265,8 +1278,8 @@ class scantable(sdtable):
                             'suffix' identifies 'off' scans by the
                             trailing '_R' (Mopra/Parkes) or
                             '_e'/'_w' (Tid)
-            preserve:       you can preserve (default) the continuum or 
-                            remove it.  The equations used are 
+            preserve:       you can preserve (default) the continuum or
+                            remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Tref * (on/off) - Ton
         """
@@ -1279,11 +1292,17 @@ class scantable(sdtable):
         if mode == "suffix":
             srcs = self.get_scan("*[^_ewR]")
             refs = self.get_scan("*[_ewR]")
-            return scantable(_quot(srcs,refs, preserve))       
+            if isinstance(srcs,scantable) and isinstance(refs,scantable):
+                ns,nr = srcs.nrow(),refs.nrow()
+                if nr > ns:
+                    refs = refs.get_scan(range(ns))
+                return scantable(_quot(srcs,refs, preserve))
+            else:
+                raise RuntimeError("Couldn't find any on/off pairs")
         else:
             print "not yet implemented"
             return None
-        
+
     def quotient(self, other, isreference=True, preserve=True):
         """
         Return the quotient of a 'source' (on) scan and a 'reference' (off)
@@ -1295,8 +1314,8 @@ class scantable(sdtable):
             other:          the 'other' scan
             isreference:    if the 'other' scan is the reference (default)
                             or source
-            preserve:       you can preserve (default) the continuum or 
-                            remove it.  The equations used are 
+            preserve:       you can preserve (default) the continuum or
+                            remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Tref * (on/off) - Ton
         Example:
@@ -1315,7 +1334,7 @@ class scantable(sdtable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            from asap._asap import b_operate as _bop            
+            from asap._asap import b_operate as _bop
             s = scantable(_bop(self, other, 'add', True))
         elif isinstance(other, float):
             from asap._asap import add as _add
@@ -1334,7 +1353,7 @@ class scantable(sdtable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            from asap._asap import b_operate as _bop            
+            from asap._asap import b_operate as _bop
             s = scantable(_bop(self, other, 'sub', True))
         elif isinstance(other, float):
             from asap._asap import add as _add
@@ -1344,7 +1363,7 @@ class scantable(sdtable):
             return
         s._add_history("operator -", varlist)
         return s
-    
+
     def __mul__(self, other):
         """
         implicit on all axes and on Tsys
@@ -1352,7 +1371,7 @@ class scantable(sdtable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            from asap._asap import b_operate as _bop            
+            from asap._asap import b_operate as _bop
             s = scantable(_bop(self, other, 'mul', True))
         elif isinstance(other, float):
             if other == 0.0:
@@ -1365,7 +1384,7 @@ class scantable(sdtable):
             return
         s._add_history("operator *", varlist)
         return s
-    
+
 
     def __div__(self, other):
         """
@@ -1374,7 +1393,7 @@ class scantable(sdtable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            from asap._asap import b_operate as _bop            
+            from asap._asap import b_operate as _bop
             s = scantable(_bop(self, other, 'div', True))
         elif isinstance(other, float):
             if other == 0.0:
@@ -1441,7 +1460,7 @@ class scantable(sdtable):
             hist += sep
         hist = hist[:-2] # remove trailing '##'
         self._addhistory(hist)
-        
+
 
     def _zip_mask(self, mask):
         mask = list(mask)
@@ -1452,9 +1471,9 @@ class scantable(sdtable):
             if mask[i:].count(0):
                 j = i + mask[i:].index(0)
             else:
-                j = len(mask)                
+                j = len(mask)
             segments.append([i,j])
-            i = j        
+            i = j
         return segments
     def _get_ordinate_label(self):
         fu = "("+self.get_fluxunit()+")"
@@ -1465,4 +1484,4 @@ class scantable(sdtable):
         elif re.match(".Jy.",fu):
             lbl = "Flux density "+ fu
         return lbl
-        
+

@@ -93,3 +93,5 @@ def simple_math(left, right, op='add', tsys=True):
     s = scantable(_bop(left, right, op, tsys))
     s._add_history("simple_math", varlist)
     return s
+    
+    

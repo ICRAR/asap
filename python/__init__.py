@@ -60,7 +60,9 @@ defaultParams = {
     'plotter.panelling'   : ['s', str],
     'plotter.colours'     : ['', str],
     'plotter.linestyles'  : ['', str],
-    
+    'plotter.decimate'    : [False, _validate_bool],
+    'plotter.ganged'      : [True, _validate_bool],
+
     # scantable
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, _validate_bool],
@@ -86,15 +88,18 @@ def list_rcparameters():
     insitu                     : True
 
     # plotting
-    
+
     # do we want a GUI or plot to a file
     plotter.gui                : True
-    
+
     # default mode for colour stacking
     plotter.stacking           : Pol
 
     # default mode for panelling
     plotter.panelling          : scan
+
+    # push panels together, to shar axislabels
+    plotter.ganged             : True
 
     # default colours/linestyles
     plotter.colours            :
@@ -220,9 +225,18 @@ def _is_sequence_or_number(param, ptype=int):
         return True
     return False
 
+from asap._asap import LogSink as _asaplog
+# use null sink if verbose==False
+#asaplog=_asaplog(rcParams['verbose'])
+asaplog=_asaplog()
+global asaplog
 from asapfitter import *
 from asapreader import reader
+
 from asapmath import *
+from asap._asap import _math_setlog
+_math_setlog(asaplog)
+
 from scantable import *
 from asaplinefind import *
 from asapfit import *
