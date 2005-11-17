@@ -1,17 +1,93 @@
-function validateranges() {
-    var fields = ["plotwindow","brangewindow"];
+var repopulate = function() {
+    unitswitch(document.getElementById('cunit').value);
+    baselineswitch();
+    checkbuttons("cdoppler",["doppler0","doppler1"]);
+    checkbuttons("cframe",["frame0","frame1"]);
+    selectFiles();
+    selectIFs();
+    selectSources();
+    var sumtext = document.getElementById('sum').value;
+    if (sumtext == "") {
+        document.getElementById('summary').style.display = 'none';
+    } else {
+        document.getElementById('summary').style.display = 'inline';
+    }
+    var csource = document.getElementById('csource').value;
+    if (csource == "") {
+        document.getElementById('sourcelbl').style.display = 'none';
+    } else {
+        document.getElementById('sourcelbl').style.display = 'inline';
+    }
 }
 
-function baselineswitch(par) {
+function summaryPopUp() {
+    var sumtext = document.getElementById('sum').value;
+    if (sumtext == "") {return false;}
+    TheNewWin = window.open('','name','height=500,width=600,toolbar=no,directories=no,status=no,menubar=no');
+    TheNewWin.document.write('<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Transitional//EN" "http:\/\/www.w3.org\/TR\/xhtml1\/DTD\/xhtml1-transitional.dtd"><html xmlns="http:\/\/www.w3.org\/1999\/xhtml">');
+    TheNewWin.document.write('<head><title>Popup<\/title><\/head><body style="overflow:hidden" bgcolor="#ffffff"><pre>');
+    TheNewWin.document.write(sumtext);
+    TheNewWin.document.write('</pre><hr \/> <p align="right"><a href="#" onclick="self.close();return false;">Close');
+    TheNewWin.document.write(' Window<\/a><\/p> <\/body><\/html>');
+    return false;
+}
+
+function checkbuttons(hiddenfields, fields){
+    var theval = document.getElementById(hiddenfields).value;
+    for (i=0; i<fields.length;++i ){
+        var elem = document.getElementById(fields[i]);
+        if ( elem.value == theval ) {
+            elem.checked = 'checked';
+        }
+    }
+}
+
+function selectSources() {
+    var sl = document.getElementById("sourcelist");
+    var cs = document.getElementById("csource").value;
+    var opts = sl.options;
+    for (k=0; k<opts.length;++k) {
+        if (opts[k].value == cs ) {
+            opts[k].selected = 'selected';
+        }
+    }
+    if (cs) {
+        var sourcediv = document.getElementById("sourcelbl");
+        sourcediv.style.display = "inline";
+    }
+}
+
+function selectFiles() {
+    var indeces = eval(document.getElementById("cfilesel").value);
+    var fl = document.getElementById("filelist");
+    var opts = fl.options;
+    for (k=0; k<indeces.length;++k) {
+        opts[indeces[k]].selected = 'selected';
+    }
+}
+
+function selectIFs() {
+    nif = eval(document.getElementById("nif").value);
+    for (i=0; i<nif.length;++i ) {
+        p0 = "cif"+nif[i]
+        p1 = "rest"+nif[i]
+        var ifsel = eval(document.getElementById(p0).value);
+        var f = document.getElementById(p1);
+        f.options[ifsel].selected = 'selected';
+    }
+}
+
+function baselineswitch() {
     var fields = ["polyorder","baselinerange"];
+    var elem = document.getElementById("baseline");
     for (i=0; i<fields.length; ++i) {
         var cont = document.getElementById(fields[i]);
-        if (par.checked) {
-            this.value = "True";
+        if (elem.checked) {
+            elem.value = 1;
             cont.style.display = "block";
         } else {
             cont.style.display = "none";
-            this.value = "False";
+            elem.value = 0;
         }
     }
 }
@@ -45,7 +121,9 @@ function unitswitch(unitval) {
     var ulblcont = document.getElementById("brangeunit");
     ulblcont.innerHTML = "";
     ulblcont.innerHTML = unitval;
-    clearunit();
+    if ( unitval != document.getElementById('cunit').value ) {
+        clearunit();
+    }
 }
 
 
@@ -81,10 +159,29 @@ function processResolutions(result) {
 function insertFields() {
     var opts = document.getElementById("directory");
     var path = opts.selectedIndex;
-    listFiles(path,"http://localhost/cgi-bin/asapmon/filelist.py", callbackHandler);
+    scripturl = new String(window.document.location);
+    scripturl = scripturl.replace(/\w+\.py.*$/gi,"filelist.py");
+    listFiles(path,scripturl, callbackHandler);
     return;
 }
 
+
+function invalidateSources() {
+    var opts = document.getElementById("sourcelist");
+    var fileopt = opts.options;
+    //clear
+    for (i=0;i<fileopt.length;++i) {
+        fileopt[i] = null;
+    }
+    fileopt.length = 0;
+    var sourcediv = document.getElementById("sourcelbl");
+    sourcediv.style.display = "none";
+}
+
+function invalidateFiles() {
+    insertFields();
+    invalidateSources();
+}
 
 var callbackHandler = {
     process: function(parm) {
