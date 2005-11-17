@@ -45,6 +45,7 @@
 
 #include "SDDefs.h"
 #include "SDFitTable.h"
+#include "SDLog.h"
 
 namespace asap {
   
@@ -54,8 +55,7 @@ class SDFrequencyTable;
 class SDFitTable;
 
 
-
-class SDMemTable {
+class SDMemTable : private SDLog {
 public:
   // create a new (empty) SDMemTable
   SDMemTable();
@@ -160,7 +160,7 @@ public:
 				  casa::Int whichIF=-1);
 
   // List lines
-  void spectralLines() const;
+  std::string spectralLines() const;
 
   // Get/Set flux unit
   std::string getFluxUnit() const;

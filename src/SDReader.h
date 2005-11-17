@@ -42,12 +42,13 @@
 
 #include "SDMemTable.h"
 #include "SDContainer.h"
+#include "SDLog.h"
 
 class PKSreader;
 
 namespace asap {
 
-class SDReader {
+class SDReader : public SDLog {
 public:
   SDReader();
   SDReader(const std::string& filename, 
@@ -72,8 +73,9 @@ public:
     return v;
   }
 
-protected:
 
+protected:
+  
 private:
   casa::Int nBeam_,nIF_,nPol_,nChan_;
   PKSreader* reader_;  

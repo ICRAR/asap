@@ -44,7 +44,7 @@ namespace asap {
         .def("_read", &SDReaderWrapper::read)
         .def("_reset", &SDReaderWrapper::reset)
         .def("_getdata", &SDReaderWrapper::getSDMemTable)
-        .def("_header",  &SDReaderWrapper::pseudoHeader);
+        .def("_header",  &SDReaderWrapper::pseudoHeader)
       ;
     };
 

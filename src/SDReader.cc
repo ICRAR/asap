@@ -88,7 +88,7 @@ void SDReader::reset() {
 
 
 void SDReader::close() {
-  cerr << "disabled" << endl;
+  //cerr << "disabled" << endl;
 }
 
 void SDReader::open(const std::string& filename, 
@@ -124,7 +124,7 @@ void SDReader::open(const std::string& filename,
   nBeam_ = beams.nelements();
   // Get basic parameters.
   if (haveXPol_) {
-    cout << "Cross polarization present" << endl;
+    pushLog("Cross polarization present");
     nPol_ += 2;                          // Convert Complex -> 2 Floats
   }
 
@@ -149,8 +149,8 @@ void SDReader::open(const std::string& filename,
   }
   if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
-    cout << "Header indicates frequency switched observation.\n"
-      "setting # of IFs = 1 " << endl;
+    pushLog("Header indicates frequency switched observation.\n"
+	       "setting # of IFs = 1 ");
     nIF_ = 1;
   }
 
@@ -258,7 +258,7 @@ int SDReader::read(const std::vector<int>& seq) {
         if (status == -1) {
           // EOF.
           if (row > 0 && row < stepsize-1) 
-	    cerr << "incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present." << endl;
+	    pushLog("incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present.");
 
 	  // flush frequency table
           table_->putSDFreqTable(*frequencies_);

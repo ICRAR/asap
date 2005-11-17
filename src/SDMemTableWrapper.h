@@ -178,7 +178,7 @@ public:
                                 casa::Int(whichIF));
   }
   
-  void spectralLines() const {table_->spectralLines();}
+  std::string spectralLines() const {table_->spectralLines();}
 
   std::vector<double> getRestFreqs() {
     return table_->getRestFreqs();

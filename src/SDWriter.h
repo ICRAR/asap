@@ -39,11 +39,13 @@
 #include <SDMemTable.h>
 #include <SDMemTableWrapper.h>
 
+#include <SDLog.h>
+
 class PKSwriter;
 
 namespace asap {
 
-class SDWriter {
+class SDWriter : public SDLog {
 public:
   SDWriter(const string &format = "SDFITS");
   ~SDWriter();

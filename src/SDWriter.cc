@@ -176,8 +176,7 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
                                hdr.antennaname, hdr.antennaposition,
                                hdr.obstype, hdr.equinox, hdr.freqref,
                                nChan, nPol, False, False)) {
-    cerr << "Failed to create output file." << endl;
-    return 1;
+    throw(AipsError("Failed to create output file"));
   }
 
   Int scanNo = -1;
@@ -305,8 +304,9 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
       }
     }
   }
-
-  cout << "SDWriter: wrote " << count << " rows to " << filename << endl;
+  ostringstream oss;
+  oss << "SDWriter: wrote " << count << " rows to " << filename << endl;
+  pushLog(String(oss));
   cWriter->close();
 
   return 0;

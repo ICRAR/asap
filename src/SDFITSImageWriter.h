@@ -35,23 +35,25 @@
 #include <casa/BasicSL/String.h>
 #include <SDMemTable.h>
 
+#include "SDLog.h"
 
 namespace asap {
 
-class SDFITSImageWriter {
+class SDFITSImageWriter : public SDLog {
 public:
-// Constructor
+  // Constructor
   SDFITSImageWriter();
-
-// Destructor
+  
+  // Destructor
   ~SDFITSImageWriter();
-
-// Write out lots of FITS images, one per row, beam, IF and polarization
+  
+  // Write out lots of FITS images, one per row, beam, IF and polarization
   casa::Bool write(const SDMemTable& table, const casa::String& rootName,
                    casa::Bool toStokes, casa::Bool verbose=casa::True);
-
+  
 private:
-   casa::Int convertStokes(casa::Int val, casa::Bool toStokes, casa::Bool linear) const;
+  casa::Int convertStokes(casa::Int val, casa::Bool toStokes,
+			  casa::Bool linear) const;
 };
 
 }// namespace

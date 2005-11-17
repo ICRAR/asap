@@ -49,6 +49,7 @@ LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
              MathUtils2.o \
+	     SDLog.o \
              SDAttr.o \
              SDContainer.o \
 	     SDFitTable.o \
@@ -71,6 +72,7 @@ PYOBJECTS := python_SDMemTable.o \
              python_SDFitter.o \
              python_SDFitTable.o \
 	     python_SDLineFinder.o \
+	     python_SDLog.o \
              python_SD.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
@@ -92,6 +94,7 @@ HEADERS   := SDDefs.h \
              SDFITSImageWriter.h \
              SDAsciiWriter.h \
 	     SDLineFinder.h \
+	     SDLog.h \
              python_SD.h
 
 STATICCCLIB := libasap.a

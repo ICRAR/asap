@@ -29,7 +29,6 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
-#include "SDAttr.h"
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/ArrayMath.h>
@@ -42,23 +41,25 @@
 
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
+#include "SDAttr.h"
+
 using namespace casa;
 using namespace asap;
 
-SDAttr::SDAttr ()
+SDAttr::SDAttr()
 {
    initData();
 }
 
 SDAttr::SDAttr(const SDAttr& other)
 {
-   initData();                                 // state just private 'static' data
+   initData();                     // state just private 'static' data
 }
 
 SDAttr& SDAttr::operator=(const SDAttr& other) 
 {
   if (this != &other) {
-    ;                                      // state just private 'static' data
+    ;                             // state just private 'static' data
   }
   return *this;
 }
@@ -67,7 +68,7 @@ SDAttr::~SDAttr()
 {;}
 
 
-Float SDAttr::diameter (Instrument inst)  const
+Float SDAttr::diameter(Instrument inst)  const
 {
    Float D = 1.0;
    switch (inst) {
@@ -102,208 +103,201 @@ Float SDAttr::diameter (Instrument inst)  const
             throw(AipsError("Unknown instrument"));
         }
    }
-//
    return D;
 }
 
-Vector<Float> SDAttr::beamEfficiency (Instrument inst, const MEpoch& dateObs, const Vector<Float>& freqs) const
+Vector<Float> SDAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs, 
+				      const Vector<Float>& freqs) const
 {
 
-// Look at date where appropriate
-
+  // Look at date where appropriate
    MVTime t(dateObs.getValue());
    uInt year = t.year();
-//
+
    Vector<Float> facs(freqs.nelements(),1.0);
    switch (inst) {
-      case ATMOPRA:
+   case ATMOPRA:
         {
-           if (year<2003) {
-              cerr << "There is no beam efficiency data from before 2003 - using 2003 data" << endl;
-              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
-           } else if (year==2003) {
-              cerr << "Using beam efficiency data from 2003" << endl;
-              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
-           } else {
-              cerr << "Using beam efficiency data from 2004" << endl;
-              facs = interp (freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_); 
-           }
+	  if (year<2003) {
+	    pushLog("There is no beam efficiency data from before 2003"
+		    " - using 2003 data");
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+	  } else if (year==2003) {
+	    pushLog("Using beam efficiency data from 2003");
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+	  } else {
+	    pushLog("Using beam efficiency data from 2004");
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_); 
+	  }
         }
         break;
-      default:
-        {
-           cerr << "No beam efficiency data for this instrument - assuming unity" << endl;
-        }
-   }
-//
-   return facs;
-}
-
-Vector<Float> SDAttr::apertureEfficiency (Instrument inst, const MEpoch& dateObs, const Vector<Float>& freqs) const
-{
-
-// Look at date where appropriate
-
-   MVTime t(dateObs.getValue());
-   uInt year = t.year();
-//
-   Vector<Float> facs(freqs.nelements(),1.0);
-   switch (inst) {
-      case ATMOPRA:
-        {
-           if (year<2004) {
-              cerr << "There is no aperture efficiency data from before 2004 - using 2004 data" << endl;
-              facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
-           } else {
-              cerr << "Using aperture efficiency data from 2004" << endl;
-              facs = interp (freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
-           }
-        }
-        break;
-      case TIDBINBILLA:
-        {
-            facs = interp (freqs/1.0e9f, TidEtaApX_, TidEtaApY_);
-        }
-        break;
-      default:
-        {
-           cerr << "No aperture efficiency data for this instrument - assuming unity" << endl;
-        }
+   default:
+     {
+       pushLog("No beam efficiency data for this instrument - assuming unity");
+     }
    }
    return facs;
 }
 
-Vector<Float> SDAttr::JyPerK (Instrument inst, const MEpoch& dateObs, const Vector<Float>& freqs) const
+Vector<Float> SDAttr::apertureEfficiency(Instrument inst, 
+					 const MEpoch& dateObs, 
+					 const Vector<Float>& freqs) const
 {
+  
+  // Look at date where appropriate
+  MVTime t(dateObs.getValue());
+  uInt year = t.year();
+  
+  Vector<Float> facs(freqs.nelements(),1.0);
+  switch (inst) {
+  case ATMOPRA:
+    {
+      if (year<2004) {
+	pushLog("There is no aperture efficiency data from before 2004"
+		" - using 2004 data");
+	facs = interp(freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+      } else {
+	pushLog("Using aperture efficiency data from 2004");
+	facs = interp(freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
+      }
+    }
+    break;
+  case TIDBINBILLA:
+    {
+      facs = interp(freqs/1.0e9f, TidEtaApX_, TidEtaApY_);
+    }
+    break;
+  default:
+    {
+      pushLog("No aperture efficiency data for this instrument"
+	      " - assuming unity");
+    }
+  }
+  return facs;
+}
 
-// FInd what we need
-
-   Vector<Float> etaAp = apertureEfficiency (inst, dateObs, freqs);
-   Float D = diameter(inst);
-
-// Compute it
-
+Vector<Float> SDAttr::JyPerK(Instrument inst, const MEpoch& dateObs,
+			     const Vector<Float>& freqs) const
+{
+  
+  // Find what we need
+  Vector<Float> etaAp = apertureEfficiency(inst, dateObs, freqs);
+  Float D = diameter(inst);
+  // Compute it
    Vector<Float> facs(freqs.nelements(),1.0);
    for (uInt i=0; i<freqs.nelements(); i++) {
-      facs(i) = SDAttr::findJyPerK (etaAp(i), D);
+     facs(i) = SDAttr::findJyPerK(etaAp(i), D);
    }
-//
    return facs;
 }
 
 
-Float SDAttr::findJyPerK (Float etaAp, Float D)
-//
-// Converts K -> Jy
-// D in m
-//
+Float SDAttr::findJyPerK(Float etaAp, Float D)
+  //
+  // Converts K -> Jy
+  // D in m
+  //
 {
-   Double kb = QC::k.getValue(Unit(String("erg/K")));
-   Float gA = C::pi * D * D / 4.0;
-   return (2.0 * 1.0e19 * kb / etaAp / gA);
+  Double kb = QC::k.getValue(Unit(String("erg/K")));
+  Float gA = C::pi * D * D / 4.0;
+  return (2.0 * 1.0e19 * kb / etaAp / gA);
 }
 
 
-Vector<Float> SDAttr::gainElevationPoly (Instrument inst) const
+Vector<Float> SDAttr::gainElevationPoly(Instrument inst) const
 {
 
-// Look at date where appropriate
-
-   switch (inst) {
-      case TIDBINBILLA:
-        {
-           return TidGainElPoly_.copy();
-        }
-        break;
-      default:
-        {
-           Vector<Float> t;
-           return t.copy();
-        }
-   }
+  // Look at date where appropriate
+  switch (inst) {
+  case TIDBINBILLA:
+    {
+      return TidGainElPoly_.copy();
+    }
+    break;
+  default:
+    {
+      Vector<Float> t;
+      return t.copy();
+    }
+  }
 }
 
-FeedPolType SDAttr::feedPolType (Instrument inst) const
+FeedPolType SDAttr::feedPolType(Instrument inst) const
 {
-   FeedPolType type = UNKNOWNFEED;
-   switch (inst) {
-      case ATMOPRA:
-      case ATPKSMB:
-      case ATPKSHOH:
-        {
-           type = LINEAR;
-        }
-        break;
-      case TIDBINBILLA:
-        {
-           type = CIRCULAR;
-        }
-        break;
-      default:
-        {
-           type = UNKNOWNFEED;
-        }
-   }
-   return type;
+  FeedPolType type = UNKNOWNFEED;
+  switch (inst) {
+  case ATMOPRA:
+  case ATPKSMB:
+  case ATPKSHOH:
+    {
+      type = LINEAR;
+    }
+    break;
+  case TIDBINBILLA:
+    {
+      type = CIRCULAR;
+    }
+    break;
+  default:
+    {
+      type = UNKNOWNFEED;
+    }
+  }
+  return type;
 }
-
-
-
 
 
 // Private
-
-Vector<Float> SDAttr::interp (const Vector<Float>& xOut, const Vector<Float>& xIn, 
-                              const Vector<Float>& yIn) const
+Vector<Float> SDAttr::interp(const Vector<Float>& xOut,
+			     const Vector<Float>& xIn, 
+			     const Vector<Float>& yIn) const
 {
-   Int method = 1;                         // Linear
-   Vector<Float> yOut;
-   Vector<Bool> mOut;
-//
-   Vector<Bool> mIn(xIn.nelements(),True);
-//
-   InterpolateArray1D<Float,Float>::interpolate(yOut, mOut, xOut,
-                                                 xIn, yIn, mIn,
-                                                 method, True, True);
-//
-   return yOut;
+  Int method = 1;  // Linear
+  Vector<Float> yOut;
+  Vector<Bool> mOut;
+
+  Vector<Bool> mIn(xIn.nelements(),True);
+  
+  InterpolateArray1D<Float,Float>::interpolate(yOut, mOut, xOut,
+					       xIn, yIn, mIn,
+					       method, True, True);
+  
+  return yOut;
 }
 
-void SDAttr::initData () 
-//
-// Mopra data from Mopra web page
-// Tid  data from Tid web page
-// X in GHz
-//
+void SDAttr::initData() 
+  //
+  // Mopra data from Mopra web page
+  // Tid  data from Tid web page
+  // X in GHz
+  //
 {
 
-// Beam efficiency
-
+  // Beam efficiency
    MopEtaBeamX_.resize(3);
    MopEtaBeamX_(0) = 86.0;
    MopEtaBeamX_(1) = 100.0;
    MopEtaBeamX_(2) = 115.0;
-//
+
    MopEtaBeam2003Y_.resize(3);
    MopEtaBeam2003Y_(0) = 0.39;
    MopEtaBeam2003Y_(1) = 0.37;
-   MopEtaBeam2003Y_(2) = 0.37;                // replicated from (1)
-//
+   MopEtaBeam2003Y_(2) = 0.37;          // replicated from (1)
+   
    MopEtaBeam2004Y_.resize(3);
    MopEtaBeam2004Y_(0) = 0.49;
    MopEtaBeam2004Y_(1) = 0.44;
    MopEtaBeam2004Y_(2) = 0.42;
 
-// Aperture efficiency
-
+   // Aperture efficiency
    MopEtaApX_.resize(2);
    MopEtaApX_(0) = 86.0;
    MopEtaApX_(1) = 115.0;
-//
+
    MopEtaAp2004Y_.resize(2);
    MopEtaAp2004Y_(0) = 0.33;
    MopEtaAp2004Y_(1) = 0.24;
-//
+
    TidEtaApX_.resize(2);
    TidEtaApY_.resize(2);
    TidEtaApX_(0) = 18.0;
@@ -311,7 +305,8 @@ void SDAttr::initData ()
    TidEtaApY_(0) = 0.4848;
    TidEtaApY_(1) = 0.4848;
 
-// Gain elevation correction polynomial coefficients (for elevation in degrees)
+   // Gain elevation correction polynomial coefficients (for elevation
+   // in degrees)
 
    TidGainElPoly_.resize(3);
    TidGainElPoly_(0) = 3.58788e-1;
@@ -323,30 +318,29 @@ void SDAttr::initData ()
 Instrument SDAttr::convertInstrument(const String& instrument,
                                      Bool throwIt)
 {
-   String t(instrument);
-   t.upcase();
-
-   // The strings are what SDReader returns, after cunning interrogation
-   // of station names... :-(
-   Instrument inst = asap::UNKNOWNINST;
-   if (t==String("DSS-43")) {
-      inst = TIDBINBILLA;
-   } else if (t==String("ATPKSMB")) {
-      inst = ATPKSMB;
-   } else if (t==String("ATPKSHOH")) {
-      inst = ATPKSHOH;
-   } else if (t==String("ATMOPRA")) {
-      inst = ATMOPRA;
-   } else if (t==String("CEDUNA")) {
-      inst = CEDUNA;
-   } else if (t==String("HOBART")) {
-      inst = HOBART;
-   } else {
-     if (throwIt) {
-       throw AipsError("Unrecognized instrument - use function scan.set_instrument to set");
-     }
-   }
-   return inst;
+  String t(instrument);
+  t.upcase();
+  
+  // The strings are what SDReader returns, after cunning
+  // interrogation of station names... :-(
+  Instrument inst = asap::UNKNOWNINST;
+  if (t==String("DSS-43")) {
+    inst = TIDBINBILLA;
+  } else if (t==String("ATPKSMB")) {
+    inst = ATPKSMB;
+  } else if (t==String("ATPKSHOH")) {
+    inst = ATPKSHOH;
+  } else if (t==String("ATMOPRA")) {
+    inst = ATMOPRA;
+  } else if (t==String("CEDUNA")) {
+    inst = CEDUNA;
+  } else if (t==String("HOBART")) {
+    inst = HOBART;
+  } else {
+    if (throwIt) {
+      throw AipsError("Unrecognized instrument"
+		      " - use function scan.set_instrument to set");
+    }
+  }
+  return inst;
 }
-
-

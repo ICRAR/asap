@@ -43,6 +43,7 @@ namespace asap {
     void python_SDFitter();
     void python_SDFitTable();
     void python_SDLineFinder();
+    void python_SDLog();
 
   } // python
 } //asap

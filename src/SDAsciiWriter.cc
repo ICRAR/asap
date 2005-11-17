@@ -40,6 +40,7 @@
 
 #include <casa/iostream.h>
 #include <casa/fstream.h>
+#include <casa/sstream.h>
 
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <coordinates/Coordinates/SpectralCoordinate.h>
@@ -95,12 +96,11 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
 
 // Open and write header file
 
-
    String rootName(fileName);
    if (rootName.length()==0) rootName = String("ascii");
    {
       String fName = String(rootName) + String("_header.txt");
-      cout << "Writing header to " << fName << endl;
+      pushLog("Writing header to "+fName);
       ofstream of(fName.chars(), ios::trunc);
       std::string summary = sdTable.summary(true);
       of << summary;
@@ -192,10 +192,11 @@ Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Boo
          itMask.next();
       }
    }
-//
+
    of.close();
-   cout << "Wrote " << nRows << " rows into file " << fileName << endl;
-//   
+   ostringstream oss;
+   oss << "Wrote " << nRows << " rows into file " << fileName;
+   pushLog(String(oss));
    return True;
 }
 
@@ -205,10 +206,10 @@ String SDAsciiWriter::formatDirection(const Vector<Double>& lonLat)
 { 
    MVAngle x1(lonLat(0));
    String s1 = x1.string(MVAngle::TIME, 12);
-// 
+
    MVAngle x2(lonLat(1));
    String s2 = x2.string(MVAngle::ANGLE, 12);
-//
+
    String ss = s1 + String(" ") + s2;
    return ss;
 }

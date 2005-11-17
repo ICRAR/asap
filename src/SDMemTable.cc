@@ -886,7 +886,8 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
   // Create SpectralCoordinate (units Hz)
   MFrequency::Types mft;
   if (!MFrequency::getType(mft, rf)) {
-    cerr << "Frequency type unknown assuming TOPO" << endl;
+    ostringstream oss;
+    pushLog("WARNING: Frequency type unknown assuming TOPO");
     mft = MFrequency::TOPO;
   }
   rpc.get(freqID, rp);
@@ -922,7 +923,7 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID,
   MFrequency::Types mtype;
   if (!MFrequency::getType(mtype, frm)) {
     // Should never happen
-    cerr << "Frequency type unknown assuming TOPO" << endl;
+    pushLog("WARNING: Frequency type unknown assuming TOPO");
     mtype = MFrequency::TOPO;
   }
 
@@ -1654,7 +1655,8 @@ MDirection::Types SDMemTable::getDirectionReference() const
   MDirection::Types mdr;
   if (!MDirection::getType(mdr, mp[eq])) {   
     mdr = MDirection::J2000;
-    cerr  << "Unknown equinox using J2000" << endl;
+    pushLog("WARNING: Unknown equinox using J2000");
+    
   }
 
   return mdr;
@@ -1666,7 +1668,7 @@ MEpoch::Types SDMemTable::getTimeReference() const
   String ep;
   table_.keywordSet().get("Epoch",ep);
   if (!MEpoch::getType(met, ep)) {
-    cerr << "Epoch type unknown - using UTC" << endl;
+     pushLog("WARNING: Epoch type unknown - using UTC");
     met = MEpoch::UTC;
   }
 
@@ -1720,29 +1722,31 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
    Int idx = -1;
    SDFrequencyTable sdft = getSDFreqTable();
 
+   ostringstream oss;
    if (nRestFreqs>1) {
      // Replace restFreqs, one per IF
-      if (nRestFreqs != nIFs) {
-         throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
-      }
-      cout << "Replacing rest frequencies, one per IF, with given list : " << restFreqs << endl;
-      sdft.deleteRestFrequencies();
-      for (uInt i=0; i<nRestFreqs; i++) {
-         Quantum<Double> rf(restFreqs[i], unit);
-         sdft.addRestFrequency(rf.getValue("Hz"));
-      }
+     if (nRestFreqs != nIFs) {
+       throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
+     }
+     ostringstream oss;
+     oss << "Replacing rest frequencies, one per IF, with given list : " << restFreqs;
+     sdft.deleteRestFrequencies();
+     for (uInt i=0; i<nRestFreqs; i++) {
+       Quantum<Double> rf(restFreqs[i], unit);
+       sdft.addRestFrequency(rf.getValue("Hz"));
+     }
    } else {
 
      // Add new rest freq
       Quantum<Double> rf(restFreqs[0], unit);
       idx = sdft.addRestFrequency(rf.getValue("Hz"));
       if (whichIF>=0) {
-         cout << "Selecting given rest frequency (" << restFreqs[0] << ") for IF " << whichIF << endl;
+         oss << "Selecting given rest frequency (" << restFreqs[0] << ") for IF " << whichIF << endl;
       } else {
-         cout << "Selecting given rest frequency (" << restFreqs[0] << ") for all IFs" << endl;
+         oss << "Selecting given rest frequency (" << restFreqs[0] << ") for all IFs" << endl;
       }
    }
-   
+   pushLog(String(oss));
    // Replace
    Bool empty = source.empty();
    Bool ok = False;
@@ -1777,20 +1781,22 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
    return ok;
 }
 
-void SDMemTable::spectralLines() const
+std::string SDMemTable::spectralLines() const
 {
    Vector<String> lines = MeasTable::Lines();
    MFrequency lineFreq;
    Double freq;
+   ostringstream oss;
 
-   cout.flags(std::ios_base::left);
-   cout << "Line      Frequency (Hz)" << endl;
-   cout << "-----------------------" << endl;
+   oss.flags(std::ios_base::left);
+   oss << "Line      Frequency (Hz)" << endl;
+   oss << "-----------------------" << endl;
    for (uInt i=0; i<lines.nelements(); i++) {
      MeasTable::Line(lineFreq, lines[i]);
      freq = lineFreq.getValue().getValue();          // Hz
-     cout << setw(11) << lines[i] << setprecision(10) << freq << endl;
+     oss << setw(11) << lines[i] << setprecision(10) << freq << endl;
    }
+   return String(oss);
 }
 
 void SDMemTable::renumber()

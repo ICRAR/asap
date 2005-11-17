@@ -60,6 +60,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_SDFitter();
   asap::python::python_SDFitTable();
   asap::python::python_SDLineFinder();
+  asap::python::python_SDLog();
 
   register_exception_translator<casa::AipsError>(&asap::python::translate_ex);
 

@@ -35,12 +35,14 @@
 #include <casa/BasicSL/String.h>
 #include <SDMemTable.h>
 
+#include "SDLog.h"
+
 template<class T> class casa::Vector;
 
 
 namespace asap {
 
-class SDAsciiWriter {
+class SDAsciiWriter : public SDLog {
 public:
 // Constructor
   SDAsciiWriter();

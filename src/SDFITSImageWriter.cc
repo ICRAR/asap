@@ -119,9 +119,10 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    }
    Directory dir(dirName2);
    dir.create(True);
-   cout << "Created directory '" << dirName2 << "' for output files" << endl;
+   ostringstream oss;
+   oss << "Created directory '" << dirName2 << "' for output files";
 
-// Temps
+   // Temps
 
    Vector<Int> whichStokes(1,1);
    Array<Double> whichDir;
@@ -232,13 +233,13 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Write out as FITS Image file
 
-         ostringstream oss;
-         oss << "row" << iRow << "_beam" << pos(0) << "_if" 
+         ostringstream oss2;
+         oss2 << "row" << iRow << "_beam" << pos(0) << "_if" 
 	     << pos(1) << "_" << stokesName  << "_" << srcCol(iRow) << ".fits";
-         String tS(oss);
+         String tS(oss2);
          String fileName = dirName2 + String("/") + tS;
-         if (verbose) cout << "Writing row " << iRow 
-			   << " into file '" << tS << "'" << endl;
+         if (verbose) oss << endl << "Writing row " << iRow 
+			   << " into file '" << tS << "'";
 //
          Bool ok = ImageFITSConverter::ImageToFITS(errMsg, tIm, fileName, 
 						   maxMem, preferVelocity,
@@ -246,7 +247,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 						   minPix, maxPix, overWrite,
 						   degLast, reallyVerbose);
          if (!ok) {
-            cerr << "Error writing fits - " << errMsg << endl;
+	   oss << endl<< "Error writing fits - " << errMsg;
          }
 
 // Next spectrum
@@ -257,10 +258,9 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
    }
 //
    if (!verbose) {
-      cout << "Wrote " << nRows << " into individual FITS files" << endl;
+     oss << endl<< "Wrote " << nRows << " into individual FITS files";
    }
-//   
+   pushLog(String(oss));
    return True;
 }
-
 
