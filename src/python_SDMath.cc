@@ -57,54 +57,55 @@ namespace asap {
         b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
-      //
-      SDMath sdm;
-      return SDMemTableWrapper(sdm.average(b, msk, Bool(scanAv), weightStr));
+      
+      return SDMemTableWrapper(sdmath.average(b, msk, Bool(scanAv), weightStr));
     };
   } // namespace SDMathWrapper
 
   namespace python {
     void python_SDMath() {
       def("b_operate", &SDMathWrapper::binaryOperate);
-      //
+      
       def("quotient", &SDMathWrapper::quotient);
-//
+
       def("scale", &SDMathWrapper::scale);
       def("scale_insitu", &SDMathWrapper::scaleInSitu);
-//
+
       def("add", &SDMathWrapper::add);
       def("add_insitu", &SDMathWrapper::addInSitu);
-//
+
       def("smooth", &SDMathWrapper::smooth);
       def("smooth_insitu", &SDMathWrapper::smoothInSitu);
-//
+
       def("convertflux", &SDMathWrapper::convertFlux);
       def("convertflux_insitu", &SDMathWrapper::convertFluxInSitu);
-//
+
       def("gainel", &SDMathWrapper::gainElevation);
       def("gainel_insitu", &SDMathWrapper::gainElevationInSitu);
-//
+
       def("freq_align", &SDMathWrapper::frequencyAlignment);
       def("freq_align_insitu", &SDMathWrapper::frequencyAlignmentInSitu);
-//
+
       def("opacity", &SDMathWrapper::opacity);
       def("opacity_insitu", &SDMathWrapper::opacityInSitu);
-//
+
       def("average", &SDMathWrapper::average);
-//
+
       def("averagepol", &SDMathWrapper::averagePol);
       def("averagepol_insitu", &SDMathWrapper::averagePolInSitu);
-//
+
       def("bin", &SDMathWrapper::bin);
       def("bin_insitu", &SDMathWrapper::binInSitu);
-//
+
       def("resample", &SDMathWrapper::resample);
       def("resample_insitu", &SDMathWrapper::resampleInSitu);
-//
+
       def("stats", &SDMathWrapper::statistic);
-// 
-      def ("_rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
-      def ("_rotate_linpolphase", &SDMathWrapper::rotateLinPolPhaseInSitu);
+ 
+      def("_rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
+      def("_rotate_linpolphase", &SDMathWrapper::rotateLinPolPhaseInSitu);
+
+      def("_frequency_switch", &SDMathWrapper::frequencySwitch);
     };
 
   } // python

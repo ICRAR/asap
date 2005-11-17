@@ -37,26 +37,31 @@
 #include <boost/python/tuple.hpp>
 
 #include "SDMemTableWrapper.h"
+#include "SDMath.h"
 
 namespace asap {
 
 namespace SDMathWrapper {
 
-// Quotient
+
+  static SDMath sdmath;
+  // Quotient
   SDMemTableWrapper quotient(const SDMemTableWrapper& on,
                              const SDMemTableWrapper& off,
                              casa::Bool preserveContinuum);
 
-// Simple binary operations
-  SDMemTableWrapper binaryOperate (const SDMemTableWrapper& left,
-                                   const SDMemTableWrapper& right,
-                                   const std::string& op, bool doTSys);
-
-// Multiply
-  void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll, bool doTSys);
-  SDMemTableWrapper scale(const SDMemTableWrapper& in, float factor, bool all, bool doTSys);
-
-// Add
+  // Simple binary operations
+  SDMemTableWrapper binaryOperate(const SDMemTableWrapper& left,
+				  const SDMemTableWrapper& right,
+				  const std::string& op, bool doTSys);
+  
+  // Multiply
+  void scaleInSitu(SDMemTableWrapper& in, float factor, bool doAll, 
+		   bool doTSys);
+  SDMemTableWrapper scale(const SDMemTableWrapper& in, float factor, 
+			  bool all, bool doTSys);
+  
+  // Add
   void addInSitu(SDMemTableWrapper& in, float offset, bool doAall);
   SDMemTableWrapper add(const SDMemTableWrapper& in, float offset, bool all);
 
@@ -71,13 +76,17 @@ namespace SDMathWrapper {
   SDMemTableWrapper bin(const SDMemTableWrapper& in, int width);
 
 // Resample 
-  void resampleInSitu(SDMemTableWrapper& in, const std::string& method, float width);
-  SDMemTableWrapper resample(const SDMemTableWrapper& in, const std::string& method, 
+  void resampleInSitu(SDMemTableWrapper& in, const std::string& method, 
+		      float width);
+  SDMemTableWrapper resample(const SDMemTableWrapper& in, 
+			     const std::string& method, 
                              float width);
 
 // Convert brightness between Jy and K
-  void convertFluxInSitu(SDMemTableWrapper& in, float D, float eta, float JyPerK, bool doAll);
-  SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float D, float eta, float JyPerK, bool doAll);
+  void convertFluxInSitu(SDMemTableWrapper& in, float D, float eta, 
+			 float JyPerK, bool doAll);
+  SDMemTableWrapper convertFlux(const SDMemTableWrapper& in, float D, 
+				float eta, float JyPerK, bool doAll);
 
 // Apply gain elevation correction
   void gainElevationInSitu (SDMemTableWrapper& in, const std::vector<float>& coeffs,
@@ -100,8 +109,9 @@ namespace SDMathWrapper {
   void rotateLinPolPhaseInSitu(SDMemTableWrapper& in, float angle, bool doAll);
 
 // Apply opacity correction
-  void opacityInSitu (SDMemTableWrapper& in, float tau, bool doAll);
-  SDMemTableWrapper opacity (const SDMemTableWrapper& in, float tau, bool doAll);
+  void opacityInSitu(SDMemTableWrapper& in, float tau, bool doAll);
+  SDMemTableWrapper opacity(const SDMemTableWrapper& in, float tau, 
+			    bool doAll);
 
 // Average in time
   SDMemTableWrapper average(boost::python::tuple tpl,
@@ -115,10 +125,17 @@ namespace SDMathWrapper {
 			       const std::vector<bool>& mask,
                                const std::string& weightStr);
 
-// Statistics
+  // Frequency Switching
+  void SDMathWrapper::frequencySwitchInSitu(SDMemTableWrapper& in);
+
+  SDMemTableWrapper 
+  SDMathWrapper::frequencySwitch(const SDMemTableWrapper& in);
+
+  // Statistics
   std::vector<float> statistic(const SDMemTableWrapper& in,
                                const std::vector<bool>& mask, 
                                const std::string& which, int row);
+
 };
 
 } // namespace

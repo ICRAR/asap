@@ -30,8 +30,10 @@
 //#---------------------------------------------------------------------------
 #include <vector>
 
+
 #include <casa/aips.h>
 #include <casa/iostream.h>
+#include <casa/sstream.h>
 #include <casa/iomanip.h>
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/IPosition.h>
@@ -88,7 +90,8 @@ using namespace asap;
 
 
 SDMath::SDMath()
-{;}
+{
+}
 
 SDMath::SDMath(const SDMath& other)
 {
@@ -112,7 +115,7 @@ SDMath::~SDMath()
 SDMemTable* SDMath::frequencyAlignment(const SDMemTable& in, 
 				       const String& refTime, 
 				       const String& method, 
-				       Bool perFreqID) const
+				       Bool perFreqID)
 {
   // Get frame info from Table
    std::vector<std::string> info = in.getCoordInfo();
@@ -135,7 +138,7 @@ SDMemTable* SDMath::frequencyAlignment(const SDMemTable& in,
 CountedPtr<SDMemTable> 
 SDMath::average(const std::vector<CountedPtr<SDMemTable> >& in,
 		const Vector<Bool>& mask, Bool scanAv,
-		const String& weightStr, Bool alignFreq) const
+		const String& weightStr, Bool alignFreq)
 // Weighted averaging of spectra from one or more Tables.
 {
   // Convert weight type  
@@ -364,7 +367,7 @@ SDMath::average(const std::vector<CountedPtr<SDMemTable> >& in,
 CountedPtr<SDMemTable> 
 SDMath::binaryOperate(const CountedPtr<SDMemTable>& left,
 		      const CountedPtr<SDMemTable>& right,
-		      const String& op, Bool preserve, Bool doTSys) const
+		      const String& op, Bool preserve, Bool doTSys)
 {
 
   // Check operator
@@ -508,7 +511,7 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 
   IPosition start, end;
   Bool doAll = False;
-  setCursorSlice (start, end, doAll, *in);
+  setCursorSlice(start, end, doAll, *in);
 
 // Loop over rows
 
@@ -553,7 +556,7 @@ std::vector<float> SDMath::statistic(const CountedPtr<SDMemTable>& in,
 }
 
 
-SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
+SDMemTable* SDMath::bin(const SDMemTable& in, Int width)
 {
   SDHeader sh = in.getSDHeader();
   SDMemTable* pTabOut = new SDMemTable(in, True);
@@ -614,7 +617,7 @@ SDMemTable* SDMath::bin(const SDMemTable& in, Int width) const
 }
 
 SDMemTable* SDMath::resample(const SDMemTable& in, const String& methodStr,
-			     Float width) const
+			     Float width)
 //
 // Should add the possibility of width being specified in km/s. This means
 // that for each freqID (SpectralCoordinate) we will need to convert to an 
@@ -728,7 +731,7 @@ SDMemTable* SDMath::resample(const SDMemTable& in, const String& methodStr,
 }
 
 SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
-                                 uInt what, Bool doTSys) const
+                                 uInt what, Bool doTSys)
 //
 // what = 0   Multiply
 //        1   Add
@@ -775,7 +778,7 @@ SDMemTable* SDMath::unaryOperate(const SDMemTable& in, Float val, Bool doAll,
 }
 
 SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
-                               const String& weightStr) const
+                               const String& weightStr)
 //
 // Average all polarizations together, weighted by variance
 //
@@ -972,7 +975,7 @@ SDMemTable* SDMath::averagePol(const SDMemTable& in, const Vector<Bool>& mask,
 
 SDMemTable* SDMath::smooth(const SDMemTable& in, 
 			   const casa::String& kernelType,
-			   casa::Float width, Bool doAll) const
+			   casa::Float width, Bool doAll)
 //
 // Should smooth TSys as well
 //
@@ -1046,7 +1049,7 @@ SDMemTable* SDMath::smooth(const SDMemTable& in,
 
 
 SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp, 
-				Float JyPerK, Bool doAll) const
+				Float JyPerK, Bool doAll)
 // 
 // etaAp = aperture efficiency (-1 means find)
 // D     = geometric diameter (m)  (-1 means find)
@@ -1065,9 +1068,9 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
 
   Bool toKelvin = True;
   Double cFac = 1.0;    
+
   if (fluxUnit==JY) {
-    cout << "Converting to K" << endl;
-    
+    pushLog("Converting to K");
     Quantum<Double> t(1.0,fluxUnit);
     Quantum<Double> t2 = t.get(JY);
     cFac = (t2 / t).getValue();               // value to Jy
@@ -1075,8 +1078,7 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
     toKelvin = True;
     sh.fluxunit = "K";
   } else if (fluxUnit==K) {
-    cout << "Converting to Jy" << endl;
-    
+    pushLog("Converting to Jy");
     Quantum<Double> t(1.0,fluxUnit);
     Quantum<Double> t2 = t.get(K);
     cFac = (t2 / t).getValue();              // value to K
@@ -1086,6 +1088,7 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
   } else {
     throw(AipsError("Unrecognized brightness units in Table - must be consistent with Jy or K"));
   }
+
   pTabOut->putSDHeader(sh);
   
   // Make sure input values are converted to either Jy or K first...
@@ -1095,16 +1098,20 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
   if (JyPerK>0.0) {
     factor *= JyPerK;
     if (toKelvin) factor = 1.0 / JyPerK;
-    cout << "Jy/K = " << JyPerK << endl;
+    ostringstream oss;
+    oss << "Jy/K = " << JyPerK;
+    pushLog(String(oss));
     Vector<Float> factors(in.nRow(), factor);
     scaleByVector(pTabOut, in, doAll, factors, False);
   } else if (etaAp>0.0) {
     Bool throwIt = True;
-    Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
+    Instrument inst = SDAttr::convertInstrument(sh.antennaname, throwIt);
     SDAttr sda;
     if (D < 0) D = sda.diameter(inst);
-    Float JyPerK = SDAttr::findJyPerK (etaAp,D);
-    cout << "Jy/K = " << JyPerK << endl;
+    Float JyPerK = SDAttr::findJyPerK(etaAp,D);
+    ostringstream oss;
+    oss << "Jy/K = " << JyPerK;
+    pushLog(String(oss));
     factor *= JyPerK;
     if (toKelvin) {
       factor = 1.0 / factor;
@@ -1119,10 +1126,9 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
     // to be computed per IF and may be different and may
     // change per integration.
     
-    cout << "Looking up conversion factors" << endl;
+    pushLog("Looking up conversion factors");
     convertBrightnessUnits (pTabOut, in, toKelvin, cFac, doAll);
   }
-
   return pTabOut;
 }
 
@@ -1130,7 +1136,7 @@ SDMemTable* SDMath::convertFlux(const SDMemTable& in, Float D, Float etaAp,
 SDMemTable* SDMath::gainElevation(const SDMemTable& in, 
 				  const Vector<Float>& coeffs,
 				  const String& fileName,
-				  const String& methodStr, Bool doAll) const
+				  const String& methodStr, Bool doAll)
 {
 
   // Get header and clone output table
@@ -1175,7 +1181,7 @@ SDMemTable* SDMath::gainElevation(const SDMemTable& in,
        delete pPoly;
        throw(AipsError("There is no known gain-elevation polynomial known for this instrument"));
      }
-     cout << "Making polynomial correction with " << msg << " coefficients" << endl;
+     pushLog("Making polynomial correction with "+msg+" coefficients");
      const uInt nRow = in.nRow();
      Vector<Float> factor(nRow);
      for (uInt i=0; i<nRow; i++) {
@@ -1192,7 +1198,7 @@ SDMemTable* SDMath::gainElevation(const SDMemTable& in,
     
     // Read and correct
     
-    cout << "Making correction from ascii Table" << endl;
+    pushLog("Making correction from ascii Table");
     scaleFromAsciiTable (pTabOut, in, fileName, col0, col1, 
 			 methodStr, doAll, x, True);
   }
@@ -1201,7 +1207,7 @@ SDMemTable* SDMath::gainElevation(const SDMemTable& in,
 }
  
 
-SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll) const
+SDMemTable* SDMath::opacity(const SDMemTable& in, Float tau, Bool doAll)
 {
 
   // Get header and clone output table
@@ -1244,7 +1250,7 @@ void SDMath::rotateXYPhase(SDMemTable& in, Float value, Bool doAll)
   }
 
    SDHeader sh = in.getSDHeader();
-   Instrument inst = SDAttr::convertInstrument (sh.antennaname, False);
+   Instrument inst = SDAttr::convertInstrument(sh.antennaname, False);
    SDAttr sdAtt;
    if (sdAtt.feedPolType(inst) != LINEAR) {
       throw(AipsError("Only linear polarizations are supported"));
@@ -1298,7 +1304,7 @@ void SDMath::rotateLinPolPhase(SDMemTable& in, Float value, Bool doAll)
    }
 //
    SDHeader sh = in.getSDHeader();
-   Instrument inst = SDAttr::convertInstrument (sh.antennaname, False);
+   Instrument inst = SDAttr::convertInstrument(sh.antennaname, False);
    SDAttr sdAtt;
    if (sdAtt.feedPolType(inst) != LINEAR) {
       throw(AipsError("Only linear polarizations are supported"));
@@ -1377,7 +1383,7 @@ void SDMath::rotateLinPolPhase(SDMemTable& in, Float value, Bool doAll)
 // 'private' functions
 
 void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in, 
-                                     Bool toKelvin, Float cFac, Bool doAll) const
+                                     Bool toKelvin, Float cFac, Bool doAll)
 {
 
 // Get header
@@ -1388,12 +1394,11 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
 // Get instrument
 
    Bool throwIt = True;
-   Instrument inst = SDAttr::convertInstrument (sh.antennaname, throwIt);
+   Instrument inst = SDAttr::convertInstrument(sh.antennaname, throwIt);
 
 // Get Diameter (m)
 
    SDAttr sdAtt;
-
 // Get epoch of first row
 
    MEpoch dateObs = in.getEpoch(0);
@@ -1409,7 +1414,9 @@ void SDMath::convertBrightnessUnits (SDMemTable* pTabOut, const SDMemTable& in,
    }
 //
    Vector<Float> JyPerK = sdAtt.JyPerK(inst, dateObs, freqs);
-   cout << "Jy/K = " << JyPerK << endl;
+   ostringstream oss;
+   oss << "Jy/K = " << JyPerK;
+   pushLog(String(oss));
    Vector<Float> factors = cFac * JyPerK;
    if (toKelvin) factors = Float(1.0) / factors;
 
@@ -1473,7 +1480,7 @@ SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
                                    MFrequency::Types freqSystem,
                                    const String& refTime, 
                                    const String& methodStr,
-                                   Bool perFreqID) const
+                                   Bool perFreqID)
 {
 // Get Header
 
@@ -1510,8 +1517,8 @@ SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
    } else {
      refEpoch = in.getEpoch(0);
    }
-   cout << "Aligning at reference Epoch " << formatEpoch(refEpoch) 
-	<< " in frame " << MFrequency::showType(freqSystem) << endl;
+   pushLog("Aligning at reference Epoch "+formatEpoch(refEpoch) 
+		  +" in frame "+MFrequency::showType(freqSystem));
    
    // Get Reference Position
    
@@ -1560,7 +1567,7 @@ SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
    
    // New output Table
    
-   cout << "Create output table" << endl;
+   pushLog("Create output table");
    SDMemTable* pTabOut = new SDMemTable(in,True);
    pTabOut->putSDFreqTable(freqTabOut);
    
@@ -1579,7 +1586,7 @@ SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
    //
    for (uInt iRow=0; iRow<nRows; ++iRow) {
      if (iRow%10==0) {
-       cout << "Processing row " << iRow << endl;
+       pushLog("Processing row "+iRow);
      }
      
      // Get EPoch
@@ -1687,7 +1694,7 @@ SDMemTable* SDMath::frequencyAlign(const SDMemTable& in,
 }
 
 
-SDMemTable* SDMath::frequencySwitch(const SDMemTable& in) const
+SDMemTable* SDMath::frequencySwitch(const SDMemTable& in)
 {
   if (in.nIF() != 2) {
     throw(AipsError("nIF != 2 "));
@@ -1747,7 +1754,7 @@ void SDMath::fillSDC(SDContainer& sc,
 		     const Array<Float>& tSys,
 		     Int scanID, Double timeStamp,
 		     Double interval, const String& sourceName,
-		     const Vector<uInt>& freqID) const
+		     const Vector<uInt>& freqID)
 {
 // Data and mask
 
@@ -1776,7 +1783,7 @@ void SDMath::accumulate(Double& timeSum, Double& intSum, Int& nAccum,
 			const std::vector<CountedPtr<SDMemTable> >& in,
 			uInt iTab, uInt iRow, uInt axis, 
 			uInt nAxesSub, Bool useMask,
-			WeightType wtType) const
+			WeightType wtType)
 {
 
 // Get data
@@ -1885,7 +1892,7 @@ void SDMath::normalize(MaskedArray<Float>& sum,
                        const Array<Float>& nPts,
                        Double intSum,
                        WeightType wtType, Int axis,
-                       Int nAxesSub) const
+                       Int nAxesSub)
 {
    IPosition pos2(nAxesSub,0);
 //
@@ -1963,7 +1970,7 @@ void SDMath::setCursorSlice (IPosition& start, IPosition& end, Bool doAll, const
 
 
 void SDMath::convertWeightString(WeightType& wtType, const String& weightStr,
-                                 Bool listType) const
+                                 Bool listType)
 {
   String tStr(weightStr);
   tStr.upcase();
@@ -1988,12 +1995,12 @@ void SDMath::convertWeightString(WeightType& wtType, const String& weightStr,
      throw(AipsError("Unrecognized weighting type"));
   }
 //
-  if (listType) cout << msg << endl;
+  if (listType) pushLog(msg);
 }
 
 
 void SDMath::convertInterpString(casa::InterpolateArray1D<Double,Float>::InterpolationMethod& type,  
-                                 const casa::String& interp) const
+                                 const casa::String& interp)
 {
   String tStr(interp);
   tStr.upcase();
@@ -2011,7 +2018,7 @@ void SDMath::convertInterpString(casa::InterpolateArray1D<Double,Float>::Interpo
 }
 
 void SDMath::putDataInSDC(SDContainer& sc, const Array<Float>& data,
-			  const Array<Bool>& mask) const
+			  const Array<Bool>& mask)
 {
     sc.putSpectrum(data);
 //
@@ -2020,7 +2027,7 @@ void SDMath::putDataInSDC(SDContainer& sc, const Array<Float>& data,
     sc.putFlags(outflags);
 }
 
-Table SDMath::readAsciiFile (const String& fileName) const
+Table SDMath::readAsciiFile(const String& fileName) const
 {
    String formatString;
    Table tbl = readAsciiTable (formatString, Table::Memory, fileName, "", "", False);
@@ -2033,7 +2040,7 @@ void SDMath::scaleFromAsciiTable(SDMemTable* pTabOut,
                                  const SDMemTable& in, const String& fileName,
                                  const String& col0, const String& col1,
                                  const String& methodStr, Bool doAll,
-                                 const Vector<Float>& xOut, Bool doTSys) const
+                                 const Vector<Float>& xOut, Bool doTSys)
 {
 
 // Read gain-elevation ascii file data into a Table.
@@ -2047,7 +2054,7 @@ void SDMath::scaleFromTable(SDMemTable* pTabOut, const SDMemTable& in,
                             const Table& tTable, const String& col0, 
                             const String& col1,
                             const String& methodStr, Bool doAll,
-                            const Vector<Float>& xOut, Bool doTsys) const
+                            const Vector<Float>& xOut, Bool doTsys)
 {
 
 // Get data from Table
@@ -2077,7 +2084,7 @@ void SDMath::scaleFromTable(SDMemTable* pTabOut, const SDMemTable& in,
 
 void SDMath::scaleByVector(SDMemTable* pTabOut, const SDMemTable& in, 
                            Bool doAll, const Vector<Float>& factor,
-                           Bool doTSys) const
+                           Bool doTSys)
 {
 
 // Set up data slice
@@ -2130,7 +2137,7 @@ void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
                                     const Table& tabIn,
                                     const ROScalarColumn<String>& srcCol,
                                     const ROArrayColumn<uInt>& fqIDCol,
-                                    Bool perFreqID) const
+                                    Bool perFreqID)
 {
    const uInt nRows = tabIn.nrow();
    ddIdx.resize(nRows,nIF);
@@ -2164,7 +2171,7 @@ void SDMath::generateDataDescTable (Matrix<uInt>& ddIdx,
 
 
 
-MEpoch SDMath::epochFromString(const String& str, MEpoch::Types timeRef) const
+MEpoch SDMath::epochFromString(const String& str, MEpoch::Types timeRef)
 {
    Quantum<Double> qt;
    if (MVTime::read(qt,str)) {
@@ -2191,7 +2198,7 @@ void SDMath::generateFrequencyAligners(PtrBlock<FrequencyAligner<Float>* >& a,
 				       MFrequency::Types system,
 				       const MPosition& refPos,
 				       const MEpoch& refEpoch,
-				       Bool perFreqID) const
+				       Bool perFreqID)
 {
    for (uInt i=0; i<dDesc.length(); i++) {
       uInt ID = dDesc.ID(i);
