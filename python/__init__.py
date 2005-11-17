@@ -225,18 +225,29 @@ def _is_sequence_or_number(param, ptype=int):
         return True
     return False
 
-from asap._asap import LogSink as _asaplog
-# use null sink if verbose==False
-#asaplog=_asaplog(rcParams['verbose'])
-asaplog=_asaplog()
+
+# workaround for ipython, which redirects this if banner=0 in ipythonrc
+sys.stdout = sys.__stdout__
+sys.stderr = sys.__stderr__
+
+# Logging
+from asap._asap import Log as _asaplog
 global asaplog
+asaplog=_asaplog()
+if rcParams['verbose']:
+    asaplog.enable()
+else:
+    asaplog.disable()
+
+def print_log():
+    log = asaplog.pop()
+    if len(log) and rcParams['verbose']: print log
+    return
+
 from asapfitter import *
 from asapreader import reader
 
 from asapmath import *
-from asap._asap import _math_setlog
-_math_setlog(asaplog)
-
 from scantable import *
 from asaplinefind import *
 from asapfit import *
@@ -247,10 +258,9 @@ from numarray import logical_not as mask_not
 
 if rcParams['useplotter']:
     from  asapplotter import *
-    if rcParams['verbose']:
-        print "Initialising GUI asapplotter with the name 'plotter' ..."
     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
     plotter = asapplotter(gui)
+    del gui
 
 __date__ = '$Date$'.split()[1]
 __version__  = '1.2'
@@ -263,11 +273,9 @@ if rcParams['verbose']:
         sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
         print filter(lambda x: not x.startswith('_'), sts)
         return
-else:
-    pass
 
-def commands():
-    x = """
+    def commands():
+        x = """
     [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
@@ -402,9 +410,9 @@ def commands():
             ASAP> help scantable.summary # to get help on the scantable's
             ASAP> help average_time
 
-    """
-    print x
-    return
+            """
+        print x
+        return
 
 def welcome():
     return """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
