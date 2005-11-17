@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import os
-from asapconfig import rpfpath
+from asapconfig import observatory
 
 class FileList:
 
@@ -11,14 +11,14 @@ class FileList:
 
         self.error = None
         if loc is None:
-            loc = rpfpath[0]
+            loc = observatory['rpfpath'][0]
         else:
             loc = int(loc)
-            if loc< 0 or loc >=len(rpfpath):
+            if loc< 0 or loc >=len(observatory['rpfpath']):
                  self.error = "Invalid Path"
                  return
             else:
-                loc = rpfpath[loc]
+                loc = observatory['rpfpath'][loc]
         if os.path.exists(loc) and os.path.isdir(loc):
             self.files = filter(lambda x: x.lower().endswith("rpf"), os.listdir(loc))
             if len(self.files) == 0:
