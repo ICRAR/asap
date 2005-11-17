@@ -32,7 +32,6 @@ class scantable(sdtable):
             average = rcParams['scantable.autoaverage']
 
         varlist = vars()
-        self._vb = rcParams['verbose']
         self._p = None
         from asap import asaplog
         if isinstance(filename,sdtable):
@@ -56,8 +55,12 @@ class scantable(sdtable):
                     if unit is not None:
                         self.set_fluxunit(unit)
                 else:
-                    print "The given file '%s'is not a valid asap table." % (filename)
-                    return
+                    msg = "The given file '%s'is not a valid asap table." % (filename)
+                    if rcParams['verbose']:
+                        print msg
+                        return
+                    else:
+                        raise IOError(msg)
             else:
                 from asap._asap import sdreader
                 ifSel = -1
@@ -113,12 +116,18 @@ class scantable(sdtable):
         suffix = '.'+format.lower()
         if name is None or name =="":
             name = 'scantable'+suffix
-            print "No filename given. Using default name %s..." % name
+            from asap import asaplog
+            msg = "No filename given. Using default name %s..." % name
+            asaplog.push(msg)
         name = path.expandvars(name)
         if path.isfile(name) or path.isdir(name):
             if not overwrite:
-                print "File %s already exists." % name
-                return
+                msg = "File %s exists." % name
+                if rcParams['verbose']:
+                    print msg
+                    return
+                else:
+                    raise IOError(msg)
         format2 = format.upper()
         if format2 == 'ASAP':
             self._save(name)
@@ -126,6 +135,8 @@ class scantable(sdtable):
             from asap._asap import sdwriter as _sw
             w = _sw(format2)
             w.write(self, name, stokes)
+
+        print_log()
         return
 
     def copy(self):
@@ -156,7 +167,12 @@ class scantable(sdtable):
             newscan = scan.get_scan([0,2,7,10])
         """
         if scanid is None:
-            print "Please specify a scan no or name to retrieve from the scantable"
+            if rcParams['verbose']:
+                print "Please specify a scan no or name to retrieve from the scantable"
+                return
+            else:
+                raise RuntimeError("No scan given")
+
         try:
             if type(scanid) is str:
                 s = sdtable._getsource(self,scanid)
@@ -168,9 +184,14 @@ class scantable(sdtable):
                 s = sdtable._getscan(self,scanid)
                 return scantable(s)
             else:
-                print "Illegal scanid type, use 'int' or 'list' if ints."
+                msg = "Illegal scanid type, use 'int' or 'list' if ints."
+                if rcParams['verbose']:
+                    print msg
+                else:
+                    raise TypeError(msg)
         except RuntimeError:
-            print "Couldn't find any match."
+            if rcParams['verbose']: print "Couldn't find any match."
+            else: raise
 
     def __str__(self):
         return sdtable._summary(self,True)
@@ -196,8 +217,15 @@ class scantable(sdtable):
                 data.write(info)
                 data.close()
             else:
-                print "Illegal file name '%s'." % (filename)
-        print info
+                msg = "Illegal file name '%s'." % (filename)
+                if rcParams['verbose']:
+                    print msg
+                else:
+                    raise IOError(msg)
+        if rcParams['verbose']:
+            print info
+        else:
+            return info
 
     def set_cursor(self, beam=0, IF=0, pol=0):
         """
@@ -229,13 +257,14 @@ class scantable(sdtable):
         i = self.getbeam()
         j = self.getif()
         k = self.getpol()
-        if self._vb:
+        if rcParams['verbose']:
             print "--------------------------------------------------"
             print " Cursor position"
             print "--------------------------------------------------"
             out = 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
             print out
-        return i,j,k
+        else:
+            return i,j,k
 
     def stats(self, stat='stddev', mask=None, allaxes=None):
         """
@@ -277,7 +306,7 @@ class scantable(sdtable):
                         arr[i,j,k,:] = _stats(self,mask,stat,-1)
             retval = {'axes': axes, 'data': arr, 'cursor':None}
             tm = [self._gettime(val) for val in range(self.nrow())]
-            if self._vb:
+            if rcParams['verbose']:
                 self._print_values(retval,stat,tm)
             self.setbeam(beamSel)
             self.setif(IFSel)
@@ -296,7 +325,7 @@ class scantable(sdtable):
                 out += '= %3.3f\n' % (statval[l])
                 out +=  "--------------------------------------------------\n"
 
-            if self._vb:
+            if rcParams['verbose']:
                 print "--------------------------------------------------"
                 print " ",stat
                 print "--------------------------------------------------"
@@ -352,7 +381,7 @@ class scantable(sdtable):
                         arr[i,j,k,:] = self._gettsys()
             retval = {'axes': axes, 'data': arr, 'cursor':None}
             tm = [self._gettime(val) for val in range(self.nrow())]
-            if self._vb:
+            if rcParams['verbose']:
                 self._print_values(retval,'Tsys',tm)
             return retval
 
@@ -369,7 +398,7 @@ class scantable(sdtable):
                 out += '= %3.3f\n' % (statval[l])
                 out +=  "--------------------------------------------------\n"
 
-            if self._vb:
+            if rcParams['verbose']:
                 print "--------------------------------------------------"
                 print " TSys"
                 print "--------------------------------------------------"
@@ -436,6 +465,7 @@ class scantable(sdtable):
         """
         self._setInstrument(instr)
         self._add_history("set_instument",vars())
+        print_log()
 
     def set_doppler(self, doppler='RADIO'):
         """
@@ -449,6 +479,7 @@ class scantable(sdtable):
         self._setcoordinfo(inf)
         if self._p: self.plot()
         self._add_history("set_doppler",vars())
+        print_log()
 
     def set_freqframe(self, frame=None):
         """
@@ -471,7 +502,12 @@ class scantable(sdtable):
             self._setcoordinfo(inf)
             self._add_history("set_freqframe",varlist)
         else:
-            print "Please specify a valid freq type. Valid types are:\n",valid
+            msg  = "Please specify a valid freq type. Valid types are:\n",valid
+            if rcParams['verbose']:
+                print msg
+            else:
+                raise TypeError(msg)
+        print_log()
 
     def get_unit(self):
         """
@@ -497,8 +533,8 @@ class scantable(sdtable):
         """
         abc = self._getabcissa(rowno)
         lbl = self._getabcissalabel(rowno)
+        print_log()
         return abc, lbl
-        #return {'abcissa':abc,'label':lbl}
 
     def create_mask(self, *args, **kwargs):
         """
@@ -534,20 +570,19 @@ class scantable(sdtable):
             row = kwargs.get("row")
         data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
-        if self._vb:
+        if rcParams['verbose']:
             if u == "": u = "channel"
-            print "The current mask window unit is", u
+            from asap import asaplog
+            msg = "The current mask window unit is %s" % u
+            asaplog.push(msg)
         n = self.nchan()
         msk = zeros(n)
         # test if args is a 'list' or a 'normal *args - UGLY!!!
 
         ws = (isinstance(args[-1][-1],int) or isinstance(args[-1][-1],float)) and args or args[0]
-        print ws
         for window in ws:
-            print window
             if (len(window) != 2 or window[0] > window[1] ):
-                print "A window needs to be defined as [min,max]"
-                return
+                raise TypeError("A window needs to be defined as [min,max]")
             for i in range(n):
                 if data[i] >= window[0] and data[i] < window[1]:
                     msk[i] = 1
@@ -555,6 +590,7 @@ class scantable(sdtable):
             if kwargs.get('invert'):
                 from numarray import logical_not
                 msk = logical_not(msk)
+        print_log()
         return msk
 
     def get_restfreqs(self):
@@ -654,85 +690,6 @@ class scantable(sdtable):
             print "Please specify a valid (Beam/IF/Pol)"
         return
 
-    def plot(self, what='spectrum',col='Pol', panel=None):
-        """
-        Plot the spectra contained in the scan. Alternatively you can also
-        Plot Tsys vs Time
-        Parameters:
-            what:     a choice of 'spectrum' (default) or 'tsys'
-            col:      which out of Beams/IFs/Pols should be colour stacked
-            panel:    set up multiple panels, currently not working.
-        """
-        print "Warning! Not fully functional. Use plotter.plot() instead"
-
-        validcol = {'Beam':self.nbeam(),'IF':self.nif(),'Pol':self.npol()}
-
-        validyax = ['spectrum','tsys']
-        from asap.asaplot import ASAPlot
-        if not self._p:
-            self._p = ASAPlot()
-            #print "Plotting not enabled"
-            #return
-        if self._p.is_dead:
-            del self._p
-            self._p = ASAPlot()
-        npan = 1
-        x = None
-        if what == 'tsys':
-            n = self.nrow()
-            if n < 2:
-                print "Only one integration. Can't plot."
-                return
-        self._p.hold()
-        self._p.clear()
-        if panel == 'Time':
-            npan = self.nrow()
-            self._p.set_panels(rows=npan)
-        xlab,ylab,tlab = None,None,None
-        self._vb = False
-        sel = self.get_cursor()
-        for i in range(npan):
-            if npan > 1:
-                self._p.subplot(i)
-            for j in range(validcol[col]):
-                x = None
-                y = None
-                m = None
-                tlab = self._getsourcename(i)
-                import re
-                tlab = re.sub('_S','',tlab)
-                if col == 'Beam':
-                    self.setbeam(j)
-                elif col == 'IF':
-                    self.setif(j)
-                elif col == 'Pol':
-                    self.setpol(j)
-                if what == 'tsys':
-                    x = range(self.nrow())
-                    xlab = 'Time [pixel]'
-                    m = list(ones(len(x)))
-                    y = []
-                    ylab = r'$T_{sys}$'
-                    for k in range(len(x)):
-                        y.append(self._gettsys(k))
-                else:
-                    x,xlab = self.get_abcissa(i)
-                    y = self._getspectrum(i)
-                    ylab = r'Flux'
-                    m = self._getmask(i)
-                llab = col+' '+str(j)
-                self._p.set_line(label=llab)
-                self._p.plot(x,y,m)
-            self._p.set_axes('xlabel',xlab)
-            self._p.set_axes('ylabel',ylab)
-            self._p.set_axes('title',tlab)
-        self._p.release()
-        self.set_cursor(sel[0],sel[1],sel[2])
-        self._vb = rcParams['verbose']
-        return
-
-        print out
-
     def _print_values(self, dat, label='', timestamps=[]):
         d = dat['data']
         a = dat['axes']
@@ -804,6 +761,7 @@ class scantable(sdtable):
         from asap._asap import average as _av
         s = scantable(_av((self,), mask, scanav, weight))
         s._add_history("average_time",varlist)
+        print_log()
         return s
 
     def convert_flux(self, jyperk=None, eta=None, d=None, insitu=None,
@@ -836,11 +794,13 @@ class scantable(sdtable):
             from asap._asap import convertflux as _convert
             s = scantable(_convert(self, d, eta, jyperk, allaxes))
             s._add_history("convert_flux", varlist)
+            print_log()
             return s
         else:
             from asap._asap import convertflux_insitu as _convert
             _convert(self, d, eta, jyperk, allaxes)
             self._add_history("convert_flux", varlist)
+            print_log()
             return
 
     def gain_el(self, poly=None, filename="", method="linear",
@@ -898,11 +858,13 @@ class scantable(sdtable):
             from asap._asap import gainel as _gainEl
             s = scantable(_gainEl(self, poly, filename, method, allaxes))
             s._add_history("gain_el", varlist)
+            print_log()
             return s
         else:
             from asap._asap import gainel_insitu as _gainEl
             _gainEl(self, poly, filename, method, allaxes)
             self._add_history("gain_el", varlist)
+            print_log()
             return
 
     def freq_align(self, reftime=None, method='cubic', perif=False,
@@ -931,11 +893,13 @@ class scantable(sdtable):
             from asap._asap import freq_align as _align
             s = scantable(_align(self, reftime, method, perfreqid))
             s._add_history("freq_align", varlist)
+            print_log()
             return s
         else:
             from asap._asap import freq_align_insitu as _align
             _align(self, reftime, method, perfreqid)
             self._add_history("freq_align", varlist)
+            print_log()
             return
 
     def opacity(self, tau, insitu=None, allaxes=None):
@@ -960,11 +924,13 @@ class scantable(sdtable):
             from asap._asap import opacity as _opacity
             s = scantable(_opacity(self, tau, allaxes))
             s._add_history("opacity", varlist)
+            print_log()
             return s
         else:
             from asap._asap import opacity_insitu as _opacity
             _opacity(self, tau, allaxes)
             self._add_history("opacity", varlist)
+            print_log()
             return
 
     def bin(self, width=5, insitu=None):
@@ -981,11 +947,13 @@ class scantable(sdtable):
             from asap._asap import bin as _bin
             s = scantable(_bin(self, width))
             s._add_history("bin",varlist)
+            print_log()
             return s
         else:
             from asap._asap import bin_insitu as _bin
             _bin(self, width)
             self._add_history("bin",varlist)
+            print_log()
             return
 
 
@@ -1006,11 +974,13 @@ class scantable(sdtable):
             from asap._asap import resample as _resample
             s = scantable(_resample(self, method, width))
             s._add_history("resample",varlist)
+            print_log()
             return s
         else:
             from asap._asap import resample_insitu as _resample
             _resample(self, method, width)
             self._add_history("resample",varlist)
+            print_log()
             return
 
     def average_pol(self, mask=None, weight='none', insitu=None):
@@ -1036,11 +1006,13 @@ class scantable(sdtable):
             from asap._asap import averagepol as _avpol
             s = scantable(_avpol(self, mask, weight))
             s._add_history("average_pol",varlist)
+            print_log()
             return s
         else:
             from asap._asap import averagepol_insitu as _avpol
             _avpol(self, mask, weight)
             self._add_history("average_pol",varlist)
+            print_log()
             return
 
     def smooth(self, kernel="hanning", width=5.0, insitu=None, allaxes=None):
@@ -1071,11 +1043,13 @@ class scantable(sdtable):
             from asap._asap import smooth as _smooth
             s = scantable(_smooth(self,kernel,width,allaxes))
             s._add_history("smooth", varlist)
+            print_log()
             return s
         else:
             from asap._asap import smooth_insitu as _smooth
             _smooth(self,kernel,width,allaxes)
             self._add_history("smooth", varlist)
+            print_log()
             return
 
     def poly_baseline(self, mask=None, order=0, insitu=None):
@@ -1106,9 +1080,11 @@ class scantable(sdtable):
         sf = f.auto_fit(insitu)
         if insitu:
             self._add_history("poly_baseline", varlist)
+            print_log()
             return
         else:
             sf._add_history("poly_baseline", varlist)
+            print_log()
             return sf
 
     def auto_poly_baseline(self, mask=None, edge=(0,0), order=0,
@@ -1119,7 +1095,6 @@ class scantable(sdtable):
         to avoid them affecting the baseline solution.
 
         Parameters:
-            scan:    a scantable
             mask:       an optional mask retreived from scantable
             edge:       an optional number of channel to drop at
                         the edge of spectrum. If only one value is
@@ -1144,6 +1119,7 @@ class scantable(sdtable):
         from asap import _is_sequence_or_number as _is_valid
 
         if not _is_valid(edge, int):
+
             raise RuntimeError, "Parameter 'edge' has to be an integer or a \
             pair of integers specified as a tuple"
 
@@ -1161,20 +1137,18 @@ class scantable(sdtable):
         else:
             workscan=self
 
-        vb=workscan._vb
-        # remember the verbose parameter and selection
-        workscan._vb=False
         sel=workscan.get_cursor()
         rows=range(workscan.nrow())
+        from asap import asaplog
         for i in range(workscan.nbeam()):
             workscan.setbeam(i)
             for j in range(workscan.nif()):
                 workscan.setif(j)
                 for k in range(workscan.npol()):
                     workscan.setpol(k)
-                    if f._vb:
-                       print "Processing:"
-                       print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    asaplog.push("Processing:")
+                    msg = 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    asaplog.push(msg)
                     for iRow in rows:
                        fl.set_scan(workscan,mask,edge)
                        fl.find_lines(iRow)
@@ -1186,9 +1160,8 @@ class scantable(sdtable):
                        x=f.get_parameters()
                        workscan._setspectrum(f.fitter.getresidual(),iRow)
         workscan.set_cursor(sel[0],sel[1],sel[2])
-        workscan._vb = vb
         if not insitu:
-           return workscan
+            return workscan
 
     def rotate_linpolphase(self, angle, allaxes=None):
         """
@@ -1208,6 +1181,7 @@ class scantable(sdtable):
         from asap._asap import _rotate_linpolphase as _rotate
         _rotate(self, angle, allaxes)
         self._add_history("rotate_linpolphase", varlist)
+        print_log()
         return
 
 
@@ -1229,6 +1203,7 @@ class scantable(sdtable):
         from asap._asap import _rotate_xyphase
         _rotate_xyphase(self, angle, allaxes)
         self._add_history("rotate_xyphase", varlist)
+        print_log()
         return
 
 
@@ -1251,11 +1226,13 @@ class scantable(sdtable):
             from asap._asap import add as _add
             s = scantable(_add(self, offset, allaxes))
             s._add_history("add",varlist)
+            print_log()
             return s
         else:
             from asap._asap import add_insitu as _add
             _add(self, offset, allaxes)
             self._add_history("add",varlist)
+            print_log()
             return
 
     def scale(self, factor, insitu=None, allaxes=None, tsys=True):
@@ -1279,11 +1256,13 @@ class scantable(sdtable):
             from asap._asap import scale as _scale
             s = scantable(_scale(self, factor, allaxes, tsys))
             s._add_history("scale",varlist)
+            print_log()
             return s
         else:
             from asap._asap import scale_insitu as _scale
             _scale(self, factor, allaxes, tsys)
             self._add_history("scale",varlist)
+            print_log()
             return
 
     def auto_quotient(self, mode='suffix', preserve=True):
@@ -1314,11 +1293,17 @@ class scantable(sdtable):
                 ns,nr = srcs.nrow(),refs.nrow()
                 if nr > ns:
                     refs = refs.get_scan(range(ns))
+                print_log()
                 return scantable(_quot(srcs,refs, preserve))
             else:
-                raise RuntimeError("Couldn't find any on/off pairs")
+                msg = "Couldn't find any on/off pairs"
+                if rcParams['verbose']:
+                    print msg
+                    return
+                else:
+                    raise RuntimeError()
         else:
-            print "not yet implemented"
+            if rcParams['verbose']: print "not yet implemented"
             return None
 
     def quotient(self, other, isreference=True, preserve=True):
@@ -1343,10 +1328,48 @@ class scantable(sdtable):
             # gives the same result
         """
         from asap._asap import quotient as _quot
-        if isreference:
-            return scantable(_quot(self, other, preserve))
-        else:
-            return scantable(_quot(other, self, preserve))
+        try:
+            s = None
+            if isreference:
+                s = scantable(_quot(self, other, preserve))
+            else:
+                s = scantable(_quot(other, self, preserve))
+            print_log()
+            return s
+        except RuntimeError,e:
+            if rcParams['verbose']:
+                print e
+                return
+            else: raise
+
+    def freq_switch(self, insitu=None):
+        """
+        Apply frequency switching to the data.
+        Parameters:
+            insitu:      if False a new scantable is returned.
+                         Otherwise, the swictching is done in-situ
+                         The default is taken from .asaprc (False)
+        Example:
+            none
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        try:
+            if insitu:
+                from asap._asap import _frequency_switch_insitu
+                _frequency_switch_insitu(self)
+                self._add_history("freq_switch", varlist)
+                print_log()
+                return
+            else:
+                from asap._asap import _frequency_switch
+                sf = scantable(_frequency_switch(self))
+                sf._add_history("freq_switch", varlist)
+                print_log()
+                return sf
+        except RuntimeError,e:
+            if rcParams['verbose']: print e
+            else: raise
 
     def __add__(self, other):
         varlist = vars()
@@ -1358,9 +1381,9 @@ class scantable(sdtable):
             from asap._asap import add as _add
             s = scantable(_add(self, other, True))
         else:
-            print "Other input is not a scantable or float value"
-            return
+            raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator +", varlist)
+        print_log()
         return s
 
 
@@ -1377,9 +1400,9 @@ class scantable(sdtable):
             from asap._asap import add as _add
             s = scantable(_add(self, -other, True))
         else:
-            print "Other input is not a scantable or float value"
-            return
+            raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator -", varlist)
+        print_log()
         return s
 
     def __mul__(self, other):
@@ -1393,14 +1416,13 @@ class scantable(sdtable):
             s = scantable(_bop(self, other, 'mul', True))
         elif isinstance(other, float):
             if other == 0.0:
-                print "Multiplying by zero is not recommended."
-                return
+                raise ZeroDivisionError("Dividing by zero is not recommended")
             from asap._asap import scale as _sca
             s = scantable(_sca(self, other, True))
         else:
-            print "Other input is not a scantable or float value"
-            return
+            raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator *", varlist)
+        print_log()
         return s
 
 
@@ -1415,14 +1437,13 @@ class scantable(sdtable):
             s = scantable(_bop(self, other, 'div', True))
         elif isinstance(other, float):
             if other == 0.0:
-                print "Dividing by zero is not recommended"
-                return
+                raise ZeroDivisionError("Dividing by zero is not recommended")
             from asap._asap import scale as _sca
             s = scantable(_sca(self, 1.0/other, True))
         else:
-            print "Other input is not a scantable or float value"
-            return
+            raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator /", varlist)
+        print_log()
         return s
 
     def get_fit(self, row=0):
@@ -1435,7 +1456,7 @@ class scantable(sdtable):
             return
         from asap import asapfit
         fit = asapfit(self._getfit(row))
-        if self._vb:
+        if rcParams['verbose']:
             print fit
             return
         else:
