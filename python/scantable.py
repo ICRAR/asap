@@ -1,5 +1,6 @@
 from asap._asap import sdtable
 from asap import rcParams
+from asap import print_log
 from numarray import ones,zeros
 import sys
 
@@ -62,7 +63,6 @@ class scantable(sdtable):
                 ifSel = -1
                 beamSel = -1
                 r = sdreader()
-                r._setlog(asaplog)
                 r._open(filename,ifSel,beamSel)
                 asaplog.push('Importing data...')
                 r._read([-1])
@@ -79,8 +79,7 @@ class scantable(sdtable):
                     sdtable.__init__(self,tbl)
                 del r,tbl
                 self._add_history("scantable", varlist)
-                log = asaplog.pop()
-                if len(log): print log
+        print_log()
 
     def save(self, name=None, format=None, stokes=False, overwrite=False):
         """
@@ -396,6 +395,22 @@ class scantable(sdtable):
             if row < self.nrow():
                 return self._gettime(row)
 
+    def get_sourcename(self, row=-1):
+        """
+        Get a list source anmes for the observations.
+        Return a string for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        out = []
+        if row == -1:
+            return [self._getsourcename(i) for i in range(self.nrow())]
+        else:
+            if  0 <= row < self.nrow():
+                return self._getsourcename(row)
+
     def set_unit(self, unit='channel'):
         """
         Set the unit for all following operations on this scantable
@@ -557,7 +572,11 @@ class scantable(sdtable):
         """
         Print the list of known spectral lines
         """
-        sdtable._lines(self)
+        l = sdtable._lines(self)
+        if rcParams['verbose']:
+            print l
+        else:
+            return l
 
     def set_restfreqs(self, freqs=None, unit='Hz', lines=None, source=None,
                       theif=None):
@@ -1284,7 +1303,6 @@ class scantable(sdtable):
                             remove:   Output = Tref * (on/off) - Ton
         """
         modes = ["suffix","time"]
-        print mode
         if not mode in modes:
             print "please provide valid mode. Valid modes are %s" % (modes)
             return None
@@ -1475,6 +1493,7 @@ class scantable(sdtable):
             segments.append([i,j])
             i = j
         return segments
+
     def _get_ordinate_label(self):
         fu = "("+self.get_fluxunit()+")"
         import re
