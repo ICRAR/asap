@@ -1,5 +1,6 @@
 from scantable import scantable
 from asap import rcParams
+from asap import print_log
 
 def average_time(*args, **kwargs):
     """
@@ -10,9 +11,9 @@ def average_time(*args, **kwargs):
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
         scanav:   True averages each scan separately.
                   False (default) averages all scans together,
-        weight:   Weighting scheme. 'none, 'var' (1/var(spec) 
+        weight:   Weighting scheme. 'none, 'var' (1/var(spec)
                   weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
-                  (integration time weighted) or 'tintsys' (Tsys 
+                  (integration time weighted) or 'tintsys' (Tsys
                   and tint). The default is 'tint'
     Example:
         # return a time averaged scan from scana and scanb
@@ -38,18 +39,23 @@ def average_time(*args, **kwargs):
         lst = args[0]
     else:
         lst = tuple(args)
-        
+
     del varlist["kwargs"]
     varlist["args"] = "%d scantables" % len(lst)
     # need special formatting her for history...
-    
+
     from asap._asap import average as _av
     for s in lst:
         if not isinstance(s,scantable):
-            print "Please give a list of scantables"
-            return
+            msg = "Please give a list of scantables"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
     s = scantable(_av(lst, mask, scanAv, weight))
     s._add_history("average_time",varlist)
+    print_log()
     return s
 
 def quotient(source, reference, preserve=True):
@@ -61,20 +67,21 @@ def quotient(source, reference, preserve=True):
     Parameters:
         source:        the 'on' scan
         reference:     the 'off' scan
-        preserve:      you can preserve (default) the continuum or 
-                       remove it.  The equations used are 
-                          preserve:  Output = Toff * (on/off) - Toff
-                          remove:    Output = Toff * (on/off) - Ton
+        preserve:      you can preserve (default) the continuum or
+                       remove it.  The equations used are
+                       preserve:  Output = Toff * (on/off) - Toff
+                       remove:    Output = Toff * (on/off) - Ton
     """
     varlist = vars()
     from asap._asap import quotient as _quot
     s = scantable(_quot(source, reference, preserve))
     s._add_history("quotient",varlist)
+    print_log()
     return s
 
 def simple_math(left, right, op='add', tsys=True):
     """
-    Apply simple mathematical binary operations to two 
+    Apply simple mathematical binary operations to two
     scan tables,  returning the result in a new scan table.
     The operation is applied to both the correlations and the TSys data
     The cursor of the output scan is set to 0
@@ -87,11 +94,14 @@ def simple_math(left, right, op='add', tsys=True):
     """
     varlist = vars()
     if not isinstance(left,scantable) and not isinstance(right,scantable):
-        print "Please provide two scantables as input"
-        return
+        msg = "Please provide two scantables as input"
+        if rcParams['verbose']:
+            print msg
+            return
+        else:
+            raise TypeError(msg)
     from asap._asap import b_operate as _bop
     s = scantable(_bop(left, right, op, tsys))
     s._add_history("simple_math", varlist)
+    print_log()
     return s
-    
-    
