@@ -1,4 +1,5 @@
 from asap._asap import sdreader
+from asap import print_log
 
 class reader(sdreader):
     """
@@ -45,6 +46,7 @@ class reader(sdreader):
         from os.path import expandvars
         filename = expandvars(filename)
         sdreader.__init__(self, filename, theif, thebeam)
+        print_log()
 
     def read(self,integrations=None):
         """
@@ -61,14 +63,16 @@ class reader(sdreader):
             r.read(range(100))     # read in the first 100 integrations
         """
         from asap import scantable
+        from asap import asaplog
         if integrations is None:
             integrations = [-1]
-        print "Reading integrations from disk..."
+        asaplog.push("Reading integrations from disk...")
         sdreader._read(self,integrations)
         tbl = sdreader._getdata(self)
         sdreader._reset(self) # reset to the beginning of the file
         if self.unit is not None:
             tbl.set_fluxunit(self.unit)
+        print_log()
         return scantable(tbl)
 
     def summary(self, name=None):
@@ -87,19 +91,3 @@ class reader(sdreader):
         sdreader._reset(self)
         tbl.summary(name)
         return
-##     def reset(self):
-##         """
-##         [Advanced use]
-##         Reset to the beginning of the file.
-##         Parameters:
-##              none
-##         Examples:
-##              r = reader('xyz.sdfits')
-##              scans0 = r.read(range(10))
-##              r.reset()
-##              scans1 = r.read(range(5,15))
-##              # produces 2 scatables  one containing integrations(rows) 0-9
-##              # and a second one with rows 5-14
-##         """
-##        sdreader._reset(self)
-        
