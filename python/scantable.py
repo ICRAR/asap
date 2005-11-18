@@ -257,14 +257,14 @@ class scantable(sdtable):
         i = self.getbeam()
         j = self.getif()
         k = self.getpol()
-        if rcParams['verbose']:
-            print "--------------------------------------------------"
-            print " Cursor position"
-            print "--------------------------------------------------"
-            out = 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
-            print out
-        else:
-            return i,j,k
+        from asap import asaplog
+        out = "--------------------------------------------------\n"
+        out += " Cursor position\n"
+        out += "--------------------------------------------------\n"
+        out += 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
+        asaplog.push(out)
+        print_log()
+        return i,j,k
 
     def stats(self, stat='stddev', mask=None, allaxes=None):
         """
@@ -1125,7 +1125,6 @@ class scantable(sdtable):
 
         # setup fitter
         f = fitter()
-        f._verbose(True)
         f.set_function(poly=order)
 
         # setup line finder
