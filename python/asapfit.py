@@ -2,8 +2,8 @@ from _asap import sdfit
 from asap import rcParams
 
 class asapfit(sdfit):
-    
-    def __init__(self, other):        
+
+    def __init__(self, other):
         sdfit.__init__(self,other)
 
     def __str__(self):
@@ -25,7 +25,7 @@ class asapfit(sdfit):
                 s = pos
                 pos += comps[k]
                 ps = pars[s:pos]
-                out += "\n  Parameters:  "                
+                out += "\n  Parameters:  "
                 out += self._format_pars(pars[s:pos],f, finfo[0])
                 out += "\n  Fixed Parms: "
                 out += str(mask[s:pos])
@@ -58,7 +58,7 @@ class asapfit(sdfit):
             out.append(comp)
         return out
 
-    
+
     def _format_pars(self, pars, ftype, unit):
         out = ''
         if ftype == 'poly':
@@ -67,7 +67,7 @@ class asapfit(sdfit):
                 out += ' p%d = %3.3f %s,' % (i,p,unit)
                 i+=1
             out = out[1:-1]
-        elif ftype == 'gauss':            
+        elif ftype == 'gauss':
             out += 'peak = %3.3f , centre = %3.3f %s, FWHM = %3.3f %s' % (pars[0],pars[1],unit,pars[2],unit)
 
         return out
