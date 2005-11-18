@@ -1,20 +1,12 @@
 import _asap
 from asap import rcParams
+from asap import print_log
 
 class fitter:
     """
     The fitting class for ASAP.
     """
-    def _verbose(self, *args):
-        """
-        Set stdout output.
-        """
-        if type(args[0]) is bool:
-            self._vb = args[0]
-            return
-        elif len(args) == 0:
-            return self._vb
-        
+
     def __init__(self):
         """
         Create a fitter object. No state is set.
@@ -30,7 +22,6 @@ class fitter:
         self.components = 0
         self._fittedrow = 0
         self._p = None
-        self._vb = True
         self._selection = None
 
     def set_data(self, xdat, ydat, mask=None):
@@ -43,7 +34,7 @@ class fitter:
             xdat:    the abcissa values
             ydat:    the ordinate values
             mask:    an optional mask
-        
+
         """
         self.fitted = False
         self.x = xdat
@@ -63,7 +54,12 @@ class fitter:
             mask:        a msk retireved from the scantable
         """
         if not thescan:
-            print "Please give a correct scan"
+            msg = "Please give a correct scan"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
         self.fitted = False
         self.data = thescan
         if mask is None:
@@ -83,7 +79,7 @@ class fitter:
             fitter.set_function(gauss=2) # will fit two gaussians
             fitter.set_function(poly=3)  # will fit a 3rd order polynomial
         """
-        #default poly order 0        
+        #default poly order 0
         n=0
         if kwargs.has_key('poly'):
             self.fitfunc = 'poly'
@@ -95,11 +91,16 @@ class fitter:
             self.fitfuncs = [ 'gauss' for i in range(n) ]
             self.components = [ 3 for i in range(n) ]
         else:
-            print "Invalid function type."
-            return
+            msg = "Invalid function type."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
+
         self.fitter.setexpression(self.fitfunc,n)
         return
-            
+
     def fit(self, row=0):
         """
         Execute the actual fitting process. All the state has to be set.
@@ -111,21 +112,24 @@ class fitter:
             f = fitter()
             f.set_scan(s)
             f.set_function(poly=0)
-            f.fit(row=0)                  # fit first row 
+            f.fit(row=0)                  # fit first row
         """
         if ((self.x is None or self.y is None) and self.data is None) \
                or self.fitfunc is None:
-            print "Fitter not yet initialised. Please set data & fit function"
-            return
+            msg = "Fitter not yet initialised. Please set data & fit function"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
+
         else:
             if self.data is not None:
                 self.x = self.data._getabcissa(row)
                 self.y = self.data._getspectrum(row)
-                print "Fitting:"
-                vb = self.data._vb
-                self.data._vb = True
+                from asap import asaplog
+                asaplog.push("Fitting:")
                 self.selection = self.data.get_cursor()
-                self.data._vb = vb
         self.fitter.setdata(self.x, self.y, self.mask)
         if self.fitfunc == 'gauss':
             ps = self.fitter.getparameters()
@@ -134,9 +138,13 @@ class fitter:
         try:
             self.fitter.fit()
         except RuntimeError, msg:
-            print msg            
+            if rcParams['verbose']:
+                print msg
+            else:
+                raise
         self._fittedrow = row
         self.fitted = True
+        print_log()
         return
 
     def store_fit(self):
@@ -160,24 +168,29 @@ class fitter:
                          component
              """
         if self.fitfunc is None:
-            print "Please specify a fitting function first."
-            return
+            msg = "Please specify a fitting function first."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         if self.fitfunc == "gauss" and component is not None:
             if not self.fitted:
                 from numarray import zeros
                 pars = list(zeros(len(self.components)*3))
                 fxd = list(zeros(len(pars)))
             else:
-                pars = list(self.fitter.getparameters())              
+                pars = list(self.fitter.getparameters())
                 fxd = list(self.fitter.getfixedparameters())
             i = 3*component
             pars[i:i+3] = params
             fxd[i:i+3] = fixed
             params = pars
-            fixed = fxd          
+            fixed = fxd
         self.fitter.setparameters(params)
         if fixed is not None:
             self.fitter.setfixedparameters(fixed)
+        print_log()
         return
 
     def set_gauss_parameters(self, peak, centre, fhwm,
@@ -198,16 +211,24 @@ class fitter:
                                  component 0)
         """
         if self.fitfunc != "gauss":
-            print "Function only operates on Gaussian components."
-            return
+            msg = "Function only operates on Gaussian components."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise ValueError(msg)
         if 0 <= component < len(self.components):
             self.set_parameters([peak, centre, fhwm],
                                 [peakfixed, centerfixed, fhwmfixed],
                                 component)
         else:
-            print "Please select a valid  component."
-            return
-        
+            msg = "Please select a valid  component."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise ValueError(msg)
+
     def get_parameters(self, component=None):
         """
         Return the fit paramters.
@@ -216,25 +237,30 @@ class fitter:
                            only, default is all components
         """
         if not self.fitted:
-            print "Not yet fitted."
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         pars = list(self.fitter.getparameters())
         fixed = list(self.fitter.getfixedparameters())
-        if component is not None:            
+        if component is not None:
             if self.fitfunc == "gauss":
                 i = 3*component
                 cpars = pars[i:i+3]
                 cfixed = fixed[i:i+3]
             else:
                 cpars = pars
-                cfixed = fixed                
+                cfixed = fixed
         else:
             cpars = pars
             cfixed = fixed
         fpars = self._format_pars(cpars, cfixed)
-        if self._vb:
+        if rcParams['verbose']:
             print fpars
         return cpars, cfixed, fpars
-    
+
     def _format_pars(self, pars, fixed):
         out = ''
         if self.fitfunc == 'poly':
@@ -258,23 +284,27 @@ class fitter:
                 c+=1
                 i+=3
         return out
-        
+
     def get_estimate(self):
         """
         Return the parameter estimates (for non-linear functions).
         """
         pars = self.fitter.getestimate()
-        if self._vb:
+        if rcParams['verbose']:
             print self._format_pars(pars)
         return pars
-       
 
     def get_residual(self):
         """
         Return the residual of the fit.
         """
         if not self.fitted:
-            print "Not yet fitted."
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         return self.fitter.getresidual()
 
     def get_chi2(self):
@@ -282,18 +312,28 @@ class fitter:
         Return chi^2.
         """
         if not self.fitted:
-            print "Not yet fitted."
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         ch2 = self.fitter.getchi2()
-        if self._vb:
+        if rcParams['verbose']:
             print 'Chi^2 = %3.3f' % (ch2)
-        return ch2 
+        return ch2
 
     def get_fit(self):
         """
         Return the fitted ordinate values.
         """
         if not self.fitted:
-            print "Not yet fitted."
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         return self.fitter.getfit()
 
     def commit(self):
@@ -302,13 +342,24 @@ class fitter:
         """
         if not self.fitted:
             print "Not yet fitted."
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
         if self.data is not scantable:
-            print "Only works with scantables"
-            return
+            msg = "Not a scantable"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
         scan = self.data.copy()
         scan._setspectrum(self.fitter.getresidual())
+        print_log()
 
-    def plot(self, residual=False, components=None, plotparms=False):
+    def plot(self, residual=False, components=None, plotparms=False, filename=None):
         """
         Plot the last fit.
         Parameters:
@@ -322,17 +373,18 @@ class fitter:
         """
         if not self.fitted:
             return
-        if not self._p:
-            from asap.asaplot import ASAPlot
-            self._p = ASAPlot()
-        if self._p.is_dead:
-            from asap.asaplot import ASAPlot
-            self._p = ASAPlot()
+        if not self._p or self._p.is_dead:
+            if rcParams['plotter.gui']:
+                from asap.asaplotgui import asaplotgui as asaplot
+            else:
+                from asap.asaplot import asaplot
+            self._p = asaplot()
+        self._p.hold()
         self._p.clear()
         self._p.set_panels()
         self._p.palette(0)
         tlab = 'Spectrum'
-        xlab = 'Abcissa'        
+        xlab = 'Abcissa'
         m = ()
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)
@@ -364,52 +416,60 @@ class fitter:
                 elif c == -1:
                     self._p.palette(2)
                     self._p.set_line(label="Total Fit")
-                    self._p.plot(self.x, self.get_fit(), m)                    
+                    self._p.plot(self.x, self.get_fit(), m)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
             self._p.plot(self.x, self.get_fit(), m)
+        xlim=[min(self.x),max(self.x)]
+        self._p.axes.set_xlim(xlim)
         self._p.set_axes('xlabel',xlab)
         self._p.set_axes('ylabel',ylab)
         self._p.set_axes('title',tlab)
         self._p.release()
+        if (not rcParams['plotter.gui']):
+            self._p.save(filename)
+        print_log()
 
     def auto_fit(self, insitu=None):
         """
         Return a scan where the function is applied to all rows for
         all Beams/IFs/Pols.
-        
+
         """
         from asap import scantable
         if not isinstance(self.data, scantable) :
-            print "Only works with scantables"
-            return
+            msg = "Data is not a scantable"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
         if insitu is None: insitu = rcParams['insitu']
         if not insitu:
             scan = self.data.copy()
         else:
             scan = self.data
-        vb = scan._vb
-        scan._vb = False
         sel = scan.get_cursor()
         rows = range(scan.nrow())
+        from asap import asaplog
         for i in range(scan.nbeam()):
             scan.setbeam(i)
             for j in range(scan.nif()):
                 scan.setif(j)
                 for k in range(scan.npol()):
                     scan.setpol(k)
-                    if self._vb:
-                        print "Fitting:"
-                        print 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    asaplog.push("Fitting:")
+                    out = 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                    asaplog.push(out)
                     for iRow in rows:
                         self.x = scan._getabcissa(iRow)
                         self.y = scan._getspectrum(iRow)
                         self.data = None
-                        self.fit()                    
+                        self.fit()
                         x = self.get_parameters()
                         scan._setspectrum(self.fitter.getresidual(),iRow)
         scan.set_cursor(sel[0],sel[1],sel[2])
-        scan._vb = vb
+        print_log()
         if not insitu:
             return scan
