@@ -57,7 +57,7 @@ namespace asap {
         b[i] = sdmw.getCP();
       }
       Vector<Bool> msk(mask);
-      
+
       return SDMemTableWrapper(sdmath.average(b, msk, Bool(scanAv), weightStr));
     };
   } // namespace SDMathWrapper
@@ -65,7 +65,7 @@ namespace asap {
   namespace python {
     void python_SDMath() {
       def("b_operate", &SDMathWrapper::binaryOperate);
-      
+
       def("quotient", &SDMathWrapper::quotient);
 
       def("scale", &SDMathWrapper::scale);
@@ -101,11 +101,12 @@ namespace asap {
       def("resample_insitu", &SDMathWrapper::resampleInSitu);
 
       def("stats", &SDMathWrapper::statistic);
- 
+
       def("_rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
       def("_rotate_linpolphase", &SDMathWrapper::rotateLinPolPhaseInSitu);
 
       def("_frequency_switch", &SDMathWrapper::frequencySwitch);
+      def("_frequency_switch_insitu", &SDMathWrapper::frequencySwitchInSitu);
     };
 
   } // python
