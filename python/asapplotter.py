@@ -10,9 +10,10 @@ class asapplotter:
         Currenly it only plots 'spectra' not Tsys or
         other variables.
     """
-    def __init__(self, visible=True):
-
-        self._visible = visible
+    def __init__(self, visible=None):
+        self._visible = rcParams['plotter.gui']
+        if visible is not None:
+            self._visible = visible
         self._plotter = self._newplotter()
 
         self._tdict = {'Time':'t','time':'t','t':'t','T':'t'}
@@ -626,15 +627,15 @@ class asapplotter:
 
     def set_linestyles(self, linestyles):
         """
+        Set the linestyles to be used. The plotter will cycle through
+        these linestyles when lines are overlaid (stacking mode) AND
+        only one color has been set.
         Parameters:
              linestyles:     a list of linestyles to use.
                              'line', 'dashed', 'dotted', 'dashdot',
                              'dashdotdot' and 'dashdashdot' are
                              possible
 
-        Set the linestyles to be used. The plotter will cycle through
-        these linestyles when lines are overlaid (stacking mode) AND
-        only one color has been set.
         Example:
              plotter.set_colors("black")
              plotter.set_linestyles("line dashed dotted dashdot")
@@ -767,6 +768,15 @@ class asapplotter:
         if self._data and refresh: self.plot()
 
     def set_mask(self, mask=None, pol=None):
+        """
+        Set a plotting mask for a specific polarization.
+        This is useful for masking out "noise" Pangle outside a source.
+        Parameters:
+             mask:     a mask from scantable.create_mask
+             pol:      the polarisation to apply the mask to, e.g
+                       "Pangle" or "XX" etc.
+        Example:
+        """
         if not self._data:
             print "Can only set cursor after a first call to plot()"
             return
