@@ -1,0 +1,27 @@
+This is a linux binary distribution of asap.
+
+To be able to run the following additional packages need to be installed.
+
+* gcc-3.3, g++-3.3
+* python2.3
+* boost_python (1.32)
+* lapack
+* blas
+* g2c
+* matplotlib (>0.73)
+* ipython 
+
+INSTALL
+=======
+
+To install simply run 
+  ./install.sh
+which will install asap into /usr/local
+
+
+RUN
+===
+
+simply type
+ asap
+at the prompt
