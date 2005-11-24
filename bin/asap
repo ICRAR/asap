@@ -43,6 +43,7 @@ fi
 
 if [ ! -d "${ASAPDATA}" ]; then
     echo "Couldn't locate the asap data directory"
+    echo "Please set ASAPDATA"
     #ASAPDATA="/nfs/aips++"
     #export ASAPDATA
     #exit 1
@@ -50,7 +51,7 @@ fi
 
 # Keep casa measures happy
 if test -d "${ASAPDATA}/data" ; then
-    platform='Linux'
+    platform='linux_gnu'
     if [ `uname -s` == 'Darwin' ]; then
 	platform='darwin'
     fi
