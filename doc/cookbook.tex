@@ -31,11 +31,11 @@ package.
 
 %\section{Documentation Standards}
 
-%In most of the examples in this document, it has been assumed that the 
+%In most of the examples in this document, it has been assumed that the
 
 \section{Installation and Running}
 
-Currently there are installations running on Linux machines at 
+Currently there are installations running on Linux machines at
 
 \begin{itemize}
 \item Epping - use hosts {\tt draco} or {\tt hydra}
@@ -84,7 +84,7 @@ main objects are used :
     into a scantable object.
 \end{itemize}
 
-There can be many objects of the same type. Each object is referred to 
+There can be many objects of the same type. Each object is referred to
 by a variable name made by the user. The name of this variable is not
 important and can be set to whatever the user prefers (ie ``s'' and
 ``ParkesHOH-20052002'' are equivalent).  However, having a simple and
@@ -144,8 +144,8 @@ Example
   ASAP> scans = scantable('MyData.rpf')
   ASAP> scans.se<TAB>
 scans.set_cursor      scans.set_freqframe   scans.set_unit        scans.setpol
-scans.set_doppler     scans.set_instrument  scans.setbeam         
-scans.set_fluxunit    scans.set_restfreqs   scans.setif     
+scans.set_doppler     scans.set_instrument  scans.setbeam
+scans.set_fluxunit    scans.set_restfreqs   scans.setif
   ASAP> scans.set_in<TAB>
   ASAP> scans.set_instrument
 \end{verbatim}
@@ -195,14 +195,14 @@ the object and function name. E.g.
 Global functions just need their name
 
 \begin{verbatim}
-  ASAP> help average_time 
+  ASAP> help average_time
 \end{verbatim}
 
 Note that if you just type \cmd{help} the internal ipython help is
 invoked, which is probably {\em not} what you want. Type \verb+^+-d
 (control-d) to escape from this.
 
-\subsection{.asaprc}
+\subsection{Customisation - .asaprc}
 
 ASAP use an \cmd{.asaprc} file to control the user's preference of
 default values for various functions arguments. This includes the
@@ -217,7 +217,7 @@ Common values include:
   # apply operations on the input scantable or return new one
   insitu                     : False
 
-  # default ouput format when saving scantable
+  # default output format when saving scantable
   scantable.save             : 'ASAP'
 
 
@@ -265,7 +265,7 @@ You can store it to disk and then browse it with the AIPS++
 Table browser if you know how to do that !).
 
 The data are stored in columns (the length of a column is the number of
-rows/integrations of course).  
+rows/integrations of course).
 
 Two important columns are those that describe the frequency setup.  We mention
 them explicitly here because you need to be able to understand the presentation
@@ -294,7 +294,7 @@ Example:
   The user created scantables are:
   ['s', 'scans', 'av', 's2', 'ss']
 
-  ASAP> del s2   
+  ASAP> del s2
   ASAP> del ss
 \end{verbatim}
 
@@ -309,17 +309,17 @@ Example:
   ASAP> scans.summary(verbose=True)    # Include frequency information
 
   # Equivalent to brief summary function call
-  ASAP> print scan                     
+  ASAP> print scan
 \end{verbatim}
 
 Most of what the \cmd{summary} function  prints out is obvious. However,
-it also prints out the FreqIDs and RestFreqIDs to which we alluded above. 
+it also prints out the FreqIDs and RestFreqIDs to which we alluded above.
 These are the last column of the listing.
 
 The summary function gives you a scan-based summary.  So it lists all of
 the FreqIDs and RestFreqIDs that it encountered for each scan.  If you'd
 like to see what each FreqID actually means, then set the verbose
-argument to True and the frequency table will be listed at the end. 
+argument to True and the frequency table will be listed at the end.
 FreqID of 3 say, refers to the fourth row of the frequency table (ASAP
 is 0-relative). The list of rest frequencies, to which the RestFreqIDs
 refer, is always listed.
@@ -336,7 +336,7 @@ refer, is always listed.
 \subsection{State}
 
 Each scantable contains "state"; these are properties  applying to all
-of the data in the scantable.  
+of the data in the scantable.
 
 Examples are the selection of beam, IF and polarisation,  spectral unit
 (e.g. km/s) frequency reference frame (e.g. BARY) and velocity Doppler
@@ -346,7 +346,7 @@ type (e.g. RADIO).
 
 The information describing the frequency setup for each integration
 is stored fundamentally in frequency in the reference frame
-of observation (E.g. TOPO).   
+of observation (E.g. TOPO).
 
 When required, this is converted to the desired reference frame
 (e.g. LSRK), Doppler (e.g. OPTICAL) and unit (e.g. km/s) on-the-fly.
@@ -357,7 +357,7 @@ For units, the user has the choice of frequency, velocity or channel.
 The \cmd{set\_unit} function is used to set the current unit for a
 scantable. All functions will (where relevant) work with the selected
 unit until this changes. This is mainly important for fitting (the fits
-can be computed in any of these units), plotting and mask creation. 
+can be computed in any of these units), plotting and mask creation.
 
 The velocity definition can be changed with the \cmd{set\_doppler}
 function, and the frequency reference frame can be changed with the
@@ -389,10 +389,10 @@ specified source and IF and added to the list of rest frequencies.
 
 \begin{verbatim}
   # Select for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   
+  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)
 
   # Select for all sources and IFs
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             
+  ASAP> scans.set_restfreqs(freqs=1.667359e9)
 \end{verbatim}
 
 
@@ -405,10 +405,10 @@ list.
 
 \begin{verbatim}
   # Select for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)   
+  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)
 
   # Select for all sources and IFs
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)                             
+  ASAP> scans.set_restfreqs(freqs=1.667359e9)
 \end{verbatim}
 
 
@@ -422,12 +422,12 @@ Examples:
   ASAP> scans.set_restfreqs(lines=['OH1665','OH1667'])
 \end{verbatim}
 
-  
+
 
 \subsection{Data Selection}
 
 Data selection is currently fairly limited. This will be improved in
-the future. 
+the future.
 
 
 \subsubsection{Cursor}
@@ -481,7 +481,7 @@ Example :
   # Select channel range for baselining
   ASAP> scans.set_unit('channels')
   ASAP> msk = scans.create_mask([100,400],[600,800])
- 
+
   # Select velocity range for fitting
   ASAP> scans.set_unit('km/s')
   ASAP> msk = scans.create_mask([-30,-10])
@@ -494,7 +494,7 @@ argument.
 Example :
 \begin{verbatim}
   ASAP> scans.set_unit('channels')
-  ASAP> msk = scans.create_mask([0,100],[900-1023], invert=True)   
+  ASAP> msk = scans.create_mask([0,100],[900-1023], invert=True)
 \end{verbatim}
 
 By default \cmd{create\_mask} uses the frequency setup of the first row
@@ -534,7 +534,7 @@ This loads all of the data from filename into the scantable object scans
 and averages all the data within a scan (i.e.  the resulting scantable
 will have one row per scan).  The recognised input file formats are
 RPFITS, SDFITS (singledish fits), ASAP's scantable format and aips++
-MeasurementSet2 format. 
+MeasurementSet2 format.
 
 
 Example usage:
@@ -556,14 +556,14 @@ of the individual integrations.  Note that due to limitation of the
 RPFITS library, only one reader object can be open at one time reading
 RPFITS files.  To read multiple RPFITS files, the old reader must be
 destroyed before the new file is opened.  However, multiple readers can
-be created and attached to SDFITS files. 
+be created and attached to SDFITS files.
 
 
 Example usage:
 
 \begin{verbatim}
   ASAP> r = reader('2003-03-16_082048_t0002.rpf')
-  ASAP> r.summary 
+  ASAP> r.summary
   ASAP> scan = r.read()
   ASAP> s = r.read(range(100)) # To read in the first 100 integrations
   ASAP> del r
@@ -579,6 +579,14 @@ default value from \cmd{True}.
 %\subsection{Editing}
 
 %How and when?
+\subsection{Auto quotient}
+Quotients can becomputed ``automatically''. This requires the data to have matching source/reference pairs or one refrence for multiple sources.
+
+\begin{verbatim}
+  ASAP> q = s.auto_quotient()
+\end{verbatim}
+
+If this is not sufficient the following alternative method can be used.
 
 \subsection{Separate reference and source observations}
 
@@ -653,11 +661,11 @@ channel range you want it to calculate the variance from.
 \subsection{Baseline fitting}
 
 To make a baseline fit, you must first create a mask of channels to
-use in the baseline fit. 
+use in the baseline fit.
 
 \begin{verbatim}
  ASAP> msk = scans.create_mask([100,400],[600,900])
- ASAP> scans.poly_baseline(msk, 1) 
+ ASAP> scans.poly_baseline(msk, 1)
 \end{verbatim}
 
 This will fit a first order polynomial to the selected channels and subtract
@@ -670,7 +678,7 @@ baseline your data with out having to specify channel ranges for
 the line free data. It automatically figures out the line-free
 emission and fits a polynomial baseline to that data. The user can use
 masks to fix the range of channels or velocity range for the fit as
-well as mark the band edge as invalid. 
+well as mark the band edge as invalid.
 
 Simple example
 
@@ -740,7 +748,7 @@ with the scale function. By default, \cmd{scale} only scans the
 spectra and not the corresponding Tsys.
 
 \begin{verbatim}
-  ASAP> scans.scale(1.05, tsys=True) 
+  ASAP> scans.scale(1.05, tsys=True)
 \end{verbatim}
 
 \subsubsection{Unit Conversion}
@@ -762,7 +770,7 @@ efficiency, telescope diameter or the Jy/K factor.
 \subsubsection{Gain-Elevation and Opacity Corrections}
 
 As higher frequencies (particularly $>$20~GHz) it is important to make
-corrections for atmospheric opacity and gain-elevation effects. 
+corrections for atmospheric opacity and gain-elevation effects.
 
 Gain-elevation curves for some telescopes and frequencies are known to
 ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases making
@@ -825,7 +833,7 @@ To average together data taken on different days, which are in
 different scantables, each scantable must aligned to a common
 reference time then the scantables averaged. The simplest way of
 doing this is to allow ASAP to choose the reference time for the first
-scantable then using this time for the subsequent scantables. 
+scantable then using this time for the subsequent scantables.
 
 \begin{verbatim}
   ASAP> scans1.freq_align() # Copy the refeference Epoch from the output
@@ -904,7 +912,7 @@ tools.
 
 \end{itemize}
 
-The default output format can be set in the users {\tt .asaprc} file. 
+The default output format can be set in the users {\tt .asaprc} file.
 Typical usages are:
 
 \begin{verbatim}
@@ -1011,7 +1019,7 @@ was previously.
 
 \item[Zoom] (the letter with the magnifying glass) lets you draw a
        rectangle around a region of interest then zooms in on that
-       region. Use the plot history to unzoom again.  
+       region. Use the plot history to unzoom again.
 
 \item[Save] (floppy disk). Save the plot as a postscript or .png file
 
@@ -1039,7 +1047,7 @@ Both the range of the ``x'' and ``y'' axis can be set at once, if desired:
   ASAP> plotter.set_range(-10,30,-1,6.6)
 \end{verbatim}
 
-To save a hardcopy of the current plot, use the save function, e.g. 
+To save a hardcopy of the current plot, use the save function, e.g.
 
 \begin{verbatim}
   ASAP> plotter.save('myplot.ps')
@@ -1090,7 +1098,7 @@ specific parameters can be fixed:
   ASAP> f.set_function(gauss=2)
   ASAP> f.set_scan(s,msk)
   ASAP> f.fit() # Fit using auto-estimates
-  # Set Peak, centre and fwhm for the second gaussian. 
+  # Set Peak, centre and fwhm for the second gaussian.
   # Force the centre to be fixed
   ASAP> f.set_gauss_parameters(0.4,450,150,0,1,0,component=1)
   ASAP> f.fit() # Re-run the fit
@@ -1104,10 +1112,10 @@ Examples:
 
 \begin{verbatim}
   # Plot the residual
-  ASAP> f.plot(residual=True) 
+  ASAP> f.plot(residual=True)
 
   # Plot the first 2 componentsa
-  ASAP> f.plot(components=[0,1]) 
+  ASAP> f.plot(components=[0,1])
 
   # Plot the first and third component plus the model sum
   ASAP> f.plot(components=[-1,0,2])  # -1 means the compoment sum
@@ -1124,7 +1132,7 @@ the scantable.
 
 This will be saved to disk with the data, if the ``ASAP'' file format
 is selected. Multiple fits to the same data can be stored in the
-scantable. 
+scantable.
 
 The scantable function \cmd{get\_fit} can be used to retrieve the
 stored fits. Currently the fit parameters are just printed to the
@@ -1142,7 +1150,7 @@ cases will be added on an as needed basic.
 
 Conversions of linears to Stokes or Circular polarisations are done
 ``on-the-fly''. Leakage cannot be corrected for nor are these routines
-able to calibrate position angle offsets. 
+able to calibrate position angle offsets.
 
 \subsection{Simple Calibration}
 
@@ -1174,7 +1182,7 @@ the corrections being applied because it is applied in-situ.
   ASAP> scans.rotate_linpolphase(-20) # Degrees; correct for receiver mounting
 
   # Receiver was tracking 90 degrees rather than 0
-  ASAP> scans.rotate_linpolphase(90)  
+  ASAP> scans.rotate_linpolphase(90)
 \end{verbatim}
 
 \subsection{Plotting}
@@ -1214,6 +1222,7 @@ Example:
 \section{Function Summary}
 
 \begin{verbatim}
+    [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
@@ -1251,20 +1260,22 @@ Example:
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
-            average_time    - return the (weighted) time average of a scan 
+            average_time    - return the (weighted) time average of a scan
                               or a list of scans
             average_pol     - average the polarisations together.
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
+            auto_quotient   - return the on/off quotient with
+                              automatic detection of the on/off scans
             quotient        - return the on/off quotient
             scale           - return a scan scaled by a given factor
-            add             - return a scan with given value added 
+            add             - return a scan with given value added
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
-            auto_poly_baseline - automatically fit a polynomial baseline 
+            auto_poly_baseline - automatically fit a polynomial baseline
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness
@@ -1275,7 +1286,7 @@ Example:
                                  polarization O=Q+iU correlation
      [Math] Mainly functions which operate on more than one scantable
 
-            average_time    - return the (weighted) time average 
+            average_time    - return the (weighted) time average
                               of a list of scans
             quotient        - return the on/off quotient
             simple_math     - simple mathematical operations on two scantables,
@@ -1313,7 +1324,7 @@ Example:
             set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
             set_layout      - specify the multi-panel layout (rows,cols)
-            
+
     [Reading files]
         reader              - access rpfits/sdfits files
             read            - read in integrations
@@ -1329,17 +1340,17 @@ Example:
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
-                              put into .asaprc file
+                              put into $HOME/.asaprc
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
-        
+
     Note:
         How to use this with help:
                                          # function 'summary'
         [xxx] is just a category
         Every 'sub-level' in this list should be replaces by a '.' Period when
-        using help 
+        using help
         Example:
             ASAP> help scantable # to get info on ths scantable
             ASAP> help scantable.summary # to get help on the scantable's
@@ -1375,7 +1386,7 @@ have installed before attempting to build ASAP. These are:
 \item AIPS++
 \item Boost
 \item Matplotlib
-\item ipython/python
+\item python/ipython
 \end{itemize}
 
 Debian Linux is currently supported and we intend also
@@ -1388,5 +1399,3 @@ Of the dependencies, AIPS++ is the most complex to install.
 \subsection{.asaprc settings}
 
 \end{document}
-
-
