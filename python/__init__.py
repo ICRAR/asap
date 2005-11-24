@@ -98,8 +98,12 @@ def list_rcparameters():
     # default mode for panelling
     plotter.panelling          : scan
 
-    # push panels together, to shar axislabels
+    # push panels together, to share axislabels
     plotter.ganged             : True
+
+    # decimate the number of points plotted bya afactor of
+    # nchan/1024
+    plotter.decimate           : False
 
     # default colours/linestyles
     plotter.colours            :
@@ -281,6 +285,7 @@ if rcParams['verbose']:
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
+                              (by name or number)
             summary         - print info about the scantable contents
             set_cursor      - set a specific Beam/IF/Pol 'cursor' for
                               further use
@@ -291,6 +296,7 @@ if rcParams['verbose']:
                               in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
+            get_sourcename  - get the source names of the scans
             get_unit        - get the currnt unit
             set_unit        - set the abcissa unit to be used from this
                               point on
@@ -312,6 +318,8 @@ if rcParams['verbose']:
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
+            nscan           - the number of scans in the scantable
+            nrow            - te number of integrations in the scantable
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
@@ -322,6 +330,7 @@ if rcParams['verbose']:
                               averaged spectrum.
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans
+                              (matched pairs and 1 off - n on)
             quotient        - return the on/off quotient
             scale           - return a scan scaled by a given factor
             add             - return a scan with given value added
@@ -338,6 +347,12 @@ if rcParams['verbose']:
             rotate_xyphase  - rotate XY phase of cross correlation
             rotate_linpolphase - rotate the phase of the complex
                                  polarization O=Q+iU correlation
+            freq_switch     - perform frequency switching on the data
+            stats           - Determine the specified statistic, e.g. 'min'
+                              'max', 'rms' etc.
+            stddev          - Determine the standard deviation of the current
+                              beam/if/pol
+
      [Math] Mainly functions which operate on more than one scantable
 
             average_time    - return the (weighted) time average
@@ -372,12 +387,16 @@ if rcParams['verbose']:
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
             set_cursor      - only plot a selected part of the data
-            set_range       - set a 'zoom' window
+            set_range       - set a 'zoom' window [xmin,xmax,ymin,ymax]
             set_legend      - specify user labels for the legend indeces
             set_title       - specify user labels for the panel indeces
-            set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
+            set_ordinate    - specify a user label for the ordinate
             set_layout      - specify the multi-panel layout (rows,cols)
+            set_colors      - specify a set of colours to use
+            set_linestyles  - specify a set of linestyles to use if only
+                              using one color
+            set_mask        - set a plotting mask for a specific polarization
 
     [Reading files]
         reader              - access rpfits/sdfits files
