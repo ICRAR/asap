@@ -77,59 +77,59 @@ defaultParams = {
 def list_rcparameters():
 
     print """
-    # general
-    # print verbose output
-    verbose                    : True
+# general
+# print verbose output
+verbose                    : True
 
-    # preload a default plotter
-    useplotter                 : True
+# preload a default plotter
+useplotter                 : True
 
-    # apply operations on the input scantable or return new one
-    insitu                     : True
+# apply operations on the input scantable or return new one
+insitu                     : True
 
-    # plotting
+# plotting
 
-    # do we want a GUI or plot to a file
-    plotter.gui                : True
+# do we want a GUI or plot to a file
+plotter.gui                : True
 
-    # default mode for colour stacking
-    plotter.stacking           : Pol
+# default mode for colour stacking
+plotter.stacking           : Pol
 
-    # default mode for panelling
-    plotter.panelling          : scan
+# default mode for panelling
+plotter.panelling          : scan
 
-    # push panels together, to share axislabels
-    plotter.ganged             : True
+# push panels together, to share axislabels
+plotter.ganged             : True
 
-    # decimate the number of points plotted bya afactor of
-    # nchan/1024
-    plotter.decimate           : False
+# decimate the number of points plotted bya afactor of
+# nchan/1024
+plotter.decimate           : False
 
-    # default colours/linestyles
-    plotter.colours            :
-    plotter.linestyles         :
+# default colours/linestyles
+plotter.colours            :
+plotter.linestyles         :
 
-    # scantable
-    # default ouput format when saving
-    scantable.save             : ASAP
-    # auto averaging on read
-    scantable.autoaverage      : True
+# scantable
+# default ouput format when saving
+scantable.save             : ASAP
+# auto averaging on read
+scantable.autoaverage      : True
 
-    # default frequency frame to set when function
-    # scantable.set_freqfrmae is called
-    scantable.freqframe        : LSRK
+# default frequency frame to set when function
+# scantable.set_freqfrmae is called
+scantable.freqframe        : LSRK
 
-    # apply action to all axes not just the cursor location
-    scantable.allaxes          : True
+# apply action to all axes not just the cursor location
+scantable.allaxes          : True
 
-    # use internal plotter
-    scantable.plotter          : True
+# use internal plotter
+scantable.plotter          : True
 
-    # Control the level of information printed by summary
-    scantable.verbosesummary   : False
+# Control the level of information printed by summary
+scantable.verbosesummary   : False
 
-    # Fitter
-    """
+# Fitter
+"""
 
 def rc_params():
     'Return the default params updated from the values in the rc file'
