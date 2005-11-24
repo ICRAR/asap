@@ -1,4 +1,4 @@
-PREFIX := /usr/local
+PREFIX := /usr
 PYDIR := $(PREFIX)/lib/python2.3/site-packages
 
 ifndef ASAPROOT
@@ -35,12 +35,9 @@ clean:
 	@cd $(ASAPROOT)/doc; make clean
 
 datadist:
-	@cd $(CASAROOT)/; cd ..
-	@pwd
-	@echo "Generating ASAP data archive from aips++ installation."
-	@tar cfj $(ASAPROOT)/$(DISTDIR)/share/data.tar.bz2 data/ephemerides data/geodetic
-	@cd $(ASAPROOT)
-	@echo "Done."
+	@echo "Generating ASAP data archive from aips++ installation..."
+	@cd $(CASAROOT); tar cfj $(ASAPROOT)/$(DISTDIR)/share/data.tar.bz2 data/ephemerides data/geodetic
+	@echo "...done."
 
 
 dist: module doc
@@ -53,10 +50,11 @@ dist: module doc
 	@for file in $(BINS) ; do cp -f $$file $(DISTDIR)/bin/ ; done
 	@cp -f share/ipythonrc-asap $(DISTDIR)/share/
 	make datadist
-	#@cp -f $(DISTDIR)/doc/README .
-	#@cp -f $(DISTDIR)/admin/install.sh .
+	@cp -f doc/README $(DISTDIR)/
+	@cp -f admin/install.sh $(DISTDIR)/bin/
 	@echo "Creating compressed archive..."
 	@tar jcf $(DISTDIR).tar.bz2 $(DISTDIR)
+	@rm -rf $(DISTDIR)/
 	@echo "Successfully created binary package" $(DISTDIR).tar.bz2
 
 .PHONY: install clean
