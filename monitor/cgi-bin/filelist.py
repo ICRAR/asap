@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import os
-from asapconfig import observatory
+from obsconfig import observatory
 
 class FileList:
 
