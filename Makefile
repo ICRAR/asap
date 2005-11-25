@@ -1,4 +1,4 @@
-PREFIX := /usr
+PREFIX := /u/phi196/data/asap/code/asap/install
 PYDIR := $(PREFIX)/lib/python2.3/site-packages
 
 ifndef ASAPROOT
@@ -23,6 +23,7 @@ doc:
 
 install:
 	@if ( test ! -d $(PYDIR)/asap ) ; then mkdir -p $(PYDIR)/asap ; fi
+	@if ( test ! -d $(PREFIX)/bin ) ; then mkdir -p $(PREFIX)/bin ; fi
 	@for file in $(LIBS) ; do cp -f $$file $(PYDIR)/asap ; done
 	@for file in $(BINS) ; do cp -f $$file $(PREFIX)/bin ; done
 	@for file in $(PY) ; do cp -f $$file $(PYDIR)/asap ; done
