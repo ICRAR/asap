@@ -85,20 +85,20 @@ public:
     return table_->getSpectrum(whichRow);
   }
 
-  std::vector<float> getStokesSpectrum(int whichRow=0, 
-				       bool linPol=false) const {
+  std::vector<float> getStokesSpectrum(int whichRow=0,
+                                       bool linPol=false) const {
     return table_->getStokesSpectrum(whichRow, linPol);
   }
 
   std::vector<float> stokesToPolSpectrum(int whichRow=0, bool linear=false,
-					 int polIdx=-1) const {
+                                         int polIdx=-1) const {
     return table_->stokesToPolSpectrum(whichRow, linear, polIdx);
   }
 
   //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
   // Boost fails with 4 arguments.
-  std::string getPolarizationLabel(bool linear, bool stokes, 
-				   bool linPol) const {
+  std::string getPolarizationLabel(bool linear, bool stokes,
+                                   bool linPol) const {
     int polIdx = -1;
     return table_->getPolarizationLabel(linear, stokes, linPol, polIdx);
   }
@@ -128,9 +128,6 @@ public:
 
   std::vector<bool> getMask(int whichRow=0) const {
     return table_->getMask(whichRow);
-  }
-  bool setMask(const std::vector<int> mvals) const {
-    return table_->setMask(mvals);
   }
 
   void flag(int whichRow=-1) {
@@ -168,8 +165,8 @@ public:
     table_->makePersistent(fname);
   }
 
-  bool setRestFreqs(const std::vector<double>& restfreqs, 
-                    const std::string& unit, 
+  bool setRestFreqs(const std::vector<double>& restfreqs,
+                    const std::string& unit,
                     const std::vector<std::string>& lines,
                     const std::string& source, int whichIF) {
     casa::Vector<casa::Double> restFreqs2(restfreqs);
@@ -177,8 +174,8 @@ public:
                                 lines, casa::String(source),
                                 casa::Int(whichIF));
   }
-  
-  std::string spectralLines() const {table_->spectralLines();}
+
+  std::string spectralLines() const {return table_->spectralLines();}
 
   std::vector<double> getRestFreqs() {
     return table_->getRestFreqs();
@@ -194,23 +191,23 @@ public:
   casa::CountedPtr<SDMemTable> getCP() const {return table_;}
   SDMemTable* getPtr() {return &(*table_);}
 
-  std::string summary(bool verbose=false) const { 
-    return table_->summary(verbose); 
+  std::string summary(bool verbose=false) const {
+    return table_->summary(verbose);
   }
-  
-  std::vector<std::string> getHistory() { 
-    return table_->getHistory(); 
+
+  std::vector<std::string> getHistory() {
+    return table_->getHistory();
   }
-  void addHistory(const std::string& hist) { 
-    table_->addHistory(hist); 
+  void addHistory(const std::string& hist) {
+    table_->addHistory(hist);
   }
 
   void addFit(int whichRow, const std::vector<double>& p,
-	      const std::vector<bool>& m, const std::vector<string>& f,
-	      const std::vector<int>& c) {
-    
+              const std::vector<bool>& m, const std::vector<string>& f,
+              const std::vector<int>& c) {
+
     casa::Vector<casa::Double> p2(p);
-    casa::Vector<casa::Bool> m2(m); 
+    casa::Vector<casa::Bool> m2(m);
     casa::Vector<casa::String> f2 = mathutil::toVectorString(f);
     casa::Vector<casa::Int> c2(c);
     table_->addFit(casa::uInt(whichRow), p2,m2,f2,c2);

@@ -48,7 +48,7 @@
 #include "SDLog.h"
 
 namespace asap {
-  
+
 class SDContainer;
 class SDHeader;
 class SDFrequencyTable;
@@ -70,9 +70,9 @@ public:
   // see also getScan()
   SDMemTable(const casa::Table& tab, const std::string& expr);
 
-  // Assignment operator (copy semantics)  
+  // Assignment operator (copy semantics)
   SDMemTable &operator=(const SDMemTable& other);
-  
+
   virtual ~SDMemTable();
 
   // put data from meta conatiner into the table
@@ -85,7 +85,7 @@ public:
   SDContainer getSDContainer(casa::uInt whichRow=0) const;
   SDHeader getSDHeader() const;
 
-  // Get SD Frequency table.  
+  // Get SD Frequency table.
   SDFrequencyTable getSDFreqTable() const;
 
   // get spectrum,mask and tsys for the given row, at the selected
@@ -100,23 +100,23 @@ public:
   // Get specific Stokes at cursor location. One of either I,Q,U,V or
   // I,P,PA,V (doPol=True) (determined by the polSel cursor location
   // 0->3) If the latter, you can add a PA offset (degrees)
-  virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0, 
+  virtual std::vector<float> getStokesSpectrum(casa::Int whichRow=0,
                                                casa::Bool doPol=casa::False) const;
 
   // Returns Label for polarization selected by polSel_ (or
   // over-ridden with arg. polIdx).  If doStokes is False, returns
   // label for raw correlations (linear or circular). If True returns
   // label for Stokes.  If doPol=False, I,Q,U,V else I,P,PA,V
-  std::string getPolarizationLabel(casa::Bool linear, casa::Bool stokes, 
-                                   casa::Bool linPol, 
-				   casa::Int polIdx=-1) const;
+  std::string getPolarizationLabel(casa::Bool linear, casa::Bool stokes,
+                                   casa::Bool linPol,
+                                   casa::Int polIdx=-1) const;
 
   // Convert Stokes to linear or circular polarizations (specified by
   // polIdx=0:3).  Presently, only conversion to RR or LL is
   // supported.
   virtual std::vector<float> stokesToPolSpectrum(casa::Int whichRow,
-						 casa::Bool toLinear,
-						 casa::Int polIdx) const;
+                                                 casa::Bool toLinear,
+                                                 casa::Int polIdx) const;
 
   // Get all Stokes at the specified Beam/IF cursor location (ignoring
   // the internal cursor).  -1 means all on that axis.  Really, this function
@@ -124,27 +124,26 @@ public:
   // as well.  However, because the Stokes column is virtual, and its shape
   // is not the same as nPol(), I have put it here for direct access as needed
   virtual casa::Array<casa::Float> getStokesSpectrum(casa::Int whichRow=0,
-                                                     casa::Int iBeam=-1, 
+                                                     casa::Int iBeam=-1,
                                                      casa::Int iIF=-1) const;
 
   // Get Tsys at cursor location
   virtual casa::Float getTsys(casa::Int whichRow=0) const;
 
   // get all as aips++ Vectors
-  virtual void getSpectrum(casa::Vector<casa::Float>& spectrum, 
-			   casa::Int whichRow=0) const;
-  //virtual void getMask(Vector<Bool>& mask,Int whichRow=0) const;
+  virtual void getSpectrum(casa::Vector<casa::Float>& spectrum,
+                           casa::Int whichRow=0) const;
 
   // Get rest frequencies
   std::vector<double> getRestFreqs() const;
-  
-  // get info for current row  
+
+  // get info for current row
   // if whichRow == -1 the Header time is given
-  std::string getTime(casa::Int whichRow=0, 
-		      casa::Bool showDate=casa::False) const ;
-  casa::MEpoch getEpoch(casa::Int whichRow=0) const; 
+  std::string getTime(casa::Int whichRow=0,
+                      casa::Bool showDate=casa::False) const ;
+  casa::MEpoch getEpoch(casa::Int whichRow=0) const;
   casa::MDirection getDirection(casa::Int whichRow=0,
-				casa::Bool refBeam=casa::False) const; 
+                                casa::Bool refBeam=casa::False) const;
 
   std::string getSourceName(casa::Int whichRow=0) const;
   double getInterval(casa::Int whichRow=0) const;
@@ -153,11 +152,11 @@ public:
   virtual void setCoordInfo(std::vector<string> theinfo);
 
   // Set RestFreqID.  source="" and IF=-1 means select all
-  virtual casa::Bool setRestFreqs(const casa::Vector<casa::Double>& restFreqs, 
-				  const casa::String& unit,
-				  const std::vector<std::string>& lines,
-				  const casa::String& source,
-				  casa::Int whichIF=-1);
+  virtual casa::Bool setRestFreqs(const casa::Vector<casa::Double>& restFreqs,
+                                  const casa::String& unit,
+                                  const std::vector<std::string>& lines,
+                                  const casa::String& source,
+                                  casa::Int whichIF=-1);
 
   // List lines
   std::string spectralLines() const;
@@ -165,7 +164,7 @@ public:
   // Get/Set flux unit
   std::string getFluxUnit() const;
   void setFluxUnit (const std::string& unit);
-  
+
   // Set Instrument
   void setInstrument (const std::string& instrument);
 
@@ -177,8 +176,6 @@ public:
   // REset cursor to 0
   virtual void resetCursor();
 
-  //sets the user mask applied to all spectra
-  virtual bool setMask(std::vector<int> whichChans);
   // Hard flags the current spectrum, not reversible
   virtual void flag(int whichRow);
 
@@ -225,7 +222,7 @@ public:
 
   // return a row as a Masked array, internally converting uChar flags
   // to bool mask
-  casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow, 
+  casa::MaskedArray<casa::Float> rowAsMaskedArray(casa::uInt whichRow,
                                                   casa::Bool toStokes=casa::False) const;
 
   // Return SC, setting only the basic construction state (i.e.
@@ -236,14 +233,14 @@ public:
   // Return SC. Set velocity conversion state (unit,doppler), and
   // rest frequency.  If row number given (>=0), also set
   // frame conversion layer (needs direction & time which require row)
-  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt freqID, 
+  casa::SpectralCoordinate getSpectralCoordinate(casa::uInt freqID,
                                                  casa::uInt restFreqID,
                                                  casa::uInt row) const;
 
   // Set just the reference value, pixel and increment into the table
   // No other state is extracted.
-  casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord, 
-			   casa::uInt whichIdx);
+  casa::Bool setCoordinate(const casa::SpectralCoordinate& speccord,
+                           casa::uInt whichIdx);
 
   casa::Int nCoordinates() const;
 
@@ -262,12 +259,12 @@ public:
   SDFitTable getSDFitTable(casa::uInt whichRow) const;
 
   void addFit(casa::uInt whichRow,
-	      const casa::Vector<casa::Double>& p, 
-	      const casa::Vector<casa::Bool>& m,
-	      const casa::Vector<casa::String>& f, 
-	      const casa::Vector<casa::Int>& c);
+              const casa::Vector<casa::Double>& p,
+              const casa::Vector<casa::Bool>& m,
+              const casa::Vector<casa::String>& f,
+              const casa::Vector<casa::Int>& c);
 
-  
+
 private:
   // utility func for nice printout
   casa::String formatSec(casa::Double x) const;
@@ -278,12 +275,11 @@ private:
   void renumber();
 
   // Generate start and end for shape and current cursor selection
-  void getCursorSlice(casa::IPosition& start, casa::IPosition& end, 
-		      const casa::IPosition& shape) const;
+  void getCursorSlice(casa::IPosition& start, casa::IPosition& end,
+                      const casa::IPosition& shape) const;
 
   // the current cursor into the array
   casa::Int IFSel_,beamSel_,polSel_;
-  std::vector<bool> chanMask_;
   // the underlying memory table
   casa::Table table_;
   // The current table version

@@ -61,7 +61,6 @@ void python_SDMemTable() {
          (boost::python::arg("whichIF")=0) )
     .def("setbeam", &SDMemTableWrapper::setBeam)
     .def("setpol", &SDMemTableWrapper::setPol)
-    .def("_setmask", &SDMemTableWrapper::setMask)
     .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
     .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
     .def("_setInstrument", &SDMemTableWrapper::setInstrument)
@@ -99,7 +98,7 @@ void python_SDMemTable() {
          (boost::python::arg("whichRow")=-1) )
     .def("_save",  &SDMemTableWrapper::makePersistent)
     .def("_summary",  &SDMemTableWrapper::summary,
-	 (boost::python::arg("verbose")=true) )
+         (boost::python::arg("verbose")=true) )
     .def("_getrestfreqs",  &SDMemTableWrapper::getRestFreqs)
     .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
     .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)

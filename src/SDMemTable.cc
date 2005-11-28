@@ -74,7 +74,7 @@ using namespace asap;
 SDMemTable::SDMemTable() :
   IFSel_(0),
   beamSel_(0),
-  polSel_(0) 
+  polSel_(0)
 {
   setup();
   attach();
@@ -104,13 +104,10 @@ SDMemTable::SDMemTable(const SDMemTable& other, Bool clear)
     IFSel_= 0;
     beamSel_= 0;
     polSel_= 0;
-    chanMask_.resize(0);
   } else {
     IFSel_= other.IFSel_;
     beamSel_= other.beamSel_;
     polSel_= other.polSel_;
-    chanMask_.resize(0);
-    chanMask_ = other.chanMask_;
   }
 
   attach();
@@ -147,8 +144,6 @@ SDMemTable &SDMemTable::operator=(const SDMemTable& other)
      IFSel_= other.IFSel_;
      beamSel_= other.beamSel_;
      polSel_= other.polSel_;
-     chanMask_.resize(0);
-     chanMask_ = other.chanMask_;
      table_ = other.table_.copyToMemoryTable(String("dummy"));
      attach();
   }
@@ -198,10 +193,10 @@ void SDMemTable::setup()
   SDStokesEngine::registerClass();
   SDStokesEngine stokesEngine(String("STOKES"), String("SPECTRA"));
   aNewTab.bindColumn("STOKES", stokesEngine);
-  
+
   // Create Table
-  table_ = Table(aNewTab, Table::Memory, 0); 
-  // add subtable 
+  table_ = Table(aNewTab, Table::Memory, 0);
+  // add subtable
   TableDesc tdf("", "1", TableDesc::Scratch);
   tdf.addColumn(ArrayColumnDesc<String>("FUNCTIONS"));
   tdf.addColumn(ArrayColumnDesc<Int>("COMPONENTS"));
@@ -261,7 +256,7 @@ std::string SDMemTable::getTime(Int whichRow, Bool showDate) const
   MVTime mvt(tm);
   if (showDate)
     mvt.setFormat(MVTime::YMD);
-  else 
+  else
     mvt.setFormat(MVTime::TIME);
   ostringstream oss;
   oss << mvt;
@@ -302,31 +297,14 @@ bool SDMemTable::setPol(Int whichPol)
   return false;
 }
 
-void SDMemTable::resetCursor() 
+void SDMemTable::resetCursor()
 {
    polSel_ = 0;
    IFSel_ = 0;
    beamSel_ = 0;
 }
 
-bool SDMemTable::setMask(std::vector<int> whichChans)
-{
-  std::vector<int>::iterator it;
-  uInt n = flagsCol_.shape(0)(3);
-  if (whichChans.empty()) {
-    chanMask_ = std::vector<bool>(n,true);
-    return true;      
-  }
-  chanMask_.resize(n,true);
-  for (it = whichChans.begin(); it != whichChans.end(); ++it) {
-    if (*it < n) {
-      chanMask_[*it] = false;
-    }
-  }
-  return true;
-}
-
-std::vector<bool> SDMemTable::getMask(Int whichRow) const 
+std::vector<bool> SDMemTable::getMask(Int whichRow) const
 {
 
   std::vector<bool> mask;
@@ -341,19 +319,8 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const
   ArrayAccessor<uChar, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));// go to pol
 
-  Bool useUserMask = ( chanMask_.size() == arr.shape()(3) );
-
-  std::vector<bool> tmp;
-  tmp = chanMask_; // WHY the fxxx do I have to make a copy here
-  std::vector<bool>::iterator miter;
-  miter = tmp.begin();
-
   for (ArrayAccessor<uChar, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     bool out =!static_cast<bool>(*i);
-    if (useUserMask) {
-      out = out && (*miter);
-      miter++;
-    }
     mask.push_back(out);
   }
   return mask;
@@ -361,7 +328,7 @@ std::vector<bool> SDMemTable::getMask(Int whichRow) const
 
 
 
-std::vector<float> SDMemTable::getSpectrum(Int whichRow) const 
+std::vector<float> SDMemTable::getSpectrum(Int whichRow) const
 {
   Array<Float> arr;
   specCol_.get(whichRow, arr);
@@ -375,8 +342,8 @@ int SDMemTable::nStokes() const
 }
 
 
-std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow, 
-						 Bool doPol) const
+std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow,
+                                                 Bool doPol) const
   //
   // Gets one STokes parameter depending on cursor polSel location
   //  doPol=False  : I,Q,U,V
@@ -387,9 +354,9 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow,
   if (nPol()!=1 && nPol()!=2 && nPol()!=4) {
     throw (AipsError("You must have 1,2 or 4 polarizations to get the Stokes parameters"));
   }
-  
+
   // For full conversion we are only supporting linears at the moment
-  
+
   if (nPol() > 2) {
     String antName;
     table_.keywordSet().get("AntennaName", antName);
@@ -402,56 +369,56 @@ std::vector<float> SDMemTable::getStokesSpectrum(Int whichRow,
 
   Array<Float> arr;
   stokesCol_.get(whichRow, arr);
-  
+
   if (doPol && (polSel_==1 || polSel_==2)) {       //   Q,U --> P, P.A.
-    
+
     // Set current cursor location
-    
+
     const IPosition& shape = arr.shape();
     IPosition start, end;
     getCursorSlice(start, end, shape);
-    
+
     // Get Q and U slices
-    
+
     Array<Float> Q = SDPolUtil::getStokesSlice(arr,start,end,"Q");
     Array<Float> U = SDPolUtil::getStokesSlice(arr,start,end,"U");
-    
-    // Compute output 
-    
+
+    // Compute output
+
     Array<Float> out;
     if (polSel_==1) {                                        // P
       out = SDPolUtil::polarizedIntensity(Q,U);
     } else if (polSel_==2) {                                 // P.A.
       out = SDPolUtil::positionAngle(Q,U);
     }
-    
+
     // Copy to output
-    
+
     IPosition vecShape(1,shape(asap::ChanAxis));
     Vector<Float> outV = out.reform(vecShape);
     std::vector<float> stlout;
     outV.tovector(stlout);
     return stlout;
-    
-  } else {    
+
+  } else {
     // Selects at the cursor location
     return getFloatSpectrum(arr);
   }
 }
 
-std::string SDMemTable::getPolarizationLabel(Bool linear, Bool stokes, 
-					      Bool linPol, Int polIdx) const
+std::string SDMemTable::getPolarizationLabel(Bool linear, Bool stokes,
+                                              Bool linPol, Int polIdx) const
 {
-   uInt idx = polSel_;   
+   uInt idx = polSel_;
    if (polIdx >=0) idx = polIdx;
    return SDPolUtil::polarizationLabel(idx, linear, stokes, linPol);
 }
 
 
 
-std::vector<float> SDMemTable::stokesToPolSpectrum(Int whichRow, 
-						   Bool toLinear, 
-						   Int polIdx) const
+std::vector<float> SDMemTable::stokesToPolSpectrum(Int whichRow,
+                                                   Bool toLinear,
+                                                   Int polIdx) const
 //
 // polIdx
 //   0:3 -> RR,LL,Real(RL),Imag(RL)
@@ -488,15 +455,15 @@ std::vector<float> SDMemTable::stokesToPolSpectrum(Int whichRow,
     if (selection>1) {
       throw(AipsError("Only conversion to RR & LL is currently supported"));
     }
-    
-    // Get I and V slices    
+
+    // Get I and V slices
     Array<Float> I = SDPolUtil::getStokesSlice(arr,start,end,"I");
     Array<Float> V = SDPolUtil::getStokesSlice(arr,start,end,"V");
-    
-    // Compute output     
+
+    // Compute output
     out = SDPolUtil::circularPolarizationFromStokes(I, V, doRR);
   }
-  
+
   // Copy to output
    IPosition vecShape(1,shape(asap::ChanAxis));
    Vector<Float> outV = out.reform(vecShape);
@@ -520,7 +487,7 @@ Array<Float> SDMemTable::getStokesSpectrum(Int whichRow, Int iBeam, Int iIF) con
 // Set current cursor location and overwrite polarization axis
 
   const IPosition& shape = arr.shape();
-  IPosition start(shape.nelements(),0);  
+  IPosition start(shape.nelements(),0);
   IPosition end(shape-1);
   if (iBeam!=-1) {
      start(asap::BeamAxis) = iBeam;
@@ -586,7 +553,7 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
 
   MFrequency::Types mdr;
   if (!MFrequency::getType(mdr, rfrm)) {
-    
+
     Int a,b;const uInt* c;
     const String* valid = MFrequency::allMyTypes(a, b, c);
     String pfix = "Please specify a legal frame type. Types are\n";
@@ -661,7 +628,7 @@ std::vector<double> SDMemTable::getAbcissa(Int whichRow) const
      }
   } else if (u == Unit("Hz")) {
 
-    // Set world axis units    
+    // Set world axis units
     Vector<String> wau(1); wau = u.getName();
     spc.setWorldAxisUnits(wau);
 
@@ -688,7 +655,7 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
 
   Vector<uInt> freqIDs;
   freqidCol_.get(whichRow, freqIDs);
-  uInt freqID = freqIDs(IFSel_);  
+  uInt freqID = freqIDs(IFSel_);
   restfreqidCol_.get(whichRow, freqIDs);
   uInt restFreqID = freqIDs(IFSel_);
 
@@ -696,7 +663,7 @@ std::string SDMemTable::getAbcissaString(Int whichRow) const
   SpectralCoordinate spc = getSpectralCoordinate(freqID, restFreqID, whichRow);
 
   String s = "Channel";
-  if (u == Unit("km/s")) { 
+  if (u == Unit("km/s")) {
     s = CoordinateUtil::axisLabel(spc,0,True,True,True);
   } else if (u == Unit("Hz")) {
     Vector<String> wau(1);wau = u.getName();
@@ -788,8 +755,8 @@ void SDMemTable::getMask(Vector<Bool>& mask, Int whichRow) const {
 }
 */
 
-MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow, 
-						Bool toStokes) const 
+MaskedArray<Float> SDMemTable::rowAsMaskedArray(uInt whichRow,
+                                                Bool toStokes) const
 {
   // Get flags
   Array<uChar> farr;
@@ -870,7 +837,7 @@ MPosition SDMemTable::getAntennaPosition () const
 
 SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 {
-  
+
   Table t = table_.keywordSet().asTable("FREQUENCIES");
   if (freqID> t.nrow() ) {
     throw(AipsError("SDMemTable::getSpectralCoordinate - freqID out of range"));
@@ -899,11 +866,11 @@ SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID) const
 }
 
 
-SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID, 
-						     uInt restFreqID,
+SpectralCoordinate SDMemTable::getSpectralCoordinate(uInt freqID,
+                                                     uInt restFreqID,
                                                      uInt whichRow) const
 {
-  
+
   // Create basic SC
   SpectralCoordinate spec = getSpectralCoordinate (freqID);
 
@@ -988,7 +955,7 @@ std::vector<double> SDMemTable::getRestFreqs() const
   t.keywordSet().get("RESTFREQS",tvec);
   std::vector<double> stlout;
   tvec.tovector(stlout);
-  return stlout;  
+  return stlout;
 }
 
 bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
@@ -1064,7 +1031,7 @@ SDFitTable SDMemTable::getSDFitTable() const
   Vector<Bool> parmask;
   Vector<String> funcs;
   Vector<String> finfo;
-  Vector<Int> comps;  
+  Vector<Int> comps;
   ROArrayColumn<Double> parmsCol(t, "PARAMETERS");
   ROArrayColumn<Bool> parmaskCol(t, "PARMASK");
   ROArrayColumn<Int> compsCol(t, "COMPONENTS");
@@ -1101,7 +1068,7 @@ SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
   Vector<Bool> parmask;
   Vector<String> funcs;
   Vector<String> finfo;
-  Vector<Int> comps;    
+  Vector<Int> comps;
   ROArrayColumn<Double> parmsCol(t, "PARAMETERS");
   ROArrayColumn<Bool> parmaskCol(t, "PARMASK");
   ROArrayColumn<Int> compsCol(t, "COMPONENTS");
@@ -1129,14 +1096,14 @@ SDFitTable SDMemTable::getSDFitTable(uInt whichRow) const {
 }
 
 void SDMemTable::addFit(uInt whichRow,
-			const Vector<Double>& p, const Vector<Bool>& m,
-			const Vector<String>& f, const Vector<Int>& c)
+                        const Vector<Double>& p, const Vector<Bool>& m,
+                        const Vector<String>& f, const Vector<Int>& c)
 {
   if (whichRow >= nRow()) {
     throw(AipsError("Specified row out of range"));
   }
   Table t = table_.keywordSet().asTable("FITS");
-  uInt nrow = t.nrow();  
+  uInt nrow = t.nrow();
   t.addRow();
   ArrayColumn<Double> parmsCol(t, "PARAMETERS");
   ArrayColumn<Bool> parmaskCol(t, "PARMASK");
@@ -1153,13 +1120,13 @@ void SDMemTable::addFit(uInt whichRow,
   Array<Int> fitarr;
   fitCol_.get(whichRow, fitarr);
 
-  Array<Int> newarr;               // The new Array containing the fitid 
-  Int pos =-1;                     // The fitid position in the array 
+  Array<Int> newarr;               // The new Array containing the fitid
+  Int pos =-1;                     // The fitid position in the array
   if ( fitarr.nelements() == 0 ) { // no fits at all in this row
     Array<Int> arr(IPosition(4,nBeam(),nIF(),nPol(),1));
     arr = -1;
     newarr.reference(arr);
-    pos = 0;      
+    pos = 0;
   } else {
     IPosition shp = fitarr.shape();
     IPosition start(4, beamSel_, IFSel_, polSel_,0);
@@ -1171,8 +1138,8 @@ void SDMemTable::addFit(uInt whichRow,
     Int i = 0;
     while (it != fits.end()) {
       if (*it == -1) {
-	pos = i;
-	break;
+        pos = i;
+        break;
       }
       ++i;
       ++it;
@@ -1185,7 +1152,7 @@ void SDMemTable::addFit(uInt whichRow,
     if (fitarr.nelements() > 0)
       newarr = fitarr;
   }
-  newarr(IPosition(4, beamSel_, IFSel_, polSel_, pos)) = Int(nrow); 
+  newarr(IPosition(4, beamSel_, IFSel_, polSel_, pos)) = Int(nrow);
   fitCol_.put(whichRow, newarr);
 
 }
@@ -1217,7 +1184,7 @@ SDFrequencyTable SDMemTable::getSDFreqTable() const
   t.keywordSet().get("BASEREFFRAME",baseFrame);
   sdft.setRefFrame(baseFrame);
 
-  // Equinox  
+  // Equinox
   Float equinox;
   t.keywordSet().get("EQUINOX", equinox);
   sdft.setEquinox(equinox);
@@ -1282,7 +1249,7 @@ SDContainer SDMemTable::getSDContainer(uInt whichRow) const
   Vector<uInt> fmap;
   Array<Double> direction;
   Array<Int> fits;
-  
+
   specCol_.get(whichRow, spectrum);
   sdc.putSpectrum(spectrum);
   flagsCol_.get(whichRow, flagtrum);
@@ -1343,7 +1310,7 @@ SDHeader SDMemTable::getSDHeader() const
   return sdh;
 }
 void SDMemTable::makePersistent(const std::string& filename)
-{  
+{
   table_.deepCopy(filename,Table::New);
 
 }
@@ -1368,14 +1335,14 @@ String SDMemTable::formatSec(Double x) const
 
   if (x < 59.95)
     return  String("      ") + mvt.string(MVTime::TIME_CLEAN_NO_HM, 7)+"s";
-  else if (x < 3599.95) 
+  else if (x < 3599.95)
     return String("   ") + mvt.string(MVTime::TIME_CLEAN_NO_H,7)+" ";
   else {
     ostringstream oss;
     oss << setw(2) << std::right << setprecision(1) << mvt.hour();
     oss << ":" << mvt.string(MVTime::TIME_CLEAN_NO_H,7) << " ";
     return String(oss);
-  }   
+  }
 };
 
 String SDMemTable::formatDirection(const MDirection& md) const
@@ -1464,10 +1431,10 @@ std::string SDMemTable::summary(bool verbose) const  {
       << setw(15) << "Source"
       << setw(24) << dirtype
       << setw(10) << "Time"
-      << setw(18) << "Integration" 
+      << setw(18) << "Integration"
       << setw(7) << "FreqIDs" << endl;
   oss << "--------------------------------------------------------------------------------" << endl;
-  
+
   // Generate list of scan start and end integrations
   Vector<Int> scanIDs = scanCol_.getColumn();
   Vector<uInt> startInt, endInt;
@@ -1487,31 +1454,31 @@ std::string SDMemTable::summary(bool verbose) const  {
     srcnCol_.getScalar(startInt(i),name);
 
     // Find all the FreqIDs in this scan
-    listFQ.resize(0);      
-    listRestFQ.resize(0);      
+    listFQ.resize(0);
+    listRestFQ.resize(0);
     for (uInt j=startInt(i); j<endInt(i)+1; j++) {
       freqidCol_.get(j, freqIDs);
       for (uInt k=0; k<freqIDs.nelements(); k++) {
-	mathutil::addEntry(listFQ, freqIDs(k));
+        mathutil::addEntry(listFQ, freqIDs(k));
       }
 //
       restfreqidCol_.get(j, restFreqIDs);
       for (uInt k=0; k<restFreqIDs.nelements(); k++) {
-	mathutil::addEntry(listRestFQ, restFreqIDs(k));
+        mathutil::addEntry(listRestFQ, restFreqIDs(k));
       }
     }
 
     nInt = endInt(i) - startInt(i) + 1;
     oss << setw(3) << std::right << i << std::left << setw(2) << "  "
-	<< setw(15) << name
-	<< setw(24) << posit
-	<< setw(10) << time 
-	<< setw(3) << std::right << nInt  << setw(3) << " x " << std::left
-	<< setw(6) <<  tInt
-	<< " " << listFQ << " " << listRestFQ << endl;
+        << setw(15) << name
+        << setw(24) << posit
+        << setw(10) << time
+        << setw(3) << std::right << nInt  << setw(3) << " x " << std::left
+        << setw(6) <<  tInt
+        << " " << listFQ << " " << listRestFQ << endl;
   }
   oss << endl;
-  oss << "Table contains " << table_.nrow() << " integration(s) in " 
+  oss << "Table contains " << table_.nrow() << " integration(s) in "
       << nScans << " scan(s)." << endl;
 
   // Frequency Table
@@ -1523,10 +1490,10 @@ std::string SDMemTable::summary(bool verbose) const  {
     oss << "--------------------------------------------------------------------------------" << endl;
     for (uInt i=0; i<sdft.length(); i++) {
       oss << setw(8) << i << setw(8)
-	  << info[3] << setw(16) << setprecision(8)
-	  << sdft.referenceValue(i) << setw(10)
-	  << sdft.referencePixel(i) << setw(12)
-	  << sdft.increment(i) << endl;
+          << info[3] << setw(16) << setprecision(8)
+          << sdft.referenceValue(i) << setw(10)
+          << sdft.referencePixel(i) << setw(12)
+          << sdft.increment(i) << endl;
     }
     oss << "--------------------------------------------------------------------------------" << endl;
   }
@@ -1585,7 +1552,7 @@ void SDMemTable::appendToHistoryTable(const Table& otherHist)
 void SDMemTable::addHistory(const std::string& hist)
 {
   Table t = table_.rwKeywordSet().asTable("HISTORY");
-  uInt nrow = t.nrow();  
+  uInt nrow = t.nrow();
   t.addRow();
   ScalarColumn<String> itemCol(t, "ITEM");
   itemCol.put(nrow, hist);
@@ -1595,7 +1562,7 @@ std::vector<std::string> SDMemTable::getHistory() const
 {
   Vector<String> history;
   const Table& t = table_.keywordSet().asTable("HISTORY");
-  uInt nrow = t.nrow();  
+  uInt nrow = t.nrow();
   ROScalarColumn<String> itemCol(t, "ITEM");
   std::vector<std::string> stlout;
   String hist;
@@ -1646,17 +1613,17 @@ void SDMemTable::flag(int whichRow)
 }
 
 MDirection::Types SDMemTable::getDirectionReference() const
-{  
+{
   Float eq;
   table_.keywordSet().get("Equinox",eq);
   std::map<float,string> mp;
   mp[2000.0] = "J2000";
   mp[1950.0] = "B1950";
   MDirection::Types mdr;
-  if (!MDirection::getType(mdr, mp[eq])) {   
+  if (!MDirection::getType(mdr, mp[eq])) {
     mdr = MDirection::J2000;
     pushLog("WARNING: Unknown equinox using J2000");
-    
+
   }
 
   return mdr;
@@ -1676,11 +1643,11 @@ MEpoch::Types SDMemTable::getTimeReference() const
 }
 
 
-Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn, 
-			      const String& sUnit,
-			      const vector<string>& lines,
-			      const String& source,
-			      Int whichIF)
+Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
+                              const String& sUnit,
+                              const vector<string>& lines,
+                              const String& source,
+                              Int whichIF)
 {
    const Int nIFs = nIF();
    if (whichIF>=nIFs) {
@@ -1706,8 +1673,8 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
          if (MeasTable::Line(lineFreq, tS)) {
             restFreqs[i] = lineFreq.getValue().getValue();          // Hz
          } else {
-            String s = String(lines[i]) + 
-	      String(" is an unrecognized spectral line");
+            String s = String(lines[i]) +
+              String(" is an unrecognized spectral line");
             throw(AipsError(s));
          }
       }
@@ -1756,22 +1723,22 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
       Vector<uInt> restFreqIDs;
       for (uInt i=0; i<nRow; i++) {
          srcnCol_.get(i, srcName);
-         restfreqidCol_.get(i,restFreqIDs);       
+         restfreqidCol_.get(i,restFreqIDs);
          if (idx==-1) {
-	   // Replace vector of restFreqs; one per IF.
-	   // No selection possible
+           // Replace vector of restFreqs; one per IF.
+           // No selection possible
             for (uInt i=0; i<nIFs; i++) restFreqIDs[i] = i;
          } else {
-	   // Set RestFreqID for selected data
+           // Set RestFreqID for selected data
             if (empty || source==srcName) {
                if (whichIF<0) {
                   restFreqIDs = idx;
-               } else {              
+               } else {
                   restFreqIDs[whichIF] = idx;
                }
             }
          }
-         restfreqidCol_.put(i,restFreqIDs);       
+         restfreqidCol_.put(i,restFreqIDs);
       }
       ok = True;
    } else {
@@ -1812,7 +1779,7 @@ void SDMemTable::renumber()
     if (pIdx == cIdx) {
       // renumber
       scanCol_.put(i,newscanid);
-    } else { 
+    } else {
       ++newscanid;
       pIdx = cIdx;   // store scanid
       --i;           // don't increment next loop
@@ -1822,12 +1789,12 @@ void SDMemTable::renumber()
 
 
 void SDMemTable::getCursorSlice(IPosition& start, IPosition& end,
-				const IPosition& shape) const
+                                const IPosition& shape) const
 {
   const uInt nDim = shape.nelements();
   start.resize(nDim);
   end.resize(nDim);
-  
+
   start(asap::BeamAxis) = beamSel_;
   end(asap::BeamAxis) = beamSel_;
   start(asap::IFAxis) = IFSel_;
@@ -1854,7 +1821,7 @@ std::vector<float> SDMemTable::getFloatSpectrum(const Array<Float>& arr) const
 
   ArrayAccessor<Float, Axis<asap::PolAxis> > aa2(aa1);
   aa2.reset(aa2.begin(uInt(polSel_)));                     // Pol selection
-  
+
   std::vector<float> spectrum;
   for (ArrayAccessor<Float, Axis<asap::ChanAxis> > i(aa2); i != i.end(); ++i) {
     spectrum.push_back(*i);
