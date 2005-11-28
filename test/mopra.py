@@ -3,7 +3,7 @@ from asap import *
 rcParams['verbose'] = 0
 print "Test using Mopra dual IF data..."
 print "Reduction test..."
-s = scantable("data/2005-05-08_0350.rpf")
+s = scantable("data/mopra_dualif.rpf")
 q = s.auto_quotient()
 q2 = quotient(s.get_scan("*_S"),s.get_scan("*_R"))
 del q2,s
