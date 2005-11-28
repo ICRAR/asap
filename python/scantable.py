@@ -1074,7 +1074,6 @@ class scantable(sdtable):
             mask = list(ones(self.nchan()))
         from asap.asapfitter import fitter
         f = fitter()
-        f._verbose(True)
         f.set_scan(self, mask)
         f.set_function(poly=order)
         sf = f.auto_fit(insitu)
