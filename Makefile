@@ -52,7 +52,7 @@ dist: module doc
 	@cp -f share/ipythonrc-asap $(DISTDIR)/share/
 	make datadist
 	@cp -f doc/README $(DISTDIR)/
-	@cp -f admin/install.sh $(DISTDIR)/bin/
+	@cp -f bin/install.sh $(DISTDIR)/bin/
 	@echo "Creating compressed archive..."
 	@tar jcf $(DISTDIR).tar.bz2 $(DISTDIR)
 	@rm -rf $(DISTDIR)/
