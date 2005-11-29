@@ -14,12 +14,21 @@ data = scantable('data/tid-t002.rpf')
 s = data.get_scan('*[^we]')
 r = data.get_scan('*[we]')
 q = quotient(s,r)
-av = average_time(q)
 
 # Set the restfreq for each IF
-av.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
-av.set_unit('km/s')
-av.set_freqframe('LSRK')
+q.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
+q.set_unit('km/s')
+q.set_freqframe('LSRK')
+
+# Align frequencies - Tid doppler tracks, so this isn't really necessary
+
+q.freq_align(perif=True)
+q.set_unit('km/s')
+
+# Average in time
+av = average_time(q)
+
+# Do some random processing, just to test these functions
 av.smooth('gauss',5)
 av.scale(1.05)
 av.add(0.05)
