@@ -532,7 +532,6 @@ void SDMemTable::setCoordInfo(std::vector<string> theinfo)
   rfrm = theinfo[1];            // Active (or conversion) frame
   dpl = theinfo[2];             // Doppler
   brfrm = theinfo[3];           // Base frame
-
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
 
   Vector<Double> rstf;
@@ -976,11 +975,13 @@ bool SDMemTable::putSDFreqTable(const SDFrequencyTable& sdft)
   }
   String rf = sdft.refFrame();
   if (rf.contains("TOPO")) rf = "TOPO";
+  String brf = sdft.baseRefFrame();
+  if (brf.contains("TOPO")) brf = "TOPO";
 
-  aTable.rwKeywordSet().define("BASEREFFRAME", rf);
+  aTable.rwKeywordSet().define("BASEREFFRAME", brf);
   aTable.rwKeywordSet().define("REFFRAME", rf);
   aTable.rwKeywordSet().define("EQUINOX", sdft.equinox());
-  aTable.rwKeywordSet().define("UNIT", String(""));
+  aTable.rwKeywordSet().define("UNIT", sdft.unit());
   aTable.rwKeywordSet().define("DOPPLER", String("RADIO"));
   Vector<Double> rfvec;
   String rfunit;
@@ -1180,14 +1181,20 @@ SDFrequencyTable SDMemTable::getSDFreqTable() const
   // Frequency reference frame.  I don't know if this
   // is the correct frame.  It might be 'REFFRAME'
   // rather than 'BASEREFFRAME' ?
-  String baseFrame;
-  t.keywordSet().get("BASEREFFRAME",baseFrame);
-  sdft.setRefFrame(baseFrame);
+  String frame;
+  t.keywordSet().get("REFFRAME",frame);
+  sdft.setRefFrame(frame);
+  t.keywordSet().get("BASEREFFRAME",frame);
+  sdft.setBaseRefFrame(frame);
 
   // Equinox
   Float equinox;
   t.keywordSet().get("EQUINOX", equinox);
   sdft.setEquinox(equinox);
+
+  String unit;
+  t.keywordSet().get("UNIT", unit);
+  sdft.setUnit(unit);
 
   // Rest Frequency
   Vector<Double> restFreqs;

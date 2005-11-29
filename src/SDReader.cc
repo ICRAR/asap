@@ -53,7 +53,7 @@ SDReader::SDReader() :
 {
   cursor_ = 0;
 }
-SDReader::SDReader(const std::string& filename, 
+SDReader::SDReader(const std::string& filename,
                    int whichIF, int whichBeam) :
   reader_(0),
   header_(0),
@@ -76,7 +76,7 @@ SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
 
 SDReader::~SDReader() {
   if (reader_) delete reader_;
-  if (header_) delete header_; 
+  if (header_) delete header_;
   if (frequencies_) delete frequencies_;
 }
 
@@ -91,7 +91,7 @@ void SDReader::close() {
   //cerr << "disabled" << endl;
 }
 
-void SDReader::open(const std::string& filename, 
+void SDReader::open(const std::string& filename,
                     int whichIF, int whichBeam) {
   if (reader_) delete reader_; reader_ = 0;
   Bool   haveBase, haveSpectra;
@@ -150,7 +150,7 @@ void SDReader::open(const std::string& filename,
   if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
     pushLog("Header indicates frequency switched observation.\n"
-	       "setting # of IFs = 1 ");
+               "setting # of IFs = 1 ");
     nIF_ = 1;
   }
 
@@ -205,6 +205,7 @@ void SDReader::open(const std::string& filename,
   if (frequencies_) delete frequencies_;
   frequencies_ = new SDFrequencyTable();
   frequencies_->setRefFrame(header_->freqref);
+  frequencies_->setBaseRefFrame(header_->freqref);
   frequencies_->setRestFrequencyUnit("Hz");
   frequencies_->setEquinox(header_->equinox);
 }
@@ -251,16 +252,16 @@ int SDReader::read(const std::vector<int>& seq) {
 
       // Make sure beam/IF numbers are 0-relative - dealing with
       // possible IF or Beam selection
-      beamNo = beamNo - beamOffset_ - 1;      
+      beamNo = beamNo - beamOffset_ - 1;
       IFno = IFno - ifOffset_ - 1;
 
       if (status) {
         if (status == -1) {
           // EOF.
-          if (row > 0 && row < stepsize-1) 
-	    pushLog("incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present.");
+          if (row > 0 && row < stepsize-1)
+            pushLog("incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present.");
 
-	  // flush frequency table
+          // flush frequency table
           table_->putSDFreqTable(*frequencies_);
           return status;
         }
@@ -276,27 +277,27 @@ int SDReader::read(const std::vector<int>& seq) {
           sc.timestamp = mjd;
           sc.interval = interval;
           sc.sourcename = srcName;
-	  sc.fieldname = fieldName;
-	  sc.azimuth = azimuth;
-	  sc.elevation = elevation;
+          sc.fieldname = fieldName;
+          sc.azimuth = azimuth;
+          sc.elevation = elevation;
         }
         // add specific info
         // refPix = nChan/2+1 in  1-rel Integer arith.!
         Int refPix = header_->nchan/2;       // 0-rel
         uInt freqID = frequencies_->addFrequency(refPix, refFreq, freqInc);
-	uInt restFreqID = frequencies_->addRestFrequency(restFreq);
+        uInt restFreqID = frequencies_->addRestFrequency(restFreq);
 
         sc.setFrequencyMap(freqID, IFno);
         sc.setRestFrequencyMap(restFreqID, IFno);
 
-	sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
-	sc.tcaltime = tcalTime;
-	sc.parangle = parAngle;
-	sc.refbeam = -1; //nbeams == 1
-	if (nBeam_ > 1) // circumvent a bug "asap0000" in read which
-			// returns a random refbema number on multiple
-			// reads
-	  sc.refbeam = refBeam-1;//make it 0-based;
+        sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
+        sc.tcaltime = tcalTime;
+        sc.parangle = parAngle;
+        sc.refbeam = -1; //nbeams == 1
+        if (nBeam_ > 1) // circumvent a bug "asap0000" in read which
+                        // returns a random refbema number on multiple
+                        // reads
+          sc.refbeam = refBeam-1;//make it 0-based;
         sc.scanid = scanNo-1;//make it 0-based
         if (haveXPol_) {
            sc.setSpectrum(spectra, xPol, beamNo, IFno);
