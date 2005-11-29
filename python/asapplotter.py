@@ -1,4 +1,4 @@
-from asap import rcParams
+from asap import rcParams, print_log
 from numarray import logical_and
 
 class asapplotter:
@@ -108,8 +108,10 @@ class asapplotter:
                 if self._cursor["t"] is None or \
                        (isinstance(self._cursor["t"],list) and \
                         len(self._cursor["t"]) > maxrows ):
-                    print "Scan to be plotted contains more than %d rows.\n" \
+                    from asap import asaplog
+                    msg ="Scan to be plotted contains more than %d rows.\n" \
                           "Selecting first %d rows..." % (maxrows,maxrows)
+                    asaplog.push(msg)
                     self._cursor["t"] = range(maxrows)
             self._plot_time(self._data[0], self._stacking)
         elif self._panelling == 's':
@@ -119,6 +121,7 @@ class asapplotter:
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
+        print_log()
         return
 
     def _plot_time(self, scan, colmode):
@@ -230,7 +233,9 @@ class asapplotter:
         return
 
     def _plot_scans(self, scans, colmode):
-        print "Plotting mode is scans across panels. Can only plot one row per scan."
+        from asap import asaplog
+        msg = "Plotting mode is scans across panels. Can only plot one row per scan."
+        asaplog.push(msg)
         if colmode == 's':
             return
         cdict = {'b':'scan.setbeam(j)',
@@ -329,6 +334,7 @@ class asapplotter:
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)
             self._plotter.set_axes('title',tlab)
+        print_log()
         return
 
     def _plot_other(self,scans,colmode):
@@ -366,9 +372,9 @@ class asapplotter:
                 self._plotter.subplot(ii)
             if self._panelling == "p":
                 polmode = self._polmode[ii]
-                eval(cdict.get(self._panelling))
-            else:
-                eval(cdict.get(self._panelling))
+
+            eval(cdict.get(self._panelling))
+
             colvals = eval(cdict2.get(colmode))
             for j in colvals:
                 rowsel = self._cursor["t"][0]
@@ -392,9 +398,12 @@ class asapplotter:
                     savei = i
                     if colmode == 'p':
                         polmode = self._polmode[self._cursor["p"].index(j)]
+
                     i = j
                     eval(cdict.get(colmode))
                     i = savei
+                if self._panelling == "p":
+                    eval(cdict.get(self._panelling))
                 x = None
                 y = None
                 m = None
@@ -484,12 +493,14 @@ class asapplotter:
                  'scan' 'Scan' 's':     Scans
                  'time' 'Time' 't':     Times
         """
-        if not self.set_panelling(panelling):
-            print "Invalid mode"
-            return
-        if not self.set_stacking(stacking):
-            print "Invalid mode"
-            return
+        msg = "Invalid mode"
+        if not self.set_panelling(panelling) or \
+               not self.set_stacking(stacking):
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
         if self._data: self.plot()
         return
 
@@ -693,8 +704,12 @@ class asapplotter:
             Be careful to select only exisiting polarisations.
         """
         if not self._data:
-            print "Can only set cursor after a first call to plot()"
-            return
+            msg = "Can only set cursor after a first call to plot()"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
 
         n = self._data[0].nrow()
         if row is None:
@@ -702,8 +717,12 @@ class asapplotter:
         else:
             for i in row:
                 if i < 0 or i >= n:
-                    print "Row index '%d' out of range" % i
-                    return
+                    msg = "Row index '%d' out of range" % i
+                    if rcParams['verbose']:
+                        print msg
+                        return        
+                    else:
+                        raise IndexError(msg)
             self._cursor["t"] = row
 
         n = self._data[0].nbeam()
@@ -712,8 +731,13 @@ class asapplotter:
         else:
             for i in beam:
                 if i < 0 or  i >= n:
-                    print "Beam index '%d' out of range" % i
-                    return
+                    msg = "Beam index '%d' out of range" % i
+                    if rcParams['verbose']:
+                        print msg
+                        return        
+                    else:
+                        raise IndexError(msg)
+
             self._cursor["b"] = beam
 
         n = self._data[0].nif()
@@ -722,8 +746,12 @@ class asapplotter:
         else:
             for i in IF:
                 if i < 0 or i >= n:
-                    print "IF index '%d' out of range" %i
-                    return
+                    msg = "IF index '%d' out of range" %i
+                    if rcParams['verbose']:
+                        print msg
+                        return        
+                    else:
+                        raise IndexError(msg)
             self._cursor["i"] = IF
 
         n = self._data[0].npol()
@@ -755,11 +783,19 @@ class asapplotter:
                         pols.append(dcirc.get(i))
                         polmode.append("circular")
                     else:
-                        print "Pol type '%s' not valid" %i
-                        return
+                        msg = "Pol type '%s' not valid" %i
+                        if rcParams['verbose']:
+                            print msg
+                            return        
+                        else:
+                            raise TypeError(msg)                       
                 elif 0 > i >= n:
                     print "Pol index '%d' out of range" %i
-                    return
+                    if rcParams['verbose']:
+                        print msg
+                        return        
+                    else:
+                        raise IndexError(msg)                    
                 else:
                     pols.append(i)
                     polmode.append("raw")
@@ -778,8 +814,12 @@ class asapplotter:
         Example:
         """
         if not self._data:
-            print "Can only set cursor after a first call to plot()"
-            return
+            msg = "Can only set cursor after a first call to plot()"
+            if rcParams['verbose']:
+                print msg
+                return        
+            else:
+                raise RuntimeError(msg)                       
         if isinstance(mask, array):
             self._usermask = mask
         if isinstance(mask, list):
