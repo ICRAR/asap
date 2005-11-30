@@ -68,6 +68,7 @@ class scantable(sdtable):
                 r = sdreader()
                 r._open(filename,ifSel,beamSel)
                 asaplog.push('Importing data...')
+                print_log()
                 r._read([-1])
                 tbl = r._getdata()
                 if unit is not None:
@@ -75,6 +76,7 @@ class scantable(sdtable):
                 if average:
                     from asap._asap import average as _av
                     asaplog.push('Auto averaging integrations...')
+                    print_log()
                     tbl2 = _av((tbl,),(),True,'none')
                     sdtable.__init__(self,tbl2)
                     del tbl2

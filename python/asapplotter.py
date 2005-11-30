@@ -104,7 +104,7 @@ class asapplotter:
             self._datamask = None
         if self._panelling == 't':
             maxrows = 25
-            if self._data[0].nrow() > maxrows:
+            if self._data[0].nrow() > maxrows and not (self._rows and self._cols):
                 if self._cursor["t"] is None or \
                        (isinstance(self._cursor["t"],list) and \
                         len(self._cursor["t"]) > maxrows ):
@@ -148,6 +148,7 @@ class asapplotter:
         else:
             self._plotter.set_panels()
         rows = self._cursor["t"]
+        rows = rows[:n]
         self._plotter.palette(0)
         for rowsel in rows:
             i = self._cursor["t"].index(rowsel)
@@ -720,7 +721,7 @@ class asapplotter:
                     msg = "Row index '%d' out of range" % i
                     if rcParams['verbose']:
                         print msg
-                        return        
+                        return
                     else:
                         raise IndexError(msg)
             self._cursor["t"] = row
@@ -734,7 +735,7 @@ class asapplotter:
                     msg = "Beam index '%d' out of range" % i
                     if rcParams['verbose']:
                         print msg
-                        return        
+                        return
                     else:
                         raise IndexError(msg)
 
@@ -749,7 +750,7 @@ class asapplotter:
                     msg = "IF index '%d' out of range" %i
                     if rcParams['verbose']:
                         print msg
-                        return        
+                        return
                     else:
                         raise IndexError(msg)
             self._cursor["i"] = IF
@@ -786,16 +787,16 @@ class asapplotter:
                         msg = "Pol type '%s' not valid" %i
                         if rcParams['verbose']:
                             print msg
-                            return        
+                            return
                         else:
-                            raise TypeError(msg)                       
+                            raise TypeError(msg)
                 elif 0 > i >= n:
                     print "Pol index '%d' out of range" %i
                     if rcParams['verbose']:
                         print msg
-                        return        
+                        return
                     else:
-                        raise IndexError(msg)                    
+                        raise IndexError(msg)
                 else:
                     pols.append(i)
                     polmode.append("raw")
@@ -817,9 +818,9 @@ class asapplotter:
             msg = "Can only set cursor after a first call to plot()"
             if rcParams['verbose']:
                 print msg
-                return        
+                return
             else:
-                raise RuntimeError(msg)                       
+                raise RuntimeError(msg)
         if isinstance(mask, array):
             self._usermask = mask
         if isinstance(mask, list):
