@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage{a4}
+\usepackage{calc}
 \usepackage[dvips]{graphicx}
 
 % Adjust the page size
@@ -10,12 +11,16 @@
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{1ex}
 
-
-\title{ATNF Spectral Analysis Package\\Cookbook }
+\title{ATNF Spectral Analysis Package\\User Guide }
 \author{Chris Phillips}
 
-
 \newcommand{\cmd}[1]{{\tt #1}}
+
+\newcommand{\asaprc}[3]{
+  \begin{minipage}[t]{45mm}#1\end{minipage}
+  \begin{minipage}[t]{30mm}\raggedright #2\end{minipage}\hspace{3mm}
+  \begin{minipage}[t]{\textwidth-75mm}#3\end{minipage}
+}
 
 \begin{document}
 
@@ -25,7 +30,7 @@
 
 ASAP is a single dish spectral line processing package currently being
 developed by the ATNF. It is intended to process data from all ATNF
-antennas, and can probably be used for other antnnas if they can
+antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
@@ -44,7 +49,7 @@ Currently there are installations running on Linux machines at
 \item Mopra - use host {\tt minos}
 \end{itemize}
 
-To start asap log onto one of these Linux hosts and  enter
+To start asap log onto one of these Linux hosts and enter
 
 \begin{verbatim}
   > cd /my/data/directory
@@ -86,7 +91,7 @@ main objects are used :
 
 There can be many objects of the same type. Each object is referred to
 by a variable name made by the user. The name of this variable is not
-important and can be set to whatever the user prefers (ie ``s'' and
+important and can be set to whatever the user prefers (i.e. ``s'' and
 ``ParkesHOH-20052002'' are equivalent).  However, having a simple and
 consistent naming convention will help you a lot.
 
@@ -112,7 +117,7 @@ E.g.
 \begin{verbatim}
   ASAP> av = scans(msk,weight='tsys')
   ASAP> av = scans(mask=msk,weight='tsys')
-  ASAP> av = scans(msk,True)
+  ASAP> av = scans(msk,tsys)
   ASAP> scans.polybaseline(mask=msk, order=0, insitu=True)
   ASAP> scans.polybaseline(msk,0,True)
   ASAP> scans.polybaseline(mask, insitu=True)
@@ -127,8 +132,8 @@ always be referred to as global functions.
 
 \subsection{Interactive environment}
 
-ipython has a number of useful interactive features and a few things to be aware
-of for the new user.
+ipython has a number of useful interactive features and a few things
+to be aware of for the new user.
 
 \subsubsection{String completion}
 
@@ -155,6 +160,14 @@ scans.set_fluxunit    scans.set_restfreqs   scans.setif
 Python uses leading space to mark blocks of code. This means that it
 you start a command line with a space, the command generally will
 fail with an syntax error.
+
+\subsubsection{Variable Names}
+
+During normal data processing, the user will have to create named
+variables to hold spectra etc. These must conform to the normal python
+syntax, specifically they cannot contain ``special'' characters such
+as \@ \$ etc and cannot start with a number (but can contain numbers).
+Variable (and function) names are case sensitive.
 
 \subsubsection{Unix Interaction}
 
@@ -220,7 +233,6 @@ Common values include:
   # default output format when saving scantable
   scantable.save             : 'ASAP'
 
-
   # default frequency frame to set when function
   # scantable.set_freqframe is called
   scantable.freqframe        : 'LSRK'
@@ -228,6 +240,8 @@ Common values include:
   # auto averaging on read
   scantable.autoaverage      : True
 \end{verbatim}
+
+For a complete list of \cmd{.asaprc} values, see the appendix.
 
 \section{Scantables}
 
@@ -339,7 +353,7 @@ Each scantable contains "state"; these are properties  applying to all
 of the data in the scantable.
 
 Examples are the selection of beam, IF and polarisation,  spectral unit
-(e.g. km/s) frequency reference frame (e.g. BARY) and velocity Doppler
+(e.g. km/s), frequency reference frame (e.g. BARY) and velocity Doppler
 type (e.g. RADIO).
 
 \subsubsection{Units, Doppler and Frequency Reference Frame}
@@ -404,13 +418,10 @@ list.
 
 
 \begin{verbatim}
-  # Select for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)
+  # Set rest frequency for all IFs
+  ASAP> scans.set_restfreqs(freqs=[1.6654018e9,1.667359e9,])
 
-  # Select for all sources and IFs
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)
 \end{verbatim}
-
 
 In both of the above modes, you can also specify the rest frequencies via
 names in a known list rather than by their values.
@@ -421,7 +432,6 @@ Examples:
   ASAP> scans.lines()                 # Print list of known lines
   ASAP> scans.set_restfreqs(lines=['OH1665','OH1667'])
 \end{verbatim}
-
 
 
 \subsection{Data Selection}
@@ -580,7 +590,11 @@ default value from \cmd{True}.
 
 %How and when?
 \subsection{Auto quotient}
-Quotients can becomputed ``automatically''. This requires the data to have matching source/reference pairs or one refrence for multiple sources.
+Quotients can be computed ``automatically''. This requires the data to
+have matching source/reference pairs or one reference for multiple
+sources. Auto quotient assumes reference scans have a trailing ``\_R''
+in the source name for data from Parkes and Mopra, and a trailing
+``e'' or ``w'' for data fro, Tidbinbilla.
 
 \begin{verbatim}
   ASAP> q = s.auto_quotient()
@@ -644,7 +658,7 @@ you can:
 \end{verbatim}
 
 The default is to use integration time weighting. The alternative is
-to use none, variance , Tsys weighting or Tsys \& integration time.
+to use none, variance, Tsys weighting or Tsys \& integration time.
 
 \begin{verbatim}
  ASAP> av = average_time(q, weight='tintsys')
@@ -674,11 +688,11 @@ this polynomial from the full spectra.
 \subsubsection{Auto-baselining}
 
 The function \cmd{auto\_poly\_baseline} can be used to automatically
-baseline your data with out having to specify channel ranges for
-the line free data. It automatically figures out the line-free
-emission and fits a polynomial baseline to that data. The user can use
-masks to fix the range of channels or velocity range for the fit as
-well as mark the band edge as invalid.
+baseline your data without having to specify channel ranges for the
+line free data. It automatically figures out the line-free emission
+and fits a polynomial baseline to that data. The user can use masks to
+fix the range of channels or velocity range for the fit as well as
+mark the band edge as invalid.
 
 Simple example
 
@@ -726,7 +740,7 @@ corrections.
 
 \subsubsection{Brightness Units}
 
-RPFITS files to not contain any information as to whether the telescope
+RPFITS files do not contain any information as to whether the telescope
 calibration was in units of Kelvin or Janskys.  On reading the data a
 default value is set depending on the telescope and frequency of
 observation.  If this default is incorrect (you can see it in the
@@ -771,6 +785,10 @@ efficiency, telescope diameter or the Jy/K factor.
 
 As higher frequencies (particularly $>$20~GHz) it is important to make
 corrections for atmospheric opacity and gain-elevation effects.
+
+{\em Note that currently the elevation is not written correctly into
+Tidbinbilla rpfits files. This means that gain-elevation and opacity
+corrections will not work until a work around is implemented.}
 
 Gain-elevation curves for some telescopes and frequencies are known to
 ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases making
@@ -818,10 +836,10 @@ E.g.:
 \cmd{freq\_align} has two modes of operations controlled by the
 \cmd{perif} argument. By default it will align each source and freqid
 separately. This is needed for scan tables containing multiple
-sources. However if scan-based Doppler tracking has been made at the observatory,
-each row will have a different freqid. In these cases run with
-\cmd{perif=True} and all rows of a source will be aligned to the same
-frame. In general \cmd{perif=True} will be needed for most
+sources. However if scan-based Doppler tracking has been made at the
+observatory, each row will have a different freqid. In these cases run
+with \cmd{perif=True} and all rows of a source will be aligned to the
+same frame. In general \cmd{perif=True} will be needed for most
 observations as Doppler tracking of some form is made at Parkes, Tid
 and Mopra.
 
@@ -926,7 +944,7 @@ Typical usages are:
 
 \section{Plotter}
 
-Scantable spectra can be plotter at any time. An asapplotter object is
+Scantable spectra can be plotted at any time. An asapplotter object is
 used for plotting, meaning multiple plot windows can be active at the
 same time. On start up a default asapplotter object is created called
 ``plotter''. This would normally be used for standard plotting.
@@ -1154,10 +1172,11 @@ able to calibrate position angle offsets.
 
 \subsection{Simple Calibration}
 
-{\em Currently the receiver position angle is not stored in the RPFITS
-file. This severely hampers correct handling of polarimetry. In the future
-we aim to define a general framework and populate the RPFITS files
-with the data required for transparent polarimetric calibration.}
+{\em Currently the receiver position angle is not read from the RPFITS
+file and a position angle of zero is assumed. This severely hampers
+correct handling of polarimetry. In the future we aim to define a
+general framework and populate the RPFITS files with the data required
+for transparent polarimetric calibration.}
 
 It is possible that there is a phase offset between polarisation which
 will effect the phase of the cross polarisation correlation, and so give
@@ -1198,10 +1217,10 @@ to circular polarisations are currently not available.
 Example:
 
 \begin{verbatim}
-  ASAP> plotter.set_cursor(pol=[``I'',''Q'']
-  ASAP> plotter.set_cursor(pol=[``RR'',''LL'']
-  ASAP> plotter.set_cursor(pol=[``XX'',''YY'']
-  ASAP> plotter.set_cursor(pol=[``I'',''Plinear'']
+  ASAP> plotter.set_cursor(pol=``I Q'')
+  ASAP> plotter.set_cursor(pol=``RR LL'')
+  ASAP> plotter.set_cursor(pol=``XX YY'')
+  ASAP> plotter.set_cursor(pol=``I Plinear'')
 \end{verbatim}
 
 Row, beam and IF selection are also available in \cmd{set\_cursor} as
@@ -1219,7 +1238,208 @@ Example:
   ASAP> scans.save('myscan.sdfits', 'SDFITS', stokes=True)
 \end{verbatim}
 
-\section{Function Summary}
+
+\section{Scantable Mathematics}
+
+It is possible to to simple mathematics directly on scantables from
+the command line using the \cmd{+, -, *, /} operators as well as their
+cousins \cmd{+=, -= *=, /=}. This works between two scantables or a
+scantable and a float. (Note that it does not work for integers).
+
+\begin{verbatim}
+  ASAP> sum = scan1+scan2
+  ASAP> scan2 = scan1+2.0
+  ASAP> scan *= 1.05
+\end{verbatim}
+
+\section{Scripting}
+
+Because asap is based on python, it easy for the user write their own
+scripts and functions to process data. This is highly recommended as
+most processing of user data could then be done in a couple of steps
+using a few simple user defined functions. A Python primer is beyond
+the scope of this userguide. See the asap home pages for a scripting
+tutorial or the main python website for comprehensive documentation.
+
+\hspace{1cm} http://www.atnf.csiro.au/computing/software/asap/tutorials
+\hspace{1cm} http://www.python.org/doc/Introduction.html
+
+\subsection{Running scripts}
+
+The asap global function \cmd{execfile} reads the named text file and
+executes the contained python code. This file can either contain
+function definitions which will be used in subsequent processing or
+just a set of commands to process a specific dataset.
+
+\subsection{asapuserfuncs.py}
+
+The file $\sim$/.asap/asapuserfuncs.py is automatically read in when
+asap is started. The user can use this to define a set of user
+functions which are automatically available each time asap is
+used. The \cmd{execfile} function can be called from within this file.
+
+\section{Worked examples}
+
+In the following section a few examples of end-to-end processing of
+some data in asap are given. 
+
+\subsection{Mopra}
+
+\subsection{Parkes Polarimetry}
+
+The following example is processing of some Parkes polarmetric
+observations of OH masers at 1.6~GHz. Because digital filters where
+used in the backend, the baselines are stable enough not to require a
+quotient spectra. The 4~MHz bandwidth is wide enough to observe both
+the 1665 and 1667~MHz OH maser transitions. Each source was observed
+once for about 10 minutes. Tsys information was not written to the
+rpfits file (a nominal 25K values was used), so the amplitudes need
+to be adjusted based on a separate log file. A simple user function is
+used to simplify this, contained in a file called mypol.py:
+
+\begin{verbatim}
+def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
+
+ data.set_cursor(pol=0)
+ data.scale(xtsys/nomtsys,allaxes=False)
+
+ data.set_cursor(pol=1)
+ data.scale(ytsys/nomtsys,allaxes=False)
+
+ data.set_cursor(pol=2)
+ data.scale((xtsys+ytsys)/(2*nomtsys),allaxes=False)
+
+ data.set_cursor(pol=3)
+ data.scale((xtsys+ytsys)/(2*nomtsys),allaxes=False)
+\end{verbatim}
+
+The typical asap session would be
+
+\begin{verbatim}
+  
+# Remind ourself the name of the rpfits files
+ls 
+
+# Load data from an rpfits file
+d1665 = scantable('2005-10-27_0154-P484.rpf')
+
+# Check what we have just loaded
+d1665.summary
+
+# View the data in velocity
+d1665.set_unit('km/s')
+d1665.set_freqframe('LSRK')
+
+# Correct for the known phase offset in the crosspol data
+d1665.rotate_xyphase(-4)
+
+# Create a copy of the data and set the rest frequency to the 1667 MHz 
+# transition
+d1667 = d1665.copy()
+d1667.set_restfreqs(lines=['OH1667'])
+d1667.summary
+
+# Copy out the scan we wish to process
+g351_5 = d1665.get_scan('351p160')
+g351_7 = d1667.get_scan('351p160')
+
+# Plot the data
+plotter.plot(g351_5,g351_7) # Only shows one panel
+
+# Tell the plotter to stack polarisation and panel scans
+plotter.set_mode('p','s')
+
+# Correct for the Tsys using our predefined function
+execfile('mypol.py') # Read in the function
+xyscale(g351_5,23.2,22.7) # Execute it on the data
+xyscale(g351_7,23.2,22.7)
+
+# Only plot the velocity range of interest
+plotter.set_range(-30,10)
+
+# Baseline the data
+msk = g351_5.create_mask([-20,-15],[0,5])
+g351_5.poly_baseline(msk,1)
+msk = g351_7.create_mask([-20,-15],[0,5])
+g351_7.poly_baseline(msk,1)
+
+# Update the plot with the baselined data
+plotter.plot()
+
+# Look at the various polarisation products
+plotter.set_cursor(pol='RR LL')
+plotter.set_cursor(pol='I Plinear')
+plotter.set_cursor(pol='I Q U V')
+
+# Save the plot as postscript
+plotter.save('g361_stokes.ps')
+
+# Save the process spectra
+g351_5.save('junk5.asap')
+g351_7.save('junk7.asap')
+
+\end{verbatim}
+
+\subsection{Tidbinbilla}
+
+The following example is processing of some Tidbinbilla observations
+of NH$_3$ at 12~mm. Tidbinbilla has (at the time of observations) a
+single polarisation, but can process two IFs simultaneously. In the
+example, the first half of the observation was observing the (1,1) and
+(2,2) transitions simultaneously). The second half observed only the
+(4,4) transition due to bandwidth limitations. The data is position
+switched, observing first an reference to the west, then the source
+twice and finally reference to the east.
+
+\begin{verbatim}
+
+# Load the rpfits file and inspect
+d = scantable('2003-03-16_082048_t0002.rpf')
+print d
+
+# Make the quotient spectra
+q = d.auto_quotient()
+print q
+
+# Plot/select in velocity
+q.set_freqframe('LSRK')
+q.set_unit('km/s')
+
+# Seperate data from the (1,1)&(2,2) and (4,4) transitions
+g1 = q.get_scan(range(6))     # Rows 0..5
+g2 = q.get_scan(range(6,12))  # Rows 6..11
+
+# Align data in velocity 
+g1.freq_align(perif=True)
+g2.freq_align(perif=True)
+
+# Average individual scans
+a1 = g1.average_time()
+a2 = g2.average_time()
+
+# Rpfits file only contrains a single rest frequency. Set both
+a1.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
+
+plotter.plot(a1,a2)
+plotter.set_mode('i','s')
+x = raw_input()
+
+a1.auto_poly_baseline()
+a2.auto_poly_baseline()
+
+plotter.plot()
+
+a1.smooth('gauss',5)
+a2.smooth('gauss',5)
+plotter.plot()
+
+\end{verbatim}
+
+\newpage
+
+\section{Appendix}
+
+\subsection{Function Summary}
 
 \begin{verbatim}
     [The scan container]
@@ -1340,7 +1560,7 @@ Example:
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
-                              put into $HOME/.asaprc
+                              put into \$HOME/.asaprc
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
@@ -1357,25 +1577,6 @@ Example:
             ASAP> help average_time
 
 \end{verbatim}
-
-\section{Scantable Mathematics}
-
-It is possible to to simple mathematics directly on scantables from
-the command line using the \cmd{+, -, *, /} operators as well as their
-cousins \cmd{+=, -= *=, /=}. This works between two scantables or a
-scantable and a float. (Note that it does not work for integers).
-
-\begin{verbatim}
-  ASAP> sum = scan1+scan2
-  ASAP> scan2 = scan1+2.0
-  ASAP> scan *= 1.05
-\end{verbatim}
-
-%\section{Scripting}
-
-%Malte to add something
-
-\section{Appendix}
 
 \subsection{Installation}
 
@@ -1398,4 +1599,52 @@ Of the dependencies, AIPS++ is the most complex to install.
 
 \subsection{.asaprc settings}
 
+\asaprc{verbose}{{\bf True}/False}{Print verbose output}
+
+\asaprc{insitu}{{\bf True}/False}{Apply operations on the input
+scantable or return new one}
+
+% plotting
+
+\asaprc{useplotter}{{\bf True}/False}{Preload a default plotter}
+
+\asaprc{plotter.gui}{{\bf True}/False}{Do we want a GUI or plot to a
+file}
+
+\asaprc{plotter.stacking}{{\bf Pol} Beam IF Scan Time}{Default mode for
+colour stacking}
+
+\asaprc{plotter.panelling}{Pol Beam IF {\bf Scan} Time}{Default mode
+for panelling}
+
+\asaprc{plotter.ganged}{{\bf True}/False}{Push panels together, to
+share axislabels}
+
+\asaprc{plotter.decimate}{True/{\bf False}}{Decimate the number of
+points plotted by a factor of nchan/1024}
+
+% default colours/linestyles
+%\asaprc{plotter.colours}{.}{.}
+%\asaprc{plotter.linestyles{.}{.}
+
+% scantable
+\asaprc{scantable.save}{{\bf ASAP} SDFITS FITS ASCII MS2}{Default output
+format when saving} 
+
+\asaprc{scantable.autoaverage}{{\bf True}/False}{Auto averaging on
+read}
+
+\asaprc{scantable.freqframe}{{\bf LSRK} TOPO BARY etc}{default
+frequency frame to set when function scantable.set\_freqframe is
+called}
+
+\asaprc{scantable.allaxes}{{\bf True}/False}{Apply action to all axes
+not just the cursor location}
+
+\asaprc{scantable.plotter}{{\bf True}/False}{Use internal plotter}
+
+\asaprc{scantable.verbosesummary}{True/{\bf False}}{Control the level
+of information printed by summary}
+
 \end{document}
+

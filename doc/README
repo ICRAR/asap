@@ -14,8 +14,8 @@ To be able to run the following additional packages need to be installed.
 INSTALL
 =======
 
-To install simply run 
-  ./install.sh
+To install simply run (as root or 'sudo')
+  ./bin/install.sh
 which will install asap into /usr/local
 
 
