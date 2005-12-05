@@ -1,0 +1,41 @@
+Changelog
+
+Release Version 1.2 [2005-11-30]
+
+Code changes
+------------
+* frequency switching: scantable.freq_switch()
+* get a list of sourcenames: scantable.get_sourcename()
+* build quotients from matched _S/_R pairs or 1*_R/n*_S automatically
+* plotting control: plotter.set_colors(), plotter.set_linestyles(), 
+  plotter.set_linewidth() all also  via .asaprc parameters
+* non-interactive (non-GUI) plotting
+* ASAP Online (Mopra) Monitor web interface (mini pipeline)
+* user control of multi-panel: plotter.set_layout()
+* histogram plotting: part of linestyles
+* plugins: via ~/.asap/userfuncs.py
+* plotter panel control: rcParams['plotter.ganged']
+* usability: reworked the whole asap startup scripts, now all user adjustable 
+  through ~/.asap/
+
+Todos/pending
+--------------
+* documentation update: should be finished by 2005-11-25
+* cookbook 
+* release 1.2:  2005-11-30
+
+Major non-targets, resulting from requirements/targets
+-----------------------------------------------------
+* asap logging, which can be turned on and off through .asaprc/rcParams
+ (from asapmon)
+* Data container v2 design study and document ( moved from cycle II )
+
+Not Addressed
+-------------
+
+(deferred to cycle II, as described in support document)
+
+* Flexible data selection
+* "Merging of spectra" (concatenating scantables)
+
+* public defect tracking system
