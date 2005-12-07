@@ -216,6 +216,7 @@ public:
     return table_->getSDFitTable(casa::uInt(whichRow));
   }
 
+  void calculateAZEL() { table_->calculateAZEL(); };
 
 private:
   casa::CountedPtr<SDMemTable> table_;

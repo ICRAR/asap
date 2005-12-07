@@ -107,6 +107,7 @@ void python_SDMemTable() {
     .def("_addhistory", &SDMemTableWrapper::addHistory)
     .def("_addfit", &SDMemTableWrapper::addFit)
     .def("_getfit", &SDMemTableWrapper::getSDFitTable)
+    .def("_recalc_azel", &SDMemTableWrapper::calculateAZEL)
   ;
 };
 

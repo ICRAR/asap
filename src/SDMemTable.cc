@@ -1630,7 +1630,6 @@ MDirection::Types SDMemTable::getDirectionReference() const
   if (!MDirection::getType(mdr, mp[eq])) {
     mdr = MDirection::J2000;
     pushLog("WARNING: Unknown equinox using J2000");
-
   }
 
   return mdr;
@@ -1836,3 +1835,19 @@ std::vector<float> SDMemTable::getFloatSpectrum(const Array<Float>& arr) const
   return spectrum;
 }
 
+void SDMemTable::calculateAZEL()
+{
+  MPosition mp = getAntennaPosition();
+
+  for (uInt i=0; i<nRow();++i) {
+    MEpoch me = getEpoch(i);
+    MDirection md = getDirection(i,False);
+    MeasFrame frame(mp, me);
+    Vector<Double> azel =
+        MDirection::Convert(md, MDirection::Ref(MDirection::AZEL,
+                                                frame)
+                            )().getAngle("rad").getValue();
+    azCol_.put(i,azel[0]);
+    elCol_.put(i,azel[1]);
+  }
+}

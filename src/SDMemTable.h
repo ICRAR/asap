@@ -265,6 +265,8 @@ public:
               const casa::Vector<casa::Int>& c);
 
 
+  void calculateAZEL();
+
 private:
   // utility func for nice printout
   casa::String formatSec(casa::Double x) const;
