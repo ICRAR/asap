@@ -1702,7 +1702,7 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
        throw (AipsError("Number of rest frequencies must be equal to the number of IFs"));
      }
      ostringstream oss;
-     oss << "Replacing rest frequencies, one per IF, with given list : " << restFreqs;
+     oss << "Replaced rest frequencies, one per IF, with given list : " << restFreqs;
      sdft.deleteRestFrequencies();
      for (uInt i=0; i<nRestFreqs; i++) {
        Quantum<Double> rf(restFreqs[i], unit);
@@ -1714,9 +1714,9 @@ Bool SDMemTable::setRestFreqs(const Vector<Double>& restFreqsIn,
       Quantum<Double> rf(restFreqs[0], unit);
       idx = sdft.addRestFrequency(rf.getValue("Hz"));
       if (whichIF>=0) {
-         oss << "Selecting given rest frequency (" << restFreqs[0] << ") for IF " << whichIF << endl;
+         oss << "Selected given rest frequency (" << restFreqs[0] << ") for IF " << whichIF << endl;
       } else {
-         oss << "Selecting given rest frequency (" << restFreqs[0] << ") for all IFs" << endl;
+         oss << "Selected given rest frequency (" << restFreqs[0] << ") for all IFs" << endl;
       }
    }
    pushLog(String(oss));
@@ -1838,10 +1838,14 @@ std::vector<float> SDMemTable::getFloatSpectrum(const Array<Float>& arr) const
 void SDMemTable::calculateAZEL()
 {
   MPosition mp = getAntennaPosition();
-
+  ostringstream oss;
+  oss << "Computed azimuth/elevation using " << endl
+      << mp << endl;
   for (uInt i=0; i<nRow();++i) {
     MEpoch me = getEpoch(i);
     MDirection md = getDirection(i,False);
+    oss  << " Time: " << getTime(i,False) << " Direction: " << formatDirection(md)
+         << endl << "     => ";
     MeasFrame frame(mp, me);
     Vector<Double> azel =
         MDirection::Convert(md, MDirection::Ref(MDirection::AZEL,
@@ -1849,5 +1853,8 @@ void SDMemTable::calculateAZEL()
                             )().getAngle("rad").getValue();
     azCol_.put(i,azel[0]);
     elCol_.put(i,azel[1]);
+    oss << "azel: " << azel[0]/C::pi*180.0 << " "
+        << azel[1]/C::pi*180.0 << " (deg)" << endl;
   }
+  pushLog(String(oss));
 }

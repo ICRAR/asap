@@ -267,7 +267,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '1.2'
+__version__  = '1.2.1'
 
 if rcParams['verbose']:
     def list_scans(t = scantable):
@@ -339,6 +339,8 @@ if rcParams['verbose']:
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
             auto_poly_baseline - automatically fit a polynomial baseline
+            recalc_azel     - recalculate azimuth and elevation based on
+                              the pointing
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness

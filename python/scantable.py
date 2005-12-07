@@ -1371,6 +1371,19 @@ class scantable(sdtable):
             if rcParams['verbose']: print e
             else: raise
 
+    def recalc_azel(self):
+        """
+        Recalculate the azimuth and elevation for each position.
+        Parameters:
+            none
+        Example:
+        """
+        varlist = vars()
+        self._recalc_azel()
+        self._add_history("recalc_azel", varlist)
+        print_log()
+        return
+
     def __add__(self, other):
         varlist = vars()
         s = None
@@ -1385,7 +1398,6 @@ class scantable(sdtable):
         s._add_history("operator +", varlist)
         print_log()
         return s
-
 
     def __sub__(self, other):
         """
