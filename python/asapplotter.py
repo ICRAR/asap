@@ -147,6 +147,7 @@ class asapplotter:
                 self._plotter.set_panels(rows=n,cols=0,nplots=n,ganged=ganged)
         else:
             self._plotter.set_panels()
+        allxlim=[]
         rows = self._cursor["t"]
         rows = rows[:n]
         self._plotter.palette(0)
@@ -227,10 +228,13 @@ class asapplotter:
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
                     xlim = self._minmaxx
-                self._plotter.axes.set_xlim(xlim)
+                allxlim += xlim
+            allxlim.sort()
+            self._plotter.axes.set_xlim([allxlim[0],allxlim[-1]])
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)
             self._plotter.set_axes('title',tlab)
+
         return
 
     def _plot_scans(self, scans, colmode):
@@ -268,6 +272,7 @@ class asapplotter:
                 self._plotter.subplot(scans.index(scan))
             colvals = eval(cdict2.get(colmode))
             rowsel = self._cursor["t"][0]
+            allxlim=[]
             for j in colvals:
                 polmode = "raw"
                 jj = colvals.index(j)
@@ -330,8 +335,9 @@ class asapplotter:
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
                     xlim = self._minmaxx
-                self._plotter.axes.set_xlim(xlim)
-
+                allxlim += xlim
+            allxlim.sort()
+            self._plotter.axes.set_xlim([allxlim[0],allxlim[-1]])
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)
             self._plotter.set_axes('title',tlab)
@@ -376,6 +382,7 @@ class asapplotter:
 
             eval(cdict.get(self._panelling))
 
+            allxlim=[]
             colvals = eval(cdict2.get(colmode))
             for j in colvals:
                 rowsel = self._cursor["t"][0]
@@ -403,8 +410,8 @@ class asapplotter:
                     i = j
                     eval(cdict.get(colmode))
                     i = savei
-                if self._panelling == "p":
-                    eval(cdict.get(self._panelling))
+                #if self._panelling == "p":
+                eval(cdict.get(self._panelling))
                 x = None
                 y = None
                 m = None
@@ -469,7 +476,9 @@ class asapplotter:
                 xlim=[min(x),max(x)]
                 if self._minmaxx is not None:
                     xlim = self._minmaxx
-                self._plotter.axes.set_xlim(xlim)
+                allxlim += xlim
+            allxlim.sort()
+            self._plotter.axes.set_xlim([allxlim[0],allxlim[-1]])
 
             self._plotter.set_axes('xlabel',xlab)
             self._plotter.set_axes('ylabel',ylab)

@@ -245,6 +245,27 @@ std::string SDMemTable::getSourceName(Int whichRow) const
   return name;
 }
 
+float SDMemTable::getElevation(Int whichRow) const
+{
+  float elevation;
+  elCol_.get(whichRow, elevation);
+  return elevation;
+}
+
+float SDMemTable::getAzimuth(Int whichRow) const
+{
+  float azimuth;
+  azCol_.get(whichRow, azimuth);
+  return azimuth;
+}
+
+float SDMemTable::getParAngle(Int whichRow) const
+{
+  float parangle;
+  paraCol_.get(whichRow, parangle);
+  return parangle;
+}
+
 std::string SDMemTable::getTime(Int whichRow, Bool showDate) const
 {
   Double tm;

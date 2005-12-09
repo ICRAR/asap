@@ -297,6 +297,9 @@ if rcParams['verbose']:
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
             get_sourcename  - get the source names of the scans
+            get_azimuth     - get the azimuth of the scans
+            get_elevation   - get the elevation of the scans
+            get_parangle    - get the parallactic angle of the scans
             get_unit        - get the currnt unit
             set_unit        - set the abcissa unit to be used from this
                               point on

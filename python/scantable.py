@@ -225,7 +225,11 @@ class scantable(sdtable):
                 else:
                     raise IOError(msg)
         if rcParams['verbose']:
-            print info
+            try:
+                from IPython.genutils import page as pager
+            except ImportError:
+                from pydoc import pager
+            pager(info)
         else:
             return info
 
@@ -428,7 +432,7 @@ class scantable(sdtable):
 
     def get_sourcename(self, row=-1):
         """
-        Get a list source anmes for the observations.
+        Get a list source names for the observations.
         Return a string for each integration in the scantable.
         Parameters:
             row:    row no of integration. Default -1 return all rows
@@ -441,6 +445,54 @@ class scantable(sdtable):
         else:
             if  0 <= row < self.nrow():
                 return self._getsourcename(row)
+
+    def get_elevation(self, row=-1):
+        """
+        Get a list of elevations for the observations.
+        Return a float for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        out = []
+        if row == -1:
+            return [self._getelevation(i) for i in range(self.nrow())]
+        else:
+            if  0 <= row < self.nrow():
+                return self._getelevation(row)
+
+    def get_azimuth(self, row=-1):
+        """
+        Get a list of azimuths for the observations.
+        Return a float for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        out = []
+        if row == -1:
+            return [self._getazimuth(i) for i in range(self.nrow())]
+        else:
+            if  0 <= row < self.nrow():
+                return self._getazimuth(row)
+
+    def get_parangle(self, row=-1):
+        """
+        Get a list of parallactic angles for the observations.
+        Return a float for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        out = []
+        if row == -1:
+            return [self._getparangle(i) for i in range(self.nrow())]
+        else:
+            if  0 <= row < self.nrow():
+                return self._getparangle(row)
 
     def set_unit(self, unit='channel'):
         """
@@ -716,21 +768,26 @@ class scantable(sdtable):
 
     def history(self):
         hist = list(self._gethistory())
-        print "-"*80
+        out = "-"*80
         for h in hist:
             if h.startswith("---"):
-                print h
+                out += "\n"+h
             else:
                 items = h.split("##")
                 date = items[0]
                 func = items[1]
                 items = items[2:]
-                print date
-                print "Function: %s\n  Parameters:" % (func)
+                out += "\n"+date+"\n"
+                out += "Function: %s\n  Parameters:" % (func)
                 for i in items:
                     s = i.split("=")
-                    print "   %s = %s" % (s[0],s[1])
-                print "-"*80
+                    out += "\n   %s = %s" % (s[0],s[1])
+                out += "\n"+"-"*80
+        try:
+            from IPython.genutils import page as pager
+        except ImportError:
+            from pydoc import pager
+        pager(out)
         return
 
     #
@@ -1054,21 +1111,25 @@ class scantable(sdtable):
             print_log()
             return
 
-    def poly_baseline(self, mask=None, order=0, insitu=None):
+    def poly_baseline(self, mask=None, order=0, insitu=None, allaxes=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
-            scan:    a scantable
-            mask:    an optional mask
-            order:   the order of the polynomial (default is 0)
-            insitu:      if False a new scantable is returned.
-                         Otherwise, the scaling is done in-situ
-                         The default is taken from .asaprc (False)
+            scan:       a scantable
+            mask:       an optional mask
+            order:      the order of the polynomial (default is 0)
+            insitu:     if False a new scantable is returned.
+                        Otherwise, the scaling is done in-situ
+                        The default is taken from .asaprc (False)
+            allaxes:    If True (default) apply to all spectra. Otherwise
+                        apply only to the selected (beam/pol/if)spectra only
+                        The default is taken from .asaprc (True if none)
         Example:
             # return a scan baselined by a third order polynomial,
             # not using a mask
             bscan = scan.poly_baseline(order=3)
         """
+        if allaxes is None: allaxes = rcParams['scantable.allaxes']
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
         if mask is None:
@@ -1078,7 +1139,7 @@ class scantable(sdtable):
         f = fitter()
         f.set_scan(self, mask)
         f.set_function(poly=order)
-        sf = f.auto_fit(insitu)
+        sf = f.auto_fit(insitu,allaxes)
         if insitu:
             self._add_history("poly_baseline", varlist)
             print_log()
@@ -1290,8 +1351,12 @@ class scantable(sdtable):
             srcs = self.get_scan("*[^_ewR]")
             refs = self.get_scan("*[_ewR]")
             if isinstance(srcs,scantable) and isinstance(refs,scantable):
+                from asap import asaplog
                 ns,nr = srcs.nrow(),refs.nrow()
+                msg = "Found %i Off and %i On scans" % (ns,nr)
+                asaplog.push(msg)
                 if nr > ns:
+                    asaplog("Found more Off integrations than On scans - dropping excess Offs.")
                     refs = refs.get_scan(range(ns))
                 print_log()
                 return scantable(_quot(srcs,refs, preserve))

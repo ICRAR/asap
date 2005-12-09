@@ -431,7 +431,7 @@ class fitter:
             self._p.save(filename)
         print_log()
 
-    def auto_fit(self, insitu=None):
+    def auto_fit(self, insitu=None, allaxes=True):
         """
         Return a scan where the function is applied to all rows for
         all Beams/IFs/Pols.
@@ -453,22 +453,35 @@ class fitter:
         sel = scan.get_cursor()
         rows = range(scan.nrow())
         from asap import asaplog
-        for i in range(scan.nbeam()):
-            scan.setbeam(i)
-            for j in range(scan.nif()):
-                scan.setif(j)
-                for k in range(scan.npol()):
-                    scan.setpol(k)
-                    asaplog.push("Fitting:")
-                    out = 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
-                    asaplog.push(out)
-                    for iRow in rows:
-                        self.x = scan._getabcissa(iRow)
-                        self.y = scan._getspectrum(iRow)
-                        self.data = None
-                        self.fit()
-                        x = self.get_parameters()
-                        scan._setspectrum(self.fitter.getresidual(),iRow)
+        if allaxes:
+            for i in range(scan.nbeam()):
+                scan.setbeam(i)
+                for j in range(scan.nif()):
+                    scan.setif(j)
+                    for k in range(scan.npol()):
+                        scan.setpol(k)
+                        asaplog.push("Fitting:")
+                        out = 'Beam[%d], IF[%d], Pol[%d]' % (i,j,k)
+                        asaplog.push(out)
+                        for iRow in rows:
+                            self.x = scan._getabcissa(iRow)
+                            self.y = scan._getspectrum(iRow)
+                            self.data = None
+                            self.fit()
+                            x = self.get_parameters()
+                            scan._setspectrum(self.fitter.getresidual(),iRow)
+        else:
+            asaplog.push("Fitting:")
+            out = 'Beam[%d], IF[%d], Pol[%d]' % sel
+            asaplog.push(out)
+            for iRow in rows:
+                self.x = scan._getabcissa(iRow)
+                self.y = scan._getspectrum(iRow)
+                self.data = None
+                self.fit()
+                x = self.get_parameters()
+                scan._setspectrum(self.fitter.getresidual(),iRow)
+
         scan.set_cursor(sel[0],sel[1],sel[2])
         print_log()
         if not insitu:

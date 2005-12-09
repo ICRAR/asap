@@ -2,6 +2,7 @@
 \usepackage{a4}
 \usepackage{calc}
 \usepackage[dvips]{graphicx}
+\usepackage{makeidx}
 
 % Adjust the page size
 \addtolength{\oddsidemargin}{-0.4in}
@@ -21,6 +22,9 @@
   \begin{minipage}[t]{30mm}\raggedright #2\end{minipage}\hspace{3mm}
   \begin{minipage}[t]{\textwidth-75mm}#3\end{minipage}
 }
+
+\makeindex
+
 
 \begin{document}
 
@@ -49,7 +53,7 @@ Currently there are installations running on Linux machines at
 \item Mopra - use host {\tt minos}
 \end{itemize}
 
-To start asap log onto one of these Linux hosts and enter
+\index{Running}To start asap log onto one of these Linux hosts and enter
 
 \begin{verbatim}
   > cd /my/data/directory
@@ -61,7 +65,7 @@ This starts the ASAP. To quit, you need to type \verb+^+-d
 
 \section{Interface}
 
-ASAP is written in C++ and python. The user interface uses the
+\index{Interface}ASAP is written in C++ and python. The user interface uses the
 ``ipython'' interactive shell, which is a simple interactive interface
 to python. The user does not need to understand python to use this,
 but certain aspects python affect what the user can do.  The current
@@ -74,7 +78,7 @@ interactive use.
 Please note, all integer indices in ASAP and iPython are {\bf 0-relative}.
 
 \subsection{Objects}
-
+\index{objects}
 The ASAP interface is based around a number of ``objects'' which the
 user deals with. Objects range from the data which have been read from
 disk, to tools used for fitting functions to the data. The following
@@ -97,11 +101,12 @@ consistent naming convention will help you a lot.
 
 \subsection{Member Functions (functions)}
 
-Following the object oriented approach, objects have associated
-``member functions'' which can either be used to modify the data in
-some way or change global properties of the object. In this document
-member functions will be referred to simply as functions. From the
-command line, the user can execute these functions using the syntax:
+\index{Functions!member}Following the object oriented approach,
+objects have associated ``member functions'' which can either be used
+to modify the data in some way or change global properties of the
+object. In this document member functions will be referred to simply
+as functions. From the command line, the user can execute these
+functions using the syntax:
 \begin{verbatim}
   ASAP> out = object.function(arguments)
 \end{verbatim}
@@ -125,24 +130,25 @@ E.g.
 
 \subsection{Global Functions}
 
-It does not make sense to implement some functions as member
+\index{Functions!global}It does not make sense to implement some functions as member
 functions, typically functions which operate on more than one
 scantable (e.g. time averaging of many scans). These functions will
 always be referred to as global functions.
 
 \subsection{Interactive environment}
 
-ipython has a number of useful interactive features and a few things
-to be aware of for the new user.
+\index{ipython!environment}ipython has a number of useful interactive
+features and a few things to be aware of for the new user.
 
 \subsubsection{String completion}
 
-Tab completion is enabled for all function names. If you type the
-first few letters of a function name, then type {\tt <TAB>} the
-function name will be auto completed if it is un-ambiguous, or a list
-of possibilities will be given. Auto-completion works for the user
-object names as well as function names. It does not work for
-filenames, nor for function arguments.
+\index{ipython!string completion}Tab completion is enabled for all
+function names. If you type the first few letters of a function name,
+then type {\tt <TAB>} the function name will be auto completed if it
+is un-ambiguous, or a list of possibilities will be
+given. Auto-completion works for the user object names as well as
+function names. It does not work for filenames, nor for function
+arguments.
 
 Example
 \begin{verbatim}
@@ -152,31 +158,33 @@ scans.set_cursor      scans.set_freqframe   scans.set_unit        scans.setpol
 scans.set_doppler     scans.set_instrument  scans.setbeam
 scans.set_fluxunit    scans.set_restfreqs   scans.setif
   ASAP> scans.set_in<TAB>
-  ASAP> scans.set_instrument
+  ASAP> scans.set_instrument()
 \end{verbatim}
 
 \subsubsection{Leading Spaces}
 
-Python uses leading space to mark blocks of code. This means that it
-you start a command line with a space, the command generally will
-fail with an syntax error.
+\index{ipython!leading space}Python uses leading space to mark blocks
+of code. This means that it you start a command line with a space, the
+command generally will fail with an syntax error.
 
 \subsubsection{Variable Names}
 
-During normal data processing, the user will have to create named
-variables to hold spectra etc. These must conform to the normal python
-syntax, specifically they cannot contain ``special'' characters such
-as \@ \$ etc and cannot start with a number (but can contain numbers).
-Variable (and function) names are case sensitive.
+\index{ipython!variable names}During normal data processing, the user
+will have to create named variables to hold spectra etc. These must
+conform to the normal python syntax, specifically they cannot contain
+``special'' characters such as \@ \$ etc and cannot start with a
+number (but can contain numbers).  Variable (and function) names are
+case sensitive.
 
 \subsubsection{Unix Interaction}
 
-Basic unix shell commands (\cmd{pwd}, \cmd{ls}, \cmd{cd} etc) can be
-issued from within ASAP. This allows the user to do things like look
-at files in the current directory. The shell command ``\cmd{cd}''
-works within ASAP, allowing the user to change between data
-directories. Unix programs cannot be run this way, but the shell
-escape ``$!$'' can be used to run arbitrary programs. E.g.
+\index{ipython!unix interaction}Basic unix shell commands (\cmd{pwd},
+\cmd{ls}, \cmd{cd} etc) can be issued from within ASAP. This allows
+the user to do things like look at files in the current directory. The
+shell command ``\cmd{cd}'' works within ASAP, allowing the user to
+change between data directories. Unix programs cannot be run this way,
+but the shell escape ``$!$'' can be used to run arbitrary
+programs. E.g.
 
 \begin{verbatim}
   ASAP> pwd
@@ -186,10 +194,11 @@ escape ``$!$'' can be used to run arbitrary programs. E.g.
 
 \subsection{Help}
 
-ASAP has built in help for all functions. To get a list of functions type:
+\index{Help}ASAP has built in help for all functions. To get a list of
+functions type:
 
 \begin{verbatim}
-  ASAP> commands
+  ASAP> commands()
 \end{verbatim}
 
 To get help on specific functions, the built in help needs to be given
@@ -217,13 +226,13 @@ invoked, which is probably {\em not} what you want. Type \verb+^+-d
 
 \subsection{Customisation - .asaprc}
 
-ASAP use an \cmd{.asaprc} file to control the user's preference of
-default values for various functions arguments. This includes the
-defaults for arguments such as \cmd{insitu}, scantable \cmd{freqframe}
-and the plotters \cmd{set\_mode} values. The help on individual
-functions says which arguments can be set default values from the
-\cmd{.asaprc} file. To get a sample contents for the \cmd{.asaprc}
-file use then command \cmd{list\_rcparameters}.
+\index{.asaprc}ASAP use an \cmd{.asaprc} file to control the user's
+preference of default values for various functions arguments. This
+includes the defaults for arguments such as \cmd{insitu}, scantable
+\cmd{freqframe} and the plotters \cmd{set\_mode} values. The help on
+individual functions says which arguments can be set default values
+from the \cmd{.asaprc} file. To get a sample contents for the
+\cmd{.asaprc} file use then command \cmd{list\_rcparameters}.
 
 Common values include:
 \begin{verbatim}
@@ -244,14 +253,14 @@ Common values include:
 For a complete list of \cmd{.asaprc} values, see the appendix.
 
 \section{Scantables}
-
+\index{Scantables}
 \subsection {Description}
 
 \subsubsection {Basic Structure}
 
-ASAP data handling works on objects called scantables.  A scantable
-holds your data, and also provides functions to operate
-upon it.
+\index{Scantable!structure}ASAP data handling works on objects called
+scantables.  A scantable holds your data, and also provides functions
+to operate upon it.
 
 The building block of a scantable is an integration, which is a single
 row of a scantable. Each row contains spectra for each beam, IF and
@@ -273,10 +282,11 @@ changed via the {\tt .asaprc} resource file.
 
 \subsubsection {Contents}
 
-A scantable has header information and data (a scantable is actually an AIPS++
-Table and it is stored in Memory when you are manipulating it with ASAP.
-You can store it to disk and then browse it with the AIPS++
-Table browser if you know how to do that !).
+\index{Scantable!contents}A scantable has header information and data
+(a scantable is actually an AIPS++ Table and it is stored in Memory
+when you are manipulating it with ASAP.  You can store it to disk and
+then browse it with the AIPS++ Table browser if you know how to do
+that !).
 
 The data are stored in columns (the length of a column is the number of
 rows/integrations of course).
@@ -296,15 +306,15 @@ more transparently handled.
 
 \subsection{Management}
 
-During processing it is possible to create a large number of scan
-tables. These all consume memory, so it is best to periodically remove
-unneeded scan tables. Use \cmd{list\_scans} to print a list of all
-scantables and \cmd{del} to remove unneeded ones.
+\index{Scantable!management}During processing it is possible to create
+a large number of scan tables. These all consume memory, so it is best
+to periodically remove unneeded scan tables. Use \cmd{list\_scans} to
+print a list of all scantables and \cmd{del} to remove unneeded ones.
 
 Example:
 
 \begin{verbatim}
-  ASAP> list_scans
+  ASAP> list_scans()
   The user created scantables are:
   ['s', 'scans', 'av', 's2', 'ss']
 
@@ -349,8 +359,8 @@ refer, is always listed.
 
 \subsection{State}
 
-Each scantable contains "state"; these are properties  applying to all
-of the data in the scantable.
+\index{Scantable!state}Each scantable contains "state"; these are
+properties applying to all of the data in the scantable.
 
 Examples are the selection of beam, IF and polarisation,  spectral unit
 (e.g. km/s), frequency reference frame (e.g. BARY) and velocity Doppler
@@ -390,9 +400,10 @@ Example usage:
 
 \subsubsection{Rest Frequency}
 
-ASAP reads the line rest frequency from the RPFITS file when reading
-the data. The values stored in the RPFITS file are not always correct
-and so there is a function \cmd{set\_restfreq} to set the rest frequencies.
+\index{Scantable!rest frequency}ASAP reads the line rest frequency
+from the RPFITS file when reading the data. The values stored in the
+RPFITS file are not always correct and so there is a function
+\cmd{set\_restfreq} to set the rest frequencies.
 
 For each integration, there is a rest-frequency per IF (the rest
 frequencies are just stored as a list with an index into them).
@@ -436,17 +447,18 @@ Examples:
 
 \subsection{Data Selection}
 
-Data selection is currently fairly limited. This will be improved in
-the future.
+\index{Scantable!data selection}Data selection is currently fairly limited. This
+will be improved in the future.
 
 
 \subsubsection{Cursor}
 
-Generally the user will want to run functions on all rows in a
-scantable. This allows very fast reduction of data. There are situations
-when functions should only operate on specific elements of the spectra. This
-is handled by the scantable cursor, which allows the user to select a
-single beam, IF and polarisation combination.
+\index{Scantable!cursor}Generally the user will want to run functions
+on all rows in a scantable. This allows very fast reduction of
+data. There are situations when functions should only operate on
+specific elements of the spectra. This is handled by the scantable
+cursor, which allows the user to select a single beam, IF and
+polarisation combination.
 
 Example :
 
@@ -457,28 +469,30 @@ Example :
 
 \subsubsection{Row number}
 
-Most functions work on all rows of a scan table. Exceptions are the
-fitter and plotter. If you wish to only operate on a selected set of
-scantable rows, use the \cmd{get\_scan} function to copy the rows into
-a new scantable.
+\index{Scantable!row selection}Most functions work on all rows of a
+scan table. Exceptions are the fitter and plotter. If you wish to only
+operate on a selected set of scantable rows, use the \cmd{get\_scan}
+function to copy the rows into a new scantable.
 
 \subsubsection{Allaxes}
 
-Many functions have an \cmd{allaxes} option which controls whether the
-function will operate on all elements within a scantable row, or just
-those selected with the current cursor. The default is taken from the
-users {\tt .asaprc} file.
+\index{allaxes}\index{Scantable!allaxes}Many functions have an
+\cmd{allaxes} option which controls whether the function will operate
+on all elements within a scantable row, or just those selected with
+the current cursor. The default is taken from the users {\tt .asaprc}
+file.
 
 \subsubsection{Masks}
 
-Many tasks (fitting, baseline subtraction, statistics etc) should only
-be run on range of channels. Depending on the current ``unit'' setting
-this range is set directly as channels, velocity or frequency
-ranges. Internally these are converted into a simple boolean mask for
-each channel of the abscissa. This means that if the unit setting is
-later changed, previously created mask are still valid. (This is not
-true for functions which change the shape or shift the frequency axis).
-You create masks with the function \cmd{create\_mask} and this specified
+\index{Masks}\index{Scantable!masks}Many tasks (fitting, baseline
+subtraction, statistics etc) should only be run on range of
+channels. Depending on the current ``unit'' setting this range is set
+directly as channels, velocity or frequency ranges. Internally these
+are converted into a simple boolean mask for each channel of the
+abscissa. This means that if the unit setting is later changed,
+previously created mask are still valid. (This is not true for
+functions which change the shape or shift the frequency axis).  You
+create masks with the function \cmd{create\_mask} and this specified
 the channels to be included in the selection.
 
 When setting the mask in velocity, the conversion from velocity
@@ -534,18 +548,18 @@ the middle of the band:
 
 \section{Data Input}
 
-Data can be loaded in one of two ways; using the reader object or via
+\index{Reading data}Data can be loaded in one of two ways; using the reader object or via
 the scantable constructor. The scantable method is simpler but the
 reader allow the user more control on what is read.
 
 \subsection{Scantable constructor}
 
-This loads all of the data from filename into the scantable object scans
-and averages all the data within a scan (i.e.  the resulting scantable
+\index{Scantable constructor}\index{Scantable!constructor}This loads
+all of the data from filename into the scantable object scans and
+averages all the data within a scan (i.e.  the resulting scantable
 will have one row per scan).  The recognised input file formats are
 RPFITS, SDFITS (singledish fits), ASAP's scantable format and aips++
 MeasurementSet2 format.
-
 
 Example usage:
 
@@ -559,21 +573,22 @@ Example usage:
 
 \subsection{Reader object}
 
-For more control when reading data into ASAP, the reader object should
-be used.  This has the option of only reading in a range of integrations
-and does not perform any scan averaging of the data, allowing analysis
-of the individual integrations.  Note that due to limitation of the
-RPFITS library, only one reader object can be open at one time reading
-RPFITS files.  To read multiple RPFITS files, the old reader must be
-destroyed before the new file is opened.  However, multiple readers can
-be created and attached to SDFITS files.
+\index{Reader object}\index{Scantable!reader object}For more control
+when reading data into ASAP, the reader object should be used.  This
+has the option of only reading in a range of integrations and does not
+perform any scan averaging of the data, allowing analysis of the
+individual integrations.  Note that due to limitation of the RPFITS
+library, only one reader object can be open at one time reading RPFITS
+files.  To read multiple RPFITS files, the old reader must be
+destroyed before the new file is opened.  However, multiple readers
+can be created and attached to SDFITS files.
 
 
 Example usage:
 
 \begin{verbatim}
   ASAP> r = reader('2003-03-16_082048_t0002.rpf')
-  ASAP> r.summary
+  ASAP> r.summary()
   ASAP> scan = r.read()
   ASAP> s = r.read(range(100)) # To read in the first 100 integrations
   ASAP> del r
@@ -590,11 +605,11 @@ default value from \cmd{True}.
 
 %How and when?
 \subsection{Auto quotient}
-Quotients can be computed ``automatically''. This requires the data to
-have matching source/reference pairs or one reference for multiple
-sources. Auto quotient assumes reference scans have a trailing ``\_R''
-in the source name for data from Parkes and Mopra, and a trailing
-``e'' or ``w'' for data fro, Tidbinbilla.
+\index{Auto quotient}Quotients can be computed ``automatically''. This
+requires the data to have matching source/reference pairs or one
+reference for multiple sources. Auto quotient assumes reference scans
+have a trailing ``\_R'' in the source name for data from Parkes and
+Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
 
 \begin{verbatim}
   ASAP> q = s.auto_quotient()
@@ -604,11 +619,11 @@ If this is not sufficient the following alternative method can be used.
 
 \subsection{Separate reference and source observations}
 
-Most data from ATNF observatories distinguishes on and off source data
-using the file name. This makes it easy to create two scantables with
-the source and reference data. As long as there was exactly one
-reference observation for each on source observation for following
-method will work.
+\index{Quotient spectra}Most data from ATNF observatories
+distinguishes on and off source data using the file name. This makes
+it easy to create two scantables with the source and reference
+data. As long as there was exactly one reference observation for each
+on source observation for following method will work.
 
 For Mopra and Parkes data:
 \begin{verbatim}
@@ -643,8 +658,9 @@ contribution, use the \cmd{preserve} argument:
 
 \subsection{Time average separate scans}
 
-If you have observed the source with multiple source/reference cycles you
-will want to scan-average the quotient spectra together.
+\index{Time average}If you have observed the source with multiple
+source/reference cycles you will want to scan-average the quotient
+spectra together.
 
 \begin{verbatim}
  ASAP> av = average_time(q)
@@ -672,10 +688,14 @@ channel range you want it to calculate the variance from.
  ASAP> av = average_time(scans, mask=msk, weight='var')
 \end{verbatim}
 
+Note that, if needed, you should run \cmd{freq\_align}, \cmd{gain\_el}
+and \cmd{opacity} before you average the data in time (\S
+\ref{sec:gainel} \& \ref{sec:freqalign}).
+
 \subsection{Baseline fitting}
 
-To make a baseline fit, you must first create a mask of channels to
-use in the baseline fit.
+\index{Baseline fitting}To make a baseline fit, you must first create
+a mask of channels to use in the baseline fit.
 
 \begin{verbatim}
  ASAP> msk = scans.create_mask([100,400],[600,900])
@@ -687,7 +707,7 @@ this polynomial from the full spectra.
 
 \subsubsection{Auto-baselining}
 
-The function \cmd{auto\_poly\_baseline} can be used to automatically
+\index{Auto-baseline}The function \cmd{auto\_poly\_baseline} can be used to automatically
 baseline your data without having to specify channel ranges for the
 line free data. It automatically figures out the line-free emission
 and fits a polynomial baseline to that data. The user can use masks to
@@ -723,7 +743,7 @@ Other examples:
 
 \subsection{Average the polarisations}
 
-If you are just interested in the highest SNR for total intensity you
+\index{average\_pol}If you are just interested in the highest SNR for total intensity you
 will want to average the parallel polarisations together.
 
 \begin{verbatim}
@@ -732,7 +752,7 @@ will want to average the parallel polarisations together.
 
 \subsection{Calibration}
 
-For most uses, calibration happens transparently as the input data
+\index{Calibration}For most uses, calibration happens transparently as the input data
 contains the Tsys measurements taken during observations. The nominal
 ``Tsys'' values may be in Kelvin or Jansky. The user may wish to
 supply a Tsys correction or apply gain-elevation and opacity
@@ -740,12 +760,13 @@ corrections.
 
 \subsubsection{Brightness Units}
 
-RPFITS files do not contain any information as to whether the telescope
-calibration was in units of Kelvin or Janskys.  On reading the data a
-default value is set depending on the telescope and frequency of
-observation.  If this default is incorrect (you can see it in the
-listing from the \cmd{summary} function) the user can either override
-this value on reading the data or later.  E.g:
+\index{Brightness Units}RPFITS files do not contain any information as
+to whether the telescope calibration was in units of Kelvin or
+Janskys.  On reading the data a default value is set depending on the
+telescope and frequency of observation.  If this default is incorrect
+(you can see it in the listing from the \cmd{summary} function) the
+user can either override this value on reading the data or later.
+E.g:
 
 \begin{verbatim}
   ASAP> scans = scantable(('2004-11-23_1841-P484.rpf', unit='Jy')
@@ -756,10 +777,10 @@ this value on reading the data or later.  E.g:
 
 \subsubsection{Tsys scaling}
 
-Sometime the nominal Tsys measurement at the telescope is wrong due to
-an incorrect noise diode calibration. This can easily be corrected for
-with the scale function. By default, \cmd{scale} only scans the
-spectra and not the corresponding Tsys.
+\index{Tsys scaling}Sometime the nominal Tsys measurement at the
+telescope is wrong due to an incorrect noise diode calibration. This
+can easily be corrected for with the scale function. By default,
+\cmd{scale} only scans the spectra and not the corresponding Tsys.
 
 \begin{verbatim}
   ASAP> scans.scale(1.05, tsys=True)
@@ -767,33 +788,40 @@ spectra and not the corresponding Tsys.
 
 \subsubsection{Unit Conversion}
 
-To convert measurements in Kelvin to Jy (and vice versa) the global
-function \cmd{convert\_flux} is needed. This converts and scales the data
-from K to Jy or vice-versa depending on what the current brightness unit is
-set to. The function knows the basic parameters for some frequencies
-and telescopes, but the user may need to supply the aperture
-efficiency, telescope diameter or the Jy/K factor.
+\index{Unit conversion}To convert measurements in Kelvin to Jy (and
+vice versa) the global function \cmd{convert\_flux} is needed. This
+converts and scales the data from K to Jy or vice-versa depending on
+what the current brightness unit is set to. The function knows the
+basic parameters for some frequencies and telescopes, but the user may
+need to supply the aperture efficiency, telescope diameter or the Jy/K
+factor.
 
 \begin{verbatim}
-  ASAP> scans.convert_flux                 # If efficency known
+  ASAP> scans.convert_flux()               # If efficency known
   ASAP> scans.convert_flux(eta=0.48)       # If telescope diameter known
   ASAP> scans.convert_flux(eta=0.48,d=35)  # Unknown telescope
   ASAP> scans.convert_flux(jypk=15)        # Alternative
 \end{verbatim}
 
 \subsubsection{Gain-Elevation and Opacity Corrections}
+\label{sec:gainel}
 
-As higher frequencies (particularly $>$20~GHz) it is important to make
-corrections for atmospheric opacity and gain-elevation effects.
+\index{Gain-elevation}As higher frequencies (particularly $>$20~GHz)
+it is important to make corrections for atmospheric opacity and
+gain-elevation effects.
 
-{\em Note that currently the elevation is not written correctly into
+Note that currently the elevation is not written correctly into
 Tidbinbilla rpfits files. This means that gain-elevation and opacity
-corrections will not work until a work around is implemented.}
+corrections will not work unless these get recalculated.
+
+\begin{verbatim}
+  ASAP> scans.recalc_azel()                # recalculate az/el based on pointing
+\end{verbatim}
 
 Gain-elevation curves for some telescopes and frequencies are known to
-ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases making
-gain-corrections is simple.  If the gain curve for your data is not
-known, the user can supply either a gain polynomial or text file
+ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases
+making gain-corrections is simple.  If the gain curve for your data is
+not known, the user can supply either a gain polynomial or text file
 tabulating gain factors at a range of elevations (see \cmd{help
 scantable.gain\_el}).
 
@@ -804,9 +832,9 @@ Examples:
   ASAP> scans.gain_el(poly=[3.58788e-1,2.87243e-2,-3.219093e-4])
 \end{verbatim}
 
-Opacity corrections can be made with the global function
-\cmd{opacity}. This should work on all telescopes as long as a
-measurement of the opacity factor was made during the observation.
+\index{Opacity}Opacity corrections can be made with the global
+function \cmd{opacity}. This should work on all telescopes as long as
+a measurement of the opacity factor was made during the observation.
 
 \begin{verbatim}
   ASAP> scans.opacity(0.083)
@@ -817,14 +845,15 @@ which takes opacity effects into account (to first order). ASAP
 opacity corrections should not be used for Mopra 3-mm data.
 
 \subsection{Frequency Frame Alignment}
+\label{sec:freqalign}
 
-When time averaging a series of scans together, it is possible that
-the velocity scales are not exactly aligned.  This may be for many
-reasons such as not Doppler tracking the observations, errors in the
-Doppler tracking etc.  This mostly affects very long integrations or
-integrations averaged together from different days.  Before averaging
-such data together, they should be frequency aligned using
-\cmd{freq\_align}.
+\index{Frequency alignment}\index{Velicity alignment}When time
+averaging a series of scans together, it is possible that the velocity
+scales are not exactly aligned.  This may be for many reasons such as
+not Doppler tracking the observations, errors in the Doppler tracking
+etc.  This mostly affects very long integrations or integrations
+averaged together from different days.  Before averaging such data
+together, they should be frequency aligned using \cmd{freq\_align}.
 
 E.g.:
 
@@ -862,11 +891,12 @@ scantable then using this time for the subsequent scantables.
 
 \section{Scantable manipulation}
 
-While it is very useful to have many independent sources within one
-scantable, it is often inconvenient for data processing. The
-\cmd{get\_scan} function can be used to create a new scantable with a
-selection of scans from a scantable. The selection can either be on
-the source name, with simple wildcard matching or set of scan ids.
+\index{Scantable!manipulation}While it is very useful to have many
+independent sources within one scantable, it is often inconvenient for
+data processing. The \cmd{get\_scan} function can be used to create a
+new scantable with a selection of scans from a scantable. The
+selection can either be on the source name, with simple wildcard
+matching or set of scan ids.
 
 For example:
 
@@ -897,13 +927,14 @@ changes made to \cmd{ss} are also seen in \cmd{scans}. To duplicate a
 scantable, use the copy function.
 
 \begin{verbatim}
-  ASAP> ss = scans.copy
+  ASAP> ss = scans.copy()
 \end{verbatim}
 
 \section{Data Output}
 
-ASAP can save scantables in a variety of formats, suitable for reading
-into other packages. The formats are:
+\index{Scantable!save}\index{Saving data}ASAP can save scantables in a
+variety of formats, suitable for reading into other packages. The
+formats are:
 
 \begin{itemize}
 \item[ASAP] This is the internal format used for ASAP. It is the only
@@ -944,7 +975,7 @@ Typical usages are:
 
 \section{Plotter}
 
-Scantable spectra can be plotted at any time. An asapplotter object is
+\index{Plotter}Scantable spectra can be plotted at any time. An asapplotter object is
 used for plotting, meaning multiple plot windows can be active at the
 same time. On start up a default asapplotter object is created called
 ``plotter''. This would normally be used for standard plotting.
@@ -987,14 +1018,15 @@ Other possibilities include:
 \subsection{Plot Selection}
 \label{sec:plotter_cursor}
 
-The plotter can plot up to 25 panels and stacked spectra per
-panel. If you have data larger than this (or for your own sanity) you
-need to select a subset of this data. This is particularly true for
-multibeam or multi IF data. The plotter \cmd{set\_cursor} function is
-used to select a subset of the data. The arguments \cmd{row},
-\cmd{beam} and \cmd{IF} all accept a vector of indices corresponding
-to row, beam or IF selection. Only the selected data will be plotted.
-To select on polarisation, see section~\ref{sec:polplot}.
+\index{Plotter!selection}The plotter can plot up to 25 panels and
+stacked spectra per panel. If you have data larger than this (or for
+your own sanity) you need to select a subset of this data. This is
+particularly true for multibeam or multi IF data. The plotter
+\cmd{set\_cursor} function is used to select a subset of the data. The
+arguments \cmd{row}, \cmd{beam} and \cmd{IF} all accept a vector of
+indices corresponding to row, beam or IF selection. Only the selected
+data will be plotted.  To select on polarisation, see
+section~\ref{sec:polplot}.
 
 Examples:
 
@@ -1017,9 +1049,9 @@ cursor.
 
 \subsection{Plot Control}
 
-The plotter window has a row of buttons on the lower left. These can
-be used to control the plotter (mostly for zooming the individual
-plots). From left to right:
+\index{Plotter!control}The plotter window has a row of buttons on the
+lower left. These can be used to control the plotter (mostly for
+zooming the individual plots). From left to right:
 
 \begin{itemize}
 
@@ -1040,6 +1072,9 @@ was previously.
        region. Use the plot history to unzoom again.
 
 \item[Save] (floppy disk). Save the plot as a postscript or .png file
+
+You can also type ``g'' in the plot window to toggle on and off grid
+lines. Typing 'l' turns on and off logarithmic Y-axis.
 
 \end{itemize}
 
@@ -1073,10 +1108,11 @@ To save a hardcopy of the current plot, use the save function, e.g.
 
 \section{Fitting}
 
-Currently multicomponent Gaussian function is available. This is done
-by creating a fitting object, setting up the fit and actually fitting
-the data. Fitting can either be done on a single scantable row/cursor
-selection or on an entire scantable using the \cmd{auto\_fit} function.
+\index{Fitting}Currently multicomponent Gaussian function is
+available. This is done by creating a fitting object, setting up the
+fit and actually fitting the data. Fitting can either be done on a
+single scantable row/cursor selection or on an entire scantable using
+the \cmd{auto\_fit} function.
 
 \begin{verbatim}
  ASAP> f = fitter()
@@ -1141,8 +1177,8 @@ Examples:
 
 \subsection{Fit saving}
 
-One you are happy with your fit, it is possible to store it as part of
-the scantable.
+\index{Fitter!Fit saving}One you are happy with your fit, it is
+possible to store it as part of the scantable.
 
 \begin{verbatim}
   ASAP> f.storefit()
@@ -1162,9 +1198,9 @@ screen.
 
 \section{Polarisation}
 
-Currently ASAP only supports polarmetric analysis on linearly
-polarised feeds and the cross polarisation products measured. Other
-cases will be added on an as needed basic.
+\index{Polarisation}Currently ASAP only supports polarmetric analysis
+on linearly polarised feeds and the cross polarisation products
+measured. Other cases will be added on an as needed basic.
 
 Conversions of linears to Stokes or Circular polarisations are done
 ``on-the-fly''. Leakage cannot be corrected for nor are these routines
@@ -1178,11 +1214,12 @@ correct handling of polarimetry. In the future we aim to define a
 general framework and populate the RPFITS files with the data required
 for transparent polarimetric calibration.}
 
-It is possible that there is a phase offset between polarisation which
-will effect the phase of the cross polarisation correlation, and so give
-rise to spurious polarisation. \cmd{rotate\_xyphase} can be used to
-correct for this error. At this point, the user must know how to
-determine the size of the phase offset themselves.
+\index{Polarisation!calibration}It is possible that there is a phase
+offset between polarisation which will effect the phase of the cross
+polarisation correlation, and so give rise to spurious
+polarisation. \cmd{rotate\_xyphase} can be used to correct for this
+error. At this point, the user must know how to determine the size of
+the phase offset themselves.
 
 \begin{verbatim}
   ASAP> scans.rotate_xyphase(10.5)            # Degrees
@@ -1207,12 +1244,13 @@ the corrections being applied because it is applied in-situ.
 \subsection{Plotting}
 \label{sec:polplot}
 
-To plot Stokes values, the plotter \cmd{set\_cursor} function should
-be called first using the \cmd{pol} argument. The values which can be
-plotted include a selection of [I,Q,U,V], [I, Plinear, Pangle, V],
-[RR, LL] or [XX, YY, Real(XY), Imaginary(XY)]. (Plinear and Pangle are
-the percentage and position angle of linear polarisation). Conversion
-to circular polarisations are currently not available.
+\index{Polarisation!plotting}To plot Stokes values, the plotter
+\cmd{set\_cursor} function should be called first using the \cmd{pol}
+argument. The values which can be plotted include a selection of
+[I,Q,U,V], [I, Plinear, Pangle, V], [RR, LL] or [XX, YY, Real(XY),
+Imaginary(XY)]. (Plinear and Pangle are the percentage and position
+angle of linear polarisation). Conversion to circular polarisations
+are currently not available.
 
 Example:
 
@@ -1228,9 +1266,9 @@ describe in section~\ref{sec:plotter_cursor}.
 
 \subsection{Saving}
 
-When saving data using the \cmd{save} function, the \cmd{stokes}
-argument can be used to save the data as Stoke values when saving in
-FITS format.
+\index{Polarisation!saving}When saving data using the \cmd{save}
+function, the \cmd{stokes} argument can be used to save the data as
+Stoke values when saving in FITS format.
 
 Example:
 
@@ -1241,10 +1279,11 @@ Example:
 
 \section{Scantable Mathematics}
 
-It is possible to to simple mathematics directly on scantables from
-the command line using the \cmd{+, -, *, /} operators as well as their
-cousins \cmd{+=, -= *=, /=}. This works between two scantables or a
-scantable and a float. (Note that it does not work for integers).
+\index{Scantable!maths}It is possible to to simple mathematics
+directly on scantables from the command line using the \cmd{+, -, *,
+/} operators as well as their cousins \cmd{+=, -= *=, /=}. This works
+between two scantables or a scantable and a float. (Note that it does
+not work for integers).
 
 \begin{verbatim}
   ASAP> sum = scan1+scan2
@@ -1254,12 +1293,13 @@ scantable and a float. (Note that it does not work for integers).
 
 \section{Scripting}
 
-Because asap is based on python, it easy for the user write their own
-scripts and functions to process data. This is highly recommended as
-most processing of user data could then be done in a couple of steps
-using a few simple user defined functions. A Python primer is beyond
-the scope of this userguide. See the asap home pages for a scripting
-tutorial or the main python website for comprehensive documentation.
+\index{Scripting}Because asap is based on python, it easy for the user
+write their own scripts and functions to process data. This is highly
+recommended as most processing of user data could then be done in a
+couple of steps using a few simple user defined functions. A Python
+primer is beyond the scope of this userguide. See the asap home pages
+for a scripting tutorial or the main python website for comprehensive
+documentation.
 
 \hspace{1cm} http://www.atnf.csiro.au/computing/software/asap/tutorials
 \hspace{1cm} http://www.python.org/doc/Introduction.html
@@ -1281,21 +1321,85 @@ used. The \cmd{execfile} function can be called from within this file.
 \section{Worked examples}
 
 In the following section a few examples of end-to-end processing of
-some data in asap are given. 
+some data in asap are given.
 
 \subsection{Mopra}
+\index{Mopra}
+
+The following example is of some dual polarisation, position switched
+data from Mopra. The source has been observed mulitple times split
+into a number of seperate rpfits files. To make the processing easier,
+the first step is to \cmd{cat} the seeprate rpfits files together and
+load as a whole (future versions of asap will make this unnecessary).
+
+
+\begin{verbatim}
+# Concatenate the individual rpfits files together before loading
+!cat 2005-06*.rpf > data.rpf
+
+# Load the data into a scantable
+data = scantable('data.rpf')
+print data
+
+# Form the quotient spectra
+q = data.auto_quotient()
+print q
+
+# Look at the spectra
+plotter.plot(q)
+
+# Velocity align the data before averaging
+q.set_unit('km/s')
+q.set_freqframe('LSRK')
+q.freq_align()
+
+# Average all scans in time
+av = q.average_time()
+plotter.plot(av)
+
+# Remove the baseline
+msk = av.create_mask([100,130],[160,200])
+av.poly_baseline(msk,2)
+
+# Average the two polarisations together
+iav = av.average_pol()
+print iav
+plotter.plot(iav)
+
+# Set a sensible velocity range on the plot
+plotter.set_range(85,200)
+
+# Smooth the data a little
+av.smooth('gauss',4)
+plotter.plot()
+
+# Fit a guassian to the emission
+f = fitter()
+f.set_function(gauss=1)
+f.set_scan(av)
+f.fit()
+
+# View the fit
+f.plot()
+
+# Get the fit parameters
+f.get_parameters()
+
+\end{verbatim}
+
 
 \subsection{Parkes Polarimetry}
 
-The following example is processing of some Parkes polarmetric
-observations of OH masers at 1.6~GHz. Because digital filters where
-used in the backend, the baselines are stable enough not to require a
-quotient spectra. The 4~MHz bandwidth is wide enough to observe both
-the 1665 and 1667~MHz OH maser transitions. Each source was observed
-once for about 10 minutes. Tsys information was not written to the
-rpfits file (a nominal 25K values was used), so the amplitudes need
-to be adjusted based on a separate log file. A simple user function is
-used to simplify this, contained in a file called mypol.py:
+\index{Parkes}\index{Polarisation}The following example is processing
+of some Parkes polarmetric observations of OH masers at
+1.6~GHz. Because digital filters where used in the backend, the
+baselines are stable enough not to require a quotient spectra. The
+4~MHz bandwidth is wide enough to observe both the 1665 and 1667~MHz
+OH maser transitions. Each source was observed once for about 10
+minutes. Tsys information was not written to the rpfits file (a
+nominal 25K values was used), so the amplitudes need to be adjusted
+based on a separate log file. A simple user function is used to
+simplify this, contained in a file called mypol.py:
 
 \begin{verbatim}
 def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
@@ -1316,9 +1420,9 @@ def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
 The typical asap session would be
 
 \begin{verbatim}
-  
+
 # Remind ourself the name of the rpfits files
-ls 
+ls
 
 # Load data from an rpfits file
 d1665 = scantable('2005-10-27_0154-P484.rpf')
@@ -1333,7 +1437,7 @@ d1665.set_freqframe('LSRK')
 # Correct for the known phase offset in the crosspol data
 d1665.rotate_xyphase(-4)
 
-# Create a copy of the data and set the rest frequency to the 1667 MHz 
+# Create a copy of the data and set the rest frequency to the 1667 MHz
 # transition
 d1667 = d1665.copy()
 d1667.set_restfreqs(lines=['OH1667'])
@@ -1382,14 +1486,15 @@ g351_7.save('junk7.asap')
 
 \subsection{Tidbinbilla}
 
-The following example is processing of some Tidbinbilla observations
-of NH$_3$ at 12~mm. Tidbinbilla has (at the time of observations) a
-single polarisation, but can process two IFs simultaneously. In the
-example, the first half of the observation was observing the (1,1) and
-(2,2) transitions simultaneously). The second half observed only the
-(4,4) transition due to bandwidth limitations. The data is position
-switched, observing first an reference to the west, then the source
-twice and finally reference to the east.
+\index{Tidbinbilla}The following example is processing of some
+Tidbinbilla observations of NH$_3$ at 12~mm. Tidbinbilla has (at the
+time of observations) a single polarisation, but can process two IFs
+simultaneously. In the example, the first half of the observation was
+observing the (1,1) and (2,2) transitions simultaneously). The second
+half observed only the (4,4) transition due to bandwidth
+limitations. The data is position switched, observing first an
+reference to the west, then the source twice and finally reference to
+the east.
 
 \begin{verbatim}
 
@@ -1409,7 +1514,7 @@ q.set_unit('km/s')
 g1 = q.get_scan(range(6))     # Rows 0..5
 g2 = q.get_scan(range(6,12))  # Rows 6..11
 
-# Align data in velocity 
+# Align data in velocity
 g1.freq_align(perif=True)
 g2.freq_align(perif=True)
 
@@ -1441,6 +1546,7 @@ plotter.plot()
 
 \subsection{Function Summary}
 
+\index{Functions!summary}%
 \begin{verbatim}
     [The scan container]
         scantable           - a container for integrations/scans
@@ -1457,6 +1563,9 @@ plotter.plot()
                               in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
+            get_azimuth     - get the azimuth of the scans
+            get_elevation   - get the elevation of the scans
+            get_parangle    - get the parallactic angle of the scans
             get_unit        - get the currnt unit
             set_unit        - set the abcissa unit to be used from this
                               point on
@@ -1496,6 +1605,8 @@ plotter.plot()
             smooth          - return the spectrally smoothed scan
             poly_baseline   - fit a polynomial baseline to all Beams/IFs/Pols
             auto_poly_baseline - automatically fit a polynomial baseline
+            recalc_azel     - recalculate azimuth and elevation based on
+                              the pointing
             gain_el         - apply gain-elevation correction
             opacity         - apply opacity correction
             convert_flux    - convert to and from Jy and Kelvin brightness
@@ -1580,7 +1691,7 @@ plotter.plot()
 
 \subsection{Installation}
 
-ASAP depends on a number of third-party libraries which you must
+\index{Installation}ASAP depends on a number of third-party libraries which you must
 have installed before attempting to build ASAP. These are:
 
 \begin{itemize}
@@ -1598,7 +1709,7 @@ Of the dependencies, AIPS++ is the most complex to install.
 \subsection{ASCII output format}
 
 \subsection{.asaprc settings}
-
+\index{.asaprc}
 \asaprc{verbose}{{\bf True}/False}{Print verbose output}
 
 \asaprc{insitu}{{\bf True}/False}{Apply operations on the input
@@ -1629,7 +1740,7 @@ points plotted by a factor of nchan/1024}
 
 % scantable
 \asaprc{scantable.save}{{\bf ASAP} SDFITS FITS ASCII MS2}{Default output
-format when saving} 
+format when saving}
 
 \asaprc{scantable.autoaverage}{{\bf True}/False}{Auto averaging on
 read}
@@ -1645,6 +1756,8 @@ not just the cursor location}
 
 \asaprc{scantable.verbosesummary}{True/{\bf False}}{Control the level
 of information printed by summary}
+
+\printindex
 
 \end{document}
 

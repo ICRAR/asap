@@ -92,6 +92,12 @@ void python_SDMemTable() {
     .def("_gettsys", &SDMemTableWrapper::getTsys)
     .def("_getsourcename", &SDMemTableWrapper::getSourceName,
          (boost::python::arg("whichRow")=0) )
+    .def("_getelevation", &SDMemTableWrapper::getElevation,
+         (boost::python::arg("whichRow")=0) )
+    .def("_getazimuth", &SDMemTableWrapper::getAzimuth,
+         (boost::python::arg("whichRow")=0) )
+    .def("_getparangle", &SDMemTableWrapper::getParAngle,
+         (boost::python::arg("whichRow")=0) )
     .def("_gettime", &SDMemTableWrapper::getTime,
          (boost::python::arg("whichRow")=0) )
     .def("_flag", &SDMemTableWrapper::flag,

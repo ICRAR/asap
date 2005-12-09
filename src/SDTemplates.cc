@@ -33,9 +33,9 @@
 #include <casa/aips.h>
 #include <casa/namespace.h>
 #include <casa/Exceptions/Error.cc>
-#include <casa/Exceptions/Error2.cc>
+//#include <casa/Exceptions/Error2.cc>
 #include <casa/Utilities/CountedPtr.cc>
-#include <casa/Utilities/CountedPtr2.cc>
+//#include <casa/Utilities/CountedPtr2.cc>
 
 namespace asap {
   template class casa::CountedConstPtr<SDMemTable>;
@@ -52,26 +52,16 @@ namespace asap {
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/Array.cc>
 #include <casa/Arrays/Vector.h>
-#include <casa/Arrays/Vector2.cc>
-#include <casa/Arrays/Vector.cc>
-#include <casa/Utilities/PtrHolder.cc>
 #include <casa/Utilities/BinarySearch.cc>
 #include <coordinates/Coordinates/FrequencyAligner.cc>
 #include <lattices/Lattices/Lattice.h>
 #include <lattices/Lattices/LatticeUtilities.cc>
-#include <scimath/Functionals/CompiledFunction.cc>
-#include <scimath/Functionals/CompiledParam.cc>
-#include <scimath/Mathematics/AutoDiff.h>
-#include <scimath/Mathematics/AutoDiffMath.h>
 #include <scimath/Mathematics/InterpolateArray1D.cc>
 #include <tables/Tables/BaseMappedArrayEngine.cc>
 
 template void convertArray<Bool, uChar>(Array<Bool> &, Array<uChar> const &);
 template void convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
-template LogicalArray operator!=<Float>(Array<Float> const &, Float const &);
-template LogicalArray operator==<Float>(Array<Float> const &, Float const &);
-template LogicalArray operator><Float>(Array<Float> const &, Float const &);
-template LogicalArray operator>=<Float>(Array<Float> const &, Float const &);
+
 template Array<Float>& operator/=<Float>(Array<Float>&, MaskedArray<Float> const&);
 template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Float const&);
 template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Array<Float> const&);
@@ -89,26 +79,11 @@ template Float stddev<Float>(MaskedArray<Float> const&);
 template Float median<Float>(MaskedArray<Float> const&, Bool, Bool);
 template Float sumsquares<Float>(MaskedArray<Float> const&);
 template Float avdev<Float>(MaskedArray<Float> const&);
-template class CompiledFunction<AutoDiff<Float> >;
-template class CompiledParam<AutoDiff<Float> >;
 
-template class Vector<Vector<Int> >;
-template class Vector<Vector<Bool> >;
-template class Vector<Vector<String> >;
-template Vector<Bool>::Vector(const vector<bool> &);
-template Vector<Int>::Vector(const vector<int> &);
-template Vector<Float>::Vector(const vector<float> &);
-template Vector<Double>::Vector(const vector<double> &);
-template void Array<float>::tovector(vector<float> &) const;
-template void Array<Bool>::tovector(vector<bool> &) const;
-template void Array<Double>::tovector(vector<double> &) const;
-template void Array<Int>::tovector(vector<int> &) const;
-template void Array<std::complex<float> >::reference(const Array<std::complex<float> >&);
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
-template class PtrHolder<Lattice<Float> >;
+
 template class FrequencyAligner<Float>;
-template class InterpolateArray1D<Double, Float>;
-template Int binarySearchBrackets<Vector<Double>,Double>(Bool &, Vector<Double> const &, Double const &, uInt, Int);
+
 template class BaseMappedArrayEngine<Float, Float>;
 
 #include "MathUtils2.cc"

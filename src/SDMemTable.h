@@ -146,6 +146,11 @@ public:
                                 casa::Bool refBeam=casa::False) const;
 
   std::string getSourceName(casa::Int whichRow=0) const;
+
+  float getElevation(casa::Int whichRow=0) const;
+  float getAzimuth(casa::Int whichRow=0) const;
+  float getParAngle(casa::Int whichRow=0) const;
+
   double getInterval(casa::Int whichRow=0) const;
 
   virtual void setSpectrum(std::vector<float> spectrum, int whichRow=0);

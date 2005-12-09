@@ -1,49 +1,80 @@
 TARGET   := /tmp/_asap.so
+
+
+# the casa environment AIPSPATH has to be defined
+CASAROOT  := $(word 1, $(AIPSPATH))
+CASAARCH  := $(word 2, $(AIPSPATH))
+CASAINC   := -I$(CASAROOT)/code/include -I$(CASAROOT)/code/casa
+CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
+
+
+# the compiler
 ifndef CXX
    CXX      := g++
 endif
+
+# compiler flags
 CXXFLAGS := -O3 -fPIC
-CXXFLAGS += -ansi
-CXXFLAGS += -pedantic -Wno-long-long
+CXXFLAGS += -ansi -pedantic -Wno-long-long
 CXXOPTS := -DAIPS_NO_TEMPLATE_SRC
 
-CFITSIOROOT := /usr/local If aips++ is build with LFS you need to have
+# darwin specific flags
+ifeq "$(CASAARCH)" "darwin"
+   CXXFLAGS := -O2 -DAIPS_DARWIN
+   CXXFLAGS += -ansi -pedantic -Wno-long-long -Wno-long-double
+endif
+
+
+# cfitsio
+CFITSIOROOT := /usr/local
+# If aips++ is build with LFS you need to have
 # libcfitsio with lfs support
-CFITSIOLIB := /usr/local/lib/libcfitsio_lfs.a
-#CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
+CFITSIOINC := -I$(CFITSIOROOT)/include
+CFITSIOLIB := $(CFITSIOROOT)/lib/libcfitsio_lfs.a
 #CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
 
-
-CASAROOT  := $(word 1, $(AIPSPATH))
-CASAARCH  := $(word 2, $(AIPSPATH))
-CASAINC   := -I$(CASAROOT)/code/include -I$(CASAROOT)/code/casa/wcslib
-CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
-
+#rpfits
+RPFITSROOT := /usr/local
+RPFITSLIB := $(RPFITSROOT)/lib/librpfits.a
 
 # This assumes all casa libs are static only (*.a)
 # if not than there might by symbol resolution errors.
 CASAPPLIB := $(CASALIB)/version.o \
-             -L$(CASALIB) -static \
+             -L$(CASALIB) \
 	     -latnf -limages -lms -lcomponents -lcoordinates \
 	     -llattices -lfits -lmeasures -lmeasures_f \
 	     -ltables -lscimath -lscimath_f -lcasa  \
 	     $(CASALIB)/libwcs.a \
-	      -lrpfits $(CFITSIOLIB) -dy -llapack -lblas -lg2c
+	     $(RPFITSLIB) $(CFITSIOLIB) -lg2c -lstdc++
 
+# darwin specific CASA flags
+ifeq "$(CASAARCH)" "darwin"
+   CASAPPLIB += -framework vecLib
+else
+   CASAPPLIB += -llapack -lblas
+endif
+
+# the linker
 LD        := $(CXX)
-LDFLAGS   := -shared -Wl$(TARGET) -s
 
+LDFLAGS   := -shared -Wl$(TARGET) -s
+ifeq "$(CASAARCH)" "darwin"
+   LDFLAGS   := -dynamiclib -single_module
+endif
+
+# python only 2.3 has been tested
 PYVERSION := 2.3
 PYTHONROOT := /usr
 PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
 PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION) 
 
-
+# has to be build with same g++ version as casa
 BOOSTROOT := /usr
 BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python
 BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
 
+# DO NOT MODIFY AFTER THIS
 INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 

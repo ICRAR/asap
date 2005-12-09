@@ -137,6 +137,16 @@ public:
     return table_->getSourceName(whichRow);
   }
 
+  float getElevation(int whichRow=0) {
+    return table_->getElevation(whichRow);
+  }
+  float getAzimuth(int whichRow=0) {
+    return table_->getAzimuth(whichRow);
+  }
+  float getParAngle(int whichRow=0) {
+    return table_->getParAngle(whichRow);
+  }
+
   void setSpectrum(std::vector<float> spectrum, int whichRow=0) {
       table_->setSpectrum(spectrum, whichRow);
   }
