@@ -267,7 +267,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '1.2.1'
+__version__  = '2.0a'
 
 if rcParams['verbose']:
     def list_scans(t = scantable):
