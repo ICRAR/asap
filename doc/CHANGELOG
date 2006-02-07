@@ -1,4 +1,23 @@
 Changelog
+=========
+
+(Release 1.2.2)
+
+* channel based flagging
+* Added get_elevation, azimuth and parangle
+* Added swap_pol & invert_phase
+* added allaxes arg to poly_baseline
+* Request: added pager throuput for history and summary
+* Request: Log meesage on auto_quotient()
+* Bug Fix: plotter -set_mode("s","i").
+* Bug fix: plotter -autoscale abcissa limits from all spectra for stacking.
+
+Release Version 1.2.1 [2005-12-06]
+
+* scantable.recalc_azel - recalcualte azimuth and elevation based on
+* pointing Bug fix: plotter - set_layout got overwritten byt plot; row
+  cursor not honoured in _plot_time
+
 
 Release Version 1.2 [2005-11-30]
 
@@ -7,7 +26,7 @@ Code changes
 * frequency switching: scantable.freq_switch()
 * get a list of sourcenames: scantable.get_sourcename()
 * build quotients from matched _S/_R pairs or 1*_R/n*_S automatically
-* plotting control: plotter.set_colors(), plotter.set_linestyles(), 
+* plotting control: plotter.set_colors(), plotter.set_linestyles(),
   plotter.set_linewidth() all also  via .asaprc parameters
 * non-interactive (non-GUI) plotting
 * ASAP Online (Mopra) Monitor web interface (mini pipeline)
@@ -15,13 +34,13 @@ Code changes
 * histogram plotting: part of linestyles
 * plugins: via ~/.asap/userfuncs.py
 * plotter panel control: rcParams['plotter.ganged']
-* usability: reworked the whole asap startup scripts, now all user adjustable 
+* usability: reworked the whole asap startup scripts, now all user adjustable
   through ~/.asap/
 
 Todos/pending
 --------------
 * documentation update: should be finished by 2005-11-25
-* cookbook 
+* cookbook
 * release 1.2:  2005-11-30
 
 Major non-targets, resulting from requirements/targets
