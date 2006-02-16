@@ -40,11 +40,11 @@ RPFITSLIB := $(RPFITSROOT)/lib/librpfits.a
 # if not than there might by symbol resolution errors.
 CASAPPLIB := $(CASALIB)/version.o \
              -L$(CASALIB) \
-	     -latnf -limages -lms -lcomponents -lcoordinates \
-	     -llattices -lfits -lmeasures -lmeasures_f \
-	     -ltables -lscimath -lscimath_f -lcasa  \
-	     $(CASALIB)/libwcs.a \
-	     $(RPFITSLIB) $(CFITSIOLIB) -lg2c -lstdc++
+             -latnf -limages -lms -lcomponents -lcoordinates \
+             -llattices -lfits -lmeasures -lmeasures_f \
+             -ltables -lscimath -lscimath_f -lcasa  \
+             $(CASALIB)/libwcs.a \
+             $(RPFITSLIB) $(CFITSIOLIB) -lg2c -lstdc++
 
 # darwin specific CASA flags
 ifeq "$(CASAARCH)" "darwin"
@@ -65,7 +65,7 @@ endif
 PYVERSION := 2.3
 PYTHONROOT := /usr
 PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
-PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION) 
+PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION)
 
 # has to be build with same g++ version as casa
 BOOSTROOT := /usr
@@ -79,41 +79,41 @@ LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
              MathUtils2.o \
-	     SDLog.o \
+             SDLog.o \
              SDAttr.o \
              SDContainer.o \
              Scantable.o \
-             ScantableFiller.o \
-             SDTemplates.o \
-	     STMath.o \
-	     STSubTable.o \
-	     STMolecules.o \
-	     STTcal.o \
-	     STFocus.o \
-	     STWeather.o \
-	     STFrequencies.o \
-	     RowAccumulator.o \
-	     STSelector.o 
-PYOBJECTS := 
+             STFiller.o \
+             STTemplates.o \
+             STMath.o \
+             STSubTable.o \
+             STMolecules.o \
+             STTcal.o \
+             STFocus.o \
+             STWeather.o \
+             STFrequencies.o \
+             RowAccumulator.o \
+             STSelector.o
+PYOBJECTS :=
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 
 HEADERS   := MathUtils.h \
-	     SDLog.h \
+             SDLog.h \
              SDAttr.h \
              SDContainer.h \
              Scantable.h \
-             ScantableFiller.h \
-	     STMath.h \
-	     RowAccumulator.h \
-	     STSubTable.h \
-	     STMolecules.h \
-	     STTcal.h \
-	     STFocus.h \
-	     STWeather.h \
-	     STFrequencies.h \
-	     SDDefs.h \
-	     STSelector.h
+             STFiller.h \
+             STMath.h \
+             RowAccumulator.h \
+             STSubTable.h \
+             STMolecules.h \
+             STTcal.h \
+             STFocus.h \
+             STWeather.h \
+             STFrequencies.h \
+             SDDefs.h \
+             STSelector.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
@@ -122,19 +122,19 @@ MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
 
 .cpp.o:
 	-@ echo
-	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	  $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .cc.o:
 	-@ echo
-	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	  $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .cxx.o:
 	-@ echo
-	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	  $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 .C.o:
 	-@ echo
-	   $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
+	  $(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $@ $<
 
 
 .PHONY : all clean objects realclean relink
@@ -147,7 +147,7 @@ objects : $(OBJECTS)
 
 $(TARGET) : $(OBJECTS)
 	-@ echo
-	   $(LD) $(LDFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+	  $(LD) $(LDFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
 
@@ -163,4 +163,4 @@ realclean : clean cleanso
 
 test: tFiller.o objects
 	-@ echo
-	   $(LD) -g -o /tmp/tFiller $(OBJECTS) $(LIBS) tFiller.o
+	  $(LD) -g -o /tmp/tFiller $(OBJECTS) $(LIBS) tFiller.o
