@@ -1,35 +1,16 @@
-//#---------------------------------------------------------------------------
-//# SDReader.h: A class to read single dish spectra from SDFITS, RPFITS
-//#---------------------------------------------------------------------------
-//# Copyright (C) 2004
-//# ATNF
-//#
-//# This program is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU General Public License as published by the Free
-//# Software Foundation; either version 2 of the License, or (at your option)
-//# any later version.
-//#
-//# This program is distributed in the hope that it will be useful, but
-//# WITHOUT ANY WARRANTY; without even the implied warranty of
-//# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-//# Public License for more details.
-//#
-//# You should have received a copy of the GNU General Public License along
-//# with this program; if not, write to the Free Software Foundation, Inc.,
-//# 675 Massachusetts Ave, Cambridge, MA 02139, USA.
-//#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: Malte.Marquarding@csiro.au
-//#        Postal address: Malte Marquarding,
-//#                        Australia Telescope National Facility,
-//#                        P.O. Box 76,
-//#                        Epping, NSW, 2121,
-//#                        AUSTRALIA
-//#
-//# $Id:
-//#---------------------------------------------------------------------------
-#ifndef SDREADER_H
-#define SDREADER_H
+//
+// C++ Interface: STFiller
+//
+// Description:
+//
+//
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+//
+#ifndef STFILLER_H
+#define STFILLER_H
 
 #include <vector>
 #include <string>
@@ -40,7 +21,7 @@
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/Vector.h>
 
-#include "SDMemTable.h"
+#include "Scantable.h"
 #include "SDContainer.h"
 #include "SDLog.h"
 
@@ -48,46 +29,65 @@ class PKSreader;
 
 namespace asap {
 
-class SDReader : public SDLog {
+/**
+This class fills a Scantable from external data formats using the PKSReader class.
+
+@author   Malte Marquarding
+@date     2006/01/16
+@version  2.0a
+*/
+class STFiller : public SDLog {
 public:
-  SDReader();
-  SDReader(const std::string& filename, 
-           int whichIF=-1, int whichBeam=-1);
-  SDReader(casa::CountedPtr<SDMemTable> tbl);
-  virtual ~SDReader();
 
-  void open(const std::string& filename,
-            int whichIF=-1,
-            int whichBeam=-1);
-  void close();
-  int read(const std::vector<int>& seq);
+  STFiller();
 
-  casa::CountedPtr<SDMemTable> getTable() const { return table_;}
-
-  void reset();
-
-  std::vector<int> pseudoHeader() const {
-    std::vector<int> v;
-    v.push_back(nBeam_);v.push_back(nIF_);
-    v.push_back(nPol_);v.push_back(nChan_);
-    return v;
-  }
+  STFiller(casa::CountedPtr< Scantable > stbl);
 
 
-protected:
-  
+  /**
+    * A constructor for a filler with associated input file
+    * @param filename the input file (rpf,sdfite or ms)
+    * @param whichIF read a specific IF only (default -1 means all IFs)
+    * @param whichBeam read a specific beam only (default -1 means all beams)
+    */
+  STFiller( const std::string& filename, int whichIF=-1,
+                  int whichBeam=-1 );
+
+  ~STFiller();
+
+  /**
+   * associate the Filler with a file on disk
+   * @param filename the input file (rpf,sdfite or ms)
+   * @param whichIF read a specific IF only (default -1 means all IFs)
+   * @param whichBeam read a specific beam only (default -1 means all beams)
+   * @exception AipsError Creation of PKSreader failed
+   */
+  void open( const std::string& filename, int whichIF=-1, int whichBeam=-1 );
+
+  /**
+   * detatch from file
+   */
+  void close( );
+
+  /**
+   * Read in "rows" from the source file attached with open()
+   * @return a status flag passed on by PKSreader
+   */
+  int read( );
+
+  casa::CountedPtr<Scantable> getTable() const { return table_;}
+
 private:
-  casa::Int nBeam_,nIF_,nPol_,nChan_;
-  PKSreader* reader_;  
+
+  PKSreader* reader_;
   SDHeader* header_;
-  SDFrequencyTable* frequencies_;
-  casa::CountedPtr<SDMemTable> table_;
   casa::String filename_;
-  casa::uInt cursor_;
-  casa::Double timestamp_;
-  casa::uInt beamOffset_, ifOffset_;
+  casa::CountedPtr< Scantable > table_;
+  casa::Int nIF_, nBeam_, nPol_, nChan_;
+  casa::uInt ifOffset_, beamOffset_;
   casa::Bool haveXPol_;
 };
 
-}// namespace
+} // namespace
+
 #endif

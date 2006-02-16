@@ -1,33 +1,14 @@
-//#---------------------------------------------------------------------------
-//# SDReader.cc: A class to read single dish spectra from SDFITS, RPFITS
-//#---------------------------------------------------------------------------
-//# Copyright (C) 2004
-//# ATNF
-//#
-//# This program is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU General Public License as published by the Free
-//# Software Foundation; either version 2 of the License, or (at your option)
-//# any later version.
-//#
-//# This program is distributed in the hope that it will be useful, but
-//# WITHOUT ANY WARRANTY; without even the implied warranty of
-//# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-//# Public License for more details.
-//#
-//# You should have received a copy of the GNU General Public License along
-//# with this program; if not, write to the Free Software Foundation, Inc.,
-//# 675 Massachusetts Ave, Cambridge, MA 02139, USA.
-//#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: Malte.Marquarding@csiro.au
-//#        Postal address: Malte Marquarding,
-//#                        Australia Telescope National Facility,
-//#                        P.O. Box 76,
-//#                        Epping, NSW, 2121,
-//#                        AUSTRALIA
-//#
-//# $Id:
-//#---------------------------------------------------------------------------
+//
+// C++ Implementation: STFiller
+//
+// Description:
+//
+//
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+//
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
 
@@ -35,73 +16,65 @@
 #include <casa/OS/Path.h>
 #include <casa/OS/File.h>
 #include <casa/Quanta/Unit.h>
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Utilities/Regex.h>
+
+#include <casa/Containers/RecordField.h>
+
+#include <tables/Tables/TableRow.h>
+
 #include <atnf/PKSIO/PKSreader.h>
 
-#include "SDReader.h"
 #include "SDDefs.h"
 #include "SDAttr.h"
 
-using namespace casa;
-using namespace asap;
+#include "STFiller.h"
 
-SDReader::SDReader() :
+using namespace casa;
+
+namespace asap {
+
+STFiller::STFiller() :
   reader_(0),
   header_(0),
-  frequencies_(0),
-  table_(new SDMemTable()),
-  haveXPol_(False)
+  table_(0)
 {
-  cursor_ = 0;
 }
-SDReader::SDReader(const std::string& filename,
-                   int whichIF, int whichBeam) :
+
+STFiller::STFiller( CountedPtr< Scantable > stbl ) :
   reader_(0),
   header_(0),
-  frequencies_(0),
-  table_(new SDMemTable()),
-  haveXPol_(False)
+  table_(stbl)
 {
-  cursor_ = 0;
+}
+
+STFiller::STFiller(const std::string & filename,
+                                 int whichIF, int whichBeam ) :
+  reader_(0),
+  header_(0),
+  table_(0)
+{
   open(filename, whichIF, whichBeam);
 }
 
-SDReader::SDReader(CountedPtr<SDMemTable> tbl) :
-  reader_(0),
-  header_(0),
-  table_(tbl),
-  haveXPol_(False)
+STFiller::~STFiller()
 {
-  cursor_ = 0;
+  close();
 }
 
-SDReader::~SDReader() {
-  if (reader_) delete reader_;
-  if (header_) delete header_;
-  if (frequencies_) delete frequencies_;
-}
-
-void SDReader::reset() {
-  cursor_ = 0;
-  table_ = new SDMemTable();
-  open(filename_,ifOffset_, beamOffset_);
-}
-
-
-void SDReader::close() {
-  //cerr << "disabled" << endl;
-}
-
-void SDReader::open(const std::string& filename,
-                    int whichIF, int whichBeam) {
-  if (reader_) delete reader_; reader_ = 0;
-  Bool   haveBase, haveSpectra;
+void STFiller::open( const std::string & filename,
+                            int whichIF, int whichBeam )
+{
+  if (table_.null()) table_ = new Scantable();
+  if (reader_)  { delete reader_; reader_ = 0; }
+  Bool haveBase, haveSpectra;
 
   String inName(filename);
   Path path(inName);
   inName = path.expandedName();
 
   File file(inName);
-  if (!file.exists()) {
+  if ( !file.exists() ) {
      throw(AipsError("File does not exist"));
   }
   filename_ = inName;
@@ -109,9 +82,9 @@ void SDReader::open(const std::string& filename,
   // Create reader and fill in values for arguments
   String format;
   Vector<Bool> beams;
-  if ((reader_ = getPKSreader(inName, 0, False, format, beams, nIF_,
+  if ( (reader_ = getPKSreader(inName, 0, 0, format, beams, nIF_,
                               nChan_, nPol_, haveBase, haveSpectra,
-                              haveXPol_)) == 0)  {
+                              haveXPol_)) == 0 )  {
     throw(AipsError("Creation of PKSreader failed"));
   }
   if (!haveSpectra) {
@@ -123,7 +96,7 @@ void SDReader::open(const std::string& filename,
 
   nBeam_ = beams.nelements();
   // Get basic parameters.
-  if (haveXPol_) {
+  if ( haveXPol_ ) {
     pushLog("Cross polarization present");
     nPol_ += 2;                          // Convert Complex -> 2 Floats
   }
@@ -144,14 +117,16 @@ void SDReader::open(const std::string& filename,
   if (status) {
     delete reader_;
     reader_ = 0;
+    delete header_;
+    header_ = 0;
     throw(AipsError("Failed to get header."));
-    return;
   }
   if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
     pushLog("Header indicates frequency switched observation.\n"
                "setting # of IFs = 1 ");
     nIF_ = 1;
+    header_->obstype = String("fswitch");
   }
 
   // Determine Telescope and set brightness unit
@@ -165,7 +140,7 @@ void SDReader::open(const std::string& filename,
 
   header_->nif = nIF_;
   header_->epoch = "UTC";
-
+  // *** header_->frequnit = "Hz"
   // Apply selection criteria.
 
   Vector<Int> ref;
@@ -175,42 +150,51 @@ void SDReader::open(const std::string& filename,
   ifOffset_ = 0;
   if (whichIF>=0) {
     if (whichIF>=0 && whichIF<nIF_) {
-       IFsel = False;
-       IFsel(whichIF) = True;
-       header_->nif = 1;
-       nIF_ = 1;
-       ifOffset_ = whichIF;
+      IFsel = False;
+      IFsel(whichIF) = True;
+      header_->nif = 1;
+      nIF_ = 1;
+      ifOffset_ = whichIF;
     } else {
-       throw(AipsError("Illegal IF selection"));
+      delete reader_;
+      reader_ = 0;
+      delete header_;
+      header_ = 0;
+      throw(AipsError("Illegal IF selection"));
     }
   }
 
   beamOffset_ = 0;
   if (whichBeam>=0) {
-     if (whichBeam>=0 && whichBeam<nBeam_) {
-        beamSel = False;
-        beamSel(whichBeam) = True;
-        header_->nbeam = 1;
-        nBeam_ = 1;
-        beamOffset_ = whichBeam;
-     } else {
-       throw(AipsError("Illegal Beam selection"));
-     }
+    if (whichBeam>=0 && whichBeam<nBeam_) {
+      beamSel = False;
+      beamSel(whichBeam) = True;
+      header_->nbeam = 1;
+      nBeam_ = 1;
+      beamOffset_ = whichBeam;
+    } else {
+      delete reader_;
+      reader_ = 0;
+      delete header_;
+      header_ = 0;
+      throw(AipsError("Illegal Beam selection"));
+    }
   }
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol_);
   table_->putSDHeader(*header_);
-
-  if (frequencies_) delete frequencies_;
-  frequencies_ = new SDFrequencyTable();
-  frequencies_->setRefFrame(header_->freqref);
-  frequencies_->setBaseRefFrame(header_->freqref);
-  frequencies_->setRestFrequencyUnit("Hz");
-  frequencies_->setEquinox(header_->equinox);
 }
 
-int SDReader::read(const std::vector<int>& seq) {
+void STFiller::close( )
+{
+  delete reader_;reader_=0;
+  delete header_;header_=0;
+  table_ = 0;
+}
+
+int asap::STFiller::read( )
+{
   int status = 0;
 
   Int    beamNo, IFno, refBeam, scanNo, cycleNo;
@@ -225,100 +209,126 @@ int SDReader::read(const std::vector<int>& seq) {
   Matrix<uChar>   flagtra;
   Complex         xCalFctr;
   Vector<Complex> xPol;
-  uInt n = seq.size();
-
-
-  uInt stepsize = header_->nif*header_->nbeam;
-  uInt seqi = 0;
-  Bool getAll = False;
-
-  if (seq[n-1] == -1) getAll = True;
-  while ( (cursor_ <= seq[n-1]) || getAll) {
-    // only needs to be create if in seq
-    SDContainer sc(header_->nbeam,header_->nif,header_->npol,header_->nchan);
-    // iterate over one correlator integration cycle = nBeam*nIF
-    for (uInt row=0; row < stepsize; row++) {
-      // stepsize as well
-      // spectra(nChan,nPol)!!!
-      status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
-                             srcName, srcDir, srcPM, srcVel, IFno, refFreq,
-                             bandwidth, freqInc, restFreq, tcal, tcalTime,
-                             azimuth, elevation, parAngle, focusAxi,
-                             focusTan, focusRot, temperature, pressure,
-                             humidity, windSpeed, windAz, refBeam,
-                             beamNo, direction, scanRate,
-                             tsys, sigma, calFctr, baseLin, baseSub,
-                             spectra, flagtra, xCalFctr, xPol);
-
-      // Make sure beam/IF numbers are 0-relative - dealing with
-      // possible IF or Beam selection
-      beamNo = beamNo - beamOffset_ - 1;
-      IFno = IFno - ifOffset_ - 1;
-
-      if (status) {
-        if (status == -1) {
-          // EOF.
-          if (row > 0 && row < stepsize-1)
-            pushLog("incomplete scan data.\n Probably means not all Beams/IFs/Pols within a scan are present.");
-
-          // flush frequency table
-          table_->putSDFreqTable(*frequencies_);
-          return status;
-        }
-      }
-      // if in the given list
-      if (cursor_ == seq[seqi] || getAll) {
-        // add integration cycle
-        if (row==0) {
-          //add invariant info: scanNo, mjd, interval, fieldName,
-          //srcName, azimuth, elevation, parAngle, focusAxi, focusTan,
-          //focusRot, temperature, pressure, humidity, windSpeed,
-          //windAz  srcDir, srcPM, srcVel
-          sc.timestamp = mjd;
-          sc.interval = interval;
-          sc.sourcename = srcName;
-          sc.fieldname = fieldName;
-          sc.azimuth = azimuth;
-          sc.elevation = elevation;
-        }
-        // add specific info
-        // refPix = nChan/2+1 in  1-rel Integer arith.!
-        Int refPix = header_->nchan/2;       // 0-rel
-        uInt freqID = frequencies_->addFrequency(refPix, refFreq, freqInc);
-        uInt restFreqID = frequencies_->addRestFrequency(restFreq);
-
-        sc.setFrequencyMap(freqID, IFno);
-        sc.setRestFrequencyMap(restFreqID, IFno);
-
-        sc.tcal[0] = tcal[0];sc.tcal[1] = tcal[1];
-        sc.tcaltime = tcalTime;
-        sc.parangle = parAngle;
-        sc.refbeam = -1; //nbeams == 1
-        if (nBeam_ > 1) // circumvent a bug "asap0000" in read which
-                        // returns a random refbema number on multiple
-                        // reads
-          sc.refbeam = refBeam-1;//make it 0-based;
-        sc.scanid = scanNo-1;//make it 0-based
-        if (haveXPol_) {
-           sc.setSpectrum(spectra, xPol, beamNo, IFno);
-           sc.setFlags(flagtra,  beamNo, IFno, True);
-        } else {
-           sc.setSpectrum(spectra, beamNo, IFno);
-           sc.setFlags(flagtra,  beamNo, IFno, False);
-        }
-        sc.setTsys(tsys, beamNo, IFno, haveXPol_);
-        sc.setDirection(direction, beamNo);
-      }
+  while ( status == 0 ) {
+    status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
+                          srcName, srcDir, srcPM, srcVel, IFno, refFreq,
+                          bandwidth, freqInc, restFreq, tcal, tcalTime,
+                          azimuth, elevation, parAngle, focusAxi,
+                          focusTan, focusRot, temperature, pressure,
+                          humidity, windSpeed, windAz, refBeam,
+                          beamNo, direction, scanRate,
+                          tsys, sigma, calFctr, baseLin, baseSub,
+                          spectra, flagtra, xCalFctr, xPol);
+    if ( status != 0 ) break;
+    TableRow row(table_->table());
+    TableRecord& rec = row.record();
+    RecordFieldPtr<uInt> scanoCol(rec, "SCANNO");
+    *scanoCol = scanNo-1;
+    RecordFieldPtr<uInt> cyclenoCol(rec, "CYCLENO");
+    *cyclenoCol = cycleNo-1;
+    RecordFieldPtr<Double> mjdCol(rec, "TIME");
+    *mjdCol = mjd;
+    RecordFieldPtr<Double> intCol(rec, "INTERVAL");
+    *intCol = interval;
+    RecordFieldPtr<String> srcnCol(rec, "SRCNAME");
+    RecordFieldPtr<Int> srctCol(rec, "SRCTYPE");
+    // try to auto-identify if it is on or off.
+    Regex rx(".*_[e|w|R]$");
+    Regex rx2("_[e|w|R|S]$");
+    Int match = srcName.matches(rx);
+    if (match) {
+      *srcnCol = srcName;
+    } else {
+      *srcnCol = srcName.before(rx2);
     }
+    //*srcnCol = srcName;//.before(rx2);
+    *srctCol = match;
+    RecordFieldPtr<uInt> beamCol(rec, "BEAMNO");
+    *beamCol = beamNo-beamOffset_-1;
+    RecordFieldPtr<Int> rbCol(rec, "REFBEAMNO");
+    Int rb = -1;
+    if (nBeam_ > 1 ) rb = refBeam-1;
+    *rbCol = rb;
+    RecordFieldPtr<uInt> ifCol(rec, "IFNO");
+    *ifCol = IFno-ifOffset_- 1;
+    uInt id;
+    /// @todo this has to change when nchan isn't global anymore
+    id = table_->frequencies().addEntry(Double(header_->nchan/2),
+                                            refFreq, freqInc);
+    RecordFieldPtr<uInt> mfreqidCol(rec, "FREQ_ID");
+    *mfreqidCol = id;
 
-    if (cursor_ == seq[seqi] || getAll) {
-      // insert container into table/list
-      table_->putSDContainer(sc);
-      seqi++;// next in list
+    id = table_->molecules().addEntry(restFreq);
+    RecordFieldPtr<uInt> molidCol(rec, "MOLECULE_ID");
+    *molidCol = id;
+
+    id = table_->tcal().addEntry(tcalTime, tcal);
+    RecordFieldPtr<uInt> mcalidCol(rec, "TCAL_ID");
+    *mcalidCol = id;
+    id = table_->weather().addEntry(temperature, pressure, humidity,
+                                    windSpeed, windAz);
+    RecordFieldPtr<uInt> mweatheridCol(rec, "WEATHER_ID");
+    *mweatheridCol = id;
+    RecordFieldPtr<uInt> mfocusidCol(rec, "FOCUS_ID");
+    id = table_->focus().addEntry(focusAxi, focusTan, focusRot);
+    *mfocusidCol = id;
+    RecordFieldPtr<Array<Double> > dirCol(rec, "DIRECTION");
+    *dirCol = direction;
+    RecordFieldPtr<Double> azCol(rec, "AZIMUTH");
+    *azCol = azimuth;
+    RecordFieldPtr<Double> elCol(rec, "ELEVATION");
+    *elCol = elevation;
+
+    RecordFieldPtr<Float> parCol(rec, "PARANGLE");
+    *parCol = parAngle;
+
+    RecordFieldPtr< Array<Float> > specCol(rec, "SPECTRA");
+    RecordFieldPtr< Array<uChar> > flagCol(rec, "FLAGTRA");
+    RecordFieldPtr< uInt > polnoCol(rec, "POLNO");
+
+    RecordFieldPtr< Array<Float> > tsysCol(rec, "TSYS");
+    // Turn the (nchan,npol) matrix and possible complex xPol vector
+    // into 2-4 rows in the scantable
+    Vector<Float> tsysvec(1);
+    // Why is spectra.ncolumn() == 3 for haveXPol_ == True
+    uInt npol = (spectra.ncolumn()==1 ? 1: 2);
+    for ( uInt i=0; i< npol; ++i ) {
+      tsysvec = tsys(i);
+      *tsysCol = tsysvec;
+      *polnoCol = i;
+
+      *specCol = spectra.column(i);
+      *flagCol = flagtra.column(i);
+      table_->table().addRow();
+      row.put(table_->table().nrow()-1, rec);
     }
-    cursor_++;// increment position in file
-
+    if ( haveXPol_ ) {
+      // no tsys given for xpol, so emulate it
+      tsysvec = sqrt(tsys[0]*tsys[1]);
+      *tsysCol = tsysvec;
+      // add real part of cross pol
+      *polnoCol = 2;
+      Vector<Float> r(real(xPol));
+      *specCol = r;
+      // make up flags from linears
+      /// @fixme this has to be a bitwise or of both pols
+      *flagCol = flagtra.column(0);// | flagtra.column(1);
+      table_->table().addRow();
+      row.put(table_->table().nrow()-1, rec);
+      // ad imaginary part of cross pol
+      *polnoCol = 3;
+      Vector<Float> im(imag(xPol));
+      *specCol = im;
+      table_->table().addRow();
+      row.put(table_->table().nrow()-1, rec);
+    }
   }
-  table_->putSDFreqTable(*frequencies_);
+  if (status > 0) {
+    close();
+    throw(AipsError("Reading error occured, data possibly corrupted."));
+  }
+
   return status;
 }
+
+}//namespace asap
