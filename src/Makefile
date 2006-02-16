@@ -1,6 +1,5 @@
 TARGET   := /tmp/_asap.so
 
-
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(AIPSPATH))
 CASAARCH  := $(word 2, $(AIPSPATH))
@@ -14,7 +13,7 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS := -O3 -fPIC
+CXXFLAGS := -fPIC -g
 CXXFLAGS += -ansi -pedantic -Wno-long-long
 CXXOPTS := -DAIPS_NO_TEMPLATE_SRC
 
@@ -83,50 +82,38 @@ CCOBJECTS := MathUtils.o \
 	     SDLog.o \
              SDAttr.o \
              SDContainer.o \
-	     SDFitTable.o \
-             SDPol.o \
-             SDPol2.o \
-             SDMemTable.o \
-             SDReader.o \
-             SDWriter.o \
-             SDMath.o \
-             SDFitter.o \
+             Scantable.o \
+             ScantableFiller.o \
              SDTemplates.o \
-             SDMathWrapper.o \
-             SDFITSImageWriter.o \
-             SDAsciiWriter.o \
-	     SDLineFinder.o 
-PYOBJECTS := python_SDMemTable.o \
-             python_SDReader.o \
-             python_SDWriter.o \
-             python_SDMath.o \
-             python_SDFitter.o \
-             python_SDFitTable.o \
-	     python_SDLineFinder.o \
-	     python_SDLog.o \
-             python_SD.o
+	     STMath.o \
+	     STSubTable.o \
+	     STMolecules.o \
+	     STTcal.o \
+	     STFocus.o \
+	     STWeather.o \
+	     STFrequencies.o \
+	     RowAccumulator.o \
+	     STSelector.o 
+PYOBJECTS := 
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 
-HEADERS   := SDDefs.h \
+HEADERS   := MathUtils.h \
+	     SDLog.h \
              SDAttr.h \
              SDContainer.h \
-	     SDFitTable.h \
-             SDMemTable.h \
-             SDPol.h \
-             SDReader.h \
-             SDWriter.h \
-             SDMath.h \
-             SDFitter.h \
-             SDMemTableWrapper.h \
-             SDMathWrapper.h \
-             SDReaderWrapper.h \
-             SDWriterWrapper.h \
-             SDFITSImageWriter.h \
-             SDAsciiWriter.h \
-	     SDLineFinder.h \
-	     SDLog.h \
-             python_SD.h
+             Scantable.h \
+             ScantableFiller.h \
+	     STMath.h \
+	     RowAccumulator.h \
+	     STSubTable.h \
+	     STMolecules.h \
+	     STTcal.h \
+	     STFocus.h \
+	     STWeather.h \
+	     STFrequencies.h \
+	     SDDefs.h \
+	     STSelector.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
@@ -173,3 +160,7 @@ cleanso :
 	-rm -f $(TARGET)
 
 realclean : clean cleanso
+
+test: tFiller.o objects
+	-@ echo
+	   $(LD) -g -o /tmp/tFiller $(OBJECTS) $(LIBS) tFiller.o
