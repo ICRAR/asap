@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDWriter.h: ASAP class to write out single dish spectra.
+//# STWriter.h: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -28,8 +28,8 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef SDWRITER_H
-#define SDWRITER_H
+#ifndef STWRITER_H
+#define STWRITER_H
 
 #include <string>
 
@@ -45,10 +45,10 @@ class PKSwriter;
 
 namespace asap {
 
-class SDWriter : public SDLog {
+class STWriter : public SDLog {
 public:
-  SDWriter(const string &format = "SDFITS");
-  ~SDWriter();
+  STWriter(const string &format = "SDFITS");
+  ~STWriter();
 
 // Format can be "SDFITS", "FITS", "MS2" or "ASCII"
 // Stokes conversion available for FITS and ASCII at present
@@ -57,6 +57,10 @@ public:
             const string &filename, casa::Bool toStokes);
 
 private:
+  void polConversion( casa::Matrix<casa::Float>& spec,
+                      casa::Matrix<casa::Float>& flag,
+                      casa::Vector<casa::Complex>& xpol,
+                      const Table& tab);
   std::string     cFormat;
   PKSwriter *cWriter;
 };

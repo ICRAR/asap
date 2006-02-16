@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDWriter.cc: ASAP class to write out single dish spectra.
+//# STWriter.cc: ASAP class to write out single dish spectra.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -48,7 +48,7 @@
 
 #include "SDContainer.h"
 #include "SDMemTable.h"
-#include "SDWriter.h"
+#include "STWriter.h"
 #include "SDFITSImageWriter.h"
 #include "SDAsciiWriter.h"
 #include "SDPol.h"
@@ -56,11 +56,11 @@
 using namespace casa;
 using namespace asap;
 
-//--------------------------------------------------------- SDWriter::SDWriter
+//--------------------------------------------------------- STWriter::STWriter
 
 // Default constructor.
 
-SDWriter::SDWriter(const std::string &format)
+STWriter::STWriter(const std::string &format)
 {
   cFormat = format;
 //
@@ -79,22 +79,22 @@ SDWriter::SDWriter(const std::string &format)
   }
 }
 
-//-------------------------------------------------------- SDWriter::~SDWriter
+//-------------------------------------------------------- STWriter::~STWriter
 
 // Destructor.
 
-SDWriter::~SDWriter()
+STWriter::~STWriter()
 {
    if (cWriter) {
      delete cWriter;
    }
 }
 
-//-------------------------------------------------------- SDWriter::setFormat
+//-------------------------------------------------------- STWriter::setFormat
 
 // Reset the output format.
 
-Int SDWriter::setFormat(const std::string &format)
+Int STWriter::setFormat(const std::string &format)
 {
   if (format != cFormat) {
     if (cWriter) delete cWriter;
@@ -117,12 +117,12 @@ Int SDWriter::setFormat(const std::string &format)
   return 0;
 }
 
-//------------------------------------------------------------ SDWriter::write
+//------------------------------------------------------------ STWriter::write
 
 // Write an SDMemTable to file in the desired format, closing the file when
 // finished.
 
-Int SDWriter::write(const CountedPtr<SDMemTable> in,
+Int STWriter::write(const CountedPtr<SDMemTable> in,
                     const std::string &filename, Bool toStokes)
 {
 
@@ -179,137 +179,146 @@ Int SDWriter::write(const CountedPtr<SDMemTable> in,
     throw(AipsError("Failed to create output file"));
   }
 
-  Int scanNo = -1;
-  Int cycleNo;
-  Double mjd0 = 0.0;
-//
+  Vector<Double>  srcPM(2, 0.0);
+  Double          srcVel = 0.0;
+
   Array<Float> spectra, tSys, stokes;
   Array<uChar> flags;
   Bool doLinear = True;
-//
+
+  String          fieldName, srcName, tcalTime;
+  Vector<Float>   calFctr, sigma, tcal, tsys;
+  Vector<Double>  direction(2), scanRate(2), srcDir(2), srcPM(2,0.0);
+  Matrix<Float>   spectra;
+  Matrix<uChar>   flagtra;
+  Complex         xCalFctr;
   Int count = 0;
-  for (Int iRow = 0; iRow < in->nRow(); iRow++) {
-    // Extract the next integration from the table.
-    SDContainer sd = in->getSDContainer(iRow);
-    if (sd.scanid != scanNo) {
-      scanNo = sd.scanid;
-      mjd0 = sd.timestamp;
-      cycleNo = 1;
-    } else if (fabs(sd.timestamp-mjd0) > sd.interval) {
-      cycleNo++;
-    }
+  Int scanno = 1;
+  // use spearate iterators to ensure renumbering of all numbers
+  TableIterator scanit(table, "SCANNO");
+  while (!scanit.pastEnd() ) {
+    Table stable = scanit.table();
+    TableIterator beamit(table, "BEAMNO");
+    Int beamno = 1;
+    while (!beamit.pastEnd() ) {
+      Table btable = beamit.table();
+      TableIterator ifit(btable, "IFNO");
+      Int ifno = 1;
+      while (!ifit.pastEnd() ) {
+        Table itable = ifit.table();
+        TableIterator cycit(itable, "CYCLENO");
+        Int cycno = 1;
+        while (!cycit.pastEnd() ) {
+          Table ctable = cycit.table();
+          TableRow row(ctable);
+          // use the first row to fill in all the "metadata"
+          const TableRecord& rec = row.record(0);
+          ROArrayColumn<Float> specCol(ctable, "SPECTRA");
+          uInt nchan = specCol(0).nelements();
+          Double cdelt,crval,crpix, restfreq;
+          String tmp,tmp2;
+          in->frequencies().getEntry(crpix,crval,cdelt, rec.asuInt("FREQ_ID"));
+          in->molecules().getEntry(restfreq,tmp,tmp2,rec.asuInt("RESTFREQ_ID"));
+          Double pixel = Double(nchan/2);
+          Double refFreqNew = (pixel-crpix)*cdelt + crval;
+          // ok, now we have nrows for the n polarizations in this table
+          Matrix<Float> specs;
+          Matrix<uChar> flags;
+          Vector<Complex> xpol;
+          polConversion(specs, flags, xpol, ctable);
+          // dummy data
+          uInt nPol = specs.ncolumns();
+          Matrix<Float>   baseLin(npol,2, 0.0f);
+          Matrix<Float>   baseSub(npol,9, 0.0f);
+          Complex         xCalFctr;
+          Vector<Double>  scanRate(2, 0.0);
+          Vector<Float>   sigma(npol, 0.0f);
+          Vector<Float>   calFctr(npol, 0.0f);
 
-    // Get FreqID vector
-    freqIDCol.get(iRow, freqIDs);
 
-    // Get Stokes array (all beams/IFs/Stokes).  Its not in SDContainer
-    if (toStokes) {
-       stokes = in->getStokesSpectrum(iRow,-1,-1);
-    }
+          if (status = cWriter->write(scano, cycno, rec.asDouble("TIME"),
+                                      rec.asDouble("INTERVAL"),
+                                      rec.asString("FIELDNAME"),
+                                      rec.asString("SRCNAME"),
+                                      direction ,//
+                                      srcPM, srcVel, // not in scantable yet
+                                      ifno,
+                                      refFreqNew, nchan*abs(cdelt), cdelt,
+                                      restfreq,
+                                      tcal,//
+                                      tcaltime,//
+                                      rec.asFloat("AZIMUTH"),
+                                      rec.asFloat("ELEVATION"),
+                                      rec.asFloat("PARANGLE"),
+                                      focusAxi, focusTan, focusRot,//
+                                      temperature,//
+                                      pressure, humidity, windSpeed, windAz,//
+                                      rec.asInt("REFBEAM"), beamno,
+                                      direction,//
+                                      scanRate,// not in scantable
+                                      tSys, //
+                                      sigma, calFctr,// not in scantable
+                                      baseLin, baseSub,// not in scantable
+                                      specs, flags,
+                                      xCalFctr,//
+                                      xpol)
+                                      ) {
+            cerr << "Error writing output file." << endl;
+            return 1;
+          }
 
-    IPosition start(asap::nAxes,0);
-    IPosition end(stokes.shape()-1);
-
-    // Write it out beam by beam.
-    for (Int iBeam = 0; iBeam < hdr.nbeam; iBeam++) {
-       start(asap::BeamAxis) = iBeam;
-       end(asap::BeamAxis) = iBeam;
-
-      // Write it out IF by IF.
-      for (Int iIF = 0; iIF < hdr.nif; iIF++) {
-        start(asap::IFAxis) = iIF;
-        end(asap::IFAxis) = iIF;
-        uInt freqID = freqIDs(iIF);
-
-        // None of these are stored in SDMemTable by SDReader.
-        //String          fieldName = "";
-        //Vector<Double>  srcDir(2, 0.0);
-        Vector<Double>  srcPM(2, 0.0);
-        Double          srcVel = 0.0;
-
-// The writer will assume refPix = nChan/2 (0-rel).  So recompute
-// the frequency at this location. 
-
-        Double          cdelt = sdft.increment(freqID);
-        Double          crval = sdft.referenceValue(freqID);
-        Double          crpix = sdft.referencePixel(freqID);
-        Double          pixel = nChan/2;
-        Double          refFreqNew = (pixel-crpix)*cdelt + crval;
-//
-        //Vector<Float>   tcal(2, 0.0f);
-        //String          tcalTime = "";
-        //Float           azimuth = 0.0f;
-        //Float           elevation = 0.0f;
-        //Float           parAngle = 0.0f;
-        Float           focusAxi = 0.0f;
-        Float           focusTan = 0.0f;
-        Float           focusRot = 0.0f;
-        Float           temperature = 0.0f;
-        Float           pressure = 0.0f;
-        Float           humidity = 0.0f;
-        Float           windSpeed = 0.0f;
-        Float           windAz = 0.0f;
-        //Int             refBeam = 0;
-        //Vector<Double>  direction(2, 0.0);
-        Vector<Double>  scanRate(2, 0.0);
-        Vector<Float>   sigma(nPol, 0.0f);
-        Vector<Float>   calFctr(nPol, 0.0f);
-        Matrix<Float>   baseLin(nPol,2, 0.0f);
-        Matrix<Float>   baseSub(nPol,9, 0.0f);
-        Complex         xCalFctr;
-        Vector<Complex> xPol;
-
-// Get data.  
-
-        if (toStokes) {
-
-// Big pain in the ass because
-//  1) Stokes vector may have less polarizations than input
-//  2) Stokes column virtual and not in SDContainer
-//  3) Tsys and FLags already selected for IF and Beam 
-//  3) Have to flip order
-
-           Array<Float> t = sd.getTsys(iBeam,iIF);
-           tSys = SDPolUtil::computeStokesTSysForWriter (t, doLinear);
-           Array<uChar> t2 = sd.getFlags(iBeam,iIF);
-           flags = SDPolUtil::computeStokesFlagsForWriter (t2, doLinear);
-           spectra = SDPolUtil::extractStokesForWriter (stokes,start,end);
-        } else {
-           tSys = sd.getTsys(iBeam,iIF);
-           flags = sd.getFlags(iBeam,iIF);
-           spectra = sd.getSpectrum(iBeam,iIF);        
+          ++cycno;
+          ++cycit;
         }
-//
-        if (status = cWriter->write(sd.scanid+1, cycleNo, sd.timestamp,
-                                    sd.interval, sd.fieldname, sd.sourcename,
-                                    sd.getDirection(iBeam),
-                                    srcPM, srcVel, iIF+1, refFreqNew,
-                                    nChan*abs(cdelt), cdelt, restFreq, sd.tcal,
-                                    sd.tcaltime, sd.azimuth, sd.elevation, 
-				    sd.parangle,
-                                    focusAxi, focusTan, focusRot, temperature,
-                                    pressure, humidity, windSpeed, windAz,
-                                    sd.refbeam, iBeam+1,
-                                    sd.getDirection(iBeam),
-                                    scanRate,
-                                    tSys, sigma, calFctr,
-                                    baseLin, baseSub,
-                                    spectra, flags,
-                                    xCalFctr, xPol)) {
-          cerr << "Error writing output file." << endl;
-          return 1;
-        }
-
-        count++;
+        ++ifno;
+        ++ifit;
       }
+      ++beamno;
+      ++beamit;
     }
+    ++scanno;
+    ++scanit;
   }
   ostringstream oss;
-  oss << "SDWriter: wrote " << count << " rows to " << filename << endl;
+  oss << "STWriter: wrote " << count << " rows to " << filename << endl;
   pushLog(String(oss));
   cWriter->close();
 
   return 0;
 }
 
-
+void STWriter::polConversion( Matrix< Float >& specs, Matrix< Float >& flags,
+                              Vector< Complex > & xpol, const Table & tab )
+{
+  TableRow row(tab);
+  String poltype = tab.keywordSet().asString("POLTYPE");
+  if ( poltype != "linear")
+    String msg = "poltype = " + poltype + " not yet supported in output.";
+    throw(AipsError("msg"));
+  // use the first row to fill in all the "metadata"
+  const TableRecord& rec = row.record(0);
+  ROArrayColumn<Float> specCol(ctable, "SPECTRA");
+  ROArrayColumn<uChar> flagCol(ctable, "FLAGTRA");
+  uInt nchan = specCol(0).nelements();
+  uInt ncols = ( ctable.nrow()==1 ? 1: 2 );
+  specs.resize(nchan, ncols);
+  flags.resize(nchan, ncols);
+  // the linears
+  for (uInt i=0; i<ncols; ++i) {
+    specs.column(i) = specCol(i);
+    flags.column(i) = flagCol(i);
+  }
+  // now the complex if exists
+  Vector<Complex> xpol;
+  Bool hasxpol = False;
+  xpol.resize();
+  if ( ctable.nrow() == 4 ) {
+    hasxpol = True;
+    xpol.resize(nchan);
+    Vector<Float> reals, imags;
+    reals = specCol(2); imags = specCol(3);
+    for (uInt k=0; k < nchan; ++k) {
+  `   xpol[k] = Complex(reals[k], imags[k]);
+    }
+  }
+}
