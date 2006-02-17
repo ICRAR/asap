@@ -36,12 +36,11 @@
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include <SDMemTable.h>
-#include <SDMemTableWrapper.h>
-
-#include <SDLog.h>
+#include "SDLog.h"
+#include "Scantable.h"
 
 class PKSwriter;
+class casa::Table;
 
 namespace asap {
 
@@ -53,14 +52,16 @@ public:
 // Format can be "SDFITS", "FITS", "MS2" or "ASCII"
 // Stokes conversion available for FITS and ASCII at present
   casa::Int setFormat(const string &format = "SDFITS");
-  casa::Int write(const casa::CountedPtr<SDMemTable> table,
-            const string &filename, casa::Bool toStokes);
+  casa::Int write(const casa::CountedPtr<Scantable> table,
+            const string &filename);
 
 private:
+  casa::Vector<casa::Float> tsysFromTable(const casa::Table& tab);
+
   void polConversion( casa::Matrix<casa::Float>& spec,
-                      casa::Matrix<casa::Float>& flag,
+                      casa::Matrix<casa::uChar>& flag,
                       casa::Vector<casa::Complex>& xpol,
-                      const Table& tab);
+                      const casa::Table& tab);
   std::string     cFormat;
   PKSwriter *cWriter;
 };

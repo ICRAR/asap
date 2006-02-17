@@ -41,29 +41,24 @@
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
 
+#include <tables/Tables/Table.h>
+#include <tables/Tables/TableIter.h>
+#include <tables/Tables/TableRow.h>
 #include <tables/Tables/ArrayColumn.h>
 
-
-
-
+//#include "SDFITSImageWriter.h"
+//#include "STAsciiWriter.h"
+//#include "SDPol.h"
 #include "SDContainer.h"
-#include "SDMemTable.h"
+
 #include "STWriter.h"
-#include "SDFITSImageWriter.h"
-#include "SDAsciiWriter.h"
-#include "SDPol.h"
 
 using namespace casa;
-using namespace asap;
-
-//--------------------------------------------------------- STWriter::STWriter
-
-// Default constructor.
+namespace asap {
 
 STWriter::STWriter(const std::string &format)
 {
   cFormat = format;
-//
   String t(cFormat);
   t.upcase();
   if (t== "MS2") {
@@ -79,10 +74,6 @@ STWriter::STWriter(const std::string &format)
   }
 }
 
-//-------------------------------------------------------- STWriter::~STWriter
-
-// Destructor.
-
 STWriter::~STWriter()
 {
    if (cWriter) {
@@ -90,16 +81,12 @@ STWriter::~STWriter()
    }
 }
 
-//-------------------------------------------------------- STWriter::setFormat
-
-// Reset the output format.
-
 Int STWriter::setFormat(const std::string &format)
 {
   if (format != cFormat) {
     if (cWriter) delete cWriter;
   }
-//
+
   cFormat = format;
   String t(cFormat);
   t.upcase();
@@ -117,58 +104,39 @@ Int STWriter::setFormat(const std::string &format)
   return 0;
 }
 
-//------------------------------------------------------------ STWriter::write
-
-// Write an SDMemTable to file in the desired format, closing the file when
-// finished.
-
-Int STWriter::write(const CountedPtr<SDMemTable> in,
-                    const std::string &filename, Bool toStokes)
+Int STWriter::write(const CountedPtr<Scantable> in,
+                    const std::string &filename)
 {
 
 // Image FITS
 
   if (cFormat=="FITS") {
-     Bool verbose = True;
-     SDFITSImageWriter iw;
-     if (iw.write(*in, filename, verbose, toStokes)) {
-        return 0;
-     } else {
-        return 1;
-     }
+//      Bool verbose = True;
+//      SDFITSImageWriter iw;
+//      if (iw.write(*in, filename, verbose)) {
+//         return 0;
+//      } else {
+//         return 1;
+//      }
   } else if (cFormat=="ASCII") {
-     SDAsciiWriter iw;
-     if (iw.write(*in, filename, toStokes)) {
+     /*SDAsciiWriter iw;
+     if (iw.write(*in, filename)) {
         return 0;
      } else {
         return 1;
-     }
+     }*/
   }
 
-// MS or SDFITS
+  // MS or SDFITS
 
   // Extract the header from the table.
   SDHeader hdr = in->getSDHeader();
   const Int nPol  = hdr.npol;
   const Int nChan = hdr.nchan;
 
-// Get Freq table
-
-  SDFrequencyTable sdft = in->getSDFreqTable();
-  Vector<Double> restFreqs;
-  String restFreqUnit;
-  sdft.restFrequencies(restFreqs, restFreqUnit);
-  Double restFreq = 0.0;
-  if (restFreqs.nelements()>0) {
-     Quantum<Double> rF(restFreqs(0), Unit(restFreqUnit));
-     restFreq = rF.getValue(Unit("Hz"));
-  }
-
-// Table columns
-
   const Table table = in->table();
-  ROArrayColumn<uInt> freqIDCol(table, "FREQID");
-  Vector<uInt> freqIDs;
+//   ROArrayColumn<uInt> freqIDCol(table, "FREQ_ID");
+//   Vector<uInt> freqIDs;
 
   // Create the output file and write static data.
   Int status;
@@ -179,12 +147,7 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
     throw(AipsError("Failed to create output file"));
   }
 
-  Vector<Double>  srcPM(2, 0.0);
   Double          srcVel = 0.0;
-
-  Array<Float> spectra, tSys, stokes;
-  Array<uChar> flags;
-  Bool doLinear = True;
 
   String          fieldName, srcName, tcalTime;
   Vector<Float>   calFctr, sigma, tcal, tsys;
@@ -202,6 +165,9 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
     Int beamno = 1;
     while (!beamit.pastEnd() ) {
       Table btable = beamit.table();
+      // position only varies by beam
+      MDirection::ScalarColumn dirCol(btable, "DIRECTION");
+      Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
       TableIterator ifit(btable, "IFNO");
       Int ifno = 1;
       while (!ifit.pastEnd() ) {
@@ -212,13 +178,20 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
           Table ctable = cycit.table();
           TableRow row(ctable);
           // use the first row to fill in all the "metadata"
-          const TableRecord& rec = row.record(0);
+          const TableRecord& rec = row.get(0);
           ROArrayColumn<Float> specCol(ctable, "SPECTRA");
           uInt nchan = specCol(0).nelements();
           Double cdelt,crval,crpix, restfreq;
-          String tmp,tmp2;
+          Float focusAxi, focusTan, focusRot,
+                temperature, pressure, humidity, windSpeed, windAz;
+          Vector<Float> tcalval;
+          String tmp,tmp2, tcalt;
           in->frequencies().getEntry(crpix,crval,cdelt, rec.asuInt("FREQ_ID"));
           in->molecules().getEntry(restfreq,tmp,tmp2,rec.asuInt("RESTFREQ_ID"));
+          in->tcal().getEntry(tcalt,tcalval,rec.asuInt("TCAL_ID"));
+          in->weather().getEntry(temperature, pressure, humidity,
+                                 windSpeed, windAz,
+                                 rec.asuInt("WEATHER_ID"));
           Double pixel = Double(nchan/2);
           Double refFreqNew = (pixel-crpix)*cdelt + crval;
           // ok, now we have nrows for the n polarizations in this table
@@ -226,8 +199,9 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
           Matrix<uChar> flags;
           Vector<Complex> xpol;
           polConversion(specs, flags, xpol, ctable);
+          Vector<Float> tsys = tsysFromTable(ctable);
           // dummy data
-          uInt nPol = specs.ncolumns();
+          uInt npol = specs.ncolumn();
           Matrix<Float>   baseLin(npol,2, 0.0f);
           Matrix<Float>   baseSub(npol,9, 0.0f);
           Complex         xCalFctr;
@@ -236,27 +210,27 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
           Vector<Float>   calFctr(npol, 0.0f);
 
 
-          if (status = cWriter->write(scano, cycno, rec.asDouble("TIME"),
+          if (status = cWriter->write(scanno, cycno, rec.asDouble("TIME"),
                                       rec.asDouble("INTERVAL"),
                                       rec.asString("FIELDNAME"),
                                       rec.asString("SRCNAME"),
-                                      direction ,//
+                                      direction,
                                       srcPM, srcVel, // not in scantable yet
                                       ifno,
                                       refFreqNew, nchan*abs(cdelt), cdelt,
                                       restfreq,
-                                      tcal,//
-                                      tcaltime,//
+                                      tcal,
+                                      tcalt,
                                       rec.asFloat("AZIMUTH"),
                                       rec.asFloat("ELEVATION"),
                                       rec.asFloat("PARANGLE"),
                                       focusAxi, focusTan, focusRot,//
-                                      temperature,//
-                                      pressure, humidity, windSpeed, windAz,//
+                                      temperature,
+                                      pressure, humidity, windSpeed, windAz,
                                       rec.asInt("REFBEAM"), beamno,
-                                      direction,//
+                                      direction,
                                       scanRate,// not in scantable
-                                      tSys, //
+                                      tsys,
                                       sigma, calFctr,// not in scantable
                                       baseLin, baseSub,// not in scantable
                                       specs, flags,
@@ -287,7 +261,18 @@ Int STWriter::write(const CountedPtr<SDMemTable> in,
   return 0;
 }
 
-void STWriter::polConversion( Matrix< Float >& specs, Matrix< Float >& flags,
+Vector<Float> STWriter::tsysFromTable(const Table& tab)
+{
+  ROArrayColumn<Float> tsysCol(tab, "TSYS");
+  Vector<Float> out(tab.nrow());
+  Vector<Float> tmp;
+  for (uInt i=0; i<tab.nrow(); ++i) {
+    tmp = tsysCol(i);
+    out[i] = tmp[0];
+  }
+}
+
+void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
                               Vector< Complex > & xpol, const Table & tab )
 {
   TableRow row(tab);
@@ -296,11 +281,11 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< Float >& flags,
     String msg = "poltype = " + poltype + " not yet supported in output.";
     throw(AipsError("msg"));
   // use the first row to fill in all the "metadata"
-  const TableRecord& rec = row.record(0);
-  ROArrayColumn<Float> specCol(ctable, "SPECTRA");
-  ROArrayColumn<uChar> flagCol(ctable, "FLAGTRA");
+  const TableRecord& rec = row.get(0);
+  ROArrayColumn<Float> specCol(tab, "SPECTRA");
+  ROArrayColumn<uChar> flagCol(tab, "FLAGTRA");
   uInt nchan = specCol(0).nelements();
-  uInt ncols = ( ctable.nrow()==1 ? 1: 2 );
+  uInt ncols = (tab.nrow()==1 ? 1: 2 );
   specs.resize(nchan, ncols);
   flags.resize(nchan, ncols);
   // the linears
@@ -309,16 +294,18 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< Float >& flags,
     flags.column(i) = flagCol(i);
   }
   // now the complex if exists
-  Vector<Complex> xpol;
   Bool hasxpol = False;
   xpol.resize();
-  if ( ctable.nrow() == 4 ) {
+  if ( tab.nrow() == 4 ) {
     hasxpol = True;
     xpol.resize(nchan);
     Vector<Float> reals, imags;
     reals = specCol(2); imags = specCol(3);
     for (uInt k=0; k < nchan; ++k) {
-  `   xpol[k] = Complex(reals[k], imags[k]);
+      xpol[k] = Complex(reals[k], imags[k]);
     }
   }
+}
+
+
 }
