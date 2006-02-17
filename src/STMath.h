@@ -22,7 +22,7 @@
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
 #include "Scantable.h"
-#include "SDDefs.h"
+#include "STDefs.h"
 #include "SDLog.h"
 
 namespace asap {
