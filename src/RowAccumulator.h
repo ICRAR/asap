@@ -13,7 +13,7 @@
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/MaskedArray.h>
-#include "SDDefs.h"
+#include "STDefs.h"
 
 namespace asap {
 
