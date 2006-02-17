@@ -25,7 +25,7 @@
 
 #include <atnf/PKSIO/PKSreader.h>
 
-#include "SDDefs.h"
+#include "STDefs.h"
 #include "SDAttr.h"
 
 #include "STFiller.h"
