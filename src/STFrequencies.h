@@ -42,8 +42,8 @@ public:
   casa::uInt addEntry( casa::Double refpix, casa::Double refval,
                        casa::Double inc );
 
-  //const casa::Table& table() const { return table_; }
-  //casa::Table table() { return table_; }
+  void getEntry( casa::Double& refpix, casa::Double& refval,
+                 casa::Double& inc, casa::uInt id );
 
   casa::SpectralCoordinate getSpectralCoordinate( casa::uInt freqID );
 
@@ -58,7 +58,7 @@ public:
 
   void rescale(casa::Float factor, const std::string& mode);
 
-  float getRefFreq(casa::uInt d, casa::uInt channel);
+  float getRefFreq(casa::uInt id, casa::uInt channel);
 
   std::string print(int id=-1);
 

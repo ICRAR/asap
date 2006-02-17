@@ -91,6 +91,22 @@ uInt STFrequencies::addEntry( Double refpix, Double refval, Double inc )
 }
 
 
+
+void STFrequencies::getEntry( Double& refpix, Double& refval, Double& inc,
+                              uInt id )
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STFrequencies::getEntry - freqID out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  refpix = rec.asDouble("REFPIX");
+  refval = rec.asDouble("REFVAL");
+  inc = rec.asDouble("INCREMENT");
+}
+
 SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt freqID )
 {
   Table t = table_(table_.col("ID") == Int(freqID) );

@@ -35,6 +35,9 @@ public:
   casa::uInt addEntry( casa::Double restfreq, const casa::String& name="",
                        const casa::String& formattedname="");
 
+  void getEntry( casa::Double restfreq, casa::String& name,
+                 casa::String& formattedname, casa::uInt id);
+
 private:
   void setup();
   static const casa::String name_;

@@ -77,4 +77,19 @@ uInt STMolecules::addEntry( Double restfreq, const String& name,
   return resultid;
 }
 
+void STMolecules::getEntry( Double restfreq, String& name,
+                            String& formattedname, uInt id )
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STMolecules::getEntry - id out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  restfreq = rec.asDouble("RESTFREQUENCY");
+  name = rec.asString("NAME");
+  formattedname = rec.asString("FORMATTEDNAME");
 }
+
+} //namespace

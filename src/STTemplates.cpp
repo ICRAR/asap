@@ -33,9 +33,7 @@
 #include <casa/aips.h>
 #include <casa/namespace.h>
 #include <casa/Exceptions/Error.cc>
-//#include <casa/Exceptions/Error2.cc>
 #include <casa/Utilities/CountedPtr.cc>
-//#include <casa/Utilities/CountedPtr2.cc>
 
 namespace asap {
   template class casa::CountedConstPtr<Scantable>;
@@ -109,9 +107,6 @@ namespace mathutil {
 			const Vector<Float>&,
 			const Vector<Bool>&,
 			Bool, Bool);
-  template uInt addEntry(Vector<uInt>&, uInt);
-  template void extendLastArrayAxis(Array<Int>&, const Array<Int>&,
-				   const Int& initVal);
 }
 //template Array<Bool> SDPolUtil::stokesData (Array<Bool>& dataIn, Bool);
 //template Array<Float> SDPolUtil::computeStokesDataForWriter(Array<Float>& dataIn, Bool);

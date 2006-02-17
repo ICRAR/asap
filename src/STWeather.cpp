@@ -81,4 +81,23 @@ uInt STWeather::addEntry( Float temp, Float pressure, Float humidity,
   return 0;
 }
 
+void STWeather::getEntry( Float& temperature, Float& pressure,
+                          Float& humidity, Float& windspeed, Float& windaz,
+                          uInt id )
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STWeather::getEntry - id out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  temperature = rec.asFloat("TEMPERATURE");
+  pressure = rec.asDouble("PRESSURE");
+  humidity = rec.asDouble("HUMIDITY");
+  windspeed = rec.asDouble("WINDSPEED");
+  windaz = rec.asDouble("WINDAZ");
 }
+
+}
+

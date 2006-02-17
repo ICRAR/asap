@@ -34,7 +34,12 @@ public:
 
   casa::uInt addEntry( casa::Float temperature, casa::Float pressure,
                        casa::Float humidity,
-                       casa::Float windspeed, casa::Float  windaz);
+                       casa::Float windspeed, casa::Float windaz);
+
+  void getEntry( casa::Float& temperature, casa::Float& pressure,
+                       casa::Float& humidity,
+                       casa::Float& windspeed, casa::Float& windaz,
+                       casa::uInt id);
 
 private:
   void setup();

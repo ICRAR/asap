@@ -35,6 +35,8 @@ public:
 
   casa::uInt addEntry( const casa::String& time,
                        const casa::Vector<casa::Float>& tcal);
+  void getEntry( casa::String& time, casa::Vector<casa::Float>& tcal,
+                 casa::uInt id );
 
 private:
   void setup();

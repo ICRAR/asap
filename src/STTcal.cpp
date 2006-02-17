@@ -73,5 +73,21 @@ uInt STTcal::addEntry( const String& time, const Vector<Float>& cal)
   return resultid;
 }
 
+void STTcal::getEntry( String& time, Vector<Float>& tcal, uInt id )
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STTcal::getEntry - id out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  time = rec.asString("TIME");
+  tcal.resize();
+  Vector<Float> out;
+  rec.get("TCAL",out);
+  tcal = out;
 }
+
+} //namespace
 
