@@ -36,7 +36,7 @@
 #include <casa/Utilities/CountedPtr.h>
 
 #include "SDLog.h"
-#include "SDDefs.h"
+#include "STDefs.h"
 
 template<class T> class casa::Vector;
 

@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDWriterWrapper.h: Wrapper classes to use CountedPtr
+//# STWriterWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -34,18 +34,18 @@
 #include <vector>
 #include <string>
 
-#include "SDWriter.h"
+#include "STWriter.h"
 
 namespace asap {
 
 class SDMemTableWrapper;
 
-class SDWriterWrapper : public SDWriter {
+class STWriterWrapper : public STWriter {
 public:
-  SDWriterWrapper(const string &format = "SDFITS") : SDWriter(format) {;}
+  STWriterWrapper(const string &format = "SDFITS") : STWriter(format) {;}
 
   casa::Int write(const SDMemTableWrapper &table, const string &filename, bool toStokes) {
-    return SDWriter::write(table.getCP(), filename, toStokes);
+    return STWriter::write(table.getCP(), filename, toStokes);
   }
 };
 

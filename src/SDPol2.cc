@@ -30,7 +30,7 @@
 //#---------------------------------------------------------------------------
 
 #include "SDPol.h"
-#include "SDDefs.h"
+#include "STDefs.h"
 
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/ArrayMath.h>
