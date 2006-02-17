@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 
 #ifndef SDDEFS_H
@@ -34,9 +34,9 @@
 
 namespace asap {
   enum AxisNo { BeamAxis=0,
-		IFAxis,
-		PolAxis,
-		ChanAxis, 
+                IFAxis,
+                PolAxis,
+                ChanAxis,
                 nAxes};
 
   enum Instrument {UNKNOWNINST=0,
@@ -49,6 +49,15 @@ namespace asap {
                    N_INSTRUMENTS};
 
   enum FeedPolType {UNKNOWNFEED, LINEAR, CIRCULAR, N_POL};
+
+  enum WeightType {NONE=0, VAR, TSYS, TINT, TINTSYS, N_WEIGHTTYPES};
+
+  enum TableType {MEMORY=0, PERSISTENT};
+
+
+
+  const std::string SEPERATOR =
+   "--------------------------------------------------------------------------------";
 }
 
 #endif
