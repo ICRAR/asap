@@ -92,6 +92,7 @@ CCOBJECTS := MathUtils.o \
              STFocus.o \
              STWeather.o \
              STFrequencies.o \
+             STWriter.o \
              RowAccumulator.o \
              STSelector.o
 PYOBJECTS :=
@@ -112,7 +113,8 @@ HEADERS   := MathUtils.h \
              STFocus.h \
              STWeather.h \
              STFrequencies.h \
-             SDDefs.h \
+             STDefs.h \
+             STWriter.h \
              STSelector.h
 
 STATICCCLIB := libasap.a
@@ -161,6 +163,6 @@ cleanso :
 
 realclean : clean cleanso
 
-test: tFiller.o objects
+test: objects tasap2.o
 	-@ echo
-	  $(LD) -g -o /tmp/tFiller $(OBJECTS) $(LIBS) tFiller.o
+	  $(LD) -g -o /tmp/tasap2 $(OBJECTS) $(LIBS) tasap2.o
