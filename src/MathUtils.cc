@@ -40,13 +40,13 @@
 
 using namespace casa;
 
-float mathutil::statistics(const String& which,  
+float mathutil::statistics(const String& which,
 			   const MaskedArray<Float>& data)
 {
    String str(which);
    str.upcase();
    if (str.contains(String("MIN"))) {
-      return min(data); 
+      return min(data);
    } else if (str.contains(String("MAX"))) {
       return max(data);
    } else if (str.contains(String("SUMSQ"))) {
@@ -56,7 +56,7 @@ float mathutil::statistics(const String& which,
    } else if (str.contains(String("MEAN"))) {
       return mean(data);
    } else if (str.contains(String("VAR"))) {
-      return variance(data); 
+      return variance(data);
    } else if (str.contains(String("STDDEV"))) {
       return stddev(data);
    } else if (str.contains(String("AVDEV"))) {
@@ -68,7 +68,7 @@ float mathutil::statistics(const String& which,
       return median(data);
    }
 }
-  
+
 
 void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
 {
@@ -78,37 +78,7 @@ void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
 }
 
 
-void mathutil::scanBoundaries(Vector<uInt>& startInt,
-			      Vector<uInt>& endInt,
-			      const Vector<Int>& scanIDs) 
-  // Find integrations start and end for each Scan
-{
-  uInt nInt = scanIDs.nelements();
-  startInt.resize(nInt);
-  endInt.resize(nInt);
-
-  startInt(0) = 0;
-  uInt j = 0;
-  Int currScanID = scanIDs(0);
-  for (uInt i=0; i<nInt; i++) {
-    if (scanIDs(i) != currScanID) {  
-      endInt(j) = i-1;
-      currScanID = scanIDs(i);
-
-      j += 1;
-      startInt(j) = i;
-      if (i==nInt-1) {
-	endInt(j) = i;
-      }   
-    } else {
-      if (i==nInt-1) endInt(j) = i;
-    }
-  }
-  startInt.resize(j+1,True);
-  endInt.resize(j+1,True);
-}
-
-std::vector<std::string> mathutil::tovectorstring(const Vector<String>& in) 
+std::vector<std::string> mathutil::tovectorstring(const Vector<String>& in)
 {
   std::vector<std::string> out;
   VectorSTLIterator<String> it(in);
@@ -118,7 +88,7 @@ std::vector<std::string> mathutil::tovectorstring(const Vector<String>& in)
   return out;
 }
 
-Vector<String> mathutil::toVectorString(const std::vector<std::string>& in) 
+Vector<String> mathutil::toVectorString(const std::vector<std::string>& in)
 {
   Vector<String> out(in.size());
   uInt i=0;

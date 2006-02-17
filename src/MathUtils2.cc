@@ -40,8 +40,8 @@
 using namespace casa;
 
 template <class T>
-void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask, 
-		       const Vector<T>& in, const Vector<Bool>& mask, 
+void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
+		       const Vector<T>& in, const Vector<Bool>& mask,
 		       Bool relaxed, Bool ignoreOther) {
 
   Vector< Vector<T> > weights(8);
@@ -53,9 +53,9 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
   vals[0] = 0.0; vals[1] = 0.0; vals[2] = 1.0;weights[4] = vals;// FFT
   vals[0] = 0.5; vals[1] = 0.0; vals[2] = 0.5; weights[5] = vals;// TFT
   vals[0] = 0.0; vals[1] = 2.0/3.0; vals[2] = 1.0/3.0; weights[6] = vals;// FTT
-  vals[0] = 0.25; vals[1] = 0.5; vals[2] = 0.25; weights[7] = vals;// TTT  
+  vals[0] = 0.25; vals[1] = 0.5; vals[2] = 0.25; weights[7] = vals;// TTT
   // Chris' case
-  Vector<Bool> weighted(8); 
+  Vector<Bool> weighted(8);
   if (relaxed) {
     weighted = False;
     weighted[7] = True;
@@ -64,7 +64,7 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
     weighted = True;
     weighted[0] = False;
   }
-  
+
   out.resize(in.nelements());
   outmask.resize(mask.nelements());
 
@@ -88,44 +88,5 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
     }
     ++i;
     ++outmit;
-  }
-}
-
-template <class T>
-uInt mathutil::addEntry (Vector<T>& list, T val)
-{
-   uInt n = list.nelements();
-   if (n>0) {
-      for (uInt i=0; i<n; i++) {
-         if (near(list[i],val)) {
-            return i; 
-         }
-      }
-   }
-//
-   n++;
-   list.resize(n,True);
-   list(n-1) = val;
-   return n-1;
-}
-
-template <class T>
-void mathutil::extendLastArrayAxis(casa::Array<T>& out, 
-				   const casa::Array<T>& in,
-				   const T& initVal)
-{
-  
-  IPosition ipin = in.shape();
-  IPosition ipout = ipin; // copy?
-  // extend the axis by 1
-  uInt axis = in.ndim()-1;
-  ipout[axis] = ipin[axis]+1;
-  out.resize(ipout);
-  out = initVal;
-  ArrayIterator<T> itout(out,axis);
-  ReadOnlyArrayIterator<T> itin(in,axis);
-  while ( !itin.pastEnd() ) {
-    itout.array() = itin.array();  // copy vector by vector
-    itin.next(); itout.next();
   }
 }
