@@ -187,7 +187,7 @@ void Scantable::setupMainTable()
 
 }
 
-void asap::Scantable::setupHistoryTable( )
+void Scantable::setupHistoryTable( )
 {
   TableDesc tdh("", "1", TableDesc::Scratch);
   tdh.addColumn(ScalarColumnDesc<String>("ITEM"));
@@ -292,7 +292,7 @@ int Scantable::rowToScanIndex( int therow )
   return therealrow;
 }
 
-int Scantable::nScan() const {
+int Scantable::nscan() const {
   int n = 0;
   int previous = -1; int current = 0;
   for (uInt i=0; i< scanCol_.nrow();i++) {
@@ -378,7 +378,7 @@ void Scantable::makePersistent(const std::string& filename)
   table_.deepCopy(inname, Table::New);
 }
 
-int asap::Scantable::nbeam( int scanno ) const
+int Scantable::nbeam( int scanno ) const
 {
   if ( scanno < 0 ) {
     Int n;
@@ -396,7 +396,7 @@ int asap::Scantable::nbeam( int scanno ) const
   return 0;
 }
 
-int asap::Scantable::nif( int scanno ) const
+int Scantable::nif( int scanno ) const
 {
   if ( scanno < 0 ) {
     Int n;
@@ -414,7 +414,7 @@ int asap::Scantable::nif( int scanno ) const
   return 0;
 }
 
-int asap::Scantable::npol( int scanno ) const
+int Scantable::npol( int scanno ) const
 {
   if ( scanno < 0 ) {
     Int n;
@@ -432,10 +432,18 @@ int asap::Scantable::npol( int scanno ) const
   return 0;
 }
 
-int asap::Scantable::nrow( int scanno ) const
+int Scantable::nrow( int scanno ) const
 {
   if ( scanno < 0 ) {
-    return int(table_.nrow());
+    Block<String> cols(2);
+    cols[0] = "SCANNO";
+    cols[1] = "CYCLENO";
+    TableIterator it(table_, cols);
+    int n = 0;
+    while ( !it.pastEnd() ) {
+      ++n;
+    }
+    return n;
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
     Table tab = table_(table_.col("SCANNO") == scanno
@@ -448,9 +456,9 @@ int asap::Scantable::nrow( int scanno ) const
 }
 
 
-int asap::Scantable::nchan( int scanno, int ifno ) const
+int Scantable::nchan( int scanno, int ifno ) const
 {
-  if ( scanno < 0 && ifno < 0 ) {
+  if ( scanno < 0 || ifno < 0 ) {
     Int n;
     table_.keywordSet().get("nChan",n);
     return int(n);
@@ -462,8 +470,7 @@ int asap::Scantable::nchan( int scanno, int ifno ) const
                        && table_.col("POLNO") == 0
                        && table_.col("CYCLENO") == 0 );
     ROArrayColumn<Float> v(tab, "SPECTRA");
-    cout << v.shape(0) << endl;
-    return 0;
+    return v(0).nelements();
   }
   return 0;
 }
@@ -613,7 +620,7 @@ void Scantable::setSelection( const STSelector& selection )
   selector_ = selection;
 }
 
-std::string asap::Scantable::summary( bool verbose )
+std::string Scantable::summary( bool verbose )
 {
   // Format header info
   ostringstream oss;
