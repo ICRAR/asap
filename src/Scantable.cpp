@@ -243,7 +243,7 @@ void Scantable::attach()
   mmolidCol_.attach(table_, "MOLECULE_ID");
 }
 
-void Scantable::putSDHeader(const SDHeader& sdh)
+void Scantable::setHeader(const SDHeader& sdh)
 {
   table_.rwKeywordSet().define("nIF", sdh.nif);
   table_.rwKeywordSet().define("nBeam", sdh.nbeam);
@@ -263,7 +263,7 @@ void Scantable::putSDHeader(const SDHeader& sdh)
   table_.rwKeywordSet().define("Epoch", sdh.epoch);
 }
 
-SDHeader Scantable::getSDHeader() const
+SDHeader Scantable::getHeader() const
 {
   SDHeader sdh;
   table_.keywordSet().get("nBeam",sdh.nbeam);
@@ -284,6 +284,12 @@ SDHeader Scantable::getSDHeader() const
   table_.keywordSet().get("Epoch", sdh.epoch);
   return sdh;
 }
+
+bool Scantable::conformant( const Scantable& other )
+{
+  return this->getHeader().conformant(other.getHeader());
+}
+
 
 int Scantable::rowToScanIndex( int therow )
 {
@@ -432,7 +438,7 @@ int Scantable::npol( int scanno ) const
   return 0;
 }
 
-int Scantable::nrow( int scanno ) const
+int Scantable::ncycle( int scanno ) const
 {
   if ( scanno < 0 ) {
     Block<String> cols(2);
@@ -456,15 +462,20 @@ int Scantable::nrow( int scanno ) const
 }
 
 
-int Scantable::nchan( int scanno, int ifno ) const
+int Scantable::nrow( int scanno ) const
 {
-  if ( scanno < 0 || ifno < 0 ) {
+  return int(table_.nrow());
+}
+
+int Scantable::nchan( int ifno ) const
+{
+  if ( ifno < 0 ) {
     Int n;
     table_.keywordSet().get("nChan",n);
     return int(n);
   } else {
-    // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == scanno
+    // take the first SCANNO,POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
+    Table tab = table_(table_.col("SCANNO") == 0
                        && table_.col("IFNO") == ifno
                        && table_.col("BEAMNO") == 0
                        && table_.col("POLNO") == 0

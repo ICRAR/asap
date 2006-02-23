@@ -84,7 +84,7 @@ public:
 
   /**
    * get a const reference to the underlying casa::Table
-   * @return const casa::Table reference
+   * @return consantcasa::Table reference
    */
   const casa::Table& table() const;
 
@@ -95,21 +95,34 @@ public:
    */
   casa::Table& table();
 
+
+  /**
+   * Get a handle to the selection object
+   * @return constant STSelector reference
+   */
+  const STSelector& getSelection() const { return selector_; }
+
+  /**
+   * Set the data to be a subset as defined by the STSelector
+   * @param selection a STSelector object
+   */
   void setSelection(const STSelector& selection);
+
+  /**
+   * unset the selection of the data
+   */
   void unsetSelection();
   /**
    * set the header
    * @param[in] sdh an SDHeader object
    */
-  void putSDHeader( const SDHeader& sdh );
+  void setHeader( const SDHeader& sdh );
 
   /**
    * get the header information
    * @return an SDHeader object
    */
-  SDHeader getSDHeader( ) const;
-
-
+  SDHeader getHeader( ) const;
   /**
    * Checks if the "other" Scantable is conformant with this,
    * i.e. if  header values are the same.
@@ -122,54 +135,90 @@ public:
    * return the number of scans in the table
    * @return number of scans in the table
    */
-  int nScan() const;
+  int nscan() const;
 
   //casa::MDirection::Types getDirectionReference() const;
   //casa::MEpoch::Types getTimeReference() const;
 
   /**
    * Get global antenna position
-   * @return
+   * @return casa::MPosition
    */
   casa::MPosition getAntennaPosition() const;
 
   /**
-   *
-   * @return
+   *  Return the Flux unit of the data, e.g. "Jy" or "K"
+   * @return string
    */
-
   std::string getFluxUnit() const;
 
   /**
-   *
-   * @param unit
+   * Set the Flux unit of the data
+   * @param unit a string representing the unit, e.g "Jy" or "K"
    */
   void setFluxUnit( const std::string& unit );
 
   /**
    *
-   * @param instrument
+   * @param instrument a string representing an insturment. see xxx
    */
   void setInstrument( const std::string& instrument );
 
+  /**
+   * (Re)calculate the azimuth and elevationnfor all rows
+   */
   void calculateAZEL();
 
   /**
-   * "hard" flags
-   * @param[in] whichrow
+   * "hard" flag the data, this flags everything selected in setSelection()
    */
   void flag();
 
-  int nbeam(int scanno=-1) const;
-  int nif(int scanno=-1) const;
-  int npol(int scanno=-1) const;
-  int nchan(int scanno=-1, int ifno=-1) const;
 
+  /**
+   * Get the number of beams in the data or a specific scan
+   * @param scanno the scan number to get the number of beams for.
+   * If scanno<0 the number is retrieved from the header.
+   * @return an integer number
+   */
+  int nbeam(int scanno=-1) const;
+  /**
+   * Get the number of IFs in the data or a specific scan
+   * @param scanno the scan number to get the number of IFs for.
+   * If scanno<0 the number is retrieved from the header.
+   * @return an integer number
+   */
+  int nif(int scanno=-1) const;
+  /**
+   * Get the number of polarizations in the data or a specific scan
+   * @param scanno the scan number to get the number of polarizations for.
+   * If scanno<0 the number is retrieved from the header.
+   * @return an integer number
+   */
+  int npol(int scanno=-1) const;
+
+  /**
+   * Get the number of channels in the data or a specific IF. This currently
+   * varies only with IF number
+   * @param ifno the IF number to get the number of channels for.
+   * If ifno<0 the number is retrieved from the header.
+   * @return an integer number
+   */
+  int nchan(int ifno=-1) const;
+
+  /**
+   * Get the number of integartion cycles
+   * @param scanno the scan number to get the number of rows for.
+   * If scanno<0 the number is retrieved from the header.
+   * @return
+   */
   int nrow(int scanno=-1) const;
 
-  double getInterval(int whichrow=0) const;
+  int ncycle(int scanno=-1) const;
 
-  float getTsys(int whichrow=0) const;
+  double getInterval(int scanno=0) const;
+
+  float getTsys(int scanno=0) const;
 
   std::vector<bool> getMask(int whichrow=0) const;
   std::vector<float> getSpectrum(int whichrow=0) const;
@@ -180,12 +229,11 @@ public:
                                    bool linpol,
                                    int polidx=-1) const;
 
+  /**
+   * Write the Scantable to disk
+   * @param filename the output file name
+   */
   void makePersistent(const std::string& filename);
-
-
-  void select(const STSelector& sel);
-
-  const STSelector& selection() const { return selector_; }
 
   std::vector<std::string> getHistory() const;
   void addHistory(const std::string& hist);
