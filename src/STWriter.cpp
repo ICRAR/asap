@@ -130,7 +130,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // MS or SDFITS
 
   // Extract the header from the table.
-  SDHeader hdr = in->getSDHeader();
+  SDHeader hdr = in->getHeader();
   const Int nPol  = hdr.npol;
   const Int nChan = hdr.nchan;
 
