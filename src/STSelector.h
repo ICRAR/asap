@@ -33,18 +33,20 @@ public:
 
   STSelector& operator=(const STSelector& other);
 
-  ~STSelector();
+  virtual ~STSelector();
 
   void setScans(const std::vector<int>& scans);
   void setBeams(const std::vector<int>& beams);
   void setIFs(const std::vector<int>& ifs);
   void setPolarizations(const std::vector<int>& pols);
+  void setCycles(const std::vector<int>& cycs);
   void setTaQL(const std::string& taql);
 
   std::vector<int> getScans();
   std::vector<int> getBeams();
   std::vector<int> getIFs();
   std::vector<int> getPols();
+  std::vector<int> getCycles();
 
   casa::Table apply(const casa::Table& tab);
   casa::Table operator()(const casa::Table& tab) { return apply(tab); };

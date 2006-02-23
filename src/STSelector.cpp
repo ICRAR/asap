@@ -63,6 +63,11 @@ void STSelector::setPolarizations( const std::vector< int >& pols )
   set("POLNO", pols);
 }
 
+void asap::STSelector::setCycles( const std::vector< int >& cycs )
+{
+  set("CYCLENO", cycs);
+}
+
 void STSelector::set(const std::string& key, const std::vector< int >& val)
 {
   if ( val.size() > 0 ) {
@@ -130,6 +135,11 @@ std::vector< int > STSelector::getIFs( )
 std::vector< int > STSelector::getPols( )
 {
   return get("POLNO");
+}
+
+std::vector< int > asap::STSelector::getCycles( )
+{
+  return get("CYCLENO");
 }
 
 std::string asap::STSelector::print( )
