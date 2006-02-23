@@ -65,7 +65,10 @@ STFiller::~STFiller()
 void STFiller::open( const std::string & filename,
                             int whichIF, int whichBeam )
 {
-  if (table_.null()) table_ = new Scantable();
+  if (table_.null())  {
+    cout << "new scnatbale object" << endl;
+    table_ = new Scantable();
+  }
   if (reader_)  { delete reader_; reader_ = 0; }
   Bool haveBase, haveSpectra;
 
@@ -183,7 +186,7 @@ void STFiller::open( const std::string & filename,
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
   reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol_);
-  table_->putSDHeader(*header_);
+  table_->setHeader(*header_);
 }
 
 void STFiller::close( )

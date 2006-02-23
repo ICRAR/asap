@@ -32,6 +32,7 @@ namespace asap {
 /**
 This class fills a Scantable from external data formats using the PKSReader class.
 
+@brief    A filler object for data import into Scantable
 @author   Malte Marquarding
 @date     2006/01/16
 @version  2.0a
@@ -39,8 +40,16 @@ This class fills a Scantable from external data formats using the PKSReader clas
 class STFiller : public SDLog {
 public:
 
+  /**
+   * Default constructor
+   */
   STFiller();
 
+
+  /**
+   * Constructor taking an existing Scantable to fill
+   * @param stbl
+   */
   STFiller(casa::CountedPtr< Scantable > stbl);
 
 
@@ -53,6 +62,9 @@ public:
   STFiller( const std::string& filename, int whichIF=-1,
                   int whichBeam=-1 );
 
+  /**
+   * Destructor
+   */
   ~STFiller();
 
   /**
@@ -65,13 +77,16 @@ public:
   void open( const std::string& filename, int whichIF=-1, int whichBeam=-1 );
 
   /**
-   * detatch from file
+   * detach from file and clean up pointers
    */
   void close( );
 
   /**
    * Read in "rows" from the source file attached with open()
    * @return a status flag passed on by PKSreader
+   *
+   * @li @c 0: ok
+   * @li >0: failed
    */
   int read( );
 
