@@ -221,4 +221,15 @@ float STFrequencies::getRefFreq( uInt id, uInt channel )
           * rec.asDouble("INCREMENT") + rec.asDouble("REFVAL");
 }
 
+bool asap::STFrequencies::conformant( const STFrequencies& other ) const
+{
+  const Record& r = table_.keywordSet();
+  const Record& ro = other.table_.keywordSet();
+  return ( r.asString("REFFRAME") == ro.asString("REFFRAME") &&
+           r.asString("EQUINOX") == ro.asString("EQUINOX") &&
+           r.asString("UNIT") == ro.asString("UNIT") &&
+           r.asString("DOPPLER") == ro.asString("DOPPLER")
+          );
+}
+
 } // namespace

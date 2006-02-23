@@ -54,6 +54,8 @@ public:
                  casa::Double& inc, casa::uInt id );
 
 
+  bool conformant(const STFrequencies& other) const;
+
   /**
    * Retrieve  the frequency values as a casa::SpectralCoordinate
    * @param freqID
