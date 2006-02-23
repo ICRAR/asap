@@ -9,8 +9,8 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#ifndef ASAPSTWeaTHER_H
-#define ASAPSTWeaTHER_H
+#ifndef ASAPSTWEATHER_H
+#define ASAPSTWEATHER_H
 
 #include <casa/aips.h>
 #include <casa/BasicSL/String.h>
