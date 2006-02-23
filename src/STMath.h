@@ -95,6 +95,9 @@ public:
   casa::CountedPtr<Scantable> opacity(const casa::CountedPtr<Scantable>& in,
                                       float tau);
 
+  casa::CountedPtr<Scantable>
+    merge(const std::vector<casa::CountedPtr<Scantable> >& in);
+
   /// @todo frequency alignment
 
 private:

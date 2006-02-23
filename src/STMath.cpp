@@ -369,7 +369,7 @@ std::vector< float > STMath::statistic( const CountedPtr< Scantable > & in,
 CountedPtr< Scantable > STMath::bin( const CountedPtr< Scantable > & in,
                                      int width )
 {
-  if ( !in->selection().empty() ) throw(AipsError("Can't bin subset of the data."));
+  if ( !in->getSelection().empty() ) throw(AipsError("Can't bin subset of the data."));
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tout = out->table();
   out->frequencies().rescale(width, "BIN");
@@ -793,6 +793,69 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
       }
       specCol.put(i, specout);
     }
+  }
+  return out;
+}
+
+CountedPtr< Scantable >
+  STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
+{
+  if ( in.size() < 2 ) {
+    throw(AipsError("Need at least two scantables to perform merge."));
+  }
+  std::vector<CountedPtr < Scantable > >::const_iterator it = in.begin();
+  ++it;
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(in[0], false);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  cout << "nrows " << in[1]->table().nrow() << endl;
+  ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
+  ScalarColumn<uInt> scannocol(tout,"SCANNO"),focusidcol(tout,"FOCUS_ID");
+  uInt newscanno = max(scannocol.getColumn())+1;
+  while ( it != in.end() ){
+    if ( ! (*it)->conformant(*out) ) {
+      // log message: "ignoring scantable i, as it isn't
+      // conformant with the other(s)"
+      cerr << "oh oh" << endl;
+      ++it;
+      continue;
+    }
+    const Table& tab = (*it)->table();
+    TableIterator scanit(tab, "SCANNO");
+    while (!scanit.pastEnd()) {
+      TableIterator freqit(scanit.table(), "FREQ_ID");
+      while ( !freqit.pastEnd() ) {
+        Table thetab = freqit.table();
+        uInt nrow = tout.nrow();
+        //tout.addRow(thetab.nrow());
+        TableCopy::copyRows(tout, thetab, nrow, 0, thetab.nrow());
+        ROTableRow row(thetab);
+        for ( uInt i=0; i<thetab.nrow(); ++i) {
+          uInt k = nrow+i;
+          scannocol.put(k, newscanno);
+          const TableRecord& rec = row.get(i);
+          Double rv,rp,inc;
+          (*it)->frequencies().getEntry(rp, rv, inc, rec.asuInt("FREQ_ID"));
+          uInt id;
+          id = out->frequencies().addEntry(rp, rv, inc);
+          freqidcol.put(k,id);
+          String name,fname;Double rf;
+          (*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
+          id = out->molecules().addEntry(rf, name, fname);
+          molidcol.put(k, id);
+          Float frot,fang,ftan;
+          (*it)->focus().getEntry(frot, fang, ftan, rec.asuInt("FOCUS_ID"));
+          id = out->focus().addEntry(frot, fang, ftan);
+          focusidcol.put(k, id);
+        }
+        ++freqit;
+      }
+      ++newscanno;
+      ++scanit;
+    }
+    ++it;
   }
   return out;
 }
