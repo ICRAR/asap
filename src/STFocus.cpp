@@ -76,4 +76,19 @@ uInt STFocus::addEntry( Float rotation, Float angle, Float ftan)
   return resultid;
 }
 
+void asap::STFocus::getEntry( Float& rotation, Float& angle, Float& ftan,
+                              uInt id)
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STFocus::getEntry - id out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  rotation = rec.asFloat("ROTATION");
+  angle = rec.asFloat("ANGLE");
+  ftan = rec.asFloat("TAN");
+}
+
 }

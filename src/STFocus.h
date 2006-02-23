@@ -35,6 +35,9 @@ public:
   casa::uInt addEntry( casa::Float rotation, casa::Float angle,
                        casa::Float ftan);
 
+  void getEntry( casa::Float& rotation, casa::Float& angle,
+                       casa::Float& ftan, casa::uInt id);
+
 private:
   void setup();
   static const casa::String name_;
