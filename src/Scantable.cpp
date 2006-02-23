@@ -223,6 +223,8 @@ void Scantable::attach()
   cycleCol_.attach(table_,"CYCLENO");
   scanCol_.attach(table_, "SCANNO");
   beamCol_.attach(table_, "BEAMNO");
+  ifCol_.attach(table_, "IFNO");
+  polCol_.attach(table_, "POLNO");
   integrCol_.attach(table_, "INTERVAL");
   azCol_.attach(table_, "AZIMUTH");
   elCol_.attach(table_, "ELEVATION");
@@ -291,13 +293,6 @@ bool Scantable::conformant( const Scantable& other )
 }
 
 
-int Scantable::rowToScanIndex( int therow )
-{
-  int therealrow = -1;
-
-  return therealrow;
-}
-
 int Scantable::nscan() const {
   int n = 0;
   int previous = -1; int current = 0;
@@ -343,9 +338,7 @@ std::string Scantable::formatDirection(const MDirection& md) const
 
 std::string Scantable::getFluxUnit() const
 {
-  String tmp;
-  table_.keywordSet().get("FluxUnit", tmp);
-  return tmp;
+  return table_.keywordSet().asString("FluxUnit");
 }
 
 void Scantable::setFluxUnit(const std::string& unit)
@@ -486,6 +479,22 @@ int Scantable::nchan( int ifno ) const
   return 0;
 }
 
+
+int Scantable::getBeam(int whichrow) const
+{
+  return beamCol_(whichrow);
+}
+
+int Scantable::getIF(int whichrow) const
+{
+  return ifCol_(whichrow);
+}
+
+int Scantable::getPol(int whichrow) const
+{
+  return polCol_(whichrow);
+}
+
 Table Scantable::getHistoryTable() const
 {
   return table_.keywordSet().asTable("HISTORY");
@@ -562,14 +571,6 @@ void Scantable::calculateAZEL()
   pushLog(String(oss));
 }
 
-double Scantable::getInterval(int whichrow) const
-{
-  if (whichrow < 0) return 0.0;
-  Double intval;
-  integrCol_.get(Int(whichrow), intval);
-  return intval;
-}
-
 std::vector<bool> Scantable::getMask(int whichrow) const
 {
   Vector<uChar> flags;
@@ -618,6 +619,7 @@ std::string Scantable::getPolarizationLabel(bool linear, bool stokes,
 void Scantable::unsetSelection()
 {
   table_ = originalTable_;
+  attach();
   selector_.reset();
 }
 
@@ -628,6 +630,7 @@ void Scantable::setSelection( const STSelector& selection )
     throw(AipsError("Selection contains no data. Not applying it."));
   }
   table_ = tab;
+  attach();
   selector_ = selection;
 }
 
@@ -739,6 +742,46 @@ std::string Scantable::getTime(int whichrow, bool showdate) const
     me = MEpoch(MVEpoch(tm));
   }
   return formatTime(me, showdate);
+}
+
+std::string Scantable::getAbcissaLabel( int whichrow ) const
+{
+  if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
+  const MPosition& mp = getAntennaPosition();
+  const MDirection& md = dirCol_(whichrow);
+  const MEpoch& me = timeCol_(whichrow);
+  const Double& rf = mmolidCol_(whichrow);
+  SpectralCoordinate spc =
+    freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
+
+  String s = "Channel";
+  Unit u = Unit(freqTable_.getUnitString());
+  if (u == Unit("km/s")) {
+    s = CoordinateUtil::axisLabel(spc,0,True,True,True);
+  } else if (u == Unit("Hz")) {
+    Vector<String> wau(1);wau = u.getName();
+    spc.setWorldAxisUnits(wau);
+
+    s = CoordinateUtil::axisLabel(spc,0,True,True,False);
+  }
+  return s;
+
+}
+
+void asap::Scantable::setRestFrequencies( double rf, const std::string& unit )
+{
+  ///@todo lookup in line table
+  Unit u(unit);
+  Quantum<Double> urf(rf, u);
+  uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), "", "");
+  TableVector<uInt> tabvec(table_, "MOLECULE_ID");
+  tabvec = id;
+}
+
+void asap::Scantable::setRestFrequencies( const std::string& name )
+{
+  throw(AipsError("setRestFrequencies( const std::string& name ) NYI"));
+  ///@todo implement
 }
 
 }//namespace asap

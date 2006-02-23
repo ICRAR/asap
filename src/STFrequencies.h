@@ -61,31 +61,43 @@ public:
    * @param freqID
    * @return casa::SpectralCoordinate
    */
-  casa::SpectralCoordinate getSpectralCoordinate( casa::uInt freqID );
+  casa::SpectralCoordinate getSpectralCoordinate( casa::uInt freqID ) const;
+
+  casa::SpectralCoordinate getSpectralCoordinate( const casa::MDirection& md,
+                                                  const casa::MPosition& mp,
+                                                  const casa::MEpoch& me,
+                                                  casa::Double restfreq,
+                                                  casa::uInt freqID
+                                                  ) const;
 
   /**
    * Return the unit of the frequency values
    * @return casa::Unit
    */
-  const casa::Unit& getUnit() const;
+  casa::Unit getUnit() const;
+  std::string getUnitString() const;
+
   /**
    * Return the doppler type of the values
-   * @return casa::MDoppler
+   * @return casa::MDoppler::Types
    */
-  casa::MDoppler getDoppler() const;
+  casa::MDoppler::Types getDoppler() const;
+  std::string getDopplerString() const;
 
 
   /**
    * Return the frame type, e.g MFrequency::TOPO
+   * @param base return the base frame or the user frame
    * @return casa::MFrequency::Types
    */
-  casa::MFrequency::Types getFrame() const;
+  casa::MFrequency::Types getFrame(bool base=false) const;
 
   /**
    * Return a string representation of the frame type, e.g TOPO
-   * @return
+   * @param base return the base frame or the user frame
+   * @return the string representation of the frame
    */
-  std::string getFrameString() const;
+  std::string getFrameString(bool base=false) const;
 
   /**
    * set the frequency frame from a string value
@@ -122,6 +134,9 @@ public:
    * @return a string
    */
   std::string print(int id=-1);
+
+  std::vector<std::string> getInfo() const;
+  void setInfo( const std::vector<std::string>& theinfo );
 
 private:
 

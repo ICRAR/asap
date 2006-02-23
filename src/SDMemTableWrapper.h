@@ -1,35 +1,16 @@
-//#---------------------------------------------------------------------------
-//# SDMemTableWrapper.h: Wrapper classes to use CountedPtr
-//#---------------------------------------------------------------------------
-//# Copyright (C) 2004
-//# ATNF
-//#
-//# This program is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU General Public License as published by the Free
-//# Software Foundation; either version 2 of the License, or (at your option)
-//# any later version.
-//#
-//# This program is distributed in the hope that it will be useful, but
-//# WITHOUT ANY WARRANTY; without even the implied warranty of
-//# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-//# Public License for more details.
-//#
-//# You should have received a copy of the GNU General Public License along
-//# with this program; if not, write to the Free Software Foundation, Inc.,
-//# 675 Massachusetts Ave, Cambridge, MA 02139, USA.
-//#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: Malte.Marquarding@csiro.au
-//#        Postal address: Malte Marquarding,
-//#                        Australia Telescope National Facility,
-//#                        P.O. Box 76,
-//#                        Epping, NSW, 2121,
-//#                        AUSTRALIA
-//#
-//# $Id:
-//#---------------------------------------------------------------------------
-#ifndef SDMEMTABLEWRAPPER_H
-#define SDMEMTABLEWRAPPER_H
+//
+// C++ Interface: Scantable
+//
+// Description:
+//
+//
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+//
+#ifndef ASAPSCANTABLEWRAPPER_H
+#define ASAPSCANTABLEWRAPPER_H
 
 #include <vector>
 #include <string>
@@ -37,49 +18,41 @@
 
 #include "MathUtils.h"
 #include "SDFitTable.h"
-#include "SDMemTable.h"
+#include "Scantable.h"
 
 namespace asap {
-
-class SDMemTableWrapper {
+/**
+  * This class contains and wraps a CountedPtr<Scantable>, as the CountedPtr
+  * class does not provide the dor operator which is need for references
+  * in boost::python
+  * see Scantable for interfce description
+  *
+  * @brief The main ASAP data container wrapper
+  * @author Malte Marquarding
+  * @date 2006-02-23
+  * @version 2.0a
+*/
+class ScantableWrapper {
 
 public:
-  SDMemTableWrapper(const std::string& name) :
-    table_(new SDMemTable(name)) {;}
-  SDMemTableWrapper() :
-    table_(new SDMemTable()) {;}
+  ScantableWrapper(const std::string& name) :
+    table_(new Scantable(name)) {;}
 
-  SDMemTableWrapper(casa::CountedPtr<SDMemTable> cp) : table_(cp) {;}
-  //SDMemTableWrapper(SDMemTable* sdmt) : table_(sdmt) {;}
-  SDMemTableWrapper(const SDMemTableWrapper& mt) :
+  ScantableWrapper() :
+    table_(new Scantable()) {;}
+
+  ScantableWrapper(casa::CountedPtr<Scantable> cp) : table_(cp) {;}
+
+  ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
 
-  SDMemTableWrapper(const SDMemTableWrapper& mt, const std::string& expr) :
-    table_(new SDMemTable(mt.getCP()->table(), expr)) {;}
+  ScantableWrapper(const ScantableWrapper& mt, const std::string& expr) :
+    table_(new Scantable(mt.getCP()->table(), expr)) {;}
 
-  SDMemTableWrapper copy() {
-    //CountedPtr<SDMemTable> cp = new SDMemTable(*this, False);
-    return SDMemTableWrapper(new SDMemTable(*(this->getCP()), casa::False));
+  ScantableWrapper copy() {
+    return ScantableWrapper(new Scantable(*(this->getCP()), false));
   }
 
-  SDMemTableWrapper getScan(std::vector<int> scan) {
-    casa::String cond("SELECT FROM $1 WHERE SCANID IN ");
-    casa::Vector<casa::Int> v(scan);
-    casa::ostringstream oss;
-    oss << v;
-    cond += casa::String(oss);
-    return SDMemTableWrapper(*this, cond);
-  }
-
-  SDMemTableWrapper getSource(const std::string& source) {
-    casa::String cond("SELECT * from $1 WHERE SRCNAME == pattern('");
-    cond += source;cond += "')";
-    return SDMemTableWrapper(*this, cond);
-  }
-
-  SDMemTableWrapper getSQL(const std::string& sqlexpr) {
-    return SDMemTableWrapper(*this, sqlexpr);
-  }
 
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
@@ -147,48 +120,38 @@ public:
     return table_->getParAngle(whichRow);
   }
 
-  void setSpectrum(std::vector<float> spectrum, int whichRow=0) {
-      table_->setSpectrum(spectrum, whichRow);
+  void setSpectrum(std::vector<float> spectrum, int whichrow=0) {
+      table_->setSpectrum(spectrum, whichrow);
   }
 
-  bool setIF(int whichIF=0) {return table_->setIF(whichIF);}
-  bool setBeam(int whichBeam=0) {return table_->setBeam(whichBeam);}
-  bool setPol(int whichPol=0) {return table_->setPol(whichPol);}
+  int getIF(int whichrow) {return table_->getIF(whichrow);}
+  int getBeam(int whichrow) {return table_->getBeam(whichrow);}
+  int getPol(int whichrow) {return table_->getPol(whichrow);}
 
-  int getIF() {return table_->getIF();}
-  int getBeam() {return table_->getBeam();}
-  int getPol() {return table_->getPol();}
+  STSelector getSelection() { return table_->getSelection(); }
 
-  int nIF() {return table_->nIF();}
-  int nBeam() {return table_->nBeam();}
-  int nPol() {return table_->nPol();}
-  int nChan() {return table_->nChan();}
-  int nScan() {return table_->nScan();}
-  int nRow() {return table_->nRow();}
-  int nStokes() {return table_->nStokes();}
+  int nif(int scanno=-1) {return table_->nif(scanno);}
+  int nbeam(int scanno=-1) {return table_->nbeam(scanno);}
+  int npol(int scanno=-1) {return table_->npol(scanno);}
+  int nchan(int ifno=-1) {return table_->nchan(ifno);}
+  int nscan() {return table_->nscan();}
+  int nrow() {return table_->nrow();}
+  ///@todo int nstokes() {return table_->nStokes();}
 
-  //sets the mask
-  bool setChannels(const std::vector<int>& whichChans) {
-    return setChannels(whichChans);
-  }
   void makePersistent(const std::string& fname) {
     table_->makePersistent(fname);
   }
 
-  bool setRestFreqs(const std::vector<double>& restfreqs,
-                    const std::string& unit,
-                    const std::vector<std::string>& lines,
-                    const std::string& source, int whichIF) {
-    casa::Vector<casa::Double> restFreqs2(restfreqs);
-    return table_->setRestFreqs(restFreqs2, casa::String(unit),
-                                lines, casa::String(source),
-                                casa::Int(whichIF));
+  void setRestFreqs(double rf, const std::string& unit) {
+    table_->setRestFreqs(rf, unit);
   }
 
-  std::string spectralLines() const {return table_->spectralLines();}
+  void setRestFreqs(const std::string& name) {
+    table_->setRestFreqs(name);
+  }
 
-  std::vector<double> getRestFreqs() {
-    return table_->getRestFreqs();
+  std::vector<double> getRestFrequencies() {
+    return table_->getRestFrequencies();
   }
 
   void setCoordInfo(std::vector<string> theinfo) {
@@ -198,8 +161,8 @@ public:
     return table_->getCoordInfo();
   }
 
-  casa::CountedPtr<SDMemTable> getCP() const {return table_;}
-  SDMemTable* getPtr() {return &(*table_);}
+  casa::CountedPtr<Scantable> getCP() const {return table_;}
+  Scantable* getPtr() {return &(*table_);}
 
   std::string summary(bool verbose=false) const {
     return table_->summary(verbose);
@@ -229,7 +192,7 @@ public:
   void calculateAZEL() { table_->calculateAZEL(); };
 
 private:
-  casa::CountedPtr<SDMemTable> table_;
+  casa::CountedPtr<Scantable> table_;
 };
 
 } // namespace

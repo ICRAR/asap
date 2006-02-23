@@ -216,12 +216,23 @@ public:
 
   int ncycle(int scanno=-1) const;
 
-  double getInterval(int scanno=0) const;
+  int getBeam(int whichrow) const;
+  int getIF(int whichrow) const;
+  int getPol(int whichrow) const;
 
-  float getTsys(int scanno=0) const;
+  double getInterval(int whichrow) const
+    { return integrCol_(whichrow); }
 
-  std::vector<bool> getMask(int whichrow=0) const;
-  std::vector<float> getSpectrum(int whichrow=0) const;
+  float getTsys(int whichrow) const;
+  float getElevation(int whichrow) const
+    { return elCol_(whichrow); }
+  float getAzimuth(int whichrow) const
+    { return azCol_(whichrow); }
+  float getParangle(int whichrow) const
+    { return paraCol_(whichrow); }
+
+  std::vector<bool> getMask(int whichrow) const;
+  std::vector<float> getSpectrum(int whichrow) const;
 
   std::vector<float> getStokesSpectrum( int whichrow=0,
                                         bool dopol=false) const;
@@ -244,6 +255,25 @@ public:
   std::string summary(bool verbose=false);
   std::string getTime(int whichrow=-1, bool showdate=true) const;
 
+  // returns unit, conversion frame, doppler, base-frame
+
+  /**
+   * Get the frequency set up
+   * This is forwarded to the STFrequencies subtable
+   * @return unit, frame, doppler
+   */
+  std::vector<std::string> getCoordInfo() const
+    { return freqTable_.getInfo(); };
+
+  void setCoordInfo(std::vector<string> theinfo)
+    { return freqTable_.setInfo(theinfo); };
+
+  std::string getAbcissaLabel(int whichrow) const;
+  std::vector<double> getRestFrequencies() const
+    { return moleculeTable_.getRestFrequencies(); }
+
+  void setRestFrequencies(double rf, const std::string& = "Hz");
+  void setRestFrequencies(const std::string& name);
 
   STFrequencies& frequencies() { return freqTable_; }
   STWeather& weather() { return weatherTable_; }
@@ -315,13 +345,14 @@ private:
   casa::Table historyTable_;
 
   // Cached Columns to avoid reconstructing them for each row get/put
-  casa::ScalarColumn<casa::Double> timeCol_, integrCol_;
+  casa::ScalarColumn<casa::Double> integrCol_;
   casa::MDirection::ScalarColumn dirCol_;
+  casa::MEpoch::ScalarColumn timeCol_;
   casa::ScalarColumn<casa::Double> azCol_;
   casa::ScalarColumn<casa::Double> elCol_;
   casa::ScalarColumn<casa::Float> paraCol_;
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
-  casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, cycleCol_;
+  casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_;
   casa::ScalarColumn<casa::Int> rbeamCol_;
   casa::ArrayColumn<casa::Float> specCol_, tsCol_;
   casa::ArrayColumn<casa::uChar> flagsCol_;

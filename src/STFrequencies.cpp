@@ -32,9 +32,9 @@ using namespace casa;
 
 namespace asap {
 
-const casa::String STFrequencies::name_ = "FREQUENCIES";
+const String STFrequencies::name_ = "FREQUENCIES";
 
-STFrequencies::STFrequencies(casa::Table::TableType tt) :
+STFrequencies::STFrequencies(Table::TableType tt) :
   STSubTable( name_, tt )
 {
   setup();
@@ -52,7 +52,8 @@ void STFrequencies::setup( )
   table_.addColumn(ScalarColumnDesc<Double>("REFVAL"));
   table_.addColumn(ScalarColumnDesc<Double>("INCREMENT"));
 
-  table_.rwKeywordSet().define("REFFRAME", String("TOPO"));
+  table_.rwKeywordSet().define("FRAME", String("TOPO"));
+  table_.rwKeywordSet().define("BASEFRAME", String("TOPO"));
   table_.rwKeywordSet().define("EQUINOX",String( "J2000"));
   table_.rwKeywordSet().define("UNIT", String("Hz"));
   table_.rwKeywordSet().define("DOPPLER", String("RADIO"));
@@ -107,12 +108,12 @@ void STFrequencies::getEntry( Double& refpix, Double& refval, Double& inc,
   inc = rec.asDouble("INCREMENT");
 }
 
-SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt freqID )
+SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(freqID) );
+  Table t = table_(table_.col("ID") == Int(id) );
 
   if (t.nrow() == 0 ) {
-    throw(AipsError("STFrequencies::getSpectralCoordinate - freqID out of range"));
+    throw(AipsError("STFrequencies::getSpectralCoordinate - ID out of range"));
   }
 
   // get the data
@@ -120,12 +121,35 @@ SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt freqID )
   // get first row - there should only be one matching id
   const TableRecord& rec = row.get(0);
 
-  return SpectralCoordinate( getFrame(), rec.asDouble("REFVAL"),
+  return SpectralCoordinate( getFrame(true), rec.asDouble("REFVAL"),
                              rec.asDouble("INCREMENT"),
                              rec.asDouble("REFPIX"));
 }
 
-void STFrequencies::rescale( casa::Float factor, const std::string& mode )
+SpectralCoordinate
+  asap::STFrequencies::getSpectralCoordinate( const MDirection& md,
+                                              const MPosition& mp,
+                                              const MEpoch& me,
+                                              Double restfreq, uInt id ) const
+{
+  SpectralCoordinate spc = getSpectralCoordinate(id);
+  spc.setRestFrequency(restfreq, True);
+  if ( !spc.setReferenceConversion(getFrame(), me, mp, md) ) {
+    throw(AipsError("Couldn't convert frequency frame."));
+  }
+  String unitstr = getUnitString();
+  if ( !unitstr.empty() ) {
+    Unit unitu(unitstr);
+    if ( unitu == Unit("Hz") ) {
+    } else {
+      spc.setVelocity(unitstr, getDoppler());
+    }
+  }
+  return spc;
+}
+
+
+void STFrequencies::rescale( Float factor, const std::string& mode )
 {
   TableRow row(table_);
   TableRecord& outrec = row.record();
@@ -136,7 +160,7 @@ void STFrequencies::rescale( casa::Float factor, const std::string& mode )
 
     const TableRecord& rec = row.get(i);
 
-    SpectralCoordinate sc ( getFrame(), rec.asDouble("REFVAL"),
+    SpectralCoordinate sc ( getFrame(true), rec.asDouble("REFVAL"),
                             rec.asDouble("INCREMENT"), rec.asDouble("REFPIX") );
 
     SpectralCoordinate scout;
@@ -176,11 +200,10 @@ SpectralCoordinate STFrequencies::resampleCsys(const SpectralCoordinate& sc,
 }
 
 
-casa::MFrequency::Types STFrequencies::getFrame( ) const
+MFrequency::Types STFrequencies::getFrame(bool base) const
 {
   // get the ref frame
-  String rf;
-  table_.keywordSet().get("REFFRAME", rf);
+  String rf = table_.keywordSet().asString("BASEFRAME");
 
   // Create SpectralCoordinate (units Hz)
   MFrequency::Types mft;
@@ -191,6 +214,39 @@ casa::MFrequency::Types STFrequencies::getFrame( ) const
   }
 
   return mft;
+}
+
+std::string asap::STFrequencies::getFrameString( bool base ) const
+{
+  if ( base ) return table_.keywordSet().asString("BASEFRAME");
+  else return table_.keywordSet().asString("FRAME");
+}
+
+std::string asap::STFrequencies::getUnitString( ) const
+{
+  return table_.keywordSet().asString("UNIT");
+}
+
+Unit asap::STFrequencies::getUnit( ) const
+{
+  return Unit(table_.keywordSet().asString("UNIT"));
+}
+
+std::string asap::STFrequencies::getDopplerString( ) const
+{
+  return table_.keywordSet().asString("DOPPLER");
+}
+
+MDoppler::Types asap::STFrequencies::getDoppler( ) const
+{
+  String dpl = table_.keywordSet().asString("DOPPLER");
+
+  // Create SpectralCoordinate (units Hz)
+  MDoppler::Types mdt;
+  if (!MDoppler::getType(mdt, dpl)) {
+    throw(AipsError("Doppler type unknown"));
+  }
+  return mdt;
 }
 
 std::string asap::STFrequencies::print( int id )
@@ -225,11 +281,48 @@ bool asap::STFrequencies::conformant( const STFrequencies& other ) const
 {
   const Record& r = table_.keywordSet();
   const Record& ro = other.table_.keywordSet();
-  return ( r.asString("REFFRAME") == ro.asString("REFFRAME") &&
+  return ( r.asString("FRAME") == ro.asString("FRAME") &&
            r.asString("EQUINOX") == ro.asString("EQUINOX") &&
            r.asString("UNIT") == ro.asString("UNIT") &&
            r.asString("DOPPLER") == ro.asString("DOPPLER")
           );
+}
+
+std::vector< std::string > asap::STFrequencies::getInfo( ) const
+{
+  const Record& r = table_.keywordSet();
+  std::vector<std::string> out;
+  out.push_back(r.asString("UNIT"));
+  out.push_back(r.asString("FRAME"));
+  out.push_back(r.asString("DOPPLER"));
+}
+
+void asap::STFrequencies::setInfo( const std::vector< std::string >& theinfo )
+{
+  if ( theinfo.size() != 3 ) throw(AipsError("setInfo needs three parameters"));
+  String un,rfrm,dpl;
+  un = theinfo[0];rfrm = theinfo[1];dpl = theinfo[2];
+  TableRecord& r = table_.rwKeywordSet();
+  setFrame(rfrm);
+  MDoppler::Types dtype;
+  dpl.upcase();
+  if (!MDoppler::getType(dtype, dpl)) {
+    throw(AipsError("Doppler type unknown"));
+  } else {
+    r.define("DOPPLER",dpl);
+  }
+}
+void asap::STFrequencies::setFrame( const std::string & frame )
+{
+  MFrequency::Types mdr;
+  if (!MFrequency::getType(mdr, frame)) {
+    Int a,b;const uInt* c;
+    const String* valid = MFrequency::allMyTypes(a, b, c);
+    String pfix = "Please specify a legal frame type. Types are\n";
+    throw(AipsError(pfix+(*valid)));
+  } else {
+    table_.rwKeywordSet().define("FRAME", frame);
+  }
 }
 
 } // namespace

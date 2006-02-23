@@ -92,4 +92,12 @@ void STMolecules::getEntry( Double restfreq, String& name,
   formattedname = rec.asString("FORMATTEDNAME");
 }
 
+std::vector< double > asap::STMolecules::getRestFrequencies( ) const
+{
+  std::vector<double> out;
+  Vector<Double> rfs = restfreqCol_.getColumn();
+  rfs.tovector(out);
+  return out;
+}
+
 } //namespace

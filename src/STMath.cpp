@@ -810,7 +810,6 @@ CountedPtr< Scantable >
   CountedPtr< Scantable > out = getScantable(in[0], false);
   setInsitu(insitu);
   Table& tout = out->table();
-  cout << "nrows " << in[1]->table().nrow() << endl;
   ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
   ScalarColumn<uInt> scannocol(tout,"SCANNO"),focusidcol(tout,"FOCUS_ID");
   uInt newscanno = max(scannocol.getColumn())+1;

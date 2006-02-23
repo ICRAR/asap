@@ -66,7 +66,6 @@ void STFiller::open( const std::string & filename,
                             int whichIF, int whichBeam )
 {
   if (table_.null())  {
-    cout << "new scnatbale object" << endl;
     table_ = new Scantable();
   }
   if (reader_)  { delete reader_; reader_ = 0; }

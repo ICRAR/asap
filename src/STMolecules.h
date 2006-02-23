@@ -38,6 +38,8 @@ public:
   void getEntry( casa::Double restfreq, casa::String& name,
                  casa::String& formattedname, casa::uInt id);
 
+  std::vector<double> getRestFrequencies() const;
+
 private:
   void setup();
   static const casa::String name_;
