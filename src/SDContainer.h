@@ -45,6 +45,9 @@ namespace asap {
 
 
 struct SDHeader {
+
+  bool conformant(const SDHeader& other);
+
   casa::Int nchan;
   casa::Int npol;
   casa::Int nif;

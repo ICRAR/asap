@@ -45,6 +45,19 @@
 using namespace casa;
 using namespace asap;
 
+
+
+bool SDHeader::conformant( const SDHeader& other )
+{
+  bool conforms;
+  conforms = (this->antennaname == other.antennaname
+              && this->equinox == other.equinox
+              && this->obstype == other.obstype
+              && this->fluxunit == other.fluxunit
+              );
+  return conforms;
+}
+
 void SDHeader::print() const {
   MVTime mvt(this->utc);
   mvt.setFormat(MVTime::YMD);
