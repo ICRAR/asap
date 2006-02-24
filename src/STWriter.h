@@ -43,17 +43,35 @@ class PKSwriter;
 class casa::Table;
 
 namespace asap {
-
+/**
+  * This exports the ASAP internal data format to othe formats,
+  * such as "SDFITS", "FITS", "MS2" or "ASCII"
+  *
+  * @brief Export of ASAP data container into forign formats
+  * @author Malte Marquarding
+  * @date $Date:$
+  * @version 2.0a
+*/
 class STWriter : public SDLog {
 public:
   STWriter(const string &format = "SDFITS");
   ~STWriter();
 
-// Format can be "SDFITS", "FITS", "MS2" or "ASCII"
-// Stokes conversion available for FITS and ASCII at present
-  casa::Int setFormat(const string &format = "SDFITS");
+  /**
+   * Set the format the data should be exported in
+   * @param format an be "SDFITS", "FITS", "MS2" or "ASCII"
+   * @return ststus code from PKSwriter
+   */
+  casa::Int setFormat(const string& format = "SDFITS");
+
+  /**
+   * Write the data to a file (directory)
+   * @param table the Scantable object
+   * @param filename the output file name
+   * @return
+   */
   casa::Int write(const casa::CountedPtr<Scantable> table,
-            const string &filename);
+            const string& filename);
 
 private:
   casa::Vector<casa::Float> tsysFromTable(const casa::Table& tab);
