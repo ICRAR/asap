@@ -40,7 +40,8 @@ public:
   void setIFs(const std::vector<int>& ifs);
   void setPolarizations(const std::vector<int>& pols);
   void setCycles(const std::vector<int>& cycs);
-  void setTaQL(const std::string& taql);
+  void setName(const std::string&);
+  virtual void setTaQL(const std::string& taql);
 
   std::vector<int> getScans();
   std::vector<int> getBeams();
@@ -51,20 +52,25 @@ public:
   casa::Table apply(const casa::Table& tab);
   casa::Table operator()(const casa::Table& tab) { return apply(tab); };
 
-  void reset() { selections_.clear(); taql_ = "";};
+  void reset() { intselections_.clear();stringselections_.clear(); taql_ = "";};
 
   bool empty() const;
 
   std::string print();
 
-private:
-  //
-  std::vector< int > get( const std::string& key);
-  void set(const std::string& key, const std::vector< int >& val);
+protected:
+  std::vector< int > getint( const std::string& key);
+  std::vector< std::string > getstring( const std::string& key);
 
-  typedef std::map<std::string, std::vector<int> > idmap;
+  void setint(const std::string& key, const std::vector< int >& val);
+  void setstring(const std::string& key, const std::vector< std::string >& val);
+
+private:
+  typedef std::map<std::string, std::vector<int> > intidmap;
+  typedef std::map<std::string, std::vector<std::string> > stringidmap;
   // has to be mutable, as to stl limitations
-  mutable idmap selections_;
+  mutable intidmap intselections_;
+  mutable stringidmap stringselections_;
   std::string taql_;
 };
 

@@ -11,10 +11,12 @@
 //
 #include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableParse.h>
+#include <tables/Tables/ExprNode.h>
 #include <casa/BasicSL/String.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
 
+#include "MathUtils.h"
 #include "STSelector.h"
 
 using namespace asap;
@@ -25,15 +27,17 @@ STSelector::STSelector() :
 {
 }
 
-STSelector::STSelector( const STSelector & other ) :
-  selections_(other.selections_),
+STSelector::STSelector( const STSelector&  other ) :
+  intselections_(other.intselections_),
+  stringselections_(other.stringselections_),
   taql_(other.taql_) {
 }
 
 STSelector& STSelector::operator=( const STSelector& other )
 {
   if (&other != this) {
-    this->selections_ = other.selections_;
+    this->intselections_ = other.intselections_;
+    this->stringselections_ = other.stringselections_;
     this->taql_ = other.taql_;
   }
   return *this;
@@ -45,33 +49,47 @@ STSelector::~STSelector()
 
 void STSelector::setScans( const std::vector< int >& scans )
 {
-  set("SCANNO", scans);
+  setint("SCANNO", scans);
 }
 
 void STSelector::setBeams( const std::vector< int >& beams )
 {
-  set("BEAMNO", beams);
+  setint("BEAMNO", beams);
 }
 
 void STSelector::setIFs( const std::vector< int >& ifs )
 {
-  set("IFNO", ifs);
+  setint("IFNO", ifs);
 }
 
 void STSelector::setPolarizations( const std::vector< int >& pols )
 {
-  set("POLNO", pols);
+  setint("POLNO", pols);
 }
 
 void asap::STSelector::setCycles( const std::vector< int >& cycs )
 {
-  set("CYCLENO", cycs);
+  setint("CYCLENO", cycs);
 }
 
-void STSelector::set(const std::string& key, const std::vector< int >& val)
+void asap::STSelector::setName( const std::string& sname )
+{
+  std::string sql = "SELECT from $1 WHERE SRCNAME == pattern('"+sname+"')";
+  setTaQL(sql);
+}
+
+void STSelector::setint(const std::string& key, const std::vector< int >& val)
 {
   if ( val.size() > 0 ) {
-    selections_[key] = val;
+    intselections_[key] = val;
+  }
+}
+
+void STSelector::setstring( const std::string& key,
+                            const std::vector<std::string>& val )
+{
+  if ( val.size() > 0 ) {
+    stringselections_[key] = val;
   }
 }
 
@@ -86,13 +104,22 @@ Table STSelector::apply( const Table& tab )
     return tab;
   }
   TableExprNode query;
-  idmap::const_iterator it = selections_.begin();
-  for (it; it != selections_.end(); ++it) {
+  intidmap::const_iterator it = intselections_.begin();
+  for (it; it != intselections_.end(); ++it) {
     TableExprNode theset(Vector<Int>( (*it).second ));
     if ( query.isNull() ) {
       query = tab.col((*it).first).in(theset);
     } else {
       query = tab.col((*it).first).in(theset) && query;
+    }
+  }
+  stringidmap::const_iterator it1 = stringselections_.begin();
+  for (it1; it1 != stringselections_.end(); ++it1) {
+    TableExprNode theset(mathutil::toVectorString( (*it1).second ));
+    if ( query.isNull() ) {
+      query = tab.col((*it1).first).in(theset);
+    } else {
+      query = tab.col((*it1).first).in(theset) && query;
     }
   }
   // add taql query
@@ -104,42 +131,42 @@ Table STSelector::apply( const Table& tab )
     } else { // taql only
       tmpt = tableCommand(taql_, tab);
     }
-    return tmpt.copyToMemoryTable("dummy");
+    return tmpt;
   } else {
-    return tab(query).copyToMemoryTable("dummy");
+    return tab(query);
   }
 }
 
-std::vector< int > STSelector::get( const std::string& key)
+std::vector< int > STSelector::getint( const std::string& key )
 {
-  if (selections_.count(key) > 0) {
-    return  std::vector<int>();//selections_[key];
+  if (intselections_.count(key) > 0) {
+    return  std::vector<int>();//intselections_[key];
   }
 }
 
 std::vector< int > STSelector::getScans( )
 {
-  return get("SCANNO");
+  return getint("SCANNO");
 }
 
 std::vector< int > STSelector::getBeams( )
 {
-  return get("BEAMNO");
+  return getint("BEAMNO");
 }
 
 std::vector< int > STSelector::getIFs( )
 {
-  return get("IFNO");
+  return getint("IFNO");
 }
 
 std::vector< int > STSelector::getPols( )
 {
-  return get("POLNO");
+  return getint("POLNO");
 }
 
 std::vector< int > asap::STSelector::getCycles( )
 {
-  return get("CYCLENO");
+  return getint("CYCLENO");
 }
 
 std::string asap::STSelector::print( )
@@ -152,13 +179,21 @@ std::string asap::STSelector::print( )
     return String(oss);
   }
 
-  idmap::const_iterator it = selections_.begin();
-  while (it != selections_.end()) {
-    if ( it != selections_.begin() )
+  intidmap::const_iterator it = intselections_.begin();
+  while (it != intselections_.end()) {
+    if ( it != intselections_.begin() )
       oss << setw(15) << " ";
     oss << it->first << ": " << Vector<Int>(it->second);
     ++it;
-    if ( it != selections_.end() ) oss << endl;
+    if ( it != intselections_.end() ) oss << endl;
+  }
+  stringidmap::const_iterator it1 = stringselections_.begin();
+  while (it1 != stringselections_.end()) {
+    if ( it1 != stringselections_.begin() )
+      oss << setw(15) << " ";
+    oss << it1->first << ": " << mathutil::toVectorString(it1->second);
+    ++it1;
+    if ( it1 != stringselections_.end() ) oss << endl;
   }
   if ( taql_.size() > 0 ) {
     oss << endl << setw(15) << "" << taql_;
@@ -168,5 +203,5 @@ std::string asap::STSelector::print( )
 
 bool asap::STSelector::empty( ) const
 {
-  return (selections_.empty() && taql_.size() == 0 );
+  return (intselections_.empty() && taql_.size() == 0 );
 }
