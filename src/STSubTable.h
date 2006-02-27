@@ -19,6 +19,7 @@
 
 namespace asap {
 
+class Scantable;
 /**
 Abstract base class for all subtables in the Scantable class.
 
@@ -28,10 +29,15 @@ Abstract base class for all subtables in the Scantable class.
 */
 class STSubTable : public SDLog {
 public:
-  STSubTable( const casa::String& name,
-              casa::Table::TableType tt = casa::Table::Memory );
+  STSubTable() {;}
+  STSubTable( casa::Table tab );
+  STSubTable( const Scantable& parent,
+              const casa::String& name );
 
   virtual ~STSubTable();
+
+  STSubTable& operator=(const STSubTable& other);
+
 
 
   /**
@@ -50,15 +56,11 @@ public:
   const casa::Table& table() const { return table_; }
   casa::Table table() { return table_; }
 
-  casa::Table::TableType tableType() const { return type_; }
-
 protected:
   casa::Table table_;
   casa::ScalarColumn<casa::uInt> idCol_;
 
 private:
-  casa::Table::TableType type_;
-
 };
 
 }

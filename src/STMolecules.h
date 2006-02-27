@@ -28,9 +28,13 @@ The Molecules subtable of the Scantable
 */
 class STMolecules : public STSubTable {
 public:
-  STMolecules( casa::Table::TableType tt = casa::Table::Memory);
+  STMolecules() {;}
+  STMolecules(casa::Table tab);
+  STMolecules( const Scantable& parent);
 
   virtual ~STMolecules();
+
+  STMolecules& operator=(const STMolecules& other);
 
   casa::uInt addEntry( casa::Double restfreq, const casa::String& name="",
                        const casa::String& formattedname="");

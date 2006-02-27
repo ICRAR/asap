@@ -29,9 +29,13 @@ The Tcal subtable of the Scantable
 */
 class STTcal : public STSubTable {
 public:
-  STTcal( casa::Table::TableType tt = casa::Table::Memory);
+  STTcal() {;}
+  STTcal(casa::Table tab);
+  STTcal( const Scantable& parent);
 
   virtual ~STTcal();
+
+  STTcal& operator=(const STTcal& other);
 
   casa::uInt addEntry( const casa::String& time,
                        const casa::Vector<casa::Float>& tcal);

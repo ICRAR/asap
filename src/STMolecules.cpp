@@ -27,15 +27,32 @@ namespace asap {
 
 const casa::String STMolecules::name_ = "MOLECULES";
 
-STMolecules::STMolecules(casa::Table::TableType tt) :
-  STSubTable( name_, tt )
+STMolecules::STMolecules(const Scantable& parent) :
+  STSubTable( parent, name_ )
 {
   setup();
 }
 
+asap::STMolecules::STMolecules( casa::Table tab ) : STSubTable(tab)
+{
+  restfreqCol_.attach(table_,"RESTFREQUENCY");
+  nameCol_.attach(table_,"NAME");
+  formattednameCol_.attach(table_,"FORMATTEDNAME");
+}
 
 STMolecules::~STMolecules()
 {
+}
+
+STMolecules & asap::STMolecules::operator =( const STMolecules & other )
+{
+  if ( this != &other ) {
+    static_cast<STSubTable&>(*this) = other;
+    restfreqCol_.attach(table_,"RESTFREQUENCY");
+    nameCol_.attach(table_,"NAME");
+    formattednameCol_.attach(table_,"FORMATTEDNAME");
+  }
+  return *this;
 }
 
 void asap::STMolecules::setup( )
@@ -100,4 +117,6 @@ std::vector< double > asap::STMolecules::getRestFrequencies( ) const
   return out;
 }
 
-} //namespace
+
+}//namespace
+

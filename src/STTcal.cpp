@@ -1,3 +1,4 @@
+
 //
 // C++ Implementation: STTcal
 //
@@ -28,12 +29,28 @@ namespace asap {
 
 const casa::String STTcal::name_ = "TCAL";
 
-STTcal::STTcal(casa::Table::TableType tt) :
-  STSubTable( name_, tt )
+STTcal::STTcal(const Scantable& parent) :
+  STSubTable( parent, name_ )
 {
   setup();
 }
 
+STTcal& asap::STTcal::operator =( const STTcal & other )
+{
+  if ( this != &other ) {
+    static_cast<STSubTable&>(*this) = other;
+    timeCol_.attach(table_,"TIME");
+    tcalCol_.attach(table_,"TCAL");
+  }
+  return *this;
+}
+
+asap::STTcal::STTcal( casa::Table tab ) : STSubTable(tab)
+{
+  timeCol_.attach(table_,"TIME");
+  tcalCol_.attach(table_,"TCAL");
+
+}
 
 STTcal::~STTcal()
 {
@@ -90,4 +107,3 @@ void STTcal::getEntry( String& time, Vector<Float>& tcal, uInt id )
 }
 
 } //namespace
-

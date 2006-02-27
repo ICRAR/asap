@@ -30,9 +30,14 @@ The Frequencies subtable of the Scantable
 */
 class STFrequencies : public STSubTable {
 public:
-    STFrequencies( casa::Table::TableType tt = casa::Table::Memory);
+  STFrequencies() {;}
+  STFrequencies(casa::Table tab);
+  STFrequencies(const Scantable& parent);
 
-    virtual ~STFrequencies();
+  virtual ~STFrequencies();
+
+  STFrequencies& operator=(const STFrequencies& other);
+
   /**
    * Add a new Entry to the Frequency subtable. This checks for duplicates.
    * @param[in] refpix the reference pixel

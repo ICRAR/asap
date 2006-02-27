@@ -27,16 +27,40 @@ namespace asap {
 
 const casa::String STWeather::name_ = "WEATHER";
 
-STWeather::STWeather(casa::Table::TableType tt) :
-  STSubTable( name_, tt )
+STWeather::STWeather(const Scantable& parent) :
+  STSubTable( parent, name_ )
 {
   setup();
 }
 
 
+asap::STWeather::STWeather( casa::Table tab ) : STSubTable(tab)
+{
+  temperatureCol_.attach(table_,"TEMPERATURE");
+  pressureCol_.attach(table_,"PRESSURE");
+  humidityCol_.attach(table_,"HUMIDITY");
+  windspeedCol_.attach(table_,"WINDSPEED");
+  windazCol_.attach(table_,"WINDAZ");
+
+}
+
 STWeather::~STWeather()
 {
 }
+
+STWeather & asap::STWeather::operator =( const STWeather & other )
+{
+  if ( this != &other ) {
+    static_cast<STSubTable&>(*this) = other;
+    temperatureCol_.attach(table_,"TEMPERATURE");
+    pressureCol_.attach(table_,"PRESSURE");
+    humidityCol_.attach(table_,"HUMIDITY");
+    windspeedCol_.attach(table_,"WINDSPEED");
+    windazCol_.attach(table_,"WINDAZ");
+  }
+  return *this;
+}
+
 
 void asap::STWeather::setup( )
 {

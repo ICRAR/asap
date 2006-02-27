@@ -28,9 +28,13 @@ The Focus subtable of the Scantable
 */
 class STFocus : public STSubTable {
 public:
-  STFocus( casa::Table::TableType tt = casa::Table::Memory);
+  STFocus() {;}
+  STFocus(casa::Table tab);
+  STFocus( const Scantable& parent );
 
   virtual ~STFocus();
+
+  STFocus& operator=(const STFocus& other);
 
   casa::uInt addEntry( casa::Float rotation, casa::Float angle,
                        casa::Float ftan);

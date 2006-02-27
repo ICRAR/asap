@@ -34,15 +34,36 @@ namespace asap {
 
 const String STFrequencies::name_ = "FREQUENCIES";
 
-STFrequencies::STFrequencies(Table::TableType tt) :
-  STSubTable( name_, tt )
+STFrequencies::STFrequencies(const Scantable& parent) :
+  STSubTable(parent, name_)
 {
+  cout << "STFrequencies(const Scantable& parent" << endl;
   setup();
+  cout << "after setup" << endl;
 }
 
+asap::STFrequencies::STFrequencies( casa::Table tab ) :
+  STSubTable(tab)
+{
+  refpixCol_.attach(table_,"REFPIX");
+  refvalCol_.attach(table_,"REFVAL");
+  incrCol_.attach(table_,"INCREMENT");
+
+}
 
 STFrequencies::~STFrequencies()
 {
+}
+
+STFrequencies & asap::STFrequencies::operator =( const STFrequencies & other )
+{
+  if ( this != &other ) {
+    static_cast<STSubTable&>(*this) = other;
+    refpixCol_.attach(table_,"REFPIX");
+    refvalCol_.attach(table_,"REFVAL");
+    incrCol_.attach(table_,"INCREMENT");
+  }
+  return *this;
 }
 
 void STFrequencies::setup( )
@@ -324,5 +345,6 @@ void asap::STFrequencies::setFrame( const std::string & frame )
     table_.rwKeywordSet().define("FRAME", frame);
   }
 }
+
 
 } // namespace

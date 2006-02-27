@@ -28,9 +28,13 @@ The Weather subtable of the Scantable
 */
 class STWeather : public STSubTable {
 public:
-  STWeather( casa::Table::TableType tt = casa::Table::Memory);
+  STWeather() {;}
+  STWeather(casa::Table tab);
+  STWeather( const Scantable& parent);
 
   virtual ~STWeather();
+
+  STWeather& operator=(const STWeather& other);
 
   casa::uInt addEntry( casa::Float temperature, casa::Float pressure,
                        casa::Float humidity,

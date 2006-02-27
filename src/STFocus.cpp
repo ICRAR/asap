@@ -27,17 +27,33 @@ namespace asap {
 
 const casa::String STFocus::name_ = "FOCUS";
 
-STFocus::STFocus(casa::Table::TableType tt) :
-  STSubTable( name_, tt )
+STFocus::STFocus(const Scantable& parent ) :
+  STSubTable( parent, name_ )
 {
   setup();
 }
 
+asap::STFocus::STFocus( casa::Table tab ) : STSubTable(tab)
+{
+  rotationCol_.attach(table_,"ROTATION");
+  angleCol_.attach(table_,"ANGLE");
+  tanCol_.attach(table_,"TAN");
+}
 
 STFocus::~STFocus()
 {
 }
 
+STFocus & asap::STFocus::operator =( const STFocus & other )
+{
+  if (this != &other) {
+    static_cast<STSubTable&>(*this) = other;
+    rotationCol_.attach(table_,"ROTATION");
+    angleCol_.attach(table_,"ANGLE");
+    tanCol_.attach(table_,"TAN");
+  }
+  return *this;
+}
 void asap::STFocus::setup( )
 {
   // add to base class table
@@ -90,5 +106,6 @@ void asap::STFocus::getEntry( Float& rotation, Float& angle, Float& ftan,
   angle = rec.asFloat("ANGLE");
   ftan = rec.asFloat("TAN");
 }
+
 
 }
