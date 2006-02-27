@@ -174,6 +174,12 @@ public:
    */
   void flag();
 
+  /**
+   * Return a list of row numbers with respect to the original table.
+   * @return a lsi of rownumbers with respect to the original table
+   */
+  std::vector<unsigned int> rownumbers() const;
+
 
   /**
    * Get the number of beams in the data or a specific scan

@@ -60,29 +60,32 @@ using namespace casa;
 namespace asap {
 
 Scantable::Scantable(Table::TableType ttype) :
-  type_(ttype),
-  freqTable_(ttype),
-  focusTable_(ttype),
-  weatherTable_(ttype),
-  tcalTable_(ttype),
-  moleculeTable_(ttype)
+  type_(ttype)
 {
   setupMainTable();
+  freqTable_ = STFrequencies(*this);
   table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_.table());
+  weatherTable_ = STWeather(*this);
   table_.rwKeywordSet().defineTable("WEATHER", weatherTable_.table());
+  focusTable_ = STFocus(*this);
   table_.rwKeywordSet().defineTable("FOCUS", focusTable_.table());
+  tcalTable_ = STTcal(*this);
   table_.rwKeywordSet().defineTable("TCAL", tcalTable_.table());
+  moleculeTable_ = STMolecules(*this);
   table_.rwKeywordSet().defineTable("MOLECULES", moleculeTable_.table());
   setupHistoryTable();
   setupFitTable();
+  historyTable_ = table_.keywordSet().asTable("HISTORY");
+  fitTable_ = table_.keywordSet().asTable("FITS");
+  cout << "DEBUG" << endl;
 
   originalTable_ = table_;
   attach();
+  cout << "debug" << endl;
 }
 
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
-  type_(ttype),
-  freqTable_(ttype)
+  type_(ttype)
 {
   Table tab(name);
   Int version;
@@ -91,10 +94,14 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
     throw(AipsError("Unsupported version of ASAP file."));
   }
   if ( type_ == Table::Memory )
-    table_ = tab.copyToMemoryTable("dummy");
+    table_ = tab.copyToMemoryTable(generateName());
   else
     table_ = tab;
-
+  freqTable_ = STFrequencies(table_.keywordSet().asTable("FREQUENCIES"));
+  focusTable_ = STFocus(table_.keywordSet().asTable("FOCUS"));
+  weatherTable_ = STWeather(table_.keywordSet().asTable("WEATHER"));
+  tcalTable_ = STTcal(table_.keywordSet().asTable("TCAL"));
+  moleculeTable_ = STMolecules(table_.keywordSet().asTable("MOLECULES"));
   originalTable_ = table_;
   attach();
 }
@@ -104,10 +111,10 @@ Scantable::Scantable( const Scantable& other, bool clear )
 {
   // with or without data
   if (clear) {
-    table_ = TableCopy::makeEmptyMemoryTable(String("dummy"), other.table_,
-                                             True);
+    table_ = TableCopy::makeEmptyMemoryTable(String(generateName()),
+                                             other.table_, True);
   } else {
-    table_ = other.table_.copyToMemoryTable(String("dummy"));
+    table_ = other.table_.copyToMemoryTable(String(generateName()));
   }
 
   originalTable_ = table_;
@@ -180,9 +187,8 @@ void Scantable::setupMainTable()
   td.rwKeywordSet().define("OBSMODE", String(""));
 
   // Now create Table SetUp from the description.
-  SetupNewTable aNewTab("dummy", td, Table::New);
-  table_ = Table(aNewTab, Table::Memory, 0);
-
+  SetupNewTable aNewTab(generateName(), td, Table::New);
+  table_ = Table(aNewTab, type_, 0);
   originalTable_ = table_;
 
 }
@@ -212,9 +218,6 @@ void Scantable::setupFitTable()
 
 void Scantable::attach()
 {
-  historyTable_ = table_.keywordSet().asTable("HISTORY");
-  fitTable_ = table_.keywordSet().asTable("FITS");
-
   timeCol_.attach(table_, "TIME");
   srcnCol_.attach(table_, "SRCNAME");
   specCol_.attach(table_, "SPECTRA");
@@ -782,6 +785,14 @@ void asap::Scantable::setRestFrequencies( const std::string& name )
 {
   throw(AipsError("setRestFrequencies( const std::string& name ) NYI"));
   ///@todo implement
+}
+
+std::vector< unsigned int > asap::Scantable::rownumbers( ) const
+{
+  std::vector<unsigned int> stlout;
+  Vector<uInt> vec = table_.rowNumbers();
+  vec.tovector(stlout);
+  return stlout;
 }
 
 }//namespace asap
