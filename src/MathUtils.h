@@ -41,6 +41,15 @@ namespace mathutil {
 
 // Hanning smoothing
 template <class T>
+/**
+ * Hanning smooth a masked vector
+ * @param out the smoothed vector
+ * @param outmask  the smoothed mask
+ * @param in the input vector
+ * @param mask the input mask
+ * @param relaxed a weighting scheme
+ * @param ignoreOther drop every second channel (NYI)
+ */
 void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask,
 	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask,
 	     casa::Bool relaxed=casa::False,
@@ -54,8 +63,20 @@ float statistics(const casa::String& which,
 void replaceMaskByZero(casa::Vector<casa::Float>& data,
 		       const casa::Vector<casa::Bool>& mask);
 
+/**
+ * Convert a std::vector of std::string
+ * to a casa::Vector casa::String
+ * @param in
+ * @return
+ */
 std::vector<std::string> tovectorstring(const casa::Vector<casa::String>& in);
 
+/**
+ * Convert a casa::Vector of casa::String
+ * to a stl std::vector of stl std::string
+ * @param in
+ * @return
+ */
 casa::Vector<casa::String> toVectorString(const std::vector<std::string>& in);
 
 };
