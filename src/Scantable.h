@@ -325,6 +325,7 @@ private:
   void setupMoleculeTable();
   void setupFitTable();
 
+  void attachSubtables();
   /**
    * Convert an "old" asap1 style row index into a new index
    * @param[in] therow

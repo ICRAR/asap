@@ -77,11 +77,8 @@ Scantable::Scantable(Table::TableType ttype) :
   setupFitTable();
   historyTable_ = table_.keywordSet().asTable("HISTORY");
   fitTable_ = table_.keywordSet().asTable("FITS");
-  cout << "DEBUG" << endl;
-
   originalTable_ = table_;
   attach();
-  cout << "debug" << endl;
 }
 
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
@@ -97,11 +94,7 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
     table_ = tab.copyToMemoryTable(generateName());
   else
     table_ = tab;
-  freqTable_ = STFrequencies(table_.keywordSet().asTable("FREQUENCIES"));
-  focusTable_ = STFocus(table_.keywordSet().asTable("FOCUS"));
-  weatherTable_ = STWeather(table_.keywordSet().asTable("WEATHER"));
-  tcalTable_ = STTcal(table_.keywordSet().asTable("TCAL"));
-  moleculeTable_ = STMolecules(table_.keywordSet().asTable("MOLECULES"));
+  attachSubtables();
   originalTable_ = table_;
   attach();
 }
@@ -110,15 +103,43 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
 Scantable::Scantable( const Scantable& other, bool clear )
 {
   // with or without data
-  if (clear) {
-    table_ = TableCopy::makeEmptyMemoryTable(String(generateName()),
-                                             other.table_, True);
+  String newname = String(generateName());
+  if ( other.table_.tableType() == Table::Memory ) {
+      if ( clear ) {
+        cout << "copy ctor memory clear" << endl;
+        table_ = TableCopy::makeEmptyMemoryTable(newname,
+                                                 other.table_, True);
+      } else
+        table_ = other.table_.copyToMemoryTable(newname);
   } else {
-    table_ = other.table_.copyToMemoryTable(String(generateName()));
-  }
+    if ( clear ) {
+      cout << "copy ctor clear" << endl;
+      other.table_.deepCopy(newname, Table::New);
+      cout << "reading table" << endl;
+      table_ = Table(newname, Table::Scratch);
+      cout << "removing rows" << endl;
+      table_.removeRow(table_.rowNumbers());
 
+    } else {
+      cout << "copy ctor no clear" << endl;
+      other.table_.deepCopy(newname, Table::Scratch);
+      table_ = Table(newname, Table::Scratch);
+    }
+  }
+  //table_.rwKeywordSet().renameTables(newname, table_.tableName());
+  //cout << table_.keywordSet().asTable("TCAL").tableName() << endl;
+  attachSubtables();
   originalTable_ = table_;
   attach();
+}
+
+void Scantable::attachSubtables()
+{
+  freqTable_ = STFrequencies(table_);
+  focusTable_ = STFocus(table_);
+  weatherTable_ = STWeather(table_);
+  tcalTable_ = STTcal(table_);
+  moleculeTable_ = STMolecules(table_);
 }
 
 Scantable::~Scantable()
@@ -187,7 +208,7 @@ void Scantable::setupMainTable()
   td.rwKeywordSet().define("OBSMODE", String(""));
 
   // Now create Table SetUp from the description.
-  SetupNewTable aNewTab(generateName(), td, Table::New);
+  SetupNewTable aNewTab(generateName(), td, Table::Scratch);
   table_ = Table(aNewTab, type_, 0);
   originalTable_ = table_;
 
@@ -197,7 +218,7 @@ void Scantable::setupHistoryTable( )
 {
   TableDesc tdh("", "1", TableDesc::Scratch);
   tdh.addColumn(ScalarColumnDesc<String>("ITEM"));
-  SetupNewTable histtab("history", tdh, Table::New);
+  SetupNewTable histtab("history", tdh, Table::Scratch);
   Table histTable(histtab, Table::Memory);
   table_.rwKeywordSet().defineTable("HISTORY", histTable);
 }
@@ -211,7 +232,7 @@ void Scantable::setupFitTable()
   td.addColumn(ArrayColumnDesc<Double>("PARAMETERS"));
   td.addColumn(ArrayColumnDesc<Bool>("PARMASK"));
   td.addColumn(ArrayColumnDesc<String>("FRAMEINFO"));
-  SetupNewTable aNewTab("fits", td, Table::New);
+  SetupNewTable aNewTab("fits", td, Table::Scratch);
   Table aTable(aNewTab, Table::Memory);
   table_.rwKeywordSet().defineTable("FITS", aTable);
 }
@@ -237,7 +258,7 @@ void Scantable::attach()
   rbeamCol_.attach(table_, "REFBEAMNO");
 
   mfitidCol_.attach(table_,"FIT_ID");
-  fitidCol_.attach(fitTable_,"FIT_ID");
+  //fitidCol_.attach(fitTable_,"FIT_ID");
 
   mfreqidCol_.attach(table_, "FREQ_ID");
 
@@ -377,7 +398,11 @@ void Scantable::makePersistent(const std::string& filename)
   String inname(filename);
   Path path(inname);
   inname = path.expandedName();
+  //cout << table_.tableName() << endl;
+  //cout << freqTable_.table().tableName() << endl;
   table_.deepCopy(inname, Table::New);
+  //Table t = Table(inname, Table::Update);
+  //cout << t.keywordSet().asTable("FREQUENCIES").tableName() << endl;
 }
 
 int Scantable::nbeam( int scanno ) const
