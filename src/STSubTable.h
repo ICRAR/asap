@@ -30,9 +30,8 @@ Abstract base class for all subtables in the Scantable class.
 class STSubTable : public SDLog {
 public:
   STSubTable() {;}
-  STSubTable( casa::Table tab );
-  STSubTable( const Scantable& parent,
-              const casa::String& name );
+  STSubTable( casa::Table tab, const casa::String& name);
+  STSubTable( const Scantable& parent, const casa::String& name );
 
   virtual ~STSubTable();
 
@@ -45,6 +44,8 @@ public:
    */
   virtual void setup() = 0;
   // -> virtual bool conformant(const STSubTable& other) = 0;
+
+  virtual const casa::String& name() const = 0;
 
   /**
    * Recalculate IDs to be 0-based and incremented by 1 i.e.
@@ -61,6 +62,7 @@ protected:
   casa::ScalarColumn<casa::uInt> idCol_;
 
 private:
+
 };
 
 }

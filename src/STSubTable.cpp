@@ -13,6 +13,7 @@
 #include <tables/Tables/TableDesc.h>
 #include <tables/Tables/SetupNewTab.h>
 #include <tables/Tables/ScaColDesc.h>
+#include <tables/Tables/TableRecord.h>
 
 #include "Scantable.h"
 #include "STSubTable.h"
@@ -27,14 +28,14 @@ STSubTable::STSubTable( const Scantable& parent, const casa::String& name )
   TableDesc td("", "1", TableDesc::Scratch);
   td.addColumn(ScalarColumnDesc<uInt>("ID"));
   String tabname = parent.table().tableName()+"/"+name;
-  SetupNewTable aNewTab(tabname, td, Table::New);
+  SetupNewTable aNewTab(tabname, td, Table::Scratch);
   table_ = Table(aNewTab, parent.table().tableType());
   idCol_.attach(table_,"ID");
 
 }
-STSubTable::STSubTable(Table tab)
+STSubTable::STSubTable(Table tab, const String& name)
 {
-  table_ = tab;
+  table_ = tab.rwKeywordSet().asTable(name);
   idCol_.attach(table_,"ID");
 }
 
