@@ -48,8 +48,7 @@ STFiller::STFiller( CountedPtr< Scantable > stbl ) :
 {
 }
 
-STFiller::STFiller(const std::string & filename,
-                                 int whichIF, int whichBeam ) :
+STFiller::STFiller(const std::string& filename, int whichIF, int whichBeam ) :
   reader_(0),
   header_(0),
   table_(0)
@@ -62,8 +61,7 @@ STFiller::~STFiller()
   close();
 }
 
-void STFiller::open( const std::string & filename,
-                            int whichIF, int whichBeam )
+void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
 {
   if (table_.null())  {
     table_ = new Scantable();
