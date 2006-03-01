@@ -92,7 +92,6 @@ Float RowAccumulator::addTsys( const casa::Vector< casa::Float > & v )
 
 void asap::RowAccumulator::addTime( casa::Double t )
 {
-  //cout << setw(11) << setprecision(10) << timeSum_ << " + " << t << endl;
   timeSum_ += t;
 }
 
@@ -122,7 +121,6 @@ casa::Vector< casa::Float > RowAccumulator::getSpectrum( ) const
 
 casa::Double asap::RowAccumulator::getTime( ) const
 {
-  //cout << setw(11) << setprecision(10) << timeSum_ << " / " << max(n_) << endl;
   return timeSum_/max(n_);
 }
 
