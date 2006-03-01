@@ -35,25 +35,30 @@ namespace asap {
 class ScantableWrapper {
 
 public:
-  ScantableWrapper(const std::string& name) :
-    table_(new Scantable(name)) {;}
+  ScantableWrapper( const std::string& name,
+                    const std::string& type="")
+  {
+    casa::Table::TableType tp = casa::Table::Memory;
+    if ( type == "disk") tp = casa::Table::Plain;
+    table_ = new Scantable(name, tp);
+  }
 
-  ScantableWrapper() :
-    table_(new Scantable()) {;}
+  ScantableWrapper(const std::string& type="")
+  {
+    casa::Table::TableType tp = casa::Table::Memory;
+    if ( type == "disk") tp = casa::Table::Plain;
+    table_= new Scantable(tp);
+  }
 
   ScantableWrapper(casa::CountedPtr<Scantable> cp) : table_(cp) {;}
 
   ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
 
-  ScantableWrapper(const ScantableWrapper& mt, const std::string& expr) :
-    table_(new Scantable(mt.getCP()->table(), expr)) {;}
-
   ScantableWrapper copy() {
     return ScantableWrapper(new Scantable(*(this->getCP()), false));
   }
-
-
+  /*
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }
@@ -67,7 +72,7 @@ public:
                                          int polIdx=-1) const {
     return table_->stokesToPolSpectrum(whichRow, linear, polIdx);
   }
-
+  */
   //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
   // Boost fails with 4 arguments.
   std::string getPolarizationLabel(bool linear, bool stokes,
@@ -76,83 +81,70 @@ public:
     return table_->getPolarizationLabel(linear, stokes, linPol, polIdx);
   }
 
-  std::vector<double> getAbcissa(int whichRow=0) const {
-    return table_->getAbcissa(whichRow);
-  }
-  std::string getAbcissaString(int whichRow=0) const {
-    return table_->getAbcissaString(whichRow);
-  }
+  std::vector<double> getAbcissa(int whichRow=0) const
+    { return table_->getAbcissa(whichRow); }
 
-  std::vector<float> getTsys() {
-     int nRow = table_->nRow();
-     std::vector<float> result(nRow);
-     for (uint i=0; i<nRow; i++) {
-        result[i] = table_->getTsys(i);
-     }
-     return result;
-  }
+  std::string getAbcissaString(int whichRow=0) const
+    { return table_->getAbcissaString(whichRow); }
 
-  std::string getTime(int whichRow=0) {return table_->getTime(whichRow);}
+  float getTsys(int whichRow=0) const
+    { return table_->getTsys(whichRow); }
 
-  std::string getFluxUnit() const {return table_->getFluxUnit();}
-  void setFluxUnit(const std::string& unit) {table_->setFluxUnit(unit);}
+  std::string getTime(int whichRow=0) const
+    { return table_->getTime(whichRow); }
+
+  std::string getFluxUnit() const { return table_->getFluxUnit(); }
+
+  void setFluxUnit(const std::string& unit) { table_->setFluxUnit(unit); }
 
   void setInstrument(const std::string& name) {table_->setInstrument(name);}
 
-  std::vector<bool> getMask(int whichRow=0) const {
-    return table_->getMask(whichRow);
-  }
+  std::vector<bool> getMask(int whichRow=0) const
+    { return table_->getMask(whichRow); }
 
-  void flag(int whichRow=-1) {
-    table_->flag(whichRow);
-  }
-  std::string getSourceName(int whichRow=0) {
-    return table_->getSourceName(whichRow);
-  }
+  void flag() { table_->flag(); }
 
-  float getElevation(int whichRow=0) {
-    return table_->getElevation(whichRow);
-  }
-  float getAzimuth(int whichRow=0) {
-    return table_->getAzimuth(whichRow);
-  }
-  float getParAngle(int whichRow=0) {
-    return table_->getParAngle(whichRow);
-  }
+  std::string getSourceName(int whichRow=0) const
+    { return table_->getSourceName(whichRow); }
 
-  void setSpectrum(std::vector<float> spectrum, int whichrow=0) {
-      table_->setSpectrum(spectrum, whichrow);
-  }
+  float getElevation(int whichRow=0) const
+    { return table_->getElevation(whichRow); }
 
-  int getIF(int whichrow) {return table_->getIF(whichrow);}
-  int getBeam(int whichrow) {return table_->getBeam(whichrow);}
-  int getPol(int whichrow) {return table_->getPol(whichrow);}
+  float getAzimuth(int whichRow=0) const
+    { return table_->getAzimuth(whichRow); }
 
-  STSelector getSelection() { return table_->getSelection(); }
+  float getParAngle(int whichRow=0) const
+    { return table_->getParAngle(whichRow); }
 
-  int nif(int scanno=-1) {return table_->nif(scanno);}
-  int nbeam(int scanno=-1) {return table_->nbeam(scanno);}
-  int npol(int scanno=-1) {return table_->npol(scanno);}
-  int nchan(int ifno=-1) {return table_->nchan(ifno);}
-  int nscan() {return table_->nscan();}
-  int nrow() {return table_->nrow();}
+  void setSpectrum(std::vector<float> spectrum, int whichrow=0)
+    { table_->setSpectrum(spectrum, whichrow); }
+
+  int getIF(int whichrow) const {return table_->getIF(whichrow);}
+  int getBeam(int whichrow) const {return table_->getBeam(whichrow);}
+  int getPol(int whichrow) const {return table_->getPol(whichrow);}
+
+  STSelector getSelection() const { return table_->getSelection(); }
+
+  int nif(int scanno=-1) const {return table_->nif(scanno);}
+  int nbeam(int scanno=-1) const {return table_->nbeam(scanno);}
+  int npol(int scanno=-1) const {return table_->npol(scanno);}
+  int nchan(int ifno=-1) const {return table_->nchan(ifno);}
+  int nscan() const {return table_->nscan();}
+  int nrow() const {return table_->nrow();}
   ///@todo int nstokes() {return table_->nStokes();}
 
-  void makePersistent(const std::string& fname) {
-    table_->makePersistent(fname);
-  }
+  void makePersistent(const std::string& fname)
+    { table_->makePersistent(fname); }
 
-  void setRestFreqs(double rf, const std::string& unit) {
-    table_->setRestFreqs(rf, unit);
-  }
+  void setRestFreqs(double rf, const std::string& unit)
+    { table_->setRestFreqs(rf, unit); }
 
   void setRestFreqs(const std::string& name) {
     table_->setRestFreqs(name);
   }
 
-  std::vector<double> getRestFrequencies() {
-    return table_->getRestFrequencies();
-  }
+  std::vector<double> getRestFrequencies() const
+    { return table_->getRestFrequencies(); }
 
   void setCoordInfo(std::vector<string> theinfo) {
     table_->setCoordInfo(theinfo);
@@ -168,13 +160,12 @@ public:
     return table_->summary(verbose);
   }
 
-  std::vector<std::string> getHistory() {
-    return table_->getHistory();
-  }
-  void addHistory(const std::string& hist) {
-    table_->addHistory(hist);
-  }
+  std::vector<std::string> getHistory()const
+    { return table_->getHistory(); }
 
+  void addHistory(const std::string& hist)
+    { table_->addHistory(hist); }
+  /*
   void addFit(int whichRow, const std::vector<double>& p,
               const std::vector<bool>& m, const std::vector<string>& f,
               const std::vector<int>& c) {
@@ -188,7 +179,7 @@ public:
   SDFitTable getSDFitTable(int whichRow) {
     return table_->getSDFitTable(casa::uInt(whichRow));
   }
-
+  */
   void calculateAZEL() { table_->calculateAZEL(); };
 
 private:
