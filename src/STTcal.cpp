@@ -45,7 +45,7 @@ STTcal& asap::STTcal::operator =( const STTcal & other )
   return *this;
 }
 
-asap::STTcal::STTcal( casa::Table tab ) : STSubTable(tab)
+asap::STTcal::STTcal( casa::Table tab ) : STSubTable(tab, name_)
 {
   timeCol_.attach(table_,"TIME");
   tcalCol_.attach(table_,"TCAL");

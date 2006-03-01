@@ -143,6 +143,8 @@ public:
   std::vector<std::string> getInfo() const;
   void setInfo( const std::vector<std::string>& theinfo );
 
+  const casa::String& name() const { return name_; }
+
 private:
 
   /**

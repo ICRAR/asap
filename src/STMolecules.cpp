@@ -33,7 +33,7 @@ STMolecules::STMolecules(const Scantable& parent) :
   setup();
 }
 
-asap::STMolecules::STMolecules( casa::Table tab ) : STSubTable(tab)
+asap::STMolecules::STMolecules( casa::Table tab ) : STSubTable(tab, name_)
 {
   restfreqCol_.attach(table_,"RESTFREQUENCY");
   nameCol_.attach(table_,"NAME");

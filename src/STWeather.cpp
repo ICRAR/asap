@@ -34,7 +34,7 @@ STWeather::STWeather(const Scantable& parent) :
 }
 
 
-asap::STWeather::STWeather( casa::Table tab ) : STSubTable(tab)
+asap::STWeather::STWeather( casa::Table tab ) : STSubTable(tab, name_)
 {
   temperatureCol_.attach(table_,"TEMPERATURE");
   pressureCol_.attach(table_,"PRESSURE");

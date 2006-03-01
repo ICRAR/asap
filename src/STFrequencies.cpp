@@ -37,13 +37,11 @@ const String STFrequencies::name_ = "FREQUENCIES";
 STFrequencies::STFrequencies(const Scantable& parent) :
   STSubTable(parent, name_)
 {
-  cout << "STFrequencies(const Scantable& parent" << endl;
   setup();
-  cout << "after setup" << endl;
 }
 
 asap::STFrequencies::STFrequencies( casa::Table tab ) :
-  STSubTable(tab)
+  STSubTable(tab, name_)
 {
   refpixCol_.attach(table_,"REFPIX");
   refvalCol_.attach(table_,"REFVAL");

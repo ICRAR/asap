@@ -44,6 +44,8 @@ public:
 
   std::vector<double> getRestFrequencies() const;
 
+  const casa::String& name() const { return name_; }
+
 private:
   void setup();
   static const casa::String name_;

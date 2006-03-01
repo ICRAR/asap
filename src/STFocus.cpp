@@ -33,7 +33,7 @@ STFocus::STFocus(const Scantable& parent ) :
   setup();
 }
 
-asap::STFocus::STFocus( casa::Table tab ) : STSubTable(tab)
+asap::STFocus::STFocus( casa::Table tab ) : STSubTable(tab, name_)
 {
   rotationCol_.attach(table_,"ROTATION");
   angleCol_.attach(table_,"ANGLE");

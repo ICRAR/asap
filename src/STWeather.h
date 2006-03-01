@@ -45,6 +45,8 @@ public:
                        casa::Float& windspeed, casa::Float& windaz,
                        casa::uInt id);
 
+  const casa::String& name() const { return name_; }
+
 private:
   void setup();
   static const casa::String name_;
