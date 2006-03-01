@@ -54,7 +54,7 @@ STMath::~STMath()
 
 CountedPtr<Scantable>
 STMath::average( const std::vector<CountedPtr<Scantable> >& in,
-                 const Vector<Bool>& mask,
+                 const std::vector<bool>& mask,
                  const std::string& weight,
                  const std::string& avmode,
                  bool alignfreq)
@@ -106,7 +106,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     ++iter;
   }
   RowAccumulator acc(wtype);
-  acc.setUserMask(mask);
+  Vector<Bool> cmask(mask);
+  acc.setUserMask(cmask);
   ROTableRow row(tout);
   ROArrayColumn<Float> specCol, tsysCol;
   ROArrayColumn<uChar> flagCol;

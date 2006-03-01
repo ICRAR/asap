@@ -53,9 +53,9 @@ public:
 
   casa::CountedPtr<Scantable>
     average( const std::vector<casa::CountedPtr<Scantable> >& in,
-             const casa::Vector<casa::Bool>& mask,
-             const std::string& weight,
-             const std::string& avmode = "",
+             const std::vector<bool>& mask = std::vector<bool>(),
+             const std::string& weight = "NONE",
+             const std::string& avmode = "SCAN",
              bool alignfreq = false );
 
   casa::CountedPtr<Scantable>
