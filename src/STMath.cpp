@@ -68,6 +68,12 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   setInsitu(false);
   CountedPtr< Scantable > out = getScantable(in[0], true);
   setInsitu(insitu);
+  std::vector<CountedPtr<Scantable> >::const_iterator stit = in.begin();
+  ++stit;
+  while ( stit != in.end() ) {
+    out->appendToHistoryTable((*stit)->history());
+    ++stit;
+  }
 
   Table& tout = out->table();
 
@@ -80,7 +86,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ScalarColumn<Double> intColOut(tout,"INTERVAL");
 
   // set up the output table rows. These are based on the structure of the
-  // FIRST scantabel in the vector
+  // FIRST scantable in the vector
   const Table& baset = in[0]->table();
 
   Block<String> cols(3);
@@ -802,18 +808,18 @@ CountedPtr< Scantable >
   STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
 {
   if ( in.size() < 2 ) {
-    throw(AipsError("Need at least two scantables to perform merge."));
+    throw(AipsError("Need at least two scantables to perform a merge."));
   }
   std::vector<CountedPtr < Scantable > >::const_iterator it = in.begin();
-  ++it;
   bool insitu = insitu_;
   setInsitu(false);
-  CountedPtr< Scantable > out = getScantable(in[0], false);
+  CountedPtr< Scantable > out = getScantable(*it, false);
   setInsitu(insitu);
   Table& tout = out->table();
   ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
   ScalarColumn<uInt> scannocol(tout,"SCANNO"),focusidcol(tout,"FOCUS_ID");
   uInt newscanno = max(scannocol.getColumn())+1;
+  ++it;
   while ( it != in.end() ){
     if ( ! (*it)->conformant(*out) ) {
       // log message: "ignoring scantable i, as it isn't
@@ -822,6 +828,7 @@ CountedPtr< Scantable >
       ++it;
       continue;
     }
+    out->appendToHistoryTable((*it)->history());
     const Table& tab = (*it)->table();
     TableIterator scanit(tab, "SCANNO");
     while (!scanit.pastEnd()) {
