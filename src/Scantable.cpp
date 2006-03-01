@@ -73,9 +73,9 @@ Scantable::Scantable(Table::TableType ttype) :
   table_.rwKeywordSet().defineTable("TCAL", tcalTable_.table());
   moleculeTable_ = STMolecules(*this);
   table_.rwKeywordSet().defineTable("MOLECULES", moleculeTable_.table());
-  setupHistoryTable();
+  historyTable_ = STHistory(*this);
+  table_.rwKeywordSet().defineTable("HISTORY", historyTable_.table());
   setupFitTable();
-  historyTable_ = table_.keywordSet().asTable("HISTORY");
   fitTable_ = table_.keywordSet().asTable("FITS");
   originalTable_ = table_;
   attach();
@@ -98,7 +98,6 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   originalTable_ = table_;
   attach();
 }
-
 
 Scantable::Scantable( const Scantable& other, bool clear )
 {
@@ -140,6 +139,7 @@ void Scantable::attachSubtables()
   weatherTable_ = STWeather(table_);
   tcalTable_ = STTcal(table_);
   moleculeTable_ = STMolecules(table_);
+  historyTable_ = STHistory(table_);
 }
 
 Scantable::~Scantable()
@@ -212,15 +212,6 @@ void Scantable::setupMainTable()
   table_ = Table(aNewTab, type_, 0);
   originalTable_ = table_;
 
-}
-
-void Scantable::setupHistoryTable( )
-{
-  TableDesc tdh("", "1", TableDesc::Scratch);
-  tdh.addColumn(ScalarColumnDesc<String>("ITEM"));
-  SetupNewTable histtab("history", tdh, Table::Scratch);
-  Table histTable(histtab, Table::Memory);
-  table_.rwKeywordSet().defineTable("HISTORY", histTable);
 }
 
 void Scantable::setupFitTable()
@@ -523,44 +514,6 @@ int Scantable::getPol(int whichrow) const
   return polCol_(whichrow);
 }
 
-Table Scantable::getHistoryTable() const
-{
-  return table_.keywordSet().asTable("HISTORY");
-}
-
-void Scantable::appendToHistoryTable(const Table& otherHist)
-{
-  Table t = table_.rwKeywordSet().asTable("HISTORY");
-
-  addHistory(asap::SEPERATOR);
-  TableCopy::copyRows(t, otherHist, t.nrow(), 0, otherHist.nrow());
-  addHistory(asap::SEPERATOR);
-}
-
-void Scantable::addHistory(const std::string& hist)
-{
-  Table t = table_.rwKeywordSet().asTable("HISTORY");
-  uInt nrow = t.nrow();
-  t.addRow();
-  ScalarColumn<String> itemCol(t, "ITEM");
-  itemCol.put(nrow, hist);
-}
-
-std::vector<std::string> Scantable::getHistory() const
-{
-  Vector<String> history;
-  const Table& t = table_.keywordSet().asTable("HISTORY");
-  uInt nrow = t.nrow();
-  ROScalarColumn<String> itemCol(t, "ITEM");
-  std::vector<std::string> stlout;
-  String hist;
-  for (uInt i=0; i<nrow; ++i) {
-    itemCol.get(i, hist);
-    stlout.push_back(hist);
-  }
-  return stlout;
-}
-
 std::string Scantable::formatTime(const MEpoch& me, bool showdate) const
 {
   MVTime mvt(me.getValue());
@@ -677,8 +630,8 @@ std::string Scantable::summary( bool verbose )
       << setw(15) << "Channels:"  << setw(4) << nchan() << endl;
   oss << endl;
   String tmp;
-  //table_.keywordSet().get("Observer", tmp);
-  oss << setw(15) << "Observer:" << table_.keywordSet().asString("Observer") << endl;
+  oss << setw(15) << "Observer:"
+      << table_.keywordSet().asString("Observer") << endl;
   oss << setw(15) << "Obs Date:" << getTime(-1,true) << endl;
   table_.keywordSet().get("Project", tmp);
   oss << setw(15) << "Project:" << tmp << endl;

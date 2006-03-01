@@ -37,6 +37,7 @@
 #include "STTcal.h"
 #include "STMolecules.h"
 #include "STSelector.h"
+#include "STHistory.h"
 
 
 
@@ -252,11 +253,13 @@ public:
    */
   void makePersistent(const std::string& filename);
 
-  std::vector<std::string> getHistory() const;
-  void addHistory(const std::string& hist);
+  std::vector<std::string> getHistory() const
+    { return historyTable_.getHistory(); };
 
-  casa::Table getHistoryTable() const;
-  void appendToHistoryTable(const casa::Table& otherHist);
+  void addHistory(const std::string& hist) { historyTable_.addEntry(hist); }
+
+  void appendToHistoryTable(const STHistory& otherhist)
+    { historyTable_.append(otherhist); }
 
   std::string summary(bool verbose=false);
   std::string getTime(int whichrow=-1, bool showdate=true) const;
@@ -286,6 +289,7 @@ public:
   STFocus& focus() { return focusTable_; }
   STTcal& tcal() { return tcalTable_; }
   STMolecules& molecules() { return moleculeTable_; }
+  STHistory& history() { return historyTable_; }
 
 private:
   /**
@@ -321,8 +325,6 @@ private:
    */
   void setupMainTable();
 
-  void setupHistoryTable();
-  void setupMoleculeTable();
   void setupFitTable();
 
   void attachSubtables();
@@ -348,8 +350,9 @@ private:
   STWeather weatherTable_;
   STFocus focusTable_;
   STMolecules moleculeTable_;
+  STHistory historyTable_;
+
   casa::Table fitTable_;
-  casa::Table historyTable_;
 
   // Cached Columns to avoid reconstructing them for each row get/put
   casa::ScalarColumn<casa::Double> integrCol_;

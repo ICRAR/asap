@@ -92,6 +92,7 @@ CCOBJECTS := MathUtils.o \
              STFocus.o \
              STWeather.o \
              STFrequencies.o \
+             STHistory.o \
              STWriter.o \
              RowAccumulator.o \
              STSelector.o
@@ -112,6 +113,7 @@ HEADERS   := MathUtils.h \
              STTcal.h \
              STFocus.h \
              STWeather.h \
+             STHistory.h \
              STFrequencies.h \
              STDefs.h \
              STWriter.h \
