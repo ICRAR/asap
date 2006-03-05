@@ -140,8 +140,9 @@ Table STSelector::apply( const Table& tab )
 std::vector< int > STSelector::getint( const std::string& key )
 {
   if (intselections_.count(key) > 0) {
-    return  std::vector<int>();//intselections_[key];
+    return  intselections_[key];
   }
+  return  std::vector<int>();
 }
 
 std::vector< int > STSelector::getScans( )
