@@ -160,6 +160,8 @@ SpectralCoordinate
   if ( !unitstr.empty() ) {
     Unit unitu(unitstr);
     if ( unitu == Unit("Hz") ) {
+      Vector<String> wau(1); wau = unitu.getName();
+      spc.setWorldAxisUnits(wau);
     } else {
       spc.setVelocity(unitstr, getDoppler());
     }
@@ -278,7 +280,7 @@ std::string asap::STFrequencies::print( int id )
   for (uInt i=0; i<t.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
     oss <<  setw(8)
-    << "frame" << setw(16) << setprecision(8)
+    << rec.asString("FRAME") << setw(16) << setprecision(8)
     << rec.asDouble("REFVAL") << setw(10)
     << rec.asDouble("REFPIX") << setw(12)
     << rec.asDouble("INCREMENT") << endl;
@@ -314,33 +316,67 @@ std::vector< std::string > asap::STFrequencies::getInfo( ) const
   out.push_back(r.asString("UNIT"));
   out.push_back(r.asString("FRAME"));
   out.push_back(r.asString("DOPPLER"));
+  return out;
 }
 
 void asap::STFrequencies::setInfo( const std::vector< std::string >& theinfo )
 {
   if ( theinfo.size() != 3 ) throw(AipsError("setInfo needs three parameters"));
-  String un,rfrm,dpl;
-  un = theinfo[0];rfrm = theinfo[1];dpl = theinfo[2];
-  TableRecord& r = table_.rwKeywordSet();
-  setFrame(rfrm);
-  MDoppler::Types dtype;
-  dpl.upcase();
-  if (!MDoppler::getType(dtype, dpl)) {
-    throw(AipsError("Doppler type unknown"));
-  } else {
-    r.define("DOPPLER",dpl);
+  try {
+    setUnit(theinfo[0]);
+    setFrame(theinfo[1]);
+    setDoppler(theinfo[2]);
+  } catch (AipsError& e) {
+    throw(e);
   }
 }
+
+void asap::STFrequencies::setUnit( const std::string & unit )
+{
+  if (unit == "" || unit == "pixel" || unit == "channel" ) {
+    table_.rwKeywordSet().define("UNIT", "");
+  } else {
+    Unit u(unit);
+    if ( u == Unit("km/s") || u == Unit("Hz") )
+      table_.rwKeywordSet().define("UNIT", unit);
+    else {
+      throw(AipsError("Illegal spectral unit."));
+    }
+  }
+}
+
 void asap::STFrequencies::setFrame( const std::string & frame )
 {
   MFrequency::Types mdr;
   if (!MFrequency::getType(mdr, frame)) {
     Int a,b;const uInt* c;
     const String* valid = MFrequency::allMyTypes(a, b, c);
-    String pfix = "Please specify a legal frame type. Types are\n";
-    throw(AipsError(pfix+(*valid)));
+    Vector<String> ftypes(IPosition(1,a), valid);
+    ostringstream oss;
+    oss <<  String("Please specify a legal frequency type. Types are\n");
+    oss << ftypes;
+    String msg(oss);
+    throw(AipsError(msg));
   } else {
     table_.rwKeywordSet().define("FRAME", frame);
+  }
+}
+
+void asap::STFrequencies::setDoppler( const std::string & doppler )
+{
+  MDoppler::Types mdt;
+  if (!MDoppler::getType(mdt, doppler)) {
+    cout << "DEBUG" << endl;
+    Int a,b;const uInt* c;
+    const String* valid = MDoppler::allMyTypes(a, b, c);
+    Vector<String> ftypes(IPosition(1,a), valid);
+    ostringstream oss;
+    oss <<  String("Please specify a legal doppler type. Types are\n");
+    oss << ftypes;
+    String msg(oss);
+    throw(AipsError(msg));
+  } else {
+    table_.rwKeywordSet().define("DOPPLER", doppler);
   }
 }
 

@@ -114,7 +114,8 @@ public:
    * @param frame casa::MFrequency::Types
    */
   void setFrame(casa::MFrequency::Types frame);
-
+  void setUnit( const std::string & unit );
+  void setDoppler( const std::string & doppler );
   /**
    * rescale the whole table by a given factor
    * @param factor the factor to bin or resample by
