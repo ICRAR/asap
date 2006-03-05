@@ -55,14 +55,17 @@ public:
   ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
 
+  void assign(const ScantableWrapper& mt)
+    { table_= mt.getCP(); }
+
   ScantableWrapper copy() {
     return ScantableWrapper(new Scantable(*(this->getCP()), false));
   }
-  /*
+
   std::vector<float> getSpectrum(int whichRow=0) const {
     return table_->getSpectrum(whichRow);
   }
-
+  /*
   std::vector<float> getStokesSpectrum(int whichRow=0,
                                        bool linPol=false) const {
     return table_->getStokesSpectrum(whichRow, linPol);
@@ -84,8 +87,8 @@ public:
   std::vector<double> getAbcissa(int whichRow=0) const
     { return table_->getAbcissa(whichRow); }
 
-  std::string getAbcissaString(int whichRow=0) const
-    { return table_->getAbcissaString(whichRow); }
+  std::string getAbcissaLabel(int whichRow=0) const
+    { return table_->getAbcissaLabel(whichRow); }
 
   float getTsys(int whichRow=0) const
     { return table_->getTsys(whichRow); }
@@ -116,14 +119,19 @@ public:
   float getParAngle(int whichRow=0) const
     { return table_->getParAngle(whichRow); }
 
-  void setSpectrum(std::vector<float> spectrum, int whichrow=0)
-    { table_->setSpectrum(spectrum, whichrow); }
+
+//   void setSpectrum(std::vector<float> spectrum, int whichrow=0)
+//     { table_->setSpectrum(spectrum, whichrow); }
 
   int getIF(int whichrow) const {return table_->getIF(whichrow);}
   int getBeam(int whichrow) const {return table_->getBeam(whichrow);}
   int getPol(int whichrow) const {return table_->getPol(whichrow);}
+  int getCycle(int whichrow) const {return table_->getCycle(whichrow);}
+  int getScan(int whichrow) const {return table_->getScan(whichrow);}
 
   STSelector getSelection() const { return table_->getSelection(); }
+  void setSelection(const STSelector& sts)
+    { return table_->setSelection(sts);}
 
   int nif(int scanno=-1) const {return table_->nif(scanno);}
   int nbeam(int scanno=-1) const {return table_->nbeam(scanno);}
@@ -136,11 +144,11 @@ public:
   void makePersistent(const std::string& fname)
     { table_->makePersistent(fname); }
 
-  void setRestFreqs(double rf, const std::string& unit)
-    { table_->setRestFreqs(rf, unit); }
+  void setRestFrequencies(double rf, const std::string& unit)
+    { table_->setRestFrequencies(rf, unit); }
 
-  void setRestFreqs(const std::string& name) {
-    table_->setRestFreqs(name);
+  void setRestFrequencies(const std::string& name) {
+    table_->setRestFrequencies(name);
   }
 
   std::vector<double> getRestFrequencies() const
