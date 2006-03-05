@@ -85,7 +85,7 @@ public:
 
   casa::CountedPtr<Scantable>
     gainElevation(const casa::CountedPtr<Scantable>& in,
-                  const casa::Vector<casa::Float>& coeffs,
+                  const std::vector<float>& coeff,
                   const std::string& fileName,
 		  const std::string& method);
   casa::CountedPtr<Scantable>

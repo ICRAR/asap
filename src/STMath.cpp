@@ -343,7 +343,7 @@ CountedPtr< Scantable > STMath::freqSwitch( const CountedPtr< Scantable >& in )
     Vector<uChar> flags1(m1.shape());
     convertArray(flags1, !m1);
     flagCol.put(1, flags1);
-
+    ++iter;
   }
 
   return out;
@@ -361,8 +361,9 @@ std::vector< float > STMath::statistic( const CountedPtr< Scantable > & in,
   std::vector<float> out;
   for (uInt i=0; i < tab.nrow(); ++i ) {
     Vector<Float> spec; specCol.get(i, spec);
-    MaskedArray<Float> ma  = maskedArray(spec, flagCol(i));
-    float outstat;
+    Vector<uChar> flag; flagCol.get(i, flag);
+    MaskedArray<Float> ma  = maskedArray(spec, flag);
+    float outstat = 0.0;
     if ( spec.nelements() == m.nelements() ) {
       outstat = mathutil::statistics(which, ma(m));
     } else {
@@ -512,7 +513,7 @@ WeightType STMath::stringToWeight(const std::string& in)
 }
 
 CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in,
-                                               const Vector< Float > & coeffs,
+                                               const vector< float > & coeff,
                                                const std::string & filename,
                                                const std::string& method)
 {
@@ -523,6 +524,7 @@ CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in
   Vector<Float> x = elev.getColumn();
   x *= Float(180 / C::pi);                        // Degrees
 
+  Vector<Float> coeffs(coeff);
   const uInt nc = coeffs.nelements();
   if ( filename.length() > 0 && nc > 0 ) {
     throw(AipsError("You must choose either polynomial coefficients or an ascii file, not both"));
@@ -742,6 +744,7 @@ void STMath::convertBrightnessUnits( CountedPtr<Scantable>& in,
       specCol.put(i, ma.getArray());
       flagCol.put(i, flagsFromMA(ma));
     }
+  ++iter;
   }
 }
 
@@ -800,6 +803,7 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
       }
       specCol.put(i, specout);
     }
+    ++iter;
   }
   return out;
 }
