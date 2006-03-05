@@ -94,8 +94,8 @@ uInt STMolecules::addEntry( Double restfreq, const String& name,
   return resultid;
 }
 
-void STMolecules::getEntry( Double restfreq, String& name,
-                            String& formattedname, uInt id )
+void STMolecules::getEntry( Double& restfreq, String& name,
+                            String& formattedname, uInt id ) const
 {
   Table t = table_(table_.col("ID") == Int(id) );
   if (t.nrow() == 0 ) {
@@ -115,6 +115,17 @@ std::vector< double > asap::STMolecules::getRestFrequencies( ) const
   Vector<Double> rfs = restfreqCol_.getColumn();
   rfs.tovector(out);
   return out;
+}
+
+double asap::STMolecules::getRestFrequency( uInt id ) const
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STMolecules::getRestFrequency - id out of range"));
+  }
+  ROTableRow row(t);
+  const TableRecord& rec = row.get(0);
+  return double(rec.asDouble("RESTFREQUENCY"));
 }
 
 

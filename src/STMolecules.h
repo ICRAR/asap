@@ -39,11 +39,11 @@ public:
   casa::uInt addEntry( casa::Double restfreq, const casa::String& name="",
                        const casa::String& formattedname="");
 
-  void getEntry( casa::Double restfreq, casa::String& name,
-                 casa::String& formattedname, casa::uInt id);
+  void getEntry( casa::Double& restfreq, casa::String& name,
+                 casa::String& formattedname, casa::uInt id) const;
 
   std::vector<double> getRestFrequencies() const;
-
+  double getRestFrequency( casa::uInt id ) const;
   const casa::String& name() const { return name_; }
 
 private:
