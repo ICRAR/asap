@@ -226,17 +226,23 @@ public:
   int getBeam(int whichrow) const;
   int getIF(int whichrow) const;
   int getPol(int whichrow) const;
+  int getCycle(int whichrow) const { return cycleCol_(whichrow); }
+  int getScan(int whichrow) const { return scanCol_(whichrow); }
 
   double getInterval(int whichrow) const
     { return integrCol_(whichrow); }
 
-  float getTsys(int whichrow) const;
+  float getTsys(int whichrow) const
+    { return casa::Vector<casa::Float>(tsysCol_(whichrow))(0); }
   float getElevation(int whichrow) const
     { return elCol_(whichrow); }
   float getAzimuth(int whichrow) const
     { return azCol_(whichrow); }
-  float getParangle(int whichrow) const
+  float getParAngle(int whichrow) const
     { return paraCol_(whichrow); }
+
+  std::string getSourceName(int whichrow) const
+    { return srcnCol_(whichrow); }
 
   std::vector<bool> getMask(int whichrow) const;
   std::vector<float> getSpectrum(int whichrow) const;
@@ -276,6 +282,9 @@ public:
 
   void setCoordInfo(std::vector<string> theinfo)
     { return freqTable_.setInfo(theinfo); };
+
+
+  std::vector<double> getAbcissa(int whichrow) const;
 
   std::string getAbcissaLabel(int whichrow) const;
   std::vector<double> getRestFrequencies() const
@@ -328,6 +337,8 @@ private:
   void setupFitTable();
 
   void attachSubtables();
+  void copySubtables(const Scantable& other);
+
   /**
    * Convert an "old" asap1 style row index into a new index
    * @param[in] therow
@@ -364,7 +375,7 @@ private:
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
   casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_;
   casa::ScalarColumn<casa::Int> rbeamCol_;
-  casa::ArrayColumn<casa::Float> specCol_, tsCol_;
+  casa::ArrayColumn<casa::Float> specCol_, tsysCol_;
   casa::ArrayColumn<casa::uChar> flagsCol_;
 
   // id in frequencies table

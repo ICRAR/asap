@@ -84,7 +84,7 @@ Scantable::Scantable(Table::TableType ttype) :
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   type_(ttype)
 {
-  Table tab(name);
+  Table tab(name, Table::Update);
   Int version;
   tab.keywordSet().get("VERSION", version);
   if (version != version_) {
@@ -103,33 +103,39 @@ Scantable::Scantable( const Scantable& other, bool clear )
 {
   // with or without data
   String newname = String(generateName());
+  type_ = other.table_.tableType();
   if ( other.table_.tableType() == Table::Memory ) {
       if ( clear ) {
-        cout << "copy ctor memory clear" << endl;
         table_ = TableCopy::makeEmptyMemoryTable(newname,
                                                  other.table_, True);
       } else
         table_ = other.table_.copyToMemoryTable(newname);
   } else {
-    if ( clear ) {
-      cout << "copy ctor clear" << endl;
-      other.table_.deepCopy(newname, Table::New);
-      cout << "reading table" << endl;
-      table_ = Table(newname, Table::Scratch);
-      cout << "removing rows" << endl;
-      table_.removeRow(table_.rowNumbers());
-
-    } else {
-      cout << "copy ctor no clear" << endl;
-      other.table_.deepCopy(newname, Table::Scratch);
-      table_ = Table(newname, Table::Scratch);
-    }
+      other.table_.deepCopy(newname, Table::New, False, Table::AipsrcEndian,
+                            Bool(clear));
+      table_ = Table(newname, Table::Update);
+      copySubtables(other);
+      table_.markForDelete();
   }
-  //table_.rwKeywordSet().renameTables(newname, table_.tableName());
-  //cout << table_.keywordSet().asTable("TCAL").tableName() << endl;
+
   attachSubtables();
   originalTable_ = table_;
   attach();
+}
+
+void Scantable::copySubtables(const Scantable& other) {
+  Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
+  TableCopy::copyRows(t, other.freqTable_.table());
+  t = table_.rwKeywordSet().asTable("FOCUS");
+  TableCopy::copyRows(t, other.focusTable_.table());
+  t = table_.rwKeywordSet().asTable("WEATHER");
+  TableCopy::copyRows(t, other.weatherTable_.table());
+  t = table_.rwKeywordSet().asTable("TCAL");
+  TableCopy::copyRows(t, other.tcalTable_.table());
+  t = table_.rwKeywordSet().asTable("MOLECULES");
+  TableCopy::copyRows(t, other.moleculeTable_.table());
+  t = table_.rwKeywordSet().asTable("HISTORY");
+  TableCopy::copyRows(t, other.historyTable_.table());
 }
 
 void Scantable::attachSubtables()
@@ -234,7 +240,7 @@ void Scantable::attach()
   srcnCol_.attach(table_, "SRCNAME");
   specCol_.attach(table_, "SPECTRA");
   flagsCol_.attach(table_, "FLAGTRA");
-  tsCol_.attach(table_, "TSYS");
+  tsysCol_.attach(table_, "TSYS");
   cycleCol_.attach(table_,"CYCLENO");
   scanCol_.attach(table_, "SCANNO");
   beamCol_.attach(table_, "BEAMNO");
@@ -389,11 +395,7 @@ void Scantable::makePersistent(const std::string& filename)
   String inname(filename);
   Path path(inname);
   inname = path.expandedName();
-  //cout << table_.tableName() << endl;
-  //cout << freqTable_.table().tableName() << endl;
   table_.deepCopy(inname, Table::New);
-  //Table t = Table(inname, Table::Update);
-  //cout << t.keywordSet().asTable("FREQUENCIES").tableName() << endl;
 }
 
 int Scantable::nbeam( int scanno ) const
@@ -550,6 +552,12 @@ void Scantable::calculateAZEL()
         << azel[1]/C::pi*180.0 << " (deg)" << endl;
   }
   pushLog(String(oss));
+}
+
+void Scantable::flag()
+{
+  if ( selector_.empty() )
+    throw(AipsError("Trying to flag whole scantable. Aborted."));
 }
 
 std::vector<bool> Scantable::getMask(int whichrow) const
@@ -725,6 +733,43 @@ std::string Scantable::getTime(int whichrow, bool showdate) const
   return formatTime(me, showdate);
 }
 
+std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
+{
+  if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
+  std::vector<double> stlout;
+  int nchan = specCol_(whichrow).nelements();
+  cout << nchan << endl;
+  String us = freqTable_.getUnitString();
+  if ( us == "" || us == "pixel" || us == "channel" ) {
+    for (int i=0; i<nchan; ++i) {
+      stlout.push_back(double(i));
+    }
+    return stlout;
+  }
+
+  const MPosition& mp = getAntennaPosition();
+  const MDirection& md = dirCol_(whichrow);
+  const MEpoch& me = timeCol_(whichrow);
+  Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
+  SpectralCoordinate spc =
+    freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
+  Vector<Double> pixel(nchan);
+  Vector<Double> world;
+  indgen(pixel);
+  if ( Unit(us) == Unit("Hz") ) {
+    for ( int i=0; i < nchan; ++i) {
+      Double world;
+      spc.toWorld(world, pixel[i]);
+      stlout.push_back(double(world));
+    }
+  } else if ( Unit(us) == Unit("km/s") ) {
+    Vector<Double> world;
+    spc.pixelToVelocity(world, pixel);
+    world.tovector(stlout);
+  }
+  return stlout;
+}
+
 std::string Scantable::getAbcissaLabel( int whichrow ) const
 {
   if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
@@ -772,5 +817,7 @@ std::vector< unsigned int > asap::Scantable::rownumbers( ) const
   vec.tovector(stlout);
   return stlout;
 }
+
+
 
 }//namespace asap
