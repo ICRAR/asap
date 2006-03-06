@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SD.h: python module for single dish package
+//# python_asap.h: python module for single dish package asap
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -28,21 +28,25 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef PYTHON_SD_H
-#define PYTHON_SD_H
+#ifndef PYTHON_ASAP_H
+#define PYTHON_ASAP_H
 
 class casa::AipsError;
 
 namespace asap {
   namespace python {
     void translate_ex(const casa::AipsError& e);
-    void python_SDMemTable();
-    void python_SDReader();
+    void python_Scantable();
+    void python_STFiller();
+    void python_STSelector();
+    void python_STMath();
+    void python_SDFitter();
+    /*
     void python_SDWriter();
     void python_SDMath();
-    void python_SDFitter();
     void python_SDFitTable();
     void python_SDLineFinder();
+    */
     void python_SDLog();
 
   } // python

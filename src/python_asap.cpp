@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SD.cc: python module for single dish package
+//# python_asap.cc: python module for single dish package asap
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -36,9 +36,11 @@
 
 #include <casa/aips.h>
 #include <casa/Exceptions/Error.h>
+#include "ScantableWrapper.h"
+
 
 #include "pyconversions.h"
-#include "python_SD.h"
+#include "python_asap.h"
 
 namespace asap {
   namespace python {
@@ -53,16 +55,22 @@ void translate_ex(const casa::AipsError& e)
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(_asap) {
-  asap::python::python_SDMemTable();
-  asap::python::python_SDReader();
-  asap::python::python_SDWriter();
-  asap::python::python_SDMath();
+  asap::python::python_Scantable();
+  asap::python::python_STFiller();
+  asap::python::python_STSelector();
+  asap::python::python_STMath();
   asap::python::python_SDFitter();
+  /*
+  asap::python::python_SDWriter();
   asap::python::python_SDFitTable();
   asap::python::python_SDLineFinder();
+  */
   asap::python::python_SDLog();
-
   register_exception_translator<casa::AipsError>(&asap::python::translate_ex);
+
+  //std_vector_to_tuple <  > ();
+  from_python_sequence < std::vector< asap::ScantableWrapper >,
+    variable_capacity_policy > ();
 
   std_vector_to_tuple < int > ();
   from_python_sequence < std::vector < int >,
