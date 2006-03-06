@@ -1,4 +1,4 @@
-TARGET   := /tmp/_asap.so
+TARGET   := /tmp/asap/_asap.so
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(AIPSPATH))
@@ -80,7 +80,7 @@ LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 CCOBJECTS := MathUtils.o \
              MathUtils2.o \
              SDLog.o \
-             SDAttr.o \
+             STAttr.o \
              SDContainer.o \
              Scantable.o \
              STFiller.o \
@@ -95,14 +95,21 @@ CCOBJECTS := MathUtils.o \
              STHistory.o \
              STWriter.o \
              RowAccumulator.o \
-             STSelector.o
-PYOBJECTS :=
+             STSelector.o \
+             SDFitter.o
+PYOBJECTS := python_Scantable.o \
+             python_STFiller.o \
+             python_STSelector.o \
+             python_STMath.o \
+             python_SDFitter.o \
+             python_SDLog.o \
+	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 
 HEADERS   := MathUtils.h \
              SDLog.h \
-             SDAttr.h \
+             STAttr.h \
              SDContainer.h \
              Scantable.h \
              STFiller.h \
