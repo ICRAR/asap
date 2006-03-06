@@ -44,7 +44,8 @@ def average_time(*args, **kwargs):
     varlist["args"] = "%d scantables" % len(lst)
     # need special formatting her for history...
 
-    from asap._asap import average as _av
+    from asap._asap import stmath
+    stm = stmath()
     for s in lst:
         if not isinstance(s,scantable):
             msg = "Please give a list of scantables"
@@ -53,31 +54,33 @@ def average_time(*args, **kwargs):
                 return
             else:
                 raise TypeError(msg)
-    s = scantable(_av(lst, mask, scanAv, weight))
+    if scanAv: scanAv = "SCAN"
+    else: scanAv = "NONE"
+    s = scantable(stm._average(lst, mask, weight, scanAv, False))
     s._add_history("average_time",varlist)
     print_log()
     return s
 
-def quotient(source, reference, preserve=True):
-    """
-    Return the quotient of a 'source' (signal) scan and a 'reference' scan.
-    The reference can have just one row, even if the signal has many. Otherwise
-    they must have the same number of rows.
-    The cursor of the output scan is set to 0
-    Parameters:
-        source:        the 'on' scan
-        reference:     the 'off' scan
-        preserve:      you can preserve (default) the continuum or
-                       remove it.  The equations used are
-                       preserve:  Output = Toff * (on/off) - Toff
-                       remove:    Output = Toff * (on/off) - Ton
-    """
-    varlist = vars()
-    from asap._asap import quotient as _quot
-    s = scantable(_quot(source, reference, preserve))
-    s._add_history("quotient",varlist)
-    print_log()
-    return s
+# def quotient(source, reference, preserve=True):
+#     """
+#     Return the quotient of a 'source' (signal) scan and a 'reference' scan.
+#     The reference can have just one row, even if the signal has many. Otherwise
+#     they must have the same number of rows.
+#     The cursor of the output scan is set to 0
+#     Parameters:
+#         source:        the 'on' scan
+#         reference:     the 'off' scan
+#         preserve:      you can preserve (default) the continuum or
+#                        remove it.  The equations used are
+#                        preserve:  Output = Toff * (on/off) - Toff
+#                        remove:    Output = Toff * (on/off) - Ton
+#     """
+#     varlist = vars()
+#     from asap._asap import quotient as _quot
+#     s = scantable(_quot(source, reference, preserve))
+#     s._add_history("quotient",varlist)
+#     print_log()
+#     return s
 
 def simple_math(left, right, op='add', tsys=True):
     """
@@ -93,6 +96,8 @@ def simple_math(left, right, op='add', tsys=True):
                        as well as the data
     """
     varlist = vars()
+    print "Not yet available in asap"
+    return
     if not isinstance(left,scantable) and not isinstance(right,scantable):
         msg = "Please provide two scantables as input"
         if rcParams['verbose']:

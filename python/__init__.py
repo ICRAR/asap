@@ -249,22 +249,22 @@ def print_log():
     return
 
 from asapfitter import *
-from asapreader import reader
+#from asapreader import reader
 
 from asapmath import *
-from scantable import *
-from asaplinefind import *
-from asapfit import *
+#from scantable import *
+#from asaplinefind import *
+#from asapfit import *
 
 from numarray import logical_and as mask_and
 from numarray import logical_or as mask_or
 from numarray import logical_not as mask_not
 
-if rcParams['useplotter']:
-    from  asapplotter import *
-    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
-    plotter = asapplotter(gui)
-    del gui
+# if rcParams['useplotter']:
+#     from  asapplotter import *
+#     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+#     plotter = asapplotter(gui)
+#     del gui
 
 __date__ = '$Date$'.split()[1]
 __version__  = '2.0a'
@@ -285,11 +285,8 @@ if rcParams['verbose']:
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
-                              (by name or number)
+                              (by name or number) [deprecated]
             summary         - print info about the scantable contents
-            set_cursor      - set a specific Beam/IF/Pol 'cursor' for
-                              further use
-            get_cursor      - print out the current cursor position
             stats           - get specified statistic of the spectra in
                               the scantable
             stddev          - get the standard deviation of the spectra
@@ -300,7 +297,7 @@ if rcParams['verbose']:
             get_azimuth     - get the azimuth of the scans
             get_elevation   - get the elevation of the scans
             get_parangle    - get the parallactic angle of the scans
-            get_unit        - get the currnt unit
+            get_unit        - get the current unit
             set_unit        - set the abcissa unit to be used from this
                               point on
             get_abcissa     - get the abcissa values and name for a given
