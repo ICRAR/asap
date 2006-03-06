@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDReaderWrapper.h: Wrapper classes to use CountedPtr
+//# STFillerWrapper.h: Wrapper classes to use CountedPtr
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,28 +26,27 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#ifndef SDREADERWRAPPER_H
-#define SDREADERWRAPPER_H
+#ifndef STFILLERWRAPPER_H
+#define STFILLERWRAPPER_H
 
-#include <vector>
 #include <string>
 
-#include "SDMemTableWrapper.h"
-#include "SDReader.h"
+#include "ScantableWrapper.h"
+#include "STFiller.h"
 
 namespace asap {
 
-class SDReaderWrapper : public SDReader {
+class STFillerWrapper : public STFiller {
 public:
-  SDReaderWrapper() {;}
-  SDReaderWrapper(const std::string& filename, int ifSel=-1, int beamSel=-1) : 
-     SDReader(filename,ifSel,beamSel) {;}
-  SDReaderWrapper(SDMemTableWrapper tbl) :
-    SDReader(tbl.getCP()){;}
-  SDMemTableWrapper getSDMemTable() const {
-    return SDMemTableWrapper(getTable());
+  STFillerWrapper() {;}
+  STFillerWrapper(const std::string& filename, int ifSel=-1, int beamSel=-1) :
+     STFiller(filename, ifSel, beamSel) {;}
+  STFillerWrapper(ScantableWrapper tbl) :
+    STFiller(tbl.getCP()){;}
+  ScantableWrapper getScantable() const {
+    return ScantableWrapper(getTable());
   }
 };
 

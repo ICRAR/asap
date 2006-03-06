@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDMemTable.cc: python exposure of c++ SDMemTable class
+//# python_Scantable.cc: python exposure of c++ Scantable class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -33,87 +33,87 @@
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
 
-#include "SDMemTableWrapper.h"
+#include "ScantableWrapper.h"
 
 using namespace boost::python;
 
 namespace asap {
   namespace python {
 
-void python_SDMemTable() {
-  class_<SDMemTableWrapper>("sdtable")
+void python_Scantable() {
+  class_<ScantableWrapper>("Scantable")
     //.def( init <> () )
-    .def( init < std::string > () )
-    .def( init < const SDMemTableWrapper& > () )
-    .def( init < const SDMemTableWrapper&, std::string > () )
-    .def("_copy", &SDMemTableWrapper::copy)
-    .def("getif", &SDMemTableWrapper::getIF)
-    .def("getbeam", &SDMemTableWrapper::getBeam)
-    .def("getpol", &SDMemTableWrapper::getPol)
-    .def("_lines", &SDMemTableWrapper::spectralLines)
-    .def("nif", &SDMemTableWrapper::nIF)
-    .def("nbeam", &SDMemTableWrapper::nBeam)
-    .def("npol", &SDMemTableWrapper::nPol)
-    .def("nchan", &SDMemTableWrapper::nChan)
-    .def("nscan", &SDMemTableWrapper::nScan)
-    .def("nrow", &SDMemTableWrapper::nRow)
-    .def("setif", &SDMemTableWrapper::setIF,
-         (boost::python::arg("whichIF")=0) )
-    .def("setbeam", &SDMemTableWrapper::setBeam)
-    .def("setpol", &SDMemTableWrapper::setPol)
-    .def("get_fluxunit", &SDMemTableWrapper::getFluxUnit)
-    .def("set_fluxunit", &SDMemTableWrapper::setFluxUnit)
-    .def("_setInstrument", &SDMemTableWrapper::setInstrument)
-    .def("_getscan", &SDMemTableWrapper::getScan)
-    .def("_getsource", &SDMemTableWrapper::getSource)
-    .def("_getspectrum", &SDMemTableWrapper::getSpectrum,
+    .def( init < const std::string&, const std::string& > () )
+    .def( init < const ScantableWrapper& > () )
+    .def("_copy", &ScantableWrapper::copy)
+    .def("_assign", &ScantableWrapper::assign)
+    .def("getif", &ScantableWrapper::getIF)
+    .def("getbeam", &ScantableWrapper::getBeam)
+    .def("getpol", &ScantableWrapper::getPol)
+    .def("getscan", &ScantableWrapper::getScan)
+    .def("getcycle", &ScantableWrapper::getCycle)
+    .def("nif", &ScantableWrapper::nif)
+    .def("nbeam", &ScantableWrapper::nbeam)
+    .def("npol", &ScantableWrapper::npol)
+    .def("nchan", &ScantableWrapper::nchan)
+    .def("nscan", &ScantableWrapper::nscan)
+    .def("nrow", &ScantableWrapper::nrow)
+    .def("get_fluxunit", &ScantableWrapper::getFluxUnit)
+    .def("set_fluxunit", &ScantableWrapper::setFluxUnit)
+    .def("_setInstrument", &ScantableWrapper::setInstrument)
+    .def("_getspectrum", &ScantableWrapper::getSpectrum,
          (boost::python::arg("whichRow")=0))
-    .def("nstokes", &SDMemTableWrapper::nStokes)
-    .def("_getstokesspectrum", &SDMemTableWrapper::getStokesSpectrum,
+    /*
+    .def("nstokes", &ScantableWrapper::nStokes)
+    .def("_getstokesspectrum", &ScantableWrapper::getStokesSpectrum,
          (boost::python::arg("whichRow")=0),
          (boost::python::arg("linpol")=false) )
-    .def("_stokestopolspectrum", &SDMemTableWrapper::stokesToPolSpectrum,
+    .def("_stokestopolspectrum", &ScantableWrapper::stokesToPolSpectrum,
          (boost::python::arg("whichRow")=0),
          (boost::python::arg("linear")=false),
          (boost::python::arg("thepol")=-1) )
-    .def("_getpolarizationlabel", &SDMemTableWrapper::getPolarizationLabel,
+    */
+    .def("_getpolarizationlabel", &ScantableWrapper::getPolarizationLabel,
          (boost::python::arg("linear")=false),
          (boost::python::arg("stokes")=false),
          (boost::python::arg("linpol")=false) )
 //         (boost::python::arg("thepol")=0) )        // Boost fails with 4 arguments
-    .def("_setspectrum",&SDMemTableWrapper::setSpectrum,
+/*    .def("_setspectrum",&ScantableWrapper::setSpectrum,
+         (boost::python::arg("whichRow")=0) )*/
+    .def("_getabcissa", &ScantableWrapper::getAbcissa,
          (boost::python::arg("whichRow")=0) )
-    .def("_getabcissa", &SDMemTableWrapper::getAbcissa,
+    .def("_getabcissalabel", &ScantableWrapper::getAbcissaLabel,
          (boost::python::arg("whichRow")=0) )
-    .def("_getabcissalabel", &SDMemTableWrapper::getAbcissaString,
+    .def("_getmask", &ScantableWrapper::getMask,
          (boost::python::arg("whichRow")=0) )
-    .def("_getmask", &SDMemTableWrapper::getMask,
+    .def("_gettsys", &ScantableWrapper::getTsys)
+    .def("_getsourcename", &ScantableWrapper::getSourceName,
          (boost::python::arg("whichRow")=0) )
-    .def("_gettsys", &SDMemTableWrapper::getTsys)
-    .def("_getsourcename", &SDMemTableWrapper::getSourceName,
+    .def("_getelevation", &ScantableWrapper::getElevation,
          (boost::python::arg("whichRow")=0) )
-    .def("_getelevation", &SDMemTableWrapper::getElevation,
+    .def("_getazimuth", &ScantableWrapper::getAzimuth,
          (boost::python::arg("whichRow")=0) )
-    .def("_getazimuth", &SDMemTableWrapper::getAzimuth,
+    .def("_getparangle", &ScantableWrapper::getParAngle,
          (boost::python::arg("whichRow")=0) )
-    .def("_getparangle", &SDMemTableWrapper::getParAngle,
+    .def("_gettime", &ScantableWrapper::getTime,
          (boost::python::arg("whichRow")=0) )
-    .def("_gettime", &SDMemTableWrapper::getTime,
-         (boost::python::arg("whichRow")=0) )
-    .def("_flag", &SDMemTableWrapper::flag,
-         (boost::python::arg("whichRow")=-1) )
-    .def("_save",  &SDMemTableWrapper::makePersistent)
-    .def("_summary",  &SDMemTableWrapper::summary,
+    .def("_flag", &ScantableWrapper::flag)
+    .def("_save",  &ScantableWrapper::makePersistent)
+    .def("_summary",  &ScantableWrapper::summary,
          (boost::python::arg("verbose")=true) )
-    .def("_getrestfreqs",  &SDMemTableWrapper::getRestFreqs)
-    .def("_setrestfreqs",  &SDMemTableWrapper::setRestFreqs)
-    .def("_setcoordinfo", &SDMemTableWrapper::setCoordInfo)
-    .def("_getcoordinfo", &SDMemTableWrapper::getCoordInfo)
-    .def("_gethistory", &SDMemTableWrapper::getHistory)
-    .def("_addhistory", &SDMemTableWrapper::addHistory)
-    .def("_addfit", &SDMemTableWrapper::addFit)
-    .def("_getfit", &SDMemTableWrapper::getSDFitTable)
-    .def("_recalc_azel", &SDMemTableWrapper::calculateAZEL)
+    .def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
+    //.def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
+    .def("_setcoordinfo", &ScantableWrapper::setCoordInfo)
+    .def("_getcoordinfo", &ScantableWrapper::getCoordInfo)
+    .def("_gethistory", &ScantableWrapper::getHistory)
+    .def("_addhistory", &ScantableWrapper::addHistory)
+    .def("_getselection", &ScantableWrapper::getSelection)
+    .def("_setselection", &ScantableWrapper::setSelection)
+    /*
+    .def("_addfit", &ScantableWrapper::addFit)
+    .def("_getfit", &ScantableWrapper::getSDFitTable)
+    */
+    .def("_recalcazel", &ScantableWrapper::calculateAZEL)
   ;
 };
 

@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDMath.cc: python exposure of c++ SDMath class
+//# python_STMathWrapper.cc: python exposure of c++ STMath class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,89 +26,38 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#include <boost/python.hpp>
 #include <vector>
+#include <boost/python.hpp>
 
-#include <casa/aips.h>
-#include <casa/Containers/Block.h>
-#include <casa/Utilities/CountedPtr.cc>
+#include "STMathWrapper.h"
 
-#include "SDMathWrapper.h"
-#include "SDMath.h"
-
-using namespace casa;
 using namespace boost::python;
 
 namespace asap {
-  namespace SDMathWrapper {
-    SDMemTableWrapper SDMathWrapper::average(boost::python::tuple tp,
-                                             const std::vector<bool>& mask,
-                                             bool scanAv,
-                                             const std::string& weightStr) {
-      int n;
-      n = extract<int>(tp.attr("__len__")());
-      std::vector<CountedPtr<asap::SDMemTable> > b(n);
-      //Block<CountedPtr<asap::SDMemTable> > b(n);
-      for (int i=0;i< n;++i) {
-        SDMemTableWrapper sdmw =
-          extract<SDMemTableWrapper>( tp.attr("__getitem__")(i) );
-        b[i] = sdmw.getCP();
-      }
-      Vector<Bool> msk(mask);
-
-      return SDMemTableWrapper(sdmath.average(b, msk, Bool(scanAv), weightStr));
-    };
-  } // namespace SDMathWrapper
-
   namespace python {
-    void python_SDMath() {
-      def("b_operate", &SDMathWrapper::binaryOperate);
-
-      def("quotient", &SDMathWrapper::quotient);
-
-      def("scale", &SDMathWrapper::scale);
-      def("scale_insitu", &SDMathWrapper::scaleInSitu);
-
-      def("add", &SDMathWrapper::add);
-      def("add_insitu", &SDMathWrapper::addInSitu);
-
-      def("smooth", &SDMathWrapper::smooth);
-      def("smooth_insitu", &SDMathWrapper::smoothInSitu);
-
-      def("convertflux", &SDMathWrapper::convertFlux);
-      def("convertflux_insitu", &SDMathWrapper::convertFluxInSitu);
-
-      def("gainel", &SDMathWrapper::gainElevation);
-      def("gainel_insitu", &SDMathWrapper::gainElevationInSitu);
-
-      def("freq_align", &SDMathWrapper::frequencyAlignment);
-      def("freq_align_insitu", &SDMathWrapper::frequencyAlignmentInSitu);
-
-      def("opacity", &SDMathWrapper::opacity);
-      def("opacity_insitu", &SDMathWrapper::opacityInSitu);
-
-      def("average", &SDMathWrapper::average);
-
-      def("averagepol", &SDMathWrapper::averagePol);
-      def("averagepol_insitu", &SDMathWrapper::averagePolInSitu);
-
-      def("bin", &SDMathWrapper::bin);
-      def("bin_insitu", &SDMathWrapper::binInSitu);
-
-      def("resample", &SDMathWrapper::resample);
-      def("resample_insitu", &SDMathWrapper::resampleInSitu);
-
-      def("stats", &SDMathWrapper::statistic);
-
-      def("_rotate_xyphase", &SDMathWrapper::rotateXYPhaseInSitu);
-      def("_rotate_linpolphase", &SDMathWrapper::rotateLinPolPhaseInSitu);
-
-      def("_frequency_switch", &SDMathWrapper::frequencySwitch);
-      def("_frequency_switch_insitu", &SDMathWrapper::frequencySwitchInSitu);
+    void python_STMath() {
+      class_<STMathWrapper>("stmath")
+        .def( init < > () )
+        .def( init < bool > () )
+        .def("_insitu", &STMathWrapper::insitu)
+        .def("_setinsitu", &STMathWrapper::setInsitu)
+        .def("_average", &STMathWrapper::average)
+        .def("_unaryop", &STMathWrapper::unaryOperate)
+        .def("_quotient", &STMathWrapper::quotient)
+        .def("_stats", &STMathWrapper::statistic)
+        .def("_freqswitch", &STMathWrapper::freqSwitch)
+        .def("_bin", &STMathWrapper::bin)
+        .def("_resample", &STMathWrapper::resample)
+        .def("_smooth", &STMathWrapper::smooth)
+        .def("_gainel", &STMathWrapper::gainElevation)
+        .def("_convertflux", &STMathWrapper::convertFlux)
+        .def("_opacity", &STMathWrapper::opacity)
+        .def("_merge", &STMathWrapper::merge)
+      ;
     };
 
-  } // python
-} // asap
+  } //namespace python
+} // namespace asap
 

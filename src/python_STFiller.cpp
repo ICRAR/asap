@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDReader.cc: python exposure of c++ SDReader class
+//# python_STFiller.cc: python exposure of c++ STFiller class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -30,21 +30,19 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDReaderWrapper.h"
+#include "STFillerWrapper.h"
 
 using namespace boost::python;
 
 namespace asap {
   namespace python {
 
-    void python_SDReader() {
-      class_<SDReaderWrapper>("sdreader")
+    void python_STFiller() {
+      class_<STFillerWrapper>("stfiller")
         .def( init < std::string, int, int > () )
-        .def("_open", &SDReaderWrapper::open)
-        .def("_read", &SDReaderWrapper::read)
-        .def("_reset", &SDReaderWrapper::reset)
-        .def("_getdata", &SDReaderWrapper::getSDMemTable)
-        .def("_header",  &SDReaderWrapper::pseudoHeader)
+        .def("_open", &STFillerWrapper::open)
+        .def("_read", &STFillerWrapper::read)
+        .def("_getdata", &STFillerWrapper::getScantable)
       ;
     };
 
