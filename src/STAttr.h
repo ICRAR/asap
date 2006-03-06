@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDAttr.h: Return known attributes about telescopes
+//# STAttr.h: Return known attributes about telescopes
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -35,7 +35,7 @@
 #include <measures/Measures/MEpoch.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include "SDLog.h"
+#include "STLog.h"
 #include "STDefs.h"
 
 template<class T> class casa::Vector;
@@ -43,21 +43,21 @@ template<class T> class casa::Vector;
 
 namespace asap {
 
-class SDAttr : public SDLog {
+class STAttr : public STLog {
 
  public:
 
   // Constructor
-  SDAttr();
+  STAttr();
   
   // Destructor
-  ~SDAttr();
+  ~STAttr();
   
   // Copy Constructor (copy semantics)
-  SDAttr(const SDAttr& other);
+  STAttr(const STAttr& other);
   
   // Assignment  (copy semantics)
-  SDAttr &operator=(const SDAttr& other);
+  STAttr &operator=(const STAttr& other);
   
   // Telescope diameter(m). Throws exception if unknown.
   casa::Float diameter(Instrument inst) const;

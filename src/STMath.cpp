@@ -35,7 +35,7 @@
 
 #include "MathUtils.h"
 #include "RowAccumulator.h"
-#include "SDAttr.h"
+#include "STAttr.h"
 #include "STMath.h"
 
 using namespace casa;
@@ -535,7 +535,7 @@ CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in
     // Find instrument
     Bool throwit = True;
     Instrument inst =
-      SDAttr::convertInstrument(tab.keywordSet().asString("AntennaName"),
+      STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"),
                                 throwit);
 
     // Set polynomial
@@ -547,7 +547,7 @@ CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in
       coeff = coeffs;
       msg = String("user");
     } else {
-      SDAttr sdAttr;
+      STAttr sdAttr;
       coeff = sdAttr.gainElevationPoly(inst);
       ppoly = new Polynomial<Float>(3);
       msg = String("built in");
@@ -688,10 +688,10 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
     scaleByVector(tab,factors, false);
   } else if ( etaap > 0.0) {
     Instrument inst =
-      SDAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), True);
-    SDAttr sda;
+      STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), True);
+    STAttr sda;
     if (d < 0) d = sda.diameter(inst);
-    Float jyPerk = SDAttr::findJyPerK(etaap, d);
+    Float jyPerk = STAttr::findJyPerK(etaap, d);
     ostringstream oss;
     oss << "Jy/K = " << jyperk;
     pushLog(String(oss));
@@ -720,10 +720,10 @@ void STMath::convertBrightnessUnits( CountedPtr<Scantable>& in,
 {
   Table& table = in->table();
   Instrument inst =
-    SDAttr::convertInstrument(table.keywordSet().asString("AntennaName"), True);
+    STAttr::convertInstrument(table.keywordSet().asString("AntennaName"), True);
   TableIterator iter(table, "FREQ_ID");
   STFrequencies stfreqs = in->frequencies();
-  SDAttr sdAtt;
+  STAttr sdAtt;
   while (!iter.pastEnd()) {
     Table tab = iter.table();
     ArrayColumn<Float> specCol(tab, "SPECTRA");
@@ -733,7 +733,7 @@ void STMath::convertBrightnessUnits( CountedPtr<Scantable>& in,
 
     uInt freqid; freqidCol.get(0, freqid);
     Vector<Float> tmpspec; specCol.get(0, tmpspec);
-    // SDAttr.JyPerK has a Vector interface... change sometime.
+    // STAttr.JyPerK has a Vector interface... change sometime.
     Vector<Float> freqs(1,stfreqs.getRefFreq(freqid, tmpspec.nelements()));
     for ( uInt i=0; i<tab.nrow(); ++i) {
       Float jyperk = (sdAtt.JyPerK(inst, timeCol(i), freqs))[0];

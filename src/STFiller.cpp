@@ -26,7 +26,7 @@
 #include <atnf/PKSIO/PKSreader.h>
 
 #include "STDefs.h"
-#include "SDAttr.h"
+#include "STAttr.h"
 
 #include "STFiller.h"
 
@@ -132,7 +132,7 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   // Determine Telescope and set brightness unit
 
   Bool throwIt = False;
-  Instrument inst = SDAttr::convertInstrument(header_->antennaname, throwIt);
+  Instrument inst = STAttr::convertInstrument(header_->antennaname, throwIt);
   header_->fluxunit = "Jy";
   if (inst==ATMOPRA || inst==TIDBINBILLA) {
      header_->fluxunit = "K";

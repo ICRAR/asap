@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDAttr.cc: A collection of attributes for different telescopes
+//# STAttr.cc: A collection of attributes for different telescopes
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -41,22 +41,22 @@
 
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
-#include "SDAttr.h"
+#include "STAttr.h"
 
 using namespace casa;
 using namespace asap;
 
-SDAttr::SDAttr()
+STAttr::STAttr()
 {
    initData();
 }
 
-SDAttr::SDAttr(const SDAttr& other)
+STAttr::STAttr(const STAttr& other)
 {
    initData();                     // state just private 'static' data
 }
 
-SDAttr& SDAttr::operator=(const SDAttr& other) 
+STAttr& STAttr::operator=(const STAttr& other) 
 {
   if (this != &other) {
     ;                             // state just private 'static' data
@@ -64,11 +64,11 @@ SDAttr& SDAttr::operator=(const SDAttr& other)
   return *this;
 }
 
-SDAttr::~SDAttr()
+STAttr::~STAttr()
 {;}
 
 
-Float SDAttr::diameter(Instrument inst)  const
+Float STAttr::diameter(Instrument inst)  const
 {
    Float D = 1.0;
    switch (inst) {
@@ -106,7 +106,7 @@ Float SDAttr::diameter(Instrument inst)  const
    return D;
 }
 
-Vector<Float> SDAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs, 
+Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs, 
 				      const Vector<Float>& freqs) const
 {
 
@@ -139,7 +139,7 @@ Vector<Float> SDAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
    return facs;
 }
 
-Vector<Float> SDAttr::apertureEfficiency(Instrument inst, 
+Vector<Float> STAttr::apertureEfficiency(Instrument inst, 
 					 const MEpoch& dateObs, 
 					 const Vector<Float>& freqs) const
 {
@@ -176,7 +176,7 @@ Vector<Float> SDAttr::apertureEfficiency(Instrument inst,
   return facs;
 }
 
-Vector<Float> SDAttr::JyPerK(Instrument inst, const MEpoch& dateObs,
+Vector<Float> STAttr::JyPerK(Instrument inst, const MEpoch& dateObs,
 			     const Vector<Float>& freqs) const
 {
   
@@ -186,13 +186,13 @@ Vector<Float> SDAttr::JyPerK(Instrument inst, const MEpoch& dateObs,
   // Compute it
    Vector<Float> facs(freqs.nelements(),1.0);
    for (uInt i=0; i<freqs.nelements(); i++) {
-     facs(i) = SDAttr::findJyPerK(etaAp(i), D);
+     facs(i) = STAttr::findJyPerK(etaAp(i), D);
    }
    return facs;
 }
 
 
-Float SDAttr::findJyPerK(Float etaAp, Float D)
+Float STAttr::findJyPerK(Float etaAp, Float D)
   //
   // Converts K -> Jy
   // D in m
@@ -204,7 +204,7 @@ Float SDAttr::findJyPerK(Float etaAp, Float D)
 }
 
 
-Vector<Float> SDAttr::gainElevationPoly(Instrument inst) const
+Vector<Float> STAttr::gainElevationPoly(Instrument inst) const
 {
 
   // Look at date where appropriate
@@ -222,7 +222,7 @@ Vector<Float> SDAttr::gainElevationPoly(Instrument inst) const
   }
 }
 
-FeedPolType SDAttr::feedPolType(Instrument inst) const
+FeedPolType STAttr::feedPolType(Instrument inst) const
 {
   FeedPolType type = UNKNOWNFEED;
   switch (inst) {
@@ -248,7 +248,7 @@ FeedPolType SDAttr::feedPolType(Instrument inst) const
 
 
 // Private
-Vector<Float> SDAttr::interp(const Vector<Float>& xOut,
+Vector<Float> STAttr::interp(const Vector<Float>& xOut,
 			     const Vector<Float>& xIn, 
 			     const Vector<Float>& yIn) const
 {
@@ -265,7 +265,7 @@ Vector<Float> SDAttr::interp(const Vector<Float>& xOut,
   return yOut;
 }
 
-void SDAttr::initData() 
+void STAttr::initData() 
   //
   // Mopra data from Mopra web page
   // Tid  data from Tid web page
@@ -315,13 +315,13 @@ void SDAttr::initData()
 }
 
 
-Instrument SDAttr::convertInstrument(const String& instrument,
+Instrument STAttr::convertInstrument(const String& instrument,
                                      Bool throwIt)
 {
   String t(instrument);
   t.upcase();
   
-  // The strings are what SDReader returns, after cunning
+  // The strings are what STReader returns, after cunning
   // interrogation of station names... :-(
   Instrument inst = asap::UNKNOWNINST;
   if (t==String("DSS-43")) {

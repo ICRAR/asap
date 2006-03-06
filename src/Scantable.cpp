@@ -53,7 +53,7 @@
 #include <casa/Quanta/MVAngle.h>
 
 #include "Scantable.h"
-#include "SDAttr.h"
+#include "STAttr.h"
 
 using namespace casa;
 
@@ -376,7 +376,7 @@ void Scantable::setFluxUnit(const std::string& unit)
 void Scantable::setInstrument(const std::string& name)
 {
   bool throwIt = true;
-  Instrument ins = SDAttr::convertInstrument(name, throwIt);
+  Instrument ins = STAttr::convertInstrument(name, throwIt);
   String nameU(name);
   nameU.upcase();
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
