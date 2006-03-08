@@ -64,7 +64,7 @@ class linefinder:
         self.finder.setoptions(threshold,min_nchan,avg_limit,box_size)
         return
 
-    def set_scan(self,scan,mask=None,edge=(0,0)):
+    def set_scan(self, scan, mask=None, edge=(0,0)):
         """
         Set the 'data' (scantable) to work with.
         Parameters:
@@ -79,7 +79,7 @@ class linefinder:
         if not scan:
            raise RuntimeError, 'Please give a correct scan'
         if not scan._check_ifs():
-                raise RuntimeError, 'IFs with different numbers of channels are not yet supported'
+           raise RuntimeError, 'IFs with different numbers of channels are not yet supported'
 
         if isinstance(edge,int):
            edge=(edge,)

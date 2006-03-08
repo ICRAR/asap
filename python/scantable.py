@@ -1376,4 +1376,5 @@ class scantable(Scantable):
 
     def _check_ifs(self):
         nchans = [self.nchan(i) for i in range(self.nif(-1))]
+        nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
