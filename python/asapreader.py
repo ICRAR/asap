@@ -1,7 +1,7 @@
-from asap._asap import sdreader
+from asap._asap import stfiller
 from asap import print_log
 
-class reader(sdreader):
+class reader(stfiller):
     """
     This class allows the user to import single dish files
     (rpfits,sdfits,ms).
@@ -45,35 +45,31 @@ class reader(sdreader):
             thebeam = -1
         from os.path import expandvars
         filename = expandvars(filename)
-        sdreader.__init__(self, filename, theif, thebeam)
+        stfiller.__init__(self, filename, theif, thebeam)
         print_log()
 
-    def read(self,integrations=None):
+    def read(self):
         """
         Reads in an returns a specified sequence of integrations.
         If no list is given all integrations a read in.
-        Parameters:
-            integrations:    a 'range' of integration numbers, e.g.
-                             range(100) or [0,1,2,3,4,10,11,100]
-                             If not given (default) all integrations
-                             are read in
-        Example:
-            r.read([0,1,2,3,4])    # reads in the first 5 integatrions
-                                   # NOT scans
-            r.read(range(100))     # read in the first 100 integrations
         """
         from asap import scantable
         from asap import asaplog
         if integrations is None:
             integrations = [-1]
         asaplog.push("Reading integrations from disk...")
-        sdreader._read(self,integrations)
-        tbl = sdreader._getdata(self)
-        sdreader._reset(self) # reset to the beginning of the file
+        stfiller._read(self)
+        tbl = stfiller._getdata(self)
         if self.unit is not None:
             tbl.set_fluxunit(self.unit)
         print_log()
         return scantable(tbl)
+
+    def close(self):
+        """
+        Close the reader.
+        """
+        self._close()
 
     def summary(self, name=None):
         """
@@ -84,10 +80,9 @@ class reader(sdreader):
         Example:
              r.summary()
         """
-        sdreader._reset(self)
-        sdreader._read(self,[-1])
+        stfiller._read(self)
         from asap import scantable
-        tbl = scantable(sdreader._getdata(self))
-        sdreader._reset(self)
+        tbl = scantable(stfiller._getdata(self))
         tbl.summary(name)
+        del tbl
         return

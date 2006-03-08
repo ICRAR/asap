@@ -42,6 +42,7 @@ namespace asap {
         .def( init < std::string, int, int > () )
         .def("_open", &STFillerWrapper::open)
         .def("_read", &STFillerWrapper::read)
+        .def("_close", &STFillerWrapper::close)
         .def("_getdata", &STFillerWrapper::getScantable)
       ;
     };

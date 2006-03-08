@@ -67,7 +67,6 @@ defaultParams = {
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, _validate_bool],
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
-    'scantable.allaxes'   : [True, _validate_bool],  # apply action to all axes
     'scantable.plotter'   : [True, _validate_bool], # use internal plotter
     'scantable.verbosesummary'   : [False, _validate_bool]
 
@@ -118,12 +117,6 @@ scantable.autoaverage      : True
 # default frequency frame to set when function
 # scantable.set_freqfrmae is called
 scantable.freqframe        : LSRK
-
-# apply action to all axes not just the cursor location
-scantable.allaxes          : True
-
-# use internal plotter
-scantable.plotter          : True
 
 # Control the level of information printed by summary
 scantable.verbosesummary   : False
@@ -249,7 +242,7 @@ def print_log():
     return
 
 from asapfitter import *
-#from asapreader import reader
+from asapreader import reader
 
 from asapmath import *
 from scantable import *

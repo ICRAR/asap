@@ -327,7 +327,6 @@ int asap::STFiller::read( )
     close();
     throw(AipsError("Reading error occured, data possibly corrupted."));
   }
-
   return status;
 }
 
