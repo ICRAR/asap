@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_STLineFinder.cc: python exposure of C++ STLineFinder class
+//# python_Fitter.cc: python exposure of c++ Fitter class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,26 +26,37 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDLineFinder.h"
+#include "SDFitter.h"
 
 using namespace boost::python;
 
 namespace asap {
   namespace python {
-     void python_STLineFinder() {
-       class_<STLineFinder>("linefinder")
-         .def( init <> () )
-	 .def("setoptions",&STLineFinder::setOptions)
-         .def("setscan",&STLineFinder::setScan)
-         .def("findlines",&STLineFinder::findLines)
-         .def("getmask",&STLineFinder::getMask)
-         .def("getlineranges",&STLineFinder::getLineRanges)
-         .def("getlinerangesinchannels",&STLineFinder::getLineRangesInChannels)
-       ;
-     };
-  } // namespace python
+
+    void python_Fitter() {
+      class_<Fitter>("fitter")
+        .def( init <> () )
+        .def("setexpression", &Fitter::setExpression)
+        .def("setdata", &Fitter::setData)
+        .def("getresidual", &Fitter::getResidual)
+        .def("getfit", &Fitter::getFit)
+        .def("getfixedparameters", &Fitter::getFixedParameters)
+        .def("setfixedparameters", &Fitter::setFixedParameters)
+        .def("getparameters", &Fitter::getParameters)
+        .def("setparameters", &Fitter::setParameters)
+        .def("getestimate", &Fitter::getEstimate)
+        .def("estimate", &Fitter::computeEstimate)
+        .def("geterrors", &Fitter::getErrors)
+        .def("getchi2", &Fitter::getChisquared)
+        .def("reset", &Fitter::reset)
+        .def("fit", &Fitter::fit)
+        .def("evaluate", &Fitter::evaluate)
+      ;
+    };
+
+  } //namespace python
 } // namespace asap
