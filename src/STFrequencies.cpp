@@ -280,7 +280,7 @@ std::string asap::STFrequencies::print( int id )
   for (uInt i=0; i<t.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
     oss <<  setw(8)
-    << rec.asString("FRAME") << setw(16) << setprecision(8)
+    << t.keywordSet().asString("FRAME") << setw(16) << setprecision(8)
     << rec.asDouble("REFVAL") << setw(10)
     << rec.asDouble("REFPIX") << setw(12)
     << rec.asDouble("INCREMENT") << endl;
@@ -366,7 +366,6 @@ void asap::STFrequencies::setDoppler( const std::string & doppler )
 {
   MDoppler::Types mdt;
   if (!MDoppler::getType(mdt, doppler)) {
-    cout << "DEBUG" << endl;
     Int a,b;const uInt* c;
     const String* valid = MDoppler::allMyTypes(a, b, c);
     Vector<String> ftypes(IPosition(1,a), valid);
