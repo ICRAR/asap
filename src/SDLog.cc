@@ -4,30 +4,31 @@ using namespace asap;
 
 std::string SDLog::log_ = std::string("");
 
-SDLog::SDLog() 
-{ 
+SDLog::SDLog()
+{
   enableLog();
 }
 
 SDLog::SDLog(bool enabled)
-{ 
+{
   enabled_ = enabled;
 }
 
-void SDLog::pushLog(const std::string& s) const
-{ 
+void SDLog::pushLog(const std::string& s, bool newline ) const
+{
   if (enabled_) {
-    log_+=s;log_+="\n";
-  }; 
+    log_+=s;
+    if ( newline ) log_+="\n";
+  };
 }
 std::string SDLog::popLog() const
 {
-  std::string out; 
+  std::string out;
   if (enabled_) out=log_;log_="";
   return out;
 }
 void SDLog::enableLog()
-{ 
+{
   enabled_ = true;
 }
 void SDLog::disableLog()

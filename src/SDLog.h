@@ -10,7 +10,7 @@ class SDLog {
 public:
   SDLog();
   SDLog(bool enabled);
-  void pushLog(const std::string& s) const;
+  void pushLog(const std::string& s, bool newline=true) const;
   //void pushLog(const char* cs);
   std::string popLog() const;
   virtual void enableLog();
