@@ -62,14 +62,14 @@ void python_Scantable() {
     .def("set_fluxunit", &ScantableWrapper::setFluxUnit)
     .def("_setInstrument", &ScantableWrapper::setInstrument)
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
-         (boost::python::arg("whichRow")=0))
+         (boost::python::arg("whichrow")=0))
     /*
     .def("nstokes", &ScantableWrapper::nStokes)
     .def("_getstokesspectrum", &ScantableWrapper::getStokesSpectrum,
-         (boost::python::arg("whichRow")=0),
+         (boost::python::arg("whichrow")=0),
          (boost::python::arg("linpol")=false) )
     .def("_stokestopolspectrum", &ScantableWrapper::stokesToPolSpectrum,
-         (boost::python::arg("whichRow")=0),
+         (boost::python::arg("whichrow")=0),
          (boost::python::arg("linear")=false),
          (boost::python::arg("thepol")=-1) )
     */
@@ -78,25 +78,25 @@ void python_Scantable() {
          (boost::python::arg("stokes")=false),
          (boost::python::arg("linpol")=false) )
 //         (boost::python::arg("thepol")=0) )        // Boost fails with 4 arguments
-/*    .def("_setspectrum",&ScantableWrapper::setSpectrum,
-         (boost::python::arg("whichRow")=0) )*/
+   .def("_setspectrum",&ScantableWrapper::setSpectrum,
+         (boost::python::arg("whichrow")=0) )
     .def("_getabcissa", &ScantableWrapper::getAbcissa,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_getabcissalabel", &ScantableWrapper::getAbcissaLabel,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_getmask", &ScantableWrapper::getMask,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_gettsys", &ScantableWrapper::getTsys)
     .def("_getsourcename", &ScantableWrapper::getSourceName,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_getelevation", &ScantableWrapper::getElevation,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_getazimuth", &ScantableWrapper::getAzimuth,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_getparangle", &ScantableWrapper::getParAngle,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_gettime", &ScantableWrapper::getTime,
-         (boost::python::arg("whichRow")=0) )
+         (boost::python::arg("whichrow")=0) )
     .def("_flag", &ScantableWrapper::flag)
     .def("_save",  &ScantableWrapper::makePersistent)
     .def("_summary",  &ScantableWrapper::summary,

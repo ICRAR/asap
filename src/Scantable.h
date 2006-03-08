@@ -247,6 +247,8 @@ public:
   std::vector<bool> getMask(int whichrow) const;
   std::vector<float> getSpectrum(int whichrow) const;
 
+  void setSpectrum(const std::vector<float>& spec, int whichrow);
+
   std::vector<float> getStokesSpectrum( int whichrow=0,
                                         bool dopol=false) const;
   std::string getPolarizationLabel(bool linear, bool stokes,

@@ -120,8 +120,8 @@ public:
     { return table_->getParAngle(whichRow); }
 
 
-//   void setSpectrum(std::vector<float> spectrum, int whichrow=0)
-//     { table_->setSpectrum(spectrum, whichrow); }
+  void setSpectrum(std::vector<float> spectrum, int whichrow=0)
+    { table_->setSpectrum(spectrum, whichrow); }
 
   int getIF(int whichrow) const {return table_->getIF(whichrow);}
   int getBeam(int whichrow) const {return table_->getBeam(whichrow);}

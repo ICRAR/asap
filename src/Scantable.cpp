@@ -581,6 +581,19 @@ std::vector<float> Scantable::getSpectrum(int whichrow) const
   return out;
 }
 
+
+void asap::Scantable::setSpectrum( const std::vector<float>& spec,
+                                   int whichrow )
+{
+  Vector<Float> spectrum(spec);
+  Vector<Float> arr;
+  specCol_.get(whichrow, arr);
+  if ( spectrum.nelements() != arr.nelements() )
+    throw AipsError("The specturm has incorrect number of channels.");
+  specCol_.put(whichrow, spectrum);
+}
+
+
 String Scantable::generateName()
 {
   return (File::newUniqueName("./","temp")).baseName();
@@ -738,7 +751,6 @@ std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
   if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
   std::vector<double> stlout;
   int nchan = specCol_(whichrow).nelements();
-  cout << nchan << endl;
   String us = freqTable_.getUnitString();
   if ( us == "" || us == "pixel" || us == "channel" ) {
     for (int i=0; i<nchan; ++i) {
