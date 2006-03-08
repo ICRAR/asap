@@ -406,11 +406,13 @@ int Scantable::nbeam( int scanno ) const
     return int(n);
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == scanno
-                       && table_.col("POLNO") == 0
-                       && table_.col("IFNO") == 0
-                       && table_.col("CYCLENO") == 0 );
-    ROTableVector<uInt> v(tab, "BEAMNO");
+    Table t = table_(table_.col("SCANNO") == scanno);
+    ROTableRow row(t);
+    const TableRecord& rec = row.get(0);
+    Table subt = t( t.col("IFNO") == Int(rec.asuInt("IFNO"))
+                    && t.col("POLNO") == Int(rec.asuInt("POLNO"))
+                    && t.col("CYCLENO") == Int(rec.asuInt("CYCLENO")) );
+    ROTableVector<uInt> v(subt, "BEAMNO");
     return int(v.nelements());
   }
   return 0;
@@ -424,11 +426,14 @@ int Scantable::nif( int scanno ) const
     return int(n);
   } else {
     // take the first POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == scanno
-                       && table_.col("POLNO") == 0
-                       && table_.col("BEAMNO") == 0
-                       && table_.col("CYCLENO") == 0 );
-    ROTableVector<uInt> v(tab, "IFNO");
+    Table t = table_(table_.col("SCANNO") == scanno);
+    ROTableRow row(t);
+    const TableRecord& rec = row.get(0);
+    Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                    && t.col("POLNO") == Int(rec.asuInt("POLNO"))
+                    && t.col("CYCLENO") == Int(rec.asuInt("CYCLENO")) );
+    if ( subt.nrow() == 0 ) return 0;
+    ROTableVector<uInt> v(subt, "IFNO");
     return int(v.nelements());
   }
   return 0;
@@ -442,11 +447,14 @@ int Scantable::npol( int scanno ) const
     return n;
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == scanno
-                       && table_.col("IFNO") == 0
-                       && table_.col("BEAMNO") == 0
-                       && table_.col("CYCLENO") == 0 );
-    ROTableVector<uInt> v(tab, "POLNO");
+    Table t = table_(table_.col("SCANNO") == scanno);
+    ROTableRow row(t);
+    const TableRecord& rec = row.get(0);
+    Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                    && t.col("IFNO") == Int(rec.asuInt("IFNO"))
+                    && t.col("CYCLENO") == Int(rec.asuInt("CYCLENO")) );
+    if ( subt.nrow() == 0 ) return 0;
+    ROTableVector<uInt> v(subt, "POLNO");
     return int(v.nelements());
   }
   return 0;
@@ -465,12 +473,14 @@ int Scantable::ncycle( int scanno ) const
     }
     return n;
   } else {
-    // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == scanno
-                       && table_.col("BEAMNO") == 0
-                       && table_.col("IFNO") == 0
-                       && table_.col("POLNO") == 0 );
-    return int(tab.nrow());
+    Table t = table_(table_.col("SCANNO") == scanno);
+    ROTableRow row(t);
+    const TableRecord& rec = row.get(0);
+    Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                    && t.col("POLNO") == Int(rec.asuInt("POLNO"))
+                    && t.col("IFNO") == Int(rec.asuInt("IFNO")) );
+    if ( subt.nrow() == 0 ) return 0;
+    return int(subt.nrow());
   }
   return 0;
 }
@@ -489,12 +499,9 @@ int Scantable::nchan( int ifno ) const
     return int(n);
   } else {
     // take the first SCANNO,POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
-    Table tab = table_(table_.col("SCANNO") == 0
-                       && table_.col("IFNO") == ifno
-                       && table_.col("BEAMNO") == 0
-                       && table_.col("POLNO") == 0
-                       && table_.col("CYCLENO") == 0 );
-    ROArrayColumn<Float> v(tab, "SPECTRA");
+    Table t = table_(table_.col("IFNO") == ifno);
+    if ( t.nrow() == 0 ) return 0;
+    ROArrayColumn<Float> v(t, "SPECTRA");
     return v(0).nelements();
   }
   return 0;
