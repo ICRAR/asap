@@ -23,7 +23,7 @@
 
 #include "Scantable.h"
 #include "SDContainer.h"
-#include "SDLog.h"
+#include "Logger.h"
 
 class PKSreader;
 

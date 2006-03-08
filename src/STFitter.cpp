@@ -42,7 +42,8 @@
 #include <scimath/Fitting/NonLinearFitLM.h>
 #include <components/SpectralComponents/SpectralEstimate.h>
 
-#include "SDFitter.h"
+#include "STFitter.h"
+
 using namespace asap;
 using namespace casa;
 

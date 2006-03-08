@@ -102,7 +102,7 @@ template class FrequencyAligner<Float>;
 template class BaseMappedArrayEngine<Float, Float>;
 
 #include "MathUtils2.cc"
-#include "SDPol2.cc"
+//#include "SDPol2.cc"
 namespace mathutil {
   template void hanning(Vector<Float>&, Vector<Bool>&,
 			const Vector<Float>&,

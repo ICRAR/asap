@@ -30,7 +30,7 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDLog.h"
+#include "Logger.h"
 
 using namespace boost::python;
 

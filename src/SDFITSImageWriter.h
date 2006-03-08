@@ -35,7 +35,7 @@
 #include <casa/BasicSL/String.h>
 #include <SDMemTable.h>
 
-#include "SDLog.h"
+#include "Logger.h"
 
 namespace asap {
 

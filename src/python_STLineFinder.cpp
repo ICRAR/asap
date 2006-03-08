@@ -30,7 +30,7 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDLineFinder.h"
+#include "STLineFinder.h"
 
 using namespace boost::python;
 

@@ -30,7 +30,7 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDFitter.h"
+#include "STFitter.h"
 
 using namespace boost::python;
 

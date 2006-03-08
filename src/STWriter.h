@@ -36,7 +36,7 @@
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include "SDLog.h"
+#include "Logger.h"
 #include "Scantable.h"
 
 class PKSwriter;
@@ -47,7 +47,7 @@ namespace asap {
   * This exports the ASAP internal data format to othe formats,
   * such as "SDFITS", "FITS", "MS2" or "ASCII"
   *
-  * @brief Export of ASAP data container into forign formats
+  * @brief Export of ASAP data container into foreign formats
   * @author Malte Marquarding
   * @date $Date$
   * @version 2.0a

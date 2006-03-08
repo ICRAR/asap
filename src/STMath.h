@@ -23,7 +23,7 @@
 
 #include "Scantable.h"
 #include "STDefs.h"
-#include "SDLog.h"
+#include "Logger.h"
 
 namespace asap {
 

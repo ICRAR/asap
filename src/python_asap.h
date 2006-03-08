@@ -40,13 +40,13 @@ namespace asap {
     void python_STFiller();
     void python_STSelector();
     void python_STMath();
-    void python_SDFitter();
+    void python_Fitter();
     void python_STLineFinder();
     /*
     void python_SDWriter();
     void python_SDFitTable();
     */
-    void python_SDLog();
+    void python_Logger();
 
   } // python
 } //asap

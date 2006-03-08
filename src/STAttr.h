@@ -35,7 +35,7 @@
 #include <measures/Measures/MEpoch.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include "SDLog.h"
+#include "Logger.h"
 #include "STDefs.h"
 
 template<class T> class casa::Vector;

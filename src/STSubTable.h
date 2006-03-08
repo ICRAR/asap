@@ -15,7 +15,7 @@
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
 
-#include "SDLog.h"
+#include "Logger.h"
 
 namespace asap {
 

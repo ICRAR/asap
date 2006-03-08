@@ -29,7 +29,7 @@
 
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 
-#include "SDLog.h"
+#include "Logger.h"
 #include "SDContainer.h"
 #include "STFrequencies.h"
 #include "STWeather.h"

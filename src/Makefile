@@ -79,12 +79,12 @@ LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
              MathUtils2.o \
-             SDLog.o \
+             Logger.o \
              STAttr.o \
              SDContainer.o \
              Scantable.o \
              STFiller.o \
-             STTemplates.o \
+             Templates.o \
              STMath.o \
              STSubTable.o \
              STMolecules.o \
@@ -96,21 +96,21 @@ CCOBJECTS := MathUtils.o \
              STWriter.o \
              RowAccumulator.o \
              STSelector.o \
-	     SDLineFinder.o \
-             SDFitter.o
+	     STLineFinder.o \
+             STFitter.o
 PYOBJECTS := python_Scantable.o \
              python_STFiller.o \
              python_STSelector.o \
              python_STMath.o \
-             python_SDFitter.o \
-             python_SDLog.o \
-             python_SDLineFinder.o \
+             python_Fitter.o \
+             python_Logger.o \
+             python_STLineFinder.o \
 	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 
 HEADERS   := MathUtils.h \
-             SDLog.h \
+             Logger.h \
              STAttr.h \
              SDContainer.h \
              Scantable.h \
@@ -127,7 +127,8 @@ HEADERS   := MathUtils.h \
              STDefs.h \
              STWriter.h \
              STSelector.h \
-	     SDLineFinder.h
+	     STFitter.h \
+	     STLineFinder.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
