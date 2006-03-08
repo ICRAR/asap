@@ -40,7 +40,8 @@ namespace asap {
       class_<SDLog>("Log")
         .def( init <> () )
         //.def( init <bool> () )
-	.def("push", &SDLog::pushLog)
+	.def("push", &SDLog::pushLog,
+         (boost::python::arg("newline")=1))
 	.def("pop", &SDLog::popLog)
 	.def("disable", &SDLog::disableLog)
 	.def("enable", &SDLog::enableLog)
