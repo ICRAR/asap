@@ -26,16 +26,16 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#ifndef SDATTR_H
-#define SDATTR_H
+#ifndef STATTR_H
+#define STATTR_H
 
 #include <casa/aips.h>
 #include <measures/Measures/MEpoch.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include "STLog.h"
+#include "SDLog.h"
 #include "STDefs.h"
 
 template<class T> class casa::Vector;
@@ -43,7 +43,7 @@ template<class T> class casa::Vector;
 
 namespace asap {
 
-class STAttr : public STLog {
+class STAttr : public SDLog {
 
  public:
 
