@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 
 
@@ -765,14 +765,14 @@ int STLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
 }
 
 // auxiliary function to fit and subtract a polynomial from the current
-// spectrum. It uses the SDFitter class. This action is required before
+// spectrum. It uses the Fitter class. This action is required before
 // reducing the spectral resolution if the baseline shape is bad
 void STLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
                       const casa::Int &order) throw(casa::AipsError)
 {
   AlwaysAssert(spectrum.nelements(),AipsError);
   // use the fact that temp_mask excludes channels rejected at the edge
-  SDFitter sdf;
+  Fitter sdf;
   std::vector<float> absc(spectrum.nelements());
   for (Int i=0;i<absc.size();++i)
        absc[i]=float(i)/float(spectrum.nelements());

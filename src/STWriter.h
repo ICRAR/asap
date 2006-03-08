@@ -49,10 +49,10 @@ namespace asap {
   *
   * @brief Export of ASAP data container into forign formats
   * @author Malte Marquarding
-  * @date $Date:$
+  * @date $Date$
   * @version 2.0a
 */
-class STWriter : public SDLog {
+class STWriter : public Logger {
 public:
   STWriter(const string &format = "SDFITS");
   ~STWriter();

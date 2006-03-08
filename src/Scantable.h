@@ -61,7 +61,7 @@ namespace asap {
   * @date
   * @version
 */
-class Scantable : private SDLog
+class Scantable : private Logger
 {
 public:
   /**

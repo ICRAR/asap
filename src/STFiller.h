@@ -37,7 +37,7 @@ This class fills a Scantable from external data formats using the PKSReader clas
 @date     2006/01/16
 @version  2.0a
 */
-class STFiller : public SDLog {
+class STFiller : public Logger {
 public:
 
   /**

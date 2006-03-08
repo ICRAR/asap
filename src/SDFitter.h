@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDFitter.h: A Fitter class for spectra
+//# Fitter.h: A Fitter class for spectra
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -41,10 +41,10 @@
 
 namespace asap {
 
-class SDFitter {
+class Fitter {
 public:
-  SDFitter();
-  virtual ~SDFitter();
+  Fitter();
+  virtual ~Fitter();
   // allowed "gauss" and "poly". ncomp is either numvber of gaussions
   // or order of the polynomial
   bool setExpression(const std::string& expr, int ncomp=1);

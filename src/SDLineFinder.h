@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef STLINEFINDER_H
 #define STLINEFINDER_H
@@ -198,7 +198,7 @@ protected:
                                throw(casa::AipsError);
 
    // auxiliary function to fit and subtract a polynomial from the current
-   // spectrum. It uses the SDFitter class. This action is required before
+   // spectrum. It uses the Fitter class. This action is required before
    // reducing the spectral resolution if the baseline shape is bad
    void subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
                          const casa::Int &order) throw(casa::AipsError);

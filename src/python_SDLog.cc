@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDLog.cc: python exposure of c++ SDLog class
+//# python_Logger.cc: python exposure of c++ Logger class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -36,15 +36,15 @@ using namespace boost::python;
 
 namespace asap {
   namespace python {
-    void python_SDLog() {
-      class_<SDLog>("Log")
+    void python_Logger() {
+      class_<Logger>("Log")
         .def( init <> () )
         //.def( init <bool> () )
-	.def("push", &SDLog::pushLog,
+	.def("push", &Logger::pushLog,
          (boost::python::arg("newline")=1))
-	.def("pop", &SDLog::popLog)
-	.def("disable", &SDLog::disableLog)
-	.def("enable", &SDLog::enableLog)
+	.def("pop", &Logger::popLog)
+	.def("disable", &Logger::disableLog)
+	.def("enable", &Logger::enableLog)
       ;
     };
 

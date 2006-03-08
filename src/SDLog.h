@@ -6,10 +6,10 @@
 
 namespace asap {
 
-class SDLog {
+class Logger {
 public:
-  SDLog();
-  SDLog(bool enabled);
+  Logger();
+  Logger(bool enabled);
   void pushLog(const std::string& s, bool newline=true) const;
   //void pushLog(const char* cs);
   std::string popLog() const;

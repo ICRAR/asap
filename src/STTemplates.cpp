@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDTemplates.cc: explicit templates for aips++
+//# Templates.cc: explicit templates for aips++
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF

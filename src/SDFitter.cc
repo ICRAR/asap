@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDFitter.cc: A Fitter class for spectra
+//# Fitter.cc: A Fitter class for spectra
 //#--------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #include <casa/aips.h>
 #include <casa/Arrays/ArrayMath.h>
@@ -46,16 +46,16 @@
 using namespace asap;
 using namespace casa;
 
-SDFitter::SDFitter()
+Fitter::Fitter()
 {
 }
 
-SDFitter::~SDFitter()
+Fitter::~Fitter()
 {
   reset();
 }
 
-void SDFitter::clear()
+void Fitter::clear()
 {
   for (uInt i=0;i< funcs_.nelements();++i) {
     delete funcs_[i]; funcs_[i] = 0;
@@ -68,7 +68,7 @@ void SDFitter::clear()
   chisquared_ = 0.0;
 }
 
-void SDFitter::reset()
+void Fitter::reset()
 {
   clear();
   x_.resize();
@@ -77,7 +77,7 @@ void SDFitter::reset()
 }
 
 
-bool SDFitter::computeEstimate() {
+bool Fitter::computeEstimate() {
   if (x_.nelements() == 0 || y_.nelements() == 0)
     throw (AipsError("No x/y data specified."));
 
@@ -121,7 +121,7 @@ bool SDFitter::computeEstimate() {
   return true;
 }
 
-std::vector<float> SDFitter::getEstimate() const
+std::vector<float> Fitter::getEstimate() const
 {
   if (estimate_.nelements() == 0)
     throw (AipsError("No estimate set."));
@@ -131,7 +131,7 @@ std::vector<float> SDFitter::getEstimate() const
 }
 
 
-bool SDFitter::setExpression(const std::string& expr, int ncomp)
+bool Fitter::setExpression(const std::string& expr, int ncomp)
 {
   clear();
   if (expr == "gauss") {
@@ -153,7 +153,7 @@ bool SDFitter::setExpression(const std::string& expr, int ncomp)
   return true;
 }
 
-bool SDFitter::setData(std::vector<float> absc, std::vector<float> spec,
+bool Fitter::setData(std::vector<float> absc, std::vector<float> spec,
                        std::vector<bool> mask)
 {
     x_.resize();
@@ -170,7 +170,7 @@ bool SDFitter::setData(std::vector<float> absc, std::vector<float> spec,
     return true;
 }
 
-std::vector<float> SDFitter::getResidual() const
+std::vector<float> Fitter::getResidual() const
 {
     if (residual_.nelements() == 0)
         throw (AipsError("Function not yet fitted."));
@@ -179,7 +179,7 @@ std::vector<float> SDFitter::getResidual() const
     return stlout;
 }
 
-std::vector<float> SDFitter::getFit() const
+std::vector<float> Fitter::getFit() const
 {
     Vector<Float> out = thefit_;
     std::vector<float> stlout;
@@ -188,7 +188,7 @@ std::vector<float> SDFitter::getFit() const
 
 }
 
-std::vector<float> SDFitter::getErrors() const
+std::vector<float> Fitter::getErrors() const
 {
     Vector<Float> out = error_;
     std::vector<float> stlout;
@@ -196,7 +196,7 @@ std::vector<float> SDFitter::getErrors() const
     return stlout;
 }
 
-bool SDFitter::setParameters(std::vector<float> params)
+bool Fitter::setParameters(std::vector<float> params)
 {
     Vector<Float> tmppar(params);
     if (funcs_.nelements() == 0)
@@ -225,7 +225,7 @@ bool SDFitter::setParameters(std::vector<float> params)
     return true;
 }
 
-bool SDFitter::setFixedParameters(std::vector<bool> fixed)
+bool Fitter::setFixedParameters(std::vector<bool> fixed)
 {
     Vector<Bool> tmp(fixed);
     if (funcs_.nelements() == 0)
@@ -251,14 +251,14 @@ bool SDFitter::setFixedParameters(std::vector<bool> fixed)
     return true;
 }
 
-std::vector<float> SDFitter::getParameters() const {
+std::vector<float> Fitter::getParameters() const {
     Vector<Float> out = parameters_;
     std::vector<float> stlout;
     out.tovector(stlout);
     return stlout;
 }
 
-std::vector<bool> SDFitter::getFixedParameters() const {
+std::vector<bool> Fitter::getFixedParameters() const {
   Vector<Bool> out(parameters_.nelements());
   if (fixedpar_.nelements() == 0) {
     out = False;
@@ -271,11 +271,11 @@ std::vector<bool> SDFitter::getFixedParameters() const {
   return stlout;
 }
 
-float SDFitter::getChisquared() const {
+float Fitter::getChisquared() const {
     return chisquared_;
 }
 
-bool SDFitter::fit() {
+bool Fitter::fit() {
   NonLinearFitLM<Float> fitter;
   CompoundFunction<Float> func;
 
@@ -292,7 +292,7 @@ bool SDFitter::fit() {
   // Fit
   Vector<Float> sigma(x_.nelements());
   sigma = 1.0;
-  
+
   parameters_.resize();
   parameters_ = fitter.fit(x_, y_, sigma, &m_);
   std::vector<float> ps;
@@ -303,7 +303,7 @@ bool SDFitter::fit() {
   error_ = fitter.errors();
 
   chisquared_ = fitter.getChi2();
-  
+
   residual_.resize();
   residual_ =  y_;
   fitter.residual(residual_,x_);
@@ -315,10 +315,10 @@ bool SDFitter::fit() {
 }
 
 
-std::vector<float> SDFitter::evaluate(int whichComp) const
-{  
+std::vector<float> Fitter::evaluate(int whichComp) const
+{
   std::vector<float> stlout;
-  uInt idx = uInt(whichComp); 
+  uInt idx = uInt(whichComp);
   Float y;
   if ( idx < funcs_.nelements() ) {
     for (uInt i=0; i<x_.nelements(); ++i) {

@@ -27,7 +27,7 @@ Abstract base class for all subtables in the Scantable class.
 @date $Date:$
 @version $Revision:$
 */
-class STSubTable : public SDLog {
+class STSubTable : public Logger {
 public:
   STSubTable() {;}
   STSubTable( casa::Table tab, const casa::String& name);

@@ -2,36 +2,36 @@
 
 using namespace asap;
 
-std::string SDLog::log_ = std::string("");
+std::string Logger::log_ = std::string("");
 
-SDLog::SDLog()
+Logger::Logger()
 {
   enableLog();
 }
 
-SDLog::SDLog(bool enabled)
+Logger::Logger(bool enabled)
 {
   enabled_ = enabled;
 }
 
-void SDLog::pushLog(const std::string& s, bool newline ) const
+void Logger::pushLog(const std::string& s, bool newline ) const
 {
   if (enabled_) {
     log_+=s;
     if ( newline ) log_+="\n";
   };
 }
-std::string SDLog::popLog() const
+std::string Logger::popLog() const
 {
   std::string out;
   if (enabled_) out=log_;log_="";
   return out;
 }
-void SDLog::enableLog()
+void Logger::enableLog()
 {
   enabled_ = true;
 }
-void SDLog::disableLog()
+void Logger::disableLog()
 {
   enabled_ = false;
 }

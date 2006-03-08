@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDFitter.cc: python exposure of c++ SDFitter class
+//# python_Fitter.cc: python exposure of c++ Fitter class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
@@ -37,24 +37,24 @@ using namespace boost::python;
 namespace asap {
   namespace python {
 
-    void python_SDFitter() {
-      class_<SDFitter>("fitter")
+    void python_Fitter() {
+      class_<Fitter>("fitter")
         .def( init <> () )
-        .def("setexpression", &SDFitter::setExpression)
-        .def("setdata", &SDFitter::setData)
-        .def("getresidual", &SDFitter::getResidual)
-        .def("getfit", &SDFitter::getFit)
-        .def("getfixedparameters", &SDFitter::getFixedParameters)
-        .def("setfixedparameters", &SDFitter::setFixedParameters)
-        .def("getparameters", &SDFitter::getParameters)
-        .def("setparameters", &SDFitter::setParameters)
-        .def("getestimate", &SDFitter::getEstimate)
-        .def("estimate", &SDFitter::computeEstimate)
-        .def("geterrors", &SDFitter::getErrors)
-        .def("getchi2", &SDFitter::getChisquared)
-        .def("reset", &SDFitter::reset)
-        .def("fit", &SDFitter::fit)
-        .def("evaluate", &SDFitter::evaluate)
+        .def("setexpression", &Fitter::setExpression)
+        .def("setdata", &Fitter::setData)
+        .def("getresidual", &Fitter::getResidual)
+        .def("getfit", &Fitter::getFit)
+        .def("getfixedparameters", &Fitter::getFixedParameters)
+        .def("setfixedparameters", &Fitter::setFixedParameters)
+        .def("getparameters", &Fitter::getParameters)
+        .def("setparameters", &Fitter::setParameters)
+        .def("getestimate", &Fitter::getEstimate)
+        .def("estimate", &Fitter::computeEstimate)
+        .def("geterrors", &Fitter::getErrors)
+        .def("getchi2", &Fitter::getChisquared)
+        .def("reset", &Fitter::reset)
+        .def("fit", &Fitter::fit)
+        .def("evaluate", &Fitter::evaluate)
       ;
     };
 

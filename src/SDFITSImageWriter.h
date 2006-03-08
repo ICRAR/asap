@@ -39,7 +39,7 @@
 
 namespace asap {
 
-class SDFITSImageWriter : public SDLog {
+class SDFITSImageWriter : public Logger {
 public:
   // Constructor
   SDFITSImageWriter();

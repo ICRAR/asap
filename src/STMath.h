@@ -32,7 +32,7 @@ Mathmatical operations on Scantable objects
 
 @author Malte Marquarding
 */
-class STMath : private SDLog {
+class STMath : private Logger {
 public:
 
   typedef casa::InterpolateArray1D<casa::Double,
