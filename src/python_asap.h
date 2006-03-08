@@ -41,11 +41,10 @@ namespace asap {
     void python_STSelector();
     void python_STMath();
     void python_SDFitter();
+    void python_STLineFinder();
     /*
     void python_SDWriter();
-    void python_SDMath();
     void python_SDFitTable();
-    void python_SDLineFinder();
     */
     void python_SDLog();
 

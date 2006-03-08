@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDLineFinder.h: A class for automated spectral line search
+//# STLineFinder.h: A class for automated spectral line search
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,10 +26,10 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#ifndef SDLINEFINDER_H
-#define SDLINEFINDER_H
+#ifndef STLINEFINDER_H
+#define STLINEFINDER_H
 
 // STL
 #include <vector>
@@ -48,8 +48,8 @@
 #include <casa/Utilities/CountedPtr.h>
 
 // ASAP
-#include "SDMemTableWrapper.h"
-#include "SDMemTable.h"
+#include "ScantableWrapper.h"
+#include "Scantable.h"
 
 namespace asap {
 
@@ -59,9 +59,9 @@ namespace asap {
 //                        The LF prefix stands for Line Finder
 //
 
-struct  LFLineListOperations {
+struct LFLineListOperations {
    // concatenate two lists preserving the order. If two lines appear to
-   // be adjacent or have a non-void intersection, they are joined into 
+   // be adjacent or have a non-void intersection, they are joined into
    // the new line
    static void addNewSearchResult(const std::list<std::pair<int, int> >
                   &newlines, std::list<std::pair<int, int> > &lines_list)
@@ -78,7 +78,7 @@ struct  LFLineListOperations {
 		       const std::pair<int,int> &edge)
 			   throw(casa::AipsError);
 protected:
-	   
+
    // An auxiliary object function to test whether two lines have a non-void
    // intersection
    class IntersectsWith : public std::unary_function<pair<int,int>, bool> {
@@ -104,7 +104,7 @@ protected:
 	// return the result (temp_line)
 	const std::pair<int,int>& result() const throw();
    };
-   
+
    // An auxiliary object function to test whether a specified line
    // is at lower spectral channels (to preserve the order in the line list)
    class LaterThan : public std::unary_function<pair<int,int>, bool> {
@@ -116,9 +116,9 @@ protected:
 	// return true if line2 should be placed later than line1
 	// in the ordered list (so, it is at greater channel numbers)
 	bool operator()(const std::pair<int,int> &line2) const throw();
-   }; 
-   
-   
+   };
+
+
 };
 
 //
@@ -126,13 +126,13 @@ protected:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// SDLineFinder  -  a class for automated spectral line search
+// STLineFinder  -  a class for automated spectral line search
 //
 //
 
-struct SDLineFinder : protected LFLineListOperations {
-   SDLineFinder() throw();
-   virtual ~SDLineFinder() throw(casa::AipsError);
+struct STLineFinder : protected LFLineListOperations {
+   STLineFinder() throw();
+   virtual ~STLineFinder() throw(casa::AipsError);
 
    // set the parameters controlling algorithm
    // in_threshold a single channel threshold default is sqrt(3), which
@@ -144,12 +144,12 @@ struct SDLineFinder : protected LFLineListOperations {
    //              a detection, default is 3
    // in_avg_limit perform the averaging of no more than in_avg_limit
    //              adjacent channels to search for broad lines
-   //              Default is 8, but for a bad baseline shape this 
+   //              Default is 8, but for a bad baseline shape this
    //              parameter should be decreased (may be even down to a
    //              minimum of 1 to disable this option) to avoid
    //              confusing of baseline undulations with a real line.
-   //              Setting a very large value doesn't usually provide 
-   //              valid detections. 
+   //              Setting a very large value doesn't usually provide
+   //              valid detections.
    // in_box_size  the box size for running mean calculation. Default is
    //              1./5. of the whole spectrum size
    void setOptions(const casa::Float &in_threshold=sqrt(3.),
@@ -163,14 +163,14 @@ struct SDLineFinder : protected LFLineListOperations {
    //   if in_edge has one element only, it represents the number of
    //      channels to drop from both sides of the spectrum
    //   in_edge is introduced for convinience, although all functionality
-   //   can be achieved using a spectrum mask only   
-   void setScan(const SDMemTableWrapper &in_scan,
+   //   can be achieved using a spectrum mask only
+   void setScan(const ScantableWrapper &in_scan,
                 const std::vector<bool> &in_mask,
 		const boost::python::tuple &in_edge) throw(casa::AipsError);
 
    // search for spectral lines for a row specified by whichRow and
    // Beam/IF/Pol specified by current cursor set for the scantable
-   // Number of lines found is returned   
+   // Number of lines found is returned
    int findLines(const casa::uInt &whichRow = 0) throw(casa::AipsError);
 
    // get the mask to mask out all lines that have been found (default)
@@ -181,7 +181,7 @@ struct SDLineFinder : protected LFLineListOperations {
    std::vector<bool> getMask(bool invert=false) const throw(casa::AipsError);
 
    // get range for all lines found. The same units as used in the scan
-   // will be returned (e.g. velocity instead of channels).   
+   // will be returned (e.g. velocity instead of channels).
    std::vector<double>   getLineRanges() const throw(casa::AipsError);
    // The same as getLineRanges, but channels are always used to specify
    // the range
@@ -202,15 +202,15 @@ protected:
    // reducing the spectral resolution if the baseline shape is bad
    void subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
                          const casa::Int &order) throw(casa::AipsError);
-   
+
    // an auxiliary function to remove all lines from the list, except the
    // strongest one (by absolute value). If the lines removed are real,
-   // they will be find again at the next iteration. This approach  
-   // increases the number of iterations required, but is able to remove 
+   // they will be find again at the next iteration. This approach
+   // increases the number of iterations required, but is able to remove
    // the sidelobes likely to occur near strong lines.
    // Later a better criterion may be implemented, e.g.
    // taking into consideration the brightness of different lines. Now
-   // use the simplest solution     
+   // use the simplest solution
    // temp_mask - mask to work with (may be different from original mask as
    // the lines previously found may be masked)
    // lines2update - a list of lines to work with
@@ -221,11 +221,11 @@ protected:
 			  int max_box_nchan)
                                       throw (casa::AipsError);
 private:
-   casa::CountedConstPtr<SDMemTable> scan; // the scan to work with
+   casa::CountedConstPtr<Scantable> scan; // the scan to work with
    casa::Vector<casa::Bool> mask;          // associated mask
    std::pair<int,int> edge;                // start and stop+1 channels
                                            // to work with
-   casa::Float threshold;                  // detection threshold - the 
+   casa::Float threshold;                  // detection threshold - the
                                            // minimal signal to noise ratio
    casa::Double box_size;	           // size of the box for running
                                            // mean calculations, specified as
@@ -250,4 +250,4 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 
 } // namespace asap
-#endif // #ifndef SDLINEFINDER_H
+#endif // #ifndef STLINEFINDER_H

@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDLineFinder.cc: python exposure of C++ SDLineFinder class
+//# python_STLineFinder.cc: python exposure of C++ STLineFinder class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
@@ -36,15 +36,15 @@ using namespace boost::python;
 
 namespace asap {
   namespace python {
-     void python_SDLineFinder() {
-       class_<SDLineFinder>("linefinder")
+     void python_STLineFinder() {
+       class_<STLineFinder>("linefinder")
          .def( init <> () )
-	 .def("setoptions",&SDLineFinder::setOptions)
-         .def("setscan",&SDLineFinder::setScan)
-         .def("findlines",&SDLineFinder::findLines)
-         .def("getmask",&SDLineFinder::getMask)
-         .def("getlineranges",&SDLineFinder::getLineRanges)
-         .def("getlinerangesinchannels",&SDLineFinder::getLineRangesInChannels)
+	 .def("setoptions",&STLineFinder::setOptions)
+         .def("setscan",&STLineFinder::setScan)
+         .def("findlines",&STLineFinder::findLines)
+         .def("getmask",&STLineFinder::getMask)
+         .def("getlineranges",&STLineFinder::getLineRanges)
+         .def("getlinerangesinchannels",&STLineFinder::getLineRangesInChannels)
        ;
      };
   } // namespace python
