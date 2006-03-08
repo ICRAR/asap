@@ -96,6 +96,7 @@ CCOBJECTS := MathUtils.o \
              STWriter.o \
              RowAccumulator.o \
              STSelector.o \
+	     SDLineFinder.o \
              SDFitter.o
 PYOBJECTS := python_Scantable.o \
              python_STFiller.o \
@@ -103,6 +104,7 @@ PYOBJECTS := python_Scantable.o \
              python_STMath.o \
              python_SDFitter.o \
              python_SDLog.o \
+             python_SDLineFinder.o \
 	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
@@ -124,7 +126,8 @@ HEADERS   := MathUtils.h \
              STFrequencies.h \
              STDefs.h \
              STWriter.h \
-             STSelector.h
+             STSelector.h \
+	     SDLineFinder.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
