@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #include <casa/aips.h>
 #include <casa/Arrays/ArrayMath.h>
