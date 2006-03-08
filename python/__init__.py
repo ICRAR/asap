@@ -252,8 +252,8 @@ from asapfitter import *
 #from asapreader import reader
 
 from asapmath import *
-#from scantable import *
-#from asaplinefind import *
+from scantable import *
+from asaplinefind import *
 #from asapfit import *
 
 from numarray import logical_and as mask_and

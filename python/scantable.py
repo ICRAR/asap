@@ -1019,74 +1019,75 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-#     def auto_poly_baseline(self, mask=None, edge=(0,0), order=0,
-#                            threshold=3, insitu=None):
-#         """
-#         Return a scan which has been baselined (all rows) by a polynomial.
-#         Spectral lines are detected first using linefinder and masked out
-#         to avoid them affecting the baseline solution.
-#
-#         Parameters:
-#             mask:       an optional mask retreived from scantable
-#             edge:       an optional number of channel to drop at
-#                         the edge of spectrum. If only one value is
-#                         specified, the same number will be dropped from
-#                         both sides of the spectrum. Default is to keep
-#                         all channels
-#             order:      the order of the polynomial (default is 0)
-#             threshold:  the threshold used by line finder. It is better to
-#                         keep it large as only strong lines affect the
-#                         baseline solution.
-#             insitu:     if False a new scantable is returned.
-#                         Otherwise, the scaling is done in-situ
-#                         The default is taken from .asaprc (False)
-#
-#         Example:
-#             scan2=scan.auto_poly_baseline(order=7)
-#         """
-#         if insitu is None: insitu = rcParams['insitu']
-#         varlist = vars()
-#         from asap.asapfitter import fitter
-#         from asap.asaplinefind import linefinder
-#         from asap import _is_sequence_or_number as _is_valid
-#
-#         if not _is_valid(edge, int):
-#             raise RuntimeError, "Parameter 'edge' has to be an integer or a \
-#             pair of integers specified as a tuple"
-#
-#         # setup fitter
-#         f = fitter()
-#         f.set_function(poly=order)
-#
-#         # setup line finder
-#         fl=linefinder()
-#         fl.set_options(threshold=threshold)
-#
-#         if not insitu:
-#             workscan=self.copy()
-#         else:
-#             workscan=self
-#
-#         rows=range(workscan.nrow())
-#         from asap import asaplog
-#         for i in rows:
-#             asaplog.push("Processing:")
-#             asaplog.push(msg)
-#             fl.set_scan(workscan,mask,edge)
-#             fl.find_lines(i)
-#             f.set_scan(workscan, fl.get_mask())
-#             f.x = workscan._getabcissa(i)
-#             f.y = workscan._getspectrum(i)
-#             f.data = None
-#             f.fit()
-#             x = f.get_parameters()
-#             workscan._setspectrum(f.fitter.getresidual(), i)
-#         workscan._add_history("poly_baseline", varlist)
-#         if insitu:
-#             self._assign(workscan)
-#         else:
-#             return workscan
-#
+    def auto_poly_baseline(self, mask=None, edge=(0,0), order=0,
+                           threshold=3, insitu=None):
+        """
+        Return a scan which has been baselined (all rows) by a polynomial.
+        Spectral lines are detected first using linefinder and masked out
+        to avoid them affecting the baseline solution.
+
+        Parameters:
+            mask:       an optional mask retreived from scantable
+            edge:       an optional number of channel to drop at
+                        the edge of spectrum. If only one value is
+                        specified, the same number will be dropped from
+                        both sides of the spectrum. Default is to keep
+                        all channels
+            order:      the order of the polynomial (default is 0)
+            threshold:  the threshold used by line finder. It is better to
+                        keep it large as only strong lines affect the
+                        baseline solution.
+            insitu:     if False a new scantable is returned.
+                        Otherwise, the scaling is done in-situ
+                        The default is taken from .asaprc (False)
+
+        Example:
+            scan2=scan.auto_poly_baseline(order=7)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+        from asap.asapfitter import fitter
+        from asap.asaplinefind import linefinder
+        from asap import _is_sequence_or_number as _is_valid
+
+        if not _is_valid(edge, int):
+            raise RuntimeError, "Parameter 'edge' has to be an integer or a \
+            pair of integers specified as a tuple"
+
+        # setup fitter
+        f = fitter()
+        f.set_function(poly=order)
+
+        # setup line finder
+        fl=linefinder()
+        fl.set_options(threshold=threshold)
+
+        if not insitu:
+            workscan=self.copy()
+        else:
+            workscan=self
+
+        rows=range(workscan.nrow())
+        from asap import asaplog
+        asaplog.push("Processing:")
+        for r in rows:
+            msg = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (workscan.getscan(r),workscan.getbeam(r),workscan.getif(r),workscan.getpol(r), workscan.getcycle(r))
+            asaplog.push(msg, False)
+            fl.set_scan(workscan, mask, edge)
+            fl.find_lines(r)
+            f.set_scan(workscan, fl.get_mask())
+            f.x = workscan._getabcissa(r)
+            f.y = workscan._getspectrum(r)
+            f.data = None
+            f.fit()
+            x = f.get_parameters()
+            workscan._setspectrum(f.fitter.getresidual(), r)
+        workscan._add_history("poly_baseline", varlist)
+        if insitu:
+            self._assign(workscan)
+        else:
+            return workscan
+
 #     def rotate_linpolphase(self, angle):
 #         """
 #         Rotate the phase of the complex polarization O=Q+iU correlation.

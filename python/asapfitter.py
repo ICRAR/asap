@@ -451,18 +451,18 @@ class fitter:
             scan = self.data.copy()
         else:
             scan = self.data
-        rows = range(scan.nrow())
+        rows = xrange(scan.nrow())
         from asap import asaplog
         asaplog.push("Fitting:")
         for r in rows:
-            out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (self.data.getscan(r),self.data.getbeam(r),self.data.getif(r),self.data.getpol(r), self.data.getcycle(r))
-            asaplog.push(out)
+            out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (scan.getscan(r),scan.getbeam(r),scan.getif(r),scan.getpol(r), scan.getcycle(r))
+            asaplog.push(out, False)
             self.x = scan._getabcissa(r)
             self.y = scan._getspectrum(r)
             self.data = None
             self.fit()
             x = self.get_parameters()
-            scan._setspectrum(self.fitter.getresidual(),iRow)
+            scan._setspectrum(self.fitter.getresidual(), r)
         print_log()
         return scan
 
