@@ -74,17 +74,16 @@ BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
 
 # DO NOT MODIFY AFTER THIS
-INCDIRS   := -I. $(CASAINC) $(BOOSTINC) $(PYTHONINC) $(CFITSIOINC)
+INCDIRS   := -I. $(CASAINC)  $(CFITSIOINC) $(BOOSTINC) $(PYTHONINC)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
              MathUtils2.o \
+             RowAccumulator.o \
              Logger.o \
              STAttr.o \
              SDContainer.o \
-             Scantable.o \
              STFiller.o \
-             Templates.o \
              STMath.o \
              STSubTable.o \
              STMolecules.o \
@@ -94,10 +93,12 @@ CCOBJECTS := MathUtils.o \
              STFrequencies.o \
              STHistory.o \
              STWriter.o \
-             RowAccumulator.o \
              STSelector.o \
 	     STLineFinder.o \
-             STFitter.o
+             STFitter.o \
+             STPolLinear.o \
+             Scantable.o \
+             Templates.o 
 PYOBJECTS := python_Scantable.o \
              python_STFiller.o \
              python_STSelector.o \
@@ -128,7 +129,11 @@ HEADERS   := MathUtils.h \
              STWriter.h \
              STSelector.h \
 	     STFitter.h \
-	     STLineFinder.h
+	     STLineFinder.h \
+             Factory.h \
+             FactoryBase.h \
+	     STPol.h \
+	     STPolLinear.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))
