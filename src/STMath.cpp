@@ -870,3 +870,76 @@ CountedPtr< Scantable >
   }
   return out;
 }
+
+CountedPtr< Scantable >
+  STMath::invertPhase( const CountedPtr < Scantable >& in )
+{
+  applyToPol(in, &STPol::invertPhase, Float(0.0));
+}
+
+CountedPtr< Scantable >
+  STMath::rotateXYPhase( const CountedPtr < Scantable >& in, float phase )
+{
+   return applyToPol(in, &STPol::rotatePhase, Float(phase));
+}
+
+CountedPtr< Scantable >
+  STMath::rotateLinPolPhase( const CountedPtr < Scantable >& in, float phase )
+{
+  return applyToPol(in, &STPol::rotateLinPolPhase, Float(phase));
+}
+
+CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
+                                             STPol::polOperation fptr,
+                                             Float phase )
+{
+  CountedPtr< Scantable > out = getScantable(in, false);
+  Table& tout = out->table();
+  Block<String> cols(4);
+  cols[0] = String("SCANNO");
+  cols[1] = String("BEAMNO");
+  cols[2] = String("IFNO");
+  cols[3] = String("CYCLENO");
+  TableIterator iter(tout, cols);
+  STPol* stpol = NULL;
+  stpol =STPol::getPolClass(Scantable::getFactories(), out->getPolType() );
+  while (!iter.pastEnd()) {
+    Table t = iter.table();
+    ArrayColumn<Float> speccol(t, "SPECTRA");
+    Matrix<Float> pols = speccol.getColumn();
+    Matrix<Float> out;
+    try {
+      stpol->setSpectra(pols);
+      (stpol->*fptr)(phase);
+      speccol.putColumn(stpol->getSpectra());
+      delete stpol;stpol=0;
+    } catch (AipsError& e) {
+      delete stpol;stpol=0;
+      throw(e);
+    }
+    ++iter;
+  }
+  return out;
+}
+
+CountedPtr< Scantable >
+  STMath::swapPolarisations( const CountedPtr< Scantable > & in )
+{
+  CountedPtr< Scantable > out = getScantable(in, false);
+  Table& tout = out->table();
+  Table t0 = tout(tout.col("POLNO") == 0);
+  Table t1 = tout(tout.col("POLNO") == 1);
+  if ( t0.nrow() != t1.nrow() )
+    throw(AipsError("Inconsistent number of polarisations"));
+  ArrayColumn<Float> speccol0(t0, "SPECTRA");
+  ArrayColumn<uChar> flagcol0(t0, "FLAGTRA");
+  ArrayColumn<Float> speccol1(t1, "SPECTRA");
+  ArrayColumn<uChar> flagcol1(t1, "FLAGTRA");
+  Matrix<Float> s0 = speccol0.getColumn();
+  Matrix<uChar> f0 = flagcol0.getColumn();
+  speccol0.putColumn(speccol1.getColumn());
+  flagcol0.putColumn(flagcol1.getColumn());
+  speccol1.putColumn(s0);
+  flagcol1.putColumn(f0);
+  return out;
+}

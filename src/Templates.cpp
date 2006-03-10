@@ -73,6 +73,12 @@ template class TabVecScaCol<Float>;
 template class TabVecTemp<Float>;
 template class TabVecRep<Float>;
 
+template class ROTableVector<uChar>;
+template class TableVector<uChar>;
+template class TabVecScaCol<uChar>;
+template class TabVecTemp<uChar>;
+template class TabVecRep<uChar>;
+
 template void convertArray<Bool, uChar>(Array<Bool> &, Array<uChar> const &);
 template void convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
 
@@ -109,7 +115,4 @@ namespace mathutil {
 			const Vector<Bool>&,
 			Bool, Bool);
 }
-//template Array<Bool> SDPolUtil::stokesData (Array<Bool>& dataIn, Bool);
-//template Array<Float> SDPolUtil::computeStokesDataForWriter(Array<Float>& dataIn, Bool);
-//template Array<uChar> SDPolUtil::computeStokesDataForWriter(Array<uChar>& dataIn, Bool);
 

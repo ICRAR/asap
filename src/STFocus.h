@@ -40,7 +40,7 @@ public:
                        casa::Float ftan);
 
   void getEntry( casa::Float& rotation, casa::Float& angle,
-                       casa::Float& ftan, casa::uInt id);
+                       casa::Float& ftan, casa::uInt id) const;
 
   const casa::String& name() const { return name_; }
 

@@ -38,8 +38,7 @@
 #include "STMolecules.h"
 #include "STSelector.h"
 #include "STHistory.h"
-
-
+#include "STPol.h"
 
 namespace asap {
 
@@ -204,6 +203,8 @@ public:
    */
   int npol(int scanno=-1) const;
 
+  std::string getPolType() const;
+
   /**
    * Get the number of channels in the data or a specific IF. This currently
    * varies only with IF number
@@ -245,12 +246,11 @@ public:
     { return srcnCol_(whichrow); }
 
   std::vector<bool> getMask(int whichrow) const;
-  std::vector<float> getSpectrum(int whichrow) const;
+  std::vector<float> getSpectrum(int whichrow,
+                                 const std::string& poltype ="linear") const;
 
   void setSpectrum(const std::vector<float>& spec, int whichrow);
 
-  std::vector<float> getStokesSpectrum( int whichrow=0,
-                                        bool dopol=false) const;
   std::string getPolarizationLabel(bool linear, bool stokes,
                                    bool linpol,
                                    int polidx=-1) const;
@@ -302,7 +302,13 @@ public:
   STMolecules& molecules() { return moleculeTable_; }
   STHistory& history() { return historyTable_; }
 
+  static const std::map<std::string, STPol::STPolFactory *>& getFactories()
+    { return factories_; }
+
 private:
+
+  casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;
+
   /**
    * Turns a time vale into a formatted string
    * @param x
@@ -393,6 +399,9 @@ private:
   casa::ScalarColumn<casa::uInt> mfocusidCol_;
 
   casa::ScalarColumn<casa::uInt> mmolidCol_;
+
+  static std::map<std::string, STPol::STPolFactory *> factories_;
+  void initFactories();
 
 };
 

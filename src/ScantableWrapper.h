@@ -62,20 +62,10 @@ public:
     return ScantableWrapper(new Scantable(*(this->getCP()), false));
   }
 
-  std::vector<float> getSpectrum(int whichRow=0) const {
-    return table_->getSpectrum(whichRow);
+  std::vector<float> getSpectrum( int whichrow=0,
+                                  const std::string& poltype="linear" ) const {
+    return table_->getSpectrum(whichrow, poltype);
   }
-  /*
-  std::vector<float> getStokesSpectrum(int whichRow=0,
-                                       bool linPol=false) const {
-    return table_->getStokesSpectrum(whichRow, linPol);
-  }
-
-  std::vector<float> stokesToPolSpectrum(int whichRow=0, bool linear=false,
-                                         int polIdx=-1) const {
-    return table_->stokesToPolSpectrum(whichRow, linear, polIdx);
-  }
-  */
   //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
   // Boost fails with 4 arguments.
   std::string getPolarizationLabel(bool linear, bool stokes,
@@ -84,17 +74,17 @@ public:
     return table_->getPolarizationLabel(linear, stokes, linPol, polIdx);
   }
 
-  std::vector<double> getAbcissa(int whichRow=0) const
-    { return table_->getAbcissa(whichRow); }
+  std::vector<double> getAbcissa(int whichrow=0) const
+    { return table_->getAbcissa(whichrow); }
 
-  std::string getAbcissaLabel(int whichRow=0) const
-    { return table_->getAbcissaLabel(whichRow); }
+  std::string getAbcissaLabel(int whichrow=0) const
+    { return table_->getAbcissaLabel(whichrow); }
 
-  float getTsys(int whichRow=0) const
-    { return table_->getTsys(whichRow); }
+  float getTsys(int whichrow=0) const
+    { return table_->getTsys(whichrow); }
 
-  std::string getTime(int whichRow=0) const
-    { return table_->getTime(whichRow); }
+  std::string getTime(int whichrow=0) const
+    { return table_->getTime(whichrow); }
 
   std::string getFluxUnit() const { return table_->getFluxUnit(); }
 
@@ -102,22 +92,22 @@ public:
 
   void setInstrument(const std::string& name) {table_->setInstrument(name);}
 
-  std::vector<bool> getMask(int whichRow=0) const
-    { return table_->getMask(whichRow); }
+  std::vector<bool> getMask(int whichrow=0) const
+    { return table_->getMask(whichrow); }
 
   void flag() { table_->flag(); }
 
-  std::string getSourceName(int whichRow=0) const
-    { return table_->getSourceName(whichRow); }
+  std::string getSourceName(int whichrow=0) const
+    { return table_->getSourceName(whichrow); }
 
-  float getElevation(int whichRow=0) const
-    { return table_->getElevation(whichRow); }
+  float getElevation(int whichrow=0) const
+    { return table_->getElevation(whichrow); }
 
-  float getAzimuth(int whichRow=0) const
-    { return table_->getAzimuth(whichRow); }
+  float getAzimuth(int whichrow=0) const
+    { return table_->getAzimuth(whichrow); }
 
-  float getParAngle(int whichRow=0) const
-    { return table_->getParAngle(whichRow); }
+  float getParAngle(int whichrow=0) const
+    { return table_->getParAngle(whichrow); }
 
 
   void setSpectrum(std::vector<float> spectrum, int whichrow=0)
@@ -132,6 +122,8 @@ public:
   STSelector getSelection() const { return table_->getSelection(); }
   void setSelection(const STSelector& sts)
     { return table_->setSelection(sts);}
+
+  std::string getPolType() const { return table_->getPolType(); }
 
   int nif(int scanno=-1) const {return table_->nif(scanno);}
   int nbeam(int scanno=-1) const {return table_->nbeam(scanno);}
@@ -174,7 +166,7 @@ public:
   void addHistory(const std::string& hist)
     { table_->addHistory(hist); }
   /*
-  void addFit(int whichRow, const std::vector<double>& p,
+  void addFit(int whichrow, const std::vector<double>& p,
               const std::vector<bool>& m, const std::vector<string>& f,
               const std::vector<int>& c) {
 
@@ -182,10 +174,10 @@ public:
     casa::Vector<casa::Bool> m2(m);
     casa::Vector<casa::String> f2 = mathutil::toVectorString(f);
     casa::Vector<casa::Int> c2(c);
-    table_->addFit(casa::uInt(whichRow), p2,m2,f2,c2);
+    table_->addFit(casa::uInt(whichrow), p2,m2,f2,c2);
   }
-  SDFitTable getSDFitTable(int whichRow) {
-    return table_->getSDFitTable(casa::uInt(whichRow));
+  SDFitTable getSDFitTable(int whichrow) {
+    return table_->getSDFitTable(casa::uInt(whichrow));
   }
   */
   void calculateAZEL() { table_->calculateAZEL(); };

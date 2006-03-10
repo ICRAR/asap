@@ -62,23 +62,12 @@ void python_Scantable() {
     .def("set_fluxunit", &ScantableWrapper::setFluxUnit)
     .def("_setInstrument", &ScantableWrapper::setInstrument)
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
-         (boost::python::arg("whichrow")=0))
-    /*
-    .def("nstokes", &ScantableWrapper::nStokes)
-    .def("_getstokesspectrum", &ScantableWrapper::getStokesSpectrum,
-         (boost::python::arg("whichrow")=0),
-         (boost::python::arg("linpol")=false) )
-    .def("_stokestopolspectrum", &ScantableWrapper::stokesToPolSpectrum,
-         (boost::python::arg("whichrow")=0),
-         (boost::python::arg("linear")=false),
-         (boost::python::arg("thepol")=-1) )
-    */
+         (arg("whichrow")=0, arg("poltype")=std::string("linear")) )
+    .def("poltype", &ScantableWrapper::getPolType )
     .def("_getpolarizationlabel", &ScantableWrapper::getPolarizationLabel,
-         (boost::python::arg("linear")=false),
-         (boost::python::arg("stokes")=false),
-         (boost::python::arg("linpol")=false) )
-//         (boost::python::arg("thepol")=0) )        // Boost fails with 4 arguments
-   .def("_setspectrum",&ScantableWrapper::setSpectrum,
+         ( arg("linear")=false, arg("stokes")=false,
+           arg("linpol")=false, arg("thepol")=0 ) )
+    .def("_setspectrum",&ScantableWrapper::setSpectrum,
          (boost::python::arg("whichrow")=0) )
     .def("_getabcissa", &ScantableWrapper::getAbcissa,
          (boost::python::arg("whichrow")=0) )

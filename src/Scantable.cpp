@@ -53,15 +53,25 @@
 #include <casa/Quanta/MVAngle.h>
 
 #include "Scantable.h"
+#include "STPolLinear.h"
 #include "STAttr.h"
 
 using namespace casa;
 
 namespace asap {
 
+std::map<std::string, STPol::STPolFactory *> Scantable::factories_;
+
+void Scantable::initFactories() {
+  if ( factories_.empty() ) {
+    Scantable::factories_["linear"] = &STPolLinear::myFactory;
+  }
+}
+
 Scantable::Scantable(Table::TableType ttype) :
   type_(ttype)
 {
+  initFactories();
   setupMainTable();
   freqTable_ = STFrequencies(*this);
   table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_.table());
@@ -84,6 +94,7 @@ Scantable::Scantable(Table::TableType ttype) :
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   type_(ttype)
 {
+  initFactories();
   Table tab(name, Table::Update);
   Int version;
   tab.keywordSet().get("VERSION", version);
@@ -565,6 +576,9 @@ void Scantable::flag()
 {
   if ( selector_.empty() )
     throw(AipsError("Trying to flag whole scantable. Aborted."));
+  TableVector<uChar> tvec(table_, "FLAGTRA");
+  uChar userflag = 1 << 7;
+  tvec = userflag;
 }
 
 std::vector<bool> Scantable::getMask(int whichrow) const
@@ -579,15 +593,34 @@ std::vector<bool> Scantable::getMask(int whichrow) const
   return mask;
 }
 
-std::vector<float> Scantable::getSpectrum(int whichrow) const
+std::vector<float> Scantable::getSpectrum( int whichrow,
+                                           const std::string& poltype) const
 {
-  Vector<Float> arr;
-  specCol_.get(whichrow, arr);
   std::vector<float> out;
+  Vector<Float> arr;
+  uInt requestedpol = polCol_(whichrow);
+  String basetype = getPolType();
+  if ( String(poltype) == basetype) {
+    specCol_.get(whichrow, arr);
+  } else {
+    STPol* stpol = 0;
+    stpol =STPol::getPolClass(Scantable::factories_, basetype);
+    try {
+      uInt row = uInt(whichrow);
+      stpol->setSpectra(getPolMatrix(row));
+      Float frot,fang,ftan;
+      focusTable_.getEntry(frot, fang, ftan, row);
+      stpol->setPhaseCorrections(frot, fang, ftan);
+      arr = stpol->getSpectrum(requestedpol, poltype);
+      delete stpol;
+    } catch (AipsError& e) {
+      delete stpol;
+      throw(e);
+    }
+  }
   arr.tovector(out);
   return out;
 }
-
 
 void asap::Scantable::setSpectrum( const std::vector<float>& spec,
                                    int whichrow )
@@ -596,7 +629,7 @@ void asap::Scantable::setSpectrum( const std::vector<float>& spec,
   Vector<Float> arr;
   specCol_.get(whichrow, arr);
   if ( spectrum.nelements() != arr.nelements() )
-    throw AipsError("The specturm has incorrect number of channels.");
+    throw AipsError("The spectrum has incorrect number of channels.");
   specCol_.put(whichrow, spectrum);
 }
 
@@ -615,6 +648,12 @@ casa::Table& Scantable::table( )
 {
   return table_;
 }
+
+std::string Scantable::getPolType() const
+{
+  return table_.keywordSet().asString("POLTYPE");
+}
+
 
 std::string Scantable::getPolarizationLabel(bool linear, bool stokes,
                                             bool linpol, int polidx) const
@@ -654,7 +693,8 @@ std::string Scantable::summary( bool verbose )
   oss.flags(std::ios_base::left);
   oss << setw(15) << "Beams:" << setw(4) << nbeam() << endl
       << setw(15) << "IFs:" << setw(4) << nif() << endl
-      << setw(15) << "Polarisations:" << setw(4) << npol() << endl
+      << setw(15) << "Polarisations:" << setw(4) << npol()
+      << "(" << getPolType() << ")" << endl
       << setw(15) << "Channels:"  << setw(4) << nchan() << endl;
   oss << endl;
   String tmp;
@@ -837,6 +877,19 @@ std::vector< unsigned int > asap::Scantable::rownumbers( ) const
   return stlout;
 }
 
+
+Matrix<Float> asap::Scantable::getPolMatrix( uInt whichrow ) const
+{
+  ROTableRow row(table_);
+  const TableRecord& rec = row.get(whichrow);
+  Table t =
+    originalTable_( originalTable_.col("SCANNO") == Int(rec.asuInt("SCANNO"))
+                    && originalTable_.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                    && originalTable_.col("IFNO") == Int(rec.asuInt("IFNO"))
+                    && originalTable_.col("CYCLENO") == Int(rec.asuInt("CYCLENO")) );
+  ROArrayColumn<Float> speccol(t, "SPECTRA");
+  return speccol.getColumn();
+}
 
 
 }//namespace asap

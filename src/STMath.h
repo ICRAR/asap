@@ -23,6 +23,7 @@
 
 #include "Scantable.h"
 #include "STDefs.h"
+#include "STPol.h"
 #include "Logger.h"
 
 namespace asap {
@@ -98,9 +99,23 @@ public:
   casa::CountedPtr<Scantable>
     merge(const std::vector<casa::CountedPtr<Scantable> >& in);
 
+  casa::CountedPtr<Scantable>
+    invertPhase( const casa::CountedPtr<Scantable>& in);
+  casa::CountedPtr<Scantable>
+    rotateXYPhase( const casa::CountedPtr<Scantable>& in, float phase);
+  casa::CountedPtr<Scantable>
+    rotateLinPolPhase( const casa::CountedPtr<Scantable>& in, float phase);
+
   /// @todo frequency alignment
 
+  casa::CountedPtr<Scantable>
+    swapPolarisations(const casa::CountedPtr<Scantable>& in);
+
 private:
+  casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
+                                           STPol::polOperation fptr,
+                                           casa::Float phase);
+
   static imethod stringToIMethod(const std::string& in);
   static WeightType stringToWeight(const std::string& in);
 

@@ -44,7 +44,7 @@ STFocus::~STFocus()
 {
 }
 
-STFocus & asap::STFocus::operator =( const STFocus & other )
+STFocus& asap::STFocus::operator =( const STFocus & other )
 {
   if (this != &other) {
     static_cast<STSubTable&>(*this) = other;
@@ -93,7 +93,7 @@ uInt STFocus::addEntry( Float rotation, Float angle, Float ftan)
 }
 
 void asap::STFocus::getEntry( Float& rotation, Float& angle, Float& ftan,
-                              uInt id)
+                              uInt id) const
 {
   Table t = table_(table_.col("ID") == Int(id) );
   if (t.nrow() == 0 ) {
