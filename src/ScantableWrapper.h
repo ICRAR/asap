@@ -17,7 +17,7 @@
 #include <casa/Arrays/Vector.h>
 
 #include "MathUtils.h"
-#include "SDFitTable.h"
+#include "STFit.h"
 #include "Scantable.h"
 
 namespace asap {

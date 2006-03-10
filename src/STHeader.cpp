@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDContainer.cc: A container class for single dish integrations
+//# STHeader.cpp: A container class for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -40,14 +40,14 @@
 
 
 #include "STDefs.h"
-#include "SDContainer.h"
+#include "STHeader.h"
 
 using namespace casa;
 using namespace asap;
 
 
 
-bool SDHeader::conformant( const SDHeader& other )
+bool STHeader::conformant( const STHeader& other )
 {
   bool conforms;
   conforms = (this->antennaname == other.antennaname
@@ -58,7 +58,7 @@ bool SDHeader::conformant( const SDHeader& other )
   return conforms;
 }
 
-void SDHeader::print() const {
+void STHeader::print() const {
   MVTime mvt(this->utc);
   mvt.setFormat(MVTime::YMD);
   cout << "Observer: " << this->observer << endl

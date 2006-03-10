@@ -277,7 +277,7 @@ void Scantable::attach()
   mmolidCol_.attach(table_, "MOLECULE_ID");
 }
 
-void Scantable::setHeader(const SDHeader& sdh)
+void Scantable::setHeader(const STHeader& sdh)
 {
   table_.rwKeywordSet().define("nIF", sdh.nif);
   table_.rwKeywordSet().define("nBeam", sdh.nbeam);
@@ -297,9 +297,9 @@ void Scantable::setHeader(const SDHeader& sdh)
   table_.rwKeywordSet().define("Epoch", sdh.epoch);
 }
 
-SDHeader Scantable::getHeader() const
+STHeader Scantable::getHeader() const
 {
-  SDHeader sdh;
+  STHeader sdh;
   table_.keywordSet().get("nBeam",sdh.nbeam);
   table_.keywordSet().get("nIF",sdh.nif);
   table_.keywordSet().get("nPol",sdh.npol);

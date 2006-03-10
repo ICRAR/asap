@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDContainer.h: A container class for single dish integrations
+//# STHeader.h: A container class for single dish integrations
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -28,8 +28,8 @@
 //#
 //# $Id:
 //#---------------------------------------------------------------------------
-#ifndef SDCONTAINER_H
-#define SDCONTAINER_H
+#ifndef STHEADER_H
+#define STHEADER_H
 
 #include <vector>
 
@@ -44,9 +44,9 @@ template<class T> class casa::Matrix;
 namespace asap {
 
 
-struct SDHeader {
+struct STHeader {
 
-  bool conformant(const SDHeader& other);
+  bool conformant(const STHeader& other);
 
   casa::Int nchan;
   casa::Int npol;

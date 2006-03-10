@@ -82,7 +82,7 @@ CCOBJECTS := MathUtils.o \
              RowAccumulator.o \
              Logger.o \
              STAttr.o \
-             SDContainer.o \
+             STHeader.o \
              STFiller.o \
              STMath.o \
              STSubTable.o \
@@ -113,7 +113,7 @@ OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
 HEADERS   := MathUtils.h \
              Logger.h \
              STAttr.h \
-             SDContainer.h \
+             STHeader.h \
              Scantable.h \
              STFiller.h \
              STMath.h \

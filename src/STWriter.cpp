@@ -48,8 +48,7 @@
 
 //#include "SDFITSImageWriter.h"
 //#include "STAsciiWriter.h"
-//#include "SDPol.h"
-#include "SDContainer.h"
+#include "STHeader.h"
 
 #include "STWriter.h"
 
@@ -130,7 +129,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // MS or SDFITS
 
   // Extract the header from the table.
-  SDHeader hdr = in->getHeader();
+  STHeader hdr = in->getHeader();
   const Int nPol  = hdr.npol;
   const Int nChan = hdr.nchan;
 

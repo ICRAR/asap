@@ -29,6 +29,7 @@
 #include "STAttr.h"
 
 #include "STFiller.h"
+#include "STHeader.h"
 
 using namespace casa;
 
@@ -102,7 +103,7 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   }
 
   if (header_) delete header_;
-  header_ = new SDHeader();
+  header_ = new STHeader();
   header_->nchan = nChan_;
   header_->npol = nPol_;
   header_->nbeam = nBeam_;

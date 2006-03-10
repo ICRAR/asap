@@ -58,7 +58,7 @@
 #include <tables/Tables/ArrayColumn.h>
 
 #include "STDefs.h"
-#include "SDContainer.h"
+#include "STHeader.h"
 #include "SDMemTable.h"
 #include "SDPol.h"
 
@@ -80,7 +80,7 @@ Bool SDFITSImageWriter::write(const SDMemTable& sdTable,
 
 // Get global Header from Table
 
-   SDHeader header = sdTable.getSDHeader();
+   STHeader header = sdTable.getSTHeader();
    MEpoch::Ref timeRef(sdTable.getTimeReference());
    MDirection::Types dirRef = sdTable.getDirectionReference();
 

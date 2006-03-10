@@ -22,7 +22,7 @@
 #include <casa/Arrays/Vector.h>
 
 #include "Scantable.h"
-#include "SDContainer.h"
+#include "STHeader.h"
 #include "Logger.h"
 
 class PKSreader;
@@ -95,7 +95,7 @@ public:
 private:
 
   PKSreader* reader_;
-  SDHeader* header_;
+  STHeader* header_;
   casa::String filename_;
   casa::CountedPtr< Scantable > table_;
   casa::Int nIF_, nBeam_, nPol_, nChan_;

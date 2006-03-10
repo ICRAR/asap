@@ -30,7 +30,7 @@
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 
 #include "Logger.h"
-#include "SDContainer.h"
+#include "STHeader.h"
 #include "STFrequencies.h"
 #include "STWeather.h"
 #include "STFocus.h"
@@ -114,15 +114,15 @@ public:
   void unsetSelection();
   /**
    * set the header
-   * @param[in] sdh an SDHeader object
+   * @param[in] sdh an STHeader object
    */
-  void setHeader( const SDHeader& sdh );
+  void setHeader( const STHeader& sth );
 
   /**
    * get the header information
-   * @return an SDHeader object
+   * @return an STHeader object
    */
-  SDHeader getHeader( ) const;
+  STHeader getHeader( ) const;
   /**
    * Checks if the "other" Scantable is conformant with this,
    * i.e. if  header values are the same.
