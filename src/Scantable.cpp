@@ -27,6 +27,7 @@
 #include <casa/BasicSL/Constants.h>
 #include <casa/Quanta/MVAngle.h>
 #include <casa/Containers/RecordField.h>
+#include <casa/Utilities/GenSort.h>
 
 #include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableDesc.h>
@@ -55,6 +56,7 @@
 #include "Scantable.h"
 #include "STPolLinear.h"
 #include "STAttr.h"
+#include "MathUtils.h"
 
 using namespace casa;
 
@@ -125,7 +127,7 @@ Scantable::Scantable( const Scantable& other, bool clear )
       other.table_.deepCopy(newname, Table::New, False, Table::AipsrcEndian,
                             Bool(clear));
       table_ = Table(newname, Table::Update);
-      copySubtables(other);
+      if ( clear ) copySubtables(other);
       table_.markForDelete();
   }
 
@@ -327,15 +329,11 @@ bool Scantable::conformant( const Scantable& other )
 
 int Scantable::nscan() const {
   int n = 0;
-  int previous = -1; int current = 0;
-  for (uInt i=0; i< scanCol_.nrow();i++) {
-    scanCol_.getScalar(i,current);
-    if (previous != current) {
-      previous = current;
-      n++;
-    }
-  }
-  return n;
+  Int previous = -1; Int current = 0;
+  Vector<uInt> scannos(scanCol_.getColumn());
+  uInt nout = GenSort<uInt>::sort( scannos, Sort::Ascending,
+                       Sort::QuickSort|Sort::NoDuplicates );
+  return int(nout);
 }
 
 std::string Scantable::formatSec(Double x) const
@@ -481,6 +479,7 @@ int Scantable::ncycle( int scanno ) const
     int n = 0;
     while ( !it.pastEnd() ) {
       ++n;
+      ++it;
     }
     return n;
   } else {
@@ -594,8 +593,10 @@ std::vector<bool> Scantable::getMask(int whichrow) const
 }
 
 std::vector<float> Scantable::getSpectrum( int whichrow,
-                                           const std::string& poltype) const
+                                           const std::string& poltype ) const
 {
+  if ( whichrow  < 0 || whichrow >= nrow() )
+    throw(AipsError("Illegal row number."));
   std::vector<float> out;
   Vector<Float> arr;
   uInt requestedpol = polCol_(whichrow);
@@ -609,7 +610,7 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
       uInt row = uInt(whichrow);
       stpol->setSpectra(getPolMatrix(row));
       Float frot,fang,ftan;
-      focusTable_.getEntry(frot, fang, ftan, row);
+      focusTable_.getEntry(frot, fang, ftan, mfocusidCol_(row));
       stpol->setPhaseCorrections(frot, fang, ftan);
       arr = stpol->getSpectrum(requestedpol, poltype);
       delete stpol;
@@ -618,6 +619,8 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
       throw(e);
     }
   }
+  if ( arr.nelements() == 0 )
+    pushLog("Not enough polarisations present to do the conversion.");
   arr.tovector(out);
   return out;
 }
@@ -652,16 +655,6 @@ casa::Table& Scantable::table( )
 std::string Scantable::getPolType() const
 {
   return table_.keywordSet().asString("POLTYPE");
-}
-
-
-std::string Scantable::getPolarizationLabel(bool linear, bool stokes,
-                                            bool linpol, int polidx) const
-{
-  uInt idx = 0;
-  if (polidx >=0) idx = polidx;
-  return "";
-  //return SDPolUtil::polarizationLabel(idx, linear, stokes, linpol);
 }
 
 void Scantable::unsetSelection()
@@ -891,5 +884,10 @@ Matrix<Float> asap::Scantable::getPolMatrix( uInt whichrow ) const
   return speccol.getColumn();
 }
 
+std::vector< std::string > asap::Scantable::columnNames( ) const
+{
+  Vector<String> vec = table_.tableDesc().columnNames();
+  return mathutil::tovectorstring(vec);
+}
 
-}//namespace asap
+} //namespace asap

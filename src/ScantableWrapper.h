@@ -68,10 +68,8 @@ public:
   }
   //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
   // Boost fails with 4 arguments.
-  std::string getPolarizationLabel(bool linear, bool stokes,
-                                   bool linPol) const {
-    int polIdx = -1;
-    return table_->getPolarizationLabel(linear, stokes, linPol, polIdx);
+  std::string getPolarizationLabel(int index, const std::string& ptype) const {
+    return table_->getPolarizationLabel(index, ptype);
   }
 
   std::vector<double> getAbcissa(int whichrow=0) const
@@ -131,6 +129,7 @@ public:
   int nchan(int ifno=-1) const {return table_->nchan(ifno);}
   int nscan() const {return table_->nscan();}
   int nrow() const {return table_->nrow();}
+  int ncycle(int scanno) const {return table_->ncycle(scanno);}
   ///@todo int nstokes() {return table_->nStokes();}
 
   void makePersistent(const std::string& fname)

@@ -24,16 +24,19 @@ namespace asap {
         .def("_getbeams", &STSelector::getBeams)
         .def("_getifs", &STSelector::getIFs)
         .def("_getpols", &STSelector::getPols)
+        .def("_getpoltypes", &STSelector::getPolTypes)
         .def("_getscans", &STSelector::getScans)
         .def("_getcycles", &STSelector::getCycles)
         .def("_reset", &STSelector::reset)
         .def("_setbeams", &STSelector::setBeams)
         .def("_setifs", &STSelector::setIFs)
         .def("_setpols", &STSelector::setPolarizations)
+        .def("_setpolstrings", &STSelector::setPolFromStrings)
         .def("_setscans", &STSelector::setScans)
         .def("_setcycles", &STSelector::setCycles)
         .def("_setname", &STSelector::setName)
         .def("_settaql", &STSelector::setTaQL)
+        .def("_setorder", &STSelector::setSortOrder)
       ;
     };
   }

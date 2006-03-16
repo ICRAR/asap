@@ -16,6 +16,8 @@
 #include <vector>
 #include <map>
 
+#include <casa/Containers/Block.h>
+#include <casa/BasicSL/String.h>
 #include <tables/Tables/Table.h>
 
 namespace asap {
@@ -39,15 +41,19 @@ public:
   void setBeams(const std::vector<int>& beams);
   void setIFs(const std::vector<int>& ifs);
   void setPolarizations(const std::vector<int>& pols);
+  void setPolFromStrings(const std::vector<std::string>& pols);
   void setCycles(const std::vector<int>& cycs);
   void setName(const std::string&);
   virtual void setTaQL(const std::string& taql);
+
+  void setSortOrder(const std::vector<std::string>& order);
 
   std::vector<int> getScans();
   std::vector<int> getBeams();
   std::vector<int> getIFs();
   std::vector<int> getPols();
   std::vector<int> getCycles();
+  std::vector<std::string> getPolTypes();
 
   casa::Table apply(const casa::Table& tab);
   casa::Table operator()(const casa::Table& tab) { return apply(tab); };
@@ -66,11 +72,16 @@ protected:
   void setstring(const std::string& key, const std::vector< std::string >& val);
 
 private:
+
+  casa::Table sort(const casa::Table& tab);
+
   typedef std::map<std::string, std::vector<int> > intidmap;
   typedef std::map<std::string, std::vector<std::string> > stringidmap;
   // has to be mutable, as to stl limitations
   mutable intidmap intselections_;
   mutable stringidmap stringselections_;
+  std::vector<std::string> poltypes_;
+  casa::Block<casa::String> order_;
   std::string taql_;
 };
 

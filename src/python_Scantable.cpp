@@ -52,10 +52,16 @@ void python_Scantable() {
     .def("getpol", &ScantableWrapper::getPol)
     .def("getscan", &ScantableWrapper::getScan)
     .def("getcycle", &ScantableWrapper::getCycle)
-    .def("nif", &ScantableWrapper::nif)
-    .def("nbeam", &ScantableWrapper::nbeam)
-    .def("npol", &ScantableWrapper::npol)
-    .def("nchan", &ScantableWrapper::nchan)
+    .def("nif", &ScantableWrapper::nif,
+         (boost::python::arg("scanno")=-1) )
+    .def("nbeam", &ScantableWrapper::nbeam,
+         (boost::python::arg("scanno")=-1) )
+    .def("npol", &ScantableWrapper::npol,
+         (boost::python::arg("scanno")=-1) )
+    .def("nchan", &ScantableWrapper::nchan,
+         (boost::python::arg("ifno")=-1) )
+    .def("ncycle", &ScantableWrapper::ncycle,
+         (boost::python::arg("scanno")=-1) )
     .def("nscan", &ScantableWrapper::nscan)
     .def("nrow", &ScantableWrapper::nrow)
     .def("get_fluxunit", &ScantableWrapper::getFluxUnit)
@@ -64,9 +70,7 @@ void python_Scantable() {
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
          (arg("whichrow")=0, arg("poltype")=std::string("linear")) )
     .def("poltype", &ScantableWrapper::getPolType )
-    .def("_getpolarizationlabel", &ScantableWrapper::getPolarizationLabel,
-         ( arg("linear")=false, arg("stokes")=false,
-           arg("linpol")=false, arg("thepol")=0 ) )
+    .def("_getpollabel", &ScantableWrapper::getPolarizationLabel)
     .def("_setspectrum",&ScantableWrapper::setSpectrum,
          (boost::python::arg("whichrow")=0) )
     .def("_getabcissa", &ScantableWrapper::getAbcissa,

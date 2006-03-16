@@ -62,6 +62,9 @@ namespace asap {
 */
 class Scantable : private Logger
 {
+
+friend class STMath;
+
 public:
   /**
    * Default constructor
@@ -176,7 +179,7 @@ public:
 
   /**
    * Return a list of row numbers with respect to the original table.
-   * @return a lsi of rownumbers with respect to the original table
+   * @return a list of unsigned ints
    */
   std::vector<unsigned int> rownumbers() const;
 
@@ -251,9 +254,8 @@ public:
 
   void setSpectrum(const std::vector<float>& spec, int whichrow);
 
-  std::string getPolarizationLabel(bool linear, bool stokes,
-                                   bool linpol,
-                                   int polidx=-1) const;
+  std::string getPolarizationLabel(int index, const std::string& ptype) const
+    { return STPol::getPolLabel(index, ptype ); }
 
   /**
    * Write the Scantable to disk
@@ -302,8 +304,7 @@ public:
   STMolecules& molecules() { return moleculeTable_; }
   STHistory& history() { return historyTable_; }
 
-  static const std::map<std::string, STPol::STPolFactory *>& getFactories()
-    { return factories_; }
+  std::vector<std::string> columnNames() const;
 
 private:
 

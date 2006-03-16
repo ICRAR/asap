@@ -902,7 +902,7 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
   cols[3] = String("CYCLENO");
   TableIterator iter(tout, cols);
   STPol* stpol = NULL;
-  stpol =STPol::getPolClass(Scantable::getFactories(), out->getPolType() );
+  stpol =STPol::getPolClass(out->factories_, out->getPolType() );
   while (!iter.pastEnd()) {
     Table t = iter.table();
     ArrayColumn<Float> speccol(t, "SPECTRA");

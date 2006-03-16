@@ -15,8 +15,10 @@
 #include <casa/BasicSL/String.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>
+#include <casa/Exceptions/Error.h>
 
 #include "MathUtils.h"
+#include "STPol.h"
 #include "STSelector.h"
 
 using namespace asap;
@@ -98,10 +100,19 @@ void STSelector::setTaQL( const std::string& taql )
   taql_ = taql;
 }
 
+
+void asap::STSelector::setSortOrder( const std::vector< std::string > & order )
+{
+  order_.resize(order.size(), True);
+  for (int i=0;i<order.size();++i) {
+    order_[i] = order[i];
+  }
+}
+
 Table STSelector::apply( const Table& tab )
 {
   if ( empty() ) {
-    return tab;
+    return sort(tab);
   }
   TableExprNode query;
   intidmap::const_iterator it = intselections_.begin();
@@ -131,9 +142,13 @@ Table STSelector::apply( const Table& tab )
     } else { // taql only
       tmpt = tableCommand(taql_, tab);
     }
-    return tmpt;
+    return sort(tmpt);
   } else {
-    return tab(query);
+    if ( query.isNull() ) {
+      return sort(tab);
+    } else {
+      return sort(tab(query));
+    }
   }
 }
 
@@ -205,4 +220,40 @@ std::string asap::STSelector::print( )
 bool asap::STSelector::empty( ) const
 {
   return (intselections_.empty() && taql_.size() == 0 );
+}
+
+casa::Table asap::STSelector::sort( const casa::Table & tab )
+{
+  if (order_.nelements() > 0) {
+    cout << "sorting" << endl;
+    Table t = tab.sort(order_);
+    return t;
+  } else {
+    return tab;
+  }
+}
+
+
+void asap::STSelector::setPolFromStrings( const std::vector< std::string >& pols )
+{
+  poltypes_.clear();
+  std::vector<int> polints;
+  std::vector<std::string>::const_iterator strit = pols.begin();
+  for (strit; strit != pols.end(); ++strit) {
+    std::pair<int, std::string> val;
+    try {
+       val = STPol::polFromString(*strit);
+    } catch (AipsError& e) {
+      poltypes_.clear();
+      throw(e);
+    }
+    polints.push_back(val.first);
+    poltypes_.push_back(val.second);
+  }
+  setint("POLNO", polints);
+}
+
+std::vector< std::string > asap::STSelector::getPolTypes( )
+{
+  return poltypes_;
 }
