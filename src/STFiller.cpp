@@ -101,12 +101,14 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
     pushLog("Cross polarization present");
     nPol_ += 2;                          // Convert Complex -> 2 Floats
   }
-
   if (header_) delete header_;
   header_ = new STHeader();
   header_->nchan = nChan_;
   header_->npol = nPol_;
   header_->nbeam = nBeam_;
+
+  if ( nPol_  == 1 ) header_->poltype = "stokes";
+  else header_->poltype = "linear";
 
   Int status = reader_->getHeader(header_->observer, header_->project,
                                   header_->antennaname, header_->antennaposition,

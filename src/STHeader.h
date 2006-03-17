@@ -64,6 +64,7 @@ struct STHeader {
   casa::Double utc;
   casa::String fluxunit;
   casa::String epoch;
+  casa::String poltype;
   void print() const ;
 };
 

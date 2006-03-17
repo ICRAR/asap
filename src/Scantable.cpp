@@ -297,6 +297,7 @@ void Scantable::setHeader(const STHeader& sdh)
   table_.rwKeywordSet().define("UTC", sdh.utc);
   table_.rwKeywordSet().define("FluxUnit", sdh.fluxunit);
   table_.rwKeywordSet().define("Epoch", sdh.epoch);
+  table_.rwKeywordSet().define("POLTYPE", sdh.poltype);
 }
 
 STHeader Scantable::getHeader() const
@@ -318,6 +319,7 @@ STHeader Scantable::getHeader() const
   table_.keywordSet().get("UTC", sdh.utc);
   table_.keywordSet().get("FluxUnit", sdh.fluxunit);
   table_.keywordSet().get("Epoch", sdh.epoch);
+  table_.keywordSet().get("POLTYPE", sdh.poltype);
   return sdh;
 }
 
@@ -595,13 +597,15 @@ std::vector<bool> Scantable::getMask(int whichrow) const
 std::vector<float> Scantable::getSpectrum( int whichrow,
                                            const std::string& poltype ) const
 {
+  String ptype = poltype;
+  if (poltype == "" ) ptype = getPolType();
   if ( whichrow  < 0 || whichrow >= nrow() )
     throw(AipsError("Illegal row number."));
   std::vector<float> out;
   Vector<Float> arr;
   uInt requestedpol = polCol_(whichrow);
   String basetype = getPolType();
-  if ( String(poltype) == basetype) {
+  if ( ptype == basetype ) {
     specCol_.get(whichrow, arr);
   } else {
     STPol* stpol = 0;
@@ -612,7 +616,7 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
       Float frot,fang,ftan;
       focusTable_.getEntry(frot, fang, ftan, mfocusidCol_(row));
       stpol->setPhaseCorrections(frot, fang, ftan);
-      arr = stpol->getSpectrum(requestedpol, poltype);
+      arr = stpol->getSpectrum(requestedpol, ptype);
       delete stpol;
     } catch (AipsError& e) {
       delete stpol;

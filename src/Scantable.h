@@ -250,7 +250,7 @@ public:
 
   std::vector<bool> getMask(int whichrow) const;
   std::vector<float> getSpectrum(int whichrow,
-                                 const std::string& poltype ="linear") const;
+                                 const std::string& poltype = "" ) const;
 
   void setSpectrum(const std::vector<float>& spec, int whichrow);
 

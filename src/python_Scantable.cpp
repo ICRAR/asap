@@ -68,7 +68,7 @@ void python_Scantable() {
     .def("set_fluxunit", &ScantableWrapper::setFluxUnit)
     .def("_setInstrument", &ScantableWrapper::setInstrument)
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
-         (arg("whichrow")=0, arg("poltype")=std::string("linear")) )
+         (arg("whichrow")=0, arg("poltype")=std::string("")) )
     .def("poltype", &ScantableWrapper::getPolType )
     .def("_getpollabel", &ScantableWrapper::getPolarizationLabel)
     .def("_setspectrum",&ScantableWrapper::setSpectrum,

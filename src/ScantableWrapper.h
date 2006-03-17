@@ -63,7 +63,7 @@ public:
   }
 
   std::vector<float> getSpectrum( int whichrow=0,
-                                  const std::string& poltype="linear" ) const {
+                                  const std::string& poltype="" ) const {
     return table_->getSpectrum(whichrow, poltype);
   }
   //  std::string getPolarizationLabel(bool linear, bool stokes, bool linPol, int polIdx) const {
