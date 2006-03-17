@@ -96,6 +96,7 @@ CCOBJECTS := MathUtils.o \
              STSelector.o \
 	     STLineFinder.o \
              STFitter.o \
+             STPol.o \
              STPolLinear.o \
              Scantable.o \
              Templates.o 
