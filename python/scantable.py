@@ -1059,7 +1059,7 @@ class scantable(Scantable):
 	   individualEdge = True;
 
         if not _is_valid(edge, int) and not individualEdge:
-            raise RuntimeError, "Parameter 'edge' has to be an integer or a \
+            raise ValueError, "Parameter 'edge' has to be an integer or a \
             pair of integers specified as a tuple. Nested tuples are allowed \
             to make individual selection for different IFs."
 	
@@ -1067,7 +1067,7 @@ class scantable(Scantable):
 	if individualEdge:
 	   for edge_par in edge:
 	       if not _is_valid(edge,int):
-	          raise RuntimeError, "Each element of the 'edge' tuple has \
+	          raise ValueError, "Each element of the 'edge' tuple has \
                   to be a pair of integers or an integer."
         else:
 	   curedge = edge;
