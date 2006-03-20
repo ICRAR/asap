@@ -6,9 +6,9 @@ class linefinder:
 
     Example:
        fl=linefinder()
-       fl.set_scan(sc,edge=(50,))
+       fl.set_scan(sc)
        fl.set_options(threshold=3)
-       nlines=fl.find_lines()
+       nlines=fl.find_lines(edge=(50,0))
        if nlines!=0:
           print "Found ",nlines," spectral lines"
           print fl.get_ranges(False)
@@ -64,23 +64,28 @@ class linefinder:
         self.finder.setoptions(threshold,min_nchan,avg_limit,box_size)
         return
 
-    def set_scan(self, scan, mask=None, edge=(0,0)):
+    def set_scan(self, scan):
         """
         Set the 'data' (scantable) to work with.
         Parameters:
              scan:    a scantable
-             mask:       an optional mask retreived from scantable
-             edge:       an optional number of channel to drop at
-                         the edge of spectrum. If only one value is
-                         specified, the same number will be dropped from
-                         both sides of the spectrum. Default is to keep
-                         all channels
         """
         if not scan:
            raise RuntimeError, 'Please give a correct scan'
-        if not scan._check_ifs():
-           raise RuntimeError, 'IFs with different numbers of channels are not yet supported'
-
+        return
+    def find_lines(self,nRow=0,mask=None,edge=(0,0)):
+        """
+        Search for spectral lines in the scan assigned in set_scan.
+        Parameters:
+	     nRow:       a row in the scantable to work with
+             mask:       an optional mask (e.g. retreived from scantable)
+             edge:       an optional number of channels to drop at
+                         the edge of the spectrum. If only one value is
+                         specified, the same number will be dropped from
+                         both sides of the spectrum. Default is to keep
+                         all channels
+        A number of lines found will be returned
+        """
         if isinstance(edge,int):
            edge=(edge,)
 
@@ -95,17 +100,9 @@ class linefinder:
            or less elements"
         if mask is None:
             from numarray import ones
-            self.finder.setscan(scan,ones(scan.nchan(-1)),tuple(edge))
+            return self.finder.findlines(ones(scan.nchan(nRow)),list(edge),nRow)
         else:
-            self.finder.setscan(scan,mask,tuple(edge))
-        return
-    def find_lines(self,nRow=0):
-        """
-        Search for spectral lines in the scan assigned in set_scan.
-        Current Beam/IF/Pol is used, Row is specified by parameter
-        A number of lines found will be returned
-        """
-        return self.finder.findlines(nRow)
+            return self.finder.setscan(mask,list(edge),nRow)
     def get_mask(self,invert=False):
         """
         Get the mask to mask out all lines that have been found (default)

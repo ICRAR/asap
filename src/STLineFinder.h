@@ -157,21 +157,20 @@ struct STLineFinder : protected LFLineListOperations {
 		   const casa::Int &in_avg_limit=8,
                    const casa::Float &in_box_size=0.2) throw();
 
-   // set the scan to work with (in_scan parameter), associated mask (in_mask
-   // parameter) and the edge channel rejection (in_edge parameter)
-   //   if in_edge has zero length, all channels chosen by mask will be used
+   // set the scan to work with (in_scan parameter)
+   void setScan(const ScantableWrapper &in_scan) throw(casa::AipsError);
+
+   // search for spectral lines in a row specified by whichRow 
+   // in_mask and in_edge parameters control channel rejection
+   //  if in_edge has zero length, all channels chosen by mask will be used
    //   if in_edge has one element only, it represents the number of
    //      channels to drop from both sides of the spectrum
    //   in_edge is introduced for convinience, although all functionality
    //   can be achieved using a spectrum mask only
-   void setScan(const ScantableWrapper &in_scan,
-                const std::vector<bool> &in_mask,
-		const boost::python::tuple &in_edge) throw(casa::AipsError);
-
-   // search for spectral lines for a row specified by whichRow and
-   // Beam/IF/Pol specified by current cursor set for the scantable
    // Number of lines found is returned
-   int findLines(const casa::uInt &whichRow = 0) throw(casa::AipsError);
+   int findLines(const std::vector<bool> &in_mask,
+		 const std::vector<int> &in_edge = std::vector<int>(),
+		 const casa::uInt &whichRow = 0) throw(casa::AipsError);
 
    // get the mask to mask out all lines that have been found (default)
    // if invert=true, only channels belong to lines will be unmasked

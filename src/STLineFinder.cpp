@@ -149,6 +149,9 @@ class LFAboveThreshold : protected LFLineListOperations {
    casa::Vector<Int> signs;                // An array to store the signs of
                                            // the value - current mean
 					   // (used to search wings)
+   casa::Int last_sign;                    // a sign (+1, -1 or 0) of the
+                                           // last point of the detected line
+                                           //
 public:
 
    // set up the detection criterion
@@ -188,6 +191,10 @@ protected:
    // if it satisfies the criterion, add this interval as a new line
    void processCurLine(const casa::Vector<casa::Bool> &mask)
                                                  throw(casa::AipsError);
+   
+   // get the sign of runningBox->aboveMean(). The RunningBox pointer
+   // should be defined
+   casa::Int getAboveMeanSign() const throw();
 };
 
 //
@@ -369,6 +376,16 @@ void LFAboveThreshold::setCriterion(int in_min_nchan, casa::Float in_threshold)
   threshold=in_threshold;
 }
 
+// get the sign of runningBox->aboveMean(). The RunningBox pointer
+// should be defined
+casa::Int LFAboveThreshold::getAboveMeanSign() const throw()
+{
+  const Float buf=running_box->aboveMean();
+  if (buf>0) return 1;
+  if (buf<0) return -1;
+  return 0;
+}
+
 
 // process a channel: update cur_line and is_detected before and
 // add a new line to the list, if necessary
@@ -376,15 +393,23 @@ void LFAboveThreshold::processChannel(Bool detect,
                  const casa::Vector<casa::Bool> &mask) throw(casa::AipsError)
 {
   try {
-       if (detect) {
-           if (is_detected_before)
-               cur_line.second=running_box->getChannel()+1;
-	   else {
-	       is_detected_before=True;
-	       cur_line.first=running_box->getChannel();
-	       cur_line.second=running_box->getChannel()+1;
-	   }
-       } else processCurLine(mask);
+       if (is_detected_before) {
+          // we have to check that the current detection has the
+          // same sign of running_box->aboveMean
+          // otherwise it could be a spurious detection
+          if (last_sign && last_sign!=getAboveMeanSign())
+              detect=False;
+          }
+          if (detect) {
+              last_sign=getAboveMeanSign();
+              if (is_detected_before)
+                  cur_line.second=running_box->getChannel()+1;
+              else {
+                  is_detected_before=True;
+                  cur_line.first=running_box->getChannel();
+                  cur_line.second=running_box->getChannel()+1;
+              }
+          } else processCurLine(mask);
   }
   catch (const AipsError &ae) {
       throw;
@@ -489,6 +514,11 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 	       processChannel(mask[ch] && (fabs(running_box->aboveMean()) >=
 		  threshold*offline_variance), mask);
 	   else processCurLine(mask); // just finish what was accumulated before
+
+	   signs[ch]=getAboveMeanSign();
+	   // os<<ch<<" "<<spectrum[ch]<<" "<<fabs(running_box->aboveMean())<<" "<<
+           //   threshold*offline_variance<<endl;
+	   
 	   const Float buf=running_box->aboveMean();
 	   if (buf>0) signs[ch]=1;
 	   else if (buf<0) signs[ch]=-1;
@@ -634,71 +664,64 @@ void STLineFinder::setOptions(const casa::Float &in_threshold,
 
 STLineFinder::~STLineFinder() throw(AipsError) {}
 
-// set scan to work with (in_scan parameter), associated mask (in_mask
-// parameter) and the edge channel rejection (in_edge parameter)
+// set scan to work with (in_scan parameter)
+void STLineFinder::setScan(const ScantableWrapper &in_scan) throw(AipsError)
+{
+  scan=in_scan.getCP();
+  AlwaysAssert(!scan.null(),AipsError);
+ 
+}
+
+// search for spectral lines. Number of lines found is returned
+// in_edge and in_mask control channel rejection for a given row
 //   if in_edge has zero length, all channels chosen by mask will be used
 //   if in_edge has one element only, it represents the number of
 //      channels to drop from both sides of the spectrum
 //   in_edge is introduced for convinience, although all functionality
 //   can be achieved using a spectrum mask only
-void STLineFinder::setScan(const ScantableWrapper &in_scan,
-               const std::vector<bool> &in_mask,
-	       const boost::python::tuple &in_edge) throw(AipsError)
-{
-  try {
-       scan=in_scan.getCP();
-       AlwaysAssert(!scan.null(),AipsError);
-
-       mask=in_mask;
-       if (mask.nelements()!=scan->nchan())
-           throw AipsError("STLineFinder::setScan - in_scan and in_mask have different"
-	                   "number of spectral channels.");
-
-       // number of elements in the in_edge tuple
-       int n=extract<int>(in_edge.attr("__len__")());
-       if (n>2 || n<0)
-           throw AipsError("STLineFinder::setScan - the length of the in_edge parameter"
-	                   "should not exceed 2");
-       if (!n) {
-           // all spectra, no rejection
-           edge.first=0;
-	   edge.second=scan->nchan();
-       } else {
-           edge.first=extract<int>(in_edge.attr("__getitem__")(0));
-	   if (edge.first<0)
-	       throw AipsError("STLineFinder::setScan - the in_edge parameter has a negative"
-	                        "number of channels to drop");
-           if (edge.first>=scan->nchan())
-	       throw AipsError("STLineFinder::setScan - all channels are rejected by the in_edge parameter");
-           if (n==2) {
-	       edge.second=extract<int>(in_edge.attr("__getitem__")(1));
-	       if (edge.second<0)
-  	           throw AipsError("STLineFinder::setScan - the in_edge parameter has a negative"
-	                           "number of channels to drop");
-               edge.second=scan->nchan()-edge.second;
-	   } else edge.second=scan->nchan()-edge.first;
-           if (edge.second<0 || (edge.first>=edge.second))
-	       throw AipsError("STLineFinder::setScan - all channels are rejected by the in_edge parameter");
-       }
-  }
-  catch(const AipsError &ae) {
-       // setScan is unsuccessfull, reset scan/mask/edge
-       scan=CountedConstPtr<Scantable>(); // null pointer
-       mask.resize(0);
-       edge=pair<int,int>(0,0);
-       throw;
-  }
-}
-
-// search for spectral lines. Number of lines found is returned
-int STLineFinder::findLines(const casa::uInt &whichRow) throw(casa::AipsError)
+int STLineFinder::findLines(const std::vector<bool> &in_mask,
+		const std::vector<int> &in_edge,
+		const casa::uInt &whichRow) throw(casa::AipsError)
 {
   const int minboxnchan=4;
   if (scan.null())
       throw AipsError("STLineFinder::findLines - a scan should be set first,"
                       " use set_scan");
-  DebugAssert(mask.nelements()==scan->nchan(), AipsError);
-  int max_box_nchan=int(scan->nchan()*box_size); // number of channels in running
+  
+  // set up mask and edge rejection
+  mask=in_mask;
+  if (mask.nelements()!=scan->nchan(whichRow))
+      throw AipsError("STLineFinder::findLines - in_scan and in_mask have different"
+            "number of spectral channels.");
+
+  // number of elements in in_edge
+  if (in_edge.size()>2)
+      throw AipsError("STLineFinder::findLines - the length of the in_edge parameter"
+	              "should not exceed 2");
+      if (!in_edge.size()) {
+           // all spectra, no rejection
+           edge.first=0;
+	   edge.second=scan->nchan(whichRow);
+      } else {
+           edge.first=in_edge[0];
+	   if (edge.first<0)
+	       throw AipsError("STLineFinder::findLines - the in_edge parameter has a negative"
+	                        "number of channels to drop");
+           if (edge.first>=scan->nchan(whichRow))
+	       throw AipsError("STLineFinder::findLines - all channels are rejected by the in_edge parameter");
+           if (in_edge.size()==2) {
+	       edge.second=in_edge[1];
+	       if (edge.second<0)
+  	           throw AipsError("STLineFinder::findLines - the in_edge parameter has a negative"
+	                           "number of channels to drop");
+               edge.second=scan->nchan(whichRow)-edge.second;
+	   } else edge.second=scan->nchan(whichRow)-edge.first;
+           if (edge.second<0 || (edge.first>=edge.second))
+	       throw AipsError("STLineFinder::findLines - all channels are rejected by the in_edge parameter");
+       }
+     
+  //
+  int max_box_nchan=int(scan->nchan(whichRow)*box_size); // number of channels in running
                                                  // box
   if (max_box_nchan<2)
       throw AipsError("STLineFinder::findLines - box_size is too small");
@@ -832,7 +855,7 @@ std::vector<bool> STLineFinder::getMask(bool invert)
        if (scan.null())
            throw AipsError("STLineFinder::getMask - a scan should be set first,"
                       " use set_scan followed by find_lines");
-       DebugAssert(mask.nelements()==scan->nchan(), AipsError);
+       DebugAssert(mask.nelements()==scan->nchan(last_row_used), AipsError);
        /*
        if (!lines.size())
            throw AipsError("STLineFinder::getMask - one have to search for "
@@ -891,7 +914,7 @@ std::vector<int> STLineFinder::getLineRangesInChannels()
        if (scan.null())
            throw AipsError("STLineFinder::getLineRangesInChannels - a scan should be set first,"
                       " use set_scan followed by find_lines");
-       DebugAssert(mask.nelements()==scan->nchan(), AipsError);
+       DebugAssert(mask.nelements()==scan->nchan(last_row_used), AipsError);
 
        if (!lines.size())
            throw AipsError("STLineFinder::getLineRangesInChannels - one have to search for "

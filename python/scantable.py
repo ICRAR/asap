@@ -1032,7 +1032,9 @@ class scantable(Scantable):
                         the edge of spectrum. If only one value is
                         specified, the same number will be dropped from
                         both sides of the spectrum. Default is to keep
-                        all channels
+                        all channels. Nested tuples represent individual
+			edge selection for different IFs (a number of spectral
+			channels can be different)
             order:      the order of the polynomial (default is 0)
             threshold:  the threshold used by line finder. It is better to
                         keep it large as only strong lines affect the
@@ -1050,9 +1052,25 @@ class scantable(Scantable):
         from asap.asaplinefind import linefinder
         from asap import _is_sequence_or_number as _is_valid
 
-        if not _is_valid(edge, int):
+	# check whether edge is set up for each IF individually
+	individualEdge = False;
+	if len(edge)>1:
+	   if isinstance(edge[0],list) or isinstance(edge[0],tuple):
+	   individualEdge = True;
+
+        if not _is_valid(edge, int) and not individualEdge:
             raise RuntimeError, "Parameter 'edge' has to be an integer or a \
-            pair of integers specified as a tuple"
+            pair of integers specified as a tuple. Nested tuples are allowed \
+            to make individual selection for different IFs."
+	
+	curedge = (0,0)
+	if individualEdge:
+	   for edge_par in edge:
+	       if not _is_valid(edge,int):
+	          raise RuntimeError, "Each element of the 'edge' tuple has \
+                  to be a pair of integers or an integer."
+        else:
+	   curedge = edge;
 
         # setup fitter
         f = fitter()
@@ -1067,14 +1085,23 @@ class scantable(Scantable):
         else:
             workscan=self
 
+        fl.set_scan(workscan)
+
         rows=range(workscan.nrow())
         from asap import asaplog
         asaplog.push("Processing:")
         for r in rows:
             msg = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (workscan.getscan(r),workscan.getbeam(r),workscan.getif(r),workscan.getpol(r), workscan.getcycle(r))
             asaplog.push(msg, False)
-            fl.set_scan(workscan, mask, edge)
-            fl.find_lines(r)
+
+	    # figure out edge parameter
+	    if individualEdge:
+	       if len(edge)>=workscan.getif(r):
+	          raise RuntimeError, "Number of edge elements appear to be less than the number of IFs"
+		  curedge = edge[workscan.getif(r)]
+	    
+	    # setup line finder
+            fl.find_lines(r,mask,curedge)
             f.set_scan(workscan, fl.get_mask())
             f.x = workscan._getabcissa(r)
             f.y = workscan._getspectrum(r)

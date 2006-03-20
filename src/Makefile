@@ -1,4 +1,4 @@
-TARGET   := /tmp/asap/_asap.so
+TARGET   := ../tmp/asap/_asap.so
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(AIPSPATH))
@@ -63,9 +63,10 @@ endif
 
 # python only 2.3 has been tested
 PYVERSION := 2.3
-PYTHONROOT := /usr
+#PYTHONROOT := /usr
+PYTHONROOT := /export/DEBIANlocal
 PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
-PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION)
+PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION) -L/export/DEBIANlocal/gnu/lib/
 
 # has to be build with same g++ version as casa
 BOOSTROOT := /usr
