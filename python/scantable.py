@@ -612,7 +612,7 @@ class scantable(Scantable):
             if u == "": u = "channel"
             from asap import asaplog
             msg = "The current mask window unit is %s" % u
-            if not _check_ifs():
+            if not self._check_ifs():
                 msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
             asaplog.push(msg)
         n = self.nchan()
@@ -1115,41 +1115,58 @@ class scantable(Scantable):
         else:
             return workscan
 
-#     def rotate_linpolphase(self, angle):
-#         """
-#         Rotate the phase of the complex polarization O=Q+iU correlation.
-#         This is always done in situ in the raw data.  So if you call this
-#         function more than once then each call rotates the phase further.
-#         Parameters:
-#             angle:   The angle (degrees) to rotate (add) by.
-#         Examples:
-#             scan.rotate_linpolphase(2.3)
-#     """
-#         varlist = vars()
-#         from asap._asap import _rotate_linpolphase as _rotate
-#         _rotate(self, angle, allaxes)
-#         self._add_history("rotate_linpolphase", varlist)
-#         print_log()
-#         return
-#
-#
-#     def rotate_xyphase(self, angle):
-#         """
-#         Rotate the phase of the XY correlation.  This is always done in situ
-#         in the data.  So if you call this function more than once
-#         then each call rotates the phase further.
-#         Parameters:
-#             angle:   The angle (degrees) to rotate (add) by.
-#         Examples:
-#             scan.rotate_xyphase(2.3)
-#         """
-#         varlist = vars()
-#         from asap._asap import _rotate_xyphase
-#         _rotate_xyphase(self, angle, allaxes)
-#         self._add_history("rotate_xyphase", varlist)
-#         print_log()
-#         return
+    def rotate_linpolphase(self, angle):
+        """
+        Rotate the phase of the complex polarization O=Q+iU correlation.
+        This is always done in situ in the raw data.  So if you call this
+        function more than once then each call rotates the phase further.
+        Parameters:
+            angle:   The angle (degrees) to rotate (add) by.
+        Examples:
+            scan.rotate_linpolphase(2.3)
+        """
+        varlist = vars()
+        self.stm._rotate_linpolphase(self, angle)
+        self._add_history("rotate_linpolphase", varlist)
+        print_log()
+        return
 
+
+    def rotate_xyphase(self, angle):
+        """
+        Rotate the phase of the XY correlation.  This is always done in situ
+        in the data.  So if you call this function more than once
+        then each call rotates the phase further.
+        Parameters:
+            angle:   The angle (degrees) to rotate (add) by.
+        Examples:
+            scan.rotate_xyphase(2.3)
+        """
+        varlist = vars()
+        self.stm._rotate_xyphase(self, angle, allaxes)
+        self._add_history("rotate_xyphase", varlist)
+        print_log()
+        return
+
+    def swap_linears(self):
+        """
+        Swap the linear polarisations XX and YY
+        """
+        varlist = vars()
+        self.stm._swap_linears(self)
+        self._add_history("swap_linears", varlist)
+        print_log()
+        return
+
+    def invert_phase(self):
+        """
+        Invert the phase of the complex polarisation
+        """
+        varlist = vars()
+        self.stm._invert_phase(self)
+        self._add_history("invert_phase", varlist)
+        print_log()
+        return
 
     def add(self, offset, insitu=None):
         """
