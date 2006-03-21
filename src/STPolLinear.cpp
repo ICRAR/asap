@@ -119,4 +119,30 @@ void asap::STPolLinear::invertPhase( Float phase )
   I *= Float(-1.0);
 }
 
+void asap::STPolLinear::rotateLinPolPhase( casa::Float phase )
+{
+//
+// Rotate P = Q + iU but do it directly on the  linear
+// correlations.
+//
+// We are using I=(XX+YY)/2 convention
+// C1 = XX; C2 = YY, C3 = Real(XY)
+//
+  Vector<Float> I,Q,U;
+  I = getStokes(0);
+  Q = getStokes(1);
+  U = getStokes(2);
+  // Rotate Q & U (factor of 2 for polarization)
+  Float cosVal = cos(C::pi/180.0*2.0*phase);
+  Float sinVal = sin(C::pi/180.0*2.0*phase);
+  Vector<Float> Q2 = Q*cosVal - U*sinVal;
+  U =  Q*sinVal + U*cosVal;
+  Q = Q2;
+  Matrix<Float>& specs = getSpectra();
+  specs.column(0) = I+Q;
+  specs.column(1) = I-Q;
+  specs.column(2) = U;
+
+}
+
 }
