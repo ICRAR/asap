@@ -55,6 +55,7 @@
 
 #include "Scantable.h"
 #include "STPolLinear.h"
+#include "STPolStokes.h"
 #include "STAttr.h"
 #include "MathUtils.h"
 
@@ -67,6 +68,7 @@ std::map<std::string, STPol::STPolFactory *> Scantable::factories_;
 void Scantable::initFactories() {
   if ( factories_.empty() ) {
     Scantable::factories_["linear"] = &STPolLinear::myFactory;
+    Scantable::factories_["stokes"] = &STPolStokes::myFactory;
   }
 }
 
