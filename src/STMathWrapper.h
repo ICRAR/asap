@@ -104,6 +104,18 @@ public:
     for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::merge(sts)); }
 
+  ScantableWrapper rotateXYPhase( const ScantableWrapper& in, float angle)
+  { return ScantableWrapper(STMath::rotateXYPhase(in.getCP(), angle)); }
+
+  ScantableWrapper rotateLinPolPhase( const ScantableWrapper& in, float angle)
+  { return ScantableWrapper(STMath::rotateLinPolPhase(in.getCP(), angle)); }
+
+  ScantableWrapper invertPhase( const ScantableWrapper& in )
+  { return ScantableWrapper(STMath::invertPhase(in.getCP())); }
+
+  ScantableWrapper swapPolarisations( const ScantableWrapper& in )
+  { return ScantableWrapper(STMath::swapPolarisations(in.getCP())); }
+
 };
 
 }

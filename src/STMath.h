@@ -101,8 +101,10 @@ public:
 
   casa::CountedPtr<Scantable>
     invertPhase( const casa::CountedPtr<Scantable>& in);
+
   casa::CountedPtr<Scantable>
     rotateXYPhase( const casa::CountedPtr<Scantable>& in, float phase);
+
   casa::CountedPtr<Scantable>
     rotateLinPolPhase( const casa::CountedPtr<Scantable>& in, float phase);
 
