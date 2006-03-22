@@ -141,7 +141,7 @@ public:
   int nscan() const;
 
   //casa::MDirection::Types getDirectionReference() const;
-  //casa::MEpoch::Types getTimeReference() const;
+  casa::MEpoch::Types getTimeReference() const;
 
   /**
    * Get global antenna position

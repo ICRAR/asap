@@ -126,13 +126,14 @@ Scantable::Scantable( const Scantable& other, bool clear )
       } else
         table_ = other.table_.copyToMemoryTable(newname);
   } else {
-      other.table_.deepCopy(newname, Table::New, False, Table::AipsrcEndian,
+      other.table_.deepCopy(newname, Table::New, False,
+                            other.table_.endianFormat(),
                             Bool(clear));
       table_ = Table(newname, Table::Update);
-      if ( clear ) copySubtables(other);
       table_.markForDelete();
   }
 
+  if ( clear ) copySubtables(other);
   attachSubtables();
   originalTable_ = table_;
   attach();
@@ -895,5 +896,11 @@ std::vector< std::string > asap::Scantable::columnNames( ) const
   Vector<String> vec = table_.tableDesc().columnNames();
   return mathutil::tovectorstring(vec);
 }
+
+casa::MEpoch::Types asap::Scantable::getTimeReference( ) const
+{
+  return MEpoch::castType(timeCol_.getMeasRef().getType());
+  }
+
 
 } //namespace asap
