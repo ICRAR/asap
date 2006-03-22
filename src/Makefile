@@ -98,6 +98,7 @@ CCOBJECTS := MathUtils.o \
              STFitter.o \
              STPol.o \
              STPolLinear.o \
+             STPolStokes.o \
              Scantable.o \
              Templates.o 
 PYOBJECTS := python_Scantable.o \
@@ -134,6 +135,7 @@ HEADERS   := MathUtils.h \
              Factory.h \
              FactoryBase.h \
 	     STPol.h \
+	     STPolStokes.h \
 	     STPolLinear.h
 
 STATICCCLIB := libasap.a
