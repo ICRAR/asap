@@ -1056,13 +1056,13 @@ class scantable(Scantable):
 	individualEdge = False;
 	if len(edge)>1:
 	   if isinstance(edge[0],list) or isinstance(edge[0],tuple):
-	   individualEdge = True;
+	       individualEdge = True;
 
         if not _is_valid(edge, int) and not individualEdge:
             raise ValueError, "Parameter 'edge' has to be an integer or a \
             pair of integers specified as a tuple. Nested tuples are allowed \
             to make individual selection for different IFs."
-	
+
 	curedge = (0,0)
 	if individualEdge:
 	   for edge_par in edge:
@@ -1099,7 +1099,7 @@ class scantable(Scantable):
 	       if len(edge)>=workscan.getif(r):
 	          raise RuntimeError, "Number of edge elements appear to be less than the number of IFs"
 		  curedge = edge[workscan.getif(r)]
-	    
+
 	    # setup line finder
             fl.find_lines(r,mask,curedge)
             f.set_scan(workscan, fl.get_mask())
