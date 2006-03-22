@@ -23,11 +23,17 @@
 #include <casa/Containers/RecordField.h>
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableVector.h>
+#include <tables/Tables/TabVecMath.h>
 #include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/ReadAsciiTable.h>
 
 #include <lattices/Lattices/LatticeUtilities.h>
+
+#include <coordinates/Coordinates/SpectralCoordinate.h>
+#include <coordinates/Coordinates/CoordinateSystem.h>
+#include <coordinates/Coordinates/CoordinateUtil.h>
+#include <coordinates/Coordinates/FrequencyAligner.h>
 
 #include <scimath/Mathematics/VectorKernel.h>
 #include <scimath/Mathematics/Convolver.h>
@@ -821,7 +827,11 @@ CountedPtr< Scantable >
   setInsitu(insitu);
   Table& tout = out->table();
   ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
-  ScalarColumn<uInt> scannocol(tout,"SCANNO"),focusidcol(tout,"FOCUS_ID");
+  ScalarColumn<uInt> scannocol(tout,"SCANNO"), focusidcol(tout,"FOCUS_ID");
+  // Renumber SCANNO to be 0-based
+  uInt offset = min(scannocol.getColumn());
+  TableVector<uInt> scannos(tout, "SCANNO");
+  scannos -= offset;
   uInt newscanno = max(scannocol.getColumn())+1;
   ++it;
   while ( it != in.end() ){
@@ -941,5 +951,131 @@ CountedPtr< Scantable >
   flagcol0.putColumn(flagcol1.getColumn());
   speccol1.putColumn(s0);
   flagcol1.putColumn(f0);
+  return out;
+}
+
+CountedPtr< Scantable >
+  asap::STMath::frequencyAlign( const CountedPtr< Scantable > & in,
+                                const std::string & refTime,
+                                const std::string & method, bool perfreqid )
+{
+  CountedPtr< Scantable > out = getScantable(in, false);
+  Table& tout = out->table();
+  // clear ouput frequency table
+  Table ftable = out->frequencies().table();
+  ftable.removeRow(ftable.rowNumbers());
+  // Get reference Epoch to time of first row or given String
+  Unit DAY(String("d"));
+  MEpoch::Ref epochRef(in->getTimeReference());
+  MEpoch refEpoch;
+  if (refTime.length()>0) {
+    Quantum<Double> qt;
+    if (MVTime::read(qt,refTime)) {
+      MVEpoch mv(qt);
+      refEpoch = MEpoch(mv, epochRef);
+   } else {
+      throw(AipsError("Invalid format for Epoch string"));
+   }
+  } else {
+    refEpoch = in->timeCol_(0);
+  }
+  MPosition refPos = in->getAntennaPosition();
+/*  ostringstream oss;
+  oss << "Aligned at reference Epoch " << formatEpoch(refEpoch)
+      << " in frame " << MFrequency::showType(freqSystem);
+  pushLog(String(oss));
+*/
+  InterpolateArray1D<Double,Float>::InterpolationMethod interp;
+  Int interpMethod(stringToIMethod(method));
+  // test if user frame is different to base frame
+  if ( in->frequencies().getFrameString(true)
+       == in->frequencies().getFrameString(false) ) {
+    throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
+  }
+  MFrequency::Types system = in->frequencies().getFrame();
+  // set up the iterator
+  Block<String> cols(3);
+  // select the by constant direction
+  cols[0] = String("SRCNAME");
+  cols[1] = String("BEAMNO");
+  // select by IF ( no of channels varies over this )
+  cols[2] = String("IFNO");
+  // handle freqid based alignment
+  if ( perfreqid ) {
+    cols.resize(4);
+    cols[3] = String("FREQ_ID");
+  }
+  TableIterator iter(tout, cols);
+  while (!iter.pastEnd()) {
+    Table t = iter.table();
+    MDirection::ROScalarColumn dirCol(t, "DIRECTION");
+    ScalarColumn<uInt> freqidCol(t, "FREQ_ID");
+    // get the SpectralCoordinate for the freqid, which we are iterating over
+    SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
+    // determine nchan from the first row. This should work as
+    // we are iterting over IFNO
+    ROArrayColumn<Float> sCol(t, "SPECTRA");
+    uInt nchan = sCol(0).nelements();
+    // we should have constant direction
+    FrequencyAligner<Float> fa(sC, nchan, refEpoch, dirCol(0), refPos, system);
+    // realign the SpectralCOordinate and put into the output Scantable
+    Vector<String> units(1);
+    units = String("Hz");
+    Bool linear=True;
+    SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
+    sc2.setWorldAxisUnits(units);
+    out->frequencies().addEntry(sc2.referencePixel()[0],
+                                sc2.referenceValue()[0],
+                                sc2.increment()[0]);
+    // create the abcissa for IF based alignment
+    Vector<Double> abc;
+    if ( !perfreqid ) {
+      abc.resize(nchan);
+      Double w;
+      for (uInt i=0; i<nchan; i++) {
+        sC.toWorld(w,Double(i));
+        abc[i] = w;
+      }
+    }
+    // cache abcissa for same time stamps, so iterate over those
+    TableIterator timeiter(t, "TIME");
+    while ( !timeiter.pastEnd() ) {
+      Table tab = timeiter.table();
+      ArrayColumn<Float> specCol(tab, "SPECTRA");
+      ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+      MEpoch::ROScalarColumn timeCol(tab, "TIME");
+      // use align abcissa cache after the first row
+      bool first = true;
+      // these rows should be just be POLNO
+      for (int i=0; i<tab.nrow(); ++i) {
+        // input values
+        Vector<uChar> flag = flagCol(i);
+        Vector<Bool> mask(flag.shape());
+        Vector<Float> specOut;
+        Vector<Bool> maskOut;Vector<uChar> flagOut;
+        convertArray(mask, flag);
+        // alignment
+        if ( perfreqid ) {
+          Bool ok = fa.align(specOut, maskOut, specCol(i),
+                        mask, timeCol(i), !first,
+                        interp, False);
+        } else {
+          Bool ok = fa.align(specOut, maskOut, abc, specCol(i),
+                        mask, timeCol(i), !first,
+                        interp, False);
+        }
+        // back into scantable
+        flagOut.resize(maskOut.nelements());
+        convertArray(flagOut, maskOut);
+        flagCol.put(i, flagOut);
+        specCol.put(i, specOut);
+        // start ancissa caching
+        first = false;
+      }
+      ++timeiter;
+    }
+    // next aligner
+    ++iter;
+  }
   return out;
 }

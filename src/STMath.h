@@ -113,6 +113,11 @@ public:
   casa::CountedPtr<Scantable>
     swapPolarisations(const casa::CountedPtr<Scantable>& in);
 
+  casa::CountedPtr<Scantable>
+    frequencyAlign( const casa::CountedPtr<Scantable>& in,
+                    const std::string& refTime,
+                    const std::string& method, bool perfreqid);
+
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
                                            STPol::polOperation fptr,
