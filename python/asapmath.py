@@ -105,8 +105,32 @@ def simple_math(left, right, op='add', tsys=True):
             return
         else:
             raise TypeError(msg)
-    from asap._asap import b_operate as _bop
-    s = scantable(_bop(left, right, op, tsys))
+    s = scantable(stm._bop(left, right, op, tsys))
     s._add_history("simple_math", varlist)
+    print_log()
+    return s
+
+def merge(*args):
+    varlist = vars()
+    if isinstance(args[0],list):
+        lst = tuple(args[0])
+    elif isinstance(args[0],tuple):
+        lst = args[0]
+    else:
+        lst = tuple(args)
+    varlist["args"] = "%d scantables" % len(lst)
+    # need special formatting her for history...
+    from asap._asap import stmath
+    stm = stmath()
+    for s in lst:
+        if not isinstance(s,scantable):
+            msg = "Please give a list of scantables"
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise TypeError(msg)
+    s = scantable(stm._merge(lst))
+    s._add_history("merge", varlist)
     print_log()
     return s
