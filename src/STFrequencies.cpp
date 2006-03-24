@@ -224,7 +224,11 @@ SpectralCoordinate STFrequencies::resampleCsys(const SpectralCoordinate& sc,
 MFrequency::Types STFrequencies::getFrame(bool base) const
 {
   // get the ref frame
-  String rf = table_.keywordSet().asString("BASEFRAME");
+  String rf;
+  if ( base )
+    rf = table_.keywordSet().asString("BASEFRAME");
+  else
+    rf = table_.keywordSet().asString("FRAME");
 
   // Create SpectralCoordinate (units Hz)
   MFrequency::Types mft;
@@ -345,7 +349,17 @@ void asap::STFrequencies::setUnit( const std::string & unit )
   }
 }
 
-void asap::STFrequencies::setFrame( const std::string & frame )
+void asap::STFrequencies::setFrame(MFrequency::Types frame, bool base )
+{
+  String f = MFrequency::showType(frame);
+  if (base)
+    table_.rwKeywordSet().define("BASEFRAME", f);
+  else
+    table_.rwKeywordSet().define("FRAME", f);
+
+}
+
+void asap::STFrequencies::setFrame( const std::string & frame, bool base )
 {
   MFrequency::Types mdr;
   if (!MFrequency::getType(mdr, frame)) {
@@ -358,7 +372,10 @@ void asap::STFrequencies::setFrame( const std::string & frame )
     String msg(oss);
     throw(AipsError(msg));
   } else {
-    table_.rwKeywordSet().define("FRAME", frame);
+    if (base)
+      table_.rwKeywordSet().define("BASEFRAME", frame);
+    else
+      table_.rwKeywordSet().define("FRAME", frame);
   }
 }
 

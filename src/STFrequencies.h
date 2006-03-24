@@ -108,12 +108,12 @@ public:
    * set the frequency frame from a string value
    * @param frame a string identifier
    */
-  void setFrame(const std::string& frame);
+  void setFrame(const std::string& frame, bool base=false);
   /**
    * set the frequency frame from a casa::MFrequency::Types
    * @param frame casa::MFrequency::Types
    */
-  void setFrame(casa::MFrequency::Types frame);
+  void setFrame(casa::MFrequency::Types frame, bool base=false);
   void setUnit( const std::string & unit );
   void setDoppler( const std::string & doppler );
   /**
