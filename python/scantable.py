@@ -645,56 +645,68 @@ class scantable(Scantable):
         return list(self._getrestfreqs())
 
 
-#     def set_restfreqs(self, freqs=None, unit='Hz', lines=None, source=None,
-#                       theif=None):
-#         """
-#         Select the restfrequency for the specified source and IF OR
-#         replace for all IFs.  If the 'freqs' argument holds a scalar,
-#         then that rest frequency will be applied to the selected
-#         data (and added to the list of available rest frequencies).
-#         In this way, you can set a rest frequency for each
-#         source and IF combination.   If the 'freqs' argument holds
-#         a vector, then it MUST be of length the number of IFs
-#         (and the available restfrequencies will be replaced by
-#         this vector).  In this case, *all* data ('source' and
-#         'theif' are ignored) have the restfrequency set per IF according
-#         to the corresponding value you give in the 'freqs' vector.
-#         E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and
-#         IF 1 gets restfreq 2e9.
-#
-#         You can also specify the frequencies via known line names
-#         in the argument 'lines'.  Use 'freqs' or 'lines'.  'freqs'
-#         takes precedence. See the list of known names via function
-#         scantable.lines()
-#         Parameters:
-#             freqs:   list of rest frequencies
-#             unit:    unit for rest frequency (default 'Hz')
-#             lines:   list of known spectral lines names (alternative to freqs).
-#                      See possible list via scantable.lines()
-#             source:  Source name (blank means all)
-#             theif:   IF (-1 means all)
-#         Example:
-#             scan.set_restfreqs(freqs=1.4e9, source='NGC253', theif=2)
-#             scan.set_restfreqs(freqs=[1.4e9,1.67e9])
-#         """
-#         varlist = vars()
-#         if source is None:
-#             source = ""
-#         if theif is None:
-#             theif = -1
-#         t = type(freqs)
-#         if t is int or t is float:
-#            freqs = [freqs]
-#         if freqs is None:
-#            freqs = []
-#         t = type(lines)
-#         if t is str:
-#            lines = [lines]
-#         if lines is None:
-#            lines = []
-#         self._setrestfreqs(freqs, unit, lines, source, theif)
-#         self._add_history("set_restfreqs", varlist)
-#
+    def set_restfreqs(self, freqs=None, unit='Hz'):
+        """
+        Set or replace the restfrequency specified and
+        If the 'freqs' argument holds a scalar,
+        then that rest frequency will be applied to all the selected
+        data.  If the 'freqs' argument holds
+        a vector, then it MUST be of equal or smaller length than
+        the number of IFs (and the available restfrequencies will be
+        replaced by this vector).  In this case, *all* data have
+        the restfrequency set per IF according
+        to the corresponding value you give in the 'freqs' vector.
+        E.g. 'freqs=[1e9,2e9]'  would mean IF 0 gets restfreq 1e9 and
+        IF 1 gets restfreq 2e9.
+        You can also specify the frequencies via known line names
+        from the built-in Lovas table.
+        Parameters:
+            freqs:   list of rest frequency values or string idenitfiers
+            unit:    unit for rest frequency (default 'Hz')
+
+        Example:
+            # set the given restfrequency for the whole table
+            scan.set_restfreqs(freqs=1.4e9)
+            # If thee number of IFs in the data is >= 2 the IF0 gets the first
+            # value IF1 the second...
+            scan.set_restfreqs(freqs=[1.4e9,1.67e9])
+            #set the given restfrequency for the whole table (by name)
+            scan.set_restfreqs(freqs="OH1667")
+
+        Note:
+            To do more sophisticate Restfrequency setting, e.g. on a
+            source and IF basis, use scantable.set_selection() before using
+            this function.
+            # provide your scantable is call scan
+            selection = selector()
+            selection.set_name("ORION*")
+            selection.set_ifs([1])
+            scan.set_selection(selection)
+            scan.set_restfreqs(freqs=86.6e9)
+
+        """
+        varlist = vars()
+
+        t = type(freqs)
+        if isinstance(freqs, int) or isinstance(freqs,float):
+           self._setrestfreqs(freqs, unit)
+        elif isinstance(freqs, list) or isinstance(freqs,tuple):
+            if isinstance(freqs[-1], int) or isinstance(freqs[-1],float):
+                from asap._asap import selector
+                sel = selector()
+                savesel = self._getselection()
+                for i in xrange(len(freqs)):
+                    sel._setifs([i])
+                    self._setselection(sel)
+                    self._setrestfreqs(freqs[i], unit)
+                self._setselection(savesel)
+            elif isinstance(freqs[-1], str):
+                # not yet implemented
+                pass
+        else:
+            return
+        self._add_history("set_restfreqs", varlist)
+
 
 
     def history(self):
@@ -725,7 +737,7 @@ class scantable(Scantable):
     # Maths business
     #
 
-    def average_time(self, mask=None, scanav=False, weight='tint'):
+    def average_time(self, mask=None, scanav=False, weight='tint', align=False):
         """
         Return the (time) average of a scan, or apply it 'insitu'.
         Note:
@@ -741,6 +753,8 @@ class scantable(Scantable):
                       weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
                       (integration time weighted) or 'tintsys' (Tint/Tsys**2).
                       The default is 'tint'
+            align:    align the spectra in velocity before averaging. It takes
+                      the time of the first spectrum as reference time.
         Example:
             # time average the scantable without using a mask
             newscan = scan.average_time()
@@ -752,7 +766,8 @@ class scantable(Scantable):
           scanav = "SCAN"
         else:
           scanav = "NONE"
-        s = scantable(self._math._average((self,), mask, weight, scanav, False))
+        s = scantable(self._math._average((self,), mask, weight.upper(),
+                      scanav, align))
         s._add_history("average_time",varlist)
         print_log()
         return s
@@ -841,8 +856,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    def freq_align(self, reftime=None, method='cubic', perif=False,
-                   insitu=None):
+    def freq_align(self, reftime=None, method='cubic', insitu=None):
         """
         Return a scan where all rows have been aligned in frequency/velocity.
         The alignment frequency frame (e.g. LSRK) is that set by function
@@ -853,20 +867,15 @@ class scantable(Scantable):
             method:      Interpolation method for regridding the spectra.
                          Choose from "nearest", "linear", "cubic" (default)
                          and "spline"
-            perif:       Generate aligners per freqID (no doppler tracking) or
-                         per IF (scan-based doppler tracking)
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
         """
-        print "Not yet implemented"
-        return
-        if insitu is None: insitu = rcParams['insitu']
+        if insitu is None: insitu = rcParams["insitu"]
         self._math._setinsitu(insitu)
         varlist = vars()
-        if reftime is None: reftime = ''
-        perfreqid = not perif
-        s = scantable(self._math._freqalign(self, reftime, method, perfreqid))
+        if reftime is None: reftime = ""
+        s = scantable(self._math._freq_align(self, reftime, method))
         s._add_history("freq_align", varlist)
         print_log()
         if insitu: self._assign(s)
@@ -1019,7 +1028,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    def auto_poly_baseline(self, mask=None, edge=(0,0), order=0,
+    def auto_poly_baseline(self, mask=[], edge=(0,0), order=0,
                            threshold=3, insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
