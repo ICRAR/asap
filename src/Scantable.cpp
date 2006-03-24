@@ -217,8 +217,8 @@ void Scantable::setupMainTable()
   TableMeasDesc<MDirection> mdirCol(tmvdMDir, mdirRef);
   // writing create the measure column
   mdirCol.write(td);
-  td.addColumn(ScalarColumnDesc<Double>("AZIMUTH"));
-  td.addColumn(ScalarColumnDesc<Double>("ELEVATION"));
+  td.addColumn(ScalarColumnDesc<Float>("AZIMUTH"));
+  td.addColumn(ScalarColumnDesc<Float>("ELEVATION"));
   td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
 
   td.addColumn(ScalarColumnDesc<uInt>("TCAL_ID"));
@@ -517,11 +517,15 @@ int Scantable::nchan( int ifno ) const
     Table t = table_(table_.col("IFNO") == ifno);
     if ( t.nrow() == 0 ) return 0;
     ROArrayColumn<Float> v(t, "SPECTRA");
-    return v(0).nelements();
+    return v.shape(0)(0);
   }
   return 0;
 }
 
+int Scantable::getChannels(int whichrow) const
+{
+  return specCol_.shape(whichrow)(0);
+}
 
 int Scantable::getBeam(int whichrow) const
 {
@@ -568,8 +572,8 @@ void Scantable::calculateAZEL()
         MDirection::Convert(md, MDirection::Ref(MDirection::AZEL,
                                                 frame)
                             )().getAngle("rad").getValue();
-    azCol_.put(i,azel[0]);
-    elCol_.put(i,azel[1]);
+    azCol_.put(i,Float(azel[0]));
+    elCol_.put(i,Float(azel[1]));
     oss << "azel: " << azel[0]/C::pi*180.0 << " "
         << azel[1]/C::pi*180.0 << " (deg)" << endl;
   }
@@ -767,7 +771,7 @@ std::string Scantable::summary( bool verbose )
         ROTableRow irow(isubt);
         const TableRecord& irec = irow.get(0);
         oss << std::right <<setw(8) << "" << std::left << irec.asuInt("IFNO");
-        oss << frequencies().print(irec.asuInt("FREQ_ID"));
+        oss << frequencies().print(irec.asuInt("FREQ_ID")) << irec.asuInt("MOLECULE_ID");
 
         ++iiter;
       }
@@ -855,7 +859,7 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
 
 void asap::Scantable::setRestFrequencies( double rf, const std::string& unit )
 {
-  ///@todo lookup in line table
+  ///@todo lookup in line table to fill in name and formattedname
   Unit u(unit);
   Quantum<Double> urf(rf, u);
   uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), "", "");

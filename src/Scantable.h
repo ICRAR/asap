@@ -232,6 +232,7 @@ public:
   int getPol(int whichrow) const;
   int getCycle(int whichrow) const { return cycleCol_(whichrow); }
   int getScan(int whichrow) const { return scanCol_(whichrow); }
+  int getChannels(int whichrow) const;
 
   double getInterval(int whichrow) const
     { return integrCol_(whichrow); }
@@ -378,8 +379,8 @@ private:
   casa::ScalarColumn<casa::Double> integrCol_;
   casa::MDirection::ScalarColumn dirCol_;
   casa::MEpoch::ScalarColumn timeCol_;
-  casa::ScalarColumn<casa::Double> azCol_;
-  casa::ScalarColumn<casa::Double> elCol_;
+  casa::ScalarColumn<casa::Float> azCol_;
+  casa::ScalarColumn<casa::Float> elCol_;
   casa::ScalarColumn<casa::Float> paraCol_;
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
   casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_;
