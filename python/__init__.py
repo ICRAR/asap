@@ -67,7 +67,6 @@ defaultParams = {
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, _validate_bool],
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
-    'scantable.plotter'   : [True, _validate_bool], # use internal plotter
     'scantable.verbosesummary'   : [False, _validate_bool]
 
     # fitter
@@ -214,6 +213,7 @@ def rcdefaults():
 
 def _is_sequence_or_number(param, ptype=int):
     if isinstance(param,tuple) or isinstance(param,list):
+        if len(param) == 0: return True # empty list
         out = True
         for p in param:
             out &= isinstance(p,ptype)
@@ -222,6 +222,13 @@ def _is_sequence_or_number(param, ptype=int):
         return True
     return False
 
+def _to_list(param, ptype=int):
+    if isinstance(param, ptype):
+        if ptype is str: return param.split()
+        else: return [param]
+    if _is_sequence_or_number(param, ptype):
+        return param
+    return None
 
 # workaround for ipython, which redirects this if banner=0 in ipythonrc
 sys.stdout = sys.__stdout__
@@ -253,11 +260,11 @@ from numarray import logical_and as mask_and
 from numarray import logical_or as mask_or
 from numarray import logical_not as mask_not
 
-# if rcParams['useplotter']:
-#     from  asapplotter import *
-#     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
-#     plotter = asapplotter(gui)
-#     del gui
+if rcParams['useplotter']:
+    from  asapplotter import *
+    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+    plotter = asapplotter(gui)
+    del gui
 
 __date__ = '$Date$'.split()[1]
 __version__  = '2.0a'
