@@ -72,8 +72,9 @@ class linefinder:
         """
         if not scan:
            raise RuntimeError, 'Please give a correct scan'
-        return
-    def find_lines(self,nRow=0,mask=None,edge=(0,0)):
+        self.finder.setscan(scan)
+
+    def find_lines(self,nRow=0,mask=[],edge=(0,0)):
         """
         Search for spectral lines in the scan assigned in set_scan.
         Parameters:
@@ -98,11 +99,7 @@ class linefinder:
         if len(edge)>2:
            raise RuntimeError, "The edge parameter should have two \
            or less elements"
-        if mask is None:
-            from numarray import ones
-            return self.finder.findlines(ones(scan.nchan(nRow)),list(edge),nRow)
-        else:
-            return self.finder.setscan(mask,list(edge),nRow)
+        return self.finder.findlines(mask,list(edge),nRow)
     def get_mask(self,invert=False):
         """
         Get the mask to mask out all lines that have been found (default)
