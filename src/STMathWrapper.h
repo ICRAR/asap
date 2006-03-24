@@ -116,6 +116,11 @@ public:
   ScantableWrapper swapPolarisations( const ScantableWrapper& in )
   { return ScantableWrapper(STMath::swapPolarisations(in.getCP())); }
 
+  ScantableWrapper frequencyAlign( const ScantableWrapper& in,
+                                   const std::string& refTime,
+                                   const std::string& method  )
+  { return ScantableWrapper(STMath::frequencyAlign(in.getCP())); }
+
 };
 
 }

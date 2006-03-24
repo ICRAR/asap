@@ -115,8 +115,8 @@ public:
 
   casa::CountedPtr<Scantable>
     frequencyAlign( const casa::CountedPtr<Scantable>& in,
-                    const std::string& refTime,
-                    const std::string& method, bool perfreqid);
+                    const std::string& refTime = "",
+                    const std::string& method = "cubic" );
 
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,

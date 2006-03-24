@@ -59,6 +59,7 @@ namespace asap {
         .def("_rotate_linpolphase", &STMathWrapper::rotateLinPolPhase)
         .def("_invert_phase", &STMathWrapper::invertPhase)
         .def("_swap_linears", &STMathWrapper::swapPolarisations)
+        .def("_freq_align", &STMathWrapper::frequencyAlign)
       ;
     };
 
