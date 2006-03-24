@@ -137,10 +137,11 @@ public:
 
   void setRestFrequencies(double rf, const std::string& unit)
     { table_->setRestFrequencies(rf, unit); }
-
+/*
   void setRestFrequencies(const std::string& name) {
     table_->setRestFrequencies(name);
   }
+*/
 
   std::vector<double> getRestFrequencies() const
     { return table_->getRestFrequencies(); }

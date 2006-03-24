@@ -95,7 +95,7 @@ void python_Scantable() {
     .def("_summary",  &ScantableWrapper::summary,
          (boost::python::arg("verbose")=true) )
     .def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
-    //.def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
+    .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
     .def("_setcoordinfo", &ScantableWrapper::setCoordInfo)
     .def("_getcoordinfo", &ScantableWrapper::getCoordInfo)
     .def("_gethistory", &ScantableWrapper::getHistory)
