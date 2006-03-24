@@ -59,24 +59,36 @@ STMath::~STMath()
 }
 
 CountedPtr<Scantable>
-STMath::average( const std::vector<CountedPtr<Scantable> >& in,
+STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
                  const std::vector<bool>& mask,
                  const std::string& weight,
                  const std::string& avmode,
                  bool alignfreq)
 {
-  if ( avmode == "SCAN" && in.size() != 1 )
+  if ( avmode == "SCAN" && scantbls.size() != 1 )
     throw(AipsError("Can't perform 'SCAN' averaging on multiple tables"));
   WeightType wtype = stringToWeight(weight);
+
+  std::vector<CountedPtr<Scantable> >* in = const_cast<std::vector<CountedPtr<Scantable> >*>(&scantbls);
+  std::vector<CountedPtr<Scantable> > inaligned;
+  if ( alignfreq ) {
+    // take first row of first scantable as reference epoch
+    String epoch = scantbls[0]->getTime(0);
+    for (int i=0; i< scantbls.size(); ++i ) {
+      inaligned.push_back(frequencyAlign(scantbls[i], epoch));
+    }
+    in = &inaligned;
+  }
+
   // output
   // clone as this is non insitu
   bool insitu = insitu_;
   setInsitu(false);
-  CountedPtr< Scantable > out = getScantable(in[0], true);
+  CountedPtr< Scantable > out = getScantable((*in)[0], true);
   setInsitu(insitu);
-  std::vector<CountedPtr<Scantable> >::const_iterator stit = in.begin();
+  std::vector<CountedPtr<Scantable> >::const_iterator stit = in->begin();
   ++stit;
-  while ( stit != in.end() ) {
+  while ( stit != in->end() ) {
     out->appendToHistoryTable((*stit)->history());
     ++stit;
   }
@@ -93,7 +105,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 
   // set up the output table rows. These are based on the structure of the
   // FIRST scantable in the vector
-  const Table& baset = in[0]->table();
+  const Table& baset = (*in)[0]->table();
 
   Block<String> cols(3);
   cols[0] = String("BEAMNO");
@@ -103,7 +115,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     cols.resize(4);
     cols[3] = String("SRCNAME");
   }
-  if ( avmode == "SCAN"  && in.size() == 1) {
+  if ( avmode == "SCAN"  && in->size() == 1) {
     cols.resize(4);
     cols[3] = String("SCANNO");
   }
@@ -127,8 +139,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ROScalarColumn<Int> scanIDCol;
 
   for (uInt i=0; i < tout.nrow(); ++i) {
-    for ( int j=0; j < in.size(); ++j ) {
-      const Table& tin = in[j]->table();
+    for ( int j=0; j < in->size(); ++j ) {
+      const Table& tin = (*in)[j]->table();
       const TableRecord& rec = row.get(i);
       ROScalarColumn<Double> tmp(tin, "TIME");
       Double td;tmp.get(0,td);
@@ -269,7 +281,6 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable >& in,
   ArrayColumn<Float> outspecCol(tout, "SPECTRA");
   ROArrayColumn<Float> outtsysCol(tout, "TSYS");
   ArrayColumn<uChar> outflagCol(tout, "FLAGTRA");
-
   for (uInt i=0; i < tout.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
     Double ontime = rec.asDouble("TIME");
@@ -302,6 +313,16 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable >& in,
     }
     outspecCol.put(i, quot.getArray());
     outflagCol.put(i, flagsFromMA(quot));
+  }
+  // renumber scanno
+  TableIterator it(tout, "SCANNO");
+  uInt i = 0;
+  while ( !it.pastEnd() ) {
+    Table t = it.table();
+    TableVector<uInt> vec(t, "SCANNO");
+    vec = i;
+    ++i;
+    ++it;
   }
   return out;
 }
@@ -479,10 +500,10 @@ STMath::imethod STMath::stringToIMethod(const std::string& in)
 
   // initialize the lookup table if necessary
   if ( lookup.empty() ) {
-    lookup["NEAR"]   = InterpolateArray1D<Double,Float>::nearestNeighbour;
-    lookup["LIN"] = InterpolateArray1D<Double,Float>::linear;
-    lookup["CUB"]  = InterpolateArray1D<Double,Float>::cubic;
-    lookup["SPL"]  = InterpolateArray1D<Double,Float>::spline;
+    lookup["nearest"]   = InterpolateArray1D<Double,Float>::nearestNeighbour;
+    lookup["linear"] = InterpolateArray1D<Double,Float>::linear;
+    lookup["cubic"]  = InterpolateArray1D<Double,Float>::cubic;
+    lookup["spline"]  = InterpolateArray1D<Double,Float>::spline;
   }
 
   STMath::imap::const_iterator iter = lookup.find(in);
@@ -525,7 +546,7 @@ CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in
 {
   // Get elevation data from Scantable and convert to degrees
   CountedPtr< Scantable > out = getScantable(in, false);
-  Table& tab = in->table();
+  Table& tab = out->table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
   Vector<Float> x = elev.getColumn();
   x *= Float(180 / C::pi);                        // Degrees
@@ -640,10 +661,9 @@ void STMath::scaleByVector( Table& in,
     specCol.put(i, ma.getArray());
     flagCol.put(i, flagsFromMA(ma));
     if ( dotsys ) {
-      Vector<Float> tsys;
-      tsysCol.get(i, tsys);
+      Vector<Float> tsys = tsysCol(i);
       tsys *= factor[i];
-      specCol.put(i,tsys);
+      tsysCol.put(i,tsys);
     }
   }
 }
@@ -758,14 +778,15 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
                                          float tau )
 {
   CountedPtr< Scantable > out = getScantable(in, false);
-  Table& tab = in->table();
+
+  Table tab = out->table();
   ROScalarColumn<Float> elev(tab, "ELEVATION");
   ArrayColumn<Float> specCol(tab, "SPECTRA");
   ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
   for ( uInt i=0; i<tab.nrow(); ++i) {
     Float zdist = Float(C::pi_2) - elev(i);
     Float factor = exp(tau)/cos(zdist);
-    MaskedArray<Float> ma  = maskedArray(specCol(i), flagCol(i));
+    MaskedArray<Float> ma = maskedArray(specCol(i), flagCol(i));
     ma *= factor;
     specCol.put(i, ma.getArray());
     flagCol.put(i, flagsFromMA(ma));
@@ -829,10 +850,11 @@ CountedPtr< Scantable >
   ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
   ScalarColumn<uInt> scannocol(tout,"SCANNO"), focusidcol(tout,"FOCUS_ID");
   // Renumber SCANNO to be 0-based
-  uInt offset = min(scannocol.getColumn());
-  TableVector<uInt> scannos(tout, "SCANNO");
+  Vector<uInt> scannos = scannocol.getColumn();
+  uInt offset = min(scannos);
   scannos -= offset;
-  uInt newscanno = max(scannocol.getColumn())+1;
+  scannocol.putColumn(scannos);
+  uInt newscanno = max(scannos)+1;
   ++it;
   while ( it != in.end() ){
     if ( ! (*it)->conformant(*out) ) {
@@ -957,7 +979,7 @@ CountedPtr< Scantable >
 CountedPtr< Scantable >
   asap::STMath::frequencyAlign( const CountedPtr< Scantable > & in,
                                 const std::string & refTime,
-                                const std::string & method, bool perfreqid )
+                                const std::string & method)
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tout = out->table();
@@ -993,86 +1015,87 @@ CountedPtr< Scantable >
     throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
   }
   MFrequency::Types system = in->frequencies().getFrame();
+  out->frequencies().setFrame(system);
   // set up the iterator
-  Block<String> cols(3);
-  // select the by constant direction
+  Block<String> cols(4);
+  // select by constant direction
   cols[0] = String("SRCNAME");
   cols[1] = String("BEAMNO");
   // select by IF ( no of channels varies over this )
   cols[2] = String("IFNO");
-  // handle freqid based alignment
-  if ( perfreqid ) {
-    cols.resize(4);
-    cols[3] = String("FREQ_ID");
-  }
+  // select by restfrequency
+  cols[3] = String("MOLECULE_ID");
   TableIterator iter(tout, cols);
-  while (!iter.pastEnd()) {
+  while ( !iter.pastEnd() ) {
     Table t = iter.table();
     MDirection::ROScalarColumn dirCol(t, "DIRECTION");
-    ScalarColumn<uInt> freqidCol(t, "FREQ_ID");
-    // get the SpectralCoordinate for the freqid, which we are iterating over
-    SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
+    TableIterator fiter(t, "FREQ_ID");
     // determine nchan from the first row. This should work as
-    // we are iterting over IFNO
+    // we are iterating over BEAMNO and IFNO    // we should have constant direction
+
     ROArrayColumn<Float> sCol(t, "SPECTRA");
+    MDirection direction = dirCol(0);
     uInt nchan = sCol(0).nelements();
-    // we should have constant direction
-    FrequencyAligner<Float> fa(sC, nchan, refEpoch, dirCol(0), refPos, system);
-    // realign the SpectralCOordinate and put into the output Scantable
-    Vector<String> units(1);
-    units = String("Hz");
-    Bool linear=True;
-    SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
-    sc2.setWorldAxisUnits(units);
-    out->frequencies().addEntry(sc2.referencePixel()[0],
-                                sc2.referenceValue()[0],
-                                sc2.increment()[0]);
-    // create the abcissa for IF based alignment
-    Vector<Double> abc;
-    if ( !perfreqid ) {
-      abc.resize(nchan);
+    while ( !fiter.pastEnd() ) {
+      Table ftab = fiter.table();
+      ScalarColumn<uInt> freqidCol(ftab, "FREQ_ID");
+      // get the SpectralCoordinate for the freqid, which we are iterating over
+      cout << freqidCol.getColumn() << endl;
+      SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
+      FrequencyAligner<Float> fa( sC, nchan, refEpoch,
+                                  direction, refPos, system );
+      // realign the SpectralCoordinate and put into the output Scantable
+      Vector<String> units(1);
+      units = String("Hz");
+      Bool linear=True;
+      SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
+      sc2.setWorldAxisUnits(units);
+      out->frequencies().addEntry(sc2.referencePixel()[0],
+                                  sc2.referenceValue()[0],
+                                  sc2.increment()[0]);
+      // create the "global" abcissa for alignment with same FREQ_ID
+      Vector<Double> abc(nchan);
       Double w;
       for (uInt i=0; i<nchan; i++) {
         sC.toWorld(w,Double(i));
         abc[i] = w;
       }
-    }
-    // cache abcissa for same time stamps, so iterate over those
-    TableIterator timeiter(t, "TIME");
-    while ( !timeiter.pastEnd() ) {
-      Table tab = timeiter.table();
-      ArrayColumn<Float> specCol(tab, "SPECTRA");
-      ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
-      MEpoch::ROScalarColumn timeCol(tab, "TIME");
-      // use align abcissa cache after the first row
-      bool first = true;
-      // these rows should be just be POLNO
-      for (int i=0; i<tab.nrow(); ++i) {
-        // input values
-        Vector<uChar> flag = flagCol(i);
-        Vector<Bool> mask(flag.shape());
-        Vector<Float> specOut;
-        Vector<Bool> maskOut;Vector<uChar> flagOut;
-        convertArray(mask, flag);
-        // alignment
-        if ( perfreqid ) {
-          Bool ok = fa.align(specOut, maskOut, specCol(i),
-                        mask, timeCol(i), !first,
-                        interp, False);
-        } else {
-          Bool ok = fa.align(specOut, maskOut, abc, specCol(i),
-                        mask, timeCol(i), !first,
-                        interp, False);
+      // cache abcissa for same time stamps, so iterate over those
+      TableIterator timeiter(ftab, "TIME");
+      while ( !timeiter.pastEnd() ) {
+        Table tab = timeiter.table();
+        ArrayColumn<Float> specCol(tab, "SPECTRA");
+        ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+        MEpoch::ROScalarColumn timeCol(tab, "TIME");
+        // use align abcissa cache after the first row
+        bool first = true;
+        // these rows should be just be POLNO
+        for (int i=0; i<tab.nrow(); ++i) {
+          // input values
+          Vector<uChar> flag = flagCol(i);
+          Vector<Bool> mask(flag.shape());
+          Vector<Float> specOut, spec;
+          spec  = specCol(i);
+          Vector<Bool> maskOut;Vector<uChar> flagOut;
+          convertArray(mask, flag);
+          // alignment
+          Bool ok = fa.align(specOut, maskOut, abc, spec,
+                             mask, timeCol(i), !first,
+                             interp, False);
+          // back into scantable
+          cout << spec[spec.nelements()/2] << " --- " << specOut[specOut.nelements()/2] << endl;
+          flagOut.resize(maskOut.nelements());
+          convertArray(flagOut, maskOut);
+          flagCol.put(i, flagOut);
+          specCol.put(i, specOut);
+          // start abcissa caching
+          first = false;
         }
-        // back into scantable
-        flagOut.resize(maskOut.nelements());
-        convertArray(flagOut, maskOut);
-        flagCol.put(i, flagOut);
-        specCol.put(i, specOut);
-        // start ancissa caching
-        first = false;
+        // next timestamp
+        ++timeiter;
       }
-      ++timeiter;
+      // nect FREQ_ID
+      ++fiter;
     }
     // next aligner
     ++iter;
