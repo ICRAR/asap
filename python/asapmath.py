@@ -15,6 +15,9 @@ def average_time(*args, **kwargs):
                   weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
                   (integration time weighted) or 'tintsys' (Tsys
                   and tint). The default is 'tint'
+        align:    align the spectra in velocity before averaging. It takes
+                  the time of the first spectrum in the first scantable
+                  as reference time.
     Example:
         # return a time averaged scan from scana and scanb
         # without using a mask
@@ -23,15 +26,18 @@ def average_time(*args, **kwargs):
         # all correlator cycles
         scanav = average_time(scan, scanav=True)
     """
-    scanAv = False
+    scanav = False
     if kwargs.has_key('scanav'):
-       scanAv = kwargs.get('scanav')
+       scanav = kwargs.get('scanav')
     weight = 'tint'
     if kwargs.has_key('weight'):
        weight = kwargs.get('weight')
     mask = ()
     if kwargs.has_key('mask'):
         mask = kwargs.get('mask')
+    align = False
+    if kwargs.has_key('align'):
+        align = kwargs.get('align')
     varlist = vars()
     if isinstance(args[0],list):
         lst = tuple(args[0])
@@ -56,7 +62,7 @@ def average_time(*args, **kwargs):
                 raise TypeError(msg)
     if scanAv: scanAv = "SCAN"
     else: scanAv = "NONE"
-    s = scantable(stm._average(lst, mask, weight, scanAv, False))
+    s = scantable(stm._average(lst, mask, weight, scanav, align))
     s._add_history("average_time",varlist)
     print_log()
     return s
