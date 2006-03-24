@@ -236,8 +236,8 @@ int asap::STFiller::read( )
     RecordFieldPtr<String> srcnCol(rec, "SRCNAME");
     RecordFieldPtr<Int> srctCol(rec, "SRCTYPE");
     // try to auto-identify if it is on or off.
-    Regex rx(".*_[e|w|R]$");
-    Regex rx2("_[e|w|R|S]$");
+    Regex rx(".*[e|w|_R]$");
+    Regex rx2("[e|w|_R|_S]$");
     Int match = srcName.matches(rx);
     if (match) {
       *srcnCol = srcName;
@@ -277,9 +277,9 @@ int asap::STFiller::read( )
     *mfocusidCol = id;
     RecordFieldPtr<Array<Double> > dirCol(rec, "DIRECTION");
     *dirCol = direction;
-    RecordFieldPtr<Double> azCol(rec, "AZIMUTH");
+    RecordFieldPtr<Float> azCol(rec, "AZIMUTH");
     *azCol = azimuth;
-    RecordFieldPtr<Double> elCol(rec, "ELEVATION");
+    RecordFieldPtr<Float> elCol(rec, "ELEVATION");
     *elCol = elevation;
 
     RecordFieldPtr<Float> parCol(rec, "PARANGLE");
