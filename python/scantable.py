@@ -1135,7 +1135,7 @@ class scantable(Scantable):
             scan.rotate_linpolphase(2.3)
         """
         varlist = vars()
-        self.stm._rotate_linpolphase(self, angle)
+        self._math._rotate_linpolphase(self, angle)
         self._add_history("rotate_linpolphase", varlist)
         print_log()
         return
@@ -1152,7 +1152,7 @@ class scantable(Scantable):
             scan.rotate_xyphase(2.3)
         """
         varlist = vars()
-        self.stm._rotate_xyphase(self, angle, allaxes)
+        self._math._rotate_xyphase(self, angle)
         self._add_history("rotate_xyphase", varlist)
         print_log()
         return
@@ -1162,7 +1162,7 @@ class scantable(Scantable):
         Swap the linear polarisations XX and YY
         """
         varlist = vars()
-        self.stm._swap_linears(self)
+        self._math._swap_linears(self)
         self._add_history("swap_linears", varlist)
         print_log()
         return
@@ -1172,7 +1172,7 @@ class scantable(Scantable):
         Invert the phase of the complex polarisation
         """
         varlist = vars()
-        self.stm._invert_phase(self)
+        self._math._invert_phase(self)
         self._add_history("invert_phase", varlist)
         print_log()
         return
