@@ -61,6 +61,7 @@ namespace asap {
 #include <tables/Tables/TableVector.cc>
 #include <tables/Tables/TVecScaCol.cc>
 #include <tables/Tables/TVecTemp.cc>
+//#include <tables/Tables/TVecMath.h>
 
 template class ROTableVector<uInt>;
 template class TableVector<uInt>;

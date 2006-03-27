@@ -69,7 +69,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
     throw(AipsError("Can't perform 'SCAN' averaging on multiple tables"));
   WeightType wtype = stringToWeight(weight);
 
-  std::vector<CountedPtr<Scantable> >* in = const_cast<std::vector<CountedPtr<Scantable> >*>(&scantbls);
+  std::vector<CountedPtr<Scantable> >* in =
+    const_cast<std::vector<CountedPtr<Scantable> >*>(&scantbls);
   std::vector<CountedPtr<Scantable> > inaligned;
   if ( alignfreq ) {
     // take first row of first scantable as reference epoch
@@ -939,18 +940,17 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
     Table t = iter.table();
     ArrayColumn<Float> speccol(t, "SPECTRA");
     Matrix<Float> pols = speccol.getColumn();
-    Matrix<Float> out;
     try {
       stpol->setSpectra(pols);
       (stpol->*fptr)(phase);
       speccol.putColumn(stpol->getSpectra());
-      delete stpol;stpol=0;
     } catch (AipsError& e) {
       delete stpol;stpol=0;
       throw(e);
     }
     ++iter;
   }
+  delete stpol;stpol=0;
   return out;
 }
 
@@ -1015,7 +1015,7 @@ CountedPtr< Scantable >
     throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
   }
   MFrequency::Types system = in->frequencies().getFrame();
-  out->frequencies().setFrame(system);
+  out->frequencies().setFrame(system, true);
   // set up the iterator
   Block<String> cols(4);
   // select by constant direction
@@ -1050,9 +1050,11 @@ CountedPtr< Scantable >
       Bool linear=True;
       SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
       sc2.setWorldAxisUnits(units);
-      out->frequencies().addEntry(sc2.referencePixel()[0],
-                                  sc2.referenceValue()[0],
-                                  sc2.increment()[0]);
+      uInt id = out->frequencies().addEntry(sc2.referencePixel()[0],
+                                            sc2.referenceValue()[0],
+                                            sc2.increment()[0]);
+      TableVector<uInt> tvec(ftab, "FREQ_ID");
+      tvec = id;
       // create the "global" abcissa for alignment with same FREQ_ID
       Vector<Double> abc(nchan);
       Double w;

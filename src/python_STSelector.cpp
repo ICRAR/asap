@@ -37,6 +37,7 @@ namespace asap {
         .def("_setname", &STSelector::setName)
         .def("_settaql", &STSelector::setTaQL)
         .def("_setorder", &STSelector::setSortOrder)
+        .def("_empty", &STSelector::empty)
       ;
     };
   }
