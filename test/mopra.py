@@ -5,8 +5,7 @@ print "Test using Mopra dual IF data..."
 print "Reduction test..."
 s = scantable("data/mopra_dualif.rpf")
 q = s.auto_quotient()
-q2 = quotient(s.get_scan("*_S"),s.get_scan("*_R"))
-del q2,s
+del s
 restfreqs = [110.201,86.243]     # 13CO-1/0, SiO the two IF
 q.set_restfreqs(restfreqs,"GHz") # set the restfrequencies, as not in data
 q.set_unit("km/s")               # set the unit to be used from now on
@@ -20,7 +19,9 @@ med = q.stats("median",msk)
 print "Fitter test..."
 f = fitter()
 f.set_scan(q)
-q.set_cursor(IF=0)
+selection = selector()
+selection.setifs([1])
+q.set_selection(selection)
 f.set_function(gauss=2) # fit two gaussians
 f.fit()
 fp = f.get_parameters()
