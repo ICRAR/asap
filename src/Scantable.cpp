@@ -771,7 +771,7 @@ std::string Scantable::summary( bool verbose )
         ROTableRow irow(isubt);
         const TableRecord& irec = irow.get(0);
         oss << std::right <<setw(8) << "" << std::left << irec.asuInt("IFNO");
-        oss << frequencies().print(irec.asuInt("FREQ_ID")) << irec.asuInt("MOLECULE_ID");
+        oss << frequencies().print(irec.asuInt("FREQ_ID"));
 
         ++iiter;
       }
