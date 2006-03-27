@@ -54,7 +54,7 @@ class asapplotter:
         return asaplot()
 
 
-    def plot(self, scan):
+    def plot(self, scan=None):
         """
         Plot a scantable.
         Parameters:
@@ -70,6 +70,8 @@ class asapplotter:
         self._plotter.hold()
         self._plotter.clear()
         from asap import scantable
+        if not self._data and not scan:
+            print "please provide a scantable to plot"
         if isinstance(scan, scantable):
             if self._data is not None:
                 if scan != self._data:
@@ -80,13 +82,14 @@ class asapplotter:
                 self._data = scan
                 self._reset()
         # ranges become invalid when unit changes
-        if self._abcunit != self._data.get_unit():
+        if self._abcunit and self._abcunit != self._data.get_unit():
             self._minmaxx = None
             self._minmaxy = None
             self._abcunit = self._data.get_unit()
             self._datamask = None
         self._plot(self._data)
         if self._minmaxy is not None:
+            print "setting limits"
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
         print_log()
