@@ -104,7 +104,7 @@ class selector(_selector):
             selection.set_name("Orion*_R")
         """
         if isinstance(name, str):
-            self._setame(name)
+            self._setname(name)
         else:
             raise TypeError('name must be a string')
 
