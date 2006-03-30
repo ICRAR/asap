@@ -74,7 +74,7 @@ void STFrequencies::setup( )
   table_.rwKeywordSet().define("FRAME", String("TOPO"));
   table_.rwKeywordSet().define("BASEFRAME", String("TOPO"));
   table_.rwKeywordSet().define("EQUINOX",String( "J2000"));
-  table_.rwKeywordSet().define("UNIT", String("Hz"));
+  table_.rwKeywordSet().define("UNIT", String(""));
   table_.rwKeywordSet().define("DOPPLER", String("RADIO"));
 
   // new cached columns
@@ -285,7 +285,7 @@ std::string asap::STFrequencies::print( int id )
     const TableRecord& rec = row.get(i);
     oss <<  setw(8)
     << t.keywordSet().asString("FRAME") << setw(16) << setprecision(8)
-    << rec.asDouble("REFVAL") << setw(10)
+    << rec.asDouble("REFVAL") << setw(7)
     << rec.asDouble("REFPIX") << setw(12)
     << rec.asDouble("INCREMENT") << endl;
   }

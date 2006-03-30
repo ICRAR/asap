@@ -166,7 +166,7 @@ void Scantable::attachSubtables()
 
 Scantable::~Scantable()
 {
-  cout << "~Scantable() " << this << endl;
+  //cout << "~Scantable() " << this << endl;
 }
 
 void Scantable::setupMainTable()
@@ -713,27 +713,25 @@ std::string Scantable::summary( bool verbose )
   oss << setw(15) << "Antenna Name:" << tmp << endl;
   table_.keywordSet().get("FluxUnit", tmp);
   oss << setw(15) << "Flux Unit:" << tmp << endl;
-  Vector<Float> vec;
+  Vector<Double> vec(moleculeTable_.getRestFrequencies());
   oss << setw(15) << "Rest Freqs:";
   if (vec.nelements() > 0) {
       oss << setprecision(10) << vec << " [Hz]" << endl;
   } else {
       oss << "none" << endl;
   }
-  oss << setw(15) << "Abcissa:" << "channel" << endl;
+
+  oss << setw(15) << "Abcissa:" << getAbcissaLabel(0) << endl;
   oss << selector_.print() << endl;
   oss << endl;
   // main table
   String dirtype = "Position ("
                   + MDirection::showType(dirCol_.getMeasRef().getType())
                   + ")";
-  oss << setw(5) << "Scan"
-      << setw(15) << "Source"
-//      << setw(24) << dirtype
-      << setw(10) << "Time"
-      << setw(18) << "Integration" << endl
-      << setw(5) << "" << setw(10) << "Beam" << dirtype << endl
-      << setw(15) << "" << setw(5) << "IF"
+  oss << setw(5) << "Scan" << setw(15) << "Source"
+      << setw(10) << "Time" << setw(18) << "Integration" << endl;
+  oss << setw(5) << "" << setw(5) << "Beam" << setw(3) << "" << dirtype << endl;
+  oss << setw(10) << "" << setw(3) << "IF" << setw(6) << ""
       << setw(8) << "Frame" << setw(16)
       << "RefVal" << setw(10) << "RefPix" << setw(12) << "Increment" <<endl;
   oss << asap::SEPERATOR << endl;
@@ -763,15 +761,16 @@ std::string Scantable::summary( bool verbose )
       ROTableRow brow(bsubt);
       MDirection::ROScalarColumn bdirCol(bsubt,"DIRECTION");
       const TableRecord& brec = brow.get(0);
-      oss << setw(6) << "" <<  setw(10) << brec.asuInt("BEAMNO");
-      oss  << setw(24) << formatDirection(bdirCol(0)) << endl;
+      oss << setw(5) << "" <<  setw(4) << std::right << brec.asuInt("BEAMNO")<< std::left;
+      oss  << setw(4) << ""  << formatDirection(bdirCol(0)) << endl;
       TableIterator iiter(bsubt, "IFNO");
       while (!iiter.pastEnd()) {
         Table isubt = iiter.table();
         ROTableRow irow(isubt);
         const TableRecord& irec = irow.get(0);
-        oss << std::right <<setw(8) << "" << std::left << irec.asuInt("IFNO");
-        oss << frequencies().print(irec.asuInt("FREQ_ID"));
+        oss << setw(10) << "";
+        oss << setw(3) << std::right << irec.asuInt("IFNO") << std::left
+            << setw(2) << "" << frequencies().print(irec.asuInt("FREQ_ID"));
 
         ++iiter;
       }
