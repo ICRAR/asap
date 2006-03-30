@@ -1,6 +1,7 @@
 from asap._asap import Scantable
 from asap import rcParams
 from asap import print_log
+from asap import selector
 from numarray import ones,zeros
 import sys
 
@@ -174,25 +175,25 @@ class scantable(Scantable):
                 raise RuntimeError("No scan given")
 
         try:
-            bsel = self._getselection()
-            sel = asap._asap.Selector()
+            bsel = self.get_selection()
+            sel = selector()
             if type(scanid) is str:
-                sel._setname()
-                self._setselection(sel)
+                sel.set_name(scanid)
+                self.set_selection(bsel+sel)
                 scopy = self._copy()
-                self._setselection(bsel)
+                self.set_selection(bsel)
                 return scantable(scopy)
             elif type(scanid) is int:
-                sel._setscans([scanid])
-                self._setselection(sel)
+                sel.set_scans([scanid])
+                self.set_selection(bsel+sel)
                 scopy = self._copy()
-                self._setselection(bsel)
+                self.set_selection(bsel)
                 return scantable(scopy)
             elif type(scanid) is list:
-                sel._setscans(scanid)
-                self._setselection(sel)
+                sel.set_scans(scanid)
+                self.set_selection(sel)
                 scopy = self._copy()
-                self._setselection(bsel)
+                self.set_selection(bsel)
                 return scantable(scopy)
             else:
                 msg = "Illegal scanid type, use 'int' or 'list' if ints."
@@ -241,6 +242,17 @@ class scantable(Scantable):
             pager(info)
         else:
             return info
+
+
+    def get_selection(self):
+        """
+        """
+        return selector(self._getselection())
+
+    def set_selection(self, selection):
+        """
+        """
+        self._setselection(selection)
 
     def set_cursor(self, beam=0, IF=0, pol=0):
         """
@@ -692,11 +704,10 @@ class scantable(Scantable):
            self._setrestfreqs(freqs, unit)
         elif isinstance(freqs, list) or isinstance(freqs,tuple):
             if isinstance(freqs[-1], int) or isinstance(freqs[-1],float):
-                from asap._asap import selector
                 sel = selector()
                 savesel = self._getselection()
                 for i in xrange(len(freqs)):
-                    sel._setifs([i])
+                    sel.set_ifs([i])
                     self._setselection(sel)
                     self._setrestfreqs(freqs[i], unit)
                 self._setselection(savesel)
@@ -941,31 +952,23 @@ class scantable(Scantable):
         else: return s
 
 
-#     def average_pol(self, mask=None, weight='none', insitu=None):
-#         """
-#         Average the Polarisations together.
-#         The polarisation cursor of the output scan is set to 0
-#         Parameters:
-#             mask:        An optional mask defining the region, where the
-#                          averaging will be applied. The output will have all
-#                          specified points masked.
-#             weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
-#                          weighted), or 'tsys' (1/Tsys**2 weighted)
-#             insitu:      if False a new scantable is returned.
-#                          Otherwise, the scaling is done in-situ
-#                          The default is taken from .asaprc (False)
-#         """
-#         if insitu is None: insitu = rcParams['insitu']
-#         self._math._setinsitu(insitu)
-#         varlist = vars()
-#
-#         if mask is None:
-#         mask = ()
-#         s = self._math._averagepol(self, mask, weight)
-#         s._add_history("average_pol",varlist)
-#         print_log()
-#         if insitu: self._assign(s)
-#         else: return scantable(s)
+    def average_pol(self, mask=None, weight='none'):
+        """
+        Average the Polarisations together.
+        Parameters:
+            mask:        An optional mask defining the region, where the
+                         averaging will be applied. The output will have all
+                         specified points masked.
+            weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
+                         weighted), or 'tsys' (1/Tsys**2 weighted)
+        """
+        varlist = vars()
+        if mask is None:
+            mask = ()
+        s = self._math._averagepol(self, mask, weight)
+        s._add_history("average_pol",varlist)
+        print_log()
+        return scantable(s)
 
     def smooth(self, kernel="hanning", width=5.0, insitu=None):
         """
