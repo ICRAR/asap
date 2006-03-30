@@ -38,9 +38,9 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-%\section{Documentation Standards}
-
-%In most of the examples in this document, it has been assumed that the
+This useeguide is currently being updated for the ASAP 2.0 release
+which has a number of significant changes which affect the user
+interface. Please report any mistakes you find in this userguide.
 
 \section{Installation and Running}
 
@@ -57,7 +57,7 @@ Currently there are installations running on Linux machines at
 
 \begin{verbatim}
   > cd /my/data/directory
-  > asap
+  > asap2
 \end{verbatim}
 
 This starts the ASAP. To quit, you need to type \verb+^+-d
@@ -87,8 +87,10 @@ main objects are used :
 \begin{itemize}
   \item[\cmd{scantable}] The data container (actual spectra and header
     information)
-  \item[\cmd{fitter}] A tool used to fit functions to the spectral data
+  \item[\cmd{selector}] Allows the user to select a subsection of the
+    data, such as a specified or ramge of beam numbers, IFs, etc.
   \item[\cmd{plotter}] A tool used to plot the spectral line data
+  \item[\cmd{fitter}] A tool used to fit functions to the spectral data
   \item[\cmd{reader}] A tool which can be used to read data from disks
     into a scantable object.
 \end{itemize}
@@ -120,9 +122,9 @@ either though position or \cmd{name=}.  A mix of the two can be used.
 E.g.
 
 \begin{verbatim}
-  ASAP> av = scans(msk,weight='tsys')
-  ASAP> av = scans(mask=msk,weight='tsys')
-  ASAP> av = scans(msk,tsys)
+  ASAP> av = scans.average_time(msk,weight='tsys')
+  ASAP> av = scans.average_time(mask=msk,weight='tsys')
+  ASAP> av = scans.average_time(msk,tsys)
   ASAP> scans.polybaseline(mask=msk, order=0, insitu=True)
   ASAP> scans.polybaseline(msk,0,True)
   ASAP> scans.polybaseline(mask, insitu=True)
@@ -189,6 +191,7 @@ programs. E.g.
 \begin{verbatim}
   ASAP> pwd
   ASAP> ls
+  ASAP> cd /my/data/directory
   ASAP> ! mozilla&
 \end{verbatim}
 
@@ -240,17 +243,17 @@ Common values include:
   insitu                     : False
 
   # default output format when saving scantable
-  scantable.save             : 'ASAP'
+  scantable.save             : ASAP
 
   # default frequency frame to set when function
   # scantable.set_freqframe is called
-  scantable.freqframe        : 'LSRK'
+  scantable.freqframe        : LSRK
 
   # auto averaging on read
   scantable.autoaverage      : True
 \end{verbatim}
 
-For a complete list of \cmd{.asaprc} values, see the appendix.
+For a complete list of \cmd{.asaprc} values, see the Appendix.
 
 \section{Scantables}
 \index{Scantables}
@@ -261,6 +264,8 @@ For a complete list of \cmd{.asaprc} values, see the appendix.
 \index{Scantable!structure}ASAP data handling works on objects called
 scantables.  A scantable holds your data, and also provides functions
 to operate upon it.
+
+{\bf [MALTE: Could you please reword this??]}
 
 The building block of a scantable is an integration, which is a single
 row of a scantable. Each row contains spectra for each beam, IF and
@@ -283,13 +288,15 @@ changed via the {\tt .asaprc} resource file.
 \subsubsection {Contents}
 
 \index{Scantable!contents}A scantable has header information and data
-(a scantable is actually an AIPS++ Table and it is stored in Memory
-when you are manipulating it with ASAP.  You can store it to disk and
-then browse it with the AIPS++ Table browser if you know how to do
-that !).
+(a scantable is actually an AIPS++ Table and it is generally stored in
+memory when you are manipulating it with ASAP.  You can save it to
+disk and then browse it with the AIPS++ Table browser if you know how
+to do that !).
 
 The data are stored in columns (the length of a column is the number of
 rows/integrations of course).
+
+{\bf [MALTE: Is this outdated??]}
 
 Two important columns are those that describe the frequency setup.  We mention
 them explicitly here because you need to be able to understand the presentation
@@ -303,24 +310,6 @@ in the next subsection.
 There are of course many other columns which contain the actual spectra,
 the flags, the Tsys, the source names and so on, but those are a little
 more transparently handled.
-
-\subsection{Management}
-
-\index{Scantable!management}During processing it is possible to create
-a large number of scan tables. These all consume memory, so it is best
-to periodically remove unneeded scan tables. Use \cmd{list\_scans} to
-print a list of all scantables and \cmd{del} to remove unneeded ones.
-
-Example:
-
-\begin{verbatim}
-  ASAP> list_scans()
-  The user created scantables are:
-  ['s', 'scans', 'av', 's2', 'ss']
-
-  ASAP> del s2
-  ASAP> del ss
-\end{verbatim}
 
 There is also a function \cmd{summary} to list a summary of the scantable.
 You will find this very useful.
@@ -347,6 +336,11 @@ argument to True and the frequency table will be listed at the end.
 FreqID of 3 say, refers to the fourth row of the frequency table (ASAP
 is 0-relative). The list of rest frequencies, to which the RestFreqIDs
 refer, is always listed.
+
+\subsection{Data Selection}
+\label{sec:selection}
+
+CHRIS TOFILL IN
 
 %You can copy one scantable to another with the \cmd{copy} function.
 
@@ -403,30 +397,24 @@ Example usage:
 \index{Scantable!rest frequency}ASAP reads the line rest frequency
 from the RPFITS file when reading the data. The values stored in the
 RPFITS file are not always correct and so there is a function
-\cmd{set\_restfreq} to set the rest frequencies.
+\cmd{set\_restfreq} to set the rest frequencies for the currently
+selected data.
 
 For each integration, there is a rest-frequency per IF (the rest
 frequencies are just stored as a list with an index into them).
 There are a few ways to set the rest frequencies with this function.
 
-If you specify just one rest frequency, then it is selected for the
-specified source and IF and added to the list of rest frequencies.
+If you specify just one rest frequency, then it is set for all IF.
 
 \begin{verbatim}
-  # Select for specified source/IF
-  ASAP> scans.set_restfreqs(freqs=1.667359e9, source='NGC253', theif=0)
-
-  # Select for all sources and IFs
+  # Set all IFs
   ASAP> scans.set_restfreqs(freqs=1.667359e9)
 \end{verbatim}
 
-
-If you specify a list of frequencies, then it must be of length the
-number of IFs.  Regardless of the source, the rest frequency will be set
-for each IF to the corresponding value in the provided list.  The
-internally stored list of rest frequencies will be replaced by this
-list.
-
+If set a rest frequency for each IF, specify a list of frequencies (of
+length the number of IFs).  Regardless of the source, the rest
+frequency will be set for each IF to the corresponding value in the
+provided list. 
 
 \begin{verbatim}
   # Set rest frequency for all IFs
@@ -434,53 +422,17 @@ list.
 
 \end{verbatim}
 
+{\em Currently this is not implemented}
+
 In both of the above modes, you can also specify the rest frequencies via
 names in a known list rather than by their values.
 
 Examples:
 
 \begin{verbatim}
-  ASAP> scans.lines()                 # Print list of known lines
-  ASAP> scans.set_restfreqs(lines=['OH1665','OH1667'])
+  ASAP> scans.set_restfreqs(freqs=['OH1665','OH1667'])
 \end{verbatim}
 
-
-\subsection{Data Selection}
-
-\index{Scantable!data selection}Data selection is currently fairly limited. This
-will be improved in the future.
-
-
-\subsubsection{Cursor}
-
-\index{Scantable!cursor}Generally the user will want to run functions
-on all rows in a scantable. This allows very fast reduction of
-data. There are situations when functions should only operate on
-specific elements of the spectra. This is handled by the scantable
-cursor, which allows the user to select a single beam, IF and
-polarisation combination.
-
-Example :
-
-\begin{verbatim}
-  ASAP> scans.set_cursor(0,2,1)      # beam, IF, pol
-  ASAP> scans.smooth(allaxes=F)      # in situ by default or .aipsrc
-\end{verbatim}
-
-\subsubsection{Row number}
-
-\index{Scantable!row selection}Most functions work on all rows of a
-scan table. Exceptions are the fitter and plotter. If you wish to only
-operate on a selected set of scantable rows, use the \cmd{get\_scan}
-function to copy the rows into a new scantable.
-
-\subsubsection{Allaxes}
-
-\index{allaxes}\index{Scantable!allaxes}Many functions have an
-\cmd{allaxes} option which controls whether the function will operate
-on all elements within a scantable row, or just those selected with
-the current cursor. The default is taken from the users {\tt .asaprc}
-file.
 
 \subsubsection{Masks}
 
@@ -546,6 +498,24 @@ the middle of the band:
 \end{verbatim}
 
 
+\subsection{Management}
+
+\index{Scantable!management}During processing it is possible to create
+a large number of scan tables. These all consume memory, so it is best
+to periodically remove unneeded scan tables. Use \cmd{list\_scans} to
+print a list of all scantables and \cmd{del} to remove unneeded ones.
+
+Example:
+
+\begin{verbatim}
+  ASAP> list_scans()
+  The user created scantables are:
+  ['s', 'scans', 'av', 's2', 'ss']
+
+  ASAP> del s2
+  ASAP> del ss
+\end{verbatim}
+
 \section{Data Input}
 
 \index{Reading data}Data can be loaded in one of two ways; using the reader object or via
@@ -575,13 +545,13 @@ Example usage:
 
 \index{Reader object}\index{Scantable!reader object}For more control
 when reading data into ASAP, the reader object should be used.  This
-has the option of only reading in a range of integrations and does not
-perform any scan averaging of the data, allowing analysis of the
-individual integrations.  Note that due to limitation of the RPFITS
-library, only one reader object can be open at one time reading RPFITS
-files.  To read multiple RPFITS files, the old reader must be
-destroyed before the new file is opened.  However, multiple readers
-can be created and attached to SDFITS files.
+has the option of only reading in a range of integrations, only a
+specified beam or IF and does not perform any scan averaging of the
+data, allowing analysis of the individual integrations.  Note that due
+to limitation of the RPFITS library, only one reader object can be
+open at one time reading RPFITS files.  To read multiple RPFITS files,
+the old reader must be destroyed before the new file is opened.
+However, multiple readers can be created and attached to SDFITS files.
 
 
 Example usage:
@@ -601,9 +571,6 @@ spectrum of a single source is followed.  It has been assume that the
 \cmd{.asaprc} file has {\em not} been used to change the \cmd{insitu}
 default value from \cmd{True}.
 
-%\subsection{Editing}
-
-%How and when?
 \subsection{Auto quotient}
 \index{Auto quotient}Quotients can be computed ``automatically''. This
 requires the data to have matching source/reference pairs or one
@@ -615,46 +582,46 @@ Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
   ASAP> q = s.auto_quotient()
 \end{verbatim}
 
-If this is not sufficient the following alternative method can be used.
-
-\subsection{Separate reference and source observations}
-
-\index{Quotient spectra}Most data from ATNF observatories
-distinguishes on and off source data using the file name. This makes
-it easy to create two scantables with the source and reference
-data. As long as there was exactly one reference observation for each
-on source observation for following method will work.
-
-For Mopra and Parkes data:
-\begin{verbatim}
-  ASAP> r = scans.get_scan('*_R')
-  ASAP> s = scans.get_scan('*_S')
-\end{verbatim}
-
-For Tidbinbilla data
-\begin{verbatim}
-  ASAP> r = scans.get_scan('*_[ew]')
-  ASAP> s = scans.get_scan('*_[^ew]')
-\end{verbatim}
-
-\subsection{Make the quotient spectra}
-
-Use the quotient function
-
-\begin{verbatim}
-  ASAP> q = s.quotient(r)
-\end{verbatim}
-
-This uses the rows in scantable \cmd{r} as reference spectra for the
-rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
-(which is applied to all rows in \cmd{s}) or both scantables must have
-the same number of rows. By default the quotient spectra is calculated
-to preserve continuum emission. If you wish to remove the continuum
-contribution, use the \cmd{preserve} argument:
-
-\begin{verbatim}
-  ASAP> q = s.quotient(r, preserve=True)
-\end{verbatim}
+%If this is not sufficient the following alternative method can be used.
+%
+%\subsection{Separate reference and source observations}
+%
+%\index{Quotient spectra}Most data from ATNF observatories
+%distinguishes on and off source data using the file name. This makes
+%it easy to create two scantables with the source and reference
+%data. As long as there was exactly one reference observation for each
+%on source observation for following method will work.
+%
+%For Mopra and Parkes data:
+%\begin{verbatim}
+%  ASAP> r = scans.get_scan('*_R')
+%  ASAP> s = scans.get_scan('*_S')
+%\end{verbatim}
+%
+%For Tidbinbilla data
+%\begin{verbatim}
+%  ASAP> r = scans.get_scan('*_[ew]')
+%  ASAP> s = scans.get_scan('*_[^ew]')
+%\end{verbatim}
+%
+%\subsection{Make the quotient spectra}
+%
+%Use the quotient function
+%
+%\begin{verbatim}
+%  ASAP> q = s.quotient(r)
+%\end{verbatim}
+%
+%This uses the rows in scantable \cmd{r} as reference spectra for the
+%rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
+%(which is applied to all rows in \cmd{s}) or both scantables must have
+%the same number of rows. By default the quotient spectra is calculated
+%to preserve continuum emission. If you wish to remove the continuum
+%contribution, use the \cmd{preserve} argument:
+%
+%\begin{verbatim}
+%  ASAP> q = s.quotient(r, preserve=True)
+%\end{verbatim}
 
 \subsection{Time average separate scans}
 
@@ -663,7 +630,7 @@ source/reference cycles you will want to scan-average the quotient
 spectra together.
 
 \begin{verbatim}
- ASAP> av = average_time(q)
+ ASAP> av = q.average_time()
 \end{verbatim}
 
 If for some you want to average multiple sets of scantables together
@@ -688,9 +655,17 @@ channel range you want it to calculate the variance from.
  ASAP> av = average_time(scans, mask=msk, weight='var')
 \end{verbatim}
 
-Note that, if needed, you should run \cmd{freq\_align}, \cmd{gain\_el}
-and \cmd{opacity} before you average the data in time (\S
-\ref{sec:gainel} \& \ref{sec:freqalign}).
+If you have not observed your data with Doppler tracking (or run
+\cmd{freq\_align} explicitally) you should align the data in frequency
+before averaging.
+
+\begin{verbatim}
+ ASAP> av = scans.average_time(align=True)
+\end{verbatim}
+
+Note that, if needed, you should run \cmd{gain\_el} and \cmd{opacity}
+before you average the data in time (\S \ref{sec:gainel} \&
+\ref{sec:freqalign}).
 
 \subsection{Baseline fitting}
 
@@ -862,19 +837,7 @@ E.g.:
   ASAP> av = average_time(scans)
 \end{verbatim}
 
-\cmd{freq\_align} has two modes of operations controlled by the
-\cmd{perif} argument. By default it will align each source and freqid
-separately. This is needed for scan tables containing multiple
-sources. However if scan-based Doppler tracking has been made at the
-observatory, each row will have a different freqid. In these cases run
-with \cmd{perif=True} and all rows of a source will be aligned to the
-same frame. In general \cmd{perif=True} will be needed for most
-observations as Doppler tracking of some form is made at Parkes, Tid
-and Mopra.
-
-\begin{verbatim}
-  ASAP> scans.freq_align(perif=True)
-\end{verbatim}
+{\em A Global freq\_align command will be made eventually}
 
 To average together data taken on different days, which are in
 different scantables, each scantable must aligned to a common
@@ -896,7 +859,9 @@ independent sources within one scantable, it is often inconvenient for
 data processing. The \cmd{get\_scan} function can be used to create a
 new scantable with a selection of scans from a scantable. The
 selection can either be on the source name, with simple wildcard
-matching or set of scan ids.
+matching or set of scan ids. Internally this uses the selector object,
+so for more complicated selection the selector should be used directly
+instead.
 
 For example:
 
@@ -911,8 +876,8 @@ For example:
 
   ASAP> r = scans.get_scan('*_R') # Get all reference sources (Parkes/Mopra)
   ASAP> s = scans.get_scan('*_S') # Get all program sources (Parkes/Mopra)
-  ASAP> r = scans.get_scan('*_[ew]')  # Get all reference sources (Tid)
-  ASAP> s = scans.get_scan('*_[^ew]') # Get all program sources (Tid)
+  ASAP> r = scans.get_scan('*[ew]')  # Get all reference sources (Tid)
+  ASAP> s = scans.get_scan('*[^ew]') # Get all program sources (Tid)
 
 \end{verbatim}
 
@@ -935,6 +900,8 @@ scantable, use the copy function.
 \index{Scantable!save}\index{Saving data}ASAP can save scantables in a
 variety of formats, suitable for reading into other packages. The
 formats are:
+
+{\em Currently only raw ASAP output is available. Other formats will be added soon}
 
 \begin{itemize}
 \item[ASAP] This is the internal format used for ASAP. It is the only
@@ -1021,31 +988,32 @@ Other possibilities include:
 \index{Plotter!selection}The plotter can plot up to 25 panels and
 stacked spectra per panel. If you have data larger than this (or for
 your own sanity) you need to select a subset of this data. This is
-particularly true for multibeam or multi IF data. The plotter
-\cmd{set\_cursor} function is used to select a subset of the data. The
-arguments \cmd{row}, \cmd{beam} and \cmd{IF} all accept a vector of
-indices corresponding to row, beam or IF selection. Only the selected
-data will be plotted.  To select on polarisation, see
-section~\ref{sec:polplot}.
+particularly true for multibeam or multi IF data. The selector object
+should be used for this purpose. Selection can either be applide to
+the scantable or directly to the plotter, the end result is the same.
 
 Examples:
 
 \begin{verbatim}
+  ASAP> selection = selector()
   # Select second IF
-  ASAP> plotter.set_cursor(IF=[1])
+  ASAP> selection.set_if(1)
+  ASAP> plotter.set_selection(selection)
 
   # Select first 4 beams
-  ASAP> plotter.set_cursor(beam=[0,1,2,3])
+  ASAP> selection.set_beam([0,1,2,3])
+  ASAP> plotter.set_selection(selection)
 
-  # Select a few rows
-  ASAP> plotter.set_cursor(row=[2,4,6,10])
+  # Select a few scans
+  ASAP> selection.set_scans([2,4,6,10])
+  ASAP> plotter.set_selection(selection)
 
   # Multiple selection
-  ASAP> plotter.set_cursor(IF=[1], beam=[0,2], row=range(10))
-\end{verbatim}
+  ASAP> selection.set_if(1)
+  ASAP> selection.set_scans([2,4,6,10])
+  ASAP> plotter.set_selection(selection)
 
-Note that the plotter cursor selection is independent of the scantable
-cursor.
+\end{verbatim}
 
 \subsection{Plot Control}
 
@@ -1064,12 +1032,15 @@ for example, to zoom in on one feature then return the plot to how it
 was previously.
 
 \item[Pan] (The Cross) This sets the cursor to pan, or scroll mode
-       allowing you to shift the plot within the window. Useful when
-       zoomed in on a feature.
+  allowing you to shift the plot within the window. Useful when
+  zoomed in on a feature.
 
 \item[Zoom] (the letter with the magnifying glass) lets you draw a
-       rectangle around a region of interest then zooms in on that
-       region. Use the plot history to unzoom again.
+  rectangle around a region of interest then zooms in on that
+  region. Use the plot history to unzoom again.
+
+\item[Adjust] (rectangle with 4 arrows) adjust subplot paramaters
+  (space at edge of plots)
 
 \item[Save] (floppy disk). Save the plot as a postscript or .png file
 
@@ -1208,12 +1179,6 @@ able to calibrate position angle offsets.
 
 \subsection{Simple Calibration}
 
-{\em Currently the receiver position angle is not read from the RPFITS
-file and a position angle of zero is assumed. This severely hampers
-correct handling of polarimetry. In the future we aim to define a
-general framework and populate the RPFITS files with the data required
-for transparent polarimetric calibration.}
-
 \index{Polarisation!calibration}It is possible that there is a phase
 offset between polarisation which will effect the phase of the cross
 polarisation correlation, and so give rise to spurious
@@ -1229,25 +1194,41 @@ Note that if this function is run twice, the sum of the two values is
 applied because it is done in-situ.
 
 A correction for the receiver parallactic angle may need to be made,
-either because of how it is mounted or if parallactifiying had to track
-at 90 degrees rather than 0. Use \cmd{rotate\_linpolphase} to correct
-the position angle. Running this function twice results in the sum of
-the corrections being applied because it is applied in-situ.
+generally because of how it is mounted. Use \cmd{rotate\_linpolphase}
+to correct the position angle. Running this function twice results in
+the sum of the corrections being applied because it is applied
+in-situ.
 
 \begin{verbatim}
-  ASAP> scans.rotate_linpolphase(-20) # Degrees; correct for receiver mounting
+  ASAP> scans.rotate_linpolphase(-45) # Degrees; correct for receiver mounting
+\end{verbatim}
 
-  # Receiver was tracking 90 degrees rather than 0
-  ASAP> scans.rotate_linpolphase(90)
+If the sign of the complex correlation is wrong (this can happen
+depending on the correlator configuration), use \cmd{invert\_phase} to
+change take the complex conjugate of the complex correlation
+term. This is always performed in-situ.
+
+\begin{verbatim}
+  ASAP> scans.invert_phase()
+\end{verbatim}
+
+Depending on how the correlator is configured, ``BA'' may be
+correlated insead of ``AB''. Use \cmd{swap\_linears} to correct for
+this problem:
+
+\begin{verbatim}
+  ASAP> scans.swap_linears() 
 \end{verbatim}
 
 \subsection{Plotting}
 \label{sec:polplot}
 
-\index{Polarisation!plotting}To plot Stokes values, the plotter
-\cmd{set\_cursor} function should be called first using the \cmd{pol}
-argument. The values which can be plotted include a selection of
-[I,Q,U,V], [I, Plinear, Pangle, V], [RR, LL] or [XX, YY, Real(XY),
+\index{Polarisation!plotting}To plot Stokes values, a selector object
+must be created and the set\_polarisation function used to select the
+desired polarisation products.
+
+The values which can be plotted include a selection of [I,Q,U,V], [I,
+Plinear, Pangle, V], [RR, LL] or [XX, YY, Real(XY),
 Imaginary(XY)]. (Plinear and Pangle are the percentage and position
 angle of linear polarisation). Conversion to circular polarisations
 are currently not available.
@@ -1255,14 +1236,27 @@ are currently not available.
 Example:
 
 \begin{verbatim}
-  ASAP> plotter.set_cursor(pol=``I Q'')
-  ASAP> plotter.set_cursor(pol=``RR LL'')
-  ASAP> plotter.set_cursor(pol=``XX YY'')
-  ASAP> plotter.set_cursor(pol=``I Plinear'')
+  ASAP> selection = selector()
+  
+  ASAP> selection.set_polarisations([``I'', ``Q'', ``U'', ``V'']) 
+  ASAP  plotter.set_selection(selection);              # Select I, Q, U \& V
+
+  ASAP> selection.set_polarisations([``I'', ``Q'') 
+  ASAP  plotter.set_selection(selection);              # Select just I \& Q
+
+  ASAP> selection.set_polarisations([``RR'', ``LL'') 
+  ASAP  plotter.set_selection(selection);              # Select just RR \& LL
+
+  ASAP> selection.set_polarisations([``XX'', ``YY'') 
+  ASAP  plotter.set_selection(selection);              # Select linears
+
+  ASAP> selection.set_polarisations([``I'', ``Plinear'') 
+  ASAP  plotter.set_selection(selection);              # Select linears
+
 \end{verbatim}
 
-Row, beam and IF selection are also available in \cmd{set\_cursor} as
-describe in section~\ref{sec:plotter_cursor}.
+Scan, beam and IF selection are also available in the selector object as 
+describe in section~\ref{sec:selection}.
 
 \subsection{Saving}
 
@@ -1302,6 +1296,7 @@ for a scripting tutorial or the main python website for comprehensive
 documentation.
 
 \hspace{1cm} http://www.atnf.csiro.au/computing/software/asap/tutorials
+
 \hspace{1cm} http://www.python.org/doc/Introduction.html
 
 \subsection{Running scripts}
@@ -1527,7 +1522,6 @@ a1.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
 
 plotter.plot(a1,a2)
 plotter.set_mode('i','s')
-x = raw_input()
 
 a1.auto_poly_baseline()
 a2.auto_poly_baseline()
@@ -1689,23 +1683,6 @@ plotter.plot()
 
 \end{verbatim}
 
-\subsection{Installation}
-
-\index{Installation}ASAP depends on a number of third-party libraries which you must
-have installed before attempting to build ASAP. These are:
-
-\begin{itemize}
-\item AIPS++
-\item Boost
-\item Matplotlib
-\item python/ipython
-\end{itemize}
-
-Debian Linux is currently supported and we intend also
-to support other popular Linux flavours, Solaris and Mac.
-
-Of the dependencies, AIPS++ is the most complex to install.
-
 \subsection{ASCII output format}
 
 \subsection{.asaprc settings}
@@ -1756,6 +1733,23 @@ not just the cursor location}
 
 \asaprc{scantable.verbosesummary}{True/{\bf False}}{Control the level
 of information printed by summary}
+
+\subsection{Installation}
+
+\index{Installation}ASAP depends on a number of third-party libraries which you must
+have installed before attempting to build ASAP. These are:
+
+\begin{itemize}
+\item AIPS++
+\item Boost
+\item Matplotlib
+\item python/ipython
+\end{itemize}
+
+Debian Linux is currently supported and we intend also
+to support other popular Linux flavours, Solaris and Mac.
+
+Of the dependencies, AIPS++ is the most complex to install.
 
 \printindex
 
