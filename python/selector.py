@@ -1,5 +1,11 @@
 from asap._asap import selector as _selector
+from asap import unique, _to_list
+
 class selector(_selector):
+    """
+    A selection object to be applied to scantables to restrict the
+    scantables to specific rows.
+    """
     def __init(self):
         _selector.__init__(self)
 
@@ -9,7 +15,12 @@ class selector(_selector):
         """
         self._reset()
 
-        
+    def is_empty(self):
+        """
+        Has anything been set?
+        """
+        return self._empty()
+
     def set_polarisations(self, pols=[]):
         """
         Set the polarisations to be selected in the scantable.
@@ -23,7 +34,7 @@ class selector(_selector):
              sel.set_polarisations([0,2])
              # reset the polarisation selection
              sel.set_polarisations()
-                          
+
         """
         vec = _to_list(pols, str) and _to_list(pols, int)
         if vec: # is an empty and/or valid vector
@@ -81,7 +92,7 @@ class selector(_selector):
             self._setcycles(vec)
         else:
             raise TypeError('Unknown Cycle number type. Use lists of integers.')
-                                    
+
 
     def set_name(self, name):
         """
@@ -96,7 +107,7 @@ class selector(_selector):
             self._setame(name)
         else:
             raise TypeError('name must be a string')
-        
+
     def set_tsys(self, tsysmin=0.0, tsysmax=None):
         """
         Select by Tsys range.
@@ -106,7 +117,7 @@ class selector(_selector):
         Examples:
             # select all spectra with Tsys <= 500.0
             selection.set_tsys(tsysmax=500.0)
-            
+
         """
         taql =  "SELECT FROM $1 WHERE TSYS >= %f" % (tsysmin)
         if isinstance(tsysmax, float):
@@ -122,4 +133,49 @@ class selector(_selector):
         """
         taql = "SELECT FROM $1 WHERE " + query
         self._settaql(taql)
-        
+
+    def set_order(self, order):
+        """
+        Set the order the scantable should be sorted by.
+        Parameters:
+            order:    The list of column nmaes to sort by in order
+        """
+        self._setorder(order)
+
+    def get_scans(self):
+        return list(self._getscans())
+    def get_cycles(self):
+        return list(self._getcycles())
+    def get_beams(self):
+        return list(self._getbeams())
+    def get_ifs(self):
+        return list(self._getifs())
+    def get_pols(self):
+        return list(self._getpols())
+    def get_poltypes(self):
+        return list(self._getpoltypes())
+    def get_order(self):
+        return list(self._getorder())
+    def get_taql(self):
+        return self._gettaql()
+    def get_name(self):
+        print "NYI"
+        s = self._gettaql()
+        return ""
+
+    def __add__(self, other):
+        """
+        Merge two selections.
+        """
+        union = selector()
+        gets = [[self._getscans(), other._getscans(), union._setscans],
+                [self._getcycles(), other._getcycles(),union._setcycles],
+                [self._getbeams(), other._getbeams(), union._setbeams],
+                [self._getifs(), other._getifs(), union._setifs],
+                [self._getpols(), other._getpols(), union._setpols]]
+        for v in gets:
+            vec = list(v[0]+v[1])
+            vec.sort()
+            v[2](unique(vec))
+        union._settaql(other._gettaql())
+        return union
