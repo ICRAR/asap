@@ -60,8 +60,8 @@ def average_time(*args, **kwargs):
                 return
             else:
                 raise TypeError(msg)
-    if scanAv: scanAv = "SCAN"
-    else: scanAv = "NONE"
+    if scanav: scanav = "SCAN"
+    else: scanav = "NONE"
     s = scantable(stm._average(lst, mask, weight, scanav, align))
     s._add_history("average_time",varlist)
     print_log()
@@ -117,6 +117,8 @@ def simple_math(left, right, op='add', tsys=True):
     return s
 
 def merge(*args):
+    """
+    """
     varlist = vars()
     if isinstance(args[0],list):
         lst = tuple(args[0])
