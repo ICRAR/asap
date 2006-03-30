@@ -230,6 +230,9 @@ def _to_list(param, ptype=int):
         return param
     return None
 
+def unique(x):
+    return dict([ (val, 1) for val in x]).keys()
+
 # workaround for ipython, which redirects this if banner=0 in ipythonrc
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__
@@ -250,6 +253,7 @@ def print_log():
 
 from asapfitter import *
 from asapreader import reader
+from selector import selector
 
 from asapmath import *
 from scantable import *
