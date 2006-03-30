@@ -15,13 +15,15 @@ q.convert_flux() # K -> Jy
 msk = q.create_mask([-70,20], [20,70]) # line free region - two windows
 rms = q.stats("rms",msk)
 med = q.stats("median",msk)
-#print q.summary()
+
 print "Fitter test..."
+# select IF1
+selection = selector()
+selection.set_ifs(1)
+q.set_selection(selection)
+
 f = fitter()
 f.set_scan(q)
-selection = selector()
-selection.setifs([1])
-q.set_selection(selection)
 f.set_function(gauss=2) # fit two gaussians
 f.fit()
 fp = f.get_parameters()
