@@ -36,10 +36,10 @@ class selector(_selector):
              sel.set_polarisations()
 
         """
-        vec = _to_list(pols, str) and _to_list(pols, int)
+        vec = _to_list(pols, str) or _to_list(pols, int)
         if vec: # is an empty and/or valid vector
             if len(vec) and isinstance(vec[-1],str):
-                self._setpolstrings(self, vec)
+                self._setpolstrings(vec)
                 return
             self._setpols(vec)
         else:

@@ -43,6 +43,8 @@ STSelector& STSelector::operator=( const STSelector& other )
     this->intselections_ = other.intselections_;
     this->stringselections_ = other.stringselections_;
     this->taql_ = other.taql_;
+    this->poltypes_ = other.poltypes_;
+    this->order_ = other.order_;
   }
   return *this;
 }
@@ -69,6 +71,7 @@ void STSelector::setIFs( const std::vector< int >& ifs )
 void STSelector::setPolarizations( const std::vector< int >& pols )
 {
   setint("POLNO", pols);
+  poltypes_ = std::vector<std::string>();
 }
 
 void asap::STSelector::setCycles( const std::vector< int >& cycs )
