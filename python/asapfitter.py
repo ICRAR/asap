@@ -129,7 +129,8 @@ class fitter:
                 self.y = self.data._getspectrum(row)
                 from asap import asaplog
                 asaplog.push("Fitting:")
-                out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" (self.data.getscan(i),self.data.getbeam(i),self.data.getif(i),self.data.getpol(i), self.data.getcycle(i))
+                i = row
+                out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (self.data.getscan(i),self.data.getbeam(i),self.data.getif(i),self.data.getpol(i), self.data.getcycle(i))
                 asaplog.push(out)
         self.fitter.setdata(self.x, self.y, self.mask)
         if self.fitfunc == 'gauss':
@@ -291,8 +292,9 @@ class fitter:
         Return the parameter estimates (for non-linear functions).
         """
         pars = self.fitter.getestimate()
+        fixed = self.fitter.getfixedparameters()
         if rcParams['verbose']:
-            print self._format_pars(pars)
+            print self._format_pars(pars,fixed)
         return pars
 
     def get_residual(self):
