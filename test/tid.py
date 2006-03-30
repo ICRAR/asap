@@ -18,14 +18,14 @@ q.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
 q.set_unit('km/s')
 q.set_freqframe('LSRK')
 # Align frequencies
-qa = q.freq_align(insitu=False)
+q.freq_align()
 # Recalculate the az/el
-qa.recalc_azel()
+q.recalc_azel()
 # Correct for gain curve and opacity
-qa.gain_el()
-qa.opacity(0.075)
+q.gain_el()
+q.opacity(0.075)
 # Average in time
-av = qa.average_time()
+av = q.average_time()
 # Baseline
 msk=av.create_mask([-70,-50],[40,60])
 av.poly_baseline(msk,1)
