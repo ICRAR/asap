@@ -1,4 +1,4 @@
-from asap import rcParams, print_log
+from asap import rcParams, print_log, selector
 from numarray import logical_and
 
 class asapplotter:
@@ -35,7 +35,6 @@ class asapplotter:
         self._abcunit = None
         self._usermask = []
         self._maskselection = None
-        from asap._asap import selector
         self._selection = selector()
 
     def _translate(self, instr):
@@ -323,12 +322,11 @@ class asapplotter:
         if mask is None and selection is None:
             self._usermask = []
             self._maskselection = None
-        from asap._asap import selector
         if isinstance(selection, selector):
-            self._maskselection = {'b': selection._getbeams(),
-                                   's': selection._getscans(),
-                                   'i': selection._getifs(),
-                                   'p': selection._getpols(),
+            self._maskselection = {'b': selection.get_beams(),
+                                   's': selection.get_scans(),
+                                   'i': selection.get_ifs(),
+                                   'p': selection.get_pols(),
                                    't': [] }
         else:
             self._maskselection = None
@@ -362,12 +360,17 @@ class asapplotter:
         self.set_selection(None, False)
 
     def _plot(self, scan):
-        savesel = scan._getselection()
-        scan._setselection(self._selection)
+        savesel = scan.get_selection()
+        sel = savesel +  self._selection
+        d0 = {'s': 'SCANNO', 'b': 'BEAMNO', 'i':'IFNO',
+              'p': 'POLNO', 'c': 'CYCLENO', 't' : 'TIME' }
+        order = [d0[self._panelling],d0[self._stacking]]
+        sel.set_order(order)
+        scan.set_selection(sel)
         d = {'b': scan.getbeam, 's': scan.getscan,
              'i': scan.getif, 'p': scan.getpol, 't': scan._gettime }
 
-        polmodes = dict(zip(self._selection._getpols(),self._selection._getpoltypes()))
+        polmodes = dict(zip(self._selection.get_pols(),self._selection.get_poltypes()))
         n,nstack = self._get_selected_n(scan)
         maxpanel, maxstack = 9,4
         if n > maxpanel or nstack > maxstack:
@@ -473,32 +476,31 @@ class asapplotter:
             if (panelcount == n) and (stackcount == nstack):
                 pass#break
             r+=1 # next row
-
-        scan._setselection(savesel)
+        #reset the selector to the scantable's original
+        scan.set_selection(savesel)
 
     def set_selection(self, selection=None, refresh=True):
-        from asap._asap import selector
-        self._selection = selection or selector()
+        self._selection = isinstance(selection,selector) and selection or selector()
         d0 = {'s': 'SCANNO', 'b': 'BEAMNO', 'i':'IFNO',
               'p': 'POLNO', 'c': 'CYCLENO', 't' : 'TIME' }
         order = [d0[self._panelling],d0[self._stacking]]
-        self._selection._setorder(order)
+        self._selection.set_order(order)
         if self._data and refresh: self.plot(self._data)
 
     def _get_selected_n(self, scan):
         d1 = {'b': scan.nbeam, 's': scan.nscan,
              'i': scan.nif, 'p': scan.npol, 't': scan.ncycle }
-        d2 = { 'b': len(self._selection._getbeams()),
-               's': len(self._selection._getscans()),
-               'i': len(self._selection._getifs()),
-               'p': len(self._selection._getpols()),
-               't': len(self._selection._getcycles()) }
+        d2 = { 'b': len(self._selection.get_beams()),
+               's': len(self._selection.get_scans()),
+               'i': len(self._selection.get_ifs()),
+               'p': len(self._selection.get_pols()),
+               't': len(self._selection.get_cycles()) }
         n =  d2[self._panelling] or d1[self._panelling]()
         nstack = d2[self._stacking] or d1[self._stacking]()
         return n,nstack
 
     def _get_label(self, scan, row, mode, userlabel=None):
-        pms = dict(zip(self._selection._getpols(),self._selection._getpoltypes()))
+        pms = dict(zip(self._selection.get_pols(),self._selection.get_poltypes()))
         if len(pms):
             poleval = scan._getpollabel(scan.getpol(row),pms[scan.getpol(row)])
         else:
