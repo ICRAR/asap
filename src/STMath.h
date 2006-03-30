@@ -58,6 +58,10 @@ public:
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN",
              bool alignfreq = false );
+  casa::CountedPtr< Scantable >
+    averagePolarisations( const casa::CountedPtr< Scantable > & in,
+                                const std::vector<bool>& mask,
+                                const std::string& weight );
 
   casa::CountedPtr<Scantable>
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,

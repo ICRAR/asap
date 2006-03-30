@@ -46,6 +46,11 @@ public:
     for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::average(sts, mask, weight, avmode, alignfreq));
   }
+  ScantableWrapper
+    averagePolarisations( const ScantableWrapper& in,
+                          const std::vector<bool>& mask,
+                          const std::string& weight)
+  { return ScantableWrapper(STMath::averagePolarisations(in.getCP(),mask, weight));}
 
   ScantableWrapper
     unaryOperate( const ScantableWrapper& in, float val,

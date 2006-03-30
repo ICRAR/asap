@@ -76,6 +76,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
     // take first row of first scantable as reference epoch
     String epoch = scantbls[0]->getTime(0);
     for (int i=0; i< scantbls.size(); ++i ) {
+
       inaligned.push_back(frequencyAlign(scantbls[i], epoch));
     }
     in = &inaligned;
@@ -977,15 +978,46 @@ CountedPtr< Scantable >
 }
 
 CountedPtr< Scantable >
+  STMath::averagePolarisations( const CountedPtr< Scantable > & in,
+                                const std::vector<bool>& mask,
+                                const std::string& weight )
+{
+  if (in->getPolType() != "linear"  || in->npol() != 2 )
+    throw(AipsError("averagePolarisations can only be applied to two linear polarisations."));
+  CountedPtr<Scantable> pol0( new Scantable(*in), false);
+  CountedPtr<Scantable> pol1( new Scantable(*in), false);
+  Table& tpol0 = pol0->table();
+  Table& tpol1 = pol1->table();
+  Vector<uInt> pol0rows = tpol0(tpol0.col("POLNO") == 0).rowNumbers();
+  Vector<uInt> pol1rows = tpol1(tpol1.col("POLNO") == 1).rowNumbers();
+  tpol0.removeRow(pol1rows);
+  tpol1.removeRow(pol0rows);
+  // give both tables the same POLNO
+  TableVector<uInt> vec(tpol1,"POLNO");
+  vec = 0;
+  std::vector<CountedPtr<Scantable> > pols;
+  pols.push_back(pol0);
+  pols.push_back(pol1);
+  CountedPtr< Scantable > out = average(pols, mask, weight, "NONE", false);
+  out->table_.rwKeywordSet().define("nPol",Int(1));
+  return out;
+}
+
+
+CountedPtr< Scantable >
   asap::STMath::frequencyAlign( const CountedPtr< Scantable > & in,
                                 const std::string & refTime,
                                 const std::string & method)
 {
+  // clone as this is not working insitu
+  bool insitu = insitu_;
+  setInsitu(false);
   CountedPtr< Scantable > out = getScantable(in, false);
+  setInsitu(insitu);
   Table& tout = out->table();
   // clear ouput frequency table
-  Table ftable = out->frequencies().table();
-  ftable.removeRow(ftable.rowNumbers());
+  //Table ftable = out->frequencies().table();
+  //ftable.removeRow(ftable.rowNumbers());
   // Get reference Epoch to time of first row or given String
   Unit DAY(String("d"));
   MEpoch::Ref epochRef(in->getTimeReference());
@@ -1002,11 +1034,7 @@ CountedPtr< Scantable >
     refEpoch = in->timeCol_(0);
   }
   MPosition refPos = in->getAntennaPosition();
-/*  ostringstream oss;
-  oss << "Aligned at reference Epoch " << formatEpoch(refEpoch)
-      << " in frame " << MFrequency::showType(freqSystem);
-  pushLog(String(oss));
-*/
+
   InterpolateArray1D<Double,Float>::InterpolationMethod interp;
   Int interpMethod(stringToIMethod(method));
   // test if user frame is different to base frame
@@ -1015,7 +1043,12 @@ CountedPtr< Scantable >
     throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
   }
   MFrequency::Types system = in->frequencies().getFrame();
-  out->frequencies().setFrame(system, true);
+  MVTime mvt(refEpoch.getValue());
+  String epochout = mvt.string(MVTime::YMD) + String(" (") + refEpoch.getRefString() + String(")");
+  ostringstream oss;
+  oss << "Aligned at reference Epoch " << epochout
+      << " in frame " << MFrequency::showType(system);
+  pushLog(String(oss));
   // set up the iterator
   Block<String> cols(4);
   // select by constant direction
@@ -1040,7 +1073,6 @@ CountedPtr< Scantable >
       Table ftab = fiter.table();
       ScalarColumn<uInt> freqidCol(ftab, "FREQ_ID");
       // get the SpectralCoordinate for the freqid, which we are iterating over
-      cout << freqidCol.getColumn() << endl;
       SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
       FrequencyAligner<Float> fa( sC, nchan, refEpoch,
                                   direction, refPos, system );
@@ -1085,7 +1117,6 @@ CountedPtr< Scantable >
                              mask, timeCol(i), !first,
                              interp, False);
           // back into scantable
-          cout << spec[spec.nelements()/2] << " --- " << specOut[specOut.nelements()/2] << endl;
           flagOut.resize(maskOut.nelements());
           convertArray(flagOut, maskOut);
           flagCol.put(i, flagOut);
@@ -1096,11 +1127,13 @@ CountedPtr< Scantable >
         // next timestamp
         ++timeiter;
       }
-      // nect FREQ_ID
+      // next FREQ_ID
       ++fiter;
     }
     // next aligner
     ++iter;
   }
+  // set this afterwards to ensure we are doing insitu correctly.
+  out->frequencies().setFrame(system, true);
   return out;
 }
