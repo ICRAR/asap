@@ -32,7 +32,9 @@ STSelector::STSelector() :
 STSelector::STSelector( const STSelector&  other ) :
   intselections_(other.intselections_),
   stringselections_(other.stringselections_),
-  taql_(other.taql_) {
+  taql_(other.taql_),
+  poltypes_(other.poltypes_),
+  order_(other.order_) {
 }
 
 STSelector& STSelector::operator=( const STSelector& other )
@@ -152,7 +154,7 @@ Table STSelector::apply( const Table& tab )
   }
 }
 
-std::vector< int > STSelector::getint( const std::string& key )
+std::vector< int > STSelector::getint( const std::string& key ) const
 {
   if (intselections_.count(key) > 0) {
     return  intselections_[key];
@@ -160,27 +162,27 @@ std::vector< int > STSelector::getint( const std::string& key )
   return  std::vector<int>();
 }
 
-std::vector< int > STSelector::getScans( )
+std::vector< int > STSelector::getScans( ) const
 {
   return getint("SCANNO");
 }
 
-std::vector< int > STSelector::getBeams( )
+std::vector< int > STSelector::getBeams( ) const
 {
   return getint("BEAMNO");
 }
 
-std::vector< int > STSelector::getIFs( )
+std::vector< int > STSelector::getIFs( ) const
 {
   return getint("IFNO");
 }
 
-std::vector< int > STSelector::getPols( )
+std::vector< int > STSelector::getPols( ) const
 {
   return getint("POLNO");
 }
 
-std::vector< int > asap::STSelector::getCycles( )
+std::vector< int > asap::STSelector::getCycles( ) const
 {
   return getint("CYCLENO");
 }
@@ -225,7 +227,6 @@ bool asap::STSelector::empty( ) const
 casa::Table asap::STSelector::sort( const casa::Table & tab )
 {
   if (order_.nelements() > 0) {
-    cout << "sorting" << endl;
     Table t = tab.sort(order_);
     return t;
   } else {
@@ -253,7 +254,15 @@ void asap::STSelector::setPolFromStrings( const std::vector< std::string >& pols
   setint("POLNO", polints);
 }
 
-std::vector< std::string > asap::STSelector::getPolTypes( )
+std::vector< std::string > asap::STSelector::getPolTypes( ) const
 {
   return poltypes_;
+}
+
+std::vector<std::string> asap::STSelector::getSortOrder() const
+{
+  std::vector<std::string> out;
+  for (uInt i=0;i<order_.nelements(); ++i)
+    out.push_back(order_[i]);
+  return out;
 }

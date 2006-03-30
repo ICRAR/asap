@@ -48,12 +48,14 @@ public:
 
   void setSortOrder(const std::vector<std::string>& order);
 
-  std::vector<int> getScans();
-  std::vector<int> getBeams();
-  std::vector<int> getIFs();
-  std::vector<int> getPols();
-  std::vector<int> getCycles();
-  std::vector<std::string> getPolTypes();
+  std::vector<int> getScans() const;
+  std::vector<int> getBeams() const;
+  std::vector<int> getIFs() const;
+  std::vector<int> getPols() const;
+  std::vector<int> getCycles() const;
+  std::vector<std::string> getPolTypes() const;
+  std::string getTaQL() const { return taql_; }
+  std::vector<std::string> getSortOrder() const;
 
   casa::Table apply(const casa::Table& tab);
   casa::Table operator()(const casa::Table& tab) { return apply(tab); };
@@ -65,8 +67,8 @@ public:
   std::string print();
 
 protected:
-  std::vector< int > getint( const std::string& key);
-  std::vector< std::string > getstring( const std::string& key);
+  std::vector< int > getint( const std::string& key) const;
+  //std::vector< std::string > getstring( const std::string& key) const;
 
   void setint(const std::string& key, const std::vector< int >& val);
   void setstring(const std::string& key, const std::vector< std::string >& val);
