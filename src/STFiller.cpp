@@ -107,9 +107,10 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   header_->npol = nPol_;
   header_->nbeam = nBeam_;
 
-  if ( nPol_  == 1 ) header_->poltype = "stokes";
-  else header_->poltype = "linear";
-
+  // not the right thing to do?!
+  //if ( nPol_  == 1 ) header_->poltype = "stokes";
+  //else header_->poltype = "linear";
+  header_->poltype = "linear";
   Int status = reader_->getHeader(header_->observer, header_->project,
                                   header_->antennaname, header_->antennaposition,
                                   header_->obstype,header_->equinox,
@@ -237,7 +238,7 @@ int asap::STFiller::read( )
     RecordFieldPtr<Int> srctCol(rec, "SRCTYPE");
     // try to auto-identify if it is on or off.
     Regex rx(".*[e|w|_R]$");
-    Regex rx2("[e|w|_R|_S]$");
+    Regex rx2("_S$");
     Int match = srcName.matches(rx);
     if (match) {
       *srcnCol = srcName;
