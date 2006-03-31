@@ -57,7 +57,7 @@ Currently there are installations running on Linux machines at
 
 \begin{verbatim}
   > cd /my/data/directory
-  > asap2
+  > asap
 \end{verbatim}
 
 This starts the ASAP. To quit, you need to type \verb+^+-d
@@ -340,16 +340,64 @@ refer, is always listed.
 \subsection{Data Selection}
 \label{sec:selection}
 
-CHRIS TOFILL IN
+ASAP contains flexible data selection. Data can be selected based on
+IF, beam, polarisation, scan number as well as values such as
+Tsys. Advanced users can also make use of the AIPS++ TAQL language to
+create selections based on almost any of the standard header values.
 
-%You can copy one scantable to another with the \cmd{copy} function.
+Selection is based on a \cmd{selector} object. This object is created
+and various selection functions applied to it (\cmd{set\_ifs},
+\cmd{set\_beams} etc). The selection object then must be applied to a
+scantable using the \cmd{set\_selection} function. A single selection
+object can be created and setup then applied to multiple scantables.
 
-%Example:
+Once a selection has been applied, all following functions will only
+``see'' the selected spectra (including functions such as
+\cmd{summary}). The selection can then be reset and all spectra are
+visible. Note that if functions such as \cmd{copy} are run on a
+scantable with active selection, only the selected spectra are copied.
 
-%\begin{verbatim}
-%  ASAP> scans = scantable('MyData.rpf')
-%  ASAP> scan2 = scans.copy()
-%\end{verbatim}
+The common selection functions are:
+
+\begin{itemize}
+
+\item[\cmd{set\_beams}] Select beams by index number
+\item[\cmd{set\_ifs}] Select ifs by index number
+\item[\cmd{set\_name}] Select by source name. Can contain ``*'' as a
+wildcard, e.g. ``Orion*\_R''.
+\item[\cmd{set\_ifs}] Select ifs by index number
+\item[\cmd{set\_polarisation}] Select but polarisation index or
+name. If polarisation names are given, the data will be on-the-fly
+converted (for example from linears to Stokes). Not all conversions
+are currently supported.
+\item[\cmd{set\_query}] Set query directly. For power users only!
+\item[\cmd{set\_tsys}] Select data based on Tsys. Also example of user
+definable query.
+\item[\cmd{reset}] Reset the selection to include all spectra.
+
+
+Note that all indices are zero based.
+
+Examples:
+
+\begin{verbatim}
+
+\end{verbatim}
+  ASAP> selection = selector()         # Create selection object
+  ASAP> selection.set_ifs(0)           # Just select the first IF
+  ASAP> scans.set_selection(selection) # Apply the selection
+  ASAP> print scans                    # Will just show the first IF
+
+  ASAP> selection.set_ifs([0,1])       # Select the first two IFs
+  ASAP> selection.set_beams([1,3,5])   # Also select three of the beams
+  ASAP> scans.set_selection(selection) # Apply the selection
+
+  ASAP> selection.set_name('G308*')     # Select by source name
+
+  ASAP> selection.reset()              # Turn off selection
+  ASAP> scans.set_selection(selection) # Apply the reset selection
+
+\end{itemize}
 
 \subsection{State}
 
@@ -436,20 +484,26 @@ Examples:
 
 \subsubsection{Masks}
 
-\index{Masks}\index{Scantable!masks}Many tasks (fitting, baseline
-subtraction, statistics etc) should only be run on range of
-channels. Depending on the current ``unit'' setting this range is set
-directly as channels, velocity or frequency ranges. Internally these
-are converted into a simple boolean mask for each channel of the
-abscissa. This means that if the unit setting is later changed,
-previously created mask are still valid. (This is not true for
-functions which change the shape or shift the frequency axis).  You
-create masks with the function \cmd{create\_mask} and this specified
-the channels to be included in the selection.
+\index{Masks}\index{Scantable!masks} 
 
-When setting the mask in velocity, the conversion from velocity
-to channels is based on the current cursor setting, selected row and
-selected frequency reference frame.
+Many tasks (fitting, baseline subtraction, statistics etc) should only
+be run on range of channels. Depending on the current ``unit'' setting
+this range is set directly as channels, velocity or frequency
+ranges. Internally these are converted into a simple boolean mask for
+each channel of the abscissa. This means that if the unit setting is
+later changed, previously created mask are still valid. (This is not
+true for functions which change the shape or shift the frequency
+axis).  You create masks with the function \cmd{create\_mask} and this
+specified the channels to be included in the selection. When setting
+the mask in velocity, the conversion from velocity to channels is
+based on the current cursor setting, selected row and selected
+frequency reference frame.
+
+
+Note that for multi IF data with different number of channels per IF a
+single mask cannot be applied to different IFs. To use a mask on such
+data the selector should be applied to select all IFs with the same
+number of channels.
 
 Example :
 \begin{verbatim}
@@ -997,11 +1051,11 @@ Examples:
 \begin{verbatim}
   ASAP> selection = selector()
   # Select second IF
-  ASAP> selection.set_if(1)
+  ASAP> selection.set_ifs(1)
   ASAP> plotter.set_selection(selection)
 
   # Select first 4 beams
-  ASAP> selection.set_beam([0,1,2,3])
+  ASAP> selection.set_beams([0,1,2,3])
   ASAP> plotter.set_selection(selection)
 
   # Select a few scans
@@ -1009,7 +1063,7 @@ Examples:
   ASAP> plotter.set_selection(selection)
 
   # Multiple selection
-  ASAP> selection.set_if(1)
+  ASAP> selection.set_ifs(1)
   ASAP> selection.set_scans([2,4,6,10])
   ASAP> plotter.set_selection(selection)
 
@@ -1082,14 +1136,18 @@ To save a hardcopy of the current plot, use the save function, e.g.
 \index{Fitting}Currently multicomponent Gaussian function is
 available. This is done by creating a fitting object, setting up the
 fit and actually fitting the data. Fitting can either be done on a
-single scantable row/cursor selection or on an entire scantable using
-the \cmd{auto\_fit} function.
+single scantable selection or on an entire scantable using the
+\cmd{auto\_fit} function. If single value fitting is used, and the
+current selection includes multiple spectra (beams, IFs, scans etc)
+then the first spectra in the scantable will be used for fitting.
 
 \begin{verbatim}
  ASAP> f = fitter()
  ASAP> f.set_function(gauss=2) # Fit two Gaussians
  ASAP> f.set_scan(scans)
- ASAP> scans.set_cursor(0,0,1) # Fit the second polarisation
+ ASAP> selection = selector()
+ ASAP> selection.set_polarisation(1) # Fit the second polarisation
+ ASAP> scans.set_selection(selection)
  ASAP> scans.set_unit('km/s')  # Make fit in velocity units
  ASAP> f.fit(1)                # Run the fit on the second row in the table
  ASAP> f.plot()                # Show fit in a plot window
@@ -1174,8 +1232,8 @@ on linearly polarised feeds and the cross polarisation products
 measured. Other cases will be added on an as needed basic.
 
 Conversions of linears to Stokes or Circular polarisations are done
-``on-the-fly''. Leakage cannot be corrected for nor are these routines
-able to calibrate position angle offsets.
+``on-the-fly''. Leakage cannot be corrected for nor are there routines
+to calibrate position angle offsets.
 
 \subsection{Simple Calibration}
 
@@ -1238,20 +1296,25 @@ Example:
 \begin{verbatim}
   ASAP> selection = selector()
   
-  ASAP> selection.set_polarisations([``I'', ``Q'', ``U'', ``V'']) 
+  ASAP> selection.set_polarisations([``I Q U V'']) 
   ASAP  plotter.set_selection(selection);              # Select I, Q, U \& V
 
-  ASAP> selection.set_polarisations([``I'', ``Q'') 
+  ASAP> selection.set_polarisations([``I Q'') 
   ASAP  plotter.set_selection(selection);              # Select just I \& Q
 
-  ASAP> selection.set_polarisations([``RR'', ``LL'') 
+  ASAP> selection.set_polarisations([``RR LL'') 
   ASAP  plotter.set_selection(selection);              # Select just RR \& LL
 
-  ASAP> selection.set_polarisations([``XX'', ``YY'') 
+  ASAP> selection.set_polarisations([``XX YY'') 
   ASAP  plotter.set_selection(selection);              # Select linears
 
-  ASAP> selection.set_polarisations([``I'', ``Plinear'') 
-  ASAP  plotter.set_selection(selection);              # Select linears
+  ASAP> selection.set_polarisations([``I Plinear'') 
+  ASAP  plotter.set_selection(selection);              # Fractional linear
+
+[[MALTE: This does not work]]
+
+  ASAP> selection.set_polarisations([``Pangle'') 
+  ASAP  plotter.set_selection(selection);              # Position angle
 
 \end{verbatim}
 
@@ -1270,7 +1333,6 @@ Example:
   ASAP> scans.save('myscan.sdfits', 'SDFITS', stokes=True)
 \end{verbatim}
 
-
 \section{Scantable Mathematics}
 
 \index{Scantable!maths}It is possible to to simple mathematics
@@ -1279,8 +1341,10 @@ directly on scantables from the command line using the \cmd{+, -, *,
 between two scantables or a scantable and a float. (Note that it does
 not work for integers).
 
+{\em Currently mathematics between two scan tables is not available }
+
 \begin{verbatim}
-  ASAP> sum = scan1+scan2
+%  ASAP> sum = scan1+scan2
   ASAP> scan2 = scan1+2.0
   ASAP> scan *= 1.05
 \end{verbatim}
@@ -1343,13 +1407,12 @@ print q
 # Look at the spectra
 plotter.plot(q)
 
-# Velocity align the data before averaging
+# Set reference frame
 q.set_unit('km/s')
 q.set_freqframe('LSRK')
-q.freq_align()
 
-# Average all scans in time
-av = q.average_time()
+# Average all scans in time, aligning in velocity
+av = q.average_time(align=True)
 plotter.plot(av)
 
 # Remove the baseline
@@ -1399,17 +1462,22 @@ simplify this, contained in a file called mypol.py:
 \begin{verbatim}
 def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
 
- data.set_cursor(pol=0)
- data.scale(xtsys/nomtsys,allaxes=False)
+ selection = selector()
+ selection.set_polarisation(0)
+ data.set_selection(selection)
+ data.scale(xtsys/nomtsys)
 
- data.set_cursor(pol=1)
- data.scale(ytsys/nomtsys,allaxes=False)
+ selection.set_polarisation(1)
+ data.set_selection(selection)
+ data.scale(ytsys/nomtsys)
 
- data.set_cursor(pol=2)
- data.scale((xtsys+ytsys)/(2*nomtsys),allaxes=False)
+ selection.set_polarisation(0)
+ data.set_selection(selection)
+ data.scale((xtsys+ytsys)/(2*nomtsys))
 
- data.set_cursor(pol=3)
- data.scale((xtsys+ytsys)/(2*nomtsys),allaxes=False)
+ selection.set_polarisation(0)
+ data.set_selection(selection)
+ data.scale((xtsys+ytsys)/(2*nomtsys))
 \end{verbatim}
 
 The typical asap session would be
@@ -1435,15 +1503,26 @@ d1665.rotate_xyphase(-4)
 # Create a copy of the data and set the rest frequency to the 1667 MHz
 # transition
 d1667 = d1665.copy()
-d1667.set_restfreqs(lines=['OH1667'])
-d1667.summary
+d1667.set_restfreqs([1667.3590], 'MHz')
+d1667.summary()
 
 # Copy out the scan we wish to process
 g351_5 = d1665.get_scan('351p160')
 g351_7 = d1667.get_scan('351p160')
 
-# Plot the data
-plotter.plot(g351_5,g351_7) # Only shows one panel
+# Baseline both
+msk = g351_5.create_mask([-30,-25],[-5,0])
+g351_5.poly_baseline(msk,order=1)
+msk = g351_7.create_mask([-30,-25],[-5,0])
+g351_7.poly_baseline(msk,order=1)
+
+
+# Plot the data. The plotter can only plot a single scantable
+# So we must merge the two tables first
+
+plotscans = merge(g351_5, g351_7)
+
+plotter.plot(plotscans) # Only shows one panel
 
 # Tell the plotter to stack polarisation and panel scans
 plotter.set_mode('p','s')
@@ -1456,26 +1535,23 @@ xyscale(g351_7,23.2,22.7)
 # Only plot the velocity range of interest
 plotter.set_range(-30,10)
 
-# Baseline the data
-msk = g351_5.create_mask([-20,-15],[0,5])
-g351_5.poly_baseline(msk,1)
-msk = g351_7.create_mask([-20,-15],[0,5])
-g351_7.poly_baseline(msk,1)
-
 # Update the plot with the baselined data
 plotter.plot()
 
 # Look at the various polarisation products
-plotter.set_cursor(pol='RR LL')
-plotter.set_cursor(pol='I Plinear')
-plotter.set_cursor(pol='I Q U V')
+selection = selector()
+selection.set_polarisations(``RR LL'')
+plotter.set_selection(selection)
+selection.set_polarisations(``I Plinear'')
+plotter.set_selection(selection)
+selection.set_polarisations(``I Q U V'')
+plotter.set_selection(selection)
 
 # Save the plot as postscript
-plotter.save('g361_stokes.ps')
+plotter.save('g351_stokes.ps')
 
 # Save the process spectra
-g351_5.save('junk5.asap')
-g351_7.save('junk7.asap')
+plotscans.save('g351.asap')
 
 \end{verbatim}
 
@@ -1501,36 +1577,43 @@ print d
 q = d.auto_quotient()
 print q
 
+del d
+
 # Plot/select in velocity
 q.set_freqframe('LSRK')
 q.set_unit('km/s')
+
+# Correct for gain/el effects
+
+q.recalc_azel()  # Tid does not write the elevation
+q.gain_el()
+q.opacity(0.05)
 
 # Seperate data from the (1,1)&(2,2) and (4,4) transitions
 g1 = q.get_scan(range(6))     # Rows 0..5
 g2 = q.get_scan(range(6,12))  # Rows 6..11
 
 # Align data in velocity
-g1.freq_align(perif=True)
-g2.freq_align(perif=True)
+g1.freq_align()
+g2.freq_align()
 
 # Average individual scans
 a1 = g1.average_time()
 a2 = g2.average_time()
 
 # Rpfits file only contrains a single rest frequency. Set both
-a1.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
+a1.set_restfreqs([23694.4700e6,23722.6336e6])
 
-plotter.plot(a1,a2)
+plotter.plot(a1)
 plotter.set_mode('i','s')
 
 a1.auto_poly_baseline()
-a2.auto_poly_baseline()
 
 plotter.plot()
 
 a1.smooth('gauss',5)
-a2.smooth('gauss',5)
 plotter.plot()
+
 
 \end{verbatim}
 
@@ -1725,9 +1808,6 @@ read}
 \asaprc{scantable.freqframe}{{\bf LSRK} TOPO BARY etc}{default
 frequency frame to set when function scantable.set\_freqframe is
 called}
-
-\asaprc{scantable.allaxes}{{\bf True}/False}{Apply action to all axes
-not just the cursor location}
 
 \asaprc{scantable.plotter}{{\bf True}/False}{Use internal plotter}
 
