@@ -890,9 +890,12 @@ CountedPtr< Scantable >
           (*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
           id = out->molecules().addEntry(rf, name, fname);
           molidcol.put(k, id);
-          Float frot,fang,ftan;
-          (*it)->focus().getEntry(frot, fang, ftan, rec.asuInt("FOCUS_ID"));
-          id = out->focus().addEntry(frot, fang, ftan);
+          Float frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
+          (*it)->focus().getEntry(fax, ftan, frot, fhand,
+                                  fmount,fuser, fxy, fxyp,
+                                  rec.asuInt("FOCUS_ID"));
+          id = out->focus().addEntry(fax, ftan, frot, fhand,
+                                     fmount,fuser, fxy, fxyp);
           focusidcol.put(k, id);
         }
         ++freqit;
