@@ -508,6 +508,6 @@ class asapplotter:
         d = {'b': "Beam "+str(scan.getbeam(row)),
              's': scan._getsourcename(row),
              'i': "IF"+str(scan.getif(row)),
-             'p': scan.poltype().capitalize()+" "+poleval,
+             'p': poleval,
              't': scan._gettime(row) }
         return userlabel or d[mode]
