@@ -45,7 +45,6 @@ Vector<Float> asap::STPolLinear::getStokes( uint index )
         out = Vector<Float>(q * sin(phase) + getSpectrum(2) * cos(phase));
         break;
       case 3:
-        cout << getFeedHand() << endl;
         out = getFeedHand() * Vector<Float>(getSpectrum(3));
         break;
     }
