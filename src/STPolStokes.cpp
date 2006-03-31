@@ -55,7 +55,6 @@ Vector<Float> asap::STPolStokes::getLinPol( uInt index )
 
 Vector<Float> asap::STPolStokes::getLinear(uInt index )
 {
-  cout << "test" << endl;
   Vector<Float> out;
   switch(index) {
   case 0:
@@ -80,10 +79,10 @@ Vector<Float> asap::STPolStokes::getCircular(uInt index )
   Vector<Float> out;
   switch(index) {
   case 0:
-    out = (getSpectrum(0) + getSpectrum(3))/Float(2.0);
+    out = (getSpectrum(0) + getSpectrum(3));
     break;
   case 1:
-    out = (getSpectrum(0) - getSpectrum(3))/Float(2.0);
+    out = (getSpectrum(0) - getSpectrum(3));
     break;
   default:
     out = Vector<Float>();

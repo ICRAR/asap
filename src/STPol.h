@@ -51,8 +51,8 @@ public:
         return getStokes(index);
       else if ( mode == "linpol" )
         return getLinPol(index);
-      else if ( mode == "cicular" )
-        return getLinPol(index);
+      else if ( mode == "circular" )
+        return getCircular(index);
       else
         throw(casa::AipsError("Polarisation type unknown"));
     }
@@ -81,7 +81,13 @@ public:
   void setSpectra(const casa::Matrix<casa::Float>& spec)
     { basespectra_.resize(); basespectra_ = spec; }
 
-  void setPhaseCorrections(casa::Float, casa::Float, casa::Float) {}
+
+  void setPhaseCorrections(casa::Float parangle=0.0, casa::Float totalfeed=0.0,
+                           casa::Float feedhand=1.0)
+    { totalfeed_=totalfeed;parangle_=parangle;feedhand_=feedhand;}
+
+  casa::Float getTotalPhase() const { return totalfeed_+parangle_; }
+  casa::Float getFeedHand() const { return feedhand_; }
 
   static std::pair<int, std::string> polFromString(const std::string& key);
   static std::string getPolLabel(int index, const std::string& type = "linear");
@@ -92,7 +98,7 @@ private:
   static std::map<std::string, std::pair<int, std::string> > polmap_;
   static std::map<std::string, std::map<int, std::string> > labelmap_;
 
-  casa::Vector<casa::Float> phaseCorrections_;
+  casa::Float totalfeed_,parangle_,feedhand_;
   std::string mode_;
   casa::Matrix<casa::Float> basespectra_;
 

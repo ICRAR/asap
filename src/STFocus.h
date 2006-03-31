@@ -36,21 +36,29 @@ public:
 
   STFocus& operator=(const STFocus& other);
 
-  casa::uInt addEntry( casa::Float rotation, casa::Float angle,
-                       casa::Float ftan);
+  casa::uInt addEntry( casa::Float faxis, casa::Float ftan,
+                       casa::Float frot, casa::Float hand=1.0f,
+                       casa::Float mount=0.0f, casa::Float user=0.0f,
+                       casa::Float xyphase=0.0f, casa::Float xyphaseoffset=0.0f);
 
-  void getEntry( casa::Float& rotation, casa::Float& angle,
-                       casa::Float& ftan, casa::uInt id) const;
+  void getEntry( casa::Float& fax, casa::Float& ftan,
+                 casa::Float& frot, casa::Float& hand,
+                 casa::Float& mount, casa::Float& user,
+                 casa::Float& xyphase, casa::Float& xyphaseoffset,
+                 casa::uInt id) const;
+
+  casa::Float getTotalFeedAngle(casa::uInt id) const;
+  casa::Float getFeedHand(casa::uInt id) const;
 
   const casa::String& name() const { return name_; }
 
 private:
   void setup();
   static const casa::String name_;
-  //casa::Table table_;
-  //casa::ScalarColumn<casa::uInt> freqidCol_;
-  casa::ScalarColumn<casa::Float> rotationCol_, angleCol_,
-                                  tanCol_;
+  casa::ScalarColumn<casa::Float> rotationCol_, axisCol_,
+                                  tanCol_,handCol_,
+                                  mountCol_,userCol_,
+                                  xyphCol_,xyphoffCol_;
 };
 
 }

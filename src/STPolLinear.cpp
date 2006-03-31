@@ -29,20 +29,25 @@ STPolLinear::~STPolLinear()
 
 Vector<Float> asap::STPolLinear::getStokes( uint index )
 {
-  cout << "debug asap::STPolLinear::getStokes" << endl;
   if ( index < 0 || index >4 ) throw(AipsError("Stokes index out of range"));
   Vector<Float> out;
-  cout << nspec() << endl;
+  Float phase = getTotalPhase();
+  Vector<Float> q(getSpectrum(0) - getSpectrum(1));
   if ( nspec() == 4 ) {
     switch(index) {
       case 0:
-        out = Vector<Float>(getSpectrum(0) + getSpectrum(1)) * Float(0.5);
+        out = Vector<Float>(getSpectrum(0) + getSpectrum(1));
         break;
       case 1:
-        out = Vector<Float>(getSpectrum(0) - getSpectrum(1)) * Float(0.5);
+        out = Vector<Float>(q * cos(phase) - getSpectrum(2) * sin(phase));
         break;
-      default:
-        out =Vector<Float>(getSpectrum(index));
+      case 2:
+        out = Vector<Float>(q * sin(phase) + getSpectrum(2) * cos(phase));
+        break;
+      case 3:
+        cout << getFeedHand() << endl;
+        out = getFeedHand() * Vector<Float>(getSpectrum(3));
+        break;
     }
   }
   return out;
@@ -51,16 +56,18 @@ Vector<Float> asap::STPolLinear::getStokes( uint index )
 Vector<Float> asap::STPolLinear::getLinPol( uInt index )
 {
   if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
-  Vector<Float> out,q;
+  Vector<Float> out,q,u;
   if ( nspec() == 4) {
     switch(index) {
       case 1:
-        q = getStokes(index);
-        out = Vector<Float>(sqrt(pow(q,Float(2.0))+pow(getSpectrum(2), Float(2.0))));
+        q = getStokes(1);
+        u = getStokes(2);
+        out = Vector<Float>(sqrt(pow(q,Float(2.0))+pow(u, Float(2.0))));
         break;
       case 2:
         q = getStokes(index);
-        out = Vector<Float>(Float(180.0/C::pi/2.0) * atan2(getSpectrum(2),q));
+        u = getStokes(2);
+        out = Vector<Float>(Float(180.0/C::pi/2.0) * atan2(u,q));
         break;
       default:
         out = getStokes(index);
@@ -87,10 +94,10 @@ Vector<Float> asap::STPolLinear::getCircular(uInt index )
   V = getStokes(3);
   switch(index) {
   case 0:
-    out = (I + V)/Float(2.0);
+    out = (I + V);
     break;
   case 1:
-    out = (I - V)/Float(2.0);
+    out = (I - V);
     break;
   default:
     out = Vector<Float>();
