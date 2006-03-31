@@ -96,6 +96,8 @@ CCOBJECTS := MathUtils.o \
              STSelector.o \
 	     STLineFinder.o \
              STFitter.o \
+             STFitEntry.o \
+             STFit.o \
              STPol.o \
              STPolLinear.o \
              STPolStokes.o \
@@ -108,6 +110,7 @@ PYOBJECTS := python_Scantable.o \
              python_Fitter.o \
              python_Logger.o \
              python_STLineFinder.o \
+             python_STFitEntry.o \
 	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
@@ -131,6 +134,8 @@ HEADERS   := MathUtils.h \
              STWriter.h \
              STSelector.h \
 	     STFitter.h \
+	     STFit.h \
+	     STFitEntry.h \
 	     STLineFinder.h \
              Factory.h \
              FactoryBase.h \
