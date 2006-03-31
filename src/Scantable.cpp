@@ -89,8 +89,8 @@ Scantable::Scantable(Table::TableType ttype) :
   table_.rwKeywordSet().defineTable("MOLECULES", moleculeTable_.table());
   historyTable_ = STHistory(*this);
   table_.rwKeywordSet().defineTable("HISTORY", historyTable_.table());
-  setupFitTable();
-  fitTable_ = table_.keywordSet().asTable("FITS");
+  fitTable_ = STFit(*this);
+  table_.rwKeywordSet().defineTable("FIT", fitTable_.table());
   originalTable_ = table_;
   attach();
 }
@@ -236,19 +236,6 @@ void Scantable::setupMainTable()
 
 }
 
-void Scantable::setupFitTable()
-{
-  TableDesc td("", "1", TableDesc::Scratch);
-  td.addColumn(ScalarColumnDesc<uInt>("FIT_ID"));
-  td.addColumn(ArrayColumnDesc<String>("FUNCTIONS"));
-  td.addColumn(ArrayColumnDesc<Int>("COMPONENTS"));
-  td.addColumn(ArrayColumnDesc<Double>("PARAMETERS"));
-  td.addColumn(ArrayColumnDesc<Bool>("PARMASK"));
-  td.addColumn(ArrayColumnDesc<String>("FRAMEINFO"));
-  SetupNewTable aNewTab("fits", td, Table::Scratch);
-  Table aTable(aNewTab, Table::Memory);
-  table_.rwKeywordSet().defineTable("FITS", aTable);
-}
 
 void Scantable::attach()
 {
@@ -620,9 +607,13 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
     try {
       uInt row = uInt(whichrow);
       stpol->setSpectra(getPolMatrix(row));
-      Float frot,fang,ftan;
-      focusTable_.getEntry(frot, fang, ftan, mfocusidCol_(row));
-      stpol->setPhaseCorrections(frot, fang, ftan);
+      Float fang,fhand,parang;
+      fang = focusTable_.getTotalFeedAngle(mfocusidCol_(row));
+      fhand = focusTable_.getFeedHand(mfocusidCol_(row));
+      parang = paraCol_(row);
+      /// @todo re-enable this
+      // disable total feed angle to support paralactifying Caswell style
+      stpol->setPhaseCorrections(parang, -parang, fhand);
       arr = stpol->getSpectrum(requestedpol, ptype);
       delete stpol;
     } catch (AipsError& e) {
