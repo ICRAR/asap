@@ -119,9 +119,9 @@ class selector(_selector):
             selection.set_tsys(tsysmax=500.0)
 
         """
-        taql =  "SELECT FROM $1 WHERE TSYS >= %f" % (tsysmin)
+        taql =  "SELECT FROM $1 WHERE TSYS[0] >= %f" % (tsysmin)
         if isinstance(tsysmax, float):
-            taql = taql + " AND TSYS <= %f" % ( tsysmax)
+            taql = taql + " AND TSYS[0] <= %f" % ( tsysmax)
         self._settaql(taql)
 
     def set_query(self, query):
