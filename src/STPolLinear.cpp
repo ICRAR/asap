@@ -64,7 +64,7 @@ Vector<Float> asap::STPolLinear::getLinPol( uInt index )
         out = Vector<Float>(sqrt(pow(q,Float(2.0))+pow(u, Float(2.0))));
         break;
       case 2:
-        q = getStokes(index);
+        q = getStokes(1);
         u = getStokes(2);
         out = Vector<Float>(Float(180.0/C::pi/2.0) * atan2(u,q));
         break;
