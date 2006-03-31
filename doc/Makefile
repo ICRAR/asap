@@ -1,4 +1,4 @@
-TARGET := ./cookbook
+TARGET := userguide
 WEBLOC := /tmp
 
 LATEXHTML := /usr/bin/latex2html
@@ -11,13 +11,15 @@ all: pdf html
 $(TARGET): pdf html
 
 latex:
-	$(LATEX) $(TARGET).tex
+	$(LATEX) $(TARGET)
+	makeindex $(TARGET)
+	$(LATEX) $(TARGET)
 
 pdf: latex
-	$(DVIPDF) $(TARGET).dvi
+	$(DVIPDF) $(TARGET)
 
 html:
-	$(LATEXHTML) $(LATEXHTMLOPTS) $(TARGET).tex
+	$(LATEXHTML) $(LATEXHTMLOPTS) $(TARGET)
 
 clean:
 	@rm -f $(TARGET).log $(TARGET).aux $(TARGET).dvi
