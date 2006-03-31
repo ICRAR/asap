@@ -25,9 +25,9 @@ This is a helper object for transporting Fit parameters
 class STFitEntry{
 public:
   STFitEntry();
-
+  
   ~STFitEntry();
-
+  
   void setFunctions(const std::vector<std::string>& f)
     { functions_ = f; }
   void setComponents(const std::vector<int>& c)
@@ -39,18 +39,18 @@ public:
   void setFrameinfo(const std::vector<std::string>& f)
     { frameinfo_ = f; }
 
-  const std::vector<std::string>& getFunctions() const { return functions_; }
-  const std::vector<int>& getComponents() const { return components_; }
-  const std::vector<double>& getParameters() const { return parameters_; }
-  const std::vector<bool>& getParmasks() const { return parmasks_; }
-  const std::vector<std::string>& getFrameinfo() const { return frameinfo_; }
+  std::vector<std::string> getFunctions() const { return functions_; }
+  std::vector<int> getComponents() const { return components_; }
+  std::vector<double> getParameters() const { return parameters_; }
+  std::vector<bool> getParmasks() const { return parmasks_; }
+  std::vector<std::string> getFrameinfo() const { return frameinfo_; }
 
 private:
-    std::vector<std::string> functions_;
-    std::vector<int> components_;
-    std::vector<double> parameters_;
-    std::vector<bool> parmasks_;
-    std::vector<std::string> frameinfo_;
+  std::vector<std::string> functions_;
+  std::vector<int> components_;
+  std::vector<double> parameters_;
+  std::vector<bool> parmasks_;
+  std::vector<std::string> frameinfo_;
 };
 
 }

@@ -42,9 +42,9 @@ namespace asap {
     void python_STMath();
     void python_Fitter();
     void python_STLineFinder();
+    void python_STFitEntry();
     /*
     void python_SDWriter();
-    void python_SDFitTable();
     */
     void python_Logger();
 

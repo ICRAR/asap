@@ -1,158 +1,144 @@
-//#---------------------------------------------------------------------------
-//# SDFitTable.h: A wrapper for fit parameters
-//#---------------------------------------------------------------------------
-//# Copyright (C) 2004
-//# ATNF
-//#
-//# This program is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU General Public License as published by the Free
-//# Software Foundation; either version 2 of the License, or (at your option)
-//# any later version.
-//#
-//# This program is distributed in the hope that it will be useful, but
-//# WITHOUT ANY WARRANTY; without even the implied warranty of
-//# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-//# Public License for more details.
-//#
-//# You should have received a copy of the GNU General Public License along
-//# with this program; if not, write to the Free Software Foundation, Inc.,
-//# 675 Massachusetts Ave, Cambridge, MA 02139, USA.
-//#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: Malte.Marquarding@csiro.au
-//#        Postal address: Malte Marquarding,
-//#                        Australia Telescope National Facility,
-//#                        P.O. Box 76,
-//#                        Epping, NSW, 2121,
-//#                        AUSTRALIA
-//#
-//# $Id:
-//#---------------------------------------------------------------------------
+
+//
+// C++ Implementation: STFit
+//
+// Description:
+//
+//
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+//
+#include <casa/Exceptions/Error.h>
+#include <tables/Tables/TableDesc.h>
+#include <tables/Tables/SetupNewTab.h>
+#include <tables/Tables/ScaColDesc.h>
+#include <tables/Tables/ArrColDesc.h>
+#include <tables/Tables/TableRecord.h>
+#include <tables/Tables/TableParse.h>
+#include <tables/Tables/TableRow.h>
+#include <casa/Containers/RecordField.h>
 
 #include "MathUtils.h"
-#include "SDFitTable.h"
+#include "STFitEntry.h"
+#include "STFit.h"
+
 
 using namespace casa;
-using namespace asap;
 
-SDFitTable::SDFitTable(const SDFitTable& other) {  
-  if (other.length() > 0) {
-    this->nfits_ = other.nfits_;
-    this->pars_ = other.pars_;
-    this->mask_ = other.mask_;
-    this->funcs_ = other.funcs_;
-    this->comps_ = other.comps_;
-    this->frameinfo_ = other.frameinfo_;
-  } else {
-    this->nfits_ = 0;
+namespace asap {
+
+const casa::String STFit::name_ = "FIT";
+
+STFit::STFit(const Scantable& parent) :
+  STSubTable( parent, name_ )
+{
+  setup();
+}
+
+STFit& asap::STFit::operator =( const STFit & other )
+{
+  if ( this != &other ) {
+    static_cast<STSubTable&>(*this) = other;
+    funcCol_.attach(table_,"FUNCTIONS");
+    compCol_.attach(table_,"COMPONENTS");
+    parCol_.attach(table_,"PARAMETERS");
+    maskCol_.attach(table_,"PARMASKS");
+    frameCol_.attach(table_,"FRAMEINFO");
   }
+  return *this;
 }
 
-
-void SDFitTable::addSTLFit(const std::vector<double>& p, 
-		      const std::vector<bool>& m,
-		      const std::vector<std::string>& f, 
-		      const std::vector<Int>& c,
-		      const std::vector<std::string>& fi)
+asap::STFit::STFit( casa::Table tab ) : STSubTable(tab, name_)
 {
-  pars_.push_back(p);
-  mask_.push_back(m);
-  funcs_.push_back(f);
-  comps_.push_back(c);
-  frameinfo_.push_back(fi);
-  nfits_++;
+    funcCol_.attach(table_,"FUNCTIONS");
+    compCol_.attach(table_,"COMPONENTS");
+    parCol_.attach(table_,"PARAMETERS");
+    maskCol_.attach(table_,"PARMASKS");
+    frameCol_.attach(table_,"FRAMEINFO");
 }
 
-void SDFitTable::addFit(const Vector<Double>& p, 
-		   const Vector<Bool>& m,
-		   const Vector<String>& f, 
-		   const Vector<Int>& c,
-		   const Vector<String>& fi)
+STFit::~STFit()
 {
-  std::vector<double> p1;
-  p.tovector(p1);
-  pars_.push_back(p1);
-  std::vector<bool> m1;
-  m.tovector(m1);
-  mask_.push_back(m1);
-  std::vector<string> f1;
-  f1 = mathutil::tovectorstring(f);
-  funcs_.push_back(f1);
-  std::vector<int> c1;
-  c.tovector(c1);
-  comps_.push_back(c1);
-  std::vector<string> fi1;
-  fi1 = mathutil::tovectorstring(fi);
-  frameinfo_.push_back(fi1);
-  nfits_++;
 }
 
-std::vector<double> SDFitTable::getSTLParameters(int which) const
+void asap::STFit::setup( )
 {
-  if (which >= nfits_) 
-    return std::vector<double>();  
-  return pars_[which];
+  // add to base class table
+  table_.addColumn(ArrayColumnDesc<String>("FUNCTIONS"));
+  table_.addColumn(ArrayColumnDesc<Int>("COMPONENTS"));
+  table_.addColumn(ArrayColumnDesc<Double>("PARAMETERS"));
+  table_.addColumn(ArrayColumnDesc<Bool>("PARMASKS"));
+  table_.addColumn(ArrayColumnDesc<String>("FRAMEINFO"));
+
+  // new cached columns
+  funcCol_.attach(table_,"FUNCTIONS");
+  compCol_.attach(table_,"COMPONENTS");
+  parCol_.attach(table_,"PARAMETERS");
+  maskCol_.attach(table_,"PARMASKS");
+  frameCol_.attach(table_,"FRAMEINFO");
 }
 
-Vector<Double> SDFitTable::getParameters(uInt which) const{
-  if (int(which) >= nfits_) 
-    return Vector<Double>(std::vector<double>());  
-  return Vector<Double>(pars_[which]);
-}
-
-std::vector<bool> SDFitTable::getSTLParameterMask(int which) const
+uInt STFit::addEntry( const STFitEntry& fit, Int id )
 {
-  if (which >= nfits_) 
-    return  std::vector<bool>();
-  return mask_[which];
+  uInt rno = table_.nrow();
+  uInt resultid;
+  bool foundentry = false;
+  if ( id > -1 ) {
+    Table t = table_(table_.col("ID") == id );
+    if (t.nrow() > 0) {
+      rno = t.rowNumbers()[0];
+      resultid = id;
+      foundentry = true;
+    }
+  }
+  if ( rno > 0  && !foundentry ) {
+    idCol_.get(rno-1, resultid);
+    resultid++;
+  }
+  if ( !foundentry )table_.addRow();
+
+  funcCol_.put(rno, mathutil::toVectorString(fit.getFunctions()));
+  compCol_.put(rno, Vector<Int>(fit.getComponents()));
+  parCol_.put(rno, Vector<Double>(fit.getParameters()));
+  maskCol_.put(rno, Vector<Bool>(fit.getParmasks()));
+  frameCol_.put(rno, mathutil::toVectorString(fit.getFrameinfo()));
+  idCol_.put(rno, resultid);
+  return resultid;
 }
 
-Vector<Bool> SDFitTable::getParameterMask(uInt which) const
+void STFit::getEntry( STFitEntry& fit, uInt id )
 {
-  if (which >= nfits_)
-    return  Vector<Bool>(std::vector<bool>());  
-  return Vector<Bool>(mask_[which]);
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STFit::getEntry - id out of range"));
+  }
+  ROTableRow row(t);
+  // get first row - there should only be one matching id
+  const TableRecord& rec = row.get(0);
+  std::vector<std::string> outstr;
+  Vector<String> vec;
+  rec.get("FUNCTIONS", vec);
+  fit.setFunctions(mathutil::tovectorstring(vec));
+  Vector<Int> ivec;
+  std::vector<int> istl;
+  rec.get("COMPONENTS", ivec);
+  ivec.tovector(istl);
+  fit.setComponents(istl);
+  Vector<Double> dvec;
+  std::vector<double> dstl;
+  rec.get("PARAMETERS", dvec);
+  dvec.tovector(dstl);
+  fit.setParameters(dstl);
+  Vector<Bool> bvec;
+  std::vector<bool> bstl;
+  rec.get("PARMASKS", bvec);
+  bvec.tovector(bstl);
+  fit.setParmasks(bstl);
+  vec.resize();
+  rec.get("FRAMEINFO", vec);
+  fit.setFrameinfo(mathutil::tovectorstring(vec));
 }
 
-std::vector<std::string> SDFitTable::getSTLFunctions(int which) const
-{
-  if (which >= nfits_) 
-    return std::vector<std::string>();  
-  return funcs_[which];
-}
-
-Vector<String> SDFitTable::getFunctions(uInt which) const
-{
-  if (int(which) >= nfits_) 
-    return mathutil::toVectorString(std::vector<std::string>());
-  return mathutil::toVectorString(funcs_[which]);
-}
-
-std::vector<int> SDFitTable::getSTLComponents(int which) const
-{
-  if (which >= nfits_) 
-    return std::vector<int>();  
-  return comps_[which];
-}
-
-Vector<Int> SDFitTable::getComponents(uInt which) const
-{
-  if (int(which) >= nfits_) 
-    return Vector<Int>(std::vector<int>());  
-  return Vector<Int>(comps_[which]);
-}
-
-std::vector<std::string> SDFitTable::getSTLFrameInfo(int which) const
-{
-  if (which >= nfits_) 
-    return std::vector<std::string>();  
-  return frameinfo_[which];
-}
-
-Vector<String> SDFitTable::getFrameInfo(uInt which) const
-{
-  if (int(which) >= nfits_) 
-    return mathutil::toVectorString(std::vector<std::string>());
-  return mathutil::toVectorString(frameinfo_[which]);
-}
-
+} //namespace

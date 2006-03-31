@@ -39,6 +39,7 @@
 #include "STSelector.h"
 #include "STHistory.h"
 #include "STPol.h"
+#include "STFit.h"
 
 namespace asap {
 
@@ -344,8 +345,6 @@ private:
    */
   void setupMainTable();
 
-  void setupFitTable();
-
   void attachSubtables();
   void copySubtables(const Scantable& other);
 
@@ -372,8 +371,7 @@ private:
   STFocus focusTable_;
   STMolecules moleculeTable_;
   STHistory historyTable_;
-
-  casa::Table fitTable_;
+  STFit fitTable_;
 
   // Cached Columns to avoid reconstructing them for each row get/put
   casa::ScalarColumn<casa::Double> integrCol_;
@@ -394,7 +392,7 @@ private:
   casa::ScalarColumn<casa::uInt> mtcalidCol_;
 
   casa::ArrayColumn<casa::String> histitemCol_;
-  casa::ScalarColumn<casa::uInt> mfitidCol_, fitidCol_;
+  casa::ScalarColumn<casa::uInt> mfitidCol_;
   // id in weather table and main table
   casa::ScalarColumn<casa::uInt> mweatheridCol_;
 

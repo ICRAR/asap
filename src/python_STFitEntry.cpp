@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
-//# python_SDFitTable.cc: python exposure of c++ SDFitTable class
+//# python_STFitEntry: python exposure of c++ STFitEntry class
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2004
+//# Copyright (C) 2006
 //# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
@@ -26,27 +26,25 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDFitTable.h"
+#include "STFitEntry.h"
 
 using namespace boost::python;
 
 namespace asap {
   namespace python {
 
-    void python_SDFitTable() {
-      class_<SDFitTable>("sdfit")
+    void python_STFitEntry() {
+      class_<STFitEntry>("fitentry")
         .def( init <> () )
-	.def( init < const SDFitTable& > () )
-        .def("__len__", &SDFitTable::STLlength)
-        .def("getfixedparameters", &SDFitTable::getSTLParameterMask)
-        .def("getparameters", &SDFitTable::getSTLParameters)
-        .def("getfunctions", &SDFitTable::getSTLFunctions)
-	.def("getcomponents", &SDFitTable::getSTLComponents)
-	.def("getframeinfo", &SDFitTable::getSTLFrameInfo)
+        .def("getfixedparameters", &STFitEntry::getParmasks)
+        .def("getparameters", &STFitEntry::getParameters)
+        .def("getfunctions", &STFitEntry::getFunctions)
+	.def("getcomponents", &STFitEntry::getComponents)
+	.def("getframeinfo", &STFitEntry::getFrameinfo)
       ;
     };
 
