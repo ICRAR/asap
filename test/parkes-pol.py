@@ -17,35 +17,37 @@ data_1665.set_unit('km/s')
 data_1665.set_freqframe('LSRK')
 
 # Look at the first scan
-from asap._asap import selector
 selection = selector()
-selection._setscans([0])
-data_1665._setselection(selection)
+selection.set_scans(0)
+data_1665.set_selection(selection)
 
 d1_5 = data_1665.copy()
 d1_7 = data_1665.copy()
 
-d1_7.set_restfreqs([1667.0],'MHz')
+d1_7.set_restfreqs([1667.3590],'MHz')
+
+# Baseline both
+msk = d1_5.create_mask([-30,-25],[-5,0])
+d1_5.poly_baseline(msk,1)
+msk = d1_7.create_mask([-30,-25],[-5,0])
+d1_7.poly_baseline(msk,1)
+
 # merge the two scans back together into a new scantable
 plotscans = merge(d1_5,d1_7)
 print plotscans.summary()
-del d1_5,d1_7
-
-# Baseline
-msk = plotscans.create_mask([-30,-25],[-5,0])
-plotscans.poly_baseline(msk,1)
+del d1_5,d1_7,data_1665
 # Plot the results
 plotter.set_mode('p','s')
 plotter.set_layout(2,1)
 plotter.set_range(-30,0)
-selection._reset()
-selection._setpolstrings(['I','Q', 'U', 'V'])
+selection.reset()
+selection.set_polarisations(['I','Q', 'U', 'V'])
 plotter.set_selection(selection)
-selection._setpolstrings(['I','Plinear'])
+selection.set_polarisations(['I','Plinear'])
 plotter.set_selection(selection)
-selection._setpolstrings(['RR','LL'])
+selection.set_polarisations(['RR','LL'])
+plotter.set_selection(selection)
 plotter.plot(plotscans)
-plotter.set_selection(selection)
 plotter.save('output/parkes_rrll.png',dpi=80)
 
 print "Parkes-Pol Test successful"
