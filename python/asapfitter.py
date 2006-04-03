@@ -156,8 +156,14 @@ class fitter:
         if self.fitted and self.data is not None:
             pars = list(self.fitter.getparameters())
             fixed = list(self.fitter.getfixedparameters())
-            self.data._addfit(self._fittedrow, pars, fixed,
-                              self.fitfuncs, self.components)
+            from asap.asapfit import asapfit
+            fit = asapfit()
+            fit.setparameters(pars)
+            fit.setfixedparameters(fixed)
+            fit.setfunctions(self.fitfuncs)
+            fit.setcomponents(self.components)
+            fit.setframeinfo(self.data._getcoordinfo())
+            self.data._addfit(fit,self._fittedrow)
 
     def set_parameters(self, params, fixed=None, component=None):
         """
@@ -231,6 +237,32 @@ class fitter:
             else:
                 raise ValueError(msg)
 
+    def get_area(self, component=None):
+        """
+        Return the area under the fitted gaussian component.
+        Parameters:
+              component:   the gaussian component selection,
+                           default (None) is the sum of all components
+        Note:
+              This will only work for gaussian fits.
+        """
+        if not self.fitted: return
+        if self.fitfunc == "gauss":
+            pars = list(self.fitter.getparameters())
+            from math import log,pi,sqrt
+            fac = sqrt(pi/log(16.0))
+            areas = []
+            for i in range(len(self.components)):
+                j = i*3
+                cpars = pars[j:j+3]
+                areas.append(fac * cpars[0] * cpars[2])
+        else:
+            return None
+        if component is not None:
+            return areas[component]
+        else:
+            return sum(areas)
+
     def get_parameters(self, component=None):
         """
         Return the fit paramters.
@@ -258,12 +290,12 @@ class fitter:
         else:
             cpars = pars
             cfixed = fixed
-        fpars = self._format_pars(cpars, cfixed)
+        fpars = self._format_pars(cpars, cfixed, self.get_area(component))
         if rcParams['verbose']:
             print fpars
         return cpars, cfixed, fpars
 
-    def _format_pars(self, pars, fixed):
+    def _format_pars(self, pars, fixed, area):
         out = ''
         if self.fitfunc == 'poly':
             c = 0
@@ -282,7 +314,7 @@ class fitter:
                 aunit = self.data.get_unit()
                 ounit = self.data.get_fluxunit()
             while i < len(pars):
-                out += '  %d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s \n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit)
+                out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n      area = %3.3f %s %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit, area,ounit,aunit)
                 c+=1
                 i+=3
         return out
@@ -351,7 +383,8 @@ class fitter:
                 return
             else:
                 raise RuntimeError(msg)
-        if self.data is not scantable:
+        from asap import scantable
+        if not isinstance(self.data, scantable):
             msg = "Not a scantable"
             if rcParams['verbose']:
                 print msg
