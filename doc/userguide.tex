@@ -381,8 +381,6 @@ Note that all indices are zero based.
 Examples:
 
 \begin{verbatim}
-
-\end{verbatim}
   ASAP> selection = selector()         # Create selection object
   ASAP> selection.set_ifs(0)           # Just select the first IF
   ASAP> scans.set_selection(selection) # Apply the selection
@@ -396,6 +394,8 @@ Examples:
 
   ASAP> selection.reset()              # Turn off selection
   ASAP> scans.set_selection(selection) # Apply the reset selection
+
+\end{verbatim}
 
 \end{itemize}
 
@@ -462,7 +462,7 @@ If you specify just one rest frequency, then it is set for all IF.
 If set a rest frequency for each IF, specify a list of frequencies (of
 length the number of IFs).  Regardless of the source, the rest
 frequency will be set for each IF to the corresponding value in the
-provided list. 
+provided list.
 
 \begin{verbatim}
   # Set rest frequency for all IFs
@@ -484,7 +484,7 @@ Examples:
 
 \subsubsection{Masks}
 
-\index{Masks}\index{Scantable!masks} 
+\index{Masks}\index{Scantable!masks}
 
 Many tasks (fitting, baseline subtraction, statistics etc) should only
 be run on range of channels. Depending on the current ``unit'' setting
@@ -1275,7 +1275,7 @@ correlated insead of ``AB''. Use \cmd{swap\_linears} to correct for
 this problem:
 
 \begin{verbatim}
-  ASAP> scans.swap_linears() 
+  ASAP> scans.swap_linears()
 \end{verbatim}
 
 \subsection{Plotting}
@@ -1295,30 +1295,30 @@ Example:
 
 \begin{verbatim}
   ASAP> selection = selector()
-  
-  ASAP> selection.set_polarisations([``I Q U V'']) 
+
+  ASAP> selection.set_polarisations([``I Q U V''])
   ASAP  plotter.set_selection(selection);              # Select I, Q, U \& V
 
-  ASAP> selection.set_polarisations([``I Q'') 
+  ASAP> selection.set_polarisations([``I Q'')
   ASAP  plotter.set_selection(selection);              # Select just I \& Q
 
-  ASAP> selection.set_polarisations([``RR LL'') 
+  ASAP> selection.set_polarisations([``RR LL'')
   ASAP  plotter.set_selection(selection);              # Select just RR \& LL
 
-  ASAP> selection.set_polarisations([``XX YY'') 
+  ASAP> selection.set_polarisations([``XX YY'')
   ASAP  plotter.set_selection(selection);              # Select linears
 
-  ASAP> selection.set_polarisations([``I Plinear'') 
+  ASAP> selection.set_polarisations([``I Plinear'')
   ASAP  plotter.set_selection(selection);              # Fractional linear
 
 [[MALTE: This does not work]]
 
-  ASAP> selection.set_polarisations([``Pangle'') 
+  ASAP> selection.set_polarisations([``Pangle'')
   ASAP  plotter.set_selection(selection);              # Position angle
 
 \end{verbatim}
 
-Scan, beam and IF selection are also available in the selector object as 
+Scan, beam and IF selection are also available in the selector object as
 describe in section~\ref{sec:selection}.
 
 \subsection{Saving}
