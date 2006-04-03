@@ -25,9 +25,10 @@ This is a helper object for transporting Fit parameters
 class STFitEntry{
 public:
   STFitEntry();
-  
+  STFitEntry(const STFitEntry& other);
+
   ~STFitEntry();
-  
+
   void setFunctions(const std::vector<std::string>& f)
     { functions_ = f; }
   void setComponents(const std::vector<int>& c)

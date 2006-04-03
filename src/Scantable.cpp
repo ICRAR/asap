@@ -93,6 +93,9 @@ Scantable::Scantable(Table::TableType ttype) :
   table_.rwKeywordSet().defineTable("FIT", fitTable_.table());
   originalTable_ = table_;
   attach();
+  TableVector<Int> v(table_,"FIT_ID");v=666;
+  table_.flush();
+  Vector<Int> v2 = mfitidCol_.getColumn();cout << v2 << endl;
 }
 
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
@@ -152,6 +155,8 @@ void Scantable::copySubtables(const Scantable& other) {
   TableCopy::copyRows(t, other.moleculeTable_.table());
   t = table_.rwKeywordSet().asTable("HISTORY");
   TableCopy::copyRows(t, other.historyTable_.table());
+  t = table_.rwKeywordSet().asTable("FIT");
+  TableCopy::copyRows(t, other.fitTable_.table());
 }
 
 void Scantable::attachSubtables()
@@ -162,6 +167,7 @@ void Scantable::attachSubtables()
   tcalTable_ = STTcal(table_);
   moleculeTable_ = STMolecules(table_);
   historyTable_ = STHistory(table_);
+  fitTable_ = STFit(table_);
 }
 
 Scantable::~Scantable()
@@ -182,12 +188,12 @@ void Scantable::setupMainTable()
 
   td.addColumn(ScalarColumnDesc<uInt>("BEAMNO"));
   td.addColumn(ScalarColumnDesc<uInt>("IFNO"));
+  // linear, circular, stokes
   td.rwKeywordSet().define("POLTYPE", String("linear"));
   td.addColumn(ScalarColumnDesc<uInt>("POLNO"));
 
   td.addColumn(ScalarColumnDesc<uInt>("FREQ_ID"));
   td.addColumn(ScalarColumnDesc<uInt>("MOLECULE_ID"));
-  // linear, circular, stokes [I Q U V], stokes1 [I Plinear Pangle V]
   td.addColumn(ScalarColumnDesc<Int>("REFBEAMNO"));
 
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
@@ -222,7 +228,9 @@ void Scantable::setupMainTable()
   td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
 
   td.addColumn(ScalarColumnDesc<uInt>("TCAL_ID"));
-  td.addColumn(ScalarColumnDesc<uInt>("FIT_ID"));
+  ScalarColumnDesc<Int> fitColumn("FIT_ID");
+  fitColumn.setDefault(Int(666));
+  td.addColumn(fitColumn);
 
   td.addColumn(ScalarColumnDesc<uInt>("FOCUS_ID"));
   td.addColumn(ScalarColumnDesc<uInt>("WEATHER_ID"));
@@ -233,7 +241,6 @@ void Scantable::setupMainTable()
   SetupNewTable aNewTab(generateName(), td, Table::Scratch);
   table_ = Table(aNewTab, type_, 0);
   originalTable_ = table_;
-
 }
 
 
@@ -258,14 +265,9 @@ void Scantable::attach()
   rbeamCol_.attach(table_, "REFBEAMNO");
 
   mfitidCol_.attach(table_,"FIT_ID");
-  //fitidCol_.attach(fitTable_,"FIT_ID");
-
   mfreqidCol_.attach(table_, "FREQ_ID");
-
   mtcalidCol_.attach(table_, "TCAL_ID");
-
   mfocusidCol_.attach(table_, "FOCUS_ID");
-
   mmolidCol_.attach(table_, "MOLECULE_ID");
 }
 
@@ -840,7 +842,6 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
   } else if (u == Unit("Hz")) {
     Vector<String> wau(1);wau = u.getName();
     spc.setWorldAxisUnits(wau);
-
     s = CoordinateUtil::axisLabel(spc,0,True,True,False);
   }
   return s;
@@ -894,7 +895,13 @@ std::vector< std::string > asap::Scantable::columnNames( ) const
 casa::MEpoch::Types asap::Scantable::getTimeReference( ) const
 {
   return MEpoch::castType(timeCol_.getMeasRef().getType());
-  }
+}
 
+void asap::Scantable::addFit( const STFitEntry & fit, int row )
+{
+  cout << mfitidCol_(uInt(row)) << endl;
+  uInt id = fitTable_.addEntry(fit, mfitidCol_(uInt(row)));
+  mfitidCol_.put(uInt(row), id);
+}
 
 } //namespace asap

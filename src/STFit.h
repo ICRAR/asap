@@ -38,14 +38,13 @@ public:
   STFit& operator=(const STFit& other);
 
   casa::uInt addEntry( const STFitEntry& fit, casa::Int id=-1 );
-  void getEntry( STFitEntry& fit, casa::uInt id );
+  void getEntry( STFitEntry& fit, casa::uInt id ) const;
 
   const casa::String& name() const { return name_; }
 
 private:
   void setup();
   static const casa::String name_;
-  //casa::Table table_;
   casa::ArrayColumn<casa::String> funcCol_;
   casa::ArrayColumn<casa::Int> compCol_;
   casa::ArrayColumn<casa::Double> parCol_;

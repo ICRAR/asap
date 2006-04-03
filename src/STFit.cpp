@@ -83,8 +83,9 @@ void asap::STFit::setup( )
 uInt STFit::addEntry( const STFitEntry& fit, Int id )
 {
   uInt rno = table_.nrow();
-  uInt resultid;
+  uInt resultid = 0;
   bool foundentry = false;
+  // replace
   if ( id > -1 ) {
     Table t = table_(table_.col("ID") == id );
     if (t.nrow() > 0) {
@@ -93,12 +94,14 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
       foundentry = true;
     }
   }
+  // doesn't exist
   if ( rno > 0  && !foundentry ) {
     idCol_.get(rno-1, resultid);
     resultid++;
   }
-  if ( !foundentry )table_.addRow();
-
+  // add new row if new id
+  if ( !foundentry ) table_.addRow();
+  cout << rno << "   " << resultid << endl;
   funcCol_.put(rno, mathutil::toVectorString(fit.getFunctions()));
   compCol_.put(rno, Vector<Int>(fit.getComponents()));
   parCol_.put(rno, Vector<Double>(fit.getParameters()));
@@ -108,7 +111,7 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
   return resultid;
 }
 
-void STFit::getEntry( STFitEntry& fit, uInt id )
+void STFit::getEntry( STFitEntry& fit, uInt id ) const
 {
   Table t = table_(table_.col("ID") == Int(id) );
   if (t.nrow() == 0 ) {

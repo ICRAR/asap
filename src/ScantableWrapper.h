@@ -165,21 +165,13 @@ public:
 
   void addHistory(const std::string& hist)
     { table_->addHistory(hist); }
-  /*
-  void addFit(int whichrow, const std::vector<double>& p,
-              const std::vector<bool>& m, const std::vector<string>& f,
-              const std::vector<int>& c) {
 
-    casa::Vector<casa::Double> p2(p);
-    casa::Vector<casa::Bool> m2(m);
-    casa::Vector<casa::String> f2 = mathutil::toVectorString(f);
-    casa::Vector<casa::Int> c2(c);
-    table_->addFit(casa::uInt(whichrow), p2,m2,f2,c2);
-  }
-  SDFitTable getSDFitTable(int whichrow) {
-    return table_->getSDFitTable(casa::uInt(whichrow));
-  }
-  */
+  void addFit(const STFitEntry& fit, int row)
+    { table_->addFit(fit, row); }
+
+  STFitEntry getFit(int whichrow) const
+  { return table_->getFit(whichrow); }
+
   void calculateAZEL() { table_->calculateAZEL(); };
 
 private:

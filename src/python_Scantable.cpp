@@ -102,10 +102,8 @@ void python_Scantable() {
     .def("_addhistory", &ScantableWrapper::addHistory)
     .def("_getselection", &ScantableWrapper::getSelection)
     .def("_setselection", &ScantableWrapper::setSelection)
-    /*
     .def("_addfit", &ScantableWrapper::addFit)
-    .def("_getfit", &ScantableWrapper::getSDFitTable)
-    */
+    .def("_getfit", &ScantableWrapper::getFit)
     .def("_recalcazel", &ScantableWrapper::calculateAZEL)
   ;
 };

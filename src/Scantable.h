@@ -40,6 +40,7 @@
 #include "STHistory.h"
 #include "STPol.h"
 #include "STFit.h"
+#include "STFitEntry.h"
 
 namespace asap {
 
@@ -305,8 +306,13 @@ public:
   STTcal& tcal() { return tcalTable_; }
   STMolecules& molecules() { return moleculeTable_; }
   STHistory& history() { return historyTable_; }
+  STFit& fit() { return fitTable_; }
 
   std::vector<std::string> columnNames() const;
+
+  void addFit(const STFitEntry& fit, int row);
+  STFitEntry getFit(int row) const
+    { STFitEntry fe; fitTable_.getEntry(fe, mfitidCol_(row)); return fe; }
 
 private:
 
@@ -392,8 +398,7 @@ private:
   casa::ScalarColumn<casa::uInt> mtcalidCol_;
 
   casa::ArrayColumn<casa::String> histitemCol_;
-  casa::ScalarColumn<casa::uInt> mfitidCol_;
-  // id in weather table and main table
+  casa::ScalarColumn<casa::Int> mfitidCol_;
   casa::ScalarColumn<casa::uInt> mweatheridCol_;
 
   casa::ScalarColumn<casa::uInt> mfocusidCol_;

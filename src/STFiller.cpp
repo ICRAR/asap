@@ -226,6 +226,8 @@ int asap::STFiller::read( )
     if ( status != 0 ) break;
     TableRow row(table_->table());
     TableRecord& rec = row.record();
+    RecordFieldPtr<Int> fitCol(rec, "FIT_ID");
+    *fitCol = -1;
     RecordFieldPtr<uInt> scanoCol(rec, "SCANNO");
     *scanoCol = scanNo-1;
     RecordFieldPtr<uInt> cyclenoCol(rec, "CYCLENO");
