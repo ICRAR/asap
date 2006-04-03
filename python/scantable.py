@@ -1,6 +1,6 @@
 from asap._asap import Scantable
 from asap import rcParams
-from asap import print_log
+from asap import print_log, asaplog
 from asap import selector
 from numarray import ones,zeros
 import sys
@@ -29,62 +29,44 @@ class scantable(Scantable):
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
         """
-        if average is None or type(average) is not bool:
+        if average is None:
             average = rcParams['scantable.autoaverage']
-
         varlist = vars()
         from asap._asap import stmath
         self._math = stmath()
-        from asap import asaplog
         if isinstance(filename, Scantable):
             Scantable.__init__(self, filename)
-            if unit is not None:
-                self.set_fluxunit(unit)
         else:
-            import os.path
-            if not os.path.exists(filename):
-                s = "File '%s' not found." % (filename)
-                if rcParams['verbose']:
-                    asaplog.push(s)
-                    print asaplog.pop().strip()
-                    return
-                raise IOError(s)
-            filename = os.path.expandvars(filename)
-            if os.path.isdir(filename):
-                # crude check if asap table
-                if os.path.exists(filename+'/table.info'):
-                    Scantable.__init__(self, filename, "memory")
-                    if unit is not None:
-                        self.set_fluxunit(unit)
-                else:
-                    msg = "The given file '%s'is not a valid asap table." % (filename)
+            if isinstance(filename,str):
+                import os.path
+                filename = os.path.expandvars(filename)
+                filename = os.path.expanduser(filename)
+                if not os.path.exists(filename):
+                    s = "File '%s' not found." % (filename)
                     if rcParams['verbose']:
-                        print msg
+                        asaplog.push(s)
+                        print asaplog.pop().strip()
                         return
+                    raise IOError(s)
+                if os.path.isdir(filename):
+                    # crude check if asap table
+                    if os.path.exists(filename+'/table.info'):
+                        Scantable.__init__(self, filename, "memory")
+                        if unit is not None:
+                            self.set_fluxunit(unit)
+                        self.set_freqframe(rcParams['scantable.freqframe'])
                     else:
-                        raise IOError(msg)
-            else:
-                from asap._asap import stfiller
-                ifSel = -1
-                beamSel = -1
-                r = stfiller()
-                r._open(filename,ifSel,beamSel)
-                asaplog.push('Importing data...')
-                print_log()
-                r._read()
-                tbl = r._getdata()
-                if unit is not None:
-                    tbl.set_fluxunit(unit)
-                if average:
-                    asaplog.push('Auto averaging integrations...')
-                    print_log()
-                    tbl2 = self._math._average((tbl,),(),'NONE','SCAN', False)
-                    Scantable.__init__(self,tbl2)
-                    del tbl2
+                        msg = "The given file '%s'is not a valid asap table." % (filename)
+                        if rcParams['verbose']:
+                            print msg
+                            return
+                        else:
+                            raise IOError(msg)
                 else:
-                    Scantable.__init__(self,tbl)
-                del r,tbl
-                self._add_history("scantable", varlist)
+                    self._fill([filename],unit, average)
+            elif (isinstance(filename,list) or isinstance(filename,tuple)) \
+                  and isinstance(filename[-1], str):
+                self._fill(filename, unit, average)
         print_log()
 
     def save(self, name=None, format=None, overwrite=False):
@@ -208,7 +190,7 @@ class scantable(Scantable):
     def __str__(self):
         return Scantable._summary(self,True)
 
-    def summary(self, filename=None, verbose=None):
+    def summary(self, filename=None):
         """
         Print a summary of the contents of this scantable.
         Parameters:
@@ -217,8 +199,8 @@ class scantable(Scantable):
             verbose:     print extra info such as the frequency table
                          The default (False) is taken from .asaprc
         """
-        info = Scantable._summary(self, verbose)
-        if verbose is None: verbose = rcParams['scantable.verbosesummary']
+        info = Scantable._summary(self, True)
+        #if verbose is None: verbose = rcParams['scantable.verbosesummary']
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
@@ -771,7 +753,7 @@ class scantable(Scantable):
             newscan = scan.average_time()
         """
         varlist = vars()
-        if weight is None: weight = 'tint'
+        if weight is None: weight = 'TINT'
         if mask is None: mask = ()
         if scanav:
           scanav = "SCAN"
@@ -1045,8 +1027,8 @@ class scantable(Scantable):
                         specified, the same number will be dropped from
                         both sides of the spectrum. Default is to keep
                         all channels. Nested tuples represent individual
-			edge selection for different IFs (a number of spectral
-			channels can be different)
+                        edge selection for different IFs (a number of spectral
+                        channels can be different)
             order:      the order of the polynomial (default is 0)
             threshold:  the threshold used by line finder. It is better to
                         keep it large as only strong lines affect the
@@ -1064,25 +1046,25 @@ class scantable(Scantable):
         from asap.asaplinefind import linefinder
         from asap import _is_sequence_or_number as _is_valid
 
-	# check whether edge is set up for each IF individually
-	individualEdge = False;
-	if len(edge)>1:
-	   if isinstance(edge[0],list) or isinstance(edge[0],tuple):
-	       individualEdge = True;
+        # check whether edge is set up for each IF individually
+        individualEdge = False;
+        if len(edge)>1:
+           if isinstance(edge[0],list) or isinstance(edge[0],tuple):
+               individualEdge = True;
 
         if not _is_valid(edge, int) and not individualEdge:
             raise ValueError, "Parameter 'edge' has to be an integer or a \
             pair of integers specified as a tuple. Nested tuples are allowed \
             to make individual selection for different IFs."
 
-	curedge = (0,0)
-	if individualEdge:
-	   for edge_par in edge:
-	       if not _is_valid(edge,int):
-	          raise ValueError, "Each element of the 'edge' tuple has \
+        curedge = (0,0)
+        if individualEdge:
+           for edge_par in edge:
+               if not _is_valid(edge,int):
+                  raise ValueError, "Each element of the 'edge' tuple has \
                   to be a pair of integers or an integer."
         else:
-	   curedge = edge;
+           curedge = edge;
 
         # setup fitter
         f = fitter()
@@ -1106,13 +1088,13 @@ class scantable(Scantable):
             msg = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (workscan.getscan(r),workscan.getbeam(r),workscan.getif(r),workscan.getpol(r), workscan.getcycle(r))
             asaplog.push(msg, False)
 
-	    # figure out edge parameter
-	    if individualEdge:
-	       if len(edge)>=workscan.getif(r):
-	          raise RuntimeError, "Number of edge elements appear to be less than the number of IFs"
-		  curedge = edge[workscan.getif(r)]
+            # figure out edge parameter
+            if individualEdge:
+               if len(edge)>=workscan.getif(r):
+                  raise RuntimeError, "Number of edge elements appear to be less than the number of IFs"
+                  curedge = edge[workscan.getif(r)]
 
-	    # setup line finder
+            # setup line finder
             fl.find_lines(r,mask,curedge)
             f.set_scan(workscan, fl.get_mask())
             f.x = workscan._getabcissa(r)
@@ -1359,7 +1341,7 @@ class scantable(Scantable):
         """
         if row > self.nrow():
             return
-        from asap import asapfit
+        from asap.asapfit import asapfit
         fit = asapfit(self._getfit(row))
         if rcParams['verbose']:
             print fit
@@ -1434,3 +1416,46 @@ class scantable(Scantable):
         nchans = [self.nchan(i) for i in range(self.nif(-1))]
         nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
+
+    def _fill(self, names, unit, average):
+        import os
+        varlist = vars()
+        from asap._asap import stfiller
+        first = True
+        fullnames = []
+        for name in names:
+            name = os.path.expandvars(name)
+            name = os.path.expanduser(name)
+            if not os.path.exists(name):
+                msg = "File '%s' does not exists" % (name)
+                if rcParams['verbose']:
+                    asaplog.push(msg)
+                    print asaplog.pop().strip()
+                    return
+                raise IOError(msg)
+            fullnames.append(name)
+        if average:
+            asaplog.push('Auto averaging integrations')
+        for name in fullnames:
+            r = stfiller()
+            msg = "Importing %s..." % (name)
+            asaplog.push(msg,False)
+            print_log()
+            r._open(name,-1,-1)
+            r._read()
+            tbl = r._getdata()
+            if average:
+                tbl = self._math._average((tbl,),(),'NONE','SCAN', False)
+                #tbl = tbl2
+            if not first:
+                tbl = self._math._merge([self, tbl])
+                #tbl = tbl2
+            Scantable.__init__(self, tbl)
+            r._close()
+            del r,tbl
+            first = False
+        if unit is not None:
+            self.set_fluxunit(unit)
+        self.set_freqframe(rcParams['scantable.freqframe'])
+        #self._add_history("scantable", varlist)
+
