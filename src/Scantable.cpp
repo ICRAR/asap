@@ -93,9 +93,6 @@ Scantable::Scantable(Table::TableType ttype) :
   table_.rwKeywordSet().defineTable("FIT", fitTable_.table());
   originalTable_ = table_;
   attach();
-  TableVector<Int> v(table_,"FIT_ID");v=666;
-  table_.flush();
-  Vector<Int> v2 = mfitidCol_.getColumn();cout << v2 << endl;
 }
 
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
@@ -229,7 +226,7 @@ void Scantable::setupMainTable()
 
   td.addColumn(ScalarColumnDesc<uInt>("TCAL_ID"));
   ScalarColumnDesc<Int> fitColumn("FIT_ID");
-  fitColumn.setDefault(Int(666));
+  fitColumn.setDefault(Int(-1));
   td.addColumn(fitColumn);
 
   td.addColumn(ScalarColumnDesc<uInt>("FOCUS_ID"));
