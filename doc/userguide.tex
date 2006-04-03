@@ -61,7 +61,7 @@ Currently there are installations running on Linux machines at
 \end{verbatim}
 
 This starts the ASAP. To quit, you need to type \verb+^+-d
-(control-d).
+(control-d) or type \cmd{\%Exit}.
 
 \section{Interface}
 
@@ -92,7 +92,7 @@ main objects are used :
   \item[\cmd{plotter}] A tool used to plot the spectral line data
   \item[\cmd{fitter}] A tool used to fit functions to the spectral data
   \item[\cmd{reader}] A tool which can be used to read data from disks
-    into a scantable object.
+    into a scantable object (advanced use).
 \end{itemize}
 
 There can be many objects of the same type. Each object is referred to
@@ -125,9 +125,9 @@ E.g.
   ASAP> av = scans.average_time(msk,weight='tsys')
   ASAP> av = scans.average_time(mask=msk,weight='tsys')
   ASAP> av = scans.average_time(msk,tsys)
-  ASAP> scans.polybaseline(mask=msk, order=0, insitu=True)
-  ASAP> scans.polybaseline(msk,0,True)
-  ASAP> scans.polybaseline(mask, insitu=True)
+  ASAP> scans.poly_baseline(mask=msk, order=0, insitu=True)
+  ASAP> scans.poly_baseline(msk,0,True)
+  ASAP> scans.poly_baseline(mask, insitu=True)
 \end{verbatim}
 
 \subsection{Global Functions}
@@ -156,10 +156,11 @@ Example
 \begin{verbatim}
   ASAP> scans = scantable('MyData.rpf')
   ASAP> scans.se<TAB>
-scans.set_cursor      scans.set_freqframe   scans.set_unit        scans.setpol
-scans.set_doppler     scans.set_instrument  scans.setbeam
-scans.set_fluxunit    scans.set_restfreqs   scans.setif
   ASAP> scans.set_in<TAB>
+scans.set_cursor      scans.set_freqframe   scans.set_selection
+scans.set_doppler     scans.set_instrument  scans.set_unit
+scans.set_fluxunit    scans.set_restfreqs
+
   ASAP> scans.set_instrument()
 \end{verbatim}
 
@@ -208,7 +209,7 @@ To get help on specific functions, the built in help needs to be given
 the object and function name. E.g.
 
 \begin{verbatim}
-  ASAP> help scantable.get_scan
+  ASAP> help scantable.get_scan # or help(scantable.get_scan)
   ASAP> help scantable.stats
   ASAP> help plotter.plot
   ASAP> help fitter.plot
@@ -268,17 +269,18 @@ to operate upon it.
 {\bf [MALTE: Could you please reword this??]}
 
 The building block of a scantable is an integration, which is a single
-row of a scantable. Each row contains spectra for each beam, IF and
+row of a scantable. Each row contains just one spectrum for each beam, IF and
 polarisation. For example Parkes multibeam data would contain many
 beams, one IF and 2-4 polarisations, while the new Mopra 8-GHz
 filterbank will eventually produce one beam, many IFs, and 2-4
-polarisations.
+polarisations. All of the combinations of Beams/IFs an Polarisations are
+contained in seperate rows. These rows are grouped in cycles - same time stamp.
 
-A collection of sequential integrations (rows) for one source is termed
-a scan (and each scan has a unique numeric identifier, the ScanID). A
+A collection of cyclesfor one source is termed
+a scan (and each scan has a unique numeric identifier, the ScanNo). A
 scantable is then a collection  of one or more scans. If you have
-scan-averaged your data in time, then each scan would  hold just one
-(averaged) integration.
+scan-averaged your data in time, i.e. you have averegaed all cycles within
+a scan, then each scan would hold just one (averaged) integration.
 
 Many of the functions which work on scantables can either return a
 new scantable with modified data or change the scantable insitu. Which
@@ -302,14 +304,13 @@ Two important columns are those that describe the frequency setup.  We mention
 them explicitly here because you need to be able to understand the presentation
 of the frequency information and possibly how to manipulate it.
 
-These columns are called FreqID and RestFreqID.  They contain indices, for
-each IF, pointing into tables with all of the frequency information for that
-integration.   More on these below when we discuss the \cmd{summary} function
-in the next subsection.
+These columns are called FreqID and MoleculeID.  They contain indices, for
+each IF, pointing into tables with all of the frequency and rest-frequency
+information for that integration. More on these below when we discuss
+the \cmd{summary} function in the next subsection.
 
 There are of course many other columns which contain the actual spectra,
-the flags, the Tsys, the source names and so on, but those are a little
-more transparently handled.
+the flags, the Tsys, the source names and so on.
 
 There is also a function \cmd{summary} to list a summary of the scantable.
 You will find this very useful.
@@ -319,23 +320,13 @@ Example:
 \begin{verbatim}
   ASAP> scans = scantable('MyData.rpf')
   ASAP> scans.summary()                # Brief listing
-  ASAP> scans.summary(verbose=True)    # Include frequency information
 
   # Equivalent to brief summary function call
   ASAP> print scan
 \end{verbatim}
 
-Most of what the \cmd{summary} function  prints out is obvious. However,
-it also prints out the FreqIDs and RestFreqIDs to which we alluded above.
-These are the last column of the listing.
-
-The summary function gives you a scan-based summary.  So it lists all of
-the FreqIDs and RestFreqIDs that it encountered for each scan.  If you'd
-like to see what each FreqID actually means, then set the verbose
-argument to True and the frequency table will be listed at the end.
-FreqID of 3 say, refers to the fourth row of the frequency table (ASAP
-is 0-relative). The list of rest frequencies, to which the RestFreqIDs
-refer, is always listed.
+The summary function gives you a scan-based summary, presenting the
+scantable as a cascading view od Beams and IFs.
 
 \subsection{Data Selection}
 \label{sec:selection}
@@ -343,7 +334,7 @@ refer, is always listed.
 ASAP contains flexible data selection. Data can be selected based on
 IF, beam, polarisation, scan number as well as values such as
 Tsys. Advanced users can also make use of the AIPS++ TAQL language to
-create selections based on almost any of the standard header values.
+create selections based on almost any of the values recorded.
 
 Selection is based on a \cmd{selector} object. This object is created
 and various selection functions applied to it (\cmd{set\_ifs},
@@ -368,8 +359,7 @@ wildcard, e.g. ``Orion*\_R''.
 \item[\cmd{set\_ifs}] Select ifs by index number
 \item[\cmd{set\_polarisation}] Select but polarisation index or
 name. If polarisation names are given, the data will be on-the-fly
-converted (for example from linears to Stokes). Not all conversions
-are currently supported.
+converted (for example from linears to Stokes).
 \item[\cmd{set\_query}] Set query directly. For power users only!
 \item[\cmd{set\_tsys}] Select data based on Tsys. Also example of user
 definable query.
@@ -417,7 +407,8 @@ of observation (E.g. TOPO).
 When required, this is converted to the desired reference frame
 (e.g. LSRK), Doppler (e.g. OPTICAL) and unit (e.g. km/s) on-the-fly.
 This is important, for example, when you are displaying the data or
-fitting to it.
+fitting to it. The reference frame is set on file read to the value
+set in the user \cmd{.asaprc} file.
 
 For units, the user has the choice of frequency, velocity or channel.
 The \cmd{set\_unit} function is used to set the current unit for a
@@ -572,9 +563,9 @@ Example:
 
 \section{Data Input}
 
-\index{Reading data}Data can be loaded in one of two ways; using the reader object or via
-the scantable constructor. The scantable method is simpler but the
-reader allow the user more control on what is read.
+\index{Reading data}Data can be loaded in one of two ways; using the
+reader object or via the scantable constructor. The scantable method
+is simpler but the reader allows the user more control on what is read.
 
 \subsection{Scantable constructor}
 
@@ -614,7 +605,6 @@ Example usage:
   ASAP> r = reader('2003-03-16_082048_t0002.rpf')
   ASAP> r.summary()
   ASAP> scan = r.read()
-  ASAP> s = r.read(range(100)) # To read in the first 100 integrations
   ASAP> del r
 \end{verbatim}
 
@@ -634,6 +624,14 @@ Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
 
 \begin{verbatim}
   ASAP> q = s.auto_quotient()
+\end{verbatim}
+
+By default the quotient spectra is calculated
+to preserve continuum emission. If you wish to remove the continuum
+contribution, use the \cmd{preserve} argument:
+
+\begin{verbatim}
+ ASAP> q = s.auto_quotient(preserve=True)
 \end{verbatim}
 
 %If this is not sufficient the following alternative method can be used.
@@ -669,13 +667,7 @@ Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
 %This uses the rows in scantable \cmd{r} as reference spectra for the
 %rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
 %(which is applied to all rows in \cmd{s}) or both scantables must have
-%the same number of rows. By default the quotient spectra is calculated
-%to preserve continuum emission. If you wish to remove the continuum
-%contribution, use the \cmd{preserve} argument:
-%
-%\begin{verbatim}
-%  ASAP> q = s.quotient(r, preserve=True)
-%\end{verbatim}
+%the same number of rows.
 
 \subsection{Time average separate scans}
 
@@ -728,7 +720,7 @@ a mask of channels to use in the baseline fit.
 
 \begin{verbatim}
  ASAP> msk = scans.create_mask([100,400],[600,900])
- ASAP> scans.poly_baseline(msk, 1)
+ ASAP> scans.poly_baseline(msk, order=1)
 \end{verbatim}
 
 This will fit a first order polynomial to the selected channels and subtract
@@ -765,7 +757,7 @@ Other examples:
 
   # Only fit a given region around the line
   ASAP> scans.set_unit('km/s')
-  ASAP> msk = scans.create_mask((-60,-20))
+  ASAP> msk = scans.create_mask([-60,-20])
   ASAP> scans.auto_poly_baseline(mask=msk,order=3,threshold=3)
 
 \end{verbatim}
@@ -798,9 +790,9 @@ user can either override this value on reading the data or later.
 E.g:
 
 \begin{verbatim}
-  ASAP> scans = scantable(('2004-11-23_1841-P484.rpf', unit='Jy')
+  ASAP> scans = scantable('2004-11-23_1841-P484.rpf', unit='Jy')
   # Or in two steps
-  ASAP> scans = scantable(('2004-11-23_1841-P484.rpf')
+  ASAP> scans = scantable('2004-11-23_1841-P484.rpf')
   ASAP> scans.set_fluxunit('Jy)
 \end{verbatim}
 
@@ -988,8 +980,6 @@ Typical usages are:
 \begin{verbatim}
   ASAP> scans.save('myscans') # Save in default format
   ASAP> scans.save('myscans', 'FITS') # Save as FITS for exporting into CLASS
-
-  ASAP> scans.save('myscans', stokes=True) # Convert raw polarisations into Stokes
   ASAP> scans.save('myscans', overwrite=True) # Overwrite an existing file
 \end{verbatim}
 
@@ -1043,8 +1033,10 @@ Other possibilities include:
 stacked spectra per panel. If you have data larger than this (or for
 your own sanity) you need to select a subset of this data. This is
 particularly true for multibeam or multi IF data. The selector object
-should be used for this purpose. Selection can either be applide to
+should be used for this purpose. Selection can either be applied to
 the scantable or directly to the plotter, the end result is the same.
+You don't have to reset the scantable slection though, if you set
+the selection on the plotter.
 
 Examples:
 
@@ -1129,6 +1121,7 @@ To save a hardcopy of the current plot, use the save function, e.g.
 
 \begin{verbatim}
   ASAP> plotter.save('myplot.ps')
+  ASAP> plotter.save('myplot.png', dpi=80)
 \end{verbatim}
 
 \section{Fitting}
@@ -1139,14 +1132,14 @@ fit and actually fitting the data. Fitting can either be done on a
 single scantable selection or on an entire scantable using the
 \cmd{auto\_fit} function. If single value fitting is used, and the
 current selection includes multiple spectra (beams, IFs, scans etc)
-then the first spectra in the scantable will be used for fitting.
+then the first spectrum in the scantable will be used for fitting.
 
 \begin{verbatim}
  ASAP> f = fitter()
  ASAP> f.set_function(gauss=2) # Fit two Gaussians
  ASAP> f.set_scan(scans)
  ASAP> selection = selector()
- ASAP> selection.set_polarisation(1) # Fit the second polarisation
+ ASAP> selection.set_polarisations(1) # Fit the second polarisation
  ASAP> scans.set_selection(selection)
  ASAP> scans.set_unit('km/s')  # Make fit in velocity units
  ASAP> f.fit(1)                # Run the fit on the second row in the table
@@ -1229,7 +1222,7 @@ screen.
 
 \index{Polarisation}Currently ASAP only supports polarmetric analysis
 on linearly polarised feeds and the cross polarisation products
-measured. Other cases will be added on an as needed basic.
+measured. Other cases will be added on an as needed basis.
 
 Conversions of linears to Stokes or Circular polarisations are done
 ``on-the-fly''. Leakage cannot be corrected for nor are there routines
@@ -1296,24 +1289,24 @@ Example:
 \begin{verbatim}
   ASAP> selection = selector()
 
-  ASAP> selection.set_polarisations([``I Q U V''])
+  ASAP> selection.set_polarisations(``I Q U V'')
   ASAP  plotter.set_selection(selection);              # Select I, Q, U \& V
 
-  ASAP> selection.set_polarisations([``I Q'')
+  ASAP> selection.set_polarisations(``I Q'')
   ASAP  plotter.set_selection(selection);              # Select just I \& Q
 
-  ASAP> selection.set_polarisations([``RR LL'')
+  ASAP> selection.set_polarisations(``RR LL'')
   ASAP  plotter.set_selection(selection);              # Select just RR \& LL
 
-  ASAP> selection.set_polarisations([``XX YY'')
+  ASAP> selection.set_polarisations(``XX YY'')
   ASAP  plotter.set_selection(selection);              # Select linears
 
-  ASAP> selection.set_polarisations([``I Plinear'')
+  ASAP> selection.set_polarisations(``I Plinear'')
   ASAP  plotter.set_selection(selection);              # Fractional linear
 
 [[MALTE: This does not work]]
 
-  ASAP> selection.set_polarisations([``Pangle'')
+  ASAP> selection.set_polarisations(``Pangle'')
   ASAP  plotter.set_selection(selection);              # Position angle
 
 \end{verbatim}
@@ -1338,13 +1331,13 @@ Example:
 \index{Scantable!maths}It is possible to to simple mathematics
 directly on scantables from the command line using the \cmd{+, -, *,
 /} operators as well as their cousins \cmd{+=, -= *=, /=}. This works
-between two scantables or a scantable and a float. (Note that it does
+between a scantable and a float. (Note that it does
 not work for integers).
 
-{\em Currently mathematics between two scan tables is not available }
+{\em Currently mathematics between two scantables is not available }
 
-\begin{verbatim}
 %  ASAP> sum = scan1+scan2
+\begin{verbatim}
   ASAP> scan2 = scan1+2.0
   ASAP> scan *= 1.05
 \end{verbatim}
@@ -1463,19 +1456,19 @@ simplify this, contained in a file called mypol.py:
 def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
 
  selection = selector()
- selection.set_polarisation(0)
+ selection.set_polarisations(0)
  data.set_selection(selection)
  data.scale(xtsys/nomtsys)
 
- selection.set_polarisation(1)
+ selection.set_polarisations(1)
  data.set_selection(selection)
  data.scale(ytsys/nomtsys)
 
- selection.set_polarisation(0)
+ selection.set_polarisations(0)
  data.set_selection(selection)
  data.scale((xtsys+ytsys)/(2*nomtsys))
 
- selection.set_polarisation(0)
+ selection.set_polarisations(0)
  data.set_selection(selection)
  data.scale((xtsys+ytsys)/(2*nomtsys))
 \end{verbatim}
@@ -1528,7 +1521,7 @@ plotter.plot(plotscans) # Only shows one panel
 plotter.set_mode('p','s')
 
 # Correct for the Tsys using our predefined function
-execfile('mypol.py') # Read in the function
+execfile('mypol.py') # Read in the function xyscale
 xyscale(g351_5,23.2,22.7) # Execute it on the data
 xyscale(g351_7,23.2,22.7)
 
@@ -1590,8 +1583,8 @@ q.gain_el()
 q.opacity(0.05)
 
 # Seperate data from the (1,1)&(2,2) and (4,4) transitions
-g1 = q.get_scan(range(6))     # Rows 0..5
-g2 = q.get_scan(range(6,12))  # Rows 6..11
+g1 = q.get_scan(range(6))     # scans 0..5
+g2 = q.get_scan(range(6,12))  # scans 6..11
 
 # Align data in velocity
 g1.freq_align()
@@ -1770,7 +1763,7 @@ plotter.plot()
 
 \subsection{.asaprc settings}
 \index{.asaprc}
-\asaprc{verbose}{{\bf True}/False}{Print verbose output}
+\asaprc{verbose}{{\bf True}/False}{Print verbose output, good to disable in scripts}
 
 \asaprc{insitu}{{\bf True}/False}{Apply operations on the input
 scantable or return new one}
@@ -1807,12 +1800,7 @@ read}
 
 \asaprc{scantable.freqframe}{{\bf LSRK} TOPO BARY etc}{default
 frequency frame to set when function scantable.set\_freqframe is
-called}
-
-\asaprc{scantable.plotter}{{\bf True}/False}{Use internal plotter}
-
-\asaprc{scantable.verbosesummary}{True/{\bf False}}{Control the level
-of information printed by summary}
+called or the data is imported}
 
 \subsection{Installation}
 
