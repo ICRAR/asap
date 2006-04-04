@@ -56,8 +56,7 @@ public:
     average( const std::vector<casa::CountedPtr<Scantable> >& in,
              const std::vector<bool>& mask = std::vector<bool>(),
              const std::string& weight = "NONE",
-             const std::string& avmode = "SCAN",
-             bool alignfreq = false );
+             const std::string& avmode = "SCAN");
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
                                 const std::vector<bool>& mask,

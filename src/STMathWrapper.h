@@ -39,8 +39,7 @@ public:
     average( const std::vector<ScantableWrapper>& in,
              const std::vector<bool>& mask,
              const std::string& weight,
-             const std::string& avmode,
-             bool alignfreq)
+             const std::string& avmode )
   {
     std::vector<casa::CountedPtr<Scantable> > sts;
     for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());

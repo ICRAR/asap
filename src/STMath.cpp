@@ -59,38 +59,24 @@ STMath::~STMath()
 }
 
 CountedPtr<Scantable>
-STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
+STMath::average( const std::vector<CountedPtr<Scantable> >& in,
                  const std::vector<bool>& mask,
                  const std::string& weight,
-                 const std::string& avmode,
-                 bool alignfreq)
+                 const std::string& avmode)
 {
-  if ( avmode == "SCAN" && scantbls.size() != 1 )
+  if ( avmode == "SCAN" && in.size() != 1 )
     throw(AipsError("Can't perform 'SCAN' averaging on multiple tables"));
   WeightType wtype = stringToWeight(weight);
-
-  std::vector<CountedPtr<Scantable> >* in =
-    const_cast<std::vector<CountedPtr<Scantable> >*>(&scantbls);
-  std::vector<CountedPtr<Scantable> > inaligned;
-  if ( alignfreq ) {
-    // take first row of first scantable as reference epoch
-    String epoch = scantbls[0]->getTime(0);
-    for (int i=0; i< scantbls.size(); ++i ) {
-
-      inaligned.push_back(frequencyAlign(scantbls[i], epoch));
-    }
-    in = &inaligned;
-  }
 
   // output
   // clone as this is non insitu
   bool insitu = insitu_;
   setInsitu(false);
-  CountedPtr< Scantable > out = getScantable((*in)[0], true);
+  CountedPtr< Scantable > out = getScantable(in[0], true);
   setInsitu(insitu);
-  std::vector<CountedPtr<Scantable> >::const_iterator stit = in->begin();
+  std::vector<CountedPtr<Scantable> >::const_iterator stit = in.begin();
   ++stit;
-  while ( stit != in->end() ) {
+  while ( stit != in.end() ) {
     out->appendToHistoryTable((*stit)->history());
     ++stit;
   }
@@ -107,7 +93,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
 
   // set up the output table rows. These are based on the structure of the
   // FIRST scantable in the vector
-  const Table& baset = (*in)[0]->table();
+  const Table& baset = in[0]->table();
 
   Block<String> cols(3);
   cols[0] = String("BEAMNO");
@@ -117,7 +103,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
     cols.resize(4);
     cols[3] = String("SRCNAME");
   }
-  if ( avmode == "SCAN"  && in->size() == 1) {
+  if ( avmode == "SCAN"  && in.size() == 1) {
     cols.resize(4);
     cols[3] = String("SCANNO");
   }
@@ -141,8 +127,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& scantbls,
   ROScalarColumn<Int> scanIDCol;
 
   for (uInt i=0; i < tout.nrow(); ++i) {
-    for ( int j=0; j < in->size(); ++j ) {
-      const Table& tin = (*in)[j]->table();
+    for ( int j=0; j < in.size(); ++j ) {
+      const Table& tin = in[j]->table();
       const TableRecord& rec = row.get(i);
       ROScalarColumn<Double> tmp(tin, "TIME");
       Double td;tmp.get(0,td);
@@ -1001,7 +987,7 @@ CountedPtr< Scantable >
   std::vector<CountedPtr<Scantable> > pols;
   pols.push_back(pol0);
   pols.push_back(pol1);
-  CountedPtr< Scantable > out = average(pols, mask, weight, "NONE", false);
+  CountedPtr< Scantable > out = average(pols, mask, weight, "NONE");
   out->table_.rwKeywordSet().define("nPol",Int(1));
   return out;
 }
