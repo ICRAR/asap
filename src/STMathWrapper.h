@@ -43,7 +43,7 @@ public:
   {
     std::vector<casa::CountedPtr<Scantable> > sts;
     for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
-    return ScantableWrapper(STMath::average(sts, mask, weight, avmode, alignfreq));
+    return ScantableWrapper(STMath::average(sts, mask, weight, avmode));
   }
   ScantableWrapper
     averagePolarisations( const ScantableWrapper& in,
