@@ -40,15 +40,15 @@ def average_time(*args, **kwargs):
         align = kwargs.get('align')
     varlist = vars()
     if isinstance(args[0],list):
-        lst = tuple(args[0])
-    elif isinstance(args[0],tuple):
         lst = args[0]
+    elif isinstance(args[0],tuple):
+        lst = list(args[0])
     else:
-        lst = tuple(args)
+        lst = list(args)
 
     del varlist["kwargs"]
     varlist["args"] = "%d scantables" % len(lst)
-    # need special formatting her for history...
+    # need special formatting here for history...
 
     from asap._asap import stmath
     stm = stmath()
@@ -62,7 +62,14 @@ def average_time(*args, **kwargs):
                 raise TypeError(msg)
     if scanav: scanav = "SCAN"
     else: scanav = "NONE"
-    s = scantable(stm._average(lst, mask, weight, scanav, align))
+    alignedlst = []
+    if align:
+        refepoch = lst[0].get_time(0)
+        for scan in lst:
+            alignedlst.append(scan.freq_align(refepoch,insitu=False))
+    else:
+        aligendlst = lst
+    s = scantable(stm._average(alignedlst, mask, weight, scanav))
     s._add_history("average_time",varlist)
     print_log()
     return s

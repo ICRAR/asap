@@ -756,11 +756,14 @@ class scantable(Scantable):
         if weight is None: weight = 'TINT'
         if mask is None: mask = ()
         if scanav:
-          scanav = "SCAN"
+            scanav = "SCAN"
         else:
-          scanav = "NONE"
-        s = scantable(self._math._average((self,), mask, weight.upper(),
-                      scanav, align))
+            scanav = "NONE"
+        scan = (self,)
+        if align:
+            scan = (self.freq_align(insitu=False),)
+        s = scantable(self._math._average(scan, mask, weight.upper(),
+                      scanav))
         s._add_history("average_time",varlist)
         print_log()
         return s
@@ -1445,7 +1448,7 @@ class scantable(Scantable):
             r._read()
             tbl = r._getdata()
             if average:
-                tbl = self._math._average((tbl,),(),'NONE','SCAN', False)
+                tbl = self._math._average((tbl,),(),'NONE','SCAN')
                 #tbl = tbl2
             if not first:
                 tbl = self._math._merge([self, tbl])
