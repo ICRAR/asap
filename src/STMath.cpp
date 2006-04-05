@@ -1029,7 +1029,8 @@ CountedPtr< Scantable >
   // test if user frame is different to base frame
   if ( in->frequencies().getFrameString(true)
        == in->frequencies().getFrameString(false) ) {
-    throw(AipsError("You have not set a frequency frame different from the initial - use function set_freqframe"));
+    throw(AipsError("Can't convert as no output frame has been set"
+                    " (use set_freqframe) or it is aligned already."));
   }
   MFrequency::Types system = in->frequencies().getFrame();
   MVTime mvt(refEpoch.getValue());
