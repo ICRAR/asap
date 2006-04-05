@@ -134,8 +134,8 @@ class myForm:
         sys.stdout = logsink
         sys.stderr = logsink2
         try:
-            scans = [asap.scantable(f) for f in files]
-            outscans = []
+            s = asap.scantable(files)
+            outscans = None
             self.fields['nif'] = range(scans[-1].nif())
             for i in self.fields['nif']:
                 name = "rest%d" % i
@@ -144,75 +144,62 @@ class myForm:
 
             # source name selection
             import re
-            for s in scans:
-                srcnames = s.get_sourcename()
-                for i in srcnames:
-                    # only add the names once
-                    i = not i in self.fields['sourcenames'] and i
+            srcnames = s.get_sourcename()
+            for i in srcnames:
+                # only add the names once
+                i = not i in self.fields['sourcenames'] and i
+                if i:
+                    # filter off scans
+                    i = not re.search(re.compile("_[R,e,w]$"),i) and i
                     if i:
-                        # filter off scans
-                        i = not re.search(re.compile("_[R,e,w]$"),i) and i
-                        if i:
-                            self.fields['sourcenames'].append(i)
-            for s in scans:
-                # form quotient
-                if self.form.has_key("quotient"):
-                    s = s.auto_quotient()
-
-                # get source by name
-                cs = self.fields['csource']
-                if len(cs) > 0:
-                    if cs in self.fields['sourcenames']:
-                        ss = s.get_scan(self.fields['csource'])
-                        if isinstance(ss,asap.scantable):
-                            s = ss
-                        del ss
-                else:
-                    # get only the last source in the table if not averaging
-                    s = s.get_scan(self.fields['sourcenames'][-1])
-                    #self.fields['debug'] = "DEBUG"
-                    self.fields['csource'] = s.get_sourcename()[-1]
-                # baseline
-                if self.form.has_key('baseline'):
-                    order = self.fields['cpolyorder']
-                    brstr = self.form.getfirst('brangewindow','').strip()
-                    # auto baseline or user window
-                    if brstr:
+                        self.fields['sourcenames'].append(i)
+            # form quotient
+            if self.form.has_key("quotient"):
+                s = s.auto_quotient()
+            # get source by name
+            cs = self.fields['csource']
+            if len(cs) > 0:
+                if cs in self.fields['sourcenames']:
+                    ss = s.get_scan(self.fields['csource'])
+                    if isinstance(ss,asap.scantable):
+                        s = ss
+                    del ss
+            else:
+                # get only the last source in the table if not averaging
+                s = s.get_scan(self.fields['sourcenames'][-1])
+                #self.fields['debug'] = "DEBUG"
+                self.fields['csource'] = s.get_sourcename()[-1]
+            # baseline
+            if self.form.has_key('baseline'):
+                order = self.fields['cpolyorder']
+                brstr = self.form.getfirst('brangewindow','').strip()
+                # auto baseline or user window
+                if brstr:
+                    self.fields['brangewindow'] = brstr
+                    brange = self.decodeWindows(brstr)
+                    if len(brange):
                         self.fields['brangewindow'] = brstr
-                        brange = self.decodeWindows(brstr)
-                        if len(brange):
-                            self.fields['brangewindow'] = brstr
-                            if self.fields['cunit'] == 1:
-                                srest = s._getrestfreqs()
-                                if isinstance(srest,tuple) and len(srest) != s.nif():
-                                    s.set_restfreqs(restfs,unit="GHz")
-                            s.set_unit(self.fields['units'][self.fields['cunit']])
-                            s.set_freqframe(self.form.getfirst("frame","LSRK"))
-                            s.set_doppler(self.form.getfirst("doppler","RADIO"))
-
-                            m = s.create_mask(brange)
-                            s.poly_baseline(mask=m,order=order)
-                    else:
-                        s.auto_poly_baseline(order=order)
-                outscans.append(s)
-            del scans
+                        if self.fields['cunit'] == 1:
+                            srest = s._getrestfreqs()
+                            if isinstance(srest,tuple) and len(srest) != s.nif():
+                                s.set_restfreqs(restfs,unit="GHz")
+                        s.set_unit(self.fields['units'][self.fields['cunit']])
+                        s.set_freqframe(self.form.getfirst("frame","LSRK"))
+                        s.set_doppler(self.form.getfirst("doppler","RADIO"))
+                        m = s.create_mask(brange)
+                        s.poly_baseline(mask=m,order=order)
+                else:
+                    s.auto_poly_baseline(order=order)
+            outscans = None
 
             if self.fields['average']:
-                outscans = asap.average_time(outscans,weight='tsys')
+                outscans = s.average_time(weight='tsys')
             else:
-                outscans = outscans[-1]
+                outscans = s
+            del s
 
             if self.fields['bin']:
                 outscans.bin()
-
-            #duplicated as average_time doesn't remember settings
-            if self.fields['cunit'] == 1:
-                srest = outscans._getrestfreqs()
-                if isinstance(srest,tuple) and len(srest) != outscans.nif():
-                    outscans.set_restfreqs(restfs,unit="GHz")
-            outscans.set_unit(self.fields['units'][self.fields['cunit']])
-            outscans.set_freqframe(self.form.getfirst("frame","LSRK"))
-            outscans.set_doppler(self.form.getfirst("doppler","RADIO"))
 
             self.fields['summary'] = str(outscans)
             asap.rcParams['plotter.decimate'] = True
@@ -224,6 +211,7 @@ class myForm:
             rcp['figure.subplot.wspace'] = 0.3
             rcp['figure.subplot.hspace'] = 0.3
             del asap.plotter
+            # plotter without GUI
             asap.plotter = asap.asapplotter(False)
             if s.nif() > 1:
                 asap.plotter.set_mode("p","i")
@@ -237,7 +225,9 @@ class myForm:
                 pols = "I"
                 if outscans.npol() > 2:
                     pols += " Q U V"
-                asap.plotter.set_cursor(pol=pols)
+                sel = asap.selector()
+                sel.set_polarisations(pols)
+                asap.plotter.set_selection(sel)
             x0,x1 = self.decodeWindow(self.fields['plotwindow'])
             asap.plotter.set_range(x0,x1)
             imname = tmppath+"plot.png"
