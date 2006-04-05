@@ -114,11 +114,9 @@ class scantable(Scantable):
         if format2 == 'ASAP':
             self._save(name)
         else:
-            print "NYI"
-#             from asap._asap import sdwriter as _sw
-#             w = _sw(format2)
-#             w.write(self, name, stokes)
-
+            from asap._asap import stwriter as stw
+            w = stw(format2)
+            w.write(self, name)
         print_log()
         return
 
@@ -528,7 +526,7 @@ class scantable(Scantable):
         valid = ['REST','TOPO','LSRD','LSRK','BARY', \
                    'GEO','GALACTO','LGROUP','CMB']
 
-        if 1:#frame in valid:
+        if frame in valid:
             inf = list(self._getcoordinfo())
             inf[1] = frame
             self._setcoordinfo(inf)
@@ -540,6 +538,25 @@ class scantable(Scantable):
             else:
                 raise TypeError(msg)
         print_log()
+
+    def set_dirframe(self, frame=""):
+        """
+        Set the frame type of the Direction on the sky.
+        Parameters:
+            frame:   an optional frame type, default ''. Valid frames are:
+                     'J2000', 'B1950', 'GALACTIC'
+        Examples:
+            scan.set_dirframe('GALACTIC')
+        """
+        varlist = vars()
+        try:
+            Scantable.set_dirframe(self, frame)
+        except RuntimeError,msg:
+            if rcParams['verbose']:
+                print msg
+            else:
+                raise
+        self._add_history("set_dirframe",varlist)
 
     def get_unit(self):
         """
@@ -760,10 +777,16 @@ class scantable(Scantable):
         else:
             scanav = "NONE"
         scan = (self,)
-        if align:
-            scan = (self.freq_align(insitu=False),)
-        s = scantable(self._math._average(scan, mask, weight.upper(),
-                      scanav))
+        try:
+          if align:
+              scan = (self.freq_align(insitu=False),)
+          s = scantable(self._math._average(scan, mask, weight.upper(),
+                        scanav))
+        except RuntimeError,msg:
+            if rcParams['verbose']:
+                print msg
+                return
+            else: raise
         s._add_history("average_time",varlist)
         print_log()
         return s
