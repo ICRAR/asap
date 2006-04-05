@@ -142,7 +142,6 @@ public:
    */
   int nscan() const;
 
-  //casa::MDirection::Types getDirectionReference() const;
   casa::MEpoch::Types getTimeReference() const;
 
   /**
@@ -150,6 +149,12 @@ public:
    * @return casa::MPosition
    */
   casa::MPosition getAntennaPosition() const;
+
+  casa::MDirection getDirection( int whichrow ) const;
+
+  void setDirectionRefString(const std::string& refstr="");
+
+  std::string getDirectionRefString() const;
 
   /**
    *  Return the Flux unit of the data, e.g. "Jy" or "K"
@@ -299,6 +304,8 @@ public:
 
   void setRestFrequencies(double rf, const std::string& = "Hz");
   void setRestFrequencies(const std::string& name);
+
+  void convertDirection(const std::string& newframe);
 
   STFrequencies& frequencies() { return freqTable_; }
   STWeather& weather() { return weatherTable_; }

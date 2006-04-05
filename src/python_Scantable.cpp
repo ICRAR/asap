@@ -98,6 +98,8 @@ void python_Scantable() {
     .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
     .def("_setcoordinfo", &ScantableWrapper::setCoordInfo)
     .def("_getcoordinfo", &ScantableWrapper::getCoordInfo)
+    .def("set_dirframe", &ScantableWrapper::setDirection,
+         (boost::python::arg("refstr")="") )
     .def("_gethistory", &ScantableWrapper::getHistory)
     .def("_addhistory", &ScantableWrapper::addHistory)
     .def("_getselection", &ScantableWrapper::getSelection)

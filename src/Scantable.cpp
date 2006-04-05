@@ -218,6 +218,8 @@ void Scantable::setupMainTable()
   TableMeasValueDesc tmvdMDir(td, "DIRECTION");
   // the TableMeasDesc gives the column a type
   TableMeasDesc<MDirection> mdirCol(tmvdMDir, mdirRef);
+  // a uder set table type e.g. GALCTIC, B1950 ...
+  td.rwKeywordSet().define("DIRECTIONREF", String("J2000"));
   // writing create the measure column
   mdirCol.write(td);
   td.addColumn(ScalarColumnDesc<Float>("AZIMUTH"));
@@ -351,6 +353,11 @@ std::string Scantable::formatDirection(const MDirection& md) const
 
   MVAngle mvLon(t[0]);
   String sLon = mvLon.string(MVAngle::TIME,prec);
+  uInt tp = md.getRef().getType();
+  if (tp == MDirection::GALACTIC ||
+      tp == MDirection::SUPERGAL ) {
+    sLon = mvLon(0.0).string(MVAngle::ANGLE_CLEAN,prec);
+  }
   MVAngle mvLat(t[1]);
   String sLat = mvLat.string(MVAngle::ANGLE+MVAngle::DIG2,prec);
   return sLon + String(" ") + sLat;
@@ -549,8 +556,7 @@ void Scantable::calculateAZEL()
       << mp << endl;
   for (uInt i=0; i<nrow(); ++i) {
     MEpoch me = timeCol(i);
-    MDirection md = dirCol_(i);
-    dirCol_.get(i,md);
+    MDirection md = getDirection(i);
     oss  << " Time: " << formatTime(me,False) << " Direction: " << formatDirection(md)
          << endl << "     => ";
     MeasFrame frame(mp, me);
@@ -716,7 +722,7 @@ std::string Scantable::summary( bool verbose )
   oss << endl;
   // main table
   String dirtype = "Position ("
-                  + MDirection::showType(dirCol_.getMeasRef().getType())
+                  + getDirectionRefString()
                   + ")";
   oss << setw(5) << "Scan" << setw(15) << "Source"
       << setw(10) << "Time" << setw(18) << "Integration" << endl;
@@ -749,10 +755,10 @@ std::string Scantable::summary( bool verbose )
     while (!biter.pastEnd()) {
       Table bsubt = biter.table();
       ROTableRow brow(bsubt);
-      MDirection::ROScalarColumn bdirCol(bsubt,"DIRECTION");
       const TableRecord& brec = brow.get(0);
+      uInt row0 = bsubt.rowNumbers()[0];
       oss << setw(5) << "" <<  setw(4) << std::right << brec.asuInt("BEAMNO")<< std::left;
-      oss  << setw(4) << ""  << formatDirection(bdirCol(0)) << endl;
+      oss  << setw(4) << ""  << formatDirection(getDirection(row0)) << endl;
       TableIterator iiter(bsubt, "IFNO");
       while (!iiter.pastEnd()) {
         Table isubt = iiter.table();
@@ -800,7 +806,7 @@ std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
   }
 
   const MPosition& mp = getAntennaPosition();
-  const MDirection& md = dirCol_(whichrow);
+  const MDirection& md = getDirection(whichrow);
   const MEpoch& me = timeCol_(whichrow);
   Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   SpectralCoordinate spc =
@@ -821,12 +827,45 @@ std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
   }
   return stlout;
 }
+void asap::Scantable::setDirectionRefString( const std::string & refstr )
+{
+  MDirection::Types mdt;
+  if (refstr != "" && !MDirection::getType(mdt, refstr)) {
+    throw(AipsError("Illegal Direction frame."));
+  }
+  if ( refstr == "" ) {
+    String defaultstr = MDirection::showType(dirCol_.getMeasRef().getType());
+    table_.rwKeywordSet().define("DIRECTIONREF", defaultstr);
+  } else {
+    table_.rwKeywordSet().define("DIRECTIONREF", String(refstr));
+  }
+}
+
+std::string asap::Scantable::getDirectionRefString( ) const
+{
+  return table_.keywordSet().asString("DIRECTIONREF");
+}
+
+MDirection Scantable::getDirection(int whichrow ) const
+{
+  String usertype = table_.keywordSet().asString("DIRECTIONREF");
+  String type = MDirection::showType(dirCol_.getMeasRef().getType());
+  if ( usertype != type ) {
+    MDirection::Types mdt;
+    if (!MDirection::getType(mdt, usertype)) {
+      throw(AipsError("Illegal Direction frame."));
+    }
+    return dirCol_.convert(uInt(whichrow), mdt);
+  } else {
+    return dirCol_(uInt(whichrow));
+  }
+}
 
 std::string Scantable::getAbcissaLabel( int whichrow ) const
 {
   if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
   const MPosition& mp = getAntennaPosition();
-  const MDirection& md = dirCol_(whichrow);
+  const MDirection& md = getDirection(whichrow);
   const MEpoch& me = timeCol_(whichrow);
   const Double& rf = mmolidCol_(whichrow);
   SpectralCoordinate spc =
@@ -901,4 +940,6 @@ void asap::Scantable::addFit( const STFitEntry & fit, int row )
   mfitidCol_.put(uInt(row), id);
 }
 
-} //namespace asap
+
+}
+ //namespace asap

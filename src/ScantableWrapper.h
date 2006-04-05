@@ -130,7 +130,6 @@ public:
   int nscan() const {return table_->nscan();}
   int nrow() const {return table_->nrow();}
   int ncycle(int scanno) const {return table_->ncycle(scanno);}
-  ///@todo int nstokes() {return table_->nStokes();}
 
   void makePersistent(const std::string& fname)
     { table_->makePersistent(fname); }
@@ -152,6 +151,9 @@ public:
   std::vector<string> getCoordInfo() const {
     return table_->getCoordInfo();
   }
+
+  void setDirection(const std::string& refstr="")
+    { table_->setDirectionRefString(refstr); }
 
   casa::CountedPtr<Scantable> getCP() const {return table_;}
   Scantable* getPtr() {return &(*table_);}
