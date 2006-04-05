@@ -271,7 +271,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.0a'
+__version__  = '2.0b'
 
 if rcParams['verbose']:
     def list_scans(t = scantable):
@@ -289,7 +289,9 @@ if rcParams['verbose']:
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
-                              (by name or number) [deprecated]
+                              (by name or number)
+            set_selection   - set a new subselection of the data
+            get_selection   - get the current selection object
             summary         - print info about the scantable contents
             stats           - get specified statistic of the spectra in
                               the scantable
@@ -309,6 +311,7 @@ if rcParams['verbose']:
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
             set_doppler     - set the doppler to be used from this point on
+            set_dirframe    - set the frame for the direction on the sky
             set_instrument  - set the instrument name
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
@@ -317,13 +320,12 @@ if rcParams['verbose']:
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-            lines           - print list of known spectral lines
-            flag_spectrum   - flag a whole Beam/IF/Pol
+            flag_spectrum   - flag data
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             nscan           - the number of scans in the scantable
-            nrow            - te number of integrations in the scantable
+            nrow            - te number of spectra in the scantable
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
@@ -335,7 +337,6 @@ if rcParams['verbose']:
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans
                               (matched pairs and 1 off - n on)
-            quotient        - return the on/off quotient
             scale           - return a scan scaled by a given factor
             add             - return a scan with given value added
             bin             - return a scan with binned channels
@@ -373,7 +374,7 @@ if rcParams['verbose']:
             commit          - return a new scan where the fits have been
                               commited.
             fit             - execute the actual fitting process
-            store_fit       - store the fit paramaters in the data (scantable)
+            store_fit       - store the fit parameters in the data (scantable)
             get_chi2        - get the Chi^2
             set_scan        - set the scantable to be fit
             set_function    - set the fitting function
@@ -387,12 +388,12 @@ if rcParams['verbose']:
     [Plotter]
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'
-            plot            - plot a (list of) scantable
+            plot            - plot a scantable
             save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
-            set_cursor      - only plot a selected part of the data
+            set_selection   - only plot a selected part of the data
             set_range       - set a 'zoom' window [xmin,xmax,ymin,ymax]
             set_legend      - specify user labels for the legend indeces
             set_title       - specify user labels for the panel indeces
@@ -406,6 +407,8 @@ if rcParams['verbose']:
 
     [Reading files]
         reader              - access rpfits/sdfits files
+            open            - attach reader to a file
+            close           - detach reader from file
             read            - read in integrations
             summary         - list info about all integrations
 
