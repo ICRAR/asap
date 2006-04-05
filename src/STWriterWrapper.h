@@ -26,26 +26,26 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#ifndef SDWRITERWRAPPER_H
-#define SDWRITERWRAPPER_H
+#ifndef STWRITERWRAPPER_H
+#define STWRITERWRAPPER_H
 
 #include <vector>
 #include <string>
+
+#include "ScantableWrapper.h"
 
 #include "STWriter.h"
 
 namespace asap {
 
-class SDMemTableWrapper;
-
 class STWriterWrapper : public STWriter {
 public:
-  STWriterWrapper(const string &format = "SDFITS") : STWriter(format) {;}
+  STWriterWrapper(const string& format = "SDFITS") : STWriter(format) {;}
 
-  casa::Int write(const SDMemTableWrapper &table, const string &filename, bool toStokes) {
-    return STWriter::write(table.getCP(), filename, toStokes);
+  casa::Int write(const ScantableWrapper& table, const string &filename) {
+    return STWriter::write(table.getCP(), filename);
   }
 };
 

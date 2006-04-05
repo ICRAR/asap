@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDAsciiWriter.cc: ASAP class to write out single dish spectra as FITS images
+//# STAsciiWriter.cc: ASAP class to write out single dish spectra as FITS images
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -31,6 +31,7 @@
 
 #include <casa/aips.h>
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorIter.h>
 #include <casa/Utilities/CountedPtr.h>
@@ -38,179 +39,140 @@
 #include <casa/Quanta/MVAngle.h>
 #include <casa/Utilities/Assert.h>
 
-#include <casa/iostream.h>
 #include <casa/fstream.h>
 #include <casa/sstream.h>
-
-#include <coordinates/Coordinates/CoordinateUtil.h>
-#include <coordinates/Coordinates/SpectralCoordinate.h>
-#include <coordinates/Coordinates/DirectionCoordinate.h>
-#include <coordinates/Coordinates/StokesCoordinate.h>
+#include <casa/iomanip.h>
 
 #include <measures/Measures/MEpoch.h>
 
 #include <tables/Tables/Table.h>
+#include <tables/Tables/TableIter.h>
+#include <tables/Tables/TableRecord.h>
+#include <casa/Containers/RecordField.h>
+#include <tables/Tables/TableRow.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
 
-#include "SDDefs.h"
-#include "SDContainer.h"
-#include "SDMemTable.h"
-#include "SDAsciiWriter.h"
+#include "STDefs.h"
+#include "STHeader.h"
+#include "Scantable.h"
+#include "STAsciiWriter.h"
 
 using namespace casa;
 using namespace asap;
 
 
-SDAsciiWriter::SDAsciiWriter()
+STAsciiWriter::STAsciiWriter()
 {;}
 
-SDAsciiWriter::~SDAsciiWriter()
+STAsciiWriter::~STAsciiWriter()
 {;}
 
 
-Bool SDAsciiWriter::write(const SDMemTable& sdTable, const String& fileName, Bool toStokes)
+Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
 {
 
 // Get global Header from Table
 
-   SDHeader header = sdTable.getSDHeader();
-   MEpoch::Ref timeRef(MEpoch::UTC);              // Should be in header   
-   MDirection::Types dirRef(MDirection::J2000);   // Should be in header   
+   STHeader hdr = stable.getHeader();
 
 // Column keywords
 
-   Table tab = sdTable.table();
-   ROArrayColumn<Double> dir(tab, String("DIRECTION"));
-   ROScalarColumn<Double> time(tab, "TIME");
-   ROArrayColumn<uInt> freqid(tab, "FREQID");
-   ROScalarColumn<String> src(tab, "SRCNAME");
+   Table tab = stable.table();
 
 // Temps
 
-   Vector<Int> whichStokes(1,1);
-   Array<Double> whichDir;
-   Vector<Double> lonLat(2);
-   IPosition posDir(2,0);
    const Unit RAD(String("rad"));
 
 // Open and write header file
 
    String rootName(fileName);
    if (rootName.length()==0) rootName = String("ascii");
-   {
-      String fName = String(rootName) + String("_header.txt");
-      pushLog("Writing header to "+fName);
-      ofstream of(fName.chars(), ios::trunc);
-      std::string summary = sdTable.summary(true);
-      of << summary;
-      of.close();
-   }
 
-// Open data file
+  Block<String> cols(4);
+  cols[0] = String("SCANNO");
+  cols[1] = String("CYCLENO");
+  cols[2] = String("BEAMNO");
+  cols[3] = String("IFNO");
+  TableIterator iter(tab, cols);
+  // Open data file
+  while ( !iter.pastEnd() ) {
+    Table t = iter.table();
+    ROTableRow row(t);
+    const TableRecord& rec = row.get(0);
+    String dirtype = stable.getDirectionRefString();
+    ostringstream onstr;
+    onstr << "SCAN" << rec.asuInt("SCANNO")
+    << "_CYCLE" << rec.asuInt("CYCLENO")
+    << "_BEAM" << rec.asuInt("BEAMNO")
+    << "_IF" << rec.asuInt("IFNO");
+    String fName = rootName + String(onstr) + String(".txt");
+    ofstream of(fName.chars(), ios::trunc);
+    int row0 = t.rowNumbers()[0];
+    MDirection mdir = stable.getDirection(row0);
+    of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
+    addLine(of, "Name", rec.asString("SRCNAME"));
+    addLine(of, "Position", String(dirtype+ " "+formatDirection(mdir)));
+    addLine(of, "Time", stable.getTime(row0,true));
+    addLine(of, "Flux Unit", hdr.fluxunit);
+    addLine(of, "Pol Type", stable.getPolType());
+    addLine(of, "Abcissa", stable.getAbcissaLabel(row0));
+    addLine(of, "Beam No", rec.asuInt("BEAMNO"));
+    addLine(of, "IF No", rec.asuInt("IFNO"));
+    of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
 
-   String fName = rootName + String(".txt");
-   ofstream of(fName.chars(), ios::trunc);
-
-// Write header
-
-   of << "row beam IF pol source longitude latitude time nchan spectrum mask" 
-      << endl;
-   
-// Loop over rows
-
-   const uInt nRows = sdTable.nRow();
-   for (uInt iRow=0; iRow<nRows; iRow++) {
-
-// Get data
-
-      const MaskedArray<Float>& dataIn(sdTable.rowAsMaskedArray(iRow,toStokes));
-      const Array<Float>& values = dataIn.getArray();
-      const Array<Bool>& mask = dataIn.getMask();
-
-// Get abcissa
-
-      std::vector<double> abcissa = sdTable.getAbcissa(Int(iRow));
-      const uInt n = abcissa.size();
-
-// Iterate through data in this row by spectra
-
-      ReadOnlyVectorIterator<Float> itData(values, asap::ChanAxis);
-      ReadOnlyVectorIterator<Bool> itMask(mask, asap::ChanAxis);
-      while (!itData.pastEnd()) {
-         const IPosition& pos = itData.pos();
-         AlwaysAssert(itData.vector().nelements()==n,AipsError);
-
-// FreqID
-
-         Vector<uInt> iTmp;
-         freqid.get(iRow, iTmp);
-
-// Direction
- 
-         dir.get(iRow, whichDir);
-         posDir(0) = pos(asap::BeamAxis);
-         posDir(1) = 0;
-         lonLat[0] = whichDir(posDir);
-//
-         posDir(0) = pos(asap::BeamAxis);
-         posDir(1) = 1;
-         lonLat[1] = whichDir(posDir);
-
-// Write preamble
-
-         of << iRow << "  " << pos(asap::BeamAxis) << " " <<  pos(asap::IFAxis) << " " << 
-               pos(asap::PolAxis) << " " <<
-               src(iRow) <<  " " << formatDirection(lonLat) << " " << 
-               sdTable.getTime(iRow,True) << " " << n << " ";
-
-// Write abcissa
-
-         of.setf(ios::fixed, ios::floatfield);
-         of.precision(4);
-         for (uInt i=0; i<n; i++) {
-            of << abcissa[i] << " ";
-         }
-
-// Write data
-
-         const Vector<Float>& data = itData.vector();
-         const Vector<Bool>& mask = itMask.vector();
-         for (uInt i=0; i<n; i++) {
-            of << data[i] << " ";
-         }
-// Write mask
-
-         for (uInt i=0; i<n; i++) {
-            of << mask[i] << " ";
-         }
-         of << endl;
-
-// Next spectrum
-
-         itData.next();
-         itMask.next();
+    of << std::left << setw(16) << "x";
+    for ( int i=0; i<t.nrow(); ++i ) {
+      String y = "y"+ String(i);
+      String ym = "yflag"+ String(i);
+      of << setw(16) << y;
+      of << setw(7) << ym;
+    }
+    of << endl;
+    std::vector<double> abc = stable.getAbcissa(row0);
+    ROArrayColumn<Float> specCol(t,"SPECTRA");
+    ROArrayColumn<uChar> flagCol(t,"FLAGTRA");
+    Matrix<Float> specs = specCol.getColumn();
+    Matrix<uChar> flags = flagCol.getColumn();
+    for ( int i=0; i<specs.nrow(); ++i ) {
+      of << setw(16) << setprecision(8) << abc[i] ;
+      for ( int j=0; j<specs.ncolumn(); ++j ) {
+        of << setw(16) << setprecision(8) << specs(i,j) ;
+        of << setw(7) << Int(flags(i,j));
       }
-   }
-
-   of.close();
-   ostringstream oss;
-   oss << "Wrote " << nRows << " rows into file " << fileName;
-   pushLog(String(oss));
-   return True;
+      of << endl;
+    }
+    of.close();
+    ostringstream oss;
+    oss << "Wrote " << fName;
+    pushLog(String(oss));
+    ++iter;
+  }
+  return True;
 }
 
 
+String STAsciiWriter::formatDirection(const MDirection& md) const
+{
+  Vector<Double> t = md.getAngle(Unit(String("rad"))).getValue();
+  Int prec = 7;
 
-String SDAsciiWriter::formatDirection(const Vector<Double>& lonLat)
-{ 
-   MVAngle x1(lonLat(0));
-   String s1 = x1.string(MVAngle::TIME, 12);
-
-   MVAngle x2(lonLat(1));
-   String s2 = x2.string(MVAngle::ANGLE, 12);
-
-   String ss = s1 + String(" ") + s2;
-   return ss;
+  MVAngle mvLon(t[0]);
+  String sLon = mvLon.string(MVAngle::TIME,prec);
+  uInt tp = md.getRef().getType();
+  if (tp == MDirection::GALACTIC ||
+      tp == MDirection::SUPERGAL ) {
+    sLon = mvLon(0.0).string(MVAngle::ANGLE_CLEAN,prec);
+  }
+  MVAngle mvLat(t[1]);
+  String sLat = mvLat.string(MVAngle::ANGLE+MVAngle::DIG2,prec);
+  return sLon + String(" ") + sLat;
 }
 
+template <class T>
+void STAsciiWriter::addLine(ostream& of, const String& lbl, const T& value)
+{
+  String label = lbl+String(": ");
+  of << std::right << "# " << setw(15) << label << std::left
+     << setw(52) << value << setw(0) << "#"<< endl;
+}

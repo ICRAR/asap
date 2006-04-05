@@ -47,7 +47,7 @@
 #include <tables/Tables/ArrayColumn.h>
 
 //#include "SDFITSImageWriter.h"
-//#include "STAsciiWriter.h"
+#include "STAsciiWriter.h"
 #include "STHeader.h"
 
 #include "STWriter.h"
@@ -57,46 +57,46 @@ namespace asap {
 
 STWriter::STWriter(const std::string &format)
 {
-  cFormat = format;
-  String t(cFormat);
+  format_ = format;
+  String t(format_);
   t.upcase();
   if (t== "MS2") {
-    cWriter = new PKSMS2writer();
+    writer_ = new PKSMS2writer();
   } else if (t== "SDFITS") {
-    cWriter = new PKSSDwriter();
+    writer_ = new PKSSDwriter();
   } else if (t== "FITS") {
-    cWriter = 0;
+    writer_ = 0;
   } else if (t== "ASCII") {
-    cWriter = 0;
+    writer_ = 0;
   } else {
-    throw (AipsError("Unrecognized Format"));
+    throw (AipsError("Unrecognized export format"));
   }
 }
 
 STWriter::~STWriter()
 {
-   if (cWriter) {
-     delete cWriter;
+   if (writer_) {
+     delete writer_;
    }
 }
 
 Int STWriter::setFormat(const std::string &format)
 {
-  if (format != cFormat) {
-    if (cWriter) delete cWriter;
+  if (format != format_) {
+    if (writer_) delete writer_;
   }
 
-  cFormat = format;
-  String t(cFormat);
+  format_ = format;
+  String t(format_);
   t.upcase();
   if (t== "MS2") {
-    cWriter = new PKSMS2writer();
+    writer_ = new PKSMS2writer();
   } else if (t== "SDFITS") {
-    cWriter = new PKSSDwriter();
+    writer_ = new PKSSDwriter();
   } else if (t== "FITS") {
-    cWriter = 0;
+    writer_ = 0;
   } else if (t== "ASCII") {
-    cWriter = 0;
+    writer_ = 0;
   } else {
     throw (AipsError("Unrecognized Format"));
   }
@@ -109,7 +109,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
 // Image FITS
 
-  if (cFormat=="FITS") {
+  if (format_=="FITS") {
 //      Bool verbose = True;
 //      SDFITSImageWriter iw;
 //      if (iw.write(*in, filename, verbose)) {
@@ -117,13 +117,13 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 //      } else {
 //         return 1;
 //      }
-  } else if (cFormat=="ASCII") {
-     /*SDAsciiWriter iw;
+  } else if (format_=="ASCII") {
+     STAsciiWriter iw;
      if (iw.write(*in, filename)) {
         return 0;
      } else {
         return 1;
-     }*/
+     }
   }
 
   // MS or SDFITS
@@ -139,10 +139,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
   // Create the output file and write static data.
   Int status;
-  if (status = cWriter->create(filename, hdr.observer, hdr.project,
+  Bool havexpol = Bool(in->npol() > 2);
+  if (status = writer_->create(filename, hdr.observer, hdr.project,
                                hdr.antennaname, hdr.antennaposition,
                                hdr.obstype, hdr.equinox, hdr.freqref,
-                               nChan, nPol, False, False)) {
+                               nChan, nPol, False, havexpol)) {
     throw(AipsError("Failed to create output file"));
   }
 
@@ -160,33 +161,37 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   TableIterator scanit(table, "SCANNO");
   while (!scanit.pastEnd() ) {
     Table stable = scanit.table();
-    TableIterator beamit(table, "BEAMNO");
+    TableIterator beamit(stable, "BEAMNO");
     Int beamno = 1;
     while (!beamit.pastEnd() ) {
       Table btable = beamit.table();
       // position only varies by beam
       MDirection::ScalarColumn dirCol(btable, "DIRECTION");
       Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
-      TableIterator ifit(btable, "IFNO");
-      Int ifno = 1;
-      while (!ifit.pastEnd() ) {
-        Table itable = ifit.table();
-        TableIterator cycit(itable, "CYCLENO");
-        Int cycno = 1;
-        while (!cycit.pastEnd() ) {
-          Table ctable = cycit.table();
-          TableRow row(ctable);
+      TableIterator cycit(btable, "CYCLENO");
+      Int cycno = 1;
+      while (!cycit.pastEnd() ) {
+        Table ctable = cycit.table();
+        TableIterator ifit(ctable, "IFNO");
+        Int ifno = 1;
+        while (!ifit.pastEnd() ) {
+          Table itable = ifit.table();
+          TableRow row(itable);
           // use the first row to fill in all the "metadata"
           const TableRecord& rec = row.get(0);
-          ROArrayColumn<Float> specCol(ctable, "SPECTRA");
+          ROArrayColumn<Float> specCol(itable, "SPECTRA");
           uInt nchan = specCol(0).nelements();
           Double cdelt,crval,crpix, restfreq;
           Float focusAxi, focusTan, focusRot,
                 temperature, pressure, humidity, windSpeed, windAz;
+          Float tmp0,tmp1,tmp2,tmp3,tmp4;
           Vector<Float> tcalval;
-          String tmp,tmp2, tcalt;
+          String stmp0,stmp1, tcalt;
           in->frequencies().getEntry(crpix,crval,cdelt, rec.asuInt("FREQ_ID"));
-          in->molecules().getEntry(restfreq,tmp,tmp2,rec.asuInt("RESTFREQ_ID"));
+          in->focus().getEntry(focusAxi, focusTan, focusRot,
+                               tmp0,tmp1,tmp2,tmp3,tmp4,
+                               rec.asuInt("FOCUS_ID"));
+          in->molecules().getEntry(restfreq,stmp0,stmp1,rec.asuInt("MOLECULE_ID"));
           in->tcal().getEntry(tcalt,tcalval,rec.asuInt("TCAL_ID"));
           in->weather().getEntry(temperature, pressure, humidity,
                                  windSpeed, windAz,
@@ -197,19 +202,18 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           Matrix<Float> specs;
           Matrix<uChar> flags;
           Vector<Complex> xpol;
-          polConversion(specs, flags, xpol, ctable);
-          Vector<Float> tsys = tsysFromTable(ctable);
+          polConversion(specs, flags, xpol, itable);
+          Vector<Float> tsys = tsysFromTable(itable);
           // dummy data
           uInt npol = specs.ncolumn();
+
           Matrix<Float>   baseLin(npol,2, 0.0f);
           Matrix<Float>   baseSub(npol,9, 0.0f);
           Complex         xCalFctr;
           Vector<Double>  scanRate(2, 0.0);
           Vector<Float>   sigma(npol, 0.0f);
           Vector<Float>   calFctr(npol, 0.0f);
-
-
-          if (status = cWriter->write(scanno, cycno, rec.asDouble("TIME"),
+          if (status = writer_->write(scanno, cycno, rec.asDouble("TIME"),
                                       rec.asDouble("INTERVAL"),
                                       rec.asString("FIELDNAME"),
                                       rec.asString("SRCNAME"),
@@ -223,10 +227,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                       rec.asFloat("AZIMUTH"),
                                       rec.asFloat("ELEVATION"),
                                       rec.asFloat("PARANGLE"),
-                                      focusAxi, focusTan, focusRot,//
+                                      focusAxi, focusTan, focusRot,
                                       temperature,
                                       pressure, humidity, windSpeed, windAz,
-                                      rec.asInt("REFBEAM"), beamno,
+                                      rec.asInt("REFBEAMNO")+1, beamno,
                                       direction,
                                       scanRate,// not in scantable
                                       tsys,
@@ -236,15 +240,15 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                       xCalFctr,//
                                       xpol)
                                       ) {
-            cerr << "Error writing output file." << endl;
-            return 1;
+            writer_->close();
+            throw(AipsError("STWriter: Failed to export Scantable."));
           }
 
-          ++cycno;
-          ++cycit;
+          ++ifno;
+          ++ifit;
         }
-        ++ifno;
-        ++ifit;
+        ++cycno;
+        ++cycit;
       }
       ++beamno;
       ++beamit;
@@ -255,7 +259,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   ostringstream oss;
   oss << "STWriter: wrote " << count << " rows to " << filename << endl;
   pushLog(String(oss));
-  cWriter->close();
+  writer_->close();
 
   return 0;
 }
@@ -266,9 +270,11 @@ Vector<Float> STWriter::tsysFromTable(const Table& tab)
   Vector<Float> out(tab.nrow());
   Vector<Float> tmp;
   for (uInt i=0; i<tab.nrow(); ++i) {
+    tmp.resize();
     tmp = tsysCol(i);
     out[i] = tmp[0];
   }
+  return out;
 }
 
 void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
@@ -276,19 +282,20 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
 {
   TableRow row(tab);
   String poltype = tab.keywordSet().asString("POLTYPE");
-  if ( poltype != "linear")
+  if ( poltype != "linear") {
     String msg = "poltype = " + poltype + " not yet supported in output.";
-    throw(AipsError("msg"));
+    throw(AipsError(msg));
+  }
   // use the first row to fill in all the "metadata"
   const TableRecord& rec = row.get(0);
   ROArrayColumn<Float> specCol(tab, "SPECTRA");
   ROArrayColumn<uChar> flagCol(tab, "FLAGTRA");
   uInt nchan = specCol(0).nelements();
-  uInt ncols = (tab.nrow()==1 ? 1: 2 );
-  specs.resize(nchan, ncols);
-  flags.resize(nchan, ncols);
+  uInt ncol = (tab.nrow()==1 ? 1: 2 );
+  specs.resize(nchan, ncol);
+  flags.resize(nchan, ncol);
   // the linears
-  for (uInt i=0; i<ncols; ++i) {
+  for (uInt i=0; i<ncol; ++i) {
     specs.column(i) = specCol(i);
     flags.column(i) = flagCol(i);
   }

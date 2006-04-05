@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDAsciiWriter.h: ASAP class to write out single dish spectra as image FITS
+//# STAsciiWriter.h: ASAP class to write out single dish spectra as image FITS
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -28,34 +28,37 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#ifndef SDASCIIWRITER_H
-#define SDASCIIWRITER_H
+#ifndef STASCIIWRITER_H
+#define STASCIIWRITER_H
 
 #include <casa/aips.h>
 #include <casa/BasicSL/String.h>
-#include <SDMemTable.h>
+#include <casa/ostream.h>
 
-#include "SDLog.h"
+#include "Scantable.h"
+#include "Logger.h"
 
 template<class T> class casa::Vector;
-
+class casa::MDirection;
 
 namespace asap {
 
-class SDAsciiWriter : public SDLog {
+class STAsciiWriter : public Logger {
 public:
 // Constructor
-  SDAsciiWriter();
+  STAsciiWriter();
 
 // Destructor
-  ~SDAsciiWriter();
+  ~STAsciiWriter();
 
 // Write out ascii table
-  casa::Bool write(const SDMemTable& table, const casa::String& name, casa::Bool toStokes);
+  casa::Bool write(const Scantable& table, const casa::String& name);
 
 private:
-   casa::Int convertStokes(casa::Int val);
-   casa::String formatDirection(const casa::Vector<casa::Double>& lonLat);
+  casa::String formatDirection(const casa::MDirection& md) const;
+  template <class T>
+  void addLine(std::ostream& of, const casa::String& lbl,
+               const T& value);
 };
 
 }// namespace

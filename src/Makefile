@@ -92,7 +92,6 @@ CCOBJECTS := MathUtils.o \
              STWeather.o \
              STFrequencies.o \
              STHistory.o \
-             STWriter.o \
              STSelector.o \
 	     STLineFinder.o \
              STFitter.o \
@@ -101,6 +100,8 @@ CCOBJECTS := MathUtils.o \
              STPol.o \
              STPolLinear.o \
              STPolStokes.o \
+             STWriter.o \
+             STAsciiWriter.o \
              Scantable.o \
              Templates.o 
 PYOBJECTS := python_Scantable.o \
@@ -111,6 +112,7 @@ PYOBJECTS := python_Scantable.o \
              python_Logger.o \
              python_STLineFinder.o \
              python_STFitEntry.o \
+             python_STWriter.o \
 	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)
@@ -141,7 +143,9 @@ HEADERS   := MathUtils.h \
              FactoryBase.h \
 	     STPol.h \
 	     STPolStokes.h \
-	     STPolLinear.h
+	     STPolLinear.h \
+	     STWriter.h \
+	     STAsciiWriter.h
 
 STATICCCLIB := libasap.a
 MEMBERS := $(patsubst %,$(STATICCCLIB)(%),$(CCOBJECTS))

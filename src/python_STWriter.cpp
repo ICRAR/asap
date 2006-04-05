@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_SDWriter.cc: Python binding to C++ SDWriter class.
+//# python_STWriter.cc: Python binding to C++ SDWriter class.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -30,22 +30,21 @@
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
-#include "SDWriterWrapper.h"
+#include "STWriterWrapper.h"
 
 using namespace boost::python;
 
 namespace asap {
   namespace python  {
 
-void python_SDWriter() {
-  class_<SDWriterWrapper>("sdwriter")
-    .def(init <> ())
-    .def(init <std::string> ())
-    .def("setformat", &SDWriterWrapper::setFormat,
-        (boost::python::arg("format")="SDFITS"))
-    .def("write",     &SDWriterWrapper::write);
-  ;
-};
-
+    void python_STWriter() {
+      class_<STWriterWrapper>("stwriter")
+        .def(init <> ())
+        .def(init <std::string> ())
+        .def("setformat", &STWriterWrapper::setFormat,
+        (boost::python::arg("format")="STFITS"))
+        .def("write",     &STWriterWrapper::write);
+      ;
+    };
   } // namespace python
 } // namespace asap

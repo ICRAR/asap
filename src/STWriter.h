@@ -49,7 +49,7 @@ namespace asap {
   *
   * @brief Export of ASAP data container into foreign formats
   * @author Malte Marquarding
-  * @date $Date$
+  * @date 2006-03-08
   * @version 2.0a
 */
 class STWriter : public Logger {
@@ -80,8 +80,8 @@ private:
                       casa::Matrix<casa::uChar>& flag,
                       casa::Vector<casa::Complex>& xpol,
                       const casa::Table& tab);
-  std::string     cFormat;
-  PKSwriter *cWriter;
+  std::string     format_;
+  PKSwriter* writer_;
 };
 
 }// namespace
