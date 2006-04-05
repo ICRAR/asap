@@ -43,7 +43,6 @@
 using namespace asap;
 using namespace casa;
 using namespace std;
-using namespace boost::python;
 
 namespace asap {
 
