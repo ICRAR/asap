@@ -398,13 +398,12 @@ class asapplotter:
         allxlim = []
         newpanel=True
         panelcount,stackcount = 0,0
-        while r < n*nstack:
+        while r < nr:
             a = d[self._panelling](r)
             b = d[self._stacking](r)
             if a > a0 and panelcount < n:
                 if n > 1:
                     self._plotter.subplot(panelcount)
-                    #pindex += 1
                 self._plotter.palette(0)
                 #title
                 xlab = self._abcissa and self._abcissa[panelcount] \
