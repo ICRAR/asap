@@ -585,6 +585,24 @@ class scantable(Scantable):
         print_log()
         return abc, lbl
 
+    def flag(self, mask=[]):
+        """
+        Flag the selected data using an optional channel mask.
+        Parameters:
+            mask:   an optional channel mask, created with create_mask. Default
+                    (no mask) is all channels.
+        """
+        varlist = vars()
+        try:
+            self._flag(mask)
+        except RuntimeError,msg:
+            if rcParams['verbose']:
+                print msg
+                return
+            else: raise
+        self._add_history("flag", varlist)
+
+
     def create_mask(self, *args, **kwargs):
         """
         Compute and return a mask based on [min,max] windows.
