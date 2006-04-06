@@ -123,10 +123,11 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
 
     of << std::left << setw(16) << "x";
     for ( int i=0; i<t.nrow(); ++i ) {
-      String y = "y"+ String(i);
-      String ym = "yflag"+ String(i);
-      of << setw(16) << y;
-      of << setw(7) << ym;
+      ostringstream os,os1;
+      os << "y" << i;
+      os1 << "yf" << i;
+      of << setw(16) << String(os);
+      of << setw(7) << String(os1);
     }
     of << endl;
     std::vector<double> abc = stable.getAbcissa(row0);
