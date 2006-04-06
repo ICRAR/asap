@@ -148,11 +148,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     throw(AipsError("Failed to create output file"));
   }
 
-  Double          srcVel = 0.0;
+  Double          srcVel;
 
   String          fieldName, srcName, tcalTime;
   Vector<Float>   calFctr, sigma, tcal, tsys;
-  Vector<Double>  direction(2), scanRate(2), srcDir(2), srcPM(2,0.0);
+  Vector<Double>  direction(2), scanRate(2), srcDir(2), srcPM(2);
   Matrix<Float>   spectra;
   Matrix<uChar>   flagtra;
   Complex         xCalFctr;
@@ -170,6 +170,14 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       MDirection::ScalarColumn dirCol(btable, "DIRECTION");
       Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
       TableIterator cycit(btable, "CYCLENO");
+      ROArrayColumn<Double> srateCol(btable, "SCANRATE");
+      srateCol.get(0, scanRate);
+      ROArrayColumn<Double> spmCol(btable, "SRCPROPERMOTION");
+      spmCol.get(0, srcPM);
+      ROArrayColumn <Double> sdirCol(btable, "SRCDIRECTION");
+      sdirCol.get(0, srcDir);
+      ROScalarColumn<Double> svelCol(btable, "SRCVELOCITY");
+      svelCol.get(0, srcVel);
       Int cycno = 1;
       while (!cycit.pastEnd() ) {
         Table ctable = cycit.table();
@@ -218,8 +226,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                       rec.asDouble("INTERVAL"),
                                       rec.asString("FIELDNAME"),
                                       rec.asString("SRCNAME"),
-                                      direction,
-                                      srcPM, srcVel, // not in scantable yet
+                                      srcDir, srcPM, srcVel,
                                       ifno,
                                       refFreqNew, nchan*abs(cdelt), cdelt,
                                       restfreq,
@@ -233,7 +240,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                       pressure, humidity, windSpeed, windAz,
                                       rec.asInt("REFBEAMNO")+1, beamno,
                                       direction,
-                                      scanRate,// not in scantable
+                                      scanRate,
                                       tsys,
                                       sigma, calFctr,// not in scantable
                                       baseLin, baseSub,// not in scantable
@@ -244,7 +251,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
             writer_->close();
             throw(AipsError("STWriter: Failed to export Scantable."));
           }
-
+          ++count;
           ++ifno;
           ++ifit;
         }
@@ -258,7 +265,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     ++scanit;
   }
   ostringstream oss;
-  oss << "STWriter: wrote " << count << " rows to " << filename << endl;
+  oss << "STWriter: wrote " << count << " rows to " << filename;
   pushLog(String(oss));
   writer_->close();
 

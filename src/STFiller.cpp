@@ -226,6 +226,16 @@ int asap::STFiller::read( )
     if ( status != 0 ) break;
     TableRow row(table_->table());
     TableRecord& rec = row.record();
+    // fields that don't get used and are just passed through asap
+    RecordFieldPtr<Array<Double> > srateCol(rec, "SCANRATE");
+    *srateCol = scanRate;
+    RecordFieldPtr<Array<Double> > spmCol(rec, "SRCPROPERMOTION");
+    *spmCol = srcPM;
+    RecordFieldPtr<Array<Double> > sdirCol(rec, "SRCDIRECTION");
+    *sdirCol = srcDir;
+    RecordFieldPtr<Double> svelCol(rec, "SRCVELOCITY");
+    *svelCol = srcVel;
+    // the real stuff
     RecordFieldPtr<Int> fitCol(rec, "FIT_ID");
     *fitCol = -1;
     RecordFieldPtr<uInt> scanoCol(rec, "SCANNO");

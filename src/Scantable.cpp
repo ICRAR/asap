@@ -234,6 +234,12 @@ void Scantable::setupMainTable()
   td.addColumn(ScalarColumnDesc<uInt>("FOCUS_ID"));
   td.addColumn(ScalarColumnDesc<uInt>("WEATHER_ID"));
 
+  // columns which just get dragged along, as they aren't used in asap
+  td.addColumn(ScalarColumnDesc<Double>("SRCVELOCITY"));
+  td.addColumn(ArrayColumnDesc<Double>("SRCPROPERMOTION"));
+  td.addColumn(ArrayColumnDesc<Double>("SRCDIRECTION"));
+  td.addColumn(ArrayColumnDesc<Double>("SCANRATE"));
+
   td.rwKeywordSet().define("OBSMODE", String(""));
 
   // Now create Table SetUp from the description.
