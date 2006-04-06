@@ -43,7 +43,7 @@ public:
 
   STMath(bool insitu=true);
 
-  ~STMath();
+  virtual ~STMath();
 
   /**
    * set the @attr insitu attribute
@@ -85,13 +85,13 @@ public:
 
   casa::CountedPtr<Scantable>
     smooth(const casa::CountedPtr<Scantable>& in, const std::string& kernel,
-		      float width);
+                      float width);
 
   casa::CountedPtr<Scantable>
     gainElevation(const casa::CountedPtr<Scantable>& in,
                   const std::vector<float>& coeff,
                   const std::string& fileName,
-		  const std::string& method);
+                  const std::string& method);
   casa::CountedPtr<Scantable>
     convertFlux(const casa::CountedPtr<Scantable>& in, float d,
                 float etaap, float jyperk);

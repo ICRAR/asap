@@ -32,9 +32,10 @@ STSelector::STSelector() :
 STSelector::STSelector( const STSelector&  other ) :
   intselections_(other.intselections_),
   stringselections_(other.stringselections_),
-  taql_(other.taql_),
   poltypes_(other.poltypes_),
-  order_(other.order_) {
+  order_(other.order_),
+  taql_(other.taql_)
+{
 }
 
 STSelector& STSelector::operator=( const STSelector& other )
@@ -109,7 +110,7 @@ void STSelector::setTaQL( const std::string& taql )
 void asap::STSelector::setSortOrder( const std::vector< std::string > & order )
 {
   order_.resize(order.size(), True);
-  for (int i=0;i<order.size();++i) {
+  for (unsigned int i=0;i<order.size();++i) {
     order_[i] = order[i];
   }
 }
@@ -120,8 +121,8 @@ Table STSelector::apply( const Table& tab )
     return sort(tab);
   }
   TableExprNode query;
-  intidmap::const_iterator it = intselections_.begin();
-  for (it; it != intselections_.end(); ++it) {
+  intidmap::const_iterator it;
+  for (it= intselections_.begin(); it != intselections_.end(); ++it) {
     TableExprNode theset(Vector<Int>( (*it).second ));
     if ( query.isNull() ) {
       query = tab.col((*it).first).in(theset);
@@ -129,8 +130,8 @@ Table STSelector::apply( const Table& tab )
       query = tab.col((*it).first).in(theset) && query;
     }
   }
-  stringidmap::const_iterator it1 = stringselections_.begin();
-  for (it1; it1 != stringselections_.end(); ++it1) {
+  stringidmap::const_iterator it1;
+  for (it1 = stringselections_.begin(); it1 != stringselections_.end(); ++it1) {
     TableExprNode theset(mathutil::toVectorString( (*it1).second ));
     if ( query.isNull() ) {
       query = tab.col((*it1).first).in(theset);
@@ -242,8 +243,8 @@ void asap::STSelector::setPolFromStrings( const std::vector< std::string >& pols
 {
   poltypes_.clear();
   std::vector<int> polints;
-  std::vector<std::string>::const_iterator strit = pols.begin();
-  for (strit; strit != pols.end(); ++strit) {
+  std::vector<std::string>::const_iterator strit;
+  for (strit = pols.begin(); strit != pols.end(); ++strit) {
     std::pair<int, std::string> val;
     try {
        val = STPol::polFromString(*strit);

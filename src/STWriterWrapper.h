@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef STWRITERWRAPPER_H
 #define STWRITERWRAPPER_H
@@ -42,6 +42,8 @@ namespace asap {
 
 class STWriterWrapper : public STWriter {
 public:
+  //STWriterWrapper() {;}
+  virtual ~STWriterWrapper() {;}
   STWriterWrapper(const string& format = "SDFITS") : STWriter(format) {;}
 
   casa::Int write(const ScantableWrapper& table, const string &filename) {

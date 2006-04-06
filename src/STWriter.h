@@ -55,7 +55,7 @@ namespace asap {
 class STWriter : public Logger {
 public:
   STWriter(const string &format = "SDFITS");
-  ~STWriter();
+  virtual ~STWriter();
 
   /**
    * Set the format the data should be exported in
