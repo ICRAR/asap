@@ -372,7 +372,7 @@ class asapplotter:
 
         polmodes = dict(zip(self._selection.get_pols(),self._selection.get_poltypes()))
         n,nstack = self._get_selected_n(scan)
-        maxpanel, maxstack = 9,4
+        maxpanel, maxstack = 16,8
         if n > maxpanel or nstack > maxstack:
             from asap import asaplog
             msg ="Scan to be plotted contains more than %d selections.\n" \
@@ -380,7 +380,7 @@ class asapplotter:
             asaplog.push(msg)
             print_log()
             n = min(n,maxpanel)
-            nstack = min(n,maxstack)
+            nstack = min(nstack,maxstack)
 
         if n > 1:
             ganged = rcParams['plotter.ganged']
@@ -398,12 +398,9 @@ class asapplotter:
         allxlim = []
         newpanel=True
         panelcount,stackcount = 0,0
-        while r < nr:
+        while r < n*nstack:
             a = d[self._panelling](r)
             b = d[self._stacking](r)
-#             print r
-#             print "  a: ",a,a0,panelcount,n
-#             print "  b: ",b,b0,stackcount,nstack
             if a > a0 and panelcount < n:
                 if n > 1:
                     self._plotter.subplot(panelcount)
@@ -474,7 +471,7 @@ class asapplotter:
             b0=b
             # ignore following rows
             if (panelcount == n) and (stackcount == nstack):
-                pass#break
+                break
             r+=1 # next row
         #reset the selector to the scantable's original
         scan.set_selection(savesel)
