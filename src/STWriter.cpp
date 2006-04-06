@@ -140,10 +140,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // Create the output file and write static data.
   Int status;
   Bool havexpol = Bool(in->npol() > 2);
-  if (status = writer_->create(filename, hdr.observer, hdr.project,
+  status = writer_->create(filename, hdr.observer, hdr.project,
                                hdr.antennaname, hdr.antennaposition,
                                hdr.obstype, hdr.equinox, hdr.freqref,
-                               nChan, nPol, False, havexpol)) {
+                               nChan, nPol, False, havexpol);
+  if ( status ) {
     throw(AipsError("Failed to create output file"));
   }
 
@@ -213,7 +214,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           Vector<Double>  scanRate(2, 0.0);
           Vector<Float>   sigma(npol, 0.0f);
           Vector<Float>   calFctr(npol, 0.0f);
-          if (status = writer_->write(scanno, cycno, rec.asDouble("TIME"),
+          status = writer_->write(scanno, cycno, rec.asDouble("TIME"),
                                       rec.asDouble("INTERVAL"),
                                       rec.asString("FIELDNAME"),
                                       rec.asString("SRCNAME"),
@@ -238,8 +239,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                       baseLin, baseSub,// not in scantable
                                       specs, flags,
                                       xCalFctr,//
-                                      xpol)
-                                      ) {
+                                      xpol);
+          if ( status ) {
             writer_->close();
             throw(AipsError("STWriter: Failed to export Scantable."));
           }
@@ -280,14 +281,11 @@ Vector<Float> STWriter::tsysFromTable(const Table& tab)
 void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
                               Vector< Complex > & xpol, const Table & tab )
 {
-  TableRow row(tab);
   String poltype = tab.keywordSet().asString("POLTYPE");
   if ( poltype != "linear") {
     String msg = "poltype = " + poltype + " not yet supported in output.";
     throw(AipsError(msg));
   }
-  // use the first row to fill in all the "metadata"
-  const TableRecord& rec = row.get(0);
   ROArrayColumn<Float> specCol(tab, "SPECTRA");
   ROArrayColumn<uChar> flagCol(tab, "FLAGTRA");
   uInt nchan = specCol(0).nelements();

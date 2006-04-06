@@ -41,7 +41,7 @@
 using namespace casa;
 
 float mathutil::statistics(const String& which,
-			   const MaskedArray<Float>& data)
+                           const MaskedArray<Float>& data)
 {
    String str(which);
    str.upcase();
@@ -67,6 +67,7 @@ float mathutil::statistics(const String& which,
    } else if (str.contains(String("MED"))) {
       return median(data);
    }
+   return 0.0;
 }
 
 

@@ -42,7 +42,7 @@ public:
              const std::string& avmode )
   {
     std::vector<casa::CountedPtr<Scantable> > sts;
-    for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
+    for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::average(sts, mask, weight, avmode));
   }
   ScantableWrapper
@@ -86,7 +86,7 @@ public:
     gainElevation(const ScantableWrapper& in,
                   const std::vector<float>& coeff,
                   const std::string& filename,
-		  const std::string& method)
+                  const std::string& method)
 
   { return
       ScantableWrapper(STMath::gainElevation(in.getCP(), coeff, filename, method)); }
@@ -105,7 +105,7 @@ public:
 
   {
     std::vector<casa::CountedPtr<Scantable> > sts;
-    for (int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
+    for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::merge(sts)); }
 
   ScantableWrapper rotateXYPhase( const ScantableWrapper& in, float angle)

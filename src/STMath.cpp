@@ -127,7 +127,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ROScalarColumn<Int> scanIDCol;
 
   for (uInt i=0; i < tout.nrow(); ++i) {
-    for ( int j=0; j < in.size(); ++j ) {
+    for ( int j=0; j < int(in.size()); ++j ) {
       const Table& tin = in[j]->table();
       const TableRecord& rec = row.get(i);
       ROScalarColumn<Double> tmp(tin, "TIME");
@@ -424,7 +424,7 @@ CountedPtr< Scantable > STMath::resample( const CountedPtr< Scantable >& in,
 // is the same length.
 //
 {
-  InterpolateArray1D<Double,Float>::InterpolationMethod interp;
+  //InterpolateArray1D<Double,Float>::InterpolationMethod interp;
   Int interpMethod(stringToIMethod(method));
 
   CountedPtr< Scantable > out = getScantable(in, false);
@@ -620,13 +620,12 @@ void STMath::scaleFromTable(Table& in,
 
   // Interpolate (and extrapolate) with desired method
 
-   //InterpolateArray1D<Double,Float>::InterpolationMethod method;
-   Int intmethod(stringToIMethod(method));
+  InterpolateArray1D<Double,Float>::InterpolationMethod interp = stringToIMethod(method);
 
    Vector<Float> yout;
    Vector<Bool> maskout;
    InterpolateArray1D<Float,Float>::interpolate(yout, maskout, xout,
-                                                xin, yin, maskin, intmethod,
+                                                xin, yin, maskin, interp,
                                                 True, True);
 
    scaleByVector(in, Float(1.0)/yout, dotsys);
@@ -705,7 +704,7 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
       STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), True);
     STAttr sda;
     if (d < 0) d = sda.diameter(inst);
-    Float jyPerk = STAttr::findJyPerK(etaap, d);
+    jyperk = STAttr::findJyPerK(etaap, d);
     ostringstream oss;
     oss << "Jy/K = " << jyperk;
     pushLog(String(oss));
@@ -897,7 +896,7 @@ CountedPtr< Scantable >
 CountedPtr< Scantable >
   STMath::invertPhase( const CountedPtr < Scantable >& in )
 {
-  applyToPol(in, &STPol::invertPhase, Float(0.0));
+  return applyToPol(in, &STPol::invertPhase, Float(0.0));
 }
 
 CountedPtr< Scantable >
@@ -1024,8 +1023,7 @@ CountedPtr< Scantable >
   }
   MPosition refPos = in->getAntennaPosition();
 
-  InterpolateArray1D<Double,Float>::InterpolationMethod interp;
-  Int interpMethod(stringToIMethod(method));
+  InterpolateArray1D<Double,Float>::InterpolationMethod interp = stringToIMethod(method);
   // test if user frame is different to base frame
   if ( in->frequencies().getFrameString(true)
        == in->frequencies().getFrameString(false) ) {
@@ -1094,7 +1092,7 @@ CountedPtr< Scantable >
         // use align abcissa cache after the first row
         bool first = true;
         // these rows should be just be POLNO
-        for (int i=0; i<tab.nrow(); ++i) {
+        for (int i=0; i<int(tab.nrow()); ++i) {
           // input values
           Vector<uChar> flag = flagCol(i);
           Vector<Bool> mask(flag.shape());

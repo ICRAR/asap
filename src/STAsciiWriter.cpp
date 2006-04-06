@@ -122,7 +122,7 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
 
     of << std::left << setw(16) << "x";
-    for ( int i=0; i<t.nrow(); ++i ) {
+    for ( unsigned int i=0; i<t.nrow(); ++i ) {
       ostringstream os,os1;
       os << "y" << i;
       os1 << "yf" << i;
@@ -135,9 +135,9 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     ROArrayColumn<uChar> flagCol(t,"FLAGTRA");
     Matrix<Float> specs = specCol.getColumn();
     Matrix<uChar> flags = flagCol.getColumn();
-    for ( int i=0; i<specs.nrow(); ++i ) {
+    for ( unsigned int i=0; i<specs.nrow(); ++i ) {
       of << setw(16) << setprecision(8) << abc[i] ;
-      for ( int j=0; j<specs.ncolumn(); ++j ) {
+      for ( unsigned int j=0; j<specs.ncolumn(); ++j ) {
         of << setw(16) << setprecision(8) << specs(i,j) ;
         of << setw(7) << Int(flags(i,j));
       }

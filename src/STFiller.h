@@ -65,7 +65,7 @@ public:
   /**
    * Destructor
    */
-  ~STFiller();
+  virtual ~STFiller();
 
   /**
    * associate the Filler with a file on disk

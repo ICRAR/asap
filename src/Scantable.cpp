@@ -100,7 +100,7 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
 {
   initFactories();
   Table tab(name, Table::Update);
-  Int version;
+  uInt version;
   tab.keywordSet().get("VERSION", version);
   if (version != version_) {
     throw(AipsError("Unsupported version of ASAP file."));
@@ -321,8 +321,6 @@ bool Scantable::conformant( const Scantable& other )
 
 
 int Scantable::nscan() const {
-  int n = 0;
-  Int previous = -1; Int current = 0;
   Vector<uInt> scannos(scanCol_.getColumn());
   uInt nout = GenSort<uInt>::sort( scannos, Sort::Ascending,
                        Sort::QuickSort|Sort::NoDuplicates );
@@ -383,7 +381,8 @@ void Scantable::setFluxUnit(const std::string& unit)
 void Scantable::setInstrument(const std::string& name)
 {
   bool throwIt = true;
-  Instrument ins = STAttr::convertInstrument(name, throwIt);
+  // create an Instrument to see if this is valid
+  STAttr::convertInstrument(name, throwIt);
   String nameU(name);
   nameU.upcase();
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
@@ -554,7 +553,7 @@ void Scantable::calculateAZEL()
   ostringstream oss;
   oss << "Computed azimuth/elevation using " << endl
       << mp << endl;
-  for (uInt i=0; i<nrow(); ++i) {
+  for (Int i=0; i<nrow(); ++i) {
     MEpoch me = timeCol(i);
     MDirection md = getDirection(i);
     oss  << " Time: " << formatTime(me,False) << " Direction: " << formatDirection(md)
@@ -794,7 +793,7 @@ std::string Scantable::getTime(int whichrow, bool showdate) const
 
 std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
 {
-  if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
+  if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal ro number"));
   std::vector<double> stlout;
   int nchan = specCol_(whichrow).nelements();
   String us = freqTable_.getUnitString();
@@ -863,7 +862,7 @@ MDirection Scantable::getDirection(int whichrow ) const
 
 std::string Scantable::getAbcissaLabel( int whichrow ) const
 {
-  if ( whichrow > table_.nrow() ) throw(AipsError("Illegal ro number"));
+  if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal ro number"));
   const MPosition& mp = getAntennaPosition();
   const MDirection& md = getDirection(whichrow);
   const MEpoch& me = timeCol_(whichrow);

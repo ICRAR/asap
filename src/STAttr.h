@@ -51,7 +51,7 @@ class STAttr : public Logger {
   STAttr();
 
   // Destructor
-  ~STAttr();
+  virtual ~STAttr();
 
   // Copy Constructor (copy semantics)
   STAttr(const STAttr& other);
@@ -65,19 +65,19 @@ class STAttr : public Logger {
   // Beam efficiency.  Frequency in Hz.  Returns 1 if unknown.
   casa::Vector<casa::Float>
   beamEfficiency(Instrument instr, const casa::MEpoch& dateObs,
-		 const casa::Vector<casa::Float>& freqs) const;
+                 const casa::Vector<casa::Float>& freqs) const;
 
   // Aperture efficiency. Frequency in Hz.  Returns 1 if unknown.
   casa::Vector<casa::Float>
   apertureEfficiency(Instrument instr,
-		     const casa::MEpoch& dateObs,
-		     const casa::Vector<casa::Float>& freqs) const;
+                     const casa::MEpoch& dateObs,
+                     const casa::Vector<casa::Float>& freqs) const;
 
   // Find factor to convert Jy -> K for this telescope, date of
   // observation and frequency (Hz)
   casa::Vector<casa::Float> JyPerK(Instrument instr,
-				   const casa::MEpoch& dateObs,
-				   const casa::Vector<casa::Float>& freqs)
+                                   const casa::MEpoch& dateObs,
+                                   const casa::Vector<casa::Float>& freqs)
     const;
 
   // Gain Elevation polynomial correction coefficients (elevation in
@@ -116,8 +116,8 @@ private:
 
   // Linear interpolation
   casa::Vector<casa::Float> interp(const casa::Vector<casa::Float>& xOut,
-				   const casa::Vector<casa::Float>& xIn,
-				   const casa::Vector<casa::Float>& yIn) const;
+                                   const casa::Vector<casa::Float>& xIn,
+                                   const casa::Vector<casa::Float>& yIn) const;
 
 
 };

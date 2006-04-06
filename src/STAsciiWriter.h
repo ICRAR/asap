@@ -49,7 +49,7 @@ public:
   STAsciiWriter();
 
 // Destructor
-  ~STAsciiWriter();
+  virtual ~STAsciiWriter();
 
 // Write out ascii table
   casa::Bool write(const Scantable& table, const casa::String& name);
