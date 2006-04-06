@@ -125,6 +125,10 @@ public:
                                    const std::string& method  )
   { return ScantableWrapper(STMath::frequencyAlign(in.getCP())); }
 
+  ScantableWrapper convertPolarisation( const ScantableWrapper& in,
+                                        const std::string& newtype )
+  { return ScantableWrapper(STMath::convertPolarisation(in.getCP(),newtype)); }
+
 };
 
 }

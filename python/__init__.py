@@ -231,7 +231,38 @@ def _to_list(param, ptype=int):
     return None
 
 def unique(x):
+    """
+    Return the unique values in a list
+    Parameters:
+        x:      the list to reduce
+    Examples:
+        x = [1,2,3,3,4]
+        print unique(x)
+        [1,2,3,4]
+    """
     return dict([ (val, 1) for val in x]).keys()
+
+def list_files(path=".",suffix="rpf"):
+    """
+    Return a list files readable by asap, such as rpf, sdfits, mbf, asap
+    Parameters:
+        path:     The directory to list (default '.')
+        suffix:   The file extension (default rpf)
+    Example:
+        files = list_files("data/","sdfits")
+        print files
+        ['data/2001-09-01_0332_P363.sdfits',
+        'data/2003-04-04_131152_t0002.sdfits',
+        'data/Sgr_86p262_best_SPC.sdfits']
+    """
+    import os
+    if not os.path.isdir(path):
+        return None
+    valid = "rpf sdf sdfits mbf asap".split()
+    if not suffix in valid:
+        return None
+    files = [os.path.expanduser(os.path.expandvars(path+"/"+f)) for f in os.listdir(path)]
+    return filter(lambda x: x.endswith(suffix),files)
 
 # workaround for ipython, which redirects this if banner=0 in ipythonrc
 sys.stdout = sys.__stdout__
@@ -334,6 +365,7 @@ if rcParams['verbose']:
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
+            convert_pol     - convert to a different polarisation type
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans
                               (matched pairs and 1 off - n on)
@@ -416,6 +448,7 @@ if rcParams['verbose']:
         commands            - this command
         print               - print details about a variable
         list_scans          - list all scantables created bt the user
+        list_files          - list all files readable by asap (default rpf)
         del                 - delete the given variable from memory
         range               - create a list of values, e.g.
                               range(3) = [0,1,2], range(2,5) = [2,3,4]

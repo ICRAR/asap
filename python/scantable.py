@@ -973,10 +973,30 @@ class scantable(Scantable):
         varlist = vars()
         if mask is None:
             mask = ()
-        s = self._math._averagepol(self, mask, weight)
+        s = scantable(self._math._averagepol(self, mask, weight))
         s._add_history("average_pol",varlist)
         print_log()
-        return scantable(s)
+        return s
+
+    def convert_pol(self, poltype=None):
+        """
+        Convert the data to a different polarisation type.
+        Parameters:
+            poltype:    The new polarisation type. Valid types are:
+                        "linear", "stokes" and "circular"
+        """
+        varlist = vars()
+        try:
+            s = scantable(self._math._convertpol(self, poltype))
+        except RuntimeError,msg:
+            if rcParams['verbose']:
+              print msg
+              return
+            else:
+                raise
+        s._add_history("convert_pol",varlist)
+        print_log()
+        return s
 
     def smooth(self, kernel="hanning", width=5.0, insitu=None):
         """

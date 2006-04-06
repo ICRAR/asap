@@ -121,6 +121,10 @@ public:
                     const std::string& refTime = "",
                     const std::string& method = "cubic" );
 
+  casa::CountedPtr<Scantable>
+    convertPolarisation( const casa::CountedPtr<Scantable>& in,
+                         const std::string& newtype);
+
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
                                            STPol::polOperation fptr,

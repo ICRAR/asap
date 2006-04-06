@@ -1127,3 +1127,62 @@ CountedPtr< Scantable >
   out->frequencies().setFrame(system, true);
   return out;
 }
+
+CountedPtr<Scantable>
+  asap::STMath::convertPolarisation( const CountedPtr<Scantable>& in,
+                                     const std::string & newtype )
+{
+  if (in->npol() != 2 && in->npol() != 4)
+    throw(AipsError("Can only convert two or four polarisations."));
+  if ( in->getPolType() == newtype )
+    throw(AipsError("No need to convert."));
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(in, true);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  tout.rwKeywordSet().define("POLTYPE", String(newtype));
+
+  Block<String> cols(4);
+  cols[0] = "SCANNO";
+  cols[1] = "CYCLENO";
+  cols[2] = "BEAMNO";
+  cols[3] = "IFNO";
+  TableIterator it(in->originalTable_, cols);
+  String basetype = in->getPolType();
+  STPol* stpol = STPol::getPolClass(in->factories_, basetype);
+  try {
+    while ( !it.pastEnd() ) {
+      Table tab = it.table();
+      uInt row = tab.rowNumbers()[0];
+      stpol->setSpectra(in->getPolMatrix(row));
+      Float fang,fhand,parang;
+      fang = in->focusTable_.getTotalFeedAngle(in->mfocusidCol_(row));
+      fhand = in->focusTable_.getFeedHand(in->mfocusidCol_(row));
+      parang = in->paraCol_(row);
+      /// @todo re-enable this
+      // disable total feed angle to support paralactifying Caswell style
+      stpol->setPhaseCorrections(parang, -parang, fhand);
+      Int npolout = 0;
+      for (uInt i=0; i<tab.nrow(); ++i) {
+        Vector<Float> outvec = stpol->getSpectrum(i, newtype);
+        if ( outvec.nelements() > 0 ) {
+          tout.addRow();
+          TableCopy::copyRows(tout, tab, tout.nrow()-1, 0, 1);
+          ArrayColumn<Float> sCol(tout,"SPECTRA");
+          ScalarColumn<uInt> pCol(tout,"POLNO");
+          sCol.put(tout.nrow()-1 ,outvec);
+          pCol.put(tout.nrow()-1 ,uInt(npolout));
+          npolout++;
+       }
+      }
+      tout.rwKeywordSet().define("nPol", npolout);
+      ++it;
+    }
+  } catch (AipsError& e) {
+    delete stpol;
+    throw(e);
+  }
+  delete stpol;
+  return out;
+}
