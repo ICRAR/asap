@@ -54,6 +54,7 @@ namespace asap {
         .def("_smooth", &STMathWrapper::smooth)
         .def("_gainel", &STMathWrapper::gainElevation)
         .def("_convertflux", &STMathWrapper::convertFlux)
+        .def("_convertpol", &STMathWrapper::convertPolarisation)
         .def("_opacity", &STMathWrapper::opacity)
         .def("_merge", &STMathWrapper::merge)
         .def("_rotate_xyphase", &STMathWrapper::rotateXYPhase)
