@@ -1,4 +1,4 @@
-TARGET   := /tmp/asap/_asap.so
+TARGET   := /tmp/_asap.so
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(AIPSPATH))
@@ -13,8 +13,8 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS := -fPIC -g
-CXXFLAGS += -ansi -pedantic -Wno-long-long
+CXXFLAGS := -fPIC -O3
+CXXFLAGS += -ansi -pedantic -Wno-long-long -Wall
 CXXOPTS := -DAIPS_NO_TEMPLATE_SRC
 
 # darwin specific flags
