@@ -89,7 +89,7 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
   if ( id > -1 ) {
     Table t = table_(table_.col("ID") == id );
     if (t.nrow() > 0) {
-      rno = t.rowNumbers()[0];
+      rno = t.rowNumbers(table_)[0];
       resultid = id;
       foundentry = true;
     }
@@ -101,7 +101,6 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
   }
   // add new row if new id
   if ( !foundentry ) table_.addRow();
-  cout << rno << "   " << resultid << endl;
   funcCol_.put(rno, mathutil::toVectorString(fit.getFunctions()));
   compCol_.put(rno, Vector<Int>(fit.getComponents()));
   parCol_.put(rno, Vector<Double>(fit.getParameters()));

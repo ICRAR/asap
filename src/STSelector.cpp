@@ -122,7 +122,7 @@ Table STSelector::apply( const Table& tab )
   }
   TableExprNode query;
   intidmap::const_iterator it;
-  for (it= intselections_.begin(); it != intselections_.end(); ++it) {
+  for (it = intselections_.begin(); it != intselections_.end(); ++it) {
     TableExprNode theset(Vector<Int>( (*it).second ));
     if ( query.isNull() ) {
       query = tab.col((*it).first).in(theset);
@@ -153,6 +153,7 @@ Table STSelector::apply( const Table& tab )
     if ( query.isNull() ) {
       return sort(tab);
     } else {
+      cout << "query rows"<< tab(query).nrow() << endl;
       return sort(tab(query));
     }
   }

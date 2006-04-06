@@ -182,7 +182,7 @@ public:
   /**
    * "hard" flag the data, this flags everything selected in setSelection()
    */
-  void flag();
+  void flag( const std::vector<bool>& msk = std::vector<bool>());
 
   /**
    * Return a list of row numbers with respect to the original table.

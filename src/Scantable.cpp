@@ -577,13 +577,39 @@ void Scantable::calculateAZEL()
   pushLog(String(oss));
 }
 
-void Scantable::flag()
+void Scantable::flag(const std::vector<bool>& msk)
 {
   if ( selector_.empty() )
-    throw(AipsError("Trying to flag whole scantable. Aborted."));
-  TableVector<uChar> tvec(table_, "FLAGTRA");
-  uChar userflag = 1 << 7;
-  tvec = userflag;
+    throw(AipsError("Trying to flag whole scantable."));
+  if ( msk.size() == 0 ) {
+    uChar userflag = 1 << 7;
+    for ( uInt i=0; i<table_.nrow(); ++i) {
+      Vector<uChar> flgs = flagsCol_(i);
+      flgs = userflag;
+      flagsCol_.put(i, flgs);
+    }
+    return;
+  }
+  if ( int(msk.size()) != nchan() ) {
+    throw(AipsError("Mask has incorrect number of channels."));
+  }
+  for ( uInt i=0; i<table_.nrow(); ++i) {
+    Vector<uChar> flgs = flagsCol_(i);
+    if ( flgs.nelements() != msk.size() ) {
+      throw(AipsError("Mask has incorrect number of channels."
+                      " Probably varying with IF. Please flag per IF"));
+    }
+    std::vector<bool>::const_iterator it;
+    uInt j = 0;
+    uChar userflag = 1 << 7;
+    for (it = msk.begin(); it != msk.end(); ++it) {
+      if ( *it ) {
+        flgs(j) = userflag;
+      }
+      ++j;
+    }
+    flagsCol_.put(i, flgs);
+  }
 }
 
 std::vector<bool> Scantable::getMask(int whichrow) const
@@ -761,7 +787,7 @@ std::string Scantable::summary( bool verbose )
       Table bsubt = biter.table();
       ROTableRow brow(bsubt);
       const TableRecord& brec = brow.get(0);
-      uInt row0 = bsubt.rowNumbers()[0];
+      uInt row0 = bsubt.rowNumbers(table_)[0];
       oss << setw(5) << "" <<  setw(4) << std::right << brec.asuInt("BEAMNO")<< std::left;
       oss  << setw(4) << ""  << formatDirection(getDirection(row0)) << endl;
       TableIterator iiter(bsubt, "IFNO");

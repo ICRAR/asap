@@ -1003,9 +1003,6 @@ CountedPtr< Scantable >
   CountedPtr< Scantable > out = getScantable(in, false);
   setInsitu(insitu);
   Table& tout = out->table();
-  // clear ouput frequency table
-  //Table ftable = out->frequencies().table();
-  //ftable.removeRow(ftable.rowNumbers());
   // Get reference Epoch to time of first row or given String
   Unit DAY(String("d"));
   MEpoch::Ref epochRef(in->getTimeReference());
@@ -1134,6 +1131,8 @@ CountedPtr<Scantable>
     throw(AipsError("Can only convert two or four polarisations."));
   if ( in->getPolType() == newtype )
     throw(AipsError("No need to convert."));
+  if ( ! in->selector_.empty() )
+    throw(AipsError("Can only convert whole scantable. Unset the selection."));
   bool insitu = insitu_;
   setInsitu(false);
   CountedPtr< Scantable > out = getScantable(in, true);
