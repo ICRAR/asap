@@ -18,9 +18,20 @@
 namespace asap {
 
 /**
-The linear representation of polarisation
+  The linear representation of polarisation.
+  We are using the following convention:
+  @li I = XX + YY
+  @li Q = XX - YY
+  @li U = 2*Real(XY)
+  @li V = 2*Imag(XY)
 
-@author Malte Marquarding
+  resulting in:
+  @li I' = I
+  @li Q' = Q * cos(theta) - V *sin(theta)
+  @li U' = Q * sin(theta) + U * cos(theta)
+  @li V' = V
+  @author Malte Marquarding
+
 */
 class STPolLinear : public STPol
 {

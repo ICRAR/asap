@@ -59,8 +59,15 @@ Vector<Float> asap::STPolStokes::getLinear(uInt index )
   switch(index) {
   case 0:
     out = (getSpectrum(0)+getSpectrum(1))/Float(2.0);
+    break;
   case 1:
     out = (getSpectrum(0)-getSpectrum(1))/Float(2.0);
+    break;
+  case 2:
+    out = getSpectrum(2)/Float(2.0);
+    break;
+  case 3:
+    out = getSpectrum(3)/Float(2.0);
     break;
   default:
     out = Vector<Float>();
@@ -80,10 +87,10 @@ Vector<Float> asap::STPolStokes::getCircular(uInt index )
   Vector<Float> out;
   switch(index) {
   case 0:
-    out = (getSpectrum(0) + getSpectrum(3));
+    out = (getSpectrum(0) + getSpectrum(3))/Float(2.0);
     break;
   case 1:
-    out = (getSpectrum(0) - getSpectrum(3));
+    out = (getSpectrum(0) - getSpectrum(3))/Float(2.0);
     break;
   default:
     out = Vector<Float>();

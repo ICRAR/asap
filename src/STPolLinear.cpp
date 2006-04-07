@@ -39,13 +39,13 @@ Vector<Float> asap::STPolLinear::getStokes( uint index )
         out = Vector<Float>(getSpectrum(0) + getSpectrum(1));
         break;
       case 1:
-        out = Vector<Float>(q * cos(phase) - getSpectrum(2) * sin(phase));
+        out = Vector<Float>(q * cos(phase) - Float(2.0)*getSpectrum(2) * sin(phase));
         break;
       case 2:
-        out = Vector<Float>(q * sin(phase) + getSpectrum(2) * cos(phase));
+        out = Vector<Float>(q * sin(phase) + Float(2.0)*getSpectrum(2) * cos(phase));
         break;
       case 3:
-        out = getFeedHand() * Vector<Float>(getSpectrum(3));
+        out = getFeedHand() * Float(2.0) * Vector<Float>(getSpectrum(3));
         break;
     }
   }
@@ -93,10 +93,10 @@ Vector<Float> asap::STPolLinear::getCircular(uInt index )
   V = getStokes(3);
   switch(index) {
   case 0:
-    out = (I + V);
+    out = (I + V)/Float(2.0);
     break;
   case 1:
-    out = (I - V);
+    out = (I - V)/Float(2.0);
     break;
   default:
     out = Vector<Float>();
@@ -145,9 +145,9 @@ void asap::STPolLinear::rotateLinPolPhase( casa::Float phase )
   U =  Q*sinVal + U*cosVal;
   Q = Q2;
   Matrix<Float>& specs = getSpectra();
-  specs.column(0) = I+Q;
-  specs.column(1) = I-Q;
-  specs.column(2) = U;
+  specs.column(0) = (I+Q)/Float(2.0);
+  specs.column(1) = (I-Q)/Float(2.0);
+  specs.column(2) = U/Float(2.0);
 
 }
 
