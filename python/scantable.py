@@ -347,6 +347,13 @@ class scantable(Scantable):
         """
         return self.stats(stat='stddev',mask=mask);
 
+
+    def column_names(self):
+        """
+        Return a  list of column names, which can be used for selection.
+        """
+        return list(Scantable.column_names(self))
+
     def get_tsys(self):
         """
         Return the System temperatures.

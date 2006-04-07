@@ -177,6 +177,9 @@ public:
 
   void calculateAZEL() { table_->calculateAZEL(); };
 
+  std::vector<std::string> columnNames() const
+    { return table_->columnNames(); }
+
 private:
   casa::CountedPtr<Scantable> table_;
 };

@@ -70,6 +70,7 @@ void python_Scantable() {
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
          (arg("whichrow")=0, arg("poltype")=std::string("")) )
     .def("poltype", &ScantableWrapper::getPolType )
+    .def("column_names", &ScantableWrapper::columnNames)
     .def("_getpollabel", &ScantableWrapper::getPolarizationLabel)
     .def("_setspectrum",&ScantableWrapper::setSpectrum,
          (boost::python::arg("whichrow")=0) )
