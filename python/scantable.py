@@ -252,47 +252,10 @@ class scantable(Scantable):
         self._setselection(selection)
 
     def set_cursor(self, beam=0, IF=0, pol=0):
-        """
-        Set the spectrum for individual operations.
-        Parameters:
-            beam, IF, pol:    a number
-        Example:
-            scan.set_cursor(0,0,1)
-            pol1sig = scan.stats(all=False) # returns std dev for beam=0
-                                            # if=0, pol=1
-        """
-        print "DEPRECATED"
-        varlist = vars()
-        sel = asap._asap.Selector()
-        sel._setbeams([beam])
-        sel._setpols([pol])
-        sel._setifs([IF])
-        self._add_history("set_cursor", varlist)
-        return
+        print "DEPRECATED - use set_selection"
 
     def get_cursor(self):
-        """
-        Return/print a the current 'cursor' into the Beam/IF/Pol cube.
-        Parameters:
-            none
-        Returns:
-            a list of values (currentBeam,currentIF,currentPol)
-        Example:
-            none
-        """
-        print "DEPRECATED"
-        sel = self._getselection()
-        i = sel.getbeams()[0]
-        j = sel.getifs()[0]
-        k = sel.getpols()[0]
-        from asap import asaplog
-        out = "--------------------------------------------------\n"
-        out += " Cursor position\n"
-        out += "--------------------------------------------------\n"
-        out += 'Beam=%d IF=%d Pol=%d ' % (i,j,k)
-        asaplog.push(out)
-        print_log()
-        return i,j,k
+        print "DEPRECATED - use get_selection"
 
     def stats(self, stat='stddev', mask=None):
         """
