@@ -153,7 +153,6 @@ Table STSelector::apply( const Table& tab )
     if ( query.isNull() ) {
       return sort(tab);
     } else {
-      cout << "query rows"<< tab(query).nrow() << endl;
       return sort(tab(query));
     }
   }
