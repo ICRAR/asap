@@ -226,11 +226,28 @@ class scantable(Scantable):
 
     def get_selection(self):
         """
+        Get the selection object currently set on this scantable.
+        Parameters:
+            none
+        Example:
+            sel = scan.get_selection()
+            sel.set_ifs(0)              # select IF 0
+            scan.set_selection(sel)     # apply modified selection
         """
         return selector(self._getselection())
 
-    def set_selection(self, selection):
+    def set_selection(self, selection=selector()):
         """
+        Select a subset of the data. All following operations on this scantable
+        are only applied to thi selection.
+        Parameters:
+            selection:    a selector object (default unset the selection)
+        Examples:
+            sel = selector()         # create a selection object
+            self.set_scans([0,3])    # select SCANNO 0 and 3
+            scan.set_selection(sel)  # set the selection
+            scan.summary()           # will only print summary of scanno 0 an 3
+            scan.set_selection()     # unset the selection
         """
         self._setselection(selection)
 
