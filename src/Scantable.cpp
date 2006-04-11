@@ -100,15 +100,16 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
 {
   initFactories();
   Table tab(name, Table::Update);
-  uInt version;
-  tab.keywordSet().get("VERSION", version);
+  uInt version = tab.keywordSet().asuInt("VERSION");
   if (version != version_) {
     throw(AipsError("Unsupported version of ASAP file."));
   }
-  if ( type_ == Table::Memory )
+  if ( type_ == Table::Memory ) {
     table_ = tab.copyToMemoryTable(generateName());
-  else
+  } else {
     table_ = tab;
+  }
+
   attachSubtables();
   originalTable_ = table_;
   attach();
@@ -176,7 +177,7 @@ void Scantable::setupMainTable()
 {
   TableDesc td("", "1", TableDesc::Scratch);
   td.comment() = "An ASAP Scantable";
-  td.rwKeywordSet().define("VERSION", Int(version_));
+  td.rwKeywordSet().define("VERSION", uInt(version_));
 
   // n Cycles
   td.addColumn(ScalarColumnDesc<uInt>("SCANNO"));
