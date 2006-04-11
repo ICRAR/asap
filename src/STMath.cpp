@@ -152,6 +152,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       Vector<Float> spec,tsys;
       Vector<uChar> flag;
       Double inter,time;
+      cout << rec.asuInt("POLNO") << endl;
       for (uInt k = 0; k < subt.nrow(); ++k ) {
         flagCol.get(k, flag);
         Vector<Bool> bflag(flag.shape());
@@ -978,22 +979,18 @@ CountedPtr< Scantable >
 {
   if (in->getPolType() != "linear"  || in->npol() != 2 )
     throw(AipsError("averagePolarisations can only be applied to two linear polarisations."));
-  CountedPtr<Scantable> pol0( new Scantable(*in), false);
-  CountedPtr<Scantable> pol1( new Scantable(*in), false);
-  Table& tpol0 = pol0->table();
-  Table& tpol1 = pol1->table();
-  Vector<uInt> pol0rows = tpol0(tpol0.col("POLNO") == 0).rowNumbers();
-  Vector<uInt> pol1rows = tpol1(tpol1.col("POLNO") == 1).rowNumbers();
-  tpol0.removeRow(pol1rows);
-  tpol1.removeRow(pol0rows);
-  // give both tables the same POLNO
-  TableVector<uInt> vec(tpol1,"POLNO");
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > pols = getScantable(in, false);
+  setInsitu(insitu);
+  Table& tout = pols->table();
+  // give all rows the same POLNO
+  TableVector<uInt> vec(tout,"POLNO");
   vec = 0;
-  std::vector<CountedPtr<Scantable> > pols;
-  pols.push_back(pol0);
-  pols.push_back(pol1);
-  CountedPtr< Scantable > out = average(pols, mask, weight, "NONE");
-  out->table_.rwKeywordSet().define("nPol",Int(1));
+  pols->table_.rwKeywordSet().define("nPol",Int(1));
+  std::vector<CountedPtr<Scantable> > vpols;
+  vpols.push_back(pols);
+  CountedPtr< Scantable > out = average(vpols, mask, weight, "NONE");
   return out;
 }
 

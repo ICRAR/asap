@@ -978,7 +978,7 @@ class scantable(Scantable):
         varlist = vars()
         if mask is None:
             mask = ()
-        s = scantable(self._math._averagepol(self, mask, weight))
+        s = scantable(self._math._averagepol(self, mask, weight.upper()))
         s._add_history("average_pol",varlist)
         print_log()
         return s
