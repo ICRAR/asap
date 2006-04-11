@@ -351,7 +351,7 @@ if rcParams['verbose']:
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-            flag_spectrum   - flag data
+            flag            - flag selected channels in the data
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
