@@ -12,7 +12,7 @@
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{1ex}
 
-\title{ATNF Spectral Analysis Package\\User Guide }
+\title{ATNF Spectral Analysis Package\\User Guide  v2.0beta }
 \author{Chris Phillips}
 
 \newcommand{\cmd}[1]{{\tt #1}}
@@ -38,7 +38,7 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-This useeguide is currently being updated for the ASAP 2.0 release
+This userguide is currently being updated for the ASAP 2.0 release
 which has a number of significant changes which affect the user
 interface. Please report any mistakes you find in this userguide.
 
@@ -266,18 +266,16 @@ For a complete list of \cmd{.asaprc} values, see the Appendix.
 scantables.  A scantable holds your data, and also provides functions
 to operate upon it.
 
-{\bf [MALTE: Could you please reword this??]}
-
 The building block of a scantable is an integration, which is a single
 row of a scantable. Each row contains just one spectrum for each beam, IF and
 polarisation. For example Parkes multibeam data would contain many
 beams, one IF and 2-4 polarisations, while the new Mopra 8-GHz
 filterbank will eventually produce one beam, many IFs, and 2-4
 polarisations. All of the combinations of Beams/IFs an Polarisations are
-contained in seperate rows. These rows are grouped in cycles - same time stamp.
+contained in seperate rows. These rows are grouped in cycles (same time stamp).
 
-A collection of cyclesfor one source is termed
-a scan (and each scan has a unique numeric identifier, the ScanNo). A
+A collection of cycles for one source is termed
+a scan (and each scan has a unique numeric identifier, the SCANNO). A
 scantable is then a collection  of one or more scans. If you have
 scan-averaged your data in time, i.e. you have averegaed all cycles within
 a scan, then each scan would hold just one (averaged) integration.
@@ -286,6 +284,23 @@ Many of the functions which work on scantables can either return a
 new scantable with modified data or change the scantable insitu. Which
 method is used depends on the users preference. The default can be
 changed via the {\tt .asaprc} resource file.
+
+For example a Mopra scan with a  4s intergration time, two IFs and
+dual polarisations has two (2s) cycles.
+
+\begin{verbatim}
+SCANNO  CYCLENO BEAMNO IFNO POLNO
+0       0       0      0    0
+0       0       0      0    1
+0       0       0      1    0
+0       0       0      1    1
+0       1       0      0    0
+0       1       0      0    1
+0       1       0      1    0
+0       1       0      1    1
+
+\end{verbatim}
+
 
 \subsubsection {Contents}
 
@@ -296,15 +311,14 @@ disk and then browse it with the AIPS++ Table browser if you know how
 to do that !).
 
 The data are stored in columns (the length of a column is the number of
-rows/integrations of course).
+rows/spectra of course).
 
-{\bf [MALTE: Is this outdated??]}
 
 Two important columns are those that describe the frequency setup.  We mention
 them explicitly here because you need to be able to understand the presentation
 of the frequency information and possibly how to manipulate it.
 
-These columns are called FreqID and MoleculeID.  They contain indices, for
+These columns are called FREQ\_ID and MOLECULE\_ID.  They contain indices, for
 each IF, pointing into tables with all of the frequency and rest-frequency
 information for that integration. More on these below when we discuss
 the \cmd{summary} function in the next subsection.
@@ -947,8 +961,6 @@ scantable, use the copy function.
 variety of formats, suitable for reading into other packages. The
 formats are:
 
-{\em Currently only raw ASAP output is available. Other formats will be added soon}
-
 \begin{itemize}
 \item[ASAP] This is the internal format used for ASAP. It is the only
   format that allows the user to restore the data, fits etc. without
@@ -1271,6 +1283,15 @@ this problem:
   ASAP> scans.swap_linears()
 \end{verbatim}
 
+\subsection{Conversion}
+\label{sec:polconv}
+Data can be converted between linear and circular polarisations and stokes.
+
+\begin{verbatim}
+  ASAP> stokescans = linearscans.convert_pol("stokes")
+\end{verbatim}
+
+
 \subsection{Plotting}
 \label{sec:polplot}
 
@@ -1281,8 +1302,7 @@ desired polarisation products.
 The values which can be plotted include a selection of [I,Q,U,V], [I,
 Plinear, Pangle, V], [RR, LL] or [XX, YY, Real(XY),
 Imaginary(XY)]. (Plinear and Pangle are the percentage and position
-angle of linear polarisation). Conversion to circular polarisations
-are currently not available.
+angle of linear polarisation).
 
 Example:
 
@@ -1303,8 +1323,6 @@ Example:
 
   ASAP> selection.set_polarisations(``I Plinear'')
   ASAP  plotter.set_selection(selection);              # Fractional linear
-
-[[MALTE: This does not work]]
 
   ASAP> selection.set_polarisations(``Pangle'')
   ASAP  plotter.set_selection(selection);              # Position angle
@@ -1386,11 +1404,11 @@ load as a whole (future versions of asap will make this unnecessary).
 
 
 \begin{verbatim}
-# Concatenate the individual rpfits files together before loading
-!cat 2005-06*.rpf > data.rpf
+# get a list of the individual rpfits files in the current directory
+myfiles = list_files()
 
 # Load the data into a scantable
-data = scantable('data.rpf')
+data = scantable(myfiles)
 print data
 
 # Form the quotient spectra
@@ -1400,7 +1418,7 @@ print q
 # Look at the spectra
 plotter.plot(q)
 
-# Set reference frame
+# Set unit and reference frame
 q.set_unit('km/s')
 q.set_freqframe('LSRK')
 
@@ -1484,7 +1502,7 @@ ls
 d1665 = scantable('2005-10-27_0154-P484.rpf')
 
 # Check what we have just loaded
-d1665.summary
+d1665.summary()
 
 # View the data in velocity
 d1665.set_unit('km/s')
@@ -1594,11 +1612,11 @@ g2.freq_align()
 a1 = g1.average_time()
 a2 = g2.average_time()
 
-# Rpfits file only contrains a single rest frequency. Set both
+# Rpfits file only contains a single rest frequency. Set both
 a1.set_restfreqs([23694.4700e6,23722.6336e6])
 
 plotter.plot(a1)
-plotter.set_mode('i','s')
+plotter.set_mode('i','t')
 
 a1.auto_poly_baseline()
 
@@ -1618,25 +1636,27 @@ plotter.plot()
 
 \index{Functions!summary}%
 \begin{verbatim}
+ASAP> commands()
     [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
+                              (by name or number)
+            set_selection   - set a new subselection of the data
+            get_selection   - get the current selection object
             summary         - print info about the scantable contents
-            set_cursor      - set a specific Beam/IF/Pol 'cursor' for
-                              further use
-            get_cursor      - print out the current cursor position
             stats           - get specified statistic of the spectra in
                               the scantable
             stddev          - get the standard deviation of the spectra
                               in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
+            get_sourcename  - get the source names of the scans
             get_azimuth     - get the azimuth of the scans
             get_elevation   - get the elevation of the scans
             get_parangle    - get the parallactic angle of the scans
-            get_unit        - get the currnt unit
+            get_unit        - get the current unit
             set_unit        - set the abcissa unit to be used from this
                               point on
             get_abcissa     - get the abcissa values and name for a given
@@ -1644,6 +1664,7 @@ plotter.plot()
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
             set_doppler     - set the doppler to be used from this point on
+            set_dirframe    - set the frame for the direction on the sky
             set_instrument  - set the instrument name
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
@@ -1652,11 +1673,12 @@ plotter.plot()
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-            lines           - print list of known spectral lines
-            flag_spectrum   - flag a whole Beam/IF/Pol
+            flag_spectrum   - flag data
             save            - save the scantable to disk as either 'ASAP'
                               or 'SDFITS'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
+            nscan           - the number of scans in the scantable
+            nrow            - te number of spectra in the scantable
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
@@ -1665,9 +1687,10 @@ plotter.plot()
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
+            convert_pol     - convert to a different polarisation type
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans
-            quotient        - return the on/off quotient
+                              (matched pairs and 1 off - n on)
             scale           - return a scan scaled by a given factor
             add             - return a scan with given value added
             bin             - return a scan with binned channels
@@ -1685,6 +1708,12 @@ plotter.plot()
             rotate_xyphase  - rotate XY phase of cross correlation
             rotate_linpolphase - rotate the phase of the complex
                                  polarization O=Q+iU correlation
+            freq_switch     - perform frequency switching on the data
+            stats           - Determine the specified statistic, e.g. 'min'
+                              'max', 'rms' etc.
+            stddev          - Determine the standard deviation of the current
+                              beam/if/pol
+
      [Math] Mainly functions which operate on more than one scantable
 
             average_time    - return the (weighted) time average
@@ -1699,7 +1728,7 @@ plotter.plot()
             commit          - return a new scan where the fits have been
                               commited.
             fit             - execute the actual fitting process
-            store_fit       - store the fit paramaters in the data (scantable)
+            store_fit       - store the fit parameters in the data (scantable)
             get_chi2        - get the Chi^2
             set_scan        - set the scantable to be fit
             set_function    - set the fitting function
@@ -1713,21 +1742,27 @@ plotter.plot()
     [Plotter]
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'
-            plot            - plot a (list of) scantable
+            plot            - plot a scantable
             save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
                               and what 'panelled'
-            set_cursor      - only plot a selected part of the data
-            set_range       - set a 'zoom' window
+            set_selection   - only plot a selected part of the data
+            set_range       - set a 'zoom' window [xmin,xmax,ymin,ymax]
             set_legend      - specify user labels for the legend indeces
             set_title       - specify user labels for the panel indeces
-            set_ordinate    - specify a user label for the ordinate
             set_abcissa     - specify a user label for the abcissa
+            set_ordinate    - specify a user label for the ordinate
             set_layout      - specify the multi-panel layout (rows,cols)
+            set_colors      - specify a set of colours to use
+            set_linestyles  - specify a set of linestyles to use if only
+                              using one color
+            set_mask        - set a plotting mask for a specific polarization
 
     [Reading files]
         reader              - access rpfits/sdfits files
+            open            - attach reader to a file
+            close           - detach reader from file
             read            - read in integrations
             summary         - list info about all integrations
 
@@ -1735,13 +1770,14 @@ plotter.plot()
         commands            - this command
         print               - print details about a variable
         list_scans          - list all scantables created bt the user
+        list_files          - list all files readable by asap (default rpf)
         del                 - delete the given variable from memory
         range               - create a list of values, e.g.
                               range(3) = [0,1,2], range(2,5) = [2,3,4]
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
-                              put into \$HOME/.asaprc
+                              put into $HOME/.asaprc
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
@@ -1756,6 +1792,7 @@ plotter.plot()
             ASAP> help scantable # to get info on ths scantable
             ASAP> help scantable.summary # to get help on the scantable's
             ASAP> help average_time
+
 
 \end{verbatim}
 
