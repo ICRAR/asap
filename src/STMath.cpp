@@ -90,6 +90,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ArrayColumn<Float> tsysColOut(tout,"TSYS");
   ScalarColumn<Double> mjdColOut(tout,"TIME");
   ScalarColumn<Double> intColOut(tout,"INTERVAL");
+  ScalarColumn<uInt> cycColOut(tout,"CYCLENO");
 
   // set up the output table rows. These are based on the structure of the
   // FIRST scantable in the vector
@@ -175,6 +176,10 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     tsysColOut.put(i, acc.getTsys());
     intColOut.put(i, acc.getInterval());
     mjdColOut.put(i, acc.getTime());
+    // we should only have one cycle now -> reset it to be 0
+    // frequency switched data has different CYCLENO for different IFNO
+    // which requires resetting this value
+    cycColOut.put(i, uInt(0));
     acc.reset();
   }
   return out;
@@ -320,10 +325,11 @@ CountedPtr< Scantable > STMath::freqSwitch( const CountedPtr< Scantable >& in )
   // make copy or reference
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tout = out->table();
-  Block<String> cols(3);
+  Block<String> cols(4);
   cols[0] = String("SCANNO");
-  cols[1] = String("BEAMNO");
-  cols[2] = String("POLNO");
+  cols[1] = String("CYCLENO");
+  cols[2] = String("BEAMNO");
+  cols[3] = String("POLNO");
   TableIterator iter(tout, cols);
   while (!iter.pastEnd()) {
     Table subt = iter.table();
@@ -331,9 +337,9 @@ CountedPtr< Scantable > STMath::freqSwitch( const CountedPtr< Scantable >& in )
     if (subt.nrow() != 2 ) {
       continue;
     }
-    ArrayColumn<Float> specCol(tout, "SPECTRA");
-    ArrayColumn<Float> tsysCol(tout, "TSYS");
-    ArrayColumn<uChar> flagCol(tout, "FLAGTRA");
+    ArrayColumn<Float> specCol(subt, "SPECTRA");
+    ArrayColumn<Float> tsysCol(subt, "TSYS");
+    ArrayColumn<uChar> flagCol(subt, "FLAGTRA");
     Vector<Float> onspec,offspec, ontsys, offtsys;
     Vector<uChar> onflag, offflag;
     tsysCol.get(0, ontsys);   tsysCol.get(1, offtsys);
