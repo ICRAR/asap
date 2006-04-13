@@ -305,6 +305,7 @@ __date__ = '$Date$'.split()[1]
 __version__  = '2.0b'
 
 if rcParams['verbose']:
+    def version(): print  "ASAP %s(%s)"% (__version__, __date__)
     def list_scans(t = scantable):
         import sys, types
         globs = sys.modules['__main__'].__dict__.iteritems()
@@ -369,8 +370,8 @@ if rcParams['verbose']:
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans
                               (matched pairs and 1 off - n on)
-            scale           - return a scan scaled by a given factor
-            add             - return a scan with given value added
+            scale, *, /     - return a scan scaled by a given factor
+            add, +, -       - return a scan with given value added
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
@@ -383,6 +384,8 @@ if rcParams['verbose']:
             convert_flux    - convert to and from Jy and Kelvin brightness
                               units
             freq_align      - align spectra in frequency frame
+            invert_phase    - Invert the phase of the cross-correlation
+            swap_linears    - Swap XX and YY
             rotate_xyphase  - rotate XY phase of cross correlation
             rotate_linpolphase - rotate the phase of the complex
                                  polarization O=Q+iU correlation
@@ -391,6 +394,18 @@ if rcParams['verbose']:
                               'max', 'rms' etc.
             stddev          - Determine the standard deviation of the current
                               beam/if/pol
+     [Selection]
+         selector              - a selection object to set a subset of a scantable
+            set_scans          - set (a list of) scans by index
+            set_cycles         - set (a list of) cycles by index
+            set_beams          - set (a list of) beamss by index
+            set_ifs            - set (a list of) ifs by index
+            set_polarisations  - set (a list of) polarisations by name
+                                 or by index
+            set_names          - set a selection by name (wildcards allowed)
+            set_tsys           - set a selection by tsys thresholds
+            reset              - unset all selections
+            +                  - merge to selections
 
      [Math] Mainly functions which operate on more than one scantable
 
