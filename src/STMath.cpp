@@ -152,7 +152,6 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       Vector<Float> spec,tsys;
       Vector<uChar> flag;
       Double inter,time;
-      cout << rec.asuInt("POLNO") << endl;
       for (uInt k = 0; k < subt.nrow(); ++k ) {
         flagCol.get(k, flag);
         Vector<Bool> bflag(flag.shape());
@@ -930,16 +929,25 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
   cols[2] = String("IFNO");
   cols[3] = String("CYCLENO");
   TableIterator iter(tout, cols);
-  STPol* stpol = NULL;
-  stpol =STPol::getPolClass(out->factories_, out->getPolType() );
+  STPol* stpol = STPol::getPolClass(out->factories_, out->getPolType() );
   while (!iter.pastEnd()) {
     Table t = iter.table();
     ArrayColumn<Float> speccol(t, "SPECTRA");
+    ScalarColumn<uInt> focidcol(t, "FOCUS_ID");
+    ScalarColumn<Float> parancol(t, "PARANGLE");
     Matrix<Float> pols = speccol.getColumn();
     try {
       stpol->setSpectra(pols);
+      Float fang,fhand,parang;
+      fang = in->focusTable_.getTotalFeedAngle(focidcol(0));
+      fhand = in->focusTable_.getFeedHand(focidcol(0));
+      parang = parancol(0);
+      /// @todo re-enable this
+      // disable total feed angle to support paralactifying Caswell style
+      stpol->setPhaseCorrections(parang, -parang, fhand);
       (stpol->*fptr)(phase);
       speccol.putColumn(stpol->getSpectra());
+      Matrix<Float> tmp = stpol->getSpectra();
     } catch (AipsError& e) {
       delete stpol;stpol=0;
       throw(e);

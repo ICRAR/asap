@@ -34,7 +34,7 @@ class STPol {
 public:
 
   typedef  void (STPol::*polOperation)( casa::Float phase );
-  STPol() {}
+  STPol(): totalfeed_(0.0),parangle_(0.0),feedhand_(1.0) {}
   virtual ~STPol() {}
 
   typedef FactoryBase<STPol> STPolFactory;
