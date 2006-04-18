@@ -699,7 +699,6 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
   if (mask.nelements()!=nchan)
       throw AipsError("STLineFinder::findLines - in_scan and in_mask have different"
             "number of spectral channels.");
-  cout << mask.nelements() << endl;
   // number of elements in in_edge
   if (in_edge.size()>2)
       throw AipsError("STLineFinder::findLines - the length of the in_edge parameter"
