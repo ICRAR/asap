@@ -88,7 +88,6 @@ class asapplotter:
             self._datamask = None
         self._plot(self._data)
         if self._minmaxy is not None:
-            print "setting limits"
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
         print_log()
@@ -396,6 +395,7 @@ class asapplotter:
         nr = scan.nrow()
         a0,b0 = -1,-1
         allxlim = []
+        allylim = []
         newpanel=True
         panelcount,stackcount = 0,0
         while r < nr:
@@ -457,6 +457,8 @@ class asapplotter:
                 self._plotter.plot(x,y,m)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
+                ylim= self._minmaxy or [min(y),max(y)]
+                allylim += ylim
                 stackcount += 1
                 # last in colour stack -> autoscale x
                 if stackcount == nstack:
@@ -470,6 +472,10 @@ class asapplotter:
             b0=b
             # ignore following rows
             if (panelcount == n) and (stackcount == nstack):
+                # last panel -> autoscale y if ganged
+                if rcParams['plotter.ganged']:
+                    allylim.sort()
+                    self._plotter.set_limits(ylim=[allylim[0],allylim[-1]])
                 break
             r+=1 # next row
         #reset the selector to the scantable's original
