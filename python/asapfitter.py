@@ -165,7 +165,8 @@ class fitter:
             fit.setframeinfo(self.data._getcoordinfo())
             self.data._addfit(fit,self._fittedrow)
 
-    def set_parameters(self, params, fixed=None, component=None):
+    #def set_parameters(self, params, fixed=None, component=None):
+    def set_parameters(self,*args,**kwargs):
         """
         Set the parameters to be fitted.
         Parameters:
@@ -174,7 +175,17 @@ class fitter:
                          (default is none)
               component: in case of multiple gaussians, the index of the
                          component
-             """
+        """
+        component = None
+        fixed = None
+        params = None
+        
+        if len(args) and isinstance(args[0],dict):
+            kwargs = args[0]
+        if kwargs.has_key("fixed"): fixed = kwargs["fixed"]
+        if kwargs.has_key("params"): params = kwargs["params"]
+        if len(args) == 2 and isinstance(args[1], int):
+            component = args[1]
         if self.fitfunc is None:
             msg = "Please specify a fitting function first."
             if rcParams['verbose']:
@@ -183,7 +194,7 @@ class fitter:
             else:
                 raise RuntimeError(msg)
         if self.fitfunc == "gauss" and component is not None:
-            if not self.fitted:
+            if not self.fitted and sum(self.fitter.getparameters()) == 0:
                 from numarray import zeros
                 pars = list(zeros(len(self.components)*3))
                 fxd = list(zeros(len(pars)))
@@ -202,8 +213,8 @@ class fitter:
         return
 
     def set_gauss_parameters(self, peak, centre, fhwm,
-                             peakfixed=False, centerfixed=False,
-                             fhwmfixed=False,
+                             peakfixed=0, centerfixed=0,
+                             fhwmfixed=0,
                              component=0):
         """
         Set the Parameters of a 'Gaussian' component, set with set_function.
@@ -226,9 +237,9 @@ class fitter:
             else:
                 raise ValueError(msg)
         if 0 <= component < len(self.components):
-            self.set_parameters([peak, centre, fhwm],
-                                [peakfixed, centerfixed, fhwmfixed],
-                                component)
+            d = {'params':[peak, centre, fhwm],
+                 'fixed':[peakfixed, centerfixed, fhwmfixed]}
+            self.set_parameters(d, component)
         else:
             msg = "Please select a valid  component."
             if rcParams['verbose']:
@@ -293,7 +304,7 @@ class fitter:
         fpars = self._format_pars(cpars, cfixed, self.get_area(component))
         if rcParams['verbose']:
             print fpars
-        return cpars, cfixed, fpars
+        return {'params':cpars, 'fixed':cfixed}
 
     def _format_pars(self, pars, fixed, area):
         out = ''
@@ -314,7 +325,10 @@ class fitter:
                 aunit = self.data.get_unit()
                 ounit = self.data.get_fluxunit()
             while i < len(pars):
-                out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n      area = %3.3f %s %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit, area,ounit,aunit)
+                if area:
+                    out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n      area = %3.3f %s %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit, area,ounit,aunit)
+                else:
+                    out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit,ounit,aunit)
                 c+=1
                 i+=3
         return out
@@ -326,7 +340,7 @@ class fitter:
         pars = self.fitter.getestimate()
         fixed = self.fitter.getfixedparameters()
         if rcParams['verbose']:
-            print self._format_pars(pars,fixed)
+            print self._format_pars(pars,fixed,None)
         return pars
 
     def get_residual(self):
@@ -421,7 +435,8 @@ class fitter:
         self._p.palette(0)
         tlab = 'Spectrum'
         xlab = 'Abcissa'
-        m = ()
+        ylab = 'Ordinate'
+        m = None
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
