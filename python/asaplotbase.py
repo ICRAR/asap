@@ -413,10 +413,9 @@ class asaplotbase:
         if fname[-3:].lower() in d:
             try:
                 if fname[-3:].lower() == ".ps":
+                    from matplotlib import __version__ as mv
                     w = self.figure.figwidth.get()
                     h = self.figure.figheight.get()
-                    a4w = 8.25
-                    a4h = 11.25
 
                     if orientation is None:
                         # auto oriented
@@ -424,14 +423,18 @@ class asaplotbase:
                             orientation = 'landscape'
                         else:
                             orientation = 'portrait'
-                    ds = None
-                    if orientation == 'landscape':
-                        ds = min(a4h/w,a4w/h)
-                    else:
-                        ds = min(a4w/w,a4h/h)
-                    ow = ds * w
-                    oh = ds * h
-                    self.figure.set_figsize_inches((ow,oh))
+                    # hack to circument ps bug in eraly versions of mpl
+                    if int(mv.split(".")[1]) < 86:
+                        a4w = 8.25
+                        a4h = 11.25
+                        ds = None
+                        if orientation == 'landscape':
+                            ds = min(a4h/w,a4w/h)
+                        else:
+                            ds = min(a4w/w,a4h/h)
+                        ow = ds * w
+                        oh = ds * h
+                        self.figure.set_figsize_inches((ow,oh))
                     self.canvas.print_figure(fname,orientation=orientation)
                     print 'Written file %s' % (fname)
                 else:
