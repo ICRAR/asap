@@ -36,7 +36,10 @@ class asapplotter:
         self._usermask = []
         self._maskselection = None
         self._selection = selector()
-
+        self._hist = None
+        if rcParams['plotter.histogram']: self._hist = "steps"
+        else: self._hist = "-"
+        
     def _translate(self, instr):
         keys = "s b i p t".split()
         if isinstance(instr, str):
@@ -217,6 +220,9 @@ class asapplotter:
         """
         Set the y-axis label of the plot. If multiple panels are plotted,
         multiple labels have to be specified.
+        Parameters:
+            ordinate:    a list of ordinate labels. None (default) let
+                         data determine the labels
         Example:
              # two panels are visible on the plotter
              plotter.set_ordinate(["First Y-Axis","Second Y-Axis"])
@@ -229,6 +235,9 @@ class asapplotter:
         """
         Set the x-axis label of the plot. If multiple panels are plotted,
         multiple labels have to be specified.
+        Parameters:
+            abcissa:     a list of abcissa labels. None (default) let
+                         data determine the labels
         Example:
              # two panels are visible on the plotter
              plotter.set_ordinate(["First X-Axis","Second X-Axis"])
@@ -241,6 +250,8 @@ class asapplotter:
         """
         Set the colors to be used. The plotter will cycle through
         these colors when lines are overlaid (stacking mode).
+        Parameters:
+            colormap:     a list of colour names
         Example:
              plotter.set_colors("red green blue")
              # If for example four lines are overlaid e.g I Q U V
@@ -252,6 +263,18 @@ class asapplotter:
         self._plotter.palette(0,colormap=colormap)
         if self._data: self.plot(self._data)
 
+    def set_histogram(self, hist=True):
+        """
+        Enable/Disable histogram-like plotting.
+        Parameters:
+            hist:        True (default) or False. The fisrt default
+                         is taken from the .asaprc setting
+                         plotter.histogram
+        """
+        if hist: self._hist = "steps"
+        else: self._hist = "-"
+        if self._data: self.plot(self._data)
+            
     def set_linestyles(self, linestyles):
         """
         Set the linestyles to be used. The plotter will cycle through
@@ -440,8 +463,8 @@ class asapplotter:
                     x = x[s:e]
                     y = y[s:e]
                     m = m[s:e]
-                if len(x) > 1024 and True:#rcParams['plotter.decimate']:
-                    fac = len(x)/1024
+                if len(x) > 2048 and rcParams['plotter.decimate']:
+                    fac = len(x)/2048
                     x = x[::fac]
                     m = m[::fac]
                     y = y[::fac]
@@ -454,6 +477,7 @@ class asapplotter:
                         # get default label
                         llbl = self._get_label(scan, r, self._stacking, None)
                 self._plotter.set_line(label=llbl)
+                self._plotter.set_line(linestyle=self._hist)
                 self._plotter.plot(x,y,m)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
