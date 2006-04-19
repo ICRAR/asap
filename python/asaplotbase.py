@@ -138,7 +138,7 @@ class asaplotbase:
         return self.attributes
 
 
-    def hist(self, x=None, y=None, fmt=None):
+    def hist(self, x=None, y=None, msk=None, fmt=None, add=None):
         """
         Plot a histogram.  N.B. the x values refer to the start of the
         histogram bin.
@@ -148,23 +148,24 @@ class asaplotbase:
 
         if x is None:
             if y is None: return
-            x = range(0,len(y))
+            x = range(len(y))
 
         if len(x) != len(y):
             return
-
         l2 = 2*len(x)
-        x2 = range(0,l2)
-        y2 = range(0,l2)
+        x2 = range(l2)
+        y2 = range(l2)
+        m2 = range(l2)
 
-        for i in range(0,l2):
+        for i in range(l2):
             x2[i] = x[i/2]
+            m2[i] = msk[i/2]
 
-        y2[0] = 0
+        y2[0] = 0.0
         for i in range(1,l2):
             y2[i] = y[(i-1)/2]
 
-        self.plot(x2, y2, fmt)
+        self.plot(x2, y2, m2, fmt, add)
 
 
     def hold(self, hold=True):

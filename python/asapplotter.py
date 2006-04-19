@@ -36,10 +36,8 @@ class asapplotter:
         self._usermask = []
         self._maskselection = None
         self._selection = selector()
-        self._hist = None
-        if rcParams['plotter.histogram']: self._hist = "steps"
-        else: self._hist = "-"
-        
+        self._hist = rcParams['plotter.histogram']
+
     def _translate(self, instr):
         keys = "s b i p t".split()
         if isinstance(instr, str):
@@ -271,10 +269,9 @@ class asapplotter:
                          is taken from the .asaprc setting
                          plotter.histogram
         """
-        if hist: self._hist = "steps"
-        else: self._hist = "-"
+        self._hist = hist
         if self._data: self.plot(self._data)
-            
+
     def set_linestyles(self, linestyles):
         """
         Set the linestyles to be used. The plotter will cycle through
@@ -477,8 +474,9 @@ class asapplotter:
                         # get default label
                         llbl = self._get_label(scan, r, self._stacking, None)
                 self._plotter.set_line(label=llbl)
-                self._plotter.set_line(linestyle=self._hist)
-                self._plotter.plot(x,y,m)
+                plotit = self._plotter.plot
+                if self._hist: plotit = self._plotter.hist
+                plotit(x,y,m)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
                 ylim= self._minmaxy or [min(y),max(y)]
