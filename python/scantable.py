@@ -597,7 +597,7 @@ class scantable(Scantable):
         applied.
         Parameters:
             [min,max],[min2,max2],...
-                Pairs of start/end points specifying the regions
+                Pairs of start/end points (inclusive)specifying the regions
                 to be masked
             invert:     optional argument. If specified as True,
                         return an inverted mask, i.e. the regions
@@ -607,17 +607,18 @@ class scantable(Scantable):
                         only necessary if frequency varies over rows.
         Example:
             scan.set_unit('channel')
-
             a)
-            msk = scan.set_mask([400,500],[800,900])
+            msk = scan.create_mask([400,500],[800,900])
             # masks everything outside 400 and 500
             # and 800 and 900 in the unit 'channel'
 
             b)
-            msk = scan.set_mask([400,500],[800,900], invert=True)
+            msk = scan.create_mask([400,500],[800,900], invert=True)
             # masks the regions between 400 and 500
             # and 800 and 900 in the unit 'channel'
-
+            c)
+            mask only channel 400
+            msk =  scan.create_mask([400,400])
         """
         row = 0
         if kwargs.has_key("row"):
@@ -640,7 +641,7 @@ class scantable(Scantable):
             if (len(window) != 2 or window[0] > window[1] ):
                 raise TypeError("A window needs to be defined as [min,max]")
             for i in range(n):
-                if data[i] >= window[0] and data[i] < window[1]:
+                if data[i] >= window[0] and data[i] <= window[1]:
                     msk[i] = 1
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
