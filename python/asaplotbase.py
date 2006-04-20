@@ -12,16 +12,14 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
-
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import NullLocator
 
 class MyFormatter(ScalarFormatter):
     def __call__(self, x, pos=None):
-        last = len(self.locs)-2
-        if pos==last:
-            print "Diabling tick no " , pos, last
-            return ''  # pos=-1 is the last tick
+        #last = len(self.locs)-2
+        if pos==0:
+            return ''
         else: return ScalarFormatter.__call__(self, x, pos)
 
 class asaplotbase:
@@ -205,7 +203,6 @@ class asaplotbase:
 
         The argument list works a bit like the matlab plot() function.
         """
-
         if x is None:
             if y is None: return
             x = range(len(y))
@@ -214,6 +211,20 @@ class asaplotbase:
             y = x
             x = range(len(y))
 
+        ax = self.axes
+        s = ax.title.get_size()
+        tsize = s-(self.cols+self.rows)/2
+        ax.title.set_size(tsize)
+        origx = rcParams['xtick.labelsize']
+        origy = rcParams['ytick.labelsize']
+        if self.cols > 1:
+            xfsize = origx-(self.cols)/2
+            #rc('xtick',labelsize=xfsize)
+            ax.xaxis.label.set_size(xfsize)
+        if self.rows > 1:
+            yfsize = origy-(self.rows)/2
+            #rc('ytick',labelsize=yfsize)
+            ax.yaxis.label.set_size(yfsize)
         if mask is None:
             if fmt is None:
                 line = self.axes.plot(x, y)
@@ -237,6 +248,9 @@ class asaplotbase:
                 i = j
 
             line = self.axes.plot(*segments)
+        #rc('xtick',labelsize=origx)
+        #rc('ytick',labelsize=origy)
+
         # Add to an existing line?
         if add is None or len(self.lines) < add < 0:
             # Don't add.
@@ -424,24 +438,25 @@ class asaplotbase:
                             orientation = 'landscape'
                         else:
                             orientation = 'portrait'
-                    # hack to circument ps bug in eraly versions of mpl
-                    if int(mv.split(".")[1]) < 86:
-                        a4w = 8.25
-                        a4h = 11.25
-                        ds = None
-                        if orientation == 'landscape':
-                            ds = min(a4h/w,a4w/h)
-                        else:
-                            ds = min(a4w/w,a4h/h)
-                        ow = ds * w
-                        oh = ds * h
-                        self.figure.set_figsize_inches((ow,oh))
-                    self.canvas.print_figure(fname,orientation=orientation)
+                    a4w = 8.25
+                    a4h = 11.25
+                    ds = None
+                    if orientation == 'landscape':
+                        ds = min(a4h/w,a4w/h)
+                    else:
+                        ds = min(a4w/w,a4h/h)
+                    ow = ds * w
+                    oh = ds * h
+                    self.figure.set_figsize_inches((ow,oh))
+                    self.figure.savefig(fname, orientation=orientation,
+                                        papertype="a4")
+                    # reset the figure size
+                    self.figure.set_figsize_inches((w,h))
                     print 'Written file %s' % (fname)
                 else:
                     if dpi is None:
                         dpi =150
-                    self.canvas.print_figure(fname,dpi=dpi)
+                    self.figure.savefig(fname,dpi=dpi)
                     print 'Written file %s' % (fname)
             except IOError, msg:
                 print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
@@ -469,15 +484,6 @@ class asaplotbase:
             newargs[k] = v
 
         getattr(self.axes, "set_%s"%what)(*args, **newargs)
-        s = self.axes.title.get_size()
-        tsize = s-(self.cols+self.rows)/2-1
-        self.axes.title.set_size(tsize)
-        if self.cols > 1:
-            xfsize = self.axes.xaxis.label.get_size()-(self.cols+1)/2
-            self.axes.xaxis.label.set_size(xfsize)
-        if self.rows > 1:
-            yfsize = self.axes.yaxis.label.get_size()-(self.rows+1)/2
-            self.axes.yaxis.label.set_size(yfsize)
 
         self.show()
 
@@ -622,22 +628,18 @@ class asaplotbase:
 
             if nplots < 1 or rows*cols < nplots:
                 nplots = rows*cols
-
+            if ganged:
+                hsp,wsp = None,None
+                if rows > 1: hsp = 0.0001
+                if cols > 1: wsp = 0.0001
+                self.figure.subplots_adjust(wspace=wsp,hspace=hsp)
             for i in range(nplots):
                 self.subplots.append({})
-
-                self.subplots[i]['axes']  = self.figure.add_subplot(rows,
+                self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
                 self.subplots[i]['lines'] = []
 
                 if ganged:
-                    if rows > 1 or cols > 1:
-                        # Squeeze the plots together.
-                        pos = self.subplots[i]['axes'].get_position()
-                        if cols > 1: pos[2] *= 1.2
-                        if rows > 1: pos[3] *= 1.2
-                        self.subplots[i]['axes'].set_position(pos)
-
                     # Suppress tick labelling for interior subplots.
                     if i <= (rows-1)*cols - 1:
                         if i+cols < nplots:
@@ -650,11 +652,11 @@ class asaplotbase:
                         for tick in self.subplots[i]['axes'].yaxis.majorTicks:
                             tick.label1On = False
                         self.subplots[i]['axes'].yaxis.label.set_visible(False)
-                    if (i+1)%cols:
+                    # disable the first tick of [1:ncol-1] of the last row
+                    if (nplots-cols) < i <= nplots-1:
                         self.subplots[i]['axes'].xaxis.set_major_formatter(MyFormatter())
                 self.rows = rows
                 self.cols = cols
-
             self.subplot(0)
 
     def set_title(self, title=None):
