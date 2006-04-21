@@ -26,10 +26,10 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
-#ifndef SDFITTER_H
-#define SDFITTER_H
+#ifndef STFITTER_H
+#define STFITTER_H
 
 #include <string>
 #include <vector>
@@ -52,19 +52,19 @@ public:
 	       std::vector<bool> mask);
   bool setParameters(std::vector<float> params);
   bool setFixedParameters(std::vector<bool> fixed);
-  
+
   std::vector<float> getResidual() const;
   std::vector<float> getFit() const;
   std::vector<float> getParameters() const;
   std::vector<bool> getFixedParameters() const;
-  
+
   std::vector<float> getEstimate() const;
   std::vector<float> getErrors() const;
   float getChisquared() const;
   void reset();
   bool fit();
   bool computeEstimate();
-  
+
   std::vector<float> evaluate(int whichComp) const;
 private:
   void clear();
@@ -76,7 +76,7 @@ private:
   casa::Float chisquared_;
   casa::Vector<casa::Float> parameters_;
   casa::Vector<casa::Bool> fixedpar_;
-  
+
   casa::Vector<casa::Float> error_;
   casa::Vector<casa::Float> thefit_;
   casa::Vector<casa::Float> residual_;
