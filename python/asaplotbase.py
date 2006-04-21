@@ -215,8 +215,8 @@ class asaplotbase:
         s = ax.title.get_size()
         tsize = s-(self.cols+self.rows)/2
         ax.title.set_size(tsize)
-        origx = rcParams['xtick.labelsize']
-        origy = rcParams['ytick.labelsize']
+        origx = ax.xaxis.label.get_size() #rcParams['xtick.labelsize']
+        origy = ax.yaxis.label.get_size() #rcParams['ytick.labelsize']
         if self.cols > 1:
             xfsize = origx-(self.cols)/2
             #rc('xtick',labelsize=xfsize)
