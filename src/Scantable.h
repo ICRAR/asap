@@ -368,7 +368,7 @@ private:
    */
   int rowToScanIndex(int therow);
 
-  static const unsigned int version_ = 2;
+  static const casa::uInt version_ = 2;
 
   STSelector selector_;
 

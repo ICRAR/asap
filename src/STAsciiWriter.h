@@ -38,8 +38,10 @@
 #include "Scantable.h"
 #include "Logger.h"
 
-template<class T> class casa::Vector;
-class casa::MDirection;
+namespace casa {
+  template<class T> class Vector;
+  class MDirection;
+}
 
 namespace asap {
 

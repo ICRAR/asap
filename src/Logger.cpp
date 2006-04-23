@@ -13,6 +13,9 @@ Logger::Logger(bool enabled)
 {
   enabled_ = enabled;
 }
+Logger::~Logger()
+{
+}
 
 void Logger::pushLog(const std::string& s, bool newline ) const
 {

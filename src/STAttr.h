@@ -38,8 +38,9 @@
 #include "Logger.h"
 #include "STDefs.h"
 
-template<class T> class casa::Vector;
-
+namespace casa {
+  template<class T> class Vector;
+}
 
 namespace asap {
 

@@ -9,6 +9,7 @@ namespace asap {
 class Logger {
 public:
   Logger();
+  virtual ~Logger();
   Logger(bool enabled);
   void pushLog(const std::string& s, bool newline=true) const;
   //void pushLog(const char* cs);

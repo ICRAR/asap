@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #ifndef MATHUTILS_H
 #define MATHUTILS_H
@@ -79,6 +79,6 @@ std::vector<std::string> tovectorstring(const casa::Vector<casa::String>& in);
  */
 casa::Vector<casa::String> toVectorString(const std::vector<std::string>& in);
 
-};
+}
 
 #endif

@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #ifndef STHEADER_H
 #define STHEADER_H
@@ -39,7 +39,9 @@
 #include <casa/Containers/Block.h>
 #include <measures/Measures/MDirection.h>
 
-template<class T> class casa::Matrix;
+namespace casa {
+  template<class T> class Matrix;
+}
 
 namespace asap {
 
