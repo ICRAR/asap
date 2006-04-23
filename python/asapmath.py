@@ -69,7 +69,7 @@ def average_time(*args, **kwargs):
             alignedlst.append(scan.freq_align(refepoch,insitu=False))
     else:
         aligendlst = lst
-    s = scantable(stm._average(alignedlst, mask, weight, scanav))
+    s = scantable(stm._average(alignedlst, mask, weight.upper(), scanav))
     s._add_history("average_time",varlist)
     print_log()
     return s
