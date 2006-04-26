@@ -498,8 +498,8 @@ if rcParams['verbose']:
 def welcome():
     return """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
 
-Please report any bugs to:
-asap@atnf.csiro.au
+Please report any bugs via:
+http://sourcecode.atnf.csiro.au/cgi-bin/trac_asap.cgi/newticket
 
 [IMPORTANT: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.""" % (__version__, __date__)
