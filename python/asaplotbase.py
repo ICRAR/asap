@@ -448,9 +448,13 @@ class asaplotbase:
                     ow = ds * w
                     oh = ds * h
                     self.figure.set_figsize_inches((ow,oh))
-                    self.figure.savefig(fname, orientation=orientation,
-                                        papertype="a4")
-                    # reset the figure size
+                    from matplotlib import __version__ as mv
+                    # hack to circument ps bug in eraly versions of mpl
+                    if int(mv.split(".")[1]) < 87:
+                        self.figure.savefig(fname, orientation=orientation)
+                    else:
+                        self.figure.savefig(fname, orientation=orientation,
+                                            papertype="a4")
                     self.figure.set_figsize_inches((w,h))
                     print 'Written file %s' % (fname)
                 else:
