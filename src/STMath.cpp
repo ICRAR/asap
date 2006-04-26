@@ -791,7 +791,7 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
                                         const std::string& kernel, float width )
 {
   CountedPtr< Scantable > out = getScantable(in, false);
-  Table& table = in->table();
+  Table& table = out->table();
   VectorKernel::KernelTypes type = VectorKernel::toKernelType(kernel);
   // same IFNO should have same no of channels
   // this saves overhead
@@ -814,14 +814,15 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
       Vector<Float> specout;
       if ( type == VectorKernel::HANNING ) {
         Vector<Bool> maskout;
-        mathutil::hanning(specout, maskout, spec , mask);
-        convertArray(flag, maskout);
+        mathutil::hanning(specout, maskout, spec , !mask);
+        convertArray(flag, !maskout);
         flagCol.put(i, flag);
-      } else {
+        specCol.put(i, specout);
+     } else {
         mathutil::replaceMaskByZero(specout, mask);
         conv.linearConv(specout, spec);
+        specCol.put(i, specout);
       }
-      specCol.put(i, specout);
     }
     ++iter;
   }

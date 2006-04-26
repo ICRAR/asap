@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 
 #include <casa/aips.h>
@@ -41,9 +41,8 @@ using namespace casa;
 
 template <class T>
 void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
-		       const Vector<T>& in, const Vector<Bool>& mask,
-		       Bool relaxed, Bool ignoreOther) {
-
+                       const Vector<T>& in, const Vector<Bool>& mask,
+                       Bool relaxed, Bool ignoreOther) {
   Vector< Vector<T> > weights(8);
   Vector<Float> vals(3);
   vals = 0.0;weights[0] = vals;// FFF
@@ -67,26 +66,23 @@ void mathutil::hanning(Vector<T>& out, Vector<Bool>& outmask,
 
   out.resize(in.nelements());
   outmask.resize(mask.nelements());
-
   // make special case for first and last
   /// ...here
   // loop from 1..n-2
-  uInt i = 1;
-  VectorSTLIterator<T> outit(out);
-  outit++;
-  VectorSTLIterator<Bool> outmit(outmask);outmit++;
+  out.resize(in.nelements());
+  out[0] = in[0];out[out.nelements()-1] = in[in.nelements()-1];
+  outmask.resize(mask.nelements());
+  outmask = False;
   uInt m;Vector<T>* w;
-  for (VectorSTLIterator<T> it = outit;it != out.end()-1;++it) {
-
+  for (uInt i=1; i < out.nelements()-1;++i) {
     m = mask[i-1] + 2*mask[i] + 4*mask[i+1];
     w = &(weights[m]);
     if (weighted[m]) {
-      (*it) = (*w)[0]*in[i-1] + (*w)[1]*in[i] + (*w)[2]*in[i+1];
-      (*outmit) = True;
+      out[i] = (*w)[0]*in[i-1] + (*w)[1]*in[i] + (*w)[2]*in[i+1];
+      outmask[i] = True;
     } else { // mask it
-      (*outmit) = False;
+      out[i] = in[i];//use arbitrary value
+      outmask[i] = False;
     }
-    ++i;
-    ++outmit;
   }
 }

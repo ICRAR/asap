@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef MATHUTILS_H
 #define MATHUTILS_H
@@ -40,7 +40,6 @@
 namespace mathutil {
 
 // Hanning smoothing
-template <class T>
 /**
  * Hanning smooth a masked vector
  * @param out the smoothed vector
@@ -50,18 +49,19 @@ template <class T>
  * @param relaxed a weighting scheme
  * @param ignoreOther drop every second channel (NYI)
  */
+template <class T>
 void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask,
-	     const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask,
-	     casa::Bool relaxed=casa::False,
-	     casa::Bool ignoreOther=casa::False);
+             const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask,
+             casa::Bool relaxed=casa::False,
+             casa::Bool ignoreOther=casa::False);
 
 // Generate specified statistic
 float statistics(const casa::String& which,
-		 const casa::MaskedArray<casa::Float>& data);
+                 const casa::MaskedArray<casa::Float>& data);
 
 // Replace masked value by zero
 void replaceMaskByZero(casa::Vector<casa::Float>& data,
-		       const casa::Vector<casa::Bool>& mask);
+                       const casa::Vector<casa::Bool>& mask);
 
 /**
  * Convert a std::vector of std::string

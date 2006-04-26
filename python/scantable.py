@@ -1025,7 +1025,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        s = scantable(self._math._smooth(self,kernel,width))
+        s = scantable(self._math._smooth(self,kernel.lower(),width))
         s._add_history("smooth", varlist)
         print_log()
         if insitu: self._assign(s)
