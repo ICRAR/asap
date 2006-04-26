@@ -179,7 +179,7 @@ class fitter:
         component = None
         fixed = None
         params = None
-        
+
         if len(args) and isinstance(args[0],dict):
             kwargs = args[0]
         if kwargs.has_key("fixed"): fixed = kwargs["fixed"]
@@ -304,7 +304,7 @@ class fitter:
         fpars = self._format_pars(cpars, cfixed, self.get_area(component))
         if rcParams['verbose']:
             print fpars
-        return {'params':cpars, 'fixed':cfixed}
+        return {'params':cpars, 'fixed':cfixed, 'formatted': fpars}
 
     def _format_pars(self, pars, fixed, area):
         out = ''
@@ -456,7 +456,7 @@ class fitter:
             cs = components
             if isinstance(components,int): cs = [components]
             if plotparms:
-                self._p.text(0.15,0.15,str(self.get_parameters()[2]),size=8)
+                self._p.text(0.15,0.15,str(self.get_parameters()['formatted']),size=8)
             n = len(self.components)
             self._p.palette(3)
             for c in cs:
@@ -505,7 +505,7 @@ class fitter:
         from asap import asaplog
         asaplog.push("Fitting:")
         for r in rows:
-            out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" %        (scan.getscan(r),scan.getbeam(r),scan.getif(r),scan.getpol(r), scan.getcycle(r))
+            out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (scan.getscan(r),scan.getbeam(r),scan.getif(r),scan.getpol(r), scan.getcycle(r))
             asaplog.push(out, False)
             self.x = scan._getabcissa(r)
             self.y = scan._getspectrum(r)
