@@ -452,7 +452,6 @@ class asapplotter:
                 m = scan._getmask(r)
                 if self._maskselection and len(self._usermask) == len(m):
                     if d[self._stacking](r) in self._maskselection[self._stacking]:
-                        print "debug"
                         m = logical_and(m, self._usermask)
                 x = scan._getabcissa(r)
                 if self._minmaxx is not None:
