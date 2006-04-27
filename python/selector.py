@@ -37,7 +37,7 @@ class selector(_selector):
 
         """
         vec = _to_list(pols, str) or _to_list(pols, int)
-        if vec: # is an empty and/or valid vector
+        if isinstance(vec, list): # is an empty and/or valid vector
             if len(vec) and isinstance(vec[-1],str):
                 self._setpolstrings(vec)
                 return
@@ -52,7 +52,7 @@ class selector(_selector):
             ifs:    a list of integers. Default [] is to unset the selection.
         """
         vec = _to_list(ifs, int)
-        if vec:
+        if isinstance(vec,list):
             self._setifs(vec)
         else:
             raise TypeError('Unknown IFno type. Use lists of integers.')
@@ -64,7 +64,7 @@ class selector(_selector):
             scans:    a list of integers. Default [] is to unset the selection.
         """
         vec = _to_list(scans, int)
-        if vec:
+        if isinstance(vec,list):
             self._setscans(vec)
         else:
             raise TypeError('Unknown Scan number type. Use lists of integers.')
@@ -76,7 +76,7 @@ class selector(_selector):
             beams:    a list of integers. Default [] is to unset the selection.
         """
         vec = _to_list(beams, int)
-        if vec:
+        if isinstance(vec,list):
             self._setbeams(vec)
         else:
             raise TypeError('Unknown Beam number type. Use lists of integers.')
@@ -88,7 +88,7 @@ class selector(_selector):
             cycless:    a list of integers. Default [] is to unset the selection.
         """
         vec = _to_list(cycles, int)
-        if vec:
+        if isinstance(vec,list):
             self._setcycles(vec)
         else:
             raise TypeError('Unknown Cycle number type. Use lists of integers.')
@@ -138,7 +138,7 @@ class selector(_selector):
         """
         Set the order the scantable should be sorted by.
         Parameters:
-            order:    The list of column nmaes to sort by in order
+            order:    The list of column names to sort by in order
         """
         self._setorder(order)
 
