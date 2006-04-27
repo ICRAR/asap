@@ -290,18 +290,26 @@ class fitter:
                 raise RuntimeError(msg)
         pars = list(self.fitter.getparameters())
         fixed = list(self.fitter.getfixedparameters())
+        area = []
         if component is not None:
             if self.fitfunc == "gauss":
                 i = 3*component
                 cpars = pars[i:i+3]
                 cfixed = fixed[i:i+3]
+                a = self.get_area(component)
+                area = [a for i in range(3)]
             else:
                 cpars = pars
                 cfixed = fixed
         else:
             cpars = pars
             cfixed = fixed
-        fpars = self._format_pars(cpars, cfixed, self.get_area(component))
+            if self.fitfunc == "gauss":
+                for c in range(len(self.components)):
+                  a = self.get_area(c)
+                  area += [a for i in range(3)]
+
+        fpars = self._format_pars(cpars, cfixed, area)
         if rcParams['verbose']:
             print fpars
         return {'params':cpars, 'fixed':cfixed, 'formatted': fpars}
@@ -325,8 +333,8 @@ class fitter:
                 aunit = self.data.get_unit()
                 ounit = self.data.get_fluxunit()
             while i < len(pars):
-                if area:
-                    out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n      area = %3.3f %s %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit, area,ounit,aunit)
+                if len(area):
+                    out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n      area = %3.3f %s %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit, area[i],ounit,aunit)
                 else:
                     out += '  %2d: peak = %3.3f %s , centre = %3.3f %s, FWHM = %3.3f %s\n' % (c,pars[i],ounit,pars[i+1],aunit,pars[i+2],aunit,ounit,aunit)
                 c+=1
