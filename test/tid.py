@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 from asap import *
 
+import os
+outdir = "./output"
+if not os.path.exists(outdir):
+    os.mkdir(outdir)
+
 rcParams['verbose'] = 0
 
 rcParams['plotter.ganged'] = 0
