@@ -66,9 +66,9 @@ We can plot the scan now. First we set up the plotter to plot "IF" as stcked col
 plotter.set_mode("IF","time")
 plotter.plot(s) # plot s
 </pre></div>
-Now we can build the quotient. This applies the quotient to both IFs. We are taking all scans ending in "_S" to be "on" source and all "_R" to be "off".
+Now we can build the quotient. This applies the quotient to both IFs.
 <div class=code><pre>
-q = quotient(s.get_scan("*_S"),s.get_scan("*_R"))
+q = auto_quotient()
 plotter.plot(q) # plot q
 </pre></div>
 Now we can set some information anbout the velocity setup. We set the rest frequencies for 13Co and SiO and want to operate in "LSRK".
@@ -76,10 +76,10 @@ Now we can set some information anbout the velocity setup. We set the rest frequ
 restfreqs = [110.201,86.243]     # 13CO-1/0, SiO the two IF
 q.set_restfreqs(restfreqs,"GHz") # set the restfrequencies, as not in data
 q.set_unit("km/s")               # set the unit to be used from now on
-q.set_freqframe("LSRK")          # set frequency frame 
-plotter.plot()                   # replot, should show velocity now 
+q.set_freqframe("LSRK")          # set frequency frame
+plotter.plot()                   # replot, should show velocity now
 </pre></div>
-Now we can subtract a baseline. ASAP can do this automatically if ther is good S/N and the lines aren't too broad. 
+Now we can subtract a baseline. ASAP can do this automatically if ther is good S/N and the lines aren't too broad.
 <div class=code><pre>
 q.auto_poly_baseline() # determine and subtract a poly baseline automatically
 plotter.plot() # replot
@@ -114,18 +114,21 @@ Part II - Fitting
 This part shows how easy it is to fit gaussian line profiles.
 <div class=code><pre>
 f = fitter()
-f.set_scan(q)
 </pre></div>
-We start with the first spectrum (IF=0) bys setting the cursor. We want to fits to gaussian components.
+We start with the first spectrum (IF=0) bys setting the selection. We want to fit two gaussian components.
 <div class=code><pre>
-q.set_cursor(IF=0)
+sel = selector()
+sel.set_ifs(0)
+q.set_selection(sel)
+f.set_scan(q)
 f.set_function(gauss=2) # fit two gaussians
 f.fit()
 f.plot(
 </pre></div>
 The second IFs spectrum is more complex. We select it and fit seven gaussians to it. Here we also plot residuals, the individual components and the fit parameters.
 <div class=code><pre>
-q.set_cursor(IF=1)
+sel.set_ifs(1)
+q.set_selection(sel)
 f.set_function(gauss=7)
 f.fit()
 f.plot(residual=True)

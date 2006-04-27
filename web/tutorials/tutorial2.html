@@ -87,15 +87,13 @@ Then we can loop over all scantables:
 <div class=code><pre>
 quotients = []                        # to hold the quotient scantables
 for scan in vec:                      # loop over input scantables
-   on = scan.get_source("*_S")        
-   off = scan.get_source("*_R")
-   quotients.append(quotient(on,off)) # add this quotient to the vector
+   quotients.append(scan.auto_quotient()) # add this quotient to the vector
 </pre></div>
 Let's have a look at the vector, and subtract a baseline
 <div class=code><pre>
 for q in quotients:
    print q
-   q.auto_poly_baseline(order=1,insitu=True) 
+   q.auto_poly_baseline(order=1,insitu=True)
 </pre></div>
 Now we average the lot together:
 <div class=code><pre>
