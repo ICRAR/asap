@@ -226,6 +226,7 @@ void Scantable::setupMainTable()
   td.addColumn(ScalarColumnDesc<Float>("AZIMUTH"));
   td.addColumn(ScalarColumnDesc<Float>("ELEVATION"));
   td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
+  td.addColumn(ScalarColumnDesc<Float>("OPACITY"));
 
   td.addColumn(ScalarColumnDesc<uInt>("TCAL_ID"));
   ScalarColumnDesc<Int> fitColumn("FIT_ID");
