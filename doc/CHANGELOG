@@ -1,11 +1,35 @@
 Changelog
 =========
 
+Release Version 2.0 [2006-04-28]
+
+* Major rework of internal data representation. Now supports IFs with
+  different number of spectral channels. This has minimal effect on the
+  user interface.
+* Creation of a "selector" object used for data selection. Allow slicing of
+  data in beam, IF, polarisation as well as selection via header values 
+  (e.g. Tsys). set_cursor is now invalid use set_selection instead.
+* Scantables can be merged
+* scantable.lines() has been removed. Set rest frequencies by value
+  (This will change in 2.1)
+* Multiple data files (e.g. rpf) can be read into a single scantable
+* Polarmetric infrastructure improved to support most observing styles
+  (linear feeds only)
+* ability to convert to/store as Stokes
+* Plotter can now only plot from a single scantable (use merge if necessary)
+* ASCII (text) spectral output changed to be more usable
+* Can change the source position coordinate frame
+* Bug fixes
+* auto_quotient is doing "closest in time reference"
+* option auto-align in velocity when using average_time
+* flagging on a per channel base
+
+
 (Release 1.2.2)
 
 * channel based flagging
 * Added get_elevation, azimuth and parangle
-* Added swap_pol & invert_phase
+* Added swap_lineas & invert_phase
 * added allaxes arg to poly_baseline
 * Request: added pager throuput for history and summary
 * Request: Log meesage on auto_quotient()

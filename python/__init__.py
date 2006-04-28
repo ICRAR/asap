@@ -454,7 +454,7 @@ if rcParams['verbose']:
             set_colors      - specify a set of colours to use
             set_linestyles  - specify a set of linestyles to use if only
                               using one color
-            set_histrogra,  - plot in historam style
+            set_histogram   - plot in historam style
             set_mask        - set a plotting mask for a specific polarization
 
     [Reading files]

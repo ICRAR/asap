@@ -12,7 +12,7 @@
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{1ex}
 
-\title{ATNF Spectral Analysis Package\\User Guide  v2.0beta }
+\title{ATNF Spectral Analysis Package\\User Guide v2.0 }
 \author{Chris Phillips}
 
 \newcommand{\cmd}[1]{{\tt #1}}
@@ -320,8 +320,7 @@ of the frequency information and possibly how to manipulate it.
 
 These columns are called FREQ\_ID and MOLECULE\_ID.  They contain indices, for
 each IF, pointing into tables with all of the frequency and rest-frequency
-information for that integration. More on these below when we discuss
-the \cmd{summary} function in the next subsection.
+information for that integration. 
 
 There are of course many other columns which contain the actual spectra,
 the flags, the Tsys, the source names and so on.
@@ -340,7 +339,12 @@ Example:
 \end{verbatim}
 
 The summary function gives you a scan-based summary, presenting the
-scantable as a cascading view od Beams and IFs.
+scantable as a cascading view of Beams and IFs. Note that the output
+of summary is redirected into your current pager specified by the
+\$PAGER environment variable. If you find the screen is reset to the
+original state when summary is finished (ie the output from summary
+disappears), you may need to set the \$LESS environment variable to
+include the \cmd{-X} option.
 
 \subsection{Data Selection}
 \label{sec:selection}
