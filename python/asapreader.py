@@ -5,12 +5,11 @@ class reader(stfiller):
     """
     This class allows the user to import single dish files
     (rpfits,sdfits,ms).
-    The reader reads in integrations from the file and reamins at
+    The reader reads in integrations from the file and remains at
     the fileposition afterwards.
     Available functions are:
 
-    read(integrations)
-    summary    CURRENTLY DISABLED
+    read() # read until the (current) end of file)
 
     Example:
         r = reader('/tmp/P389.rpf')
@@ -50,13 +49,10 @@ class reader(stfiller):
 
     def read(self):
         """
-        Reads in an returns a specified sequence of integrations.
-        If no list is given all integrations a read in.
+        Reads in all integrations in the data file.
         """
         from asap import scantable
         from asap import asaplog
-        if integrations is None:
-            integrations = [-1]
         asaplog.push("Reading integrations from disk...")
         stfiller._read(self)
         tbl = stfiller._getdata(self)

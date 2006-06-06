@@ -306,7 +306,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.0'
+__version__  = '2.0.1'
 
 if rcParams['verbose']:
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
