@@ -100,7 +100,7 @@ private:
   casa::CountedPtr< Scantable > table_;
   casa::Int nIF_, nBeam_, nPol_, nChan_;
   casa::uInt ifOffset_, beamOffset_;
-  casa::Bool haveXPol_;
+  casa::Vector<casa::Bool> haveXPol_;
 };
 
 } // namespace

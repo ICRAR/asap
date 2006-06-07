@@ -130,8 +130,16 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
   // Extract the header from the table.
   STHeader hdr = in->getHeader();
-  const Int nPol  = hdr.npol;
-  const Int nChan = hdr.nchan;
+  //const Int nPol  = hdr.npol;
+  //const Int nChan = hdr.nchan;
+  int nIF = in->nif();
+  Vector<uInt> nPol(nIF),nChan(nIF);
+  Vector<Bool> havexpol(nIF);
+  for (int i=0;i<nIF;++i) {
+    nPol(i) = in->npol();
+    nChan(i) = in->nchan(i);
+    havexpol(i) = nPol(i) > 2;
+  }
 
   const Table table = in->table();
 //   ROArrayColumn<uInt> freqIDCol(table, "FREQ_ID");
@@ -139,11 +147,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
   // Create the output file and write static data.
   Int status;
-  Bool havexpol = Bool(in->npol() > 2);
-  status = writer_->create(filename, hdr.observer, hdr.project,
+  //Bool havexpol = Bool(in->npol() > 2);
+  status = writer_->create(String(filename), hdr.observer, hdr.project,
                                hdr.antennaname, hdr.antennaposition,
                                hdr.obstype, hdr.equinox, hdr.freqref,
-                               nChan, nPol, False, havexpol);
+                               nChan, nPol, havexpol, False);
   if ( status ) {
     throw(AipsError("Failed to create output file"));
   }

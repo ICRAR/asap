@@ -17,6 +17,7 @@
 #include <casa/OS/File.h>
 #include <casa/Quanta/Unit.h>
 #include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/ArrayLogical.h>
 #include <casa/Utilities/Regex.h>
 
 #include <casa/Containers/RecordField.h>
@@ -82,10 +83,11 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
 
   // Create reader and fill in values for arguments
   String format;
-  Vector<Bool> beams;
-  if ( (reader_ = getPKSreader(inName, 0, 0, format, beams, nIF_,
-                              nChan_, nPol_, haveBase, haveSpectra,
-                              haveXPol_)) == 0 )  {
+  Vector<Bool> beams, ifs;
+  Vector<uInt> nchans,npols;
+  if ( (reader_ = getPKSreader(inName, 0, 0, format, beams, ifs,
+                              nchans, npols, haveXPol_,haveBase, haveSpectra
+                              )) == 0 )  {
     throw(AipsError("Creation of PKSreader failed"));
   }
   if (!haveSpectra) {
@@ -94,17 +96,19 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
     throw(AipsError("No spectral data in file."));
     return;
   }
-
   nBeam_ = beams.nelements();
+  nIF_ = ifs.nelements();
   // Get basic parameters.
-  if ( haveXPol_ ) {
+  if ( anyEQ(haveXPol_, True) ) {
     pushLog("Cross polarization present");
-    nPol_ += 2;                          // Convert Complex -> 2 Floats
+    for (uInt i=0; i< npols.nelements();++i) {
+      if (npols[i] < 3) npols[i] += 2;// Convert Complex -> 2 Floats
+    }
   }
   if (header_) delete header_;
   header_ = new STHeader();
-  header_->nchan = nChan_;
-  header_->npol = nPol_;
+  header_->nchan = max(nchans);
+  header_->npol = max(npols);
   header_->nbeam = nBeam_;
 
   // not the right thing to do?!
@@ -132,7 +136,6 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
     nIF_ = 1;
     header_->obstype = String("fswitch");
   }
-
   // Determine Telescope and set brightness unit
 
   Bool throwIt = False;
@@ -146,16 +149,12 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   header_->epoch = "UTC";
   // *** header_->frequnit = "Hz"
   // Apply selection criteria.
-
   Vector<Int> ref;
-  Vector<Bool> beamSel(nBeam_,True);
-  Vector<Bool> IFsel(nIF_,True);
-
   ifOffset_ = 0;
   if (whichIF>=0) {
     if (whichIF>=0 && whichIF<nIF_) {
-      IFsel = False;
-      IFsel(whichIF) = True;
+      ifs = False;
+      ifs(whichIF) = True;
       header_->nif = 1;
       nIF_ = 1;
       ifOffset_ = whichIF;
@@ -171,8 +170,8 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   beamOffset_ = 0;
   if (whichBeam>=0) {
     if (whichBeam>=0 && whichBeam<nBeam_) {
-      beamSel = False;
-      beamSel(whichBeam) = True;
+      beams = False;
+      beams(whichBeam) = True;
       header_->nbeam = 1;
       nBeam_ = 1;
       beamOffset_ = whichBeam;
@@ -186,7 +185,7 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   }
   Vector<Int> start(nIF_, 1);
   Vector<Int> end(nIF_, 0);
-  reader_->select(beamSel, IFsel, start, end, ref, True, haveXPol_);
+  reader_->select(beams, ifs, start, end, ref, True, haveXPol_[0], False);
   table_->setHeader(*header_);
 }
 
@@ -318,7 +317,7 @@ int asap::STFiller::read( )
       table_->table().addRow();
       row.put(table_->table().nrow()-1, rec);
     }
-    if ( haveXPol_ ) {
+    if ( haveXPol_[0] ) {
       // no tsys given for xpol, so emulate it
       tsysvec = sqrt(tsys[0]*tsys[1]);
       *tsysCol = tsysvec;
