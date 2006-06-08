@@ -1032,19 +1032,19 @@ class scantable(Scantable):
         else: return s
 
 
-    def poly_baseline(self, mask=None, order=0, insitu=None):
+    def poly_baseline(self, mask=None, order=0, plot=False, insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
             scan:       a scantable
             mask:       an optional mask
             order:      the order of the polynomial (default is 0)
+            plot:       plot the fit and the residual. In this each
+                        indivual fit has to be approved, by typing 'y'
+                        or 'n'
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
-            allaxes:    If True (default) apply to all spectra. Otherwise
-                        apply only to the selected (beam/pol/if)spectra only
-                        The default is taken from .asaprc (True if none)
         Example:
             # return a scan baselined by a third order polynomial,
             # not using a mask
@@ -1059,14 +1059,14 @@ class scantable(Scantable):
         f = fitter()
         f.set_scan(self, mask)
         f.set_function(poly=order)
-        s = f.auto_fit(insitu)
+        s = f.auto_fit(insitu, plot=plot)
         s._add_history("poly_baseline", varlist)
         print_log()
         if insitu: self._assign(s)
         else: return s
 
     def auto_poly_baseline(self, mask=[], edge=(0,0), order=0,
-                           threshold=3, insitu=None):
+                           threshold=3, plot=False, insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
@@ -1085,6 +1085,9 @@ class scantable(Scantable):
             threshold:  the threshold used by line finder. It is better to
                         keep it large as only strong lines affect the
                         baseline solution.
+            plot:       plot the fit and the residual. In this each
+                        indivual fit has to be approved, by typing 'y'
+                        or 'n'
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -1154,8 +1157,16 @@ class scantable(Scantable):
             f.data = None
             f.fit()
             x = f.get_parameters()
+            if plot:
+                f.plot(residual=True)
+                x = raw_input("Accept fit ( [y]/n ): ")
+                if x.upper() == 'N':
+                    continue
             workscan._setspectrum(f.fitter.getresidual(), r)
-        workscan._add_history("poly_baseline", varlist)
+        if plot:
+            f._p.unmap()
+            f._p = None
+        workscan._add_history("auto_poly_baseline", varlist)
         if insitu:
             self._assign(workscan)
         else:

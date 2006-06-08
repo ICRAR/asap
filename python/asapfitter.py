@@ -321,7 +321,7 @@ class fitter:
             for i in range(len(pars)):
                 fix = ""
                 if fixed[i]: fix = "(fixed)"
-                out += '  p%d%s= %3.3f,' % (c,fix,pars[i])
+                out += '  p%d%s= %3.6f,' % (c,fix,pars[i])
                 c+=1
             out = out[:-1]  # remove trailing ','
         elif self.fitfunc == 'gauss':
@@ -490,7 +490,7 @@ class fitter:
             self._p.save(filename)
         print_log()
 
-    def auto_fit(self, insitu=None):
+    def auto_fit(self, insitu=None, plot=False):
         """
         Return a scan where the function is applied to all rows for
         all Beams/IFs/Pols.
@@ -520,7 +520,15 @@ class fitter:
             self.data = None
             self.fit()
             x = self.get_parameters()
+            if plot:
+                self.plot(residual=True)
+                x = raw_input("Accept fit ([y]/n): ")
+                if x.upper() == 'N':
+                    continue
             scan._setspectrum(self.fitter.getresidual(), r)
+        if plot:
+            self._p.unmap()
+            self._p = None
         print_log()
         return scan
 
