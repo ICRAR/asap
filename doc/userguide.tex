@@ -38,9 +38,9 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-This userguide is currently being updated for the ASAP 2.0 release
-which has a number of significant changes which affect the user
-interface. Please report any mistakes you find in this userguide.
+This userguide has been updated for the ASAP 2.0 release which has a
+number of significant changes which affect the user interface. Please
+report any mistakes you find.
 
 \section{Installation and Running}
 
@@ -65,13 +65,11 @@ This starts the ASAP. To quit, you need to type \verb+^+-d
 
 \section{Interface}
 
-\index{Interface}ASAP is written in C++ and python. The user interface uses the
-``ipython'' interactive shell, which is a simple interactive interface
-to python. The user does not need to understand python to use this,
-but certain aspects python affect what the user can do.  The current
-interface is object oriented.  In the future, we will build a
-functional (non object oriented) shell on top of this to ease
-interactive use.
+\index{Interface}ASAP is written in C++ and python. The user interface
+uses the ``ipython'' interactive shell, which is a simple interactive
+interface to python. The user does not need to understand python to
+use this, but certain aspects python affect what the user can do.  The
+current interface is object oriented.
 
 \subsection {Integer Indices are 0-relative}
 
@@ -88,7 +86,7 @@ main objects are used :
   \item[\cmd{scantable}] The data container (actual spectra and header
     information)
   \item[\cmd{selector}] Allows the user to select a subsection of the
-    data, such as a specified or ramge of beam numbers, IFs, etc.
+    data, such as a specified or range of beam numbers, IFs, etc.
   \item[\cmd{plotter}] A tool used to plot the spectral line data
   \item[\cmd{fitter}] A tool used to fit functions to the spectral data
   \item[\cmd{reader}] A tool which can be used to read data from disks
@@ -236,7 +234,7 @@ includes the defaults for arguments such as \cmd{insitu}, scantable
 \cmd{freqframe} and the plotters \cmd{set\_mode} values. The help on
 individual functions says which arguments can be set default values
 from the \cmd{.asaprc} file. To get a sample contents for the
-\cmd{.asaprc} file use then command \cmd{list\_rcparameters}.
+\cmd{.asaprc} file use the command \cmd{list\_rcparameters}.
 
 Common values include:
 \begin{verbatim}
@@ -287,18 +285,16 @@ changed via the {\tt .asaprc} resource file.
 
 For example a Mopra scan with a  4s intergration time, two IFs and
 dual polarisations has two (2s) cycles.
-
 \begin{verbatim}
-SCANNO  CYCLENO BEAMNO IFNO POLNO
-0       0       0      0    0
-0       0       0      0    1
-0       0       0      1    0
-0       0       0      1    1
-0       1       0      0    0
-0       1       0      0    1
-0       1       0      1    0
-0       1       0      1    1
-
+    SCANNO  CYCLENO BEAMNO IFNO POLNO
+    0       0       0      0    0
+    0       0       0      0    1
+    0       0       0      1    0
+    0       0       0      1    1
+    0       1       0      0    0
+    0       1       0      0    1
+    0       1       0      1    0
+    0       1       0      1    1
 \end{verbatim}
 
 
@@ -374,8 +370,8 @@ The common selection functions are:
 \item[\cmd{set\_ifs}] Select ifs by index number
 \item[\cmd{set\_name}] Select by source name. Can contain ``*'' as a
 wildcard, e.g. ``Orion*\_R''.
-\item[\cmd{set\_ifs}] Select ifs by index number
-\item[\cmd{set\_polarisation}] Select but polarisation index or
+\item[\cmd{set\_ifs}] Select IFs by index number
+\item[\cmd{set\_polarisation}] Select by polarisation index or
 name. If polarisation names are given, the data will be on-the-fly
 converted (for example from linears to Stokes).
 \item[\cmd{set\_query}] Set query directly. For power users only!
@@ -479,7 +475,7 @@ provided list.
 
 \end{verbatim}
 
-{\em Currently this is not implemented}
+{\em Currently the following is not implemented}
 
 In both of the above modes, you can also specify the rest frequencies via
 names in a known list rather than by their values.
@@ -505,8 +501,8 @@ true for functions which change the shape or shift the frequency
 axis).  You create masks with the function \cmd{create\_mask} and this
 specified the channels to be included in the selection. When setting
 the mask in velocity, the conversion from velocity to channels is
-based on the current cursor setting, selected row and selected
-frequency reference frame.
+based on the current selection, specified row and selected frequency
+reference frame.
 
 
 Note that for multi IF data with different number of channels per IF a
@@ -977,9 +973,9 @@ formats are:
   for interchange between packages, but few packages actually can read
   it.
 
-\item[FITS] This uses simple ``image'' fits to save the data, each row
-  being written to a separate fits file. This format is suitable for
-  importing the data into CLASS.
+%\item[FITS] This uses simple ``image'' fits to save the data, each row
+%  being written to a separate fits file. This format is suitable for
+%  importing the data into CLASS.
 
 \item[ASCII] A simple text based format suitable for the user to
 processing using Perl or, Python, gnuplot etc.
@@ -1289,7 +1285,9 @@ this problem:
 
 \subsection{Conversion}
 \label{sec:polconv}
-Data can be converted between linear and circular polarisations and stokes.
+
+Data can be permanently converted between linear and circular
+polarisations and stokes.
 
 \begin{verbatim}
   ASAP> stokescans = linearscans.convert_pol("stokes")
