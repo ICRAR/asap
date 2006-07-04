@@ -20,6 +20,8 @@
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/Slice.h>
+#include <casa/Arrays/Slicer.h>
 #include <casa/Containers/RecordField.h>
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableVector.h>
@@ -65,7 +67,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
                  const std::string& avmode)
 {
   if ( avmode == "SCAN" && in.size() != 1 )
-    throw(AipsError("Can't perform 'SCAN' averaging on multiple tables"));
+    throw(AipsError("Can't perform 'SCAN' averaging on multiple tables.\n"
+                    "Use merge first."));
   WeightType wtype = stringToWeight(weight);
 
   // output
@@ -185,6 +188,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   return out;
 }
 
+
 CountedPtr< Scantable > STMath::getScantable(const CountedPtr< Scantable >& in,
                                              bool droprows)
 {
@@ -247,9 +251,9 @@ Vector<uChar> STMath::flagsFromMA(const MaskedArray<Float>& ma)
   return flags;
 }
 
-CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable >& in,
-                                          const std::string & mode,
-                                          bool preserve )
+CountedPtr< Scantable > STMath::autoQuotient( const CountedPtr< Scantable >& in,
+                                              const std::string & mode,
+                                              bool preserve )
 {
   /// @todo make other modes available
   /// modes should be "nearest", "pair"
@@ -319,6 +323,64 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable >& in,
   }
   return out;
 }
+
+
+CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable > & on,
+                                          const CountedPtr< Scantable > & off,
+                                          bool preserve )
+{
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(on, false);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  const Table& toff = off->table();
+  TableIterator sit(tout, "SCANNO");
+  TableIterator s2it(toff, "SCANNO");
+  while ( !sit.pastEnd() ) {
+    Table ton = sit.table();
+    TableRow row(ton);
+    Table t = s2it.table();
+    ArrayColumn<Float> outspecCol(ton, "SPECTRA");
+    ROArrayColumn<Float> outtsysCol(ton, "TSYS");
+    ArrayColumn<uChar> outflagCol(ton, "FLAGTRA");
+    for (uInt i=0; i < ton.nrow(); ++i) {
+      const TableRecord& rec = row.get(i);
+      Table offsel = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                          && t.col("IFNO") == Int(rec.asuInt("IFNO"))
+                          && t.col("POLNO") == Int(rec.asuInt("POLNO")) );
+      TableRow offrow(offsel);
+      const TableRecord& offrec = offrow.get(0);//should be ncycles - take first
+      RORecordFieldPtr< Array<Float> > specoff(offrec, "SPECTRA");
+      RORecordFieldPtr< Array<Float> > tsysoff(offrec, "TSYS");
+      RORecordFieldPtr< Array<uChar> > flagoff(offrec, "FLAGTRA");
+      Float tsysoffscalar = (*tsysoff)(IPosition(1,0));
+      Vector<Float> specon, tsyson;
+      outtsysCol.get(i, tsyson);
+      outspecCol.get(i, specon);
+      Vector<uChar> flagon;
+      outflagCol.get(i, flagon);
+      MaskedArray<Float> mon = maskedArray(specon, flagon);
+      MaskedArray<Float> moff = maskedArray(*specoff, *flagoff);
+      MaskedArray<Float> quot = (tsysoffscalar * mon / moff);
+      if (preserve) {
+        quot -= tsysoffscalar;
+      } else {
+        quot -= tsyson[0];
+      }
+      outspecCol.put(i, quot.getArray());
+      outflagCol.put(i, flagsFromMA(quot));
+    }
+    ++sit;
+    ++s2it;
+    // take the first off for each on scan which doesn't have a
+    // matching off scan
+    // non <= noff:  matching pairs, non > noff matching pairs then first off
+    if ( s2it.pastEnd() ) s2it.reset();
+  }
+  return out;
+}
+
 
 CountedPtr< Scantable > STMath::freqSwitch( const CountedPtr< Scantable >& in )
 {
@@ -1195,3 +1257,4 @@ CountedPtr<Scantable>
   delete stpol;
   return out;
 }
+

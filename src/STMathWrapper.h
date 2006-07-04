@@ -56,10 +56,16 @@ public:
                   const std::string& mode, bool tsys=false )
   { return ScantableWrapper(STMath::unaryOperate(in.getCP(), val, mode, tsys)); }
 
-  ScantableWrapper quotient( const ScantableWrapper& in,
-                             const std::string& mode = "NEAREST",
+  ScantableWrapper autoQuotient( const ScantableWrapper& in,
+                                 const std::string& mode = "NEAREST",
+                                 bool preserve = true )
+  { return ScantableWrapper(STMath::autoQuotient(in.getCP(), mode, preserve)); }
+
+  ScantableWrapper quotient( const ScantableWrapper& on,
+                             const ScantableWrapper& off,
                              bool preserve = true )
-  { return ScantableWrapper(STMath::quotient(in.getCP(), mode, preserve)); }
+  { return ScantableWrapper( STMath::quotient( on.getCP(), off.getCP(),
+                                               preserve ) ); }
 
   ScantableWrapper
     freqSwitch( const ScantableWrapper& in )

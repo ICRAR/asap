@@ -57,6 +57,7 @@ public:
              const std::vector<bool>& mask = std::vector<bool>(),
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN");
+
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
                                 const std::vector<bool>& mask,
@@ -66,8 +67,12 @@ public:
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,
                   const std::string& mode, bool tsys=false );
 
-  casa::CountedPtr<Scantable> quotient( const casa::CountedPtr<Scantable>& in,
-                                        const std::string& mode = "NEAREST",
+  casa::CountedPtr<Scantable> autoQuotient(const casa::CountedPtr<Scantable>& in,
+                                           const std::string& mode = "NEAREST",
+                                           bool preserve = true);
+
+  casa::CountedPtr<Scantable> quotient( const casa::CountedPtr<Scantable>& on,
+                                        const casa::CountedPtr<Scantable>& off,
                                         bool preserve = true );
 
   casa::CountedPtr<Scantable>
