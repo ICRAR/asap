@@ -188,6 +188,60 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   return out;
 }
 
+CountedPtr< Scantable >
+  STMath::averageChannel( const CountedPtr < Scantable > & in,
+                          const std::string & mode )
+{
+  // clone as this is non insitu
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(in, true);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  ArrayColumn<Float> specColOut(tout,"SPECTRA");
+  ArrayColumn<uChar> flagColOut(tout,"FLAGTRA");
+  ArrayColumn<Float> tsysColOut(tout,"TSYS");
+
+  Block<String> cols(3);
+  cols[0] = String("BEAMNO");
+  cols[1] = String("IFNO");
+  cols[2] = String("POLNO");
+  uInt outrowCount = 0;
+  uChar userflag = 1 << 7;
+  TableIterator iter(in->table(), cols);
+  while (!iter.pastEnd()) {
+    Table subt = iter.table();
+    ROArrayColumn<Float> specCol, tsysCol;
+    ROArrayColumn<uChar> flagCol;
+    specCol.attach(subt,"SPECTRA");
+    flagCol.attach(subt,"FLAGTRA");
+    tsysCol.attach(subt,"TSYS");
+    tout.addRow();
+    TableCopy::copyRows(tout, subt, outrowCount, 0, 1);
+    Vector<Float> tmp;
+    specCol.get(0, tmp);
+    uInt nchan = tmp.nelements();
+    Vector<uChar> flags = flagCol.getColumn(Slicer(Slice(0)));
+    Vector<Float> outspec(nchan);
+    Vector<uChar> outflag(nchan,0);
+    Vector<Float> outtsys(1);/// @fixme when tsys is channel based
+    for (uInt i=0; i<nchan; ++i) {
+      Vector<Float> specs = specCol.getColumn(Slicer(Slice(i)));
+      MaskedArray<Float> ma = maskedArray(specs,flags);
+      outspec[i] = median(ma);
+      if ( allEQ(ma.getMask(), False) )
+        outflag[i] = userflag;// flag data
+    }
+    outtsys[0] = median(tsysCol.getColumn());
+    specColOut.put(outrowCount, outspec);
+    flagColOut.put(outrowCount, outflag);
+    tsysColOut.put(outrowCount, outtsys);
+
+    ++outrowCount;
+    ++iter;
+  }
+  return out;
+}
 
 CountedPtr< Scantable > STMath::getScantable(const CountedPtr< Scantable >& in,
                                              bool droprows)
@@ -330,6 +384,9 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable > & on,
                                           bool preserve )
 {
   bool insitu = insitu_;
+  if ( ! on->conformant(*off) ) {
+    throw(AipsError("'on' and 'off' scantables are not conformant."));
+  }
   setInsitu(false);
   CountedPtr< Scantable > out = getScantable(on, false);
   setInsitu(insitu);

@@ -44,6 +44,7 @@ namespace asap {
         .def("_insitu", &STMathWrapper::insitu)
         .def("_setinsitu", &STMathWrapper::setInsitu)
         .def("_average", &STMathWrapper::average)
+        .def("_averagechannel", &STMathWrapper::averageChannel)
         .def("_averagepol", &STMathWrapper::averagePolarisations)
         .def("_unaryop", &STMathWrapper::unaryOperate)
         .def("_auto_quotient", &STMathWrapper::autoQuotient)

@@ -58,6 +58,10 @@ public:
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN");
 
+  casa::CountedPtr<Scantable>
+    averageChannel( const casa::CountedPtr<Scantable> & in,
+                     const std::string& mode = "MEDIAN");
+
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
                                 const std::vector<bool>& mask,

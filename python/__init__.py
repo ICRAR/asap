@@ -305,8 +305,9 @@ if rcParams['useplotter']:
     plotter = asapplotter(gui)
     del gui
 
+
 __date__ = '$Date$'.split()[1]
-__version__  = '2.0.1'
+__version__  = '2.1a'
 
 if rcParams['verbose']:
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
@@ -366,14 +367,15 @@ if rcParams['verbose']:
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
                               or a list of scans
+            average_channel - return the (median) average of a scantable
             average_pol     - average the polarisations together.
                               The dimension won't be reduced and
                               all polarisations will contain the
                               averaged spectrum.
             convert_pol     - convert to a different polarisation type
             auto_quotient   - return the on/off quotient with
-                              automatic detection of the on/off scans
-                              (matched pairs and 1 off - n on)
+                              automatic detection of the on/off scans (closest
+                              in time off is selected)
             scale, *, /     - return a scan scaled by a given factor
             add, +, -       - return a scan with given value added
             bin             - return a scan with binned channels
@@ -418,6 +420,9 @@ if rcParams['verbose']:
             quotient        - return the on/off quotient
             simple_math     - simple mathematical operations on two scantables,
                               'add', 'sub', 'mul', 'div'
+            quotient        - build quotient of the given on and off scans
+                              (matched pairs and 1 off/n on are valid)
+
      [Fitting]
         fitter
             auto_fit        - return a scan where the function is
