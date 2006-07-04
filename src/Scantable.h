@@ -128,6 +128,7 @@ public:
    * @return an STHeader object
    */
   STHeader getHeader( ) const;
+
   /**
    * Checks if the "other" Scantable is conformant with this,
    * i.e. if  header values are the same.
@@ -135,6 +136,13 @@ public:
    * @return true or false
    */
   bool conformant( const Scantable& other);
+
+  /**
+   *
+   * @param stype The type of the source, 0 = on, 1 = off
+   */
+  void setSourceType(int stype);
+
 
   /**
    * return the number of scans in the table
@@ -151,6 +159,8 @@ public:
   casa::MPosition getAntennaPosition() const;
 
   casa::MDirection getDirection( int whichrow ) const;
+
+  std::string getDirectionString( int whichrow ) const;
 
   void setDirectionRefString(const std::string& refstr="");
 
@@ -395,7 +405,7 @@ private:
   casa::ScalarColumn<casa::Float> paraCol_;
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
   casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_;
-  casa::ScalarColumn<casa::Int> rbeamCol_;
+  casa::ScalarColumn<casa::Int> rbeamCol_, srctCol_;
   casa::ArrayColumn<casa::Float> specCol_, tsysCol_;
   casa::ArrayColumn<casa::uChar> flagsCol_;
 

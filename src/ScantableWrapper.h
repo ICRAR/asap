@@ -84,6 +84,9 @@ public:
   std::string getTime(int whichrow=0) const
     { return table_->getTime(whichrow); }
 
+  std::string getDirectionString(int whichrow=0) const
+    { return table_->getDirectionString(whichrow); }
+
   std::string getFluxUnit() const { return table_->getFluxUnit(); }
 
   void setFluxUnit(const std::string& unit) { table_->setFluxUnit(unit); }
@@ -134,6 +137,9 @@ public:
 
   void makePersistent(const std::string& fname)
     { table_->makePersistent(fname); }
+
+  void setSourceType(int stype)
+    { table_->setSourceType(stype); }
 
   void setRestFrequencies(double rf, const std::string& unit)
     { table_->setRestFrequencies(rf, unit); }

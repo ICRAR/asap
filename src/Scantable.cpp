@@ -255,6 +255,7 @@ void Scantable::attach()
 {
   timeCol_.attach(table_, "TIME");
   srcnCol_.attach(table_, "SRCNAME");
+  srctCol_.attach(table_, "SRCTYPE");
   specCol_.attach(table_, "SPECTRA");
   flagsCol_.attach(table_, "FLAGTRA");
   tsysCol_.attach(table_, "TSYS");
@@ -320,6 +321,14 @@ STHeader Scantable::getHeader() const
   table_.keywordSet().get("Epoch", sdh.epoch);
   table_.keywordSet().get("POLTYPE", sdh.poltype);
   return sdh;
+}
+
+void asap::Scantable::setSourceType( int stype )
+{
+  if ( stype < 0 || stype > 1 )
+    throw(AipsError("Illegal sourcetype."));
+  TableVector<Int> tabvec(table_, "SRCTYPE");
+  tabvec = Int(stype);
 }
 
 bool Scantable::conformant( const Scantable& other )
@@ -823,6 +832,11 @@ std::string Scantable::getTime(int whichrow, bool showdate) const
     me = MEpoch(MVEpoch(tm));
   }
   return formatTime(me, showdate);
+}
+
+std::string Scantable::getDirectionString(int whichrow) const
+{
+  return formatDirection(getDirection(uInt(whichrow)));
 }
 
 std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const

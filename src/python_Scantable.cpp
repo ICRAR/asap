@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #include <vector>
 
@@ -91,6 +91,8 @@ void python_Scantable() {
          (boost::python::arg("whichrow")=0) )
     .def("_gettime", &ScantableWrapper::getTime,
          (boost::python::arg("whichrow")=0) )
+    .def("_getdirection", &ScantableWrapper::getDirectionString,
+         (boost::python::arg("whichrow")=0) )
     .def("_flag", &ScantableWrapper::flag)
     .def("_save",  &ScantableWrapper::makePersistent)
     .def("_summary",  &ScantableWrapper::summary,
@@ -108,6 +110,7 @@ void python_Scantable() {
     .def("_addfit", &ScantableWrapper::addFit)
     .def("_getfit", &ScantableWrapper::getFit)
     .def("_recalcazel", &ScantableWrapper::calculateAZEL)
+    .def("_setsourcetype", &ScantableWrapper::setSourceType)
   ;
 };
 
