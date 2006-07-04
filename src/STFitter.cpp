@@ -102,8 +102,8 @@ bool Fitter::computeEstimate() {
       break;
     }
   }
-  mn = 0+x_.nelements()/10;
-  mx = x_.nelements()-x_.nelements()/10;
+  //mn = 0+x_.nelements()/10;
+  //mx = x_.nelements()-x_.nelements()/10;
   estimator.setRegion(mn,mx);
   //estimator.setWindowing(True);
   SpectralList listGauss = estimator.estimate(x_, y_);
@@ -296,6 +296,9 @@ bool Fitter::fit() {
 
   parameters_.resize();
   parameters_ = fitter.fit(x_, y_, sigma, &m_);
+  if ( !fitter.converged() ) {
+     return false;
+  }
   std::vector<float> ps;
   parameters_.tovector(ps);
   setParameters(ps);
