@@ -376,6 +376,15 @@ class scantable(Scantable):
         retval = {'axesnames': axesnames, 'axes': axes, 'data': outvec}
         return retval
 
+    def _get_column(self, callback, row=-1):
+        """
+        """
+        if row == -1:
+            return [callback(i) for i in range(self.nrow())]
+        else:
+            if  0 <= row < self.nrow():
+                return callback(row)
+
 
     def get_time(self, row=-1):
         """
@@ -386,14 +395,7 @@ class scantable(Scantable):
         Example:
             none
         """
-        out = []
-        if row == -1:
-            for i in range(self.nrow()):
-                out.append(self._gettime(i))
-            return out
-        else:
-            if row < self.nrow():
-                return self._gettime(row)
+        return self._get_column(self._gettime, row)
 
     def get_sourcename(self, row=-1):
         """
@@ -404,12 +406,7 @@ class scantable(Scantable):
         Example:
             none
         """
-        out = []
-        if row == -1:
-            return [self._getsourcename(i) for i in range(self.nrow())]
-        else:
-            if  0 <= row < self.nrow():
-                return self._getsourcename(row)
+        return self._get_column(self._getsourcename, row)
 
     def get_elevation(self, row=-1):
         """
@@ -420,12 +417,7 @@ class scantable(Scantable):
         Example:
             none
         """
-        out = []
-        if row == -1:
-            return [self._getelevation(i) for i in range(self.nrow())]
-        else:
-            if  0 <= row < self.nrow():
-                return self._getelevation(row)
+        return self._get_column(self._getelevation, row)
 
     def get_azimuth(self, row=-1):
         """
@@ -436,12 +428,7 @@ class scantable(Scantable):
         Example:
             none
         """
-        out = []
-        if row == -1:
-            return [self._getazimuth(i) for i in range(self.nrow())]
-        else:
-            if  0 <= row < self.nrow():
-                return self._getazimuth(row)
+        return self._get_column(self._getazimuth, row)
 
     def get_parangle(self, row=-1):
         """
@@ -452,12 +439,18 @@ class scantable(Scantable):
         Example:
             none
         """
-        out = []
-        if row == -1:
-            return [self._getparangle(i) for i in range(self.nrow())]
-        else:
-            if  0 <= row < self.nrow():
-                return self._getparangle(row)
+        return self._get_column(self._getparangle, row)
+
+    def get_direction(self, row=-1):
+        """
+        Get a list of Positions on the sky (direction) for the observations.
+        Return a float for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        return self._get_column(self._getdirection, row)
 
     def set_unit(self, unit='channel'):
         """
@@ -755,10 +748,9 @@ class scantable(Scantable):
 
     def average_time(self, mask=None, scanav=False, weight='tint', align=False):
         """
-        Return the (time) average of a scan, or apply it 'insitu'.
+        Return the (time) weighted average of a scan.
         Note:
-            in channels only
-            The cursor of the output scan is set to 0.
+            in channels only - align if necessary
         Parameters:
             one scan or comma separated  scans
             mask:     an optional mask (only used for 'var' and 'tsys'
@@ -794,6 +786,37 @@ class scantable(Scantable):
                 return
             else: raise
         s._add_history("average_time",varlist)
+        print_log()
+        return s
+
+    def average_channel(self, mode="MEDIAN", align=False):
+        """
+        Return the (median) average of a scan.
+        Note:
+            in channels only - align if necessary
+            the mdeian Tsys is computed.
+        Parameters:
+            one scan or comma separated  scans
+            mode:     type of average, default "MEDIAN"
+            align:    align the spectra in velocity before averaging. It takes
+                      the time of the first spectrum as reference time.
+        Example:
+            # mdeian average the scan
+            newscan = scan.average_channel()
+        """
+        varlist = vars()
+        if mode is None: mode = 'MEDIAN'
+        scan = self
+        try:
+          if align:
+              scan = self.freq_align(insitu=False)
+          s = scantable(self._math._averagechannel(scan, mode))
+        except RuntimeError,msg:
+            if rcParams['verbose']:
+                print msg
+                return
+            else: raise
+        s._add_history("average_channel",varlist)
         print_log()
         return s
 
@@ -1281,14 +1304,14 @@ class scantable(Scantable):
             preserve:       you can preserve (default) the continuum or
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
-                            remove:   Output = Tref * (on/off) - Ton
+                            remove:   Output = Toff * (on/off) - Ton
         """
         modes = ["time"]
         if not mode in modes:
             msg = "please provide valid mode. Valid modes are %s" % (modes)
             raise ValueError(msg)
         varlist = vars()
-        s = scantable(self._math._quotient(self, mode, preserve))
+        s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient",varlist)
         print_log()
         return s
