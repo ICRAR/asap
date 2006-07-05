@@ -61,14 +61,14 @@ To start we are reading in the data into a scantable, which can be accessed via 
 s = scantable("2005-05-08_0350.rpf")
 s.summary()
 </pre></div>
-We can plot the scan now. First we set up the plotter to plot "IF" as stcked colours and "time" across panels. Then we issue th plot command.
+We can plot the scan now. First we set up the plotter to plot "IF" as stcked colours and "time" across panels. Then we issue the plot command.
 <div class=code><pre>
 plotter.set_mode("IF","time")
 plotter.plot(s) # plot s
 </pre></div>
 Now we can build the quotient. This applies the quotient to both IFs.
 <div class=code><pre>
-q = auto_quotient()
+q = s.auto_quotient()
 plotter.plot(q) # plot q
 </pre></div>
 Now we can set some information anbout the velocity setup. We set the rest frequencies for 13Co and SiO and want to operate in "LSRK".

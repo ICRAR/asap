@@ -66,6 +66,11 @@ Type commands() to get a list of all available ASAP commands.
 ASAP>
 </pre>
 
+<h2>Defects and enhancement requests</h2>
+Bugs and enhancement requests can be submitted online, via the <a href="http://sourcecode.atnf.csiro.au/cgi-bin/trac_asap.cgi/newticket">
+ASAP project tracking page</a>. Please also check if the defect has already been sumbitted under
+<a href="http://sourcecode.atnf.csiro.au/cgi-bin/trac_asap.cgi/report/1">current tickets</a>.
+
 
 <h2>Documentation</h2>
 ASAP has a user guide for general use and telescope specific examples,
@@ -80,6 +85,10 @@ and analyse their data.
 <p>
 More detailed help is available via the <b>help</b> function.
 <p>
+The <a href="http://sourcecode.atnf.csiro.au/cgi-bin/trac_asap.cgi">Trac page</a>
+for ASAP also contains information about building from source and code
+revisions and milestones. The current
+
 
 <h2>ASAP Mailinglist </h2>
 
@@ -92,18 +101,16 @@ asap@atnf.csiro.au). Messages sent to this list are archived at
 
 <p> You need to be suscribed to send and receive messages from this
 list. To subscribe, please send a message to <pre>
-asap-users-requests@atnf.csiro.au </pre> with the single word
+asap-users-request@atnf.csiro.au </pre> with the single word
 "subscribe" in the body of the message. Send this from your normal
 email account. If you wish to be removed from this list send an email
-to asap-users-requests@atnf.csiro.au with the single word
+to asap-users-request@atnf.csiro.au with the single word
 "unsubscribe" in the body of the message.
 
 
 <a name="download"><h2>Download</h2></a>
 ASAP source code and binaries are available in the <a href="http://www.atnf.csiro.au/pub/software/asap/">ATNF ftp area</a>
 <ul>
-  <li>Current stable release source code snapshot <a
-      href="ftp://ftp.atnf.csiro.au/pub/software/asap/asap_src.tar.bz2">asap source</a> </li>
   <li> A binary tar archive of the latest stable release <a
       href=ftp://ftp.atnf.csiro.au/pub/software/asap/asap_linux.tar.bz2>linux binary</a>.
       You will need to have the following libraries:<br>
@@ -111,7 +118,15 @@ ASAP source code and binaries are available in the <a href="http://www.atnf.csir
       python2.3.<br>
       The matplotlib python module has to be installed too.
   </li>
-  <li>For Mac OSX 10.4 follow <a href="./osx.html">these instructions.</a>
+  <li>For Mac OSX 10.4 follow <a href="./osx.html">these instructions.</a></li>
+  <li>Current stable release source code snapshot <a
+      href="ftp://ftp.atnf.csiro.au/pub/software/asap/asap_src.tar.bz2">asap source</a>
+      You will need a full aips++ installation, or cyou an try and use the
+      <a href="http://www.atnf.csiro.au/pub/software/asap/casa_asap.tar.bz2">mini-aips++ tree</a>,
+       necessary to build ASAP.</li>
+  <li>The ASAP data package, which contains information about observatories and
+      coordinate frames can be downloaded <a href="http://www.atnf.csiro.au/pub/software/asap/asap_data.tar.bz2">here</a>.
+      You need this if you are building ASAP from source.</li>
 </ul>
 <p>
 

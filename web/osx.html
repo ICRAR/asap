@@ -33,60 +33,47 @@ title_bar("atnf");
 title_crumbs("/computing/software/");
 ?>
 <!-- Start Content -->
-<h1>ASAP OS X (10.4)install</h1>
-This might or might not work with 10.3. Obviously, steps specific for
-10.4 have to be omitted.
+<h1>ASAP OS X (10.4) install</h1>
+This might or might not work with 10.3.
 <h2>Getting stuff</h2>
 <a href="http://pythonmac.org/packages">pythonmac.org</a> has
-pre-packaged python modules.
+a pre-packaged python and some  modules.
 <br>
-From the section <b>Mac OS X 10.4 (stock Python 2.3.5) </b>
-<br>get
+From the section <b>Packages for Universal...</b>
+<br>get and install
 <ul>
   <li>
 <a
-      href="http://pythonmac.org/packages/TigerPython23Compat.pkg.zip">TigerPython23Compat</a> </li>
+      href="http://pythonmac.org/packages/py24-fat/dmg/Universal-MacPython-2.4.3-2006-04-07.dmg">Python</a> </li>
+  <li>
+<a
+      href="http://pythonmac.org/packages/py24-fat/mpkg/matplotlib-0.87.2-py2.4-macosx10.4.mpkg.zip">matplotlib</a> </li>
 </ul>
-From the section <b>Mac OS X 10.3 (stock Python 2.3.0) </b>
-<br>get
+You also need to get numpy:
 <ul>
   <li>
 <a
-      href="http://pythonmac.org/packages/Numeric-23.7-py2.3-macosx10.3.zip">Numeric</a> </li>
-  <li>
-<a
-      href="http://pythonmac.org/packages/numarray-1.1.1-py2.3-macosx10.3.zip">numarray</a> </li>
-<a
-      href="http://pythonmac.org/packages/matplotlib-0.82-py2.3-macosx10.3.zip">matplotlib</a> </li>
+      href="http://prdownloads.sourceforge.net/numpy/numpy-0.9.6-py2.4-macosx10.4.dmg?download">numpy</a> </li>
 </ul>
 <br>
-Next get <a href="http://ipython.scipy.org/dist">ipython</a> and run:<br>
+Next get <a href="http://ipython.scipy.org/dist/ipython-0.7.2.tar.gz">ipython</a> and run:<br>
 <pre>
-tar zxvf ipython-0.6.15.tar.gz
 sudo python setup.py install
-sudo ln -s ../../System/Library/Frameworks/Python.framework/Versions/2.3/bin/ipython /usr/bin/ipython
 </pre>
-
-
+from within the ipython-0.7.2 directory.
+<br>
+Then
+<pre>
+sudo ln -s /Library/Frameworks/Python.framework/Versions/2.4/bin/ipython /usr/bin/ipython
+</pre>
 <h2>Tweaking it</h2>
 Run the following in a terminal:<br>
-OSX comes with your own pimp pre-installed, so better use him!<br>
-<pre>
-sudo python `python -c "import pimp; print pimp.__file__"` -i readline
-</pre>
-
-Then as 'root' or 'sudo' edit<br>
-<b>/System/Library/Frameworks/Python.framework/Versions/2.3/share/matplotlib/.matplotlibrc</b><br>
+As 'root' or 'sudo' edit<br>
+<b>/System/Library/Frameworks/Python.framework/Versions/2.4/lib/python2.4/site-packages/matplotlib/mpl-data/matplotlibrc</b><br>
 In this file replace<br>
-<b> backend    : GTKAgg</b><br>
+<b> backend    : WXAgg</b><br>
 with<br>
 <b> backend    : TkAgg</b><br>
-<p>
-Now we have to patch matplotlib:
-Get <a href="./figure.py">this</a> and run:<br>
-<pre>
-sudo cp -f figure.py /Library/Python/2.3/matplotlib/
-</pre>
 
 <h2>Oh yeah there is ASAP, too</h2>
 Get
