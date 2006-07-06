@@ -51,7 +51,7 @@ class scantable(Scantable):
                 if os.path.isdir(filename):
                     # crude check if asap table
                     if os.path.exists(filename+'/table.info'):
-                        Scantable.__init__(self, filename, "memory")
+                        Scantable.__init__(self, filename, rcParams['scantable.storage']=='disk')
                         if unit is not None:
                             self.set_fluxunit(unit)
                         self.set_freqframe(rcParams['scantable.freqframe'])
@@ -789,28 +789,32 @@ class scantable(Scantable):
         print_log()
         return s
 
-    def average_channel(self, mode="MEDIAN", align=False):
+    def average_channel(self, mode="MEDIAN", scanav=False, align=False):
         """
         Return the (median) average of a scan.
         Note:
             in channels only - align if necessary
-            the mdeian Tsys is computed.
+            the median Tsys is computed.
         Parameters:
             one scan or comma separated  scans
             mode:     type of average, default "MEDIAN"
+            scanav:   True averages each scan separately
+                      False (default) averages all scans together,
             align:    align the spectra in velocity before averaging. It takes
                       the time of the first spectrum as reference time.
         Example:
-            # mdeian average the scan
+            # median average the scan
             newscan = scan.average_channel()
         """
         varlist = vars()
         if mode is None: mode = 'MEDIAN'
+        scanav = "NONE"
+        if scanav: scanav = "SCAN"
         scan = self
         try:
           if align:
               scan = self.freq_align(insitu=False)
-          s = scantable(self._math._averagechannel(scan, mode))
+          s = scantable(self._math._averagechannel(scan, mode, scanav))
         except RuntimeError,msg:
             if rcParams['verbose']:
                 print msg
@@ -1522,14 +1526,17 @@ class scantable(Scantable):
             fullnames.append(name)
         if average:
             asaplog.push('Auto averaging integrations')
+        stype = int(rcParams['scantable.storage'] == 'disk')
         for name in fullnames:
-            r = stfiller()
+            tbl = Scantable(stype)
+            print stype
+            r = stfiller(tbl)
             msg = "Importing %s..." % (name)
             asaplog.push(msg,False)
             print_log()
             r._open(name,-1,-1)
             r._read()
-            tbl = r._getdata()
+            #tbl = r._getdata()
             if average:
                 tbl = self._math._average((tbl,),(),'NONE','SCAN')
                 #tbl = tbl2
