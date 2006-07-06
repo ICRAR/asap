@@ -60,7 +60,8 @@ public:
 
   casa::CountedPtr<Scantable>
     averageChannel( const casa::CountedPtr<Scantable> & in,
-                     const std::string& mode = "MEDIAN");
+                    const std::string& mode = "MEDIAN",
+                    const std::string& avmode = "SCAN");
 
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,

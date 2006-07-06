@@ -48,9 +48,10 @@ public:
 
   ScantableWrapper
     averageChannel( const ScantableWrapper& in,
-                    const std::string& mode = "MEDIAN")
+                    const std::string& mode = "MEDIAN",
+                    const std::string& avmode = "NONE")
   {
-    return ScantableWrapper(STMath::averageChannel(in.getCP(), mode));
+    return ScantableWrapper(STMath::averageChannel(in.getCP(), mode, avmode));
   }
 
   ScantableWrapper

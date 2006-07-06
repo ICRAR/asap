@@ -190,7 +190,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 
 CountedPtr< Scantable >
   STMath::averageChannel( const CountedPtr < Scantable > & in,
-                          const std::string & mode )
+                          const std::string & mode,
+                          const std::string& avmode )
 {
   // clone as this is non insitu
   bool insitu = insitu_;
@@ -206,6 +207,10 @@ CountedPtr< Scantable >
   cols[0] = String("BEAMNO");
   cols[1] = String("IFNO");
   cols[2] = String("POLNO");
+  if ( avmode == "SCAN") {
+    cols.resize(4);
+    cols[3] = String("SCANNO");
+  }
   uInt outrowCount = 0;
   uChar userflag = 1 << 7;
   TableIterator iter(in->table(), cols);
@@ -221,6 +226,8 @@ CountedPtr< Scantable >
     Vector<Float> tmp;
     specCol.get(0, tmp);
     uInt nchan = tmp.nelements();
+    // have to do channel by channel here as MaskedArrMath
+    // doesn't have partialMedians
     Vector<uChar> flags = flagCol.getColumn(Slicer(Slice(0)));
     Vector<Float> outspec(nchan);
     Vector<uChar> outflag(nchan,0);
