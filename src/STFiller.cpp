@@ -204,7 +204,7 @@ int asap::STFiller::read( )
   Float  azimuth, elevation, focusAxi, focusRot, focusTan,
     humidity, parAngle, pressure, temperature, windAz, windSpeed;
   Double bandwidth, freqInc, interval, mjd, refFreq, restFreq, srcVel;
-  String          fieldName, srcName, tcalTime;
+  String          fieldName, srcName, tcalTime, obsType;
   Vector<Float>   calFctr, sigma, tcal, tsys;
   Matrix<Float>   baseLin, baseSub;
   Vector<Double>  direction(2), scanRate(2), srcDir(2), srcPM(2);
@@ -214,8 +214,8 @@ int asap::STFiller::read( )
   Vector<Complex> xPol;
   while ( status == 0 ) {
     status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
-                          srcName, srcDir, srcPM, srcVel, IFno, refFreq,
-                          bandwidth, freqInc, restFreq, tcal, tcalTime,
+                          srcName, srcDir, srcPM, srcVel, obsType, IFno,
+                          refFreq, bandwidth, freqInc, restFreq, tcal, tcalTime,
                           azimuth, elevation, parAngle, focusAxi,
                           focusTan, focusRot, temperature, pressure,
                           humidity, windSpeed, windAz, refBeam,
