@@ -74,26 +74,28 @@ def average_time(*args, **kwargs):
     print_log()
     return s
 
-# def quotient(source, reference, preserve=True):
-#     """
-#     Return the quotient of a 'source' (signal) scan and a 'reference' scan.
-#     The reference can have just one row, even if the signal has many. Otherwise
-#     they must have the same number of rows.
-#     The cursor of the output scan is set to 0
-#     Parameters:
-#         source:        the 'on' scan
-#         reference:     the 'off' scan
-#         preserve:      you can preserve (default) the continuum or
-#                        remove it.  The equations used are
-#                        preserve:  Output = Toff * (on/off) - Toff
-#                        remove:    Output = Toff * (on/off) - Ton
-#     """
-#     varlist = vars()
-#     from asap._asap import quotient as _quot
-#     s = scantable(_quot(source, reference, preserve))
-#     s._add_history("quotient",varlist)
-#     print_log()
-#     return s
+def quotient(source, reference, preserve=True):
+    """
+    Return the quotient of a 'source' (signal) scan and a 'reference' scan.
+    The reference can have just one scan, even if the signal has many. Otherwise
+    they must have the same number of scans.
+    The cursor of the output scan is set to 0
+    Parameters:
+        source:        the 'on' scan
+        reference:     the 'off' scan
+        preserve:      you can preserve (default) the continuum or
+                       remove it.  The equations used are
+                       preserve:  Output = Toff * (on/off) - Toff
+                       remove:    Output = Toff * (on/off) - Ton
+    """
+    varlist = vars()
+    from asap._asap import stmath
+    stm = stmath()
+    stm._setinsitu(False)
+    s = scantable(stm._quotient(source, reference, preserve))
+    s._add_history("quotient",varlist)
+    print_log()
+    return s
 
 def simple_math(left, right, op='add', tsys=True):
     """
@@ -149,3 +151,4 @@ def merge(*args):
     s._add_history("merge", varlist)
     print_log()
     return s
+
