@@ -62,6 +62,7 @@ class fitter:
                 raise TypeError(msg)
         self.fitted = False
         self.data = thescan
+        self.mask = None
         if mask is None:
             from numarray import ones
             self.mask = ones(self.data.nchan())
@@ -101,11 +102,14 @@ class fitter:
         self.fitter.setexpression(self.fitfunc,n)
         return
 
-    def fit(self, row=0):
+    def fit(self, row=0, estimate=False):
         """
         Execute the actual fitting process. All the state has to be set.
         Parameters:
-            row:    specify the row in the scantable
+            row:        specify the row in the scantable
+            estimate:   auto-compute an initial parameter set (default False)
+                        This can be used to compute estimates even if fit was
+                        called before.
         Example:
             s = scantable('myscan.asap')
             s.set_cursor(thepol=1)        # select second pol
@@ -131,14 +135,16 @@ class fitter:
                 asaplog.push("Fitting:")
                 i = row
                 out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (self.data.getscan(i),self.data.getbeam(i),self.data.getif(i),self.data.getpol(i), self.data.getcycle(i))
-                asaplog.push(out)
+                asaplog.push(out,False)
         self.fitter.setdata(self.x, self.y, self.mask)
         if self.fitfunc == 'gauss':
             ps = self.fitter.getparameters()
-            if len(ps) == 0:
+            if len(ps) == 0 or estimate:
                 self.fitter.estimate()
         try:
-            self.fitter.fit()
+            converged = self.fitter.fit()
+            if not converged:
+                raise RuntimeError,"Fit didn't converge."
         except RuntimeError, msg:
             if rcParams['verbose']:
                 print msg
@@ -274,7 +280,30 @@ class fitter:
         else:
             return sum(areas)
 
-    def get_parameters(self, component=None):
+    def get_errors(self, component=None):
+        """
+        Return the errors in the parameters.
+        Parameters:
+            component:    get the errors for the specified component
+                          only, default is all components
+        """
+        if not self.fitted:
+            msg = "Not yet fitted."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
+        errs = list(self.fitter.geterrors())
+        cerrs = errs
+        if component is not None:
+            if self.fitfunc == "gauss":
+                i = 3*component
+                if i < len(errs):
+                    cerrs = errs[i:i+3]
+        return cerrs
+
+    def get_parameters(self, component=None, errors=False):
         """
         Return the fit paramters.
         Parameters:
@@ -290,31 +319,35 @@ class fitter:
                 raise RuntimeError(msg)
         pars = list(self.fitter.getparameters())
         fixed = list(self.fitter.getfixedparameters())
+        errs = list(self.fitter.geterrors())
         area = []
         if component is not None:
             if self.fitfunc == "gauss":
                 i = 3*component
                 cpars = pars[i:i+3]
                 cfixed = fixed[i:i+3]
+                cerrs = errs[i:i+3]
                 a = self.get_area(component)
                 area = [a for i in range(3)]
             else:
                 cpars = pars
                 cfixed = fixed
+                cerrs = errs
         else:
             cpars = pars
             cfixed = fixed
+            cerrs = errs
             if self.fitfunc == "gauss":
                 for c in range(len(self.components)):
                   a = self.get_area(c)
                   area += [a for i in range(3)]
-
-        fpars = self._format_pars(cpars, cfixed, area)
+        fpars = self._format_pars(cpars, cfixed, None, area)
         if rcParams['verbose']:
             print fpars
-        return {'params':cpars, 'fixed':cfixed, 'formatted': fpars}
+        return {'params':cpars, 'fixed':cfixed, 'formatted': fpars,
+                'errors':cerrs}
 
-    def _format_pars(self, pars, fixed, area):
+    def _format_pars(self, pars, fixed, errors, area):
         out = ''
         if self.fitfunc == 'poly':
             c = 0
@@ -451,7 +484,7 @@ class fitter:
             m = self.data._getmask(self._fittedrow)
             ylab = self.data._get_ordinate_label()
 
-        colours = ["#777777","#bbbbbb","red","orange","purple","green","magenta", "cyan"]
+        colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
         self._p.plot(self.x, self.y, m)
