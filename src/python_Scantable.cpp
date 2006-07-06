@@ -43,7 +43,8 @@ namespace asap {
 void python_Scantable() {
   class_<ScantableWrapper>("Scantable")
     //.def( init <> () )
-    .def( init < const std::string&, const std::string& > () )
+    .def( init < int > () )
+    .def( init < const std::string&, int > () )
     .def( init < const ScantableWrapper& > () )
     .def("_copy", &ScantableWrapper::copy)
     .def("_assign", &ScantableWrapper::assign)

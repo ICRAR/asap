@@ -36,17 +36,17 @@ class ScantableWrapper {
 
 public:
   ScantableWrapper( const std::string& name,
-                    const std::string& type="")
+                    int type=0)
   {
     casa::Table::TableType tp = casa::Table::Memory;
-    if ( type == "disk") tp = casa::Table::Plain;
+    if ( type == 1 ) tp = casa::Table::Plain;
     table_ = new Scantable(name, tp);
   }
 
-  ScantableWrapper(const std::string& type="")
+  ScantableWrapper(int type=0)
   {
     casa::Table::TableType tp = casa::Table::Memory;
-    if ( type == "disk") tp = casa::Table::Plain;
+    if ( type == 1) tp = casa::Table::Plain;
     table_= new Scantable(tp);
   }
 

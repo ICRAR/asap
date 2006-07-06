@@ -26,10 +26,11 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:
+//# $Id:$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
+#include "ScantableWrapper.h"
 #include "STFillerWrapper.h"
 
 using namespace boost::python;
@@ -39,6 +40,7 @@ namespace asap {
 
     void python_STFiller() {
       class_<STFillerWrapper>("stfiller")
+        .def( init < ScantableWrapper > () )
         .def( init < std::string, int, int > () )
         .def("_open", &STFillerWrapper::open)
         .def("_read", &STFillerWrapper::read)
