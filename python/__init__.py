@@ -68,8 +68,8 @@ defaultParams = {
     'scantable.save'      : ['ASAP', str],
     'scantable.autoaverage'      : [True, _validate_bool],
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
-    'scantable.verbosesummary'   : [False, _validate_bool]
-
+    'scantable.verbosesummary'   : [False, _validate_bool],
+    'scantable.storage'   : ['memory', str]
     # fitter
     }
 
@@ -112,6 +112,9 @@ plotter.linestyles         :
 plotter.histogram          : False
 
 # scantable
+
+# default storage of scantable (memory/disk)
+scantable.storage          : memory
 # default ouput format when saving
 scantable.save             : ASAP
 # auto averaging on read
