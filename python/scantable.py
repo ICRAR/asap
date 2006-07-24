@@ -1526,10 +1526,9 @@ class scantable(Scantable):
             fullnames.append(name)
         if average:
             asaplog.push('Auto averaging integrations')
-        stype = int(rcParams['scantable.storage'] == 'disk')
+        stype = int(rcParams['scantable.storage'].lower() == 'disk')
         for name in fullnames:
             tbl = Scantable(stype)
-            print stype
             r = stfiller(tbl)
             msg = "Importing %s..." % (name)
             asaplog.push(msg,False)
