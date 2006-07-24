@@ -2,7 +2,32 @@
 This is the ATNF Single Dish Analysis package.
 
 """
-import os,sys
+import os,sys,shutil, platform
+
+# Set up AIPSPATH and first time use of asap i.e. ~/.asap/*
+plf = None
+if sys.platform == "linux2":
+    if platform.architecture()[0] == '64bit':
+        plf = 'linux_64b'
+    else:
+        plf = 'linux_gnu'
+elif sys.platform == 'darwin':
+    plf = 'darwin'
+else:
+    # Shouldn't happen - default to linux
+    plf = 'linux'
+asapdata = __path__[-1]
+os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
+userdir = os.environ["HOME"]+"/.asap"
+if not os.path.exists(userdir):
+    print 'First time ASAP use. Setting up ~/.asap'
+    os.mkdir(userdir)
+    shutil.copyfile(asapdata+"/data/ipythonrc-asap", userdir+"/ipythonrc-asap")
+    f = file(userdir+"/asapuserfuncs.py", "w")
+    f.close()
+    f = file(userdir+"/ipythonrc", "w")
+    f.close()
+del asapdata, userdir, shutil, platform
 
 def _validate_bool(b):
     'Convert b to a boolean or raise'
@@ -164,7 +189,7 @@ def rc_params():
         if ind>=0: val = val[:ind]   # ignore trailing comments
         val = val.strip()
         try: cval = converter(val)   # try to convert to proper type or raise
-        except Exception, msg:
+        except ValueError, msg:
             print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
             continue
         else:
@@ -294,7 +319,7 @@ from asapreader import reader
 from selector import selector
 
 from asapmath import *
-from scantable import *
+from scantable import scantable
 from asaplinefind import *
 #from asapfit import *
 
