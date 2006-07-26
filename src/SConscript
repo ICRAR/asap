@@ -1,0 +1,91 @@
+import os,glob,shutil
+
+# import root environment
+Import( "env" )
+myenv = env.Copy()
+
+# casa includes
+casaincd = [os.path.join(myenv['CASAROOT'], 'code/include'), \
+            os.path.join(myenv['CASAROOT'], 'code/casa')]
+
+myenv.Append( CPPPATH = casaincd )
+
+# libaries and objects
+# myabe use glob here
+# ASAP
+cpps = """
+Logger.cpp
+MathUtils.cpp
+MathUtils2.cpp
+RowAccumulator.cpp
+STAsciiWriter.cpp
+STAttr.cpp
+STFiller.cpp
+STFit.cpp
+STFitEntry.cpp
+STFitter.cpp
+STFocus.cpp
+STFrequencies.cpp
+STHeader.cpp
+STHistory.cpp
+STLineFinder.cpp
+STMath.cpp
+STMolecules.cpp
+STPol.cpp
+STPolLinear.cpp
+STPolStokes.cpp
+STSelector.cpp
+STSubTable.cpp
+STTcal.cpp
+STWeather.cpp
+STWriter.cpp
+Scantable.cpp
+Templates.cpp
+""".split()
+
+pycpps = """
+python_Fitter.cpp
+python_Logger.cpp
+python_STFiller.cpp
+python_STFitEntry.cpp
+python_STLineFinder.cpp
+python_STMath.cpp
+python_STSelector.cpp
+python_STWriter.cpp
+python_Scantable.cpp
+python_asap.cpp
+""".split()
+
+# CASA
+casalibs = """
+casav
+atnf images ms components coordinates
+lattices fits measures measures_f
+tables scimath scimath_f casa
+wcs
+rpfits
+""".split()
+
+# OTHER
+genlibs = """
+g2c stdc++ lapack blas
+""".split()
+
+myenv.Append( LIBS =  casalibs )
+myenv.Append( LIBS =  ['cfitsio_lfs'] )
+myenv.Append( LIBS =  genlibs )
+
+# Explicit templates in casa
+myenv.Append( CPPFLAGS = ['-DAIPS_NO_TEMPLATE_SRC'] )
+
+casalibd = os.path.join(myenv['CASAROOT'],myenv['CASAARCH'],'lib')
+# location of libcasav.a
+myenv.Append( LIBPATH = ['#/build', casalibd] )
+myenv.Install('#build', os.path.join(casalibd, 'libwcs.a'))
+myenv['SHLIBPREFIX']=""   #gets rid of lib prefix
+
+# need to create library here to fool  scons linker
+casav = myenv.StaticLibrary(target = "casav", source = os.path.join(casalibd, 'version.o'))
+# Finally create the library for the module
+so = myenv.SharedLibrary( target = "_asap", source = cpps+pycpps )
+Return("so")
