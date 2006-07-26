@@ -223,6 +223,11 @@ int asap::STFiller::read( )
                           tsys, sigma, calFctr, baseLin, baseSub,
                           spectra, flagtra, xCalFctr, xPol);
     if ( status != 0 ) break;
+    Regex filterrx(".*[SL|PA]$");
+    if ( obsType.matches(filterrx)) {
+      //cerr << "ignoring paddle scan" << endl;
+        continue;
+    }
     TableRow row(table_->table());
     TableRecord& rec = row.record();
     // fields that don't get used and are just passed through asap
