@@ -136,7 +136,7 @@ class myForm:
         try:
             s = asap.scantable(files)
             outscans = None
-            self.fields['nif'] = range(scans[-1].nif())
+            self.fields['nif'] = range(s.nif())
             for i in self.fields['nif']:
                 name = "rest%d" % i
                 self.fields['restn'].append(int(self.form.getfirst(name,0)))
@@ -169,6 +169,14 @@ class myForm:
                 s = s.get_scan(self.fields['sourcenames'][-1])
                 #self.fields['debug'] = "DEBUG"
                 self.fields['csource'] = s.get_sourcename()[-1]
+            if self.fields['cunit'] == 1:
+                srest = s._getrestfreqs()
+                if isinstance(srest,tuple) and len(srest) != s.nif():
+                    s.set_restfreqs(restfs,unit="GHz")
+            s.set_unit(self.fields['units'][self.fields['cunit']])
+            s.set_freqframe(self.form.getfirst("frame","LSRK"))
+            s.set_doppler(self.form.getfirst("doppler","RADIO"))
+
             # baseline
             if self.form.has_key('baseline'):
                 order = self.fields['cpolyorder']
@@ -179,13 +187,6 @@ class myForm:
                     brange = self.decodeWindows(brstr)
                     if len(brange):
                         self.fields['brangewindow'] = brstr
-                        if self.fields['cunit'] == 1:
-                            srest = s._getrestfreqs()
-                            if isinstance(srest,tuple) and len(srest) != s.nif():
-                                s.set_restfreqs(restfs,unit="GHz")
-                        s.set_unit(self.fields['units'][self.fields['cunit']])
-                        s.set_freqframe(self.form.getfirst("frame","LSRK"))
-                        s.set_doppler(self.form.getfirst("doppler","RADIO"))
                         m = s.create_mask(brange)
                         s.poly_baseline(mask=m,order=order)
                 else:
@@ -205,18 +206,19 @@ class myForm:
             asap.rcParams['plotter.decimate'] = True
             asap.rcParams['plotter.ganged'] = False
             from matplotlib import rcParams as rcp
-            rcp['tick.labelsize'] = 6
+            rcp['xtick.labelsize'] = 8
+            rcp['ytick.labelsize'] = 8
             rcp['axes.labelsize'] = 8
-            rcp['axes.titlesize'] = 8
+            rcp['axes.titlesize'] = 12
             rcp['figure.subplot.wspace'] = 0.3
             rcp['figure.subplot.hspace'] = 0.3
             del asap.plotter
             # plotter without GUI
             asap.plotter = asap.asapplotter(False)
-            if s.nif() > 1:
+            if outscans.nif() > 1:
                 asap.plotter.set_mode("p","i")
             else:
-                if s.npol() > 2:
+                if outscans.npol() > 2:
                     asap.plotter.set_mode("t","p")
                 else:
                     asap.plotter.set_mode("p","t")
