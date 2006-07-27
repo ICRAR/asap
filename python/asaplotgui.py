@@ -183,7 +183,7 @@ class asaplotgui(asaplotbase):
 	if not self.buffering:
             asaplotbase.show(self)
 	    self.window.wm_deiconify()
-	    self.canvas.show()
+	    self.canvas.draw()
 
     def terminate(self):
 	"""
