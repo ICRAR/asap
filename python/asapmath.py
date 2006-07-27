@@ -1,4 +1,4 @@
-from scantable import scantable
+from asap.scantable import scantable
 from asap import rcParams
 from asap import print_log
 
