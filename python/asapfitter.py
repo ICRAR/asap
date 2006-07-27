@@ -341,7 +341,7 @@ class fitter:
                 for c in range(len(self.components)):
                   a = self.get_area(c)
                   area += [a for i in range(3)]
-        fpars = self._format_pars(cpars, cfixed, None, area)
+        fpars = self._format_pars(cpars, cfixed, errors and cerrs, area)
         if rcParams['verbose']:
             print fpars
         return {'params':cpars, 'fixed':cfixed, 'formatted': fpars,
@@ -354,7 +354,10 @@ class fitter:
             for i in range(len(pars)):
                 fix = ""
                 if fixed[i]: fix = "(fixed)"
-                out += '  p%d%s= %3.6f,' % (c,fix,pars[i])
+                if errors :
+                    out += '  p%d%s= %3.6f (%1.6f),' % (c,fix,pars[i], errors[i])
+                else:
+                    out += '  p%d%s= %3.6f,' % (c,fix,pars[i])
                 c+=1
             out = out[:-1]  # remove trailing ','
         elif self.fitfunc == 'gauss':
@@ -487,11 +490,15 @@ class fitter:
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
-        self._p.plot(self.x, self.y, m)
+        from matplotlib.numerix import ma,logical_not,array
+        y = ma.MA.MaskedArray(self.y,mask=logical_not(array(m,copy=0)),copy=0)
+        self._p.plot(self.x, y)
         if residual:
             self._p.palette(1)
             self._p.set_line(label='Residual')
-            self._p.plot(self.x, self.get_residual(), m)
+            y = ma.MA.MaskedArray(self.get_residual(),
+                                  mask=logical_not(array(m,copy=0)),copy=0)
+            self._p.plot(self.x, y)
         self._p.palette(2)
         if components is not None:
             cs = components
@@ -504,15 +511,25 @@ class fitter:
                 if 0 <= c < n:
                     lab = self.fitfuncs[c]+str(c)
                     self._p.set_line(label=lab)
-                    self._p.plot(self.x, self.fitter.evaluate(c), m)
+                    y = ma.MA.MaskedArray(self.fitter.evaluate(c),
+                                          mask=logical_not(array(m,copy=0)),
+                                          copy=0)
+
+                    self._p.plot(self.x, y)
                 elif c == -1:
                     self._p.palette(2)
                     self._p.set_line(label="Total Fit")
-                    self._p.plot(self.x, self.get_fit(), m)
+                    y = ma.MA.MaskedArray(self.fitter.get_fit(),
+                                          mask=logical_not(array(m,copy=0)),
+                                          copy=0)                    
+                    self._p.plot(self.x, y)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
-            self._p.plot(self.x, self.get_fit(), m)
+            y = ma.MA.MaskedArray(self.fitter.get_fit(),
+                                  mask=logical_not(array(m,copy=0)),
+                                  copy=0)                    
+            self._p.plot(self.x, y)
         xlim=[min(self.x),max(self.x)]
         self._p.axes.set_xlim(xlim)
         self._p.set_axes('xlabel',xlab)
