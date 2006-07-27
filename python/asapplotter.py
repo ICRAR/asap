@@ -454,15 +454,15 @@ class asapplotter:
                     if d[self._stacking](r) in self._maskselection[self._stacking]:
                         m = logical_and(m, self._usermask)
                 x = scan._getabcissa(r)
+                from matplotlib.numerix import ma,logical_not,array
+                y = ma.MA.MaskedArray(y,mask=logical_not(array(m,copy=0)),copy=0)
                 if self._minmaxx is not None:
                     s,e = self._slice_indeces(x)
                     x = x[s:e]
                     y = y[s:e]
-                    m = m[s:e]
                 if len(x) > 2048 and rcParams['plotter.decimate']:
                     fac = len(x)/2048
                     x = x[::fac]
-                    m = m[::fac]
                     y = y[::fac]
                 llbl = self._get_label(scan, r, self._stacking, self._lmap)
                 if isinstance(llbl, list) or isinstance(llbl, tuple):
@@ -475,10 +475,10 @@ class asapplotter:
                 self._plotter.set_line(label=llbl)
                 plotit = self._plotter.plot
                 if self._hist: plotit = self._plotter.hist
-                plotit(x,y,m)
+                plotit(x,y)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
-                ylim= self._minmaxy or [min(y),max(y)]
+                ylim= self._minmaxy or [ma.MA.minimum(y),ma.MA.maximum(y)]
                 allylim += ylim
                 stackcount += 1
                 # last in colour stack -> autoscale x
