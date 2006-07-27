@@ -136,14 +136,15 @@ class asaplotbase:
         return self.attributes
 
 
-    def hist(self, x=None, y=None, msk=None, fmt=None, add=None):
+    def hist(self, x=None, y=None, fmt=None, add=None):
         """
         Plot a histogram.  N.B. the x values refer to the start of the
         histogram bin.
 
         fmt is the line style as in plot().
         """
-
+        from matplotlib.numerix import array
+        from matplotlib.numerix.ma import MaskedArray
         if x is None:
             if y is None: return
             x = range(len(y))
@@ -152,18 +153,20 @@ class asaplotbase:
             return
         l2 = 2*len(x)
         x2 = range(l2)
+        y2 = range(12)
         y2 = range(l2)
         m2 = range(l2)
-
+        ymsk = y.raw_mask()
+        ydat = y.raw_data()
         for i in range(l2):
             x2[i] = x[i/2]
-            m2[i] = msk[i/2]
+            m2[i] = ymsk[i/2]
 
         y2[0] = 0.0
         for i in range(1,l2):
-            y2[i] = y[(i-1)/2]
+            y2[i] = ydat[(i-1)/2]
 
-        self.plot(x2, y2, m2, fmt, add)
+        self.plot(x2, MaskedArray(y2,mask=m2,copy=0), fmt, add)
 
 
     def hold(self, hold=True):
@@ -196,7 +199,7 @@ class asaplotbase:
         self.show()
 
 
-    def plot(self, x=None, y=None, mask=None, fmt=None, add=None):
+    def plot(self, x=None, y=None, fmt=None, add=None):
         """
         Plot the next line in the current frame using the current line
         attributes.  The ASAPlot graphics window will be mapped and raised.
@@ -210,48 +213,13 @@ class asaplotbase:
         elif y is None:
             y = x
             x = range(len(y))
-
-        ax = self.axes
-        s = ax.title.get_size()
-        tsize = s-(self.cols+self.rows)/2
-        ax.title.set_size(tsize)
-        origx = ax.xaxis.label.get_size() #rcParams['xtick.labelsize']
-        origy = ax.yaxis.label.get_size() #rcParams['ytick.labelsize']
-        if self.cols > 1:
-            xfsize = origx-(self.cols)/2
-            #rc('xtick',labelsize=xfsize)
-            ax.xaxis.label.set_size(xfsize)
-        if self.rows > 1:
-            yfsize = origy-(self.rows)/2
-            #rc('ytick',labelsize=yfsize)
-            ax.yaxis.label.set_size(yfsize)
-        if mask is None:
-            if fmt is None:
-                line = self.axes.plot(x, y)
-            else:
-                line = self.axes.plot(x, y, fmt)
+        if fmt is None:
+            line = self.axes.plot(x, y)
         else:
-            segments = []
-
-            mask = list(mask)
-            i = 0
-            while mask[i:].count(1):
-                i += mask[i:].index(1)
-                if mask[i:].count(0):
-                    j = i + mask[i:].index(0)
-                else:
-                    j = len(mask)
-
-                segments.append(x[i:j])
-                segments.append(y[i:j])
-
-                i = j
-
-            line = self.axes.plot(*segments)
-        #rc('xtick',labelsize=origx)
-        #rc('ytick',labelsize=origy)
+            line = self.axes.plot(x, y, fmt)
 
         # Add to an existing line?
+        i = None
         if add is None or len(self.lines) < add < 0:
             # Don't add.
             self.lines.append(line)
@@ -273,6 +241,7 @@ class asaplotbase:
                 getattr(segment, "set_color")(self.colormap[self.color])
                 if len(self.colormap)  == 1:
                     getattr(segment, "set_dashes")(self.linestyles[self.linestyle])
+
             self.color += 1
             if self.color >= len(self.colormap):
                 self.color = 0
@@ -680,11 +649,11 @@ class asaplotbase:
         """
         if not self.buffering:
             if self.loc is not None:
-                for j in range(len(self.subplots)):
+                for sp in self.subplots:
                     lines  = []
                     labels = []
                     i = 0
-                    for line in self.subplots[j]['lines']:
+                    for line in sp['lines']:
                         i += 1
                         if line is not None:
                             lines.append(line[0])
@@ -694,12 +663,37 @@ class asaplotbase:
                             labels.append(lbl)
 
                     if len(lines):
-                        self.subplots[j]['axes'].legend(tuple(lines),
-                                                        tuple(labels),
-                                                        self.loc)
+                        rcParams['legend.fontsize'] = 8
+##                         lsiz = rcParams['legend.fontsize']-len(lines)/2
+                        sp['axes'].legend(tuple(lines), tuple(labels),
+                                          self.loc) 
+##                                           ,prop=FontProperties(size=lsiz) )
                     else:
-                        self.subplots[j]['axes'].legend((' '))
+                        sp['axes'].legend((' '))
 
+            ax = sp['axes']
+            from matplotlib.artist import setp
+            xts = rcParams['xtick.labelsize']-(self.cols)/2
+            yts = rcParams['ytick.labelsize']-(self.rows)/2
+            for sp in self.subplots:
+                ax = sp['axes']
+                s = ax.title.get_size()
+                tsize = s-(self.cols+self.rows)
+                ax.title.set_size(tsize)
+                setp(ax.get_xticklabels(), fontsize=xts)
+                setp(ax.get_yticklabels(), fontsize=yts)
+                origx = rcParams['xtick.labelsize'] #ax.xaxis.label.get_size()
+                origy =  rcParams['ytick.labelsize'] #ax.yaxis.label.get_size()
+                off = 0
+                if self.cols > 1: off = self.cols
+                xfsize = origx-off
+                #rc('xtick',labelsize=xfsize)
+                ax.xaxis.label.set_size(xfsize)
+                off = 0
+                if self.rows > 1: off = self.rows
+                yfsize = origy-off
+                #rc('ytick',labelsize=yfsize)
+                ax.yaxis.label.set_size(yfsize)
 
     def subplot(self, i=None, inc=None):
         """
