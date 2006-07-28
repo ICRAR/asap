@@ -74,15 +74,12 @@ class scantable(Scantable):
         Store the scantable on disk. This can be an asap (aips++) Table, SDFITS,
         Image FITS or MS2 format.
         Parameters:
-            name:        the name of the outputfile. For format="FITS" this
-                         is the directory file name into which all the files
-                         will be written (default is 'asap_FITS'). For format
-                         "ASCII" this is the root file name (data in 'name'.txt
+            name:        the name of the outputfile. For format "ASCII"
+                         this is the root file name (data in 'name'.txt
                          and header in 'name'_header.txt)
             format:      an optional file format. Default is ASAP.
                          Allowed are - 'ASAP' (save as ASAP [aips++] Table),
                                        'SDFITS' (save as SDFITS file)
-                                       'FITS' (saves each row as a FITS Image)
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
@@ -130,6 +127,45 @@ class scantable(Scantable):
         """
         sd = scantable(Scantable._copy(self))
         return sd
+
+    def drop_scan(self, scanid=None):
+        """
+        Return a new scantable where the specified scan number(s) has(have)
+        been dropped.
+        Parameters:
+            scanid:    a (list of) scan number(s)
+        """
+        from asap import _is_sequence_or_number as _is_valid
+        from asap import _to_list
+        from asap import unique
+        if not _is_valid(scanid):
+            if rcParams['verbose']:
+                print "Please specify a scanno to drop from the scantable"
+                return
+            else:
+                raise RuntimeError("No scan given")
+        try:
+            scanid = _to_list(scanid)
+            allscans = unique([ self.getscan(i) for i in range(self.nrow())])
+            for sid in scanid: allscans.remove(sid)
+            if len(allscans) == 0: raise ValueError("Can't remove all scans")
+        except ValueError:
+            if rcParams['verbose']:
+                print "Couldn't find any match."
+                return
+            else: raise
+        try:
+            bsel = self.get_selection()
+            sel = selector()
+            sel.set_scans(allscans)
+            self.set_selection(bsel+sel)
+            scopy = self._copy()
+            self.set_selection(bsel)
+            return scantable(scopy)
+        except RuntimeError:
+            if rcParams['verbose']: print "Couldn't find any match."
+            else: raise
+
 
     def get_scan(self, scanid=None):
         """

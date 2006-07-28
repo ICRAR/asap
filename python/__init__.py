@@ -355,6 +355,8 @@ if rcParams['verbose']:
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
                               (by name or number)
+            drop_scan       - drops a specific scan out of a scantable
+                              (by number)
             set_selection   - set a new subselection of the data
             get_selection   - get the current selection object
             summary         - print info about the scantable contents
