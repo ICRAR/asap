@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #include "Scantable.h"
 
@@ -35,13 +35,11 @@
 #include <casa/Exceptions/Error.cc>
 #include <casa/Utilities/CountedPtr.cc>
 
-namespace asap {
-  template class casa::CountedConstPtr<Scantable>;
-  template class casa::CountedPtr<Scantable>;
-  template class casa::PtrRep<Scantable>;
-  template class casa::SimpleCountedConstPtr<Scantable>;
-  template class casa::SimpleCountedPtr<Scantable>;
-}
+template class casa::CountedConstPtr<asap::Scantable>;
+template class casa::CountedPtr<asap::Scantable>;
+template class casa::PtrRep<asap::Scantable>;
+template class casa::SimpleCountedConstPtr<asap::Scantable>;
+template class casa::SimpleCountedPtr<asap::Scantable>;
 
 #include <casa/Arrays/ArrayLogical.cc>
 #include <casa/Arrays/ArrayMath.cc>
