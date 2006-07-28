@@ -56,27 +56,15 @@ python_Scantable.cpp
 python_asap.cpp
 """.split()
 
-# CASA
-casalibs = """
-casav
-atnf images ms components coordinates
-lattices fits measures measures_f
-tables scimath scimath_f casa
-wcs
-rpfits
-""".split()
 
 # OTHER
-genlibs = """
-g2c stdc++ lapack blas
-""".split()
+#genlibs = """
+#g2c stdc++ lapack blas
+#""".split()
 
-myenv.Append( LIBS =  casalibs )
-myenv.Append( LIBS =  ['cfitsio_lfs'] )
-myenv.Append( LIBS =  genlibs )
+#myenv.Append( LIBS =  ['cfitsio_lfs'] )
+#myenv.Append( LIBS =  genlibs )
 
-# Explicit templates in casa
-myenv.Append( CPPFLAGS = ['-DAIPS_NO_TEMPLATE_SRC'] )
 
 casalibd = os.path.join(myenv['CASAROOT'],myenv['CASAARCH'],'lib')
 # location of libcasav.a
