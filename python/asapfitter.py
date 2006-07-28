@@ -434,7 +434,6 @@ class fitter:
         Return a new scan where the fits have been commited (subtracted)
         """
         if not self.fitted:
-            print "Not yet fitted."
             msg = "Not yet fitted."
             if rcParams['verbose']:
                 print msg
@@ -452,6 +451,7 @@ class fitter:
         scan = self.data.copy()
         scan._setspectrum(self.fitter.getresidual())
         print_log()
+        return scan
 
     def plot(self, residual=False, components=None, plotparms=False, filename=None):
         """
@@ -521,14 +521,14 @@ class fitter:
                     self._p.set_line(label="Total Fit")
                     y = ma.MA.MaskedArray(self.fitter.get_fit(),
                                           mask=logical_not(array(m,copy=0)),
-                                          copy=0)                    
+                                          copy=0)
                     self._p.plot(self.x, y)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
             y = ma.MA.MaskedArray(self.fitter.get_fit(),
                                   mask=logical_not(array(m,copy=0)),
-                                  copy=0)                    
+                                  copy=0)
             self._p.plot(self.x, y)
         xlim=[min(self.x),max(self.x)]
         self._p.axes.set_xlim(xlim)
