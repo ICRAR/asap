@@ -519,14 +519,14 @@ class fitter:
                 elif c == -1:
                     self._p.palette(2)
                     self._p.set_line(label="Total Fit")
-                    y = ma.MA.MaskedArray(self.fitter.get_fit(),
+                    y = ma.MA.MaskedArray(self.fitter.getfit(),
                                           mask=logical_not(array(m,copy=0)),
                                           copy=0)
                     self._p.plot(self.x, y)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
-            y = ma.MA.MaskedArray(self.fitter.get_fit(),
+            y = ma.MA.MaskedArray(self.fitter.getfit(),
                                   mask=logical_not(array(m,copy=0)),
                                   copy=0)
             self._p.plot(self.x, y)
