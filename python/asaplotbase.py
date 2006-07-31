@@ -196,8 +196,8 @@ class asaplotbase:
 
         """
         if isinstance(loc, int):
-            if 0 >= loc > 10: loc = None
-            self.loc = loc
+            self.loc = None
+            if 0 <= loc <= 10: self.loc = loc
         else:
             self.loc = None
         #self.show()
@@ -683,8 +683,8 @@ class asaplotbase:
                 ax.title.set_size(tsize)
                 setp(ax.get_xticklabels(), fontsize=xts)
                 setp(ax.get_yticklabels(), fontsize=yts)
-                origx = rcParams['xtick.labelsize'] #ax.xaxis.label.get_size()
-                origy =  rcParams['ytick.labelsize'] #ax.yaxis.label.get_size()
+                origx = rcParams['axes.labelsize'] #ax.xaxis.label.get_size()
+                origy = rcParams['axes.labelsize'] #ax.yaxis.label.get_size()
                 off = 0
                 if self.cols > 1: off = self.cols
                 xfsize = origx-off
