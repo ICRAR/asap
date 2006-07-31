@@ -88,6 +88,7 @@ defaultParams = {
     'plotter.decimate'    : [False, _validate_bool],
     'plotter.ganged'      : [True, _validate_bool],
     'plotter.histogram'  : [False, _validate_bool],
+    'plotter.papertype'  : ['A4', str],
 
     # scantable
     'scantable.save'      : ['ASAP', str],
@@ -136,6 +137,9 @@ plotter.linestyles         :
 # enable/disable histogram plotting
 plotter.histogram          : False
 
+# ps paper type
+plotter.papertype          : A4
+
 # scantable
 
 # default storage of scantable (memory/disk)
@@ -146,7 +150,7 @@ scantable.save             : ASAP
 scantable.autoaverage      : True
 
 # default frequency frame to set when function
-# scantable.set_freqfrmae is called
+# scantable.set_freqframe is called
 scantable.freqframe        : LSRK
 
 # Control the level of information printed by summary
@@ -314,13 +318,13 @@ def print_log():
     if len(log) and rcParams['verbose']: print log
     return
 
-from asapfitter import *
+from asapfitter import fitter as  asapfitter
 from asapreader import reader
 from selector import selector
 
 from asapmath import *
 from scantable import scantable
-from asaplinefind import *
+from asaplinefind import linefinder
 #from asapfit import *
 
 from numarray import logical_and as mask_and
@@ -328,7 +332,7 @@ from numarray import logical_or as mask_or
 from numarray import logical_not as mask_not
 
 if rcParams['useplotter']:
-    from  asapplotter import *
+    from  asapplotter import asapplotter
     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
     plotter = asapplotter(gui)
     del gui
