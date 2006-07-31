@@ -180,15 +180,28 @@ class asapplotter:
         if self._data: self.plot(self._data)
         return
 
-    def set_legend(self, mp=None):
+    def set_legend(self, mp=None, mode = 0):
         """
         Specify a mapping for the legend instead of using the default
         indices:
         Parameters:
-             mp:    a list of 'strings'. This should have the same length
+            mp:    a list of 'strings'. This should have the same length
                     as the number of elements on the legend and then maps
                     to the indeces in order. It is possible to uses latex
                     math expression. These have to be enclosed in r'', e.g. r'$x^{2}$'
+            mode:   where to display the legend
+                    Any other value for loc else disables the legend:
+                        0: auto
+                        1: upper right
+                        2: upper left
+                        3: lower left
+                        4: lower right
+                        5: right
+                        6: center left
+                        7: center right
+                        8: lower center
+                        9: upper center
+                        10: center
 
         Example:
              If the data has two IFs/rest frequencies with index 0 and 1
@@ -199,7 +212,9 @@ class asapplotter:
              plotter.set_legend([r'$^{12}CO$', r'SiO'])
         """
         self._lmap = mp
-        if self._data: self.plot(self._data)
+        self._plotter.legend(mode)
+        if self._data:
+            self.plot(self._data)
         return
 
     def set_title(self, title=None):
@@ -460,8 +475,8 @@ class asapplotter:
                     s,e = self._slice_indeces(x)
                     x = x[s:e]
                     y = y[s:e]
-                if len(x) > 2048 and rcParams['plotter.decimate']:
-                    fac = len(x)/2048
+                if len(x) > 1024 and rcParams['plotter.decimate']:
+                    fac = len(x)/1024
                     x = x[::fac]
                     y = y[::fac]
                 llbl = self._get_label(scan, r, self._stacking, self._lmap)
