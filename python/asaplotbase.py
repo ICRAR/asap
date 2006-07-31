@@ -14,6 +14,8 @@ from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import NullLocator
+if int(matplotlib.__version__.split(".")[1]) < 87:
+    print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
 
 class MyFormatter(ScalarFormatter):
     def __call__(self, x, pos=None):
@@ -193,10 +195,12 @@ class asaplotbase:
             10: center
 
         """
-        if isinstance(loc,int):
-            if 0 > loc > 10: loc = 0
+        if isinstance(loc, int):
+            if 0 >= loc > 10: loc = None
             self.loc = loc
-        self.show()
+        else:
+            self.loc = None
+        #self.show()
 
 
     def plot(self, x=None, y=None, fmt=None, add=None):
@@ -375,7 +379,7 @@ class asaplotbase:
         self.show()
 
 
-    def save(self, fname=None, orientation=None, dpi=None):
+    def save(self, fname=None, orientation=None, dpi=None, papertype=None):
         """
         Save the plot to a file.
 
@@ -384,6 +388,9 @@ class asaplotbase:
         file name is specified 'yyyymmdd_hhmmss.png' is created in the current
         directory.
         """
+        from asap import rcParams
+        if papertype is None:
+            papertype = rcParams['plotter.papertype']
         if fname is None:
             from datetime import datetime
             dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -407,24 +414,19 @@ class asaplotbase:
                             orientation = 'landscape'
                         else:
                             orientation = 'portrait'
-                    a4w = 8.25
-                    a4h = 11.25
+                    from matplotlib.backends.backend_ps import papersize
+                    pw,ph = papersize[papertype.lower()]
                     ds = None
                     if orientation == 'landscape':
-                        ds = min(a4h/w,a4w/h)
+                        ds = min(ph/w, pw/h)
                     else:
-                        ds = min(a4w/w,a4h/h)
+                        ds = min(pw/w, ph/h)
                     ow = ds * w
                     oh = ds * h
-                    self.figure.set_figsize_inches((ow,oh))
-                    from matplotlib import __version__ as mv
-                    # hack to circument ps bug in eraly versions of mpl
-                    if int(mv.split(".")[1]) < 87:
-                        self.figure.savefig(fname, orientation=orientation)
-                    else:
-                        self.figure.savefig(fname, orientation=orientation,
-                                            papertype="a4")
-                    self.figure.set_figsize_inches((w,h))
+                    self.figure.set_figsize_inches((ow, oh))
+                    self.figure.savefig(fname, orientation=orientation,
+                                        papertype=papertype.lower())
+                    self.figure.set_figsize_inches((w, h))
                     print 'Written file %s' % (fname)
                 else:
                     if dpi is None:
@@ -666,12 +668,11 @@ class asaplotbase:
                         rcParams['legend.fontsize'] = 8
 ##                         lsiz = rcParams['legend.fontsize']-len(lines)/2
                         sp['axes'].legend(tuple(lines), tuple(labels),
-                                          self.loc) 
+                                          self.loc)
 ##                                           ,prop=FontProperties(size=lsiz) )
                     else:
                         sp['axes'].legend((' '))
 
-            ax = sp['axes']
             from matplotlib.artist import setp
             xts = rcParams['xtick.labelsize']-(self.cols)/2
             yts = rcParams['ytick.labelsize']-(self.rows)/2
