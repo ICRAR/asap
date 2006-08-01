@@ -793,9 +793,13 @@ class scantable(Scantable):
                       weighting)
             scanav:   True averages each scan separately
                       False (default) averages all scans together,
-            weight:   Weighting scheme. 'none', 'var' (1/var(spec)
-                      weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
-                      (integration time weighted) or 'tintsys' (Tint/Tsys**2).
+            weight:   Weighting scheme.
+                      'none'     (mean no weight)
+                      'var'      (1/var(spec) weighted)
+                      'tsys'     (1/Tsys**2 weighted)
+                      'tint'     (integration time weighted)
+                      'tintsys'  (Tint/Tsys**2)
+                      'median'   ( median averaging)
                       The default is 'tint'
             align:    align the spectra in velocity before averaging. It takes
                       the time of the first spectrum as reference time.
@@ -806,57 +810,24 @@ class scantable(Scantable):
         varlist = vars()
         if weight is None: weight = 'TINT'
         if mask is None: mask = ()
-        if scanav:
-            scanav = "SCAN"
-        else:
-            scanav = "NONE"
+        if scanav: scanav = "SCAN"
+        else: scanav = "NONE"
         scan = (self,)
         try:
           if align:
               scan = (self.freq_align(insitu=False),)
-          s = scantable(self._math._average(scan, mask, weight.upper(),
+          s = None
+          if weight.upper() == 'MEDIAN':
+              s = scantable(self._math._averagechannel(scan[0], 'MEDIAN', scanav))
+          else:
+              s = scantable(self._math._average(scan, mask, weight.upper(),
                         scanav))
         except RuntimeError,msg:
             if rcParams['verbose']:
                 print msg
                 return
             else: raise
-        s._add_history("average_time",varlist)
-        print_log()
-        return s
-
-    def average_channel(self, mode="MEDIAN", scanav=False, align=False):
-        """
-        Return the (median) average of a scan.
-        Note:
-            in channels only - align if necessary
-            the median Tsys is computed.
-        Parameters:
-            one scan or comma separated  scans
-            mode:     type of average, default "MEDIAN"
-            scanav:   True averages each scan separately
-                      False (default) averages all scans together,
-            align:    align the spectra in velocity before averaging. It takes
-                      the time of the first spectrum as reference time.
-        Example:
-            # median average the scan
-            newscan = scan.average_channel()
-        """
-        varlist = vars()
-        if mode is None: mode = 'MEDIAN'
-        scanav = "NONE"
-        if scanav: scanav = "SCAN"
-        scan = self
-        try:
-          if align:
-              scan = self.freq_align(insitu=False)
-          s = scantable(self._math._averagechannel(scan, mode, scanav))
-        except RuntimeError,msg:
-            if rcParams['verbose']:
-                print msg
-                return
-            else: raise
-        s._add_history("average_channel",varlist)
+        s._add_history("average_time", varlist)
         print_log()
         return s
 
