@@ -665,8 +665,6 @@ class asaplotbase:
                             labels.append(lbl)
 
                     if len(lines):
-                        rcParams['legend.fontsize'] = 8
-##                         lsiz = rcParams['legend.fontsize']-len(lines)/2
                         sp['axes'].legend(tuple(lines), tuple(labels),
                                           self.loc)
 ##                                           ,prop=FontProperties(size=lsiz) )
