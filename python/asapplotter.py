@@ -37,6 +37,8 @@ class asapplotter:
         self._maskselection = None
         self._selection = selector()
         self._hist = rcParams['plotter.histogram']
+        from matplotlib import rc as mplrc
+        mplrc('legend',fontsize=8)
 
     def _translate(self, instr):
         keys = "s b i p t".split()
@@ -71,7 +73,11 @@ class asapplotter:
         self._plotter.clear()
         from asap import scantable
         if not self._data and not scan:
-            print "please provide a scantable to plot"
+            msg = "Input is not a scantable"
+            if rcParams['verbose']:
+                print msg
+                return
+            raise TypeError(msg)
         if isinstance(scan, scantable):
             if self._data is not None:
                 if scan != self._data:
@@ -180,17 +186,19 @@ class asapplotter:
         if self._data: self.plot(self._data)
         return
 
-    def set_legend(self, mp=None, mode = 0):
+    def set_legend(self, mp=None, fontsize = None, mode = 0):
         """
         Specify a mapping for the legend instead of using the default
         indices:
         Parameters:
-            mp:    a list of 'strings'. This should have the same length
-                    as the number of elements on the legend and then maps
-                    to the indeces in order. It is possible to uses latex
-                    math expression. These have to be enclosed in r'', e.g. r'$x^{2}$'
-            mode:   where to display the legend
-                    Any other value for loc else disables the legend:
+            mp:        a list of 'strings'. This should have the same length
+                       as the number of elements on the legend and then maps
+                       to the indeces in order. It is possible to uses latex
+                       math expression. These have to be enclosed in r'',
+                       e.g. r'$x^{2}$'
+            fontsize:  The font size of the label (default None)
+            mode:      where to display the legend
+                       Any other value for loc else disables the legend:
                         0: auto
                         1: upper right
                         2: upper left
@@ -213,11 +221,14 @@ class asapplotter:
         """
         self._lmap = mp
         self._plotter.legend(mode)
+        if isinstance(fontsize, int):
+            from matplotlib import rc as rcp
+            rcp('legend', fontsize=fontsize)
         if self._data:
             self.plot(self._data)
         return
 
-    def set_title(self, title=None):
+    def set_title(self, title=None, fontsize=None):
         """
         Set the title of the plot. If multiple panels are plotted,
         multiple titles have to be specified.
@@ -226,10 +237,13 @@ class asapplotter:
              plotter.set_title(["First Panel","Second Panel"])
         """
         self._title = title
+        if isinstance(fontsize, int):
+            from matplotlib import rc as rcp
+            rcp('axes', titlesize=fontsize)
         if self._data: self.plot(self._data)
         return
 
-    def set_ordinate(self, ordinate=None):
+    def set_ordinate(self, ordinate=None, fontsize=None):
         """
         Set the y-axis label of the plot. If multiple panels are plotted,
         multiple labels have to be specified.
@@ -241,10 +255,14 @@ class asapplotter:
              plotter.set_ordinate(["First Y-Axis","Second Y-Axis"])
         """
         self._ordinate = ordinate
+        if isinstance(fontsize, int):
+            from matplotlib import rc as rcp
+            rcp('axes', labelsize=fontsize)
+            rcp('ytick', labelsize=fontsize)
         if self._data: self.plot(self._data)
         return
 
-    def set_abcissa(self, abcissa=None):
+    def set_abcissa(self, abcissa=None, fontsize=None):
         """
         Set the x-axis label of the plot. If multiple panels are plotted,
         multiple labels have to be specified.
@@ -256,6 +274,10 @@ class asapplotter:
              plotter.set_ordinate(["First X-Axis","Second X-Axis"])
         """
         self._abcissa = abcissa
+        if isinstance(fontsize, int):
+            from matplotlib import rc as rcp
+            rcp('axes', labelsize=fontsize)
+            rcp('xtick', labelsize=fontsize)
         if self._data: self.plot(self._data)
         return
 
@@ -276,7 +298,7 @@ class asapplotter:
         self._plotter.palette(0,colormap=colormap)
         if self._data: self.plot(self._data)
 
-    def set_histogram(self, hist=True):
+    def set_histogram(self, hist=True, linewidth=None):
         """
         Enable/Disable histogram-like plotting.
         Parameters:
@@ -285,9 +307,12 @@ class asapplotter:
                          plotter.histogram
         """
         self._hist = hist
+        if isinstance(linewidth, float) or isinstance(linewidth, int):
+            from matplotlib import rc as rcp
+            rcp('lines', linewidth=linewidth)
         if self._data: self.plot(self._data)
 
-    def set_linestyles(self, linestyles):
+    def set_linestyles(self, linestyles=None, linewidth=None):
         """
         Set the linestyles to be used. The plotter will cycle through
         these linestyles when lines are overlaid (stacking mode) AND
@@ -308,6 +333,30 @@ class asapplotter:
         if isinstance(linestyles,str):
             linestyles = linestyles.split()
         self._plotter.palette(color=0,linestyle=0,linestyles=linestyles)
+        if isinstance(linewidth, float) or isinstance(linewidth, int):
+            from matplotlib import rc as rcp
+            rcp('lines', linewidth=linewidth)
+        if self._data: self.plot(self._data)
+
+    def set_font(self, family=None, style=None, weight=None, size=None):
+        """
+        Set font properties.
+        Parameters:
+            family:    one of 'sans-serif', 'serif', 'cursive', 'fantasy', 'monospace'
+            style:     one of 'normal' (or 'roman'), 'italic'  or 'oblique'
+            weight:    one of 'normal or 'bold'
+            size:      the 'general' font size, individual elements can be adjusted
+                       seperately
+        """
+        from matplotlib import rc as rcp
+        if isinstance(family, str):
+            rcp('font', family=family)
+        if isinstance(style, str):
+            rcp('font', style=style)
+        if isinstance(weight, str):
+            rcp('font', weight=weight)
+        if isinstance(size, float) or isinstance(size, int):
+            rcp('font', size=size)
         if self._data: self.plot(self._data)
 
     def save(self, filename=None, orientation=None, dpi=None):
@@ -378,12 +427,12 @@ class asapplotter:
             end = 0
             inc = -1
         # find min index
-        while data[start] < mn:
+        while start > 0 and data[start] < mn:
             start+= inc
         # find max index
-        while data[end] > mx:
+        while end > 0 and data[end] > mx:
             end-=inc
-        end +=1
+        if end > 0: end +=1
         if start > end:
             return end,start
         return start,end
@@ -490,7 +539,7 @@ class asapplotter:
                 self._plotter.set_line(label=llbl)
                 plotit = self._plotter.plot
                 if self._hist: plotit = self._plotter.hist
-                plotit(x,y)
+                if len(x) > 0: plotit(x,y)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
                 ylim= self._minmaxy or [ma.MA.minimum(y),ma.MA.maximum(y)]
