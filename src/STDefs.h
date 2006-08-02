@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# SDDefs.h: Global definitions
+//# STDefs.h: Global definitions
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -29,8 +29,8 @@
 //# $Id$
 //#---------------------------------------------------------------------------
 
-#ifndef SDDEFS_H
-#define SDDEFS_H
+#ifndef ASAPDEFS_H
+#define ASAPDEFS_H
 
 namespace asap {
   enum AxisNo { BeamAxis=0,
