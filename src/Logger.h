@@ -32,13 +32,13 @@ public:
   virtual ~Logger();
   /**
    * push another message into the logger
-   * @param[in] the message
-   * @param[in] whether to add a newline character at the end
+   * @param[in] s the message
+   * @param[in] newline whether to add a newline character at the end
    */  
   void pushLog(const std::string& s, bool newline=true) const;
   /**
    * pop the message form the logger
-   * @returns the log message string
+   * @return the log message string
    */  
   std::string popLog() const;
   /**

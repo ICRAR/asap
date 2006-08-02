@@ -89,7 +89,7 @@ public:
 
   /**
    * get a const reference to the underlying casa::Table
-   * @return consantcasa::Table reference
+   * @return const \ref casa::Table reference
    */
   const casa::Table& table() const;
 
@@ -145,7 +145,7 @@ public:
 
 
   /**
-   * return the number of scans in the table
+   * The number of scans in the table
    * @return number of scans in the table
    */
   int nscan() const;
@@ -158,13 +158,35 @@ public:
    */
   casa::MPosition getAntennaPosition() const;
 
+	/**
+	 * the @ref casa::MDirection for a specific row
+	 * @param[in] whichrow the row number 
+	 * return casa::MDirection
+	 */
   casa::MDirection getDirection( int whichrow ) const;
 
+	/**
+	 * get the direction type as a string, e.g. "J2000"
+	 * @param[in] whichrow the row number
+	 * return the direction string
+	 */
   std::string getDirectionString( int whichrow ) const;
 
+	/**
+	 * set the direction type as a string, e.g. "J2000"
+	 * @param[in] the direction type
+	 */	
   void setDirectionRefString(const std::string& refstr="");
-
-  std::string getDirectionRefString() const;
+  /**
+   * get the direction reference string
+   * @return a string describing the direction reference
+   */
+  std::string getDirectionRefString() const;	/**
+	 * get the direction type as a string, e.g. "J2000"
+	 * param[in] whichrow the row number
+	 * return the direction string
+	 */
+  
 
   /**
    *  Return the Flux unit of the data, e.g. "Jy" or "K"
@@ -191,6 +213,8 @@ public:
 
   /**
    * "hard" flag the data, this flags everything selected in setSelection()
+   * param[in] msk a boolean mask of length nchan describing the points to
+   * to be flagged
    */
   void flag( const std::vector<bool>& msk = std::vector<bool>());
 
@@ -238,7 +262,7 @@ public:
    * Get the number of integartion cycles
    * @param scanno the scan number to get the number of rows for.
    * If scanno<0 the number is retrieved from the header.
-   * @return
+   * @return the number of rows (for the specified scanno)
    */
   int nrow(int scanno=-1) const;
 
