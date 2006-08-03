@@ -1,19 +1,29 @@
-import os,sys
+import os, sys, glob
 import distutils.sysconfig
 import platform
 
 #vars = distutils.sysconfig.get_config_vars()
-moduledir = "/tmp/dummy"#distutils.sysconfig.get_python_lib()
+moduledir = "/opt/lib/python2/"#distutils.sysconfig.get_python_lib()
 
 opts = Options("userconfig.py", ARGUMENTS)
 opts.Add("prefix", "The root installation path", distutils.sysconfig.PREFIX)
 opts.Add("moduledir", "The python module path (site-packages))", moduledir)
+
+def SGlob(pattern):
+    path = GetBuildPath('SConscript').replace('SConscript', '')
+    return [ i.replace(path, '') for i in glob.glob(path + pattern) ]
+
 
 def addCasaLibs(env):
     casalibs = "casav atnf images ms components coordinates \
                 lattices fits measures measures_f \
                 tables scimath scimath_f casa wcs".split()
     env.Prepend( LIBS =  casalibs )
+    casaincd = [os.path.join(env['CASAROOT'], 'code/include'), \
+                os.path.join(env['CASAROOT'], 'code/casa')]
+    env.Append( CPPPATH = casaincd )
+    casalibd = os.path.join(env['CASAROOT'], env['CASAARCH'], 'lib')
+    env.Append( LIBPATH = [ casalibd ] )
     # Explicit templates in casa
     env.Append( CPPFLAGS = ['-DAIPS_NO_TEMPLATE_SRC'] )
 
@@ -61,9 +71,9 @@ if not env.GetOption('clean'):
     if not conf.CheckLib(library='boost_python', language='c++'): Exit(1)
     if not conf.CheckLib('rpfits'): Exit(1)
     if not conf.CheckLib('cfitsio'): Exit(1)
-    if not conf.CheckLib('g2c'): Exit(1)
     if not conf.CheckLib('lapack'): Exit(1)
     if not conf.CheckLib('blas'): Exit(1)
+    if not conf.CheckLib('g2c'): Exit(1)
     if not conf.CheckLib('stdc++',language='c++'): Exit(1)
     if not conf.CheckCasa(): Exit(1)
     env = conf.Finish()
@@ -73,8 +83,9 @@ env.Append(CPPFLAGS='-O3 -Wno-long-long'.split())
 if  platform.architecture()[0] == '64bit':
     env.Append(CPPFLAGS='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__x86_64__ -DAIPS_64B'.split())
 
-Export("env")
+Export("env","SGlob")
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
 env.Install(moduledir, so )
-env.Install(moduledir, ["python/__init__.py"] )
-env.Alias('install',moduledir)
+#pys = env.SConscript("python/SConscript")
+# env.Install(moduledir, pys)
+env.Alias('install', moduledir)
