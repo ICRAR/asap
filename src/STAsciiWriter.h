@@ -44,7 +44,9 @@ namespace casa {
 }
 
 namespace asap {
-
+/**
+ * A class to export a Scnatble to ASCII file(s)
+ */
 class STAsciiWriter : public Logger {
 public:
 // Constructor

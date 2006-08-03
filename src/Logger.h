@@ -1,3 +1,14 @@
+//
+// C++ Interface: Logger
+//
+// Description:
+//
+//
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2005
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+//
 #ifndef ASAPLOGGER_H
 #define ASAPLOGGER_H
 

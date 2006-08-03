@@ -29,35 +29,61 @@
 namespace asap {
 
 /**
-Mathmatical operations on Scantable objects
-
-@author Malte Marquarding
+	* Mathmatical operations on Scantable objects
+	* @author Malte Marquarding
 */
 class STMath : private Logger {
 public:
-
+	// typedef for long method name
   typedef casa::InterpolateArray1D<casa::Double,
                                    casa::Float>::InterpolationMethod imethod;
 
+  // typedef for std::map
   typedef std::map<std::string, imethod> imap;
 
+/**
+  * whether to operate on the given Scantable or return a new one
+  * @param insitu the toggle for this behaviour
+  */
   STMath(bool insitu=true);
 
   virtual ~STMath();
 
   /**
-   * set the @attr insitu attribute
-   * @param b
+   * get the currnt @attr inistu state
    */
   bool insitu() const { return insitu_;};
+  
+  /**
+   * set the currnt @attr inistu state
+   * @param b the new state
+   */
   void setInsitu(bool b) { insitu_ = b; };
 
+
+	/**
+	  * average a vector of Scantables
+	  * @param in the vector of Scantables to average
+	  * @param an optional mask to apply on specific weights
+	  * @param weight weighting scheme
+	  * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
+	  * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+	  * or returns the imput pointer.
+	  */
   casa::CountedPtr<Scantable>
     average( const std::vector<casa::CountedPtr<Scantable> >& in,
              const std::vector<bool>& mask = std::vector<bool>(),
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN");
 
+	/**
+	  * median average a vector of Scantables. See also STMath::average
+	  * @param in the Scantable to average
+ 	  * @param mode the averaging mode. Currently only "MEDIAN"
+	  * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
+ 	  * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+	  * or returns the imput pointer.
+	  */
   casa::CountedPtr<Scantable>
     averageChannel( const casa::CountedPtr<Scantable> & in,
                     const std::string& mode = "MEDIAN",
@@ -120,8 +146,6 @@ public:
 
   casa::CountedPtr<Scantable>
     rotateLinPolPhase( const casa::CountedPtr<Scantable>& in, float phase);
-
-  /// @todo frequency alignment
 
   casa::CountedPtr<Scantable>
     swapPolarisations(const casa::CountedPtr<Scantable>& in);
