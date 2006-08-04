@@ -48,7 +48,8 @@ class scantable(Scantable):
                         print asaplog.pop().strip()
                         return
                     raise IOError(s)
-                if os.path.isdir(filename):
+                if os.path.isdir(filename) \
+                   and not os.path.exists(filename+'/table.f1'):
                     # crude check if asap table
                     if os.path.exists(filename+'/table.info'):
                         Scantable.__init__(self, filename, rcParams['scantable.storage']=='disk')
