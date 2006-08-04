@@ -75,6 +75,9 @@ BOOST_PYTHON_MODULE(_asap) {
   std_vector_to_tuple < int > ();
   from_python_sequence < std::vector < int >,
     variable_capacity_policy > ();
+  std_vector_to_tuple < uint > ();
+  from_python_sequence < std::vector < uint >,
+    variable_capacity_policy > ();
   std_vector_to_tuple < float > ();
   from_python_sequence < std::vector < float >,
     variable_capacity_policy > ();
