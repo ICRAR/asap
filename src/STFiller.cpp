@@ -224,8 +224,9 @@ int asap::STFiller::read( )
                           spectra, flagtra, xCalFctr, xPol);
     if ( status != 0 ) break;
     Regex filterrx(".*[SL|PA]$");
-    if ( obsType.matches(filterrx)) {
-      //cerr << "ignoring paddle scan" << endl;
+    Regex obsrx("^AT.+");
+    if ( header_->antennaname.matches(obsrx) && obsType.matches(filterrx)) {
+        //cerr << "ignoring paddle scan" << endl;
         continue;
     }
     TableRow row(table_->table());
