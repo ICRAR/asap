@@ -9,6 +9,8 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+#ifndef ASAPROWACCUMULATOR_H
+#define ASAPROWACCUMULATOR_H
 
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
@@ -34,53 +36,53 @@ public:
 
  ~RowAccumulator();
 
-	/**
-	 * add a new "row" to the accumulator
-	 * @param v the spectrum
-	 * @param m the mask for the spectrum
-	 * @param tsys the Tsys corresponing to the spectrum
-	 * @param interval the intergration time
-	 * @param the time of the observation
-	 */
+  /**
+    * add a new "row" to the accumulator
+    * @param v the spectrum
+    * @param m the mask for the spectrum
+    * @param tsys the Tsys corresponing to the spectrum
+    * @param interval the intergration time
+    * @param the time of the observation
+    */
   void add(const casa::Vector<casa::Float>& v,
            const casa::Vector<casa::Bool>& m,
            const casa::Vector<casa::Float>& tsys,
            casa::Double interval,
            casa::Double time);
-	/**
-	 * Also set a user mask which get combined with the individual masks
-	 * from the spectra
-	 * @param m a boolean mask of teh same length as the spectrum
-	 */
+  /**
+    * Also set a user mask which get combined with the individual masks
+    * from the spectra
+    * @param m a boolean mask of teh same length as the spectrum
+    */
   void setUserMask(const casa::Vector<casa::Bool>& m);
-	/**
-	 * Get the spectrum. Applies the normalisation (averaging)
-	 * @return the spectrum vector
-	 */
+  /**
+    * Get the spectrum. Applies the normalisation (averaging)
+    * @return the spectrum vector
+    */
   casa::Vector<casa::Float> getSpectrum() const;
-	/**
-	 * Get the Tsys. Applies the normalisation (averaging)
-	 * @return the Tsys vector
-	 */
+  /**
+    * Get the Tsys. Applies the normalisation (averaging)
+    * @return the Tsys vector
+    */
   casa::Vector<casa::Float> getTsys() const;
- 	/**
-	 * Get the spectrum's mask. Applies the normalisation (averaging)
-	 * @return the mask vector
-	 */
+  /**
+    * Get the spectrum's mask. Applies the normalisation (averaging)
+    * @return the mask vector
+    */
   casa::Vector<casa::Bool> getMask() const;
-	/**
-	 * Get the total interval.
-	 * @return the integration time
-	 */
+  /**
+    * Get the total interval.
+    * @return the integration time
+    */
   casa::Double getInterval() const;
-	/**
-	 * Get the time of the observation. Retrieves the "mean" time.
-	 * @return the integration time
-	 */  
+  /**
+    * Get the time of the observation. Retrieves the "mean" time.
+    * @return the integration time
+    */
   casa::Double getTime() const;
-	/**
-	 * Reset the acummulator to the state at construction.
-	 */
+  /**
+    * Reset the acummulator to the state at construction.
+    */
   void reset();
 
 private:
@@ -106,3 +108,4 @@ private:
 };
 
 }
+#endif
