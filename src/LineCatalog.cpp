@@ -15,11 +15,16 @@
 
 // casa includes
 #include <casa/Exceptions/Error.h>
+#include <casa/iostream.h>
+#include <casa/iomanip.h>
 #include <casa/OS/Path.h>
 #include <casa/OS/File.h>
+#include <casa/Arrays/Vector.h>
 #include <tables/Tables/ReadAsciiTable.h>
 #include <tables/Tables/TableParse.h>
+#include <tables/Tables/ScalarColumn.h>
 
+#include "STAttr.h"
 #include "LineCatalog.h"
 
 using namespace casa;
@@ -75,4 +80,47 @@ void LineCatalog::save(const std::string& name)
   table_.deepCopy(inname, Table::New);
 }
 
+std::string LineCatalog::summary(int row) const
+{
+  std::string stlout;
+  ostringstream oss;
+  oss << asap::SEPERATOR << endl;
+  oss << "Line Catalog summary" << endl;
+  oss << asap::SEPERATOR << endl << endl;
+  if (row == -1) {
+    Vector<uInt> rownrs = table_.rowNumbers(baseTable_);
+    for (uint i=0; i<rownrs.nelements(); ++i) {
+      oss << std::right << setw(7) << rownrs[i];
+      oss << std::left << setw(12) << getName(i);
+      oss << setw(12) << setprecision(8) << std::left << getFrequency(i);
+      oss << endl;
+    }
+  } else {
+    oss << std::right << setw(7) << row;
+    oss << std::left << setw(12) << getName(row);
+    oss << setw(12) << setprecision(8) << std::left << getFrequency(row);
+    oss << endl;
+  }
+  /// @todo implement me
+  return String(oss);
+}
+
+/*!
+    \fn asap::LineCatalog::getName(int row)
+ */
+std::string LineCatalog::getName(uint row) const
+{
+  ROScalarColumn<String> col(table_, "Column1");
+  return col(row);
+}
+
+double asap::LineCatalog::getFrequency(uint row) const
+{
+  ROScalarColumn<Double> col(table_, "Column2");
+  return col(row);
+}
+
+
 } // namespace
+
+

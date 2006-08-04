@@ -70,8 +70,15 @@ public:
   void save(const std::string& name);
   /**
     * Return a string representation of this table
+    * @param an integer descriing the row number to show
+    * default -1 is all rows
     * @return std::string
     */
+  std::string summary(int row=-1) const;
+
+  double getFrequency(uint row) const;
+
+  std::string getName(uint row) const;
 
 private:
   /**
