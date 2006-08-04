@@ -249,14 +249,6 @@ public:
 
   std::string getPolType() const;
 
-  /**
-   * Get the number of channels in the data or a specific IF. This currently
-   * varies only with IF number
-   * @param ifno the IF number to get the number of channels for.
-   * If ifno<0 the number is retrieved from the header.
-   * @return an integer number
-   */
-  int nchan(int ifno=-1) const;
 
   /**
    * Get the number of integartion cycles
@@ -266,14 +258,30 @@ public:
    */
   int nrow(int scanno=-1) const;
 
-  int ncycle(int scanno=-1) const;
-
   int getBeam(int whichrow) const;
+  std::vector<uint> getBeamNos() { return getNumbers(beamCol_); }
+
   int getIF(int whichrow) const;
+  std::vector<uint> getIFNos() { return getNumbers(ifCol_); }
+
   int getPol(int whichrow) const;
-  int getCycle(int whichrow) const { return cycleCol_(whichrow); }
+  std::vector<uint> getPolNos() { return getNumbers(polCol_); }
+
+  std::vector<uint> getScanNos() { return getNumbers(scanCol_); }
   int getScan(int whichrow) const { return scanCol_(whichrow); }
+
+  /**
+   * Get the number of channels in the data or a specific IF. This currently
+   * varies only with IF number
+   * @param ifno the IF number to get the number of channels for.
+   * If ifno<0 the number is retrieved from the header.
+   * @return an integer number
+   */
+  int nchan(int ifno=-1) const;
   int getChannels(int whichrow) const;
+
+  int ncycle(int scanno=-1) const;
+  int getCycle(int whichrow) const { return cycleCol_(whichrow); }
 
   double getInterval(int whichrow) const
     { return integrCol_(whichrow); }
@@ -401,6 +409,8 @@ private:
    * @return and index into @table_
    */
   int rowToScanIndex(int therow);
+
+  std::vector<uint> getNumbers(casa::ScalarColumn<casa::uInt>& col);
 
   static const casa::uInt version_ = 2;
 

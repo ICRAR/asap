@@ -133,7 +133,7 @@ Scantable::Scantable( const Scantable& other, bool clear )
       table_ = Table(newname, Table::Update);
       table_.markForDelete();
   }
-
+  /// @todo reindex SCANNO, recompute nbeam, nif, npol
   if ( clear ) copySubtables(other);
   attachSubtables();
   originalTable_ = table_;
@@ -337,12 +337,6 @@ bool Scantable::conformant( const Scantable& other )
 }
 
 
-int Scantable::nscan() const {
-  Vector<uInt> scannos(scanCol_.getColumn());
-  uInt nout = GenSort<uInt>::sort( scannos, Sort::Ascending,
-                       Sort::QuickSort|Sort::NoDuplicates );
-  return int(nout);
-}
 
 std::string Scantable::formatSec(Double x) const
 {
@@ -417,6 +411,7 @@ void Scantable::makePersistent(const std::string& filename)
 {
   String inname(filename);
   Path path(inname);
+  /// @todo reindex SCANNO, recompute nbeam, nif, npol
   inname = path.expandedName();
   table_.deepCopy(inname, Table::New);
 }
@@ -531,6 +526,13 @@ int Scantable::nchan( int ifno ) const
   return 0;
 }
 
+int Scantable::nscan() const {
+  Vector<uInt> scannos(scanCol_.getColumn());
+  uInt nout = GenSort<uInt>::sort( scannos, Sort::Ascending,
+                       Sort::QuickSort|Sort::NoDuplicates );
+  return int(nout);
+}
+
 int Scantable::getChannels(int whichrow) const
 {
   return specCol_.shape(whichrow)(0);
@@ -539,6 +541,16 @@ int Scantable::getChannels(int whichrow) const
 int Scantable::getBeam(int whichrow) const
 {
   return beamCol_(whichrow);
+}
+
+std::vector<uint> Scantable::getNumbers(ScalarColumn<uInt>& col)
+{
+  Vector<uInt> nos(col.getColumn());
+  GenSort<uInt>::sort( nos, Sort::Ascending,
+                       Sort::QuickSort|Sort::NoDuplicates );
+  std::vector<uint> stlout;
+  nos.tovector(stlout);
+  return stlout;
 }
 
 int Scantable::getIF(int whichrow) const
@@ -980,7 +992,7 @@ casa::MEpoch::Types asap::Scantable::getTimeReference( ) const
   return MEpoch::castType(timeCol_.getMeasRef().getType());
 }
 
-void asap::Scantable::addFit( const STFitEntry & fit, int row )
+void Scantable::addFit( const STFitEntry & fit, int row )
 {
   cout << mfitidCol_(uInt(row)) << endl;
   uInt id = fitTable_.addEntry(fit, mfitidCol_(uInt(row)));

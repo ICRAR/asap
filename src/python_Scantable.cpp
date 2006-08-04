@@ -49,9 +49,13 @@ void python_Scantable() {
     .def("_copy", &ScantableWrapper::copy)
     .def("_assign", &ScantableWrapper::assign)
     .def("getif", &ScantableWrapper::getIF)
+    .def("getifnos", &ScantableWrapper::getIFNos)
     .def("getbeam", &ScantableWrapper::getBeam)
+    .def("getbeamnos", &ScantableWrapper::getBeamNos)
     .def("getpol", &ScantableWrapper::getPol)
+    .def("getpolnos", &ScantableWrapper::getPolNos)
     .def("getscan", &ScantableWrapper::getScan)
+    .def("getscannos", &ScantableWrapper::getScanNos)
     .def("getcycle", &ScantableWrapper::getCycle)
     .def("nif", &ScantableWrapper::nif,
          (boost::python::arg("scanno")=-1) )

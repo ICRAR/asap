@@ -115,10 +115,14 @@ public:
   void setSpectrum(std::vector<float> spectrum, int whichrow=0)
     { table_->setSpectrum(spectrum, whichrow); }
 
+  std::vector<uint> getIFNos() { return table_->getIFNos(); }
   int getIF(int whichrow) const {return table_->getIF(whichrow);}
+  std::vector<uint> getBeamNos() { return table_->getBeamNos(); }
   int getBeam(int whichrow) const {return table_->getBeam(whichrow);}
+  std::vector<uint> getPolNos() { return table_->getPolNos(); }
   int getPol(int whichrow) const {return table_->getPol(whichrow);}
   int getCycle(int whichrow) const {return table_->getCycle(whichrow);}
+  std::vector<uint> getScanNos() { return table_->getScanNos(); }
   int getScan(int whichrow) const {return table_->getScan(whichrow);}
 
   STSelector getSelection() const { return table_->getSelection(); }
