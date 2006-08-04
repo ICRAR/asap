@@ -518,8 +518,8 @@ class asapplotter:
                     if d[self._stacking](r) in self._maskselection[self._stacking]:
                         m = logical_and(m, self._usermask)
                 x = scan._getabcissa(r)
-                from matplotlib.numerix import ma,logical_not,array
-                y = ma.MA.MaskedArray(y,mask=logical_not(array(m,copy=0)),copy=0)
+                from matplotlib.numerix import ma, logical_not, array
+                y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
                 if self._minmaxx is not None:
                     s,e = self._slice_indeces(x)
                     x = x[s:e]
@@ -542,7 +542,7 @@ class asapplotter:
                 if len(x) > 0: plotit(x,y)
                 xlim= self._minmaxx or [min(x),max(x)]
                 allxlim += xlim
-                ylim= self._minmaxy or [ma.MA.minimum(y),ma.MA.maximum(y)]
+                ylim= self._minmaxy or [ma.minimum(y),ma.maximum(y)]
                 allylim += ylim
                 stackcount += 1
                 # last in colour stack -> autoscale x
