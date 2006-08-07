@@ -318,7 +318,7 @@ def print_log():
     if len(log) and rcParams['verbose']: print log
     return
 
-from asapfitter import fitter as  asapfitter
+from asapfitter import fitter
 from asapreader import reader
 from selector import selector
 
@@ -456,6 +456,7 @@ if rcParams['verbose']:
                               'add', 'sub', 'mul', 'div'
             quotient        - build quotient of the given on and off scans
                               (matched pairs and 1 off/n on are valid)
+            merge           - merge a list of scantables
 
      [Fitting]
         fitter
