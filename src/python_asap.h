@@ -43,8 +43,8 @@ namespace asap {
     void python_Fitter();
     void python_STLineFinder();
     void python_STFitEntry();
-
     void python_STWriter();
+    void python_LineCatalog();
     void python_Logger();
 
   } // python

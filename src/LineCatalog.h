@@ -48,13 +48,13 @@ public:
    * @param fmin the lower frequency bound
    * @param fmax the upper frequency bound
    */
-  void setFrequencyLimits(float fmin, float fmax);
+  void setFrequencyLimits(double fmin, double fmax);
   /**
     * select a subset of the table by line strength range
     * @param smin the lower strength bound
     * @param smin the upper strength bound
     */
-  void setStrengthLimits(float smin, float smax);
+  void setStrengthLimits(double smin, double smax);
   /**
     * select a subset of the data by name pattern match (unix-style)
     * @param name the string pattern e.g. "*CS*"
@@ -70,25 +70,39 @@ public:
   void save(const std::string& name);
   /**
     * Return a string representation of this table
-    * @param an integer descriing the row number to show
+    * @param row an integer describing the row number to show
     * default -1 is all rows
     * @return std::string
     */
   std::string summary(int row=-1) const;
 
+  /**
+   * Return the rest frequency value for a specific row
+   * @param row the row number
+   * @return a double rest frequency value
+   */
   double getFrequency(uint row) const;
 
+  /**
+   *
+   * @param row
+   * @return
+   */
   std::string getName(uint row) const;
+
+  int nrow() const  { return table_.nrow(); }
+
+  void reset() { table_ = baseTable_; }
 
 private:
   /**
-   * utility function to hadle range limits
+   * utility function to handle range limits
    * @param lmin the lower limit
    * @param lmax the upper limit
    * @param colname the columd to apply the limits to
    * @return a new casa::Table
    */
-  casa::Table setLimits(float lmin, float lmax, const std::string& colname);
+  casa::Table setLimits(double lmin, double lmax, const std::string& colname);
 
   // the table with seelection
   casa::Table table_;
