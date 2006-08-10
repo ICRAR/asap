@@ -1,0 +1,12 @@
+import glob
+
+# import root environment
+Import( "env", "SGlob" )
+myenv = env.Copy()
+
+# gather python files
+pys = SGlob("*.py")
+pymods = []
+for p in pys:
+    myenv.Install(myenv["dist_dir"],p)
+
