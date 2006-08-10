@@ -1,4 +1,6 @@
 import os
+import sys
+import platform
 from SCons.Script import *
 
 def addCasaLibs(env):
@@ -29,16 +31,16 @@ def checkCasa(conf, path=None):
     if sys.platform == 'darwin':
         casaarch = darwin
     elif sys.platform == 'linux2' and platform.architecture()[0] == '64bit':
-        casarch = 'linux_64b'
+        casaarch = 'linux_64b'
     paths = "/nfs/aips++/weekly /aips++ /opt/aips++ ../casa_asap".split()
-    if path is not None:
+    if path is not None and len(path):
         paths = [path]
     for p in paths:
         if os.path.isfile(os.path.join(p,casaarch,"lib/libcasa.a")):
             conf.env.Append(CASAARCH = casaarch)
-            conf.env.Append(CASAROOT = p)
+            conf.env.Append(CASAROOT = os.path.abspath(p))
             addCasaLibs(conf.env)
             conf.Result('yes')
             return True
-    conf.Result('n')
+    conf.Result('no')
     return False

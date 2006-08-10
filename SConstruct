@@ -16,6 +16,7 @@ opts.AddOptions(PathOption("prefix", "The root installation path",
                 PathOption("moduledir",
                             "The python module path (site-packages))",
                             moduledir),
+                ("casadir", "Where casa lives. Default is to autodetect", ""),
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1))
 
@@ -48,7 +49,7 @@ if not env.GetOption('clean'):
     if not conf.CheckLib('blas'): Exit(1)
     if not conf.CheckLib('g2c'): Exit(1)
     if not conf.CheckLib('stdc++',language='c++'): Exit(1)
-    if not conf.CheckCasa(): Exit(1)
+    if not conf.CheckCasa(env["casadir"]): Exit(1)
     env = conf.Finish()
 
 env["dist_dir"] = "dist/asap"
@@ -70,7 +71,8 @@ asapmod = InstallTree(env,
                       src_dir  = env["dist_dir"],
                       includes = ['*.py', '*.so'],
                       excludes = [])
-env.Alias('install', asapmod)
+asapbin = env.Install(os.path.join(distutils.sysconfig.PREFIX, "bin"),"bin/asap")
+env.Alias('install', [asapmod, asapbin])
 
 #if env['mode'] == "release":
 #    env.DistTar("dist/asap", ["README", "INSTALL", Dir(env["dist_dir"])])
