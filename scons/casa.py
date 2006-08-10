@@ -1,9 +1,10 @@
+__revision__ = "$Version:$"
 import os
 import sys
 import platform
 from SCons.Script import *
 
-def addCasaLibs(env):
+def addCasa(env):
     casalibs = "casav atnf images ms components coordinates \
                 lattices fits measures measures_f \
                 tables scimath scimath_f casa wcs".split()
@@ -24,22 +25,22 @@ def checkCasa(conf, path=None):
         casa = os.environ.get('AIPSPATH').split()
         conf.env.Append(CASAARCH = casa[1])
         conf.env.Append(CASAROOT = casa[0])
-        addCasaLibs(conf.env)
+        addCasa(conf.env)
         conf.Result('yes')
         return True
     casaarch = 'linux_gnu'
     if sys.platform == 'darwin':
-        casaarch = darwin
+        casaarch = 'darwin'
     elif sys.platform == 'linux2' and platform.architecture()[0] == '64bit':
         casaarch = 'linux_64b'
     paths = "/nfs/aips++/weekly /aips++ /opt/aips++ ../casa_asap".split()
     if path is not None and len(path):
         paths = [path]
     for p in paths:
-        if os.path.isfile(os.path.join(p,casaarch,"lib/libcasa.a")):
+        if os.path.isfile(os.path.join(p, casaarch, "lib/libcasa.a")):
             conf.env.Append(CASAARCH = casaarch)
             conf.env.Append(CASAROOT = os.path.abspath(p))
-            addCasaLibs(conf.env)
+            addCasa(conf.env)
             conf.Result('yes')
             return True
     conf.Result('no')

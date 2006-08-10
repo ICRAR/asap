@@ -58,6 +58,9 @@ env.Append(CPPFLAGS='-O3 -Wno-long-long'.split())
 # 64bit flags
 if  platform.architecture()[0] == '64bit':
     env.Append(CPPFLAGS='-fPIC -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__x86_64__ -DAIPS_64B'.split())
+    # hack to install into /usr/lib64 if scons isn't installed there
+    if moduledir.startswith("/usr/lib/"):
+        moduledir.replace("lib","lib64")
 if env['mode'] == 'release':
     env.Append(LINKFLAGS=['-Wl,-O1'])
 Export("env","SGlob")
@@ -68,7 +71,7 @@ env.Install(env["dist_dir"], so )
 pys = env.SConscript("python/SConscript")
 asapmod = InstallTree(env,
                       dest_dir = os.path.join(moduledir, "asap"),
-                      src_dir  = env["dist_dir"],
+                      src_dir  = "dist/asap",
                       includes = ['*.py', '*.so'],
                       excludes = [])
 asapbin = env.Install(os.path.join(distutils.sysconfig.PREFIX, "bin"),"bin/asap")
