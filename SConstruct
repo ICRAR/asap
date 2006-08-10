@@ -1,64 +1,32 @@
 import os, sys, glob
 import distutils.sysconfig
 import platform
+sys.path.append("scons")
+from casa import checkCasa
 
-#vars = distutils.sysconfig.get_config_vars()
-moduledir = "/opt/lib/python2/"#distutils.sysconfig.get_python_lib()
+moduledir = '/tmp'#distutils.sysconfig.get_python_lib()
 
-opts = Options("userconfig.py", ARGUMENTS)
-opts.Add("prefix", "The root installation path", distutils.sysconfig.PREFIX)
-opts.Add("moduledir", "The python module path (site-packages))", moduledir)
+opts = Options("userconfig.py")
+opts.AddOptions(PathOption("prefix", "The root installation path",
+                distutils.sysconfig.PREFIX),
+                PathOption("moduledir",
+                            "The python module path (site-packages))",
+                            moduledir),
+                EnumOption("mode", "The type of build.", "debug",
+                           ["release","debug"], ignorecase=1))
 
 def SGlob(pattern):
     path = GetBuildPath('SConscript').replace('SConscript', '')
     return [ i.replace(path, '') for i in glob.glob(path + pattern) ]
 
 
-def addCasaLibs(env):
-    casalibs = "casav atnf images ms components coordinates \
-                lattices fits measures measures_f \
-                tables scimath scimath_f casa wcs".split()
-    env.Prepend( LIBS =  casalibs )
-    casaincd = [os.path.join(env['CASAROOT'], 'code/include'), \
-                os.path.join(env['CASAROOT'], 'code/casa')]
-    env.Append( CPPPATH = casaincd )
-    casalibd = os.path.join(env['CASAROOT'], env['CASAARCH'], 'lib')
-    env.Append( LIBPATH = [ casalibd ] )
-    # Explicit templates in casa
-    env.Append( CPPFLAGS = ['-DAIPS_NO_TEMPLATE_SRC'] )
+env = Environment( toolpath = ['./scons'], tools = ["default", "disttar"],
+                  ENV = { 'PATH' : os.environ[ 'PATH' ],
+                          'HOME' : os.environ[ 'HOME' ] },
+                  options = opts)
 
-def checkCasa(conf, path=None):
-    ''' look for casa libraries'''
-    conf.Message('Checking for casa libraries...')
-    casaarch = None
-    if os.environ.has_key('AIPSPATH'):
-        casa = os.environ.get('AIPSPATH').split()
-        conf.env.Append(CASAARCH = casa[1])
-        conf.env.Append(CASAROOT = casa[0])
-        addCasaLibs(conf.env)
-        conf.Result('yes')
-        return True
-    casaarch = 'linux_gnu'
-    if sys.platform == 'darwin':
-        casaarch = darwin
-    elif sys.platform == 'linux2' and platform.architecture()[0] == '64bit':
-        casarch = 'linux_64b'
-    paths = "/nfs/aips++/weekly /aips++ /opt/aips++ ../casa_asap".split()
-    if path is not None:
-        paths = [path]
-    for p in paths:
-        if os.path.isfile(os.path.join(p,casaarch,"lib/libcasa.a")):
-            conf.env.Append(CASAARCH = casaarch)
-            conf.env.Append(CASAROOT = p)
-            addCasaLibs(conf.env)
-            conf.Result('yes')
-            return True
-    conf.Result('n')
-    return False
-
-env = Environment( ENV = { 'PATH' : os.environ[ 'PATH' ],
-                           'HOME' : os.environ[ 'HOME' ] # required for distcc
-                   }, options = opts)
+Help(opts.GenerateHelpText(env))
+env.SConsignFile()
 env.Append(CASAARCH = '')
 env.Append(CASAROOT = '')
 if not env.GetOption('clean'):
@@ -70,6 +38,7 @@ if not env.GetOption('clean'):
     if not conf.CheckHeader(['boost/python.hpp'], language="C++"): Exit(1)
     if not conf.CheckLib(library='boost_python', language='c++'): Exit(1)
     if not conf.CheckLib('rpfits'): Exit(1)
+    if not conf.CheckHeader('cfitsio/fitsio.h', language='c++'): Exit(1)
     if not conf.CheckLib('cfitsio'): Exit(1)
     if not conf.CheckLib('lapack'): Exit(1)
     if not conf.CheckLib('blas'): Exit(1)
@@ -77,15 +46,23 @@ if not env.GetOption('clean'):
     if not conf.CheckLib('stdc++',language='c++'): Exit(1)
     if not conf.CheckCasa(): Exit(1)
     env = conf.Finish()
+
+env["dist_dir"] = "dist/asap"
 # general CPPFLAGS
 env.Append(CPPFLAGS='-O3 -Wno-long-long'.split())
 # 64bit flags
 if  platform.architecture()[0] == '64bit':
     env.Append(CPPFLAGS='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__x86_64__ -DAIPS_64B'.split())
-
+if env['mode'] == 'release':
+    env.Append(LINKFLAGS=['-Wl,-O1'])
 Export("env","SGlob")
+
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
-env.Install(moduledir, so )
-#pys = env.SConscript("python/SConscript")
-# env.Install(moduledir, pys)
+
+env.Install(env["dist_dir"], so )
+pys = env.SConscript("python/SConscript")
+env.Install(moduledir, Dir(env["dist_dir"]))
 env.Alias('install', moduledir)
+
+#if env['mode'] == "release":
+#    env.DistTar("dist/asap", ["README", "INSTALL", Dir(env["dist_dir"])])
