@@ -18,6 +18,11 @@ myenv['SHLIBPREFIX']=""   #gets rid of lib prefix
 
 # need to create library here to fool  scons linker
 casav = myenv.StaticLibrary(target = "casav", source = os.path.join(casalibd, 'version.o'))
+libasap =  myenv.StaticLibrary(target = "asap", source = cpps)
+myenv.Prepend( LIBS =  ['asap'] )
+
 # Finally create the library for the module
-so = myenv.SharedLibrary( target = "_asap", source = cpps+pycpps )
+so = myenv.SharedLibrary( target = "_asap", source = pycpps )
+#test = myenv.Program("test", cpps)
 Return("so")
+
