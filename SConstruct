@@ -1,10 +1,14 @@
-import os, sys, glob
+import os
+import sys
+import glob
 import distutils.sysconfig
 import platform
+# scons plug-ins
 sys.path.append("scons")
 from casa import checkCasa
+from installtree import InstallTree
 
-moduledir = '/tmp'#distutils.sysconfig.get_python_lib()
+moduledir = distutils.sysconfig.get_python_lib()
 
 opts = Options("userconfig.py")
 opts.AddOptions(PathOption("prefix", "The root installation path",
@@ -61,8 +65,12 @@ so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
 
 env.Install(env["dist_dir"], so )
 pys = env.SConscript("python/SConscript")
-env.Install(moduledir, Dir(env["dist_dir"]))
-env.Alias('install', moduledir)
+asapmod = InstallTree(env,
+                      dest_dir = os.path.join(moduledir, "asap"),
+                      src_dir  = env["dist_dir"],
+                      includes = ['*.py', '*.so'],
+                      excludes = [])
+env.Alias('install', asapmod)
 
 #if env['mode'] == "release":
 #    env.DistTar("dist/asap", ["README", "INSTALL", Dir(env["dist_dir"])])
