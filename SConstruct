@@ -52,7 +52,7 @@ env["dist_dir"] = "dist/asap"
 env.Append(CPPFLAGS='-O3 -Wno-long-long'.split())
 # 64bit flags
 if  platform.architecture()[0] == '64bit':
-    env.Append(CPPFLAGS='-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__x86_64__ -DAIPS_64B'.split())
+    env.Append(CPPFLAGS='-fPIC -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D__x86_64__ -DAIPS_64B'.split())
 if env['mode'] == 'release':
     env.Append(LINKFLAGS=['-Wl,-O1'])
 Export("env","SGlob")
