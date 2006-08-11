@@ -4,7 +4,7 @@ A representation of a spectra line catalog.
 Author: Malte Marquarding
 
 """
-__revision__ = "$Id:$"
+__revision__ = "$Revision:$"
 from asap._asap import linecatalog as lcbase
 from asap import rcParams
 import os
