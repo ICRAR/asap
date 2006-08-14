@@ -1,12 +1,12 @@
 import os,glob,shutil
 
 # import root environment
-Import( "env", "SGlob" )
+Import( "env")
 myenv = env.Copy()
 
 # gather cpp files
-cpps = SGlob("*.cpp")
-pycpps = SGlob("python_*.cpp")
+cpps = env.SGlob("*.cpp")
+pycpps = env.SGlob("python_*.cpp")
 for pf in pycpps: cpps.remove(pf)
 
 casalibd = os.path.join(myenv['CASAROOT'],myenv['CASAARCH'],'lib')

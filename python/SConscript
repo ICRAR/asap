@@ -1,12 +1,12 @@
 import glob
 
 # import root environment
-Import( "env", "SGlob" )
+Import( "env")
 myenv = env.Copy()
 
 # gather python files
-pys = SGlob("*.py")
+pys = myenv.SGlob("*.py")
 pymods = []
 for p in pys:
-    myenv.Install(myenv["dist_dir"],p)
+    myenv.Install(myenv["stage_dir"],p)
 

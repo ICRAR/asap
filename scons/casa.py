@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+import platform
 
 def generate(env):
     def CheckCasaLib(context, lib):
@@ -14,7 +16,7 @@ def generate(env):
             casalibs = "casav atnf images ms components coordinates \
                         lattices fits measures measures_f \
                         tables scimath scimath_f casa wcs".split()
-            #env.Prepend( LIBS =  casalibs )
+            env.Prepend( LIBS =  casalibs )
             casaincd = [os.path.join(env['CASAROOT'], 'code/include'), \
                         os.path.join(env['CASAROOT'], 'code/casa')]
             env.Append( CPPPATH = casaincd )
@@ -32,7 +34,7 @@ def generate(env):
             context.Result('yes')
             return True
         casaarch = 'linux_gnu'
-        if sys.platform == 'darwin':
+        if context.env["PLATFORM"] == 'darwin':
             casaarch = 'darwin'
         elif sys.platform == 'linux2' and platform.architecture()[0] == '64bit':
             casaarch = 'linux_64b'
@@ -51,19 +53,10 @@ def generate(env):
         return False
 
 
-    def AddCustomTests(conf):
-        conf.AddTests({
-                        'CheckCasa'            : CheckCasa,
-                      })
+    def AddCasaTest(conf):
+        conf.AddTests({'CheckCasa': CheckCasa})
 
-    env.AddCustomTests = AddCustomTests
-
-    def AddCustomPath(path=""):
-        if not len(path) or not os.path.exists(path):
-            return
-        env.PrependUnique(CPPPATH = [os.path.join(path, "include")])
-        env.PrependUnique(LIBPATH = [os.path.join(path, "lib")])
-    env.AddCustomPath = AddCustomPath
+    env.AddCasaTest = AddCasaTest
 
 def exists(env):
     return true
