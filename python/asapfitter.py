@@ -1,6 +1,7 @@
 import _asap
 from asap import rcParams
 from asap import print_log
+from asap import NUM
 
 class fitter:
     """
@@ -40,8 +41,7 @@ class fitter:
         self.x = xdat
         self.y = ydat
         if mask == None:
-            from numarray import ones
-            self.mask = ones(len(xdat))
+            self.mask = NUM.ones(len(xdat))
         else:
             self.mask = mask
         return
@@ -64,8 +64,7 @@ class fitter:
         self.data = thescan
         self.mask = None
         if mask is None:
-            from numarray import ones
-            self.mask = ones(self.data.nchan())
+            self.mask = NUM.ones(self.data.nchan())
         else:
             self.mask = mask
         return
@@ -201,9 +200,8 @@ class fitter:
                 raise RuntimeError(msg)
         if self.fitfunc == "gauss" and component is not None:
             if not self.fitted and sum(self.fitter.getparameters()) == 0:
-                from numarray import zeros
-                pars = list(zeros(len(self.components)*3))
-                fxd = list(zeros(len(pars)))
+                pars = list(NUM.zeros(len(self.components)*3))
+                fxd = list(NUM.zeros(len(pars)))
             else:
                 pars = list(self.fitter.getparameters())
                 fxd = list(self.fitter.getfixedparameters())

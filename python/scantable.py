@@ -3,8 +3,7 @@ from asap import rcParams
 from asap import print_log
 from asap import asaplog
 from asap import selector
-from numarray import ones
-from numarray import zeros
+from asap import NUM
 
 class scantable(Scantable):
     """
@@ -665,7 +664,7 @@ class scantable(Scantable):
                 msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
             asaplog.push(msg)
         n = self.nchan()
-        msk = zeros(n)
+        msk = NUM.zeros(n)
         # test if args is a 'list' or a 'normal *args - UGLY!!!
 
         ws = (isinstance(args[-1][-1], int) or isinstance(args[-1][-1], float)) \
@@ -678,8 +677,7 @@ class scantable(Scantable):
                     msk[i] = 1
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
-                from numarray import logical_not
-                msk = logical_not(msk)
+                msk = NUM.logical_not(msk)
         print_log()
         return msk
 
@@ -1092,7 +1090,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
         if mask is None:
-            mask = list(ones(self.nchan(-1)))
+            mask = list(NUM.ones(self.nchan(-1)))
         from asap.asapfitter import fitter
         f = fitter()
         f.set_scan(self, mask)

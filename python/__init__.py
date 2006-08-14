@@ -318,6 +318,14 @@ def print_log():
     if len(log) and rcParams['verbose']: print log
     return
 
+try:
+    import numpy.core as NUM
+except ImportError:
+    try:
+        import numarray as NUM
+    except ImportError:
+        raise ImportError("You need to have numpy or numarray installed")
+
 from asapfitter import fitter
 from asapreader import reader
 from selector import selector
@@ -325,18 +333,17 @@ from selector import selector
 from asapmath import *
 from scantable import scantable
 from asaplinefind import linefinder
-#from asapfit import *
+from linecatalog import linecatalog
 
-from numarray import logical_and as mask_and
-from numarray import logical_or as mask_or
-from numarray import logical_not as mask_not
+mask_and = NUM.logical_and
+mask_or = NUM.logical_or
+mask_not = NUM.logical_not
 
 if rcParams['useplotter']:
     from  asapplotter import asapplotter
     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
     plotter = asapplotter(gui)
     del gui
-
 
 __date__ = '$Date$'.split()[1]
 __version__  = '2.1a'
