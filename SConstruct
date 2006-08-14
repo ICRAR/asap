@@ -6,6 +6,10 @@ import platform
 #from installtree import InstallTree
 
 moduledir = distutils.sysconfig.get_python_lib()
+if  platform.architecture()[0] == '64bit':
+    # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
+    if moduledir.startswith("/usr/lib/"):
+        moduledir.replace("lib", "lib64")
 
 opts = Options("userconfig.py")
 opts.AddOptions(PathOption("prefix",
@@ -64,12 +68,11 @@ env["stage_dir"] = Dir("#/stage/asap")
 
 # general CPPFLAGS
 env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])
+
 # 64bit flags
 if  platform.architecture()[0] == '64bit':
     env.Append(CPPFLAGS=['-fPIC', '-D__x86_64__', '-DAIPS_64B'])
-    # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
-    if moduledir.startswith("/usr/lib/"):
-        moduledir.replace("lib","lib64")
+
 if env["PLATFORM"] == "darwin":
     env['SHLINKFLAGS'] = '$LINKFLAGS -bundle'
     #env['SHLIBSUFFIX'] = '.dylib'
