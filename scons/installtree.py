@@ -10,6 +10,7 @@ def generate(env):
         while len(dirs) > 0:
             currdir = dirs.pop(0)
             currdestdir = dest_dir + currdir[len(src_dir):]
+            if not os.path.exists(currdir): return
             flist = os.listdir(currdir)
             for currfile in flist:
                 currpath = os.path.join(currdir, currfile)
