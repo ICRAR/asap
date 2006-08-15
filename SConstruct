@@ -19,6 +19,7 @@ opts.AddOptions(PathOption("prefix",
                             "The python module path (site-packages))",
                             moduledir),
                 ("rpfitsdir", "Alternative rpfits location.", ""),
+                ("cfitsioincdir", "Alternative cfitsio include dir", ""),
                 ("casadir", "Alternative casa location", ""),
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1),
@@ -37,7 +38,9 @@ env = Environment( toolpath = ['./scons'],
 Help(opts.GenerateHelpText(env))
 env.SConsignFile()
 env.Append(CASAARCH = '', CASAROOT = '')
-
+if (os.path.exists(env["cfitsioincdir"])):
+    env.Append(CPPPATH=[env["cfitsioincdir"]])
+env.AddCustomPath(env["rpfitsdir"])
 if not env.GetOption('clean'):
     conf = Configure(env)
     # import Custom tests
@@ -53,7 +56,14 @@ if not env.GetOption('clean'):
     if not conf.CheckLibWithHeader('boost_python', 'boost/python.hpp', 'c++'): Exit(1)
     conf.env.AddCustomPath(env["rpfitsdir"])
     if not conf.CheckLib('rpfits'): Exit(1)
-    if not conf.CheckLibWithHeader('cfitsio', 'fitsio.h', 'c'): Exit(1)
+    # cfitsio is either in include/ or /include/cfitsio
+    # handle this
+    if not conf.CheckLib(library='cfitsio', language='c'): Exit(1)
+    if not conf.CheckHeader('fitsio.h', language='c'):
+        if not conf.CheckHeader('cfitsio/fitsio.h', language='c'):
+            Exit(1)
+        else:
+            conf.env.Append(CPPPATH=['/usr/include/cfitsio'])
     if (sys.platform == "darwin"):
         conf.env.Append(LIBS = ['-framework vecLib'])
     else:
