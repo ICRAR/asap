@@ -165,6 +165,17 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
       header_ = 0;
       throw(AipsError("Illegal IF selection"));
     }
+  } else {
+    // hack Multibeam Methanol until pksreader is patched
+     if ( (header_->obstype) == "MX" && header_->nbeam  == 7 ) {
+        pushLog("Guessing this is Methanol Multibeam Data .\n"
+                "Only importing first IF...");
+        ifs = False;
+        ifs[0] = True;
+        header_->nif = 1;
+        nIF_ = 1;
+        ifOffset_ = 0;
+     }
   }
 
   beamOffset_ = 0;
