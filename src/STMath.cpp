@@ -14,8 +14,6 @@
 #include <casa/Exceptions/Error.h>
 #include <casa/Containers/Block.h>
 #include <casa/BasicSL/String.h>
-#include <tables/Tables/TableIter.h>
-#include <tables/Tables/TableCopy.h>
 #include <casa/Arrays/MaskArrLogi.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/ArrayLogical.h>
@@ -28,7 +26,10 @@
 #include <tables/Tables/TabVecMath.h>
 #include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableRecord.h>
+#include <tables/Tables/TableParse.h>
 #include <tables/Tables/ReadAsciiTable.h>
+#include <tables/Tables/TableIter.h>
+#include <tables/Tables/TableCopy.h>
 
 #include <lattices/Lattices/LatticeUtilities.h>
 
@@ -202,7 +203,8 @@ CountedPtr< Scantable >
   ArrayColumn<Float> specColOut(tout,"SPECTRA");
   ArrayColumn<uChar> flagColOut(tout,"FLAGTRA");
   ArrayColumn<Float> tsysColOut(tout,"TSYS");
-
+  ScalarColumn<uInt> scanColOut(tout,"SCANNO");
+  Table tmp = in->table().sort("BEAMNO");
   Block<String> cols(3);
   cols[0] = String("BEAMNO");
   cols[1] = String("IFNO");
@@ -213,7 +215,7 @@ CountedPtr< Scantable >
   }
   uInt outrowCount = 0;
   uChar userflag = 1 << 7;
-  TableIterator iter(in->table(), cols);
+  TableIterator iter(tmp, cols);
   while (!iter.pastEnd()) {
     Table subt = iter.table();
     ROArrayColumn<Float> specCol, tsysCol;
@@ -223,6 +225,9 @@ CountedPtr< Scantable >
     tsysCol.attach(subt,"TSYS");
     tout.addRow();
     TableCopy::copyRows(tout, subt, outrowCount, 0, 1);
+    if ( avmode != "SCAN") {
+      scanColOut.put(outrowCount, uInt(0));
+    }
     Vector<Float> tmp;
     specCol.get(0, tmp);
     uInt nchan = tmp.nelements();
@@ -1322,3 +1327,24 @@ CountedPtr<Scantable>
   return out;
 }
 
+CountedPtr< Scantable > 
+  asap::STMath::mxExtract( const CountedPtr< Scantable > & in,
+                           const std::string & scantype )
+{
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(in, true);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  std::string taql = "SELECT FROM $1 WHERE BEAMNO != REFBEAMNO";
+  if (scantype == "on") {
+    taql = "SELECT FROM $1 WHERE BEAMNO == REFBEAMNO";
+  }
+  Table tab = tableCommand(taql, in->table());
+  TableCopy::copyRows(tout, tab);
+  if (scantype == "on") {
+    TableVector<uInt> vec(tout, "SCANNO");
+    vec = 0;
+  }
+  return out;
+}

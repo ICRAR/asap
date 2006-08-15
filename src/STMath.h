@@ -61,38 +61,46 @@ public:
   void setInsitu(bool b) { insitu_ = b; };
 
 
-	/**
-	  * average a vector of Scantables
-	  * @param in the vector of Scantables to average
-	  * @param an optional mask to apply on specific weights
-	  * @param weight weighting scheme
-	  * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
-	  * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
-	  * or returns the imput pointer.
-	  */
+  /**
+    * average a vector of Scantables
+    * @param in the vector of Scantables to average
+    * @param an optional mask to apply on specific weights
+    * @param weight weighting scheme
+    * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
+    * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+    * or returns the imput pointer.
+    */
   casa::CountedPtr<Scantable>
     average( const std::vector<casa::CountedPtr<Scantable> >& in,
              const std::vector<bool>& mask = std::vector<bool>(),
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN");
 
-	/**
-	  * median average a vector of Scantables. See also STMath::average
-	  * @param in the Scantable to average
- 	  * @param mode the averaging mode. Currently only "MEDIAN"
-	  * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
- 	  * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
-	  * or returns the imput pointer.
-	  */
+  /**
+    * median average a vector of Scantables. See also STMath::average
+    * @param in the Scantable to average
+    * @param mode the averaging mode. Currently only "MEDIAN"
+    * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
+    * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+    * or returns the imput pointer.
+    */
   casa::CountedPtr<Scantable>
     averageChannel( const casa::CountedPtr<Scantable> & in,
                     const std::string& mode = "MEDIAN",
                     const std::string& avmode = "SCAN");
 
+  /**
+    * average polarisations together. really only useful if only linears are
+    *  available.
+    * @param in the input Scantable
+    * @param mask an optional mask if weight allows one
+    * @param weight weighting scheme
+    * @return 
+    */
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
-                                const std::vector<bool>& mask,
-                                const std::string& weight );
+                          const std::vector<bool>& mask,
+                          const std::string& weight );
 
   casa::CountedPtr<Scantable>
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,
@@ -158,6 +166,10 @@ public:
   casa::CountedPtr<Scantable>
     convertPolarisation( const casa::CountedPtr<Scantable>& in,
                          const std::string& newtype);
+  
+  casa::CountedPtr<Scantable>
+      mxExtract( const casa::CountedPtr<Scantable>& in,
+                 const std::string& scantype = "on" );
 
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,

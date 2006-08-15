@@ -64,7 +64,8 @@ namespace asap {
         .def("_invert_phase", &STMathWrapper::invertPhase)
         .def("_swap_linears", &STMathWrapper::swapPolarisations)
         .def("_freq_align", &STMathWrapper::frequencyAlign)
-      ;
+        .def("_mx_extract", &STMathWrapper::mxExtract)
+          ;
     };
 
   } //namespace python

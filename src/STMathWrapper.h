@@ -143,6 +143,10 @@ public:
   ScantableWrapper convertPolarisation( const ScantableWrapper& in,
                                         const std::string& newtype )
   { return ScantableWrapper(STMath::convertPolarisation(in.getCP(),newtype)); }
+  
+  ScantableWrapper mxExtract( const ScantableWrapper& in,
+                              const std::string& scantype="on" )
+  { return ScantableWrapper(STMath::mxExtract(in.getCP(),scantype)); }
 
 };
 
