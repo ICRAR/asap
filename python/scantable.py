@@ -1331,8 +1331,15 @@ class scantable(Scantable):
         print_log()
         return s
 
-
-
+    def mx_quotient(self, averageoff='median'):
+        """
+	"""
+        varlist = vars()
+        on = scantable(self._math._mx_extract(self, 'on'))
+        s._add_history("mx_quotient", varlist)
+        print_log()
+	from asapmath  import quotient
+	return quotient(on, off)
 
     def freq_switch(self, insitu=None):
         """
