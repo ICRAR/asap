@@ -53,7 +53,7 @@ public:
    * get the currnt @attr inistu state
    */
   bool insitu() const { return insitu_;};
-  
+
   /**
    * set the currnt @attr inistu state
    * @param b the new state
@@ -95,7 +95,7 @@ public:
     * @param in the input Scantable
     * @param mask an optional mask if weight allows one
     * @param weight weighting scheme
-    * @return 
+    * @return
     */
   casa::CountedPtr< Scantable >
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
@@ -166,10 +166,10 @@ public:
   casa::CountedPtr<Scantable>
     convertPolarisation( const casa::CountedPtr<Scantable>& in,
                          const std::string& newtype);
-  
+
   casa::CountedPtr<Scantable>
-      mxExtract( const casa::CountedPtr<Scantable>& in,
-                 const std::string& scantype = "on" );
+    mxExtract( const casa::CountedPtr<Scantable>& in,
+               const std::string& srctype = "on");
 
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,

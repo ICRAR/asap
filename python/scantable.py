@@ -790,7 +790,6 @@ class scantable(Scantable):
         Note:
             in channels only - align if necessary
         Parameters:
-            one scan or comma separated  scans
             mask:     an optional mask (only used for 'var' and 'tsys'
                       weighting)
             scanav:   True averages each scan separately
@@ -1331,15 +1330,22 @@ class scantable(Scantable):
         print_log()
         return s
 
-    def mx_quotient(self, averageoff='median'):
+    def mx_quotient(self, mask = None, weight='median'):
         """
+        Form a quotient using "off" beams when observing in "MX" mode.
+        Parameters:
+            weight:         How to average the off beams.  Default is 'median'.
 	"""
+        if mask is None: mask = ()
         varlist = vars()
         on = scantable(self._math._mx_extract(self, 'on'))
-        s._add_history("mx_quotient", varlist)
+        preoff = scantable(self._math._mx_extract(self, 'off'))
+        off = preoff.average_time(mask=mask, weight=weight, scanav=False)
         print_log()
 	from asapmath  import quotient
-	return quotient(on, off)
+        q = quotient(on, off)
+        q._add_history("mx_quotient", varlist)
+	return q
 
     def freq_switch(self, insitu=None):
         """

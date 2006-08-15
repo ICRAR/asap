@@ -1327,7 +1327,7 @@ CountedPtr<Scantable>
   return out;
 }
 
-CountedPtr< Scantable > 
+CountedPtr< Scantable >
   asap::STMath::mxExtract( const CountedPtr< Scantable > & in,
                            const std::string & scantype )
 {
@@ -1343,6 +1343,7 @@ CountedPtr< Scantable >
   Table tab = tableCommand(taql, in->table());
   TableCopy::copyRows(tout, tab);
   if (scantype == "on") {
+    // re-index SCANNO to 0
     TableVector<uInt> vec(tout, "SCANNO");
     vec = 0;
   }
