@@ -408,15 +408,13 @@ if rcParams['verbose']:
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
                               or a list of scans
-            average_channel - return the (median) average of a scantable
             average_pol     - average the polarisations together.
-                              The dimension won't be reduced and
-                              all polarisations will contain the
-                              averaged spectrum.
+            average_beam    - average the beams together.
             convert_pol     - convert to a different polarisation type
             auto_quotient   - return the on/off quotient with
                               automatic detection of the on/off scans (closest
                               in time off is selected)
+            mx_quotient     - Form a quotient using MX data (off beams)
             scale, *, /     - return a scan scaled by a given factor
             add, +, -       - return a scan with given value added
             bin             - return a scan with binned channels
