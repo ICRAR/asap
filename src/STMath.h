@@ -90,8 +90,8 @@ public:
                     const std::string& avmode = "SCAN");
 
   /**
-    * average polarisations together. really only useful if only linears are
-    *  available.
+    * Average polarisations together. really only useful if only linears are
+    * available.
     * @param in the input Scantable
     * @param mask an optional mask if weight allows one
     * @param weight weighting scheme
@@ -101,6 +101,18 @@ public:
     averagePolarisations( const casa::CountedPtr< Scantable > & in,
                           const std::vector<bool>& mask,
                           const std::string& weight );
+
+  /**
+    * Average beams together.
+    * @param in the input Scantable
+    * @param mask an optional mask if weight allows one
+    * @param weight weighting scheme
+    * @return
+    */
+  casa::CountedPtr< Scantable >
+    averageBeams( const casa::CountedPtr< Scantable > & in,
+                   const std::vector<bool>& mask,
+                   const std::string& weight );
 
   casa::CountedPtr<Scantable>
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,

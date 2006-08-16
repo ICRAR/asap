@@ -95,6 +95,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ScalarColumn<Double> mjdColOut(tout,"TIME");
   ScalarColumn<Double> intColOut(tout,"INTERVAL");
   ScalarColumn<uInt> cycColOut(tout,"CYCLENO");
+  ScalarColumn<uInt> scanColOut(tout,"SCANNO");
 
   // set up the output table rows. These are based on the structure of the
   // FIRST scantable in the vector
@@ -119,6 +120,10 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     // copy the first row of this selection into the new table
     tout.addRow();
     TableCopy::copyRows(tout, subt, outrowCount, 0, 1);
+    // re-index to 0
+    if ( avmode != "SCAN" && avmode != "SOURCE" ) {
+      scanColOut.put(outrowCount, uInt(0));
+    }
     ++outrowCount;
     ++iter;
   }
@@ -418,6 +423,8 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable > & on,
       Table offsel = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
                           && t.col("IFNO") == Int(rec.asuInt("IFNO"))
                           && t.col("POLNO") == Int(rec.asuInt("POLNO")) );
+      if ( offsel.nrow() == 0 )
+        throw AipsError("STMath::quotient: no matching off");
       TableRow offrow(offsel);
       const TableRecord& offrec = offrow.get(0);//should be ncycles - take first
       RORecordFieldPtr< Array<Float> > specoff(offrec, "SPECTRA");
@@ -1125,12 +1132,32 @@ CountedPtr< Scantable >
   setInsitu(insitu);
   Table& tout = pols->table();
   // give all rows the same POLNO
-  TableVector<uInt> vec(tout,"POLNO");
+  TableVector<uInt> vec(tout, "POLNO");
   vec = 0;
-  pols->table_.rwKeywordSet().define("nPol",Int(1));
+  pols->table_.rwKeywordSet().define("nPol", Int(1));
   std::vector<CountedPtr<Scantable> > vpols;
   vpols.push_back(pols);
   CountedPtr< Scantable > out = average(vpols, mask, weight, "NONE");
+  return out;
+}
+
+CountedPtr< Scantable >
+  STMath::averageBeams( const CountedPtr< Scantable > & in,
+                        const std::vector<bool>& mask,
+                        const std::string& weight )
+{
+  bool insitu = insitu_;
+  setInsitu(false);
+  CountedPtr< Scantable > beams = getScantable(in, false);
+  setInsitu(insitu);
+  Table& tout = beams->table();
+  // give all rows the same BEAMNO
+  TableVector<uInt> vec(tout, "BEAMNO");
+  vec = 0;
+  beams->table_.rwKeywordSet().define("nBeam", Int(1));
+  std::vector<CountedPtr<Scantable> > vbeams;
+  vbeams.push_back(beams);
+  CountedPtr< Scantable > out = average(vbeams, mask, weight, "NONE");
   return out;
 }
 

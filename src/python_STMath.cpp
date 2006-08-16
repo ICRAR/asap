@@ -46,6 +46,7 @@ namespace asap {
         .def("_average", &STMathWrapper::average)
         .def("_averagechannel", &STMathWrapper::averageChannel)
         .def("_averagepol", &STMathWrapper::averagePolarisations)
+        .def("_averagebeams", &STMathWrapper::averageBeams)
         .def("_unaryop", &STMathWrapper::unaryOperate)
         .def("_auto_quotient", &STMathWrapper::autoQuotient)
         .def("_quotient", &STMathWrapper::quotient)

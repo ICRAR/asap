@@ -1020,6 +1020,24 @@ class scantable(Scantable):
         print_log()
         return s
 
+    def average_beam(self, mask=None, weight='none'):
+        """
+        Average the Beams together.
+        Parameters:
+            mask:        An optional mask defining the region, where the
+                         averaging will be applied. The output will have all
+                         specified points masked.
+            weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
+                         weighted), or 'tsys' (1/Tsys**2 weighted)
+        """
+        varlist = vars()
+        if mask is None:
+            mask = ()
+        s = scantable(self._math._averagebeams(self, mask, weight.upper()))
+        s._add_history("average_beam", varlist)
+        print_log()
+        return s
+
     def convert_pol(self, poltype=None):
         """
         Convert the data to a different polarisation type.
@@ -1330,21 +1348,26 @@ class scantable(Scantable):
         print_log()
         return s
 
-    def mx_quotient(self, mask = None, weight='median'):
+    def mx_quotient(self, mask = None, weight='median', preserve=True):
         """
         Form a quotient using "off" beams when observing in "MX" mode.
         Parameters:
+            mask:           an optional mask to be used when weight == 'stddev'
             weight:         How to average the off beams.  Default is 'median'.
+            preserve:       you can preserve (default) the continuum or
+                            remove it.  The equations used are
+                            preserve: Output = Toff * (on/off) - Toff
+                            remove:   Output = Toff * (on/off) - Ton
 	"""
         if mask is None: mask = ()
         varlist = vars()
         on = scantable(self._math._mx_extract(self, 'on'))
         preoff = scantable(self._math._mx_extract(self, 'off'))
         off = preoff.average_time(mask=mask, weight=weight, scanav=False)
-        print_log()
 	from asapmath  import quotient
-        q = quotient(on, off)
+        q = quotient(on, off, preserve)
         q._add_history("mx_quotient", varlist)
+        print_log()
 	return q
 
     def freq_switch(self, insitu=None):

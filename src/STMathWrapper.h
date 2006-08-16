@@ -61,6 +61,13 @@ public:
   { return ScantableWrapper(STMath::averagePolarisations(in.getCP(),mask, weight));}
 
   ScantableWrapper
+    averageBeams( const ScantableWrapper& in,
+                  const std::vector<bool>& mask,
+                  const std::string& weight)
+
+  { return ScantableWrapper(STMath::averageBeams(in.getCP(),mask, weight));}
+
+  ScantableWrapper
     unaryOperate( const ScantableWrapper& in, float val,
                   const std::string& mode, bool tsys=false )
   { return ScantableWrapper(STMath::unaryOperate(in.getCP(), val, mode, tsys)); }
@@ -143,7 +150,7 @@ public:
   ScantableWrapper convertPolarisation( const ScantableWrapper& in,
                                         const std::string& newtype )
   { return ScantableWrapper(STMath::convertPolarisation(in.getCP(),newtype)); }
-  
+
   ScantableWrapper mxExtract( const ScantableWrapper& in,
                               const std::string& scantype="on" )
   { return ScantableWrapper(STMath::mxExtract(in.getCP(),scantype)); }
