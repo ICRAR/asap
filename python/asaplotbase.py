@@ -8,12 +8,14 @@ from re import match
 import matplotlib
 
 from matplotlib.figure import Figure, Text
-from matplotlib.font_manager import FontProperties
+from matplotlib.font_manager import FontProperties as FP
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import NullLocator
+from matplotlib.transforms import blend_xy_sep_transform
+
 if int(matplotlib.__version__.split(".")[1]) < 87:
     print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
 
@@ -81,7 +83,7 @@ class asaplotbase:
 
     def clear(self):
         """
-        Delete all lines from the plot.  Line numbering will restart from 1.
+        Delete all lines from the plot.  Line numbering will restart from 0.
         """
 
         for i in range(len(self.lines)):
@@ -409,7 +411,7 @@ class asaplotbase:
                     h = self.figure.figheight.get()
 
                     if orientation is None:
-                        # auto oriented
+                        # oriented
                         if w > h:
                             orientation = 'landscape'
                         else:
@@ -665,33 +667,36 @@ class asaplotbase:
                             labels.append(lbl)
 
                     if len(lines):
+                        fp = FP(size=rcParams['legend.fontsize'])
+                        fsz = fp.get_size_in_points() - len(lines)
+                        fp.set_size(max(fsz,6))
                         sp['axes'].legend(tuple(lines), tuple(labels),
-                                          self.loc)
-##                                           ,prop=FontProperties(size=lsiz) )
+                                          self.loc, prop=fp)
                     else:
                         sp['axes'].legend((' '))
 
             from matplotlib.artist import setp
-            xts = rcParams['xtick.labelsize']-(self.cols)/2
-            yts = rcParams['ytick.labelsize']-(self.rows)/2
+            fp = FP(size=rcParams['xtick.labelsize'])
+            xts = fp.get_size_in_points()- (self.cols)/2
+            fp = FP(size=rcParams['ytick.labelsize'])
+            yts = fp.get_size_in_points() - (self.rows)/2
             for sp in self.subplots:
                 ax = sp['axes']
                 s = ax.title.get_size()
                 tsize = s-(self.cols+self.rows)
                 ax.title.set_size(tsize)
+                fp = FP(size=rcParams['axes.labelsize'])
                 setp(ax.get_xticklabels(), fontsize=xts)
                 setp(ax.get_yticklabels(), fontsize=yts)
-                origx = rcParams['axes.labelsize'] #ax.xaxis.label.get_size()
-                origy = rcParams['axes.labelsize'] #ax.yaxis.label.get_size()
+                origx =  fp.get_size_in_points()
+                origy = origx
                 off = 0
                 if self.cols > 1: off = self.cols
                 xfsize = origx-off
-                #rc('xtick',labelsize=xfsize)
                 ax.xaxis.label.set_size(xfsize)
                 off = 0
                 if self.rows > 1: off = self.rows
                 yfsize = origy-off
-                #rc('ytick',labelsize=yfsize)
                 ax.yaxis.label.set_size(yfsize)
 
     def subplot(self, i=None, inc=None):
@@ -711,10 +716,49 @@ class asaplotbase:
             self.axes  = self.subplots[self.i]['axes']
             self.lines = self.subplots[self.i]['lines']
 
-
     def text(self, *args, **kwargs):
         """
         Add text to the figure.
         """
         self.figure.text(*args, **kwargs)
         self.show()
+
+    def vline_with_label(self, x, y, label,
+                         location='bottom', rotate=0.0, **kwargs):
+        """
+        Plot a vertical line with label.
+        It takes "world" values fo x and y.
+        """
+        ax = self.axes
+        # need this to suppress autoscaling during this function
+        self.axes.set_autoscale_on(False)
+        ymin = 0.0
+        ymax = 1.0
+        valign = 'center'
+        if location.lower() == 'top':
+            y = max(0.0, y)
+        elif location.lower() == 'bottom':
+            y = min(0.0, y)
+        lbloffset = 0.06
+        # a rough estimate for the bb of the text
+        if rotate > 0.0: lbloffset = 0.03*len(label)
+        peakoffset = 0.01
+        xy0 = ax.transData.xy_tup((x,y))
+        # get relative coords
+        xy = ax.transAxes.inverse_xy_tup(xy0)
+        if location.lower() == 'top':
+            ymax = 1.0-lbloffset
+            ymin = xy[1]+peakoffset
+            valign = 'bottom'
+            ylbl = ymax+0.01
+        elif location.lower() == 'bottom':
+            ymin = lbloffset
+            ymax = xy[1]-peakoffset
+            valign = 'top'
+            ylbl = ymin-0.01
+        trans = blend_xy_sep_transform(ax.transData, ax.transAxes)
+        l = ax.axvline(x, ymin, ymax, color='black', **kwargs)
+        t = ax.text(x, ylbl ,label, verticalalignment=valign,
+                                    horizontalalignment='center',
+                    rotation=rotate,transform = trans)
+        self.axes.set_autoscale_on(True)
