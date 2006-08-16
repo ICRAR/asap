@@ -33,7 +33,7 @@ class linecatalog(lcbase):
             from IPython.genutils import page as pager
         except ImportError:
             from pydoc import pager
-        pager(lcbase.summary(-1))
+        pager(lcbase.summary(self, -1))
 
     def set_name(self, name, mode="pattern"):
         """
