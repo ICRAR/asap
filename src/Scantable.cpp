@@ -528,7 +528,7 @@ int Scantable::nchan( int ifno ) const
 
 int Scantable::nscan() const {
   Vector<uInt> scannos(scanCol_.getColumn());
-  uInt nout = GenSort<uInt>::sort( scannos, Sort::Ascending,
+  uInt nout = genSort( scannos, Sort::Ascending,
                        Sort::QuickSort|Sort::NoDuplicates );
   return int(nout);
 }
@@ -546,8 +546,8 @@ int Scantable::getBeam(int whichrow) const
 std::vector<uint> Scantable::getNumbers(ScalarColumn<uInt>& col)
 {
   Vector<uInt> nos(col.getColumn());
-  GenSort<uInt>::sort( nos, Sort::Ascending,
-                       Sort::QuickSort|Sort::NoDuplicates );
+  uInt n = genSort( nos, Sort::Ascending, Sort::QuickSort|Sort::NoDuplicates );
+  nos.resize(n, True);
   std::vector<uint> stlout;
   nos.tovector(stlout);
   return stlout;

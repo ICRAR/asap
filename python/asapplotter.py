@@ -473,18 +473,27 @@ class asapplotter:
         d = {'b': scan.getbeam, 's': scan.getscan,
              'i': scan.getif, 'p': scan.getpol, 't': scan._gettime }
 
-        polmodes = dict(zip(self._selection.get_pols(),self._selection.get_poltypes()))
-        n,nstack = self._get_selected_n(scan)
+        polmodes = dict(zip(self._selection.get_pols(),
+                            self._selection.get_poltypes()))
+        # this returns either a tuple of numbers or a length  (ncycles)
+        # convert this into lengths
+        n0,nstack0 = self._get_selected_n(scan)
+        n = len(n0)
+        if isinstance(n0, int): n = n0
+        nstack = len(nstack0)
+        if isinstance(nstack0, int): nstack = nstack0
         maxpanel, maxstack = 16,8
         if n > maxpanel or nstack > maxstack:
             from asap import asaplog
+            maxn = 0
+            if nstack > maxstack: maxn = maxstack
+            if n > maxpanel: maxn = maxpanel
             msg ="Scan to be plotted contains more than %d selections.\n" \
-                  "Selecting first %d selections..." % (maxpanel,maxpanel)
+                  "Selecting first %d selections..." % (maxn, maxn)
             asaplog.push(msg)
             print_log()
             n = min(n,maxpanel)
             nstack = min(nstack,maxstack)
-
         if n > 1:
             ganged = rcParams['plotter.ganged']
             if self._rows and self._cols:
@@ -597,13 +606,13 @@ class asapplotter:
         if self._data and refresh: self.plot(self._data)
 
     def _get_selected_n(self, scan):
-        d1 = {'b': scan.nbeam, 's': scan.nscan,
-             'i': scan.nif, 'p': scan.npol, 't': scan.ncycle }
-        d2 = { 'b': len(self._selection.get_beams()),
-               's': len(self._selection.get_scans()),
-               'i': len(self._selection.get_ifs()),
-               'p': len(self._selection.get_pols()),
-               't': len(self._selection.get_cycles()) }
+        d1 = {'b': scan.getbeamnos, 's': scan.getscannos,
+             'i': scan.getifnos, 'p': scan.getpolnos, 't': scan.ncycle }
+        d2 = { 'b': self._selection.get_beams(),
+               's': self._selection.get_scans(),
+               'i': self._selection.get_ifs(),
+               'p': self._selection.get_pols(),
+               't': self._selection.get_cycles() }
         n =  d2[self._panelling] or d1[self._panelling]()
         nstack = d2[self._stacking] or d1[self._stacking]()
         return n,nstack
