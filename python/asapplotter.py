@@ -1,5 +1,5 @@
 from asap import rcParams, print_log, selector
-from numarray import logical_and
+from asap import NUM
 
 class asapplotter:
     """
@@ -15,7 +15,6 @@ class asapplotter:
         if visible is not None:
             self._visible = visible
         self._plotter = self._newplotter()
-
 
         self._panelling = None
         self._stacking = None
@@ -37,8 +36,6 @@ class asapplotter:
         self._maskselection = None
         self._selection = selector()
         self._hist = rcParams['plotter.histogram']
-        from matplotlib import rc as mplrc
-        mplrc('legend',fontsize=8)
 
     def _translate(self, instr):
         keys = "s b i p t".split()
@@ -359,6 +356,29 @@ class asapplotter:
             rcp('font', size=size)
         if self._data: self.plot(self._data)
 
+    def plot_lines(self, linecat=None, offset=0.0, peak=5.0, rotate=0.0,
+                   location=None):
+        """
+        """
+        if not self._data: return
+        from asap._asap import linecatalog
+        if not isinstance(linecat, linecatalog): return
+        if not self._data.get_unit().endswith("GHz"): return
+        self._plotter.hold()
+        for j in range(len(self._plotter.subplots)):
+            self._plotter.subplot(j)
+            lims = self._plotter.axes.get_xlim()
+            for i in range(linecat.nrow()):
+                freq = linecat.get_frequency(i)/1000.0 + offset
+                if lims[0] < freq < lims[1]:
+                    if location is None:
+                        loc = 'bottom'
+                        if i%2: loc='top'
+                    else: loc = location
+                    self._plotter.vline_with_label(freq, peak, linecat.get_name(i),
+                                             location=loc, rotate=rotate)
+        self._plotter.release()
+
     def save(self, filename=None, orientation=None, dpi=None):
         """
         Save the plot to a file. The know formats are 'png', 'ps', 'eps'.
@@ -514,11 +534,12 @@ class asapplotter:
                 else:
                     y = scan._getspectrum(r)
                 m = scan._getmask(r)
+                from matplotlib.numerix import logical_not, logical_and
                 if self._maskselection and len(self._usermask) == len(m):
                     if d[self._stacking](r) in self._maskselection[self._stacking]:
                         m = logical_and(m, self._usermask)
                 x = scan._getabcissa(r)
-                from matplotlib.numerix import ma, logical_not, array
+                from matplotlib.numerix import ma, array
                 y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
                 if self._minmaxx is not None:
                     s,e = self._slice_indeces(x)
@@ -539,11 +560,12 @@ class asapplotter:
                 self._plotter.set_line(label=llbl)
                 plotit = self._plotter.plot
                 if self._hist: plotit = self._plotter.hist
-                if len(x) > 0: plotit(x,y)
-                xlim= self._minmaxx or [min(x),max(x)]
-                allxlim += xlim
-                ylim= self._minmaxy or [ma.minimum(y),ma.maximum(y)]
-                allylim += ylim
+                if len(x) > 0:
+                    plotit(x,y)
+                    xlim= self._minmaxx or [min(x),max(x)]
+                    allxlim += xlim
+                    ylim= self._minmaxy or [ma.minimum(y),ma.maximum(y)]
+                    allylim += ylim
                 stackcount += 1
                 # last in colour stack -> autoscale x
                 if stackcount == nstack:
