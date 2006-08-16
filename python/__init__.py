@@ -399,8 +399,8 @@ if rcParams['verbose']:
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
             flag            - flag selected channels in the data
-            save            - save the scantable to disk as either 'ASAP'
-                              or 'SDFITS'
+            save            - save the scantable to disk as either 'ASAP',
+                              'SDFITS' or 'ASCII'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             nscan           - the number of scans in the scantable
             nrow            - te number of spectra in the scantable
@@ -463,6 +463,18 @@ if rcParams['verbose']:
                               (matched pairs and 1 off/n on are valid)
             merge           - merge a list of scantables
 
+     [Line Catalog]
+        linecatalog              - a linecatalog wrapper, taking an ASCII or
+                                   internal format table
+            summary              - print a summary of the current selection
+            set_name             - select a subset by name pattern, e.g. '*OH*'
+            set_strength_limits  - select a subset by line strength limits
+            set_frequency_limits - select a subset by frequency limits
+            reset                - unset all selections
+            save                 - save the current subset to a table (internal
+                                   format)
+            get_row              - get the name and frequency from a specific
+                                   row in the table
      [Fitting]
         fitter
             auto_fit        - return a scan where the function is
@@ -485,6 +497,7 @@ if rcParams['verbose']:
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'
             plot            - plot a scantable
+            plot_lines      - plot a linecatalog overlay
             save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
@@ -499,6 +512,7 @@ if rcParams['verbose']:
             set_colors      - specify a set of colours to use
             set_linestyles  - specify a set of linestyles to use if only
                               using one color
+            set_font        - set general font properties, e.g. 'family'
             set_histogram   - plot in historam style
             set_mask        - set a plotting mask for a specific polarization
 
@@ -537,7 +551,14 @@ if rcParams['verbose']:
             ASAP> help average_time
 
             """
-        print x
+        if rcParams['verbose']:
+            try:
+                from IPython.genutils import page as pager
+            except ImportError:
+                from pydoc import pager
+            pager(x)
+        else:
+            print x
         return
 
 def welcome():
