@@ -453,8 +453,9 @@ class asapplotter:
                             y = line._y_orig[s]
                             maxys.append(ma.maximum(y))
                     peak = max(maxys)
-                    self._plotter.vline_with_label(freq, peak, linecat.get_name(row),
-                                             location=loc, rotate=rotate)
+                    self._plotter.vline_with_label(freq, peak,
+                                                   linecat.get_name(row),
+                                                   location=loc, rotate=rotate)
         #        self._plotter.release()
         self._plotter.show(hardrefresh=False)
 

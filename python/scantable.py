@@ -735,11 +735,13 @@ class scantable(Scantable):
 
         """
         varlist = vars()
-
-        t = type(freqs)
+        from asap import linecatalog
+        # simple  value
         if isinstance(freqs, int) or isinstance(freqs, float):
             self._setrestfreqs(freqs, "",unit)
+        # list of values
         elif isinstance(freqs, list) or isinstance(freqs, tuple):
+            # list values are scalars
             if isinstance(freqs[-1], int) or isinstance(freqs[-1], float):
                 sel = selector()
                 savesel = self._getselection()
@@ -748,9 +750,17 @@ class scantable(Scantable):
                     self._setselection(sel)
                     self._setrestfreqs(freqs[i], "",unit)
                 self._setselection(savesel)
-            elif isinstance(freqs[-1], str):
-                # not yet implemented
-                pass
+            # list values are tuples, (value, name)
+            elif isinstance(freqs[-1], dict):
+                sel = selector()
+                savesel = self._getselection()
+                for i in xrange(len(freqs)):
+                    sel.set_ifs([i])
+                    self._setrestfreqs(freqs[i]["value"],
+                                       freqs[i]["name"], "MHz")
+                    self._setselection(sel)
+                self._setselection(savesel)
+        # freqs are to be taken from a linecatalog
         elif isinstance(freqs, linecatalog):
             sel = selector()
             savesel = self._getselection()
