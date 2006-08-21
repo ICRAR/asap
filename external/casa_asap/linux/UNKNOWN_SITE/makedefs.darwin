@@ -1,0 +1,191 @@
+##############################################################################
+##  Compilers
+##############################################################################
+
+C++ROOT := /usr
+C++     := $(C++ROOT)/bin/g++ -Wno-deprecated -Wno-long-double
+C++OPTLVL :=  -O2   -falign-loops=32
+C++STD += -fexceptions -pipe -Wall -Wno-non-template-friend -Woverloaded-virtual -Wcast-align -Wno-comment
+
+##  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+
+CC       := $(C++ROOT)/bin/gcc
+CSTD	:= -DAIPS_DARWIN -Wall -fexceptions
+COPTLVL :=  -O2 -fno-strength-reduce -falign-loops=32
+
+##  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
+
+F77ROOT  := /usr/local
+FC       := $(F77ROOT)/bin/g77
+FCOPTLVL := -O2 -falign-loops=32
+FCOPT    += -fPIC
+F77LIB := -lg2c
+
+##############################################################################
+##  General external libraries. 
+##############################################################################
+
+PGPLOTROOT := /opt/local
+
+TCLROOT := /opt/local
+TCLLIB  := -ltk -ltcl -ldl
+
+X11ROOT := /usr/X11R6
+
+MotifROOT := /usr/X11R6
+
+XPMROOT  := $(X11ROOT)
+
+LAPACKLIBD := 
+LAPACKLIB := -framework vecLib
+
+# Platform-specific libraries - always added.
+ARCHLIBS := -lm
+
+##############################################################################
+##  External libraries required by particular AIPS++ packages.
+##############################################################################
+
+# RPFITS (required by ATNF).
+RPFITSROOT := /usr/local
+RPFITSDEFS :=
+RPFITSINCD  = $(RPFITSROOT)/include
+RPFITSLIBD  = $(RPFITSROOT)/lib
+RPFITSLIB  := -lrpfits
+
+CFITSIOROOT := /usr/local
+CFITSIODEFS :=
+CFITSIOINCD  = $(CFITSIOROOT)/include/cfitsio
+CFITSIOLIBD  = $(CFITSIOROOT)/lib
+CFITSIOLIB  := -lcfitsio
+
+WCSLIBLIB  := $(WCSLIBLIBD)/libwcs.a
+MIRLIBLIB  := $(MIRLIBLIBD)/libmir.a
+
+##############################################################################
+##  Compilation and linkage variables
+##############################################################################
+
+EXT_GLISH_DIR := /opt/local
+GLISHLOLIB  :=
+
+# Preprocessor flags for system debug/optimized compilations.
+CPPSTD   := -DAIPS_STDLIB -DAIPS_DARWIN -DAIPS_BIG_ENDIAN -D_GLIBCPP_DEPRECATED -DAIPS_NO_LEA_MALLOC -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DAIPS_AUTO_STL
+CPPSTD   += -DNEED_FORTRAN_UNDERSCORES=1
+
+# Use do-it-yourself template instantiation.
+TEMPLATES := diy
+
+# Link flags for system debug/optimized compilations; these are passed to
+# the C++ compiler.
+LDDBG := -Xlinker -multiply_defined -Xlinker suppress -Xlinker -bind_at_load \
+	-L/opt/local/lib
+LDOPT := $(LDDBG) 
+
+RANLIB := /usr/bin/ranlib
+
+SFXSHAR := dylib
+LDSOPTS := -dynamiclib -single_module
+
+PERL4 := /usr/bin/perl
+PERL5 := /usr/bin/perl
+
+#                      C++            C          FORTRAN
+#                   dbg    opt    dbg    opt    dbg    opt
+#                 ------------- ------------- -------------
+LIBcasa        := defeat static defeat defeat defeat defeat
+LIBscimath     := defeat static defeat defeat defeat static
+LIBtables      := defeat static defeat defeat defeat defeat
+LIBmeasures    := defeat static defeat defeat defeat static
+LIBfits        := defeat static defeat defeat defeat defeat
+LIBgraphics    := defeat static defeat defeat defeat defeat
+LIBlattices    := defeat static defeat defeat defeat defeat
+LIBcoordinates := defeat static defeat defeat defeat defeat
+LIBcomponents  := defeat static defeat defeat defeat defeat
+LIBimages      := defeat static defeat defeat defeat defeat
+LIBms          := defeat static defeat defeat defeat defeat
+LIBmsvis       := defeat static defeat defeat defeat defeat
+LIBcalibration := defeat static defeat defeat defeat defeat
+LIBionosphere  := defeat static defeat defeat defeat static
+LIBflagging    := defeat static defeat defeat defeat defeat
+LIBdish        := defeat static defeat defeat defeat defeat
+LIBsimulators  := defeat static defeat defeat defeat defeat
+LIBsynthesis   := defeat static defeat defeat defeat static
+LIBtasking     := defeat static defeat defeat defeat defeat
+LIBtrialdisplay  := defeat static defeat defeat defeat defeat
+LIBnrao          := defeat static defeat defeat defeat defeat
+LIBnpoi          := defeat defeat defeat defeat defeat defeat
+LIBalma          := defeat static defeat defeat defeat defeat
+LIBatnf          := defeat static defeat defeat defeat defeat
+LIBnfra          := defeat static defeat defeat defeat defeat
+
+
+# TeX, dvips, and MetaFont paths.
+#--------------------------------
+TEXROOT    := /usr/lib/texmf/texmf
+TEXFONTS   := $(TEXROOT)/fonts/tfm//
+TEXFORMATS := $(TEXROOT)/web2c
+TEXINPUTS  := $(TEXROOT)/tex//
+TEXPOOL    := $(TEXROOT)/web2c
+TEXPKS     := $(TEXROOT)/fonts/pk//
+MFBASES    := $(TEXROOT)/web2c
+MFINPUTS   := $(TEXROOT)/metafont//:$(TEXROOT)/fonts/source//
+MFPOOL     := $(TEXROOT)/web2c
+LATEX2HTML := /usr/local/bin/latex2html -init_file $(AIPSROOT)/code/install/docutils/latex2html-init
+
+# Set these variables to get local icons in the html files generated by
+# latex2html
+ICONSERVER := http://www.nrao.edu/icons/latex2html
+ICONS2LOCAL := $(AIPSARCH)/bin/redoicons.sh              
+
+# Variables which tell the makefiles what to do and how to do it
+#-----------------------------------------------------------------------------
+# Command for benchmarking the rebuild (usually 'adate -l').
+TIMER := adate -l
+
+# Unset this to defeat document compilation.
+DOCSYS :=
+
+# Unset this to defeat document extraction from C++ sources.
+DOCEXTR :=
+
+# What consortium packages to build (atnf bima hia nfra nral nrao tifr).
+CONSORTIA := atnf
+
+#-----------------------------------------------------------------------------
+# The remaining definitions are programmer variables for code development.
+# These are not required for production-line systems.
+#-----------------------------------------------------------------------------
+ifeq "$(MAKEMODE)" "programmer"
+   # Alternate definitions for CPPFLAGS.
+   ifeq "$(CPPFLAGS)" "alt1"
+      override CPPFLAGS := $(CPPOPT) $(EXTRA_CPPFLAGS)
+   endif
+
+   # C++ compiler flags for programmer compilations.
+   ifdef OPT
+      C++FLAGS := $(C++OPT) -Wall
+   else
+      C++FLAGS := $(C++DBG) -Wall
+   endif
+
+   # Where to put binaries for programmer compilations.
+   ifdef OPT
+      PGMRLIBD := $(wildcard $(PGMRARCH)/lib)
+      PGMRBIND := $(wildcard $(PGMRARCH)/bin)
+   else
+      PGMRLIBD := $(wildcard $(PGMRARCH)/libdbg)
+      PGMRBIND := $(wildcard $(PGMRARCH)/bindbg)
+   endif
+
+   # Alternate definitions for C++FLAGS.
+   ifeq "$(C++FLAGS)" "alt1"
+      override CPPFLAGS := $(CPPOPT) $(EXTRA_CPPFLAGS)
+      PGMRBIND := $(wildcard $(PGMRARCH)/bin)
+      PGMRLIBD := $(wildcard $(PGMRARCH)/lib)
+      override C++FLAGS := $(C++OPT) -Wall
+   endif
+
+   # Extra compiler flags.
+   C++FLAGS += $(EXTRA_C++FLAGS)
+endif
