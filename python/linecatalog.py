@@ -23,7 +23,8 @@ class linecatalog(lcbase):
     """
 
     def __init__(self, name):
-        lcbase.__init__(self, name)
+        fpath = os.path.abspath(os.path.expandvars(os.path.expanduser(name)))
+        lcbase.__init__(self, fpath)
 
     def summary(self):
         """
@@ -63,7 +64,7 @@ class linecatalog(lcbase):
         if not base.has_key(unit):
             raise ValueError("%s is not a valid unit." % unit)
         # the table conatins values in MHz
-        lcbase.set_freq_limits(self, fmin/base[unit], fmax/base[unit])
+        lcbase.set_freq_limits(self, fmin*base[unit], fmax*base[unit])
 
     def set_strength_limits(self, smin, smax):
         """
@@ -79,7 +80,7 @@ class linecatalog(lcbase):
         Save the subset of the table to disk. This uses an internal data format
         and can be read in again.
         """
-        name = os.path.expandvars(name)
+        name = os.path.expanduser(os.path.expandvars(name))
         if os.path.isfile(name) or os.path.isdir(name):
             if not overwrite:
                 msg = "File %s exists." % name
