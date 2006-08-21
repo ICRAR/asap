@@ -102,6 +102,18 @@ class linecatalog(lcbase):
         Parameters:
               row:        the row to retrieve
         """
-        freq = lcbase.get_frequency(row)
-        name = lcbase.get_name(row)
+        freq = lcbase.get_frequency(self, row)
+        name = lcbase.get_name(self, row)
         return (freq, name)
+
+    def __len__(self):
+        return self.nrow()
+
+    def __getitem__(self, k):
+        if k < 0: k = self.nrow()-k
+        return self.get_row(k)
+
+
+
+
+

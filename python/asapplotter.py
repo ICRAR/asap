@@ -1,5 +1,6 @@
 from asap import rcParams, print_log, selector
 from asap import NUM
+import matplotlib.axes
 
 class asapplotter:
     """
@@ -94,8 +95,57 @@ class asapplotter:
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
+        self._plotter.tidy()
+        self._plotter.show(hardrefresh=False)
         print_log()
         return
+
+
+    # forwards to matplotlib axes
+    def text(self, *args, **kwargs):
+        self._axes_callback("text", *args, **kwargs)
+    text. __doc__ = matplotlib.axes.Axes.text.__doc__
+    def arrow(self, *args, **kwargs):
+        self._axes_callback("arrow", *args, **kwargs)
+    arrow. __doc__ = matplotlib.axes.Axes.arrow.__doc__
+    def axvline(self, *args, **kwargs):
+        self._axes_callback("axvline", *args, **kwargs)
+    axvline. __doc__ = matplotlib.axes.Axes.axvline.__doc__
+    def axhline(self, *args, **kwargs):
+        self._axes_callback("axhline", *args, **kwargs)
+    axhline. __doc__ = matplotlib.axes.Axes.axhline.__doc__
+    def axvspan(self, *args, **kwargs):
+        self._axes_callback("axvspan", *args, **kwargs)
+        # hack to preventy mpl from redrawing the patch
+        # it seem to convert the patch into lines on every draw.
+        # This doesn't happen in a test script???
+        del self._plotter.axes.patches[-1]
+    axvspan. __doc__ = matplotlib.axes.Axes.axvspan.__doc__
+    def axhspan(self, *args, **kwargs):
+        self._axes_callback("ahvspan", *args, **kwargs)
+        # hack to preventy mpl from redrawing the patch
+        # it seem to convert the patch into lines on every draw.
+        # This doesn't happen in a test script???
+        del self._plotter.axes.patches[-1]
+    axhspan. __doc__ = matplotlib.axes.Axes.axhspan.__doc__
+
+    def _axes_callback(self, axesfunc, *args, **kwargs):
+        panel = 0
+        if kwargs.has_key("panel"):
+            panel = kwargs.pop("panel")
+        coords = None
+        if kwargs.has_key("coords"):
+            coords = kwargs.pop("coords")
+            if coords.lower() == 'world':
+                kwargs["transform"] = self._plotter.axes.transData
+            elif coords.lower() == 'relative':
+                kwargs["transform"] = self._plotter.axes.transAxes
+        self._plotter.subplot(panel)
+        self._plotter.axes.set_autoscale_on(False)
+        getattr(self._plotter.axes, axesfunc)(*args, **kwargs)
+        self._plotter.show(False)
+        self._plotter.axes.set_autoscale_on(True)
+    # end matplotlib.axes fowarding functions
 
     def set_mode(self, stacking=None, panelling=None):
         """
@@ -356,7 +406,7 @@ class asapplotter:
             rcp('font', size=size)
         if self._data: self.plot(self._data)
 
-    def plot_lines(self, linecat=None, offset=0.0, peak=5.0, rotate=0.0,
+    def plot_lines(self, linecat=None, offset=0.0, deltachan=10, rotate=0.0,
                    location=None):
         """
         """
@@ -364,20 +414,50 @@ class asapplotter:
         from asap._asap import linecatalog
         if not isinstance(linecat, linecatalog): return
         if not self._data.get_unit().endswith("GHz"): return
-        self._plotter.hold()
+        #self._plotter.hold()
+        from matplotlib.numerix import ma
         for j in range(len(self._plotter.subplots)):
             self._plotter.subplot(j)
             lims = self._plotter.axes.get_xlim()
-            for i in range(linecat.nrow()):
-                freq = linecat.get_frequency(i)/1000.0 + offset
+            for row in range(linecat.nrow()):
+                freq = linecat.get_frequency(row)/1000.0 + offset
                 if lims[0] < freq < lims[1]:
                     if location is None:
                         loc = 'bottom'
-                        if i%2: loc='top'
+                        if row%2: loc='top'
                     else: loc = location
-                    self._plotter.vline_with_label(freq, peak, linecat.get_name(i),
+                    maxys = []
+                    for line in self._plotter.axes.lines:
+                        v = line._x
+                        asc = v[0] < v[-1]
+
+                        idx = None
+                        if not asc:
+                            if v[len(v)-1] <= freq <= v[0]:
+                                i = len(v)-1
+                                while i>=0 and v[i] < freq:
+                                    idx = i
+                                    i-=1
+                        else:
+                           if v[0] <= freq <= v[len(v)-1]:
+                                i = 0
+                                while  i<len(v) and v[i] < freq:
+                                    idx = i
+                                    i+=1
+                        if idx is not None:
+                            lower = idx - deltachan
+                            upper = idx + deltachan
+                            if lower < 0: lower = 0
+                            if upper > len(v): upper = len(v)
+                            s = slice(lower, upper)
+                            y = line._y_orig[s]
+                            maxys.append(ma.maximum(y))
+                    peak = max(maxys)
+                    self._plotter.vline_with_label(freq, peak, linecat.get_name(row),
                                              location=loc, rotate=rotate)
-        self._plotter.release()
+        #        self._plotter.release()
+        self._plotter.show(hardrefresh=False)
+
 
     def save(self, filename=None, orientation=None, dpi=None):
         """
@@ -618,6 +698,8 @@ class asapplotter:
         return n,nstack
 
     def _get_label(self, scan, row, mode, userlabel=None):
+        if isinstance(userlabel, list) and len(userlabel) == 0:
+            userlabel = " "
         pms = dict(zip(self._selection.get_pols(),self._selection.get_poltypes()))
         if len(pms):
             poleval = scan._getpollabel(scan.getpol(row),pms[scan.getpol(row)])
@@ -629,3 +711,4 @@ class asapplotter:
              'p': poleval,
              't': scan._gettime(row) }
         return userlabel or d[mode]
+

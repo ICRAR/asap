@@ -453,16 +453,14 @@ class asaplotbase:
         if what is None: return
         if what[-6:] == 'colour': what = what[:-6] + 'color'
 
-        newargs = {}
+        key = "colour"
+        if kwargs.has_key(key):
+            val = kwargs.pop(key)
+            kwargs["color"] = val
 
-        for k, v in kwargs.iteritems():
-            k = k.lower()
-            if k == 'colour': k = 'color'
-            newargs[k] = v
+        getattr(self.axes, "set_%s"%what)(*args, **kwargs)
 
-        getattr(self.axes, "set_%s"%what)(*args, **newargs)
-
-        self.show()
+        self.show(hardrefresh=False)
 
 
     def set_figure(self, what=None, *args, **kwargs):
@@ -484,7 +482,7 @@ class asaplotbase:
             newargs[k] = v
 
         getattr(self.figure, "set_%s"%what)(*args, **newargs)
-        self.show()
+        self.show(hardrefresh=False)
 
 
     def set_limits(self, xlim=None, ylim=None):
@@ -551,7 +549,7 @@ class asaplotbase:
                 else:
                     self.attributes[k] = v
 
-        if redraw: self.show()
+        if redraw: self.show(hardrefresh=False)
 
 
     def set_panels(self, rows=1, cols=0, n=-1, nplots=-1, ganged=True):
@@ -612,17 +610,26 @@ class asaplotbase:
                 self.figure.subplots_adjust(wspace=wsp,hspace=hsp)
             for i in range(nplots):
                 self.subplots.append({})
-                self.subplots[i]['axes'] = self.figure.add_subplot(rows,
-                                                cols, i+1)
                 self.subplots[i]['lines'] = []
-
-                if ganged:
+                if not ganged:
+                    self.subplots[i]['axes'] = self.figure.add_subplot(rows,
+                                                cols, i+1)
+                else:
+                    if i == 0:
+                        self.subplots[i]['axes'] = self.figure.add_subplot(rows,
+                                                cols, i+1)
+                    else:
+                        self.subplots[i]['axes'] = self.figure.add_subplot(rows,
+                                                cols, i+1,
+                                                sharex=self.subplots[0]['axes'],
+                                                sharey=self.subplots[0]['axes'])
                     # Suppress tick labelling for interior subplots.
                     if i <= (rows-1)*cols - 1:
                         if i+cols < nplots:
                             # Suppress x-labels for frames width
                             # adjacent frames
-                            self.subplots[i]['axes'].xaxis.set_major_locator(NullLocator())
+                            for tick in self.subplots[i]['axes'].xaxis.majorTicks:
+                                tick.label1On = False
                             self.subplots[i]['axes'].xaxis.label.set_visible(False)
                     if i%cols:
                         # Suppress y-labels for frames not in the left column.
@@ -630,11 +637,24 @@ class asaplotbase:
                             tick.label1On = False
                         self.subplots[i]['axes'].yaxis.label.set_visible(False)
                     # disable the first tick of [1:ncol-1] of the last row
-                    if (nplots-cols) < i <= nplots-1:
-                        self.subplots[i]['axes'].xaxis.set_major_formatter(MyFormatter())
+                    #if i+1 < nplots:
+                    #    self.subplots[i]['axes'].xaxis.majorTicks[0].label1On = False
                 self.rows = rows
                 self.cols = cols
             self.subplot(0)
+
+    def tidy(self):
+        # this needs to be exceuted after the first "refresh"
+        nplots = len(self.subplots)
+        if nplots == 1: return
+        for i in xrange(nplots):
+            ax = self.subplots[i]['axes']
+            if i%self.cols:
+                ax.xaxis.majorTicks[0].label1On = False
+            else:
+                if i != 0:
+                    ax.yaxis.majorTicks[-1].label1On = False
+
 
     def set_title(self, title=None):
         """
@@ -647,10 +667,11 @@ class asaplotbase:
         self.figure.text(0.5, 0.95, self.title, horizontalalignment='center')
 
 
-    def show(self):
+    def show(self, hardrefresh=True):
         """
         Show graphics dependent on the current buffering state.
         """
+        if not hardrefresh: return
         if not self.buffering:
             if self.loc is not None:
                 for sp in self.subplots:

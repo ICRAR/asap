@@ -4,6 +4,7 @@ from asap import print_log
 from asap import asaplog
 from asap import selector
 from asap import NUM
+from asap import linecatalog
 
 class scantable(Scantable):
     """
@@ -706,8 +707,8 @@ class scantable(Scantable):
         to the corresponding value you give in the 'freqs' vector.
         E.g. 'freqs=[1e9, 2e9]'  would mean IF 0 gets restfreq 1e9 and
         IF 1 gets restfreq 2e9.
-        You can also specify the frequencies via known line names
-        from the built-in Lovas table.
+        You can also specify the frequencies via a linecatalog/
+
         Parameters:
             freqs:   list of rest frequency values or string idenitfiers
             unit:    unit for rest frequency (default 'Hz')
@@ -737,7 +738,7 @@ class scantable(Scantable):
 
         t = type(freqs)
         if isinstance(freqs, int) or isinstance(freqs, float):
-            self._setrestfreqs(freqs, unit)
+            self._setrestfreqs(freqs, "",unit)
         elif isinstance(freqs, list) or isinstance(freqs, tuple):
             if isinstance(freqs[-1], int) or isinstance(freqs[-1], float):
                 sel = selector()
@@ -745,11 +746,22 @@ class scantable(Scantable):
                 for i in xrange(len(freqs)):
                     sel.set_ifs([i])
                     self._setselection(sel)
-                    self._setrestfreqs(freqs[i], unit)
+                    self._setrestfreqs(freqs[i], "",unit)
                 self._setselection(savesel)
             elif isinstance(freqs[-1], str):
                 # not yet implemented
                 pass
+        elif isinstance(freqs, linecatalog):
+            sel = selector()
+            savesel = self._getselection()
+            for i in xrange(freqs.nrow()):
+                sel.set_ifs([i])
+                self._setselection(sel)
+                self._setrestfreqs(freqs.get_frequency(i),
+                                   freqs.get_name(i), "MHz")
+                # ensure that we are not iterating past nIF
+                if i == self.nif()-1: break
+            self._setselection(savesel)
         else:
             return
         self._add_history("set_restfreqs", varlist)

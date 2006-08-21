@@ -25,7 +25,7 @@ class asaplotgui(asaplotbase):
 	"""
         v = vars()
         del v['self']
-        
+
         asaplotbase.__init__(self, **v)
         self.window = Tk.Tk()
         def dest_callback():
@@ -37,14 +37,14 @@ class asaplotgui(asaplotbase):
         self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
         # Simply instantiating this is enough to get a working toolbar.
         self.figmgr = FigureManagerTkAgg(self.canvas, 1, self.window)
-        self.window.wm_title('ASAPlot graphics window')
+        self.window.wm_title('ASAP Plotter - Tk')
 
 	self.events = {'button_press':None,
 		       'button_release':None,
 		       'motion_notify':None}
 
-	matplotlib.interactive = True
-	self.buffering = buffering
+	matplotlib.rcParams["interactive"] = True
+	#self.buffering = buffering
 
 	self.canvas.show()
 
@@ -176,14 +176,15 @@ class asaplotgui(asaplotbase):
 	    self.events[type] = self.canvas.mpl_connect(type + '_event', func)
 
 
-    def show(self):
+    def show(self, hardrefresh=True):
 	"""
 	Show graphics dependent on the current buffering state.
 	"""
 	if not self.buffering:
-            asaplotbase.show(self)
+            if hardrefresh:
+                asaplotbase.show(self)
 	    self.window.wm_deiconify()
-	    self.canvas.draw()
+	    self.canvas.show()
 
     def terminate(self):
 	"""

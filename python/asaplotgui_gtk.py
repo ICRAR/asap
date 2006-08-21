@@ -7,8 +7,10 @@ from asap.asaplotbase import *
 import gtk
 import matplotlib
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
+from matplotlib.backends.backend_gtkagg import FigureManagerGTKAgg
 matplotlib.use("GTkAgg")
 matplotlib.rcParams['toolbar'] = 'toolbar2'
+from matplotlib.backends.backend_gtk import NavigationToolbar2GTK as NavigationToolbar
 
 class asaplotgui(asaplotbase):
     """
@@ -26,30 +28,25 @@ class asaplotgui(asaplotbase):
         del v['self']
 
         asaplotbase.__init__(self, **v)
-        self.window = gtk.Window()
-        def dest_callback(val):
-            self.is_dead = True
-            self.window.destroy()
-        self.window.connect("destroy", dest_callback )
-        self.window.set_default_size(800,600)
-        self.subwin = gtk.ScrolledWindow()
-        self.window.add(self.subwin)
-        self.subwin.set_border_width(10)
+        matplotlib.interactive = True
         self.canvas = FigureCanvas(self.figure)
         # Simply instantiating this is enough to get a working toolbar.
-        self.figmgr = None#FigureManagerTkAgg(self.canvas, 1, self.window)
-        self.window.set_title('ASAPlot graphics window')
-
+        self.figmgr = FigureManagerGTKAgg(self.canvas, 1)
+        def dest_callback(val):
+            self.is_dead = True
+            self.figmgr.window.destroy()
+        self.window = self.figmgr.window
+        self.window.connect("destroy", dest_callback )
+        self.window.set_title('ASAP Plotter - GTK')
         self.events = {'button_press':None,
                        'button_release':None,
                        'motion_notify':None}
 
-        self.subwin.add_with_viewport(self.canvas)
-        matplotlib.interactive = True
         self.buffering = buffering
-        self.canvas.set_size_request(800,600)
+        matplotlib.rcParams['interactive'] = True
+        #self.canvas.set_size_request(800,600)
 
-        self.canvas.show()
+        #self.canvas.show()
 
     def map(self):
         """
@@ -179,12 +176,13 @@ class asaplotgui(asaplotbase):
             self.events[type] = self.canvas.mpl_connect(type + '_event', func)
 
 
-    def show(self):
+    def show(self, hardrefresh=True):
         """
         Show graphics dependent on the current buffering state.
         """
         if not self.buffering:
-            asaplotbase.show(self)
+            if hardrefresh:
+                asaplotbase.show(self, hardrefresh)
             self.window.deiconify()
             self.canvas.draw()
             self.window.show_all()
