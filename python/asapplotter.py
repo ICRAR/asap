@@ -409,6 +409,15 @@ class asapplotter:
     def plot_lines(self, linecat=None, offset=0.0, deltachan=10, rotate=0.0,
                    location=None):
         """
+        Plot a line catalog.
+        Parameters:
+            linecat:      the linecatalog to plot
+            offset:       the shift in frequency to apply to the frequencies
+            deltachan:    the number of channels to include each side of the
+                          line to determine a local maximum/minimum
+            rotate:       the rotation for the text label
+            location:     the location of the line annotation from the 'top',
+                          'bottom' or alternate (None - the default)
         """
         if not self._data: return
         from asap._asap import linecatalog
