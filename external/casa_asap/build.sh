@@ -8,7 +8,7 @@ major=`/bin/echo $gv | awk '{ print $1 }'`
 minor=`/bin/echo $gv | awk '{ print $2 }'`
 cppflags=''
 if [ $major -eq 4 ] && [ $minor -ge 1 ]; then
-    cppflags='-friend-injection -fpermissive '
+    cppflags='-ffriend-injection -fpermissive '
 elif [ $major -eq 2 ]; then
     echo "gcc version < 3 not supported"
     exit 1
