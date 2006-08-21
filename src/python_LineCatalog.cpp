@@ -27,7 +27,7 @@ namespace asap {
         .def("summary", &LineCatalog::summary)
         .def("get_name", &LineCatalog::getName)
         .def("get_frequency", &LineCatalog::getFrequency)
-        .def("set_freq_limits", &LineCatalog::setFrequencyLimits)
+        .def("set_frequency_limits", &LineCatalog::setFrequencyLimits)
         .def("set_strength_limits", &LineCatalog::setStrengthLimits)
         .def("set_name", &LineCatalog::setPattern)
         .def("save", &LineCatalog::save)

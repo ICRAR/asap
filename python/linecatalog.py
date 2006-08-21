@@ -64,7 +64,7 @@ class linecatalog(lcbase):
         if not base.has_key(unit):
             raise ValueError("%s is not a valid unit." % unit)
         # the table conatins values in MHz
-        lcbase.set_freq_limits(self, fmin*base[unit], fmax*base[unit])
+        lcbase.set_frequency_limits(self, fmin*base[unit], fmax*base[unit])
 
     def set_strength_limits(self, smin, smax):
         """
@@ -105,7 +105,7 @@ class linecatalog(lcbase):
         """
         freq = lcbase.get_frequency(self, row)
         name = lcbase.get_name(self, row)
-        return (freq, name)
+        return { 'name':name, 'value': freq }
 
     def __len__(self):
         return self.nrow()
