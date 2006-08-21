@@ -9,7 +9,7 @@ moduledir = distutils.sysconfig.get_python_lib()
 if  platform.architecture()[0] == '64bit':
     # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
     if moduledir.startswith("/usr/lib/"):
-        moduledir.replace("lib", "lib64")
+        moduledir = moduledir.replace("lib", "lib64")
 
 opts = Options("userconfig.py")
 opts.AddOptions(PathOption("prefix",
