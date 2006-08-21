@@ -1,22 +1,43 @@
 #!/bin/sh
 
-. aipsinit.sh
+ROOTDIR=`pwd`
 
-MODULES="casa components coordinates fits images lattices measures ms scimath tables atnf"
-
-echo 'Building modules. This might take a while.'
-echo 'Progress can be seen with  tail -f build.log'
-if [ -f 'build.log' ]
-then
-    rm build.log
-    touch build.log
+# insert flags to make it install with gcc-4.1
+gv=`gcc -dumpversion | sed -e 's#\.# #g'`
+major=`/bin/echo $gv | awk '{ print $1 }'`
+minor=`/bin/echo $gv | awk '{ print $2 }'`
+cppflags=''
+if [ $major -eq 4 ] && [ $minor -ge 1 ]; then
+    cppflags='-ffriend-injection -fpermissive '
+elif [ $major -eq 2 ]; then
+    echo "gcc version < 3 not supported"
+    exit 1
 fi
-for mod in ${MODULES}
+
+for AIPSINIT in aipsinit.sh aipsinit.csh
 do
-    cd $ROOTDIR/code/$mod
-    echo "Making module $mod..."
-    make cleansys >> $ROOTDIR/build.log 2>&1
-    make >> $ROOTDIR/build.log 2>&1
+  if [ ! -f $AIPSINIT ]
+  then
+    sed -e "s#__AIPSROOT#$ROOTDIR#g" $AIPSINIT.template > $AIPSINIT
+  fi
 done
-echo 'Finished building the casa modules required by ASAP'
-echo 'Look for status in build.log' 
+
+# detect 64bit
+platf=`uname -m | grep '64'`
+arch=`uname -s`
+
+if [ ! $platf == '' ]; then
+    mv $ROOTDIR/linux $ROOTDIR/linux_64b
+    cd $ROOTDIR/linux_64b/UNKNOWN_SITE
+    cat makedefs.64 | sed -e  "s#-Wall  #-Wall $flags#" > makedefs
+    cd $ROOTDIR
+elif [ $arch == 'Darwin' ]; then
+    mv $ROOTDIR/linux $ROOTDIR/darwin
+    cd $ROOTDIR/darwin/UNKNOWN_SITE
+    cat makedefs.darwin > makedefs
+    cd $ROOTDIR
+else
+    cd $ROOTDIR/linux/UNKNOWN_SITE
+    cat makedefs.32 | sed -e  "s#-Wall  #-Wall $flags#" > makedefs
+    cd $ROOTDIR
+fi
