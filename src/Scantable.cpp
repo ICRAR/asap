@@ -933,22 +933,23 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
   String s = "Channel";
   Unit u = Unit(freqTable_.getUnitString());
   if (u == Unit("km/s")) {
-    s = CoordinateUtil::axisLabel(spc,0,True,True,True);
+    s = CoordinateUtil::axisLabel(spc, 0, True,True,  True);
   } else if (u == Unit("Hz")) {
     Vector<String> wau(1);wau = u.getName();
     spc.setWorldAxisUnits(wau);
-    s = CoordinateUtil::axisLabel(spc,0,True,True,False);
+    s = CoordinateUtil::axisLabel(spc, 0, True, True, False);
   }
   return s;
 
 }
 
-void asap::Scantable::setRestFrequencies( double rf, const std::string& unit )
+void asap::Scantable::setRestFrequencies( double rf, const std::string& name,
+                                          const std::string& unit )
 {
   ///@todo lookup in line table to fill in name and formattedname
   Unit u(unit);
   Quantum<Double> urf(rf, u);
-  uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), "", "");
+  uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), name, "");
   TableVector<uInt> tabvec(table_, "MOLECULE_ID");
   tabvec = id;
 }

@@ -160,7 +160,7 @@ public:
 
 	/**
 	 * the @ref casa::MDirection for a specific row
-	 * @param[in] whichrow the row number 
+	 * @param[in] whichrow the row number
 	 * return casa::MDirection
 	 */
   casa::MDirection getDirection( int whichrow ) const;
@@ -175,7 +175,7 @@ public:
 	/**
 	 * set the direction type as a string, e.g. "J2000"
 	 * @param[in] the direction type
-	 */	
+	 */
   void setDirectionRefString(const std::string& refstr="");
   /**
    * get the direction reference string
@@ -186,7 +186,7 @@ public:
 	 * param[in] whichrow the row number
 	 * return the direction string
 	 */
-  
+
 
   /**
    *  Return the Flux unit of the data, e.g. "Jy" or "K"
@@ -344,7 +344,8 @@ public:
   std::vector<double> getRestFrequencies() const
     { return moleculeTable_.getRestFrequencies(); }
 
-  void setRestFrequencies(double rf, const std::string& = "Hz");
+  void setRestFrequencies(double rf, const std::string& name = "",
+                          const std::string& = "Hz");
   void setRestFrequencies(const std::string& name);
 
   void convertDirection(const std::string& newframe);

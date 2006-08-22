@@ -145,8 +145,9 @@ public:
   void setSourceType(int stype)
     { table_->setSourceType(stype); }
 
-  void setRestFrequencies(double rf, const std::string& unit)
-    { table_->setRestFrequencies(rf, unit); }
+  void setRestFrequencies(double rf, const std::string& name,
+                          const std::string& unit)
+    { table_->setRestFrequencies(rf, name, unit); }
 /*
   void setRestFrequencies(const std::string& name) {
     table_->setRestFrequencies(name);
