@@ -473,7 +473,6 @@ class asapplotter:
                             loc = 'bottom'
                     else:
                         continue
-                    print freq,peak
                     self._plotter.vline_with_label(freq, peak,
                                                    linecat.get_name(row),
                                                    location=loc, rotate=rotate)
