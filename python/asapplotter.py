@@ -461,7 +461,11 @@ class asapplotter:
                             s = slice(lower, upper)
                             y = line._y_orig[s]
                             maxys.append(ma.maximum(y))
-                    peak = max(maxys)
+                    if len(maxys):
+                        peak = max(maxys)
+                    else:
+                        print "DEBUG - ignoring line as spectrum was masked at this frequency"
+                        continue
                     self._plotter.vline_with_label(freq, peak,
                                                    linecat.get_name(row),
                                                    location=loc, rotate=rotate)
