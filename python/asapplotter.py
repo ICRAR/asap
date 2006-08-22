@@ -418,6 +418,8 @@ class asapplotter:
             rotate:       the rotation for the text label
             location:     the location of the line annotation from the 'top',
                           'bottom' or alternate (None - the default)
+        Notes:
+        If the spectrum is flagged no line will be drawn in that location.
         """
         if not self._data: return
         from asap._asap import linecatalog
@@ -429,7 +431,9 @@ class asapplotter:
             self._plotter.subplot(j)
             lims = self._plotter.axes.get_xlim()
             for row in range(linecat.nrow()):
-                freq = linecat.get_frequency(row)/1000.0 + offset
+                restf = linecat.get_frequency(row)/1000.0
+                c = 299792.458
+                freq = restf*(doppler+c)/c
                 if lims[0] < freq < lims[1]:
                     if location is None:
                         loc = 'bottom'
@@ -460,12 +464,16 @@ class asapplotter:
                             if upper > len(v): upper = len(v)
                             s = slice(lower, upper)
                             y = line._y_orig[s]
-                            maxys.append(ma.maximum(y))
+                            maxy = ma.maximum(y)
+                            if isinstance( maxy, float):
+                                maxys.append(maxy)
                     if len(maxys):
                         peak = max(maxys)
+                        if peak > self._plotter.axes.get_ylim()[1]:
+                            loc = 'bottom'
                     else:
-                        print "DEBUG - ignoring line as spectrum was masked at this frequency"
                         continue
+                    print freq,peak
                     self._plotter.vline_with_label(freq, peak,
                                                    linecat.get_name(row),
                                                    location=loc, rotate=rotate)
