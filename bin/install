@@ -16,7 +16,7 @@ def usage():
 try:
     opts, args = getopt.getopt(sys.argv[1:], "p:m:h",
                                ["exec-prefix=", "module-dir=", "help"])
-    
+
 except getopt.GetoptError:
     usage()
     sys.exit(2)
@@ -40,7 +40,7 @@ for k, v in opts:
         execprefix = v
     if k in ("-m", "--module-dir"):
         v = os.path.expanduser(v)
-        v = os.path.expandvars(v)        
+        v = os.path.expandvars(v)
         if not os.path.exists(v):
             print "The specified module directory %s doesn't exist" % v
             sys.exit(1)
@@ -52,10 +52,9 @@ try:
 except ImportError:
     print "Matplotlib not found"
     sys.exit(1)
-if matplotlib.__version__.split(".")[1] < 87:
+if int(matplotlib.__version__.split(".")[1]) < 87:
     print "Warning: matplotlib version < 0.87." \
           "This might cause errors. Please upgrade."
-
 try:
     import matplotlib.backends.backend_tkagg
 except ImportError:
