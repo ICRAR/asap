@@ -7,14 +7,18 @@ import sys
 import getopt
 
 def usage():
-    pass
+    print """Usage:
+    ./install [-p <prefix for asap binary>]
+              [-m <where to install python module>]
+              [-h] this message
+    """
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "p:m:h",
                                ["exec-prefix=", "module-dir=", "help"])
     
 except getopt.GetoptError:
-    print "error"
+    usage()
     sys.exit(2)
 
 execprefix = dist.EXEC_PREFIX
@@ -48,6 +52,10 @@ try:
 except ImportError:
     print "Matplotlib not found"
     sys.exit(1)
+if matplotlib.__version__.split(".")[1] < 87:
+    print "Warning: matplotlib version < 0.87." \
+          "This might cause errors. Please upgrade."
+
 try:
     import matplotlib.backends.backend_tkagg
 except ImportError:
@@ -61,7 +69,13 @@ except ImportError:
     except ImportError:
         print "You need to have either 'numpy' or 'numarray' installed."
         sys.exit(1)
-print "Looks like everything is here"
+try:
+    import IPython
+except ImportError:
+    print "IPython should be installed."
+    sys.exit(1)
+
+print "All required modules were found."
 moddir = os.path.join(moduledir, "asap")
 bindir =  os.path.join(execprefix, "bin")
 try:
