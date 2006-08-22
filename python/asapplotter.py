@@ -412,7 +412,7 @@ class asapplotter:
         Plot a line catalog.
         Parameters:
             linecat:      the linecatalog to plot
-            offset:       the shift in frequency to apply to the frequencies
+            doppler:      the velocity shift to apply to the frequencies
             deltachan:    the number of channels to include each side of the
                           line to determine a local maximum/minimum
             rotate:       the rotation for the text label
