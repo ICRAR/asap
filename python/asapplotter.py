@@ -463,7 +463,7 @@ class asapplotter:
                             if lower < 0: lower = 0
                             if upper > len(v): upper = len(v)
                             s = slice(lower, upper)
-                            y = line._y_orig[s]
+                            y = line._y[s]
                             maxy = ma.maximum(y)
                             if isinstance( maxy, float):
                                 maxys.append(maxy)
