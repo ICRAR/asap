@@ -406,7 +406,7 @@ class asapplotter:
             rcp('font', size=size)
         if self._data: self.plot(self._data)
 
-    def plot_lines(self, linecat=None, offset=0.0, deltachan=10, rotate=0.0,
+    def plot_lines(self, linecat=None, doppler=0.0, deltachan=10, rotate=0.0,
                    location=None):
         """
         Plot a line catalog.
