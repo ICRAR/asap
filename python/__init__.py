@@ -17,7 +17,12 @@ else:
     # Shouldn't happen - default to linux
     plf = 'linux'
 asapdata = __path__[-1]
+# Allow user defined data location
+if os.environ.has_key("ASAPDATA"):
+    if os.path.exists(os.environ["ASAPDATA"]):
+        asapdata = os.environ["ASAPDATA"]
 os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
+# set up user space
 userdir = os.environ["HOME"]+"/.asap"
 if not os.path.exists(userdir):
     print 'First time ASAP use. Setting up ~/.asap'
@@ -27,6 +32,7 @@ if not os.path.exists(userdir):
     f.close()
     f = file(userdir+"/ipythonrc", "w")
     f.close()
+# remove from namespace
 del asapdata, userdir, shutil, platform
 
 def _validate_bool(b):
@@ -346,7 +352,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.1a'
+__version__  = '2.1b'
 
 if rcParams['verbose']:
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
@@ -515,7 +521,13 @@ if rcParams['verbose']:
             set_font        - set general font properties, e.g. 'family'
             set_histogram   - plot in historam style
             set_mask        - set a plotting mask for a specific polarization
-
+            text            - draw text annotations either in data or relative
+                              coordinates
+            arrow           - draw arrow annotations either in data or relative
+                              coordinates
+            axhline,axvline - draw horizontal/vertical lines
+            axhspan,axvspan - draw horizontal/vertical regions
+            
     [Reading files]
         reader              - access rpfits/sdfits files
             open            - attach reader to a file
@@ -535,6 +547,7 @@ if rcParams['verbose']:
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
                               put into $HOME/.asaprc
+        rc                  - set rc parameters from within asap
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
