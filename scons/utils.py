@@ -39,7 +39,6 @@ def generate(env):
             print "Adding to archive: %s/%s" % (dir_name, item)
             tar.add(item,'%s/%s' % (dir_name, item))
         tar.close()
-        return env.Entry(traget_dir)
 
     env.CreateDist = CreateDist
 
