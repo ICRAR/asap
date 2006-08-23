@@ -433,7 +433,7 @@ class asapplotter:
             for row in range(linecat.nrow()):
                 restf = linecat.get_frequency(row)/1000.0
                 c = 299792.458
-                freq = restf*(doppler+c)/c
+                freq = restf*(1.0-doppler/c)
                 if lims[0] < freq < lims[1]:
                     if location is None:
                         loc = 'bottom'
