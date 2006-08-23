@@ -5,6 +5,7 @@ import platform
 # scons plug-ins
 #from installtree import InstallTree
 
+version = "2.1b"
 moduledir = distutils.sysconfig.get_python_lib()
 if  platform.architecture()[0] == '64bit':
     # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
@@ -23,13 +24,13 @@ opts.AddOptions(PathOption("prefix",
                 ("casadir", "Alternative casa location", ""),
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1),
-                BoolOption("staticlink",
-                           "Should extrenal libs be linked in statically",
-                           False)
+                ("makedist",
+                 "Make a binary distribution giving a suffix, e.g. sarge or fc5",
+                 "")
                 )
 
 env = Environment( toolpath = ['./scons'],
-                   tools = ["default", "disttar", "installtree", "casa",
+                   tools = ["default", "installtree", "casa",
                             "utils"],
                    ENV = { 'PATH' : os.environ[ 'PATH' ],
                           'HOME' : os.environ[ 'HOME' ] },
@@ -92,12 +93,21 @@ if env['mode'] == 'release':
 Export("env")
 
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
-env.Install(env["stage_dir"], so )
-
-pys = env.SConscript("python/SConscript")
+stagebuild = env.Install(env["stage_dir"], so )
+stagedoc = env.Install("stage", ["doc/README", "doc/CHANGELOG"] )
+stagepys = env.SConscript("python/SConscript")
+stage0 = env.Install("stage", "bin/install")
+stage1 = env.Install("stage/bin", "bin/asap")
+env.Alias('stage', [stagebuild,stagedoc,stagepys, stage0, stage1])
+# install locally
 asapmod = env.InstallTree(dest_dir = os.path.join(env["moduledir"], "asap"),
                           src_dir  = "stage/asap",
                           includes = ['*.py', '*.so'],
                           excludes = [])
 asapbin = env.Install(os.path.join(env["prefix"], "bin"), "bin/asap")
 env.Alias('install', [asapmod, asapbin])
+# make binary distribution
+if len(env["makedist"]):
+    md =env.CreateDist("dist/asap-%s-%s" % (version, env["makedist"]),
+                   ["install", "README", "CHANGELOG", "asap"],
+                   "stage")
