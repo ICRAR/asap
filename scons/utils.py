@@ -1,5 +1,5 @@
-import glob
 import os
+import glob
 
 def generate(env):
     def SGlob(pattern):
@@ -14,5 +14,41 @@ def generate(env):
         env.PrependUnique(LIBPATH = [os.path.join(path, "lib")])
     env.AddCustomPath = AddCustomPath
 
+    def CreateDist(target, sources, descend="stage"):
+        import tarfile
+        base_name = str(target).split('.tar')[0]
+        (target_dir, dir_name) = os.path.split(base_name)
+        # create the target directory if it does not exist
+        if target_dir and not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        tar_format = "bz2"
+        tar = tarfile.open(str(target)+".tar.bz2", "w:%s" % (tar_format,))
+        if os.path.exists(descend): os.chdir(descend)
+        taritems = []
+        excludedirs = [".svn"]
+        for item in sources:
+            if os.path.isdir(item):
+                for root, dirs, files in os.walk(str(item)):
+                    if not root in excludedirs:
+                        for name in files:
+                            if not name.startswith("."):
+                                taritems.append(os.path.join(root, name))
+            else:
+                taritems.append(item)
+        for item in taritems:
+            print "Adding to archive: %s/%s" % (dir_name, item)
+            tar.add(item,'%s/%s' % (dir_name, item))
+        tar.close()
+        return env.Entry(traget_dir)
+
+    env.CreateDist = CreateDist
+
 def exists(env):
-    return true
+    try:
+        import os
+        import glob
+        import tarfile
+    except ImportError:
+        return False
+    else:
+        return True
