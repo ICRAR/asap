@@ -410,8 +410,9 @@ class scantable(Scantable):
             print " %s" % (label)
             print "--------------------------------------------------"
             print out
-        retval = {'axesnames': axesnames, 'axes': axes, 'data': outvec}
-        return retval
+        # disabled because the vector seems more useful
+        #retval = {'axesnames': axesnames, 'axes': axes, 'data': outvec}
+        return outvec
 
     def _get_column(self, callback, row=-1):
         """
@@ -432,7 +433,14 @@ class scantable(Scantable):
         Example:
             none
         """
-        return self._get_column(self._gettime, row)
+        from time import strptime
+        from datetime import datetime
+        times = self._get_column(self._gettime, row)
+        format = "%Y/%m/%d/%H:%M:%S"
+        if isinstance(times, list):
+            return [datetime(*strptime(i, format)[:6]) for i in times]
+        else:
+            return datetime(*strptime(times, format)[:6])
 
     def get_sourcename(self, row=-1):
         """

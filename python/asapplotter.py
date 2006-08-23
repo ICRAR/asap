@@ -579,10 +579,10 @@ class asapplotter:
         # this returns either a tuple of numbers or a length  (ncycles)
         # convert this into lengths
         n0,nstack0 = self._get_selected_n(scan)
-        n = len(n0)
         if isinstance(n0, int): n = n0
-        nstack = len(nstack0)
+        else: n = len(n0)
         if isinstance(nstack0, int): nstack = nstack0
+        else: nstack = len(nstack0)
         maxpanel, maxstack = 16,8
         if n > maxpanel or nstack > maxstack:
             from asap import asaplog
@@ -730,6 +730,6 @@ class asapplotter:
              's': scan._getsourcename(row),
              'i': "IF"+str(scan.getif(row)),
              'p': poleval,
-             't': scan._gettime(row) }
+             't': str(scan.get_time(row)) }
         return userlabel or d[mode]
 

@@ -348,6 +348,8 @@ mask_not = NUM.logical_not
 if rcParams['useplotter']:
     from  asapplotter import asapplotter
     gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+    if gui:
+        import pylab as xyplotter
     plotter = asapplotter(gui)
     del gui
 
@@ -527,7 +529,9 @@ if rcParams['verbose']:
                               coordinates
             axhline,axvline - draw horizontal/vertical lines
             axhspan,axvspan - draw horizontal/vertical regions
-            
+
+        xyplotter           - matplotlib/pylab plotting functions
+
     [Reading files]
         reader              - access rpfits/sdfits files
             open            - attach reader to a file
