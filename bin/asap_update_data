@@ -11,7 +11,7 @@ dataurl  = "http://www.atnf.csiro.au/pub/software/asap/data/"
 tmpdata = '/tmp/asap_data.tar.bz2'
 tmpmd5 = tmpdata+'.md5sum'
 
-
+print "Checking if an update is required."
 md5req = urllib2.Request(dataurl+name+'.md5sum')
 response = urllib2.urlopen(md5req)
 md5file = file(tmpmd5,'w')
@@ -22,7 +22,10 @@ md5new = md5file.readlines()[0].split()[0]
 
 # get asap module path
 asapbase = asap.__path__[0]
-
+# use ASAPDATA if set - allows non-root update
+if os.environ.has_key("ASAPDATA"):
+    asapbase = os.environ["ASAPDATA"]
+    
 try:
     fl = os.path.join(asapbase, name+".md5sum")
     data_md5 = file(fl)
@@ -35,7 +38,7 @@ except IOError:
 if md5new != md5old:
     dreq = urllib2.Request(dataurl+name)
     src = urllib2.urlopen(dreq)
-    print "Downloading asap data archive...."
+    print "Update required. Downloading asap data archive...."
     dst = open(tmpdata, 'w')
     dst.write(src.read())
     dst.close()
