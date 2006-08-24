@@ -3,7 +3,6 @@ import urllib2
 import os
 import tarfile
 
-import asap
 import shutil
 
 name = 'asap_data.tar.bz2'
@@ -20,12 +19,13 @@ md5file.close()
 md5file = file(tmpmd5)
 md5new = md5file.readlines()[0].split()[0]
 
-# get asap module path
-asapbase = asap.__path__[0]
 # use ASAPDATA if set - allows non-root update
 if os.environ.has_key("ASAPDATA"):
     asapbase = os.environ["ASAPDATA"]
-    
+else:
+    import asap
+    # get asap module path
+    asapbase = asap.__path__[0]
 try:
     fl = os.path.join(asapbase, name+".md5sum")
     data_md5 = file(fl)
