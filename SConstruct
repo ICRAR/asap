@@ -102,8 +102,8 @@ stage2 = env.Install("stage/data", "share/ipythonrc-asap")
 env.Alias('stage', [stagebuild,stagedoc,stagepys, stage0, stage1, stage2])
 # install locally
 asapmod = env.InstallTree(dest_dir = os.path.join(env["moduledir"], "asap"),
-                          src_dir  = "stage/asap",
-                          includes = ['*.py', '*.so'],
+                          src_dir  = "stage",
+                          includes = ['asap','data'],
                           excludes = [])
 asapbin = env.Install(os.path.join(env["prefix"], "bin"), "bin/asap")
 env.Alias('install', [asapmod, asapbin])
