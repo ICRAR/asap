@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+import urllib2
+import os
+import tarfile
+
+import asap
+import shutil
+
+name = 'asap_data.tar.bz2'
+dataurl  = "http://www.atnf.csiro.au/pub/software/asap/data/"
+tmpdata = '/tmp/asap_data.tar.bz2'
+tmpmd5 = tmpdata+'.md5sum'
+
+
+md5req = urllib2.Request(dataurl+name+'.md5sum')
+response = urllib2.urlopen(md5req)
+md5file = file(tmpmd5,'w')
+md5file.write(response.read())
+md5file.close()
+md5file = file(tmpmd5)
+md5new = md5file.readlines()[0].split()[0]
+
+# get asap module path
+asapbase = asap.__path__[0]
+
+try:
+    fl = os.path.join(asapbase, name+".md5sum")
+    data_md5 = file(fl)
+    ls = data_md5.readlines()[0]
+    data_md5.close()
+    md5old = ls.split()[0]
+except IOError:
+    md5old =''
+
+if md5new != md5old:
+    dreq = urllib2.Request(dataurl+name)
+    src = urllib2.urlopen(dreq)
+    print "Downloading asap data archive...."
+    dst = open(tmpdata, 'w')
+    dst.write(src.read())
+    dst.close()
+    os.chdir(asapbase)
+    tf = tarfile.TarFile.bz2open(tmpdata)
+    print "Extracting data archive in %s.." % asapbase
+    for member in tf.getmembers():
+        tf.extract(member)
+    shutil.copy(tmpmd5, asapbase)
+else:
+    print """Data already at latest available version.
+If you still get errors running asap, please report this."""
