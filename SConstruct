@@ -5,7 +5,7 @@ import platform
 # scons plug-ins
 #from installtree import InstallTree
 
-version = "2.1b"
+version = "2.1.0b"
 moduledir = distutils.sysconfig.get_python_lib()
 if  platform.architecture()[0] == '64bit':
     # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
@@ -97,8 +97,9 @@ stagebuild = env.Install(env["stage_dir"], so )
 stagedoc = env.Install("stage", ["doc/README", "doc/CHANGELOG"] )
 stagepys = env.SConscript("python/SConscript")
 stage0 = env.Install("stage", "bin/install")
-stage1 = env.Install("stage/bin", "bin/asap")
-env.Alias('stage', [stagebuild,stagedoc,stagepys, stage0, stage1])
+stage1 = env.Install("stage/bin", ["bin/asap", "bin/asap_update_data"])
+stage2 = env.Install("stage/data", "share/ipythonrc-asap")
+env.Alias('stage', [stagebuild,stagedoc,stagepys, stage0, stage1, stage2])
 # install locally
 asapmod = env.InstallTree(dest_dir = os.path.join(env["moduledir"], "asap"),
                           src_dir  = "stage/asap",
@@ -109,5 +110,6 @@ env.Alias('install', [asapmod, asapbin])
 # make binary distribution
 if len(env["makedist"]):
     md =env.CreateDist("dist/asap-%s-%s" % (version, env["makedist"]),
-                   ["install", "README", "CHANGELOG", "asap"],
+                   ["install", "README", "CHANGELOG", "asap", "data",
+                    "bin"],
                    "stage")

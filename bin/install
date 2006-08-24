@@ -13,6 +13,22 @@ def usage():
               [-h] this message
     """
 
+def get_libs(lddcommand='/usr/bin/ldd', lib='_asap.so'):
+    if not os.path.isfile(lddcommand):
+        raise IOError("ldd not available")
+    if not os.path.exists(lib):
+        raise IOError("File %s not found" %lib)
+    p = os.popen(lddcommand+" "+lib)
+    resolved = []
+    unresolved = []
+    for l in p.readlines():
+        lsp = l.split()
+        if lsp[2] == "not":
+            unresolved.append(lsp[0])
+        else:
+            resolved.append(lsp[2])
+    return resolved, unresolved
+
 try:
     opts, args = getopt.getopt(sys.argv[1:], "p:m:h",
                                ["exec-prefix=", "module-dir=", "help"])
@@ -46,7 +62,19 @@ for k, v in opts:
             sys.exit(1)
         moduledir = v
 
-print 'Looking for dependent modules...'
+print "Looking fo all required libraries..."
+try:
+    libs, missing = get_libs(lib="asap/_asap.so")
+    if len(missing):
+        print " The following libraries are missing:"
+        print missing
+        sys.exit(1)
+    else:
+        print "   All required libraries are present."
+except IOError,msg:
+    print msg+" Skipping test."
+
+print 'Looking for dependent python modules...'
 try:
     import matplotlib
 except ImportError:
@@ -74,7 +102,7 @@ except ImportError:
     print "IPython should be installed."
     sys.exit(1)
 
-print "All required modules were found."
+print "   All required modules were found."
 moddir = os.path.join(moduledir, "asap")
 bindir =  os.path.join(execprefix, "bin")
 try:
@@ -83,8 +111,9 @@ try:
         shutil.rmtree(moddir)
     print "Installing asap module in %s" % moddir
     shutil.copytree("asap", moddir)
-    print "Installing asap startup script in %s" % bindir
+    print "Installing asap  scripts in %s" % bindir
     shutil.copy2("bin/asap", bindir)
+    shutil.copy2("bin/asap_update_data", bindir)
     shutil.copytree("data", os.path.join(moddir,"data"))
     print "Installation completed."
 except OSError, oe:
