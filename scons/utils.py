@@ -14,39 +14,30 @@ def generate(env):
         env.PrependUnique(LIBPATH = [os.path.join(path, "lib")])
     env.AddCustomPath = AddCustomPath
 
-    def CreateDist(target, sources, descend="stage"):
-        import tarfile
-        base_name = str(target).split('.tar')[0]
-        (target_dir, dir_name) = os.path.split(base_name)
-        # create the target directory if it does not exist
-        if target_dir and not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        tar_format = "bz2"
-        tar = tarfile.open(str(target)+".tar.bz2", "w:%s" % (tar_format,))
-        if os.path.exists(descend): os.chdir(descend)
-        taritems = []
-        excludedirs = [".svn"]
-        for item in sources:
-            if os.path.isdir(item):
-                for root, dirs, files in os.walk(str(item)):
-                    if not root in excludedirs:
-                        for name in files:
-                            if not name.startswith("."):
-                                taritems.append(os.path.join(root, name))
-            else:
-                taritems.append(item)
-        for item in taritems:
-            print "Adding to archive: %s/%s" % (dir_name, item)
-            tar.add(item,'%s/%s' % (dir_name, item))
-        tar.close()
+    def WalkDirTree(targetroot, sourceroot, sources):
+        ifiles = []
+        ofiles = []
+        for s in sources:
+            if os.path.isdir(os.path.join(sourceroot ,s)):
+                for d,ld,f in os.walk(os.path.join(sourceroot ,s)):
+                    for fl in f:
+                        ifile = os.path.join(d, fl)
+                        ifiles.append(ifile)
+                        ofile = ifile.replace(sourceroot, targetroot)
+                        ofiles.append(ofile)
+        return ofiles, ifiles
+    env.WalkDirTree = WalkDirTree
 
-    env.CreateDist = CreateDist
+    def null_action(target, source, env): return 0
+
+    def message(target, source, env):
+        return "%s" % target[0]
+    env.MessageAction = env.Action(null_action, message)
 
 def exists(env):
     try:
         import os
         import glob
-        import tarfile
     except ImportError:
         return False
     else:

@@ -2,10 +2,10 @@ import os
 import sys
 import distutils.sysconfig
 import platform
+import SCons
 # scons plug-ins
 #from installtree import InstallTree
 
-version = "2.1.0b"
 moduledir = distutils.sysconfig.get_python_lib()
 if  platform.architecture()[0] == '64bit':
     # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
@@ -30,8 +30,8 @@ opts.AddOptions(PathOption("prefix",
                 )
 
 env = Environment( toolpath = ['./scons'],
-                   tools = ["default", "installtree", "casa",
-                            "utils"],
+                   tools = ["default", "casa", "archiver", "utils",
+                            "quietinstall"],
                    ENV = { 'PATH' : os.environ[ 'PATH' ],
                           'HOME' : os.environ[ 'HOME' ] },
                    options = opts)
@@ -75,7 +75,7 @@ if not env.GetOption('clean'):
     if not conf.CheckCasa(env["casadir"]): Exit(1)
     env = conf.Finish()
 
-env["stage_dir"] = Dir("#/stage/asap")
+env["version"] = "2.1.0b"
 
 # general CPPFLAGS
 env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])
@@ -84,32 +84,51 @@ env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])
 if  platform.architecture()[0] == '64bit':
     env.Append(CPPFLAGS=['-fPIC', '-D__x86_64__', '-DAIPS_64B'])
 
-if env["PLATFORM"] == "darwin":
-    env['SHLINKFLAGS'] = '$LINKFLAGS -bundle'
-    #env['SHLIBSUFFIX'] = '.dylib'
-
 if env['mode'] == 'release':
     env.Append(LINKFLAGS=['-Wl,-O1'])
+
+# Export for SConscript files
 Export("env")
 
+# build library
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
-stagebuild = env.Install(env["stage_dir"], so )
-stagedoc = env.Install("stage", ["doc/README", "doc/CHANGELOG"] )
-stagepys = env.SConscript("python/SConscript")
-stage0 = env.Install("stage", "bin/install")
-stage1 = env.Install("stage/bin", ["bin/asap", "bin/asap_update_data"])
-stage2 = env.Install("stage/data", "share/ipythonrc-asap")
-env.Alias('stage', [stagebuild,stagedoc,stagepys, stage0, stage1, stage2])
-# install locally
-asapmod = env.InstallTree(dest_dir = os.path.join(env["moduledir"], "asap"),
-                          src_dir  = "stage",
-                          includes = ['asap','data'],
-                          excludes = [])
-asapbin = env.Install(os.path.join(env["prefix"], "bin"), "bin/asap")
-env.Alias('install', [asapmod, asapbin])
+
+# install targets
+somod = env.Install("$moduledir/asap", so )
+pymods = env.Install("$moduledir/asap", env.SGlob("python/*.py"))
+bins = env.Install("$prefix/bin", ["bin/asap", "bin/asap_update_data"])
+shares = env.Install("$moduledir/data", "share/ipythonrc-asap")
+env.Alias('install', [somod, pymods, bins, shares])
+
+# install aips++ data repos
+rootdir=None
+outdir =  os.path.join(env["moduledir"],'asap','data')
+sources = ['ephemerides','geodetic']
+if os.path.exists("/nfs/aips++/data"):
+    rootdir = "/nfs/aips++/data"
+elif os.path.exists("data"):
+    rootdir = "data"
+if rootdir is not None:
+    ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
+    data =  env.InstallAs(ofiles, ifiles)
+    env.Alias('install', data)
+    
 # make binary distribution
 if len(env["makedist"]):
-    md =env.CreateDist("dist/asap-%s-%s" % (version, env["makedist"]),
-                   ["install", "README", "CHANGELOG", "asap", "data",
-                    "bin"],
-                   "stage")
+    env["stagedir"] = "asap-%s-%s" % (env["version"], env["makedist"])
+    env.Command('Staging distribution for archive in %s' % env["stagedir"],
+                '', env.MessageAction)
+    env.QInstall("$stagedir/asap", [so,  pymods] )
+    env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
+    env.QInstall("$stagedir/install", ["bin/install"])
+    env.QInstall("$stagedir/data", "share/ipythonrc-asap")
+    if os.path.exists("/nfs/aips++/data"):
+        rootdir = "/nfs/aips++/data"
+        sources = ['ephemerides','geodetic']
+        outdir =  os.path.join(env["stagedir"],'asap','data')
+        ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
+        env.QInstallAs(ofiles, ifiles)
+    arch = env.Archiver(os.path.join("dist",env["stagedir"]),
+                        env["stagedir"])
+    env.AddPostAction(arch, Delete("$stagedir"))
+    
