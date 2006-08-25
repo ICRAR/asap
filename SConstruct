@@ -97,7 +97,7 @@ so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
 somod = env.Install("$moduledir/asap", so )
 pymods = env.Install("$moduledir/asap", env.SGlob("python/*.py"))
 bins = env.Install("$prefix/bin", ["bin/asap", "bin/asap_update_data"])
-shares = env.Install("$moduledir/data", "share/ipythonrc-asap")
+shares = env.Install("$moduledir/asap/data", "share/ipythonrc-asap")
 env.Alias('install', [somod, pymods, bins, shares])
 
 # install aips++ data repos
