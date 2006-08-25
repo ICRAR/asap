@@ -118,7 +118,7 @@ if len(env["makedist"]):
     env["stagedir"] = "asap-%s-%s" % (env["version"], env["makedist"])
     env.Command('Staging distribution for archive in %s' % env["stagedir"],
                 '', env.MessageAction)
-    env.QInstall("$stagedir/asap", [so,  pymods] )
+    env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
     env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
     env.QInstall("$stagedir/install", ["bin/install"])
     env.QInstall("$stagedir/data", "share/ipythonrc-asap")
