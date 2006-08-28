@@ -356,7 +356,9 @@ if rcParams['useplotter']:
 __date__ = '$Date$'.split()[1]
 __version__  = '2.1b'
 
-if rcParams['verbose']:
+def is_ipython():
+    return '__IP' in dir(sys.modules["__main__"]) 
+if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
     def list_scans(t = scantable):
         import sys, types
