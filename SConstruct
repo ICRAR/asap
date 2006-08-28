@@ -25,7 +25,7 @@ opts.AddOptions(PathOption("prefix",
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
-                 "Make a binary distribution giving a suffix, e.g. sarge or fc5",
+                 "Make a binary archive giving a suffix, e.g. sarge or fc5",
                  "")
                 )
 
@@ -92,6 +92,19 @@ Export("env")
 
 # build library
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
+# test module import, to see if there are unresolved symbols
+def test_module(target,source,env):
+    pth = str(target[0])
+    mod = os.path.splitext(pth)[0]
+    sys.path.insert(2, os.path.split(mod)[0])
+    __import__(os.path.split(mod)[1])
+    print "ok"
+    return 0
+def test_str(target, source, env):
+    return "Testing module..."
+
+taction = Action(test_module, test_str)
+env.AddPostAction(so, taction)
 
 # install targets
 somod = env.Install("$moduledir/asap", so )
@@ -107,7 +120,7 @@ sources = ['ephemerides','geodetic']
 if os.path.exists("/nfs/aips++/data"):
     rootdir = "/nfs/aips++/data"
 elif os.path.exists("data"):
-    rootdir = "data"
+    rootdir = "./data"
 if rootdir is not None:
     ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
     data =  env.InstallAs(ofiles, ifiles)
@@ -118,17 +131,22 @@ if len(env["makedist"]):
     env["stagedir"] = "asap-%s-%s" % (env["version"], env["makedist"])
     env.Command('Staging distribution for archive in %s' % env["stagedir"],
                 '', env.MessageAction)
-    env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
+    st0 = env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
     env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
-    env.QInstall("$stagedir/install", ["bin/install"])
-    env.QInstall("$stagedir/data", "share/ipythonrc-asap")
-    if os.path.exists("/nfs/aips++/data"):
-        rootdir = "/nfs/aips++/data"
-        sources = ['ephemerides','geodetic']
+    env.QInstall("$stagedir", ["bin/install"])
+    env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
+    if rootdir is not None:
+        env.Command("Using data tables in %s" % rootdir,
+                    '', env.MessageAction)        
         outdir =  os.path.join(env["stagedir"],'asap','data')
         ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
         env.QInstallAs(ofiles, ifiles)
+    else:
+        env.Command("No data tables available. Use 'asap_update_data' after install",
+                    '', env.MessageAction)        
     arch = env.Archiver(os.path.join("dist",env["stagedir"]),
                         env["stagedir"])
     env.AddPostAction(arch, Delete("$stagedir"))
-    
+
+if env.GetOption("clean"):
+    Execute(Delete(".sconf_temp"))

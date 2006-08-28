@@ -13,12 +13,17 @@ def usage():
               [-h] this message
     """
 
-def get_libs(lddcommand='/usr/bin/ldd', lib='_asap.so'):
+def get_libs(lib='_asap.so'):
+    lddcommand = "/usr/bin/ldd"
+    lddopts = ""
+    if (sys.platform == "darwin"):
+        lddcommand = "otool"
+        lddopts = "-L"
     if not os.path.isfile(lddcommand):
-        raise IOError("ldd not available")
+        raise IOError("ldd/otool is not available")
     if not os.path.exists(lib):
         raise IOError("File %s not found" %lib)
-    p = os.popen(lddcommand+" "+lib)
+    p = os.popen(lddcommand+" "+lddopts+" "+lib)
     resolved = []
     unresolved = []
     for l in p.readlines():
@@ -114,7 +119,9 @@ try:
     print "Installing asap  scripts in %s" % bindir
     shutil.copy2("bin/asap", bindir)
     shutil.copy2("bin/asap_update_data", bindir)
-    shutil.copytree("data", os.path.join(moddir,"data"))
+    if not os.path.exists("asap/data/ephemerides"):
+        print "Warning - no data directory present"
+        print "Please run asap_update_data after the installation is completed."
     print "Installation completed."
 except OSError, oe:
     print oe
