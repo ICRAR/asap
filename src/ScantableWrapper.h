@@ -92,6 +92,7 @@ public:
   void setFluxUnit(const std::string& unit) { table_->setFluxUnit(unit); }
 
   void setInstrument(const std::string& name) {table_->setInstrument(name);}
+  void setFeedType(const std::string& ftype) {table_->setFeedType(ftype);}
 
   std::vector<bool> getMask(int whichrow=0) const
     { return table_->getMask(whichrow); }

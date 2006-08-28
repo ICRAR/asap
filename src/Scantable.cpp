@@ -55,6 +55,7 @@
 
 #include "Scantable.h"
 #include "STPolLinear.h"
+#include "STPolCircular.h"
 #include "STPolStokes.h"
 #include "STAttr.h"
 #include "MathUtils.h"
@@ -68,6 +69,7 @@ std::map<std::string, STPol::STPolFactory *> Scantable::factories_;
 void Scantable::initFactories() {
   if ( factories_.empty() ) {
     Scantable::factories_["linear"] = &STPolLinear::myFactory;
+    Scantable::factories_["circular"] = &STPolStokes::myFactory;
     Scantable::factories_["stokes"] = &STPolStokes::myFactory;
   }
 }
@@ -397,6 +399,15 @@ void Scantable::setInstrument(const std::string& name)
   String nameU(name);
   nameU.upcase();
   table_.rwKeywordSet().define(String("AntennaName"), nameU);
+}
+
+void Scantable::setFeedType(const std::string& feedtype)
+{
+  if ( Scantable::factories_.find(feedtype) ==  Scantable::factories_.end() ) {
+    std::string msg = "Illegal feed type "+ feedtype;
+    throw(casa::AipsError(msg));
+  }
+  table_.rwKeywordSet().define(String("POLTYPE"), feedtype);
 }
 
 MPosition Scantable::getAntennaPosition () const

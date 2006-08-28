@@ -48,12 +48,18 @@ Vector<Float> asap::STPolLinear::getStokes( uint index )
         out = getFeedHand() * Float(2.0) * Vector<Float>(getSpectrum(3));
         break;
     }
+  } else if (nspec() == 2) {
+    if ( index == 0 )
+      out = Vector<Float>(getSpectrum(0) + getSpectrum(1));
   }
   return out;
 }
 
 Vector<Float> asap::STPolLinear::getLinPol( uInt index )
 {
+  if (nspec() != 4) {
+    throw(AipsError("You must have 4 linear polarizations to run this function"));
+  }
   if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
   Vector<Float> out,q,u;
   if ( nspec() == 4) {
@@ -86,7 +92,9 @@ Vector<Float> asap::STPolLinear::getCircular(uInt index )
   //
   //   We use the convention
   //    I = (RR+LL)  // definition changed
-
+  if (nspec() != 4) {
+    throw(AipsError("You must have 4 linear polarizations to run this function"));
+  }
   if ( index == 2 || index ==3  ) throw(AipsError("Re/Imag RL not implemented"));
   Vector<Float> I,V,out;
   I = getStokes(0);
@@ -120,6 +128,9 @@ void asap::STPolLinear::rotatePhase( Float phase )
 void asap::STPolLinear::invertPhase( Float phase )
 {
   // phase isnt used, just ro keep interface the same for all pol operations
+  if (nspec() != 4) {
+    throw(AipsError("You must have 4 linear polarizations to run this function"));
+  }
   Matrix<Float>& specs = getSpectra();
   Vector<Float> I = specs.column(3);
   I *= Float(-1.0);
@@ -134,6 +145,9 @@ void asap::STPolLinear::rotateLinPolPhase( casa::Float phase )
 // We are using I=(XX+YY)/2 convention
 // C1 = XX; C2 = YY, C3 = Real(XY)
 //
+  if (nspec() != 4) {
+    throw(AipsError("You must have 4 linear polarizations to run this function"));
+  }
   Vector<Float> I,Q,U;
   I = getStokes(0);
   Q = getStokes(1);

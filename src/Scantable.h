@@ -201,6 +201,12 @@ public:
   void setFluxUnit( const std::string& unit );
 
   /**
+   * Set the Stokes type of the data
+   * @param a string representing the type, e.g "circular" or "linear"
+   */
+  void setFeedType( const std::string& feedtype );
+
+  /**
    *
    * @param instrument a string representing an insturment. see xxx
    */
