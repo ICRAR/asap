@@ -639,6 +639,38 @@ class scantable(Scantable):
             else: raise
         self._add_history("flag", varlist)
 
+    def lag_flag(self, frequency, unit="GHz", width=0, insitu=None):
+        """
+        Flag the data in 'lag' space by providing a frequency to remove.
+        Flagged data in the scantable gets set to 0.0 before the fft.
+        No taper is applied.
+        Parameters:
+            frequency:    the frequency to remove
+            unit:         the frequency unit ()default "GHz")
+            width:        the number of 'lag' channels to extent the frequency
+                          by, i.e. the interval
+                          [bandwidth/frequency-width, bandwidth/frequency+width]
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        self._math._setinsitu(insitu)
+        varlist = vars()
+        base = { "GHz": 100000000., "MHz": 1000000., "kHz": 1000., "Hz": 1. }
+        if not base.has_key(unit):
+            raise ValueError("%s is not a valid unit." % unit)
+        try:
+            s = scantable(self._math._lag_flag(self, frequency*base[unit], width))
+        except RuntimeError, msg:
+            if rcParams['verbose']:
+                print msg
+                return
+            else: raise
+        s._add_history("lag_flag", varlist)
+        print_log()
+        if insitu:
+            self._assign(s)
+        else:
+            return s
+
 
     def create_mask(self, *args, **kwargs):
         """

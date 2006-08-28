@@ -183,6 +183,15 @@ public:
     mxExtract( const casa::CountedPtr<Scantable>& in,
                const std::string& srctype = "on");
 
+  /**
+   * "hard" flag the data, this flags everything selected in setSelection()
+   * @param frequency the frequency to remove
+   * @param width the number of lags to flag left to the side of the frequency
+   */
+  casa::CountedPtr<Scantable>
+    lagFlag( const casa::CountedPtr<Scantable>& in, double frequency,
+              int width);
+
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
                                            STPol::polOperation fptr,

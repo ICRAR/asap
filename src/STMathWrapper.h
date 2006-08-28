@@ -155,6 +155,10 @@ public:
                               const std::string& scantype="on" )
   { return ScantableWrapper(STMath::mxExtract(in.getCP(),scantype)); }
 
+  ScantableWrapper lagFlag( const ScantableWrapper& in,
+                            double frequency, int width )
+  { return ScantableWrapper(STMath::lagFlag(in.getCP(), frequency, width)); }
+
 };
 
 }

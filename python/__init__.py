@@ -408,6 +408,7 @@ if rcParams['verbose']:
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
             flag            - flag selected channels in the data
+            lag_flag        - flag specified frequency in the data
             save            - save the scantable to disk as either 'ASAP',
                               'SDFITS' or 'ASCII'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans

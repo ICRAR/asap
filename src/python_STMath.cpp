@@ -66,6 +66,7 @@ namespace asap {
         .def("_swap_linears", &STMathWrapper::swapPolarisations)
         .def("_freq_align", &STMathWrapper::frequencyAlign)
         .def("_mx_extract", &STMathWrapper::mxExtract)
+        .def("_lag_flag", &STMathWrapper::lagFlag)
           ;
     };
 

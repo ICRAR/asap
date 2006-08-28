@@ -30,6 +30,7 @@
 #include <tables/Tables/ReadAsciiTable.h>
 #include <tables/Tables/TableIter.h>
 #include <tables/Tables/TableCopy.h>
+#include <scimath/Mathematics/FFTServer.h>
 
 #include <lattices/Lattices/LatticeUtilities.h>
 
@@ -1373,6 +1374,51 @@ CountedPtr< Scantable >
     // re-index SCANNO to 0
     TableVector<uInt> vec(tout, "SCANNO");
     vec = 0;
+  }
+  return out;
+}
+
+CountedPtr< Scantable >
+  asap::STMath::lagFlag( const CountedPtr< Scantable > & in,
+                          double frequency, int width )
+{
+  CountedPtr< Scantable > out = getScantable(in, false);
+  Table& tout = out->table();
+  TableIterator iter(tout, "FREQ_ID");
+  FFTServer<Float,Complex> ffts;
+  while ( !iter.pastEnd() ) {
+    Table tab = iter.table();
+    Double rp,rv,inc;
+    ROTableRow row(tab);
+    const TableRecord& rec = row.get(0);
+    uInt freqid = rec.asuInt("FREQ_ID");
+    out->frequencies().getEntry(rp, rv, inc, freqid);
+    ArrayColumn<Float> specCol(tab, "SPECTRA");
+    ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+    for (int i=0; i<int(tab.nrow()); ++i) {
+      Vector<Float> spec = specCol(i);
+      Vector<uChar> flag = flagCol(i);
+      Int lag = Int(spec.nelements()*abs(inc)/frequency);
+      for (int k=0; k < flag.nelements(); ++k ) {
+        if (flag[k] > 0) {
+          spec[k] = 0.0;
+        }
+      }
+      Vector<Complex> lags;
+      ffts.fft(lags, spec);
+      Int start =  max(0, lag-width);
+      Int end =  min(Int(lags.nelements()-1), lag+width);
+      if (start == end) {
+        lags[start] = Complex(0.0);
+      } else {
+        for (int j=start; j <=end ;++j) {
+          lags[j] = Complex(0.0);
+        }
+      }
+      ffts.fft(spec, lags);
+      specCol.put(i, spec);
+    }
+    ++iter;
   }
   return out;
 }
