@@ -399,6 +399,7 @@ if rcParams['verbose']:
             set_doppler     - set the doppler to be used from this point on
             set_dirframe    - set the frame for the direction on the sky
             set_instrument  - set the instrument name
+            set_feedtype    - set the feed type
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
             create_mask     - return an mask in the current unit

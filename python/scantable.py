@@ -523,6 +523,16 @@ class scantable(Scantable):
         self._add_history("set_instument", vars())
         print_log()
 
+    def set_feedtype(self, feedtype):
+        """
+        Overwrite the feed type, which might not be set correctly.
+        Parameters:
+            feedtype:     'linear' or 'circular'
+        """
+        self._setfeedtype(feedtype)
+        self._add_history("set_feedtype", vars())
+        print_log()
+
     def set_doppler(self, doppler='RADIO'):
         """
         Set the doppler for all following operations on this scantable.
