@@ -31,6 +31,8 @@
 #ifndef STATTR_H
 #define STATTR_H
 
+#include <string>
+
 #include <casa/aips.h>
 #include <measures/Measures/MEpoch.h>
 #include <casa/Utilities/CountedPtr.h>
@@ -87,7 +89,7 @@ class STAttr : public Logger {
 
   // Find feed polarization type of feeds. In future this needs to come
   // from the data themselves
-  FeedPolType feedPolType(Instrument) const;
+  std::string feedPolType(Instrument) const;
 
   // Helper function to check instrument (antenna) name and give enum
   static Instrument convertInstrument(const casa::String& instrument,

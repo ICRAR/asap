@@ -56,7 +56,7 @@ STAttr::STAttr(const STAttr& other)
    initData();                     // state just private 'static' data
 }
 
-STAttr& STAttr::operator=(const STAttr& other) 
+STAttr& STAttr::operator=(const STAttr& other)
 {
   if (this != &other) {
     ;                             // state just private 'static' data
@@ -106,7 +106,7 @@ Float STAttr::diameter(Instrument inst)  const
    return D;
 }
 
-Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs, 
+Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
 				      const Vector<Float>& freqs) const
 {
 
@@ -121,13 +121,13 @@ Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
 	  if (year<2003) {
 	    pushLog("There is no beam efficiency data from before 2003"
 		    " - using 2003 data");
-	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_);
 	  } else if (year==2003) {
 	    pushLog("Using beam efficiency data from 2003");
-	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_); 
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_);
 	  } else {
 	    pushLog("Using beam efficiency data from 2004");
-	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_); 
+	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_);
 	  }
         }
         break;
@@ -139,15 +139,15 @@ Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
    return facs;
 }
 
-Vector<Float> STAttr::apertureEfficiency(Instrument inst, 
-					 const MEpoch& dateObs, 
+Vector<Float> STAttr::apertureEfficiency(Instrument inst,
+					 const MEpoch& dateObs,
 					 const Vector<Float>& freqs) const
 {
-  
+
   // Look at date where appropriate
   MVTime t(dateObs.getValue());
   uInt year = t.year();
-  
+
   Vector<Float> facs(freqs.nelements(),1.0);
   switch (inst) {
   case ATMOPRA:
@@ -179,7 +179,7 @@ Vector<Float> STAttr::apertureEfficiency(Instrument inst,
 Vector<Float> STAttr::JyPerK(Instrument inst, const MEpoch& dateObs,
 			     const Vector<Float>& freqs) const
 {
-  
+
   // Find what we need
   Vector<Float> etaAp = apertureEfficiency(inst, dateObs, freqs);
   Float D = diameter(inst);
@@ -222,25 +222,25 @@ Vector<Float> STAttr::gainElevationPoly(Instrument inst) const
   }
 }
 
-FeedPolType STAttr::feedPolType(Instrument inst) const
+std::string STAttr::feedPolType(Instrument inst) const
 {
-  FeedPolType type = UNKNOWNFEED;
+  std::string type;
   switch (inst) {
   case ATMOPRA:
   case ATPKSMB:
   case ATPKSHOH:
     {
-      type = LINEAR;
+      type = "linear";
     }
     break;
   case TIDBINBILLA:
     {
-      type = CIRCULAR;
+      type = "circular";
     }
     break;
   default:
     {
-      type = UNKNOWNFEED;
+      type = "linear";
     }
   }
   return type;
@@ -249,7 +249,7 @@ FeedPolType STAttr::feedPolType(Instrument inst) const
 
 // Private
 Vector<Float> STAttr::interp(const Vector<Float>& xOut,
-			     const Vector<Float>& xIn, 
+			     const Vector<Float>& xIn,
 			     const Vector<Float>& yIn) const
 {
   Int method = 1;  // Linear
@@ -257,15 +257,15 @@ Vector<Float> STAttr::interp(const Vector<Float>& xOut,
   Vector<Bool> mOut;
 
   Vector<Bool> mIn(xIn.nelements(),True);
-  
+
   InterpolateArray1D<Float,Float>::interpolate(yOut, mOut, xOut,
 					       xIn, yIn, mIn,
 					       method, True, True);
-  
+
   return yOut;
 }
 
-void STAttr::initData() 
+void STAttr::initData()
   //
   // Mopra data from Mopra web page
   // Tid  data from Tid web page
@@ -283,7 +283,7 @@ void STAttr::initData()
    MopEtaBeam2003Y_(0) = 0.39;
    MopEtaBeam2003Y_(1) = 0.37;
    MopEtaBeam2003Y_(2) = 0.37;          // replicated from (1)
-   
+
    MopEtaBeam2004Y_.resize(3);
    MopEtaBeam2004Y_(0) = 0.49;
    MopEtaBeam2004Y_(1) = 0.44;
@@ -320,7 +320,7 @@ Instrument STAttr::convertInstrument(const String& instrument,
 {
   String t(instrument);
   t.upcase();
-  
+
   // The strings are what STReader returns, after cunning
   // interrogation of station names... :-(
   Instrument inst = asap::UNKNOWNINST;
