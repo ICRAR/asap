@@ -190,7 +190,7 @@ public:
    */
   casa::CountedPtr<Scantable>
     lagFlag( const casa::CountedPtr<Scantable>& in, double frequency,
-              int width);
+              double width);
 
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,

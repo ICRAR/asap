@@ -1380,7 +1380,7 @@ CountedPtr< Scantable >
 
 CountedPtr< Scantable >
   asap::STMath::lagFlag( const CountedPtr< Scantable > & in,
-                          double frequency, int width )
+                          double frequency, double width )
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tout = out->table();
@@ -1398,7 +1398,8 @@ CountedPtr< Scantable >
     for (int i=0; i<int(tab.nrow()); ++i) {
       Vector<Float> spec = specCol(i);
       Vector<uChar> flag = flagCol(i);
-      Int lag = Int(spec.nelements()*abs(inc)/frequency);
+      Int lag0 = Int(spec.nelements()*abs(inc)/(frequency+width)+0.5);
+      Int lag1 = Int(spec.nelements()*abs(inc)/(frequency-width)+0.5);
       for (int k=0; k < flag.nelements(); ++k ) {
         if (flag[k] > 0) {
           spec[k] = 0.0;
@@ -1406,8 +1407,8 @@ CountedPtr< Scantable >
       }
       Vector<Complex> lags;
       ffts.fft(lags, spec);
-      Int start =  max(0, lag-width);
-      Int end =  min(Int(lags.nelements()-1), lag+width);
+      Int start =  max(0, lag0);
+      Int end =  min(Int(lags.nelements()-1), lag1);
       if (start == end) {
         lags[start] = Complex(0.0);
       } else {
