@@ -1,0 +1,54 @@
+REQUIREMENTS
+============
+
+You need to have following packages and their development packages installed:
+
+# from standard (rpm/deb) packages
+
+* cfitsio 
+* blas    
+* lapack  
+* gcc/g++ (>=3.2) 
+* g77     cfitsio
+* g2c
+
+and their development packages 
+e.g. cfitsio-dev (deb based) / cfitsio-devel (rpm based)
+
+# extra libraries 
+
+* rpfits  -> in /usr/local
+  To get rpfits
+  wget http://www.atnf.csiro.au/pub/software/rpfits/rpfits.tar.gz
+  unpack and build/install
+
+INSTALL
+=======
+
+To build this casa_asap package:
+
+1) ./configure.sh
+2) Do this ONLY if you have non-standard locations for cfitsio or rpfits
+   If RPFITS is not in /usr/local/
+   
+   edit  "linux/UNKNOWN_SITE/makedefs"
+   or    "linux_64b/UNKNOWN_SITE/makedefs"
+   or    "darwin/UNKNOWN_SITE/makedefs"
+   
+   and replace 
+   
+   RPFITSROOT := /usr/local
+   
+   with
+   
+   RPFITSROOT := myrpfitsdir
+ 
+3) ./build.sh
+4) patience ;-)
+
+
+NOTES
+=====
+
+The OSX installation isn't straight forward. Please use the binary package 
+instead.

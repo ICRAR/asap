@@ -1,5 +1,6 @@
 #!/bin/sh
 
+ROOTDIR=`pwd`
 . aipsinit.sh
 
 MODULES="casa components coordinates fits images lattices measures ms scimath tables atnf"

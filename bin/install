@@ -44,6 +44,7 @@ except getopt.GetoptError:
 
 execprefix = dist.EXEC_PREFIX
 moduledir = dist.get_python_lib()
+sysmoduledir = moduledir
 for k, v in opts:
     if k in ("-h", "--help"):
         usage()
@@ -117,7 +118,21 @@ try:
     print "Installing asap module in %s" % moddir
     shutil.copytree("asap", moddir)
     print "Installing asap  scripts in %s" % bindir
-    shutil.copy2("bin/asap", bindir)
+    if moduledir != sysmoduledir:
+        import sre
+        print "Changing asap startup script to use custom PYTHONPATH"
+        inf = file("bin/asap")
+        outf = file(os.path.join(bindir,"asap"), "w")
+        outline = "export PYTHONPATH=%s" % moduledir
+        regx = sre.compile("\*\*PYTHONPATH\*\*")
+        for line in inf.readlines():
+            if regx.search(line):
+                line = outline
+            outf.write(line)
+        outf.close()
+        os.chmod(os.path.join(bindir,"asap"), 0755)
+    else:
+        shutil.copy2("bin/asap", bindir)
     shutil.copy2("bin/asap_update_data", bindir)
     if not os.path.exists("asap/data/ephemerides"):
         print "Warning - no data directory present"
