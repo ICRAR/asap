@@ -1,4 +1,4 @@
-TARGET   := /tmp/_asap.so
+TARGET   := _asap.so
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(AIPSPATH))
@@ -14,27 +14,29 @@ endif
 
 # compiler flags
 CXXFLAGS := -fPIC -O3
-CXXFLAGS += -ansi -pedantic -Wno-long-long -Wall
+CXXFLAGS += -ansi -Wno-long-long -Wall
 CXXOPTS := -DAIPS_NO_TEMPLATE_SRC
 
 # darwin specific flags
 ifeq "$(CASAARCH)" "darwin"
-   CXXFLAGS := -O2 -DAIPS_DARWIN
-   CXXFLAGS += -ansi -pedantic -Wno-long-long -Wno-long-double
+   CXXFLAGS +=-DAIPS_DARWIN
+   CXXFLAGS += -Wno-long-double
 endif
 
-
 # cfitsio
-CFITSIOROOT := /usr/local
-# If aips++ is build with LFS you need to have
+CFITSIOROOT := /usr
+# If aips++ is build with LFS (default) you need to have
 # libcfitsio with lfs support
+# this is default in cfitsio >= 3.0
 CFITSIOINC := -I$(CFITSIOROOT)/include
-CFITSIOLIB := $(CFITSIOROOT)/lib/libcfitsio_lfs.a
-#CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
+CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
 
 #rpfits
 RPFITSROOT := /usr/local
 RPFITSLIB := $(RPFITSROOT)/lib/librpfits.a
+
+G2CROOT := /usr
+G2CLIB := $(G2CROOT)/lib -lg2c
 
 # This assumes all casa libs are static only (*.a)
 # if not than there might by symbol resolution errors.
@@ -44,7 +46,7 @@ CASAPPLIB := $(CASALIB)/version.o \
              -llattices -lfits -lmeasures -lmeasures_f \
              -ltables -lscimath -lscimath_f -lcasa  \
              $(CASALIB)/libwcs.a \
-             $(RPFITSLIB) $(CFITSIOLIB) -lg2c -lstdc++
+             $(RPFITSLIB) $(CFITSIOLIB) $(G2CLIB) -lstdc++
 
 # darwin specific CASA flags
 ifeq "$(CASAARCH)" "darwin"
@@ -58,14 +60,22 @@ LD        := $(CXX)
 
 LDFLAGS   := -shared -Wl$(TARGET) -s
 ifeq "$(CASAARCH)" "darwin"
-   LDFLAGS   := -dynamiclib -single_module
+   LDFLAGS   := -bundle
 endif
 
-# python only 2.3 has been tested
+# python
 PYVERSION := 2.3
 PYTHONROOT := /usr
 PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
 PYTHONLIB := -L$(PYTHONROOT)/lib -lpython$(PYVERSION)
+
+# use python universal build
+ifeq "$(CASAARCH)" "darwin"
+   PYVERSION := 2.4
+   PYTHONROOT := /Library/Frameworks/Python.framework/Versions/$(PYVERSION)
+   PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
+   PYTHONLIB := -L$(PYTHONROOT)/lib -framework Python
+endif
 
 # has to be build with same g++ version as casa
 BOOSTROOT := /usr
@@ -78,7 +88,7 @@ INCDIRS   := -I. $(CASAINC)  $(CFITSIOINC) $(BOOSTINC) $(PYTHONINC)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
-             MathUtils2.o \
+	     MathUtils2.o \
              RowAccumulator.o \
              Logger.o \
              STAttr.o \
