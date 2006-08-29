@@ -125,7 +125,7 @@ if rootdir is not None:
     ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
     data =  env.InstallAs(ofiles, ifiles)
     env.Alias('install', data)
-    
+
 # make binary distribution
 if len(env["makedist"]):
     env["stagedir"] = "asap-%s-%s" % (env["version"], env["makedist"])
@@ -136,14 +136,15 @@ if len(env["makedist"]):
     env.QInstall("$stagedir", ["bin/install"])
     env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
     if rootdir is not None:
-        env.Command("Using data tables in %s" % rootdir,
-                    '', env.MessageAction)        
+        # This creates a directory Using data table... - disabled
+        #env.Command("Using data tables in %s" % rootdir,
+        #           '', env.MessageAction)
         outdir =  os.path.join(env["stagedir"],'asap','data')
         ofiles, ifiles = env.WalkDirTree(outdir, rootdir, sources)
         env.QInstallAs(ofiles, ifiles)
     else:
         env.Command("No data tables available. Use 'asap_update_data' after install",
-                    '', env.MessageAction)        
+                    '', env.MessageAction)
     arch = env.Archiver(os.path.join("dist",env["stagedir"]),
                         env["stagedir"])
     env.AddPostAction(arch, Delete("$stagedir"))
