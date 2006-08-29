@@ -639,15 +639,18 @@ class scantable(Scantable):
             else: raise
         self._add_history("flag", varlist)
 
-    def lag_flag(self, frequency, unit="GHz", width=0.0, insitu=None):
+    def lag_flag(self, frequency, width=0.0, unit="GHz", insitu=None):
         """
         Flag the data in 'lag' space by providing a frequency to remove.
         Flagged data in the scantable gets set to 0.0 before the fft.
         No taper is applied.
         Parameters:
-            frequency:    the frequency to remove
-            unit:         the frequency unit ()default "GHz")
-            width:        the width of the frequency to remove
+            frequency:    the frequency (really a period within the bandwidth) to remove
+            width:        the width of the frequency to remove, to remove a range
+                          of frequencies aroung the centre.
+            unit:         the frequency unit (default "GHz")
+        Notes:
+            It is recommended to flag edges of the band or strong signals beforehand.
         """
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
@@ -1429,17 +1432,17 @@ class scantable(Scantable):
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
-	"""
+    """
         if mask is None: mask = ()
         varlist = vars()
         on = scantable(self._math._mx_extract(self, 'on'))
         preoff = scantable(self._math._mx_extract(self, 'off'))
         off = preoff.average_time(mask=mask, weight=weight, scanav=False)
-	from asapmath  import quotient
+    from asapmath  import quotient
         q = quotient(on, off, preserve)
         q._add_history("mx_quotient", varlist)
         print_log()
-	return q
+    return q
 
     def freq_switch(self, insitu=None):
         """

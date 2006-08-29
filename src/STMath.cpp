@@ -1406,7 +1406,7 @@ CountedPtr< Scantable >
         }
       }
       Vector<Complex> lags;
-      ffts.fft(lags, spec);
+      ffts.fft0(lags, spec);
       Int start =  max(0, lag0);
       Int end =  min(Int(lags.nelements()-1), lag1);
       if (start == end) {
@@ -1416,7 +1416,7 @@ CountedPtr< Scantable >
           lags[j] = Complex(0.0);
         }
       }
-      ffts.fft(spec, lags);
+      ffts.fft0(spec, lags);
       specCol.put(i, spec);
     }
     ++iter;
