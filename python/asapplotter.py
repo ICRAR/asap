@@ -1,6 +1,7 @@
 from asap import rcParams, print_log, selector
 from asap import NUM
 import matplotlib.axes
+import sre
 
 class asapplotter:
     """
@@ -152,7 +153,7 @@ class asapplotter:
         Set the plots look and feel, i.e. what you want to see on the plot.
         Parameters:
             stacking:     tell the plotter which variable to plot
-                          as line color overlays (default 'pol')
+                          as line colour overlays (default 'pol')
             panelling:    tell the plotter which variable to plot
                           across multiple panels (default 'scan'
         Note:
@@ -328,22 +329,25 @@ class asapplotter:
         if self._data: self.plot(self._data)
         return
 
-    def set_colors(self, colormap):
+    def set_colors(self, colmap):
         """
-        Set the colors to be used. The plotter will cycle through
-        these colors when lines are overlaid (stacking mode).
+        Set the colours to be used. The plotter will cycle through
+        these colours when lines are overlaid (stacking mode).
         Parameters:
-            colormap:     a list of colour names
+            colmap:     a list of colour names
         Example:
              plotter.set_colors("red green blue")
              # If for example four lines are overlaid e.g I Q U V
              # 'I' will be 'red', 'Q' will be 'green', U will be 'blue'
              # and 'V' will be 'red' again.
         """
-        if isinstance(colormap,str):
-            colormap = colormap.split()
-        self._plotter.palette(0,colormap=colormap)
+        if isinstance(colmap,str):
+            colmap = colmap.split()
+        self._plotter.palette(0, colormap=colmap)
         if self._data: self.plot(self._data)
+
+    # alias for english speakers
+    set_colours = set_colors
 
     def set_histogram(self, hist=True, linewidth=None):
         """

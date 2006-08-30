@@ -216,9 +216,9 @@ class fitter:
         print_log()
         return
 
-    def set_gauss_parameters(self, peak, centre, fhwm,
+    def set_gauss_parameters(self, peak, centre, fwhm,
                              peakfixed=0, centerfixed=0,
-                             fhwmfixed=0,
+                             fwhmfixed=0,
                              component=0):
         """
         Set the Parameters of a 'Gaussian' component, set with set_function.
@@ -226,7 +226,7 @@ class fitter:
             peak, centre, fhwm:  The gaussian parameters
             peakfixed,
             centerfixed,
-            fhwmfixed:           Optional parameters to indicate if
+            fwhmfixed:           Optional parameters to indicate if
                                  the paramters should be held fixed during
                                  the fitting process. The default is to keep
                                  all parameters flexible.
@@ -241,8 +241,8 @@ class fitter:
             else:
                 raise ValueError(msg)
         if 0 <= component < len(self.components):
-            d = {'params':[peak, centre, fhwm],
-                 'fixed':[peakfixed, centerfixed, fhwmfixed]}
+            d = {'params':[peak, centre, fwhm],
+                 'fixed':[peakfixed, centerfixed, fwhmfixed]}
             self.set_parameters(d, component)
         else:
             msg = "Please select a valid  component."
@@ -478,7 +478,9 @@ class fitter:
         tlab = 'Spectrum'
         xlab = 'Abcissa'
         ylab = 'Ordinate'
-        m = None
+        from matplotlib.numerix import ma,logical_not,array
+        m = NUM.ones(len(self.x))
+
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
@@ -488,7 +490,6 @@ class fitter:
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
-        from matplotlib.numerix import ma,logical_not,array
         y = ma.masked_array(self.y,mask=logical_not(array(m,copy=False)))
         self._p.plot(self.x, y)
         if residual:

@@ -31,7 +31,7 @@ if [ ! $platf == '' ]; then
     echo "configuting 64bit linux..."
     mv $ROOTDIR/linux $ROOTDIR/linux_64b
     cd $ROOTDIR/linux_64b/UNKNOWN_SITE
-    cat makedefs.64 | sed -e  "s#-Wall  #-Wall $flags#" > makedefs
+    cat makedefs.64 | sed -e  "s#-Wall  #-Wall $cppflags#" > makedefs
     cd $ROOTDIR
 elif [ $arch == 'Darwin' ]; then
     echo "configuring darwin..."
@@ -42,6 +42,6 @@ elif [ $arch == 'Darwin' ]; then
 else
     echo "configuring linux..."
     cd $ROOTDIR/linux/UNKNOWN_SITE
-    cat makedefs.32 | sed -e  "s#-Wall  #-Wall $flags#" > makedefs
+    cat makedefs.32 | sed -e  "s#-Wall  #-Wall $cppflags#" > makedefs
     cd $ROOTDIR
 fi

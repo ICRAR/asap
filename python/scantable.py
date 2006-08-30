@@ -922,9 +922,6 @@ class scantable(Scantable):
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
-            allaxes:         if True apply to all spectra. Otherwise
-                         apply only to the selected (beam/pol/if)spectra only
-                         The default is taken from .asaprc (True if none)
         """
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
@@ -1183,14 +1180,23 @@ class scantable(Scantable):
         if mask is None:
             mask = list(NUM.ones(self.nchan(-1)))
         from asap.asapfitter import fitter
-        f = fitter()
-        f.set_scan(self, mask)
-        f.set_function(poly=order)
-        s = f.auto_fit(insitu, plot=plot)
-        s._add_history("poly_baseline", varlist)
-        print_log()
-        if insitu: self._assign(s)
-        else: return s
+        try:
+            f = fitter()
+            f.set_scan(self, mask)
+            f.set_function(poly=order)
+            s = f.auto_fit(insitu, plot=plot)
+            s._add_history("poly_baseline", varlist)
+            print_log()
+            if insitu: self._assign(s)
+            else: return s
+        except RuntimeError:
+            msg = "The fit failed, possibly because it didn't converge."
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise RuntimeError(msg)
+
 
     def auto_poly_baseline(self, mask=[], edge=(0, 0), order=0,
                            threshold=3, plot=False, insitu=None):
@@ -1432,17 +1438,17 @@ class scantable(Scantable):
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
-    """
+        """
         if mask is None: mask = ()
         varlist = vars()
         on = scantable(self._math._mx_extract(self, 'on'))
         preoff = scantable(self._math._mx_extract(self, 'off'))
         off = preoff.average_time(mask=mask, weight=weight, scanav=False)
-    from asapmath  import quotient
+        from asapmath  import quotient
         q = quotient(on, off, preserve)
         q._add_history("mx_quotient", varlist)
         print_log()
-    return q
+        return q
 
     def freq_switch(self, insitu=None):
         """

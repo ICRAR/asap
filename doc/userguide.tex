@@ -12,7 +12,7 @@
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{1ex}
 
-\title{ATNF Spectral Analysis Package\\User Guide v2.0 }
+\title{ATNF Spectral Analysis Package\\User Guide v2.1\\DRAFT }
 \author{Chris Phillips}
 
 \newcommand{\cmd}[1]{{\tt #1}}
@@ -23,8 +23,17 @@
   \begin{minipage}[t]{\textwidth-75mm}#3\end{minipage}
 }
 
-\makeindex
+\newcommand{\commanddef}[3]{
+  \begin{minipage}[t]{27mm}\tt #1\end{minipage}\hspace{3mm}
+  \begin{minipage}[t]{\textwidth-30mm}#2 \\ \tt #3\end{minipage}
+}
 
+\newcommand{\bigcommanddef}[3]{
+  \begin{minipage}[t]{45mm}\tt #1\end{minipage}\hspace{3mm}
+  \begin{minipage}[t]{\textwidth-47mm}#2 \\ \tt #3\end{minipage}
+}
+
+\makeindex
 
 \begin{document}
 
@@ -38,9 +47,8 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-This userguide has been updated for the ASAP 2.0 release which has a
-number of significant changes which affect the user interface. Please
-report any mistakes you find.
+This userguide is being updated for the ASAP 2.1. Please report any
+mistakes you find.
 
 \section{Installation and Running}
 
@@ -52,6 +60,13 @@ Currently there are installations running on Linux machines at
 \item Parkes - use host {\tt bourbon}
 \item Mopra - use host {\tt minos}
 \end{itemize}
+
+Or use your own Linux desktop.
+
+{\em Note. ASAP2.1 only runs on ATNF Linux machines which have been
+updated to Debian Sarge and are using the ``DEBIANsarge''
+/usr/local. If your favourite machine has not been upgraded, send a
+request your your friendly IT support.}
 
 \index{Running}To start asap log onto one of these Linux hosts and enter
 
@@ -265,21 +280,24 @@ scantables.  A scantable holds your data, and also provides functions
 to operate upon it.
 
 The building block of a scantable is an integration, which is a single
-row of a scantable. Each row contains just one spectrum for each beam, IF and
-polarisation. For example Parkes multibeam data would contain many
-beams, one IF and 2-4 polarisations, while the new Mopra 8-GHz
-filterbank will eventually produce one beam, many IFs, and 2-4
-polarisations. All of the combinations of Beams/IFs an Polarisations are
+row of a scantable. Each row contains just one spectrum for each beam,
+IF and polarisation. For example Parkes OH-multibeam data would
+normally contain 13 beams, 1 IF and 2 polarisations, Parkes
+methanol-multibeam data would contain 7 beams, 2 IFs and 2
+polarisations while the Mopra 8-GHz MOPDS filterbank will produce one
+beam, many IFs, and 2-4 polarisations.
+
+All of the combinations of Beams/IFs an Polarisations are
 contained in seperate rows. These rows are grouped in cycles (same time stamp).
 
-A collection of cycles for one source is termed
-a scan (and each scan has a unique numeric identifier, the SCANNO). A
-scantable is then a collection  of one or more scans. If you have
-scan-averaged your data in time, i.e. you have averegaed all cycles within
-a scan, then each scan would hold just one (averaged) integration.
+A collection of cycles for one source is termed a scan (and each scan
+has a unique numeric identifier, the SCANNO). A scantable is then a
+collection of one or more scans. If you have scan-averaged your data
+in time, i.e. you have averegaed all cycles within a scan, then each
+scan would hold just one (averaged) integration.
 
-Many of the functions which work on scantables can either return a
-new scantable with modified data or change the scantable insitu. Which
+Many of the functions which work on scantables can either return a new
+scantable with modified data or change the scantable insitu. Which
 method is used depends on the users preference. The default can be
 changed via the {\tt .asaprc} resource file.
 
@@ -308,7 +326,6 @@ to do that !).
 
 The data are stored in columns (the length of a column is the number of
 rows/spectra of course).
-
 
 Two important columns are those that describe the frequency setup.  We mention
 them explicitly here because you need to be able to understand the presentation
@@ -475,7 +492,7 @@ provided list.
 
 \end{verbatim}
 
-{\em Currently the following is not implemented}
+{\em Currently the following is not implemented
 
 In both of the above modes, you can also specify the rest frequencies via
 names in a known list rather than by their values.
@@ -485,7 +502,7 @@ Examples:
 \begin{verbatim}
   ASAP> scans.set_restfreqs(freqs=['OH1665','OH1667'])
 \end{verbatim}
-
+}
 
 \subsubsection{Masks}
 
@@ -648,40 +665,40 @@ contribution, use the \cmd{preserve} argument:
  ASAP> q = s.auto_quotient(preserve=True)
 \end{verbatim}
 
-%If this is not sufficient the following alternative method can be used.
-%
-%\subsection{Separate reference and source observations}
-%
-%\index{Quotient spectra}Most data from ATNF observatories
-%distinguishes on and off source data using the file name. This makes
-%it easy to create two scantables with the source and reference
-%data. As long as there was exactly one reference observation for each
-%on source observation for following method will work.
-%
-%For Mopra and Parkes data:
-%\begin{verbatim}
-%  ASAP> r = scans.get_scan('*_R')
-%  ASAP> s = scans.get_scan('*_S')
-%\end{verbatim}
-%
-%For Tidbinbilla data
-%\begin{verbatim}
-%  ASAP> r = scans.get_scan('*_[ew]')
-%  ASAP> s = scans.get_scan('*_[^ew]')
-%\end{verbatim}
-%
-%\subsection{Make the quotient spectra}
-%
-%Use the quotient function
-%
-%\begin{verbatim}
-%  ASAP> q = s.quotient(r)
-%\end{verbatim}
-%
-%This uses the rows in scantable \cmd{r} as reference spectra for the
-%rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
-%(which is applied to all rows in \cmd{s}) or both scantables must have
-%the same number of rows.
+If this is not sufficient the following alternative method can be used.
+
+\subsection{Separate reference and source observations}
+
+\index{Quotient spectra}Most data from ATNF observatories
+distinguishes on and off source data using the file name. This makes
+it easy to create two scantables with the source and reference
+data. As long as there was exactly one reference observation for each
+on source observation for following method will work.
+
+For Mopra and Parkes data:
+\begin{verbatim}
+  ASAP> r = scans.get_scan('*_R')
+  ASAP> s = scans.get_scan('*_S')
+\end{verbatim}
+
+For Tidbinbilla data
+\begin{verbatim}
+  ASAP> r = scans.get_scan('*_[ew]')
+  ASAP> s = scans.get_scan('*_[^ew]')
+\end{verbatim}
+
+\subsection{Make the quotient spectra}
+
+Use the quotient function
+
+\begin{verbatim}
+  ASAP> q = s.quotient(r)
+\end{verbatim}
+
+This uses the rows in scantable \cmd{r} as reference spectra for the
+rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
+(which is applied to all rows in \cmd{s}) or both scantables must have
+the same number of rows.
 
 \subsection{Time average separate scans}
 
@@ -701,7 +718,8 @@ you can:
 \end{verbatim}
 
 The default is to use integration time weighting. The alternative is
-to use none, variance, Tsys weighting or Tsys \& integration time.
+to use none, variance, Tsys weighting, Tsys \& integration time or
+median averaging.
 
 \begin{verbatim}
  ASAP> av = average_time(q, weight='tintsys')
@@ -807,7 +825,22 @@ E.g:
   ASAP> scans = scantable('2004-11-23_1841-P484.rpf', unit='Jy')
   # Or in two steps
   ASAP> scans = scantable('2004-11-23_1841-P484.rpf')
-  ASAP> scans.set_fluxunit('Jy)
+  ASAP> scans.set_fluxunit('Jy')
+\end{verbatim}
+
+\subsubsection{Feed Polarisation}
+
+\index{Brightness Units}The RPFITS files also do not contain any
+information as to the feed polarisation. ASAP will set a default based
+on the antenna, but this will often be wrong the data has been read,
+the default can be changed using the \cmd{set\_feedtype} function with
+an argument of \cmd{'linear'} or \cmd{'circular'}.
+
+E.g:
+
+\begin{verbatim}
+  ASAP> scans = scantable('2004-11-23_1841-P484.rpf')
+  ASAP> scans.set_feedtype('circular')
 \end{verbatim}
 
 \subsubsection{Tsys scaling}
@@ -995,7 +1028,6 @@ Typical usages are:
   ASAP> scans.save('myscans', overwrite=True) # Overwrite an existing file
 \end{verbatim}
 
-
 \section{Plotter}
 
 \index{Plotter}Scantable spectra can be plotted at any time. An asapplotter object is
@@ -1134,6 +1166,122 @@ To save a hardcopy of the current plot, use the save function, e.g.
 \begin{verbatim}
   ASAP> plotter.save('myplot.ps')
   ASAP> plotter.save('myplot.png', dpi=80)
+\end{verbatim}
+
+\subsection{Plotter Customisation}
+
+The plotter allows the user to change most properties such as text
+size and colour. The \cmd{commands} funcation and {\cmd help\
+asapplotter} list all the possible commands that can be used with the
+plotter.
+
+\commanddef{set\_colors}{Change the default colours used for line
+plotting. Colours can be given either by name, using the html standard
+(e.g. red, blue or hotpink), or hexadecimal code (e.g. for black
+\#000000). If less colours are specified than lines plotted , the
+plotter cycles through the colours. Example:} {ASAP>
+plotter.set\_colors('red blue green')\\ ASAP>
+plotter.set\_colors(`\#0000 blue \#FF00FF')\\ }
+
+\commanddef{set\_linestyles}{Change the line styles used for
+plots. Allowable values are 'line', 'dashed', 'dotted', 'dashdot', 
+'dashdotdot' and 'dashdashdot. Example: }{
+  ASAP> plotter.set\_linestyles('line dash cotted datshot.)\\
+  ASAP> plotter.set\_font(size=10)\\
+}
+
+\commanddef{set\_font}{Change the font style and size. Example}{
+  ASAP> plotter.set\_font(weight='bold')\\
+  ASAP> plotter.set\_font(size=10)\\
+  ASAP> plotter.set\_font(style='italic')\\
+}
+
+\commanddef{set\_layout}{Change the multi-panel layout, ie now many
+  rows and columns}{
+  ASAP> plotter.set\_layout(3,2)
+}
+
+\commanddef{set\_legend}{Set the position, size and optional value of the legend}{
+  ASAP> plotter.set\_legend(fontsize=16)\\
+  ASAP> plotter.set\_legend(mode=0)  \# ASAP chooses where to put the legend\\
+  ASAP> plotter.set\_legend(mode=4)  \# Put legend on lower right\\
+  ASAP> plotter.set\_legend(mode=-1) \# No legend\\
+  ASAP> plotter.set\_legend(mp=['RR','LL']) \# Specify legend labels\\
+  ASAP> plotter.set\_legend(mp=[r'\$\^\{12\}CO\$',r'\$\^\{13\}CO\$']) \# Latex labels
+}
+
+\commanddef{set\_title}{Set the plot title. If multiple panels are
+  plotted, multiple titles have to be specified}{
+  ASAP> plotter.set\_title(`G323.12$-$1.79`)\\
+  ASAP> plotter.set\_title([`SiO`, 'Methanol'], fontsize=18)\\
+}
+
+\subsection{Plotter Annotations}
+
+The plotter allows various annontations (lines, arrows, text and
+``spans'') to be added to the plot. These annotations are
+``temporary'', when the plotter is next refreshed
+(e.g. \cmd{plotter.plot} or \cmd{plotter.set\_range}) the annotations
+will be removed. 
+
+\bigcommanddef{arrow(x,y,x+dx,y+dy)}{Draw an arrow from a specifed
+\cmd{(x,y)} position to \cmd{(x+dx, y+dy)}. The values are in world
+coordinates. \em {HOW TO SET ARROW HEAD??}}{
+  ASAP> plotter.arrow(-40,7,35,0)
+}
+
+\bigcommanddef{axhline(y, xmin, xmax)}{Draw a horizontal line at the
+specifed \cmd{y} position (in world coordinates) between xmin and xmax
+(in relative coordinates, ie 0.0 is the left hand edge of the plot
+while 1.0 is the right side of the plot.}{
+ ASAP> plotter.axhline(6.0,0.2,0.8)
+}
+
+\bigcommanddef{avhline(x, ymin, ymax)}{Draw a vertical line at the
+specifed \cmd{x} position (in world coordinates) between \cmd{ymin}
+and \cmd{ymax} (in relative coordinates, ie 0.0 is the left hand edge
+of the plot while 1.0 is the right side of the plot).}{
+ ASAP> plotter.axvline(-50.0,0.1,1.0)
+}
+
+\bigcommanddef{axhspan(ymin, ymax, \\ \hspace*{20mm}xmin,
+ xmax)}{Overlay a transparent colour rectangle. \cmd{ymin} and
+ \cmd{ymax} are given in world coordnates while \cmd{xmin} and
+ \cmd{xmax} are given in relative coordinates}{ 
+ASAP> plotter.axhspan(2,4,0.25,0.75) 
+}
+
+\bigcommanddef{axvspan(xmin, xmax, \\ \hspace*{20mm} ymin,
+ ymax)}{Overlay a transparent colour rectangle. \cmd{ymin} and
+ \cmd{ymax} are given in relative coordnates while \cmd{xmin} and
+ \cmd{xmax} are given in world coordinates}{ 
+ASAP> plotter.axvspan(-50,60,0.2,0.5) 
+}
+
+\bigcommanddef{text(x, y, str)}{Place the string \cmd{str} at the
+ given \cmd{(x,y)} position in world coordinates.}{
+ASAP>plotter.text(-10,7,"CO") 
+}
+
+
+
+These functions all take a set of \cmd{kwargs} commands. These can be
+used to set colour, linewidth fontsize etc. These are standard
+matplotlib settings. Common ones include:
+
+\begin{tabular}{ll}
+ \tt color  \\
+ \tt linewidth \\
+ \tt fontsize \\
+ \tt fontname & Sans, Helvetica, Courier, Times etc\\
+ \tt rotation & Text rotation (horizontal, vertical) \\
+ \tt alpha & The alpha transparency on 0-1 scale\\
+\end{tabular}
+
+Examples: 
+\begin{verbatim}
+  ASAP> plotter.axhline(6.0,0.2,0.8, color='red', linewidth=3)
+  ASAP> plotter.text(-10,7,"CO", fontsize=20)
 \end{verbatim}
 
 \section{Fitting}
@@ -1345,6 +1493,45 @@ Example:
 \begin{verbatim}
   ASAP> scans.save('myscan.sdfits', 'SDFITS', stokes=True)
 \end{verbatim}
+
+\section{Specialised Processing}
+
+\subsection{Multibeam MX mode}
+
+MX mode is a specific observing approach with a multibeam where a
+single source is observed cycling through each beam. The scans when
+the beam is off source is used as a reference for the onsource
+scan. The function \cmd{mx\_quotient} is used to make a quotient
+spectrum from an MX cycle. This works averaging the ``off-source''
+scans for each beam (either a median average or mean) and using this
+as a reference scan in a normal quotient (for each beam). The final
+spectrum for each beam is returned on a new scantable containing
+single scan (it the scan numbers are re-labelled to be the same). Note
+that the current version of \cmd{mx\_quotient} only handles a single
+MX cycle, ie if each beam has observed the source multiple times you
+will need to use the selector object multiple times to select a single
+MX cycle, run \cmd{mx\_quotient} for each cycle then merge the
+resulting scan tables back together.
+
+Example:
+
+\begin{verbatim}
+  ASAP> scans = scantable('mydata.rpf')
+  ASAP> q = scans.mx_quotient()
+  ASAP> plotter.plot(q)
+\end{verbatim}
+
+The function \cmd{average\_beam} averages multiple beam data
+together. This is need if MX mode has been used to make a long
+integration on a single source. E.g.
+
+\begin{verbatim}
+  ASAP> av = q.average_beam()
+\end{verbatim}
+
+\subsection{Frequency Switching}
+
+{\em FILL ME IN}
 
 \section{Scantable Mathematics}
 
@@ -1638,13 +1825,15 @@ plotter.plot()
 
 \index{Functions!summary}%
 \begin{verbatim}
-ASAP> commands()
+
     [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
             get_scan        - gets a specific scan out of a scantable
                               (by name or number)
+            drop_scan       - drops a specific scan out of a scantable
+                              (by number)
             set_selection   - set a new subselection of the data
             get_selection   - get the current selection object
             summary         - print info about the scantable contents
@@ -1668,6 +1857,7 @@ ASAP> commands()
             set_doppler     - set the doppler to be used from this point on
             set_dirframe    - set the frame for the direction on the sky
             set_instrument  - set the instrument name
+            set_feedtype    - set the feed type
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
             create_mask     - return an mask in the current unit
@@ -1675,9 +1865,10 @@ ASAP> commands()
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-            flag_spectrum   - flag data
-            save            - save the scantable to disk as either 'ASAP'
-                              or 'SDFITS'
+            flag            - flag selected channels in the data
+            lag_flag        - flag specified frequency in the data
+            save            - save the scantable to disk as either 'ASAP',
+                              'SDFITS' or 'ASCII'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             nscan           - the number of scans in the scantable
             nrow            - te number of spectra in the scantable
@@ -1686,15 +1877,14 @@ ASAP> commands()
             average_time    - return the (weighted) time average of a scan
                               or a list of scans
             average_pol     - average the polarisations together.
-                              The dimension won't be reduced and
-                              all polarisations will contain the
-                              averaged spectrum.
+            average_beam    - average the beams together.
             convert_pol     - convert to a different polarisation type
             auto_quotient   - return the on/off quotient with
-                              automatic detection of the on/off scans
-                              (matched pairs and 1 off - n on)
-            scale           - return a scan scaled by a given factor
-            add             - return a scan with given value added
+                              automatic detection of the on/off scans (closest
+                              in time off is selected)
+            mx_quotient     - Form a quotient using MX data (off beams)
+            scale, *, /     - return a scan scaled by a given factor
+            add, +, -       - return a scan with given value added
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
@@ -1707,6 +1897,8 @@ ASAP> commands()
             convert_flux    - convert to and from Jy and Kelvin brightness
                               units
             freq_align      - align spectra in frequency frame
+            invert_phase    - Invert the phase of the cross-correlation
+            swap_linears    - Swap XX and YY
             rotate_xyphase  - rotate XY phase of cross correlation
             rotate_linpolphase - rotate the phase of the complex
                                  polarization O=Q+iU correlation
@@ -1715,6 +1907,18 @@ ASAP> commands()
                               'max', 'rms' etc.
             stddev          - Determine the standard deviation of the current
                               beam/if/pol
+     [Selection]
+         selector              - a selection object to set a subset of a scantable
+            set_scans          - set (a list of) scans by index
+            set_cycles         - set (a list of) cycles by index
+            set_beams          - set (a list of) beamss by index
+            set_ifs            - set (a list of) ifs by index
+            set_polarisations  - set (a list of) polarisations by name
+                                 or by index
+            set_names          - set a selection by name (wildcards allowed)
+            set_tsys           - set a selection by tsys thresholds
+            reset              - unset all selections
+            +                  - merge to selections
 
      [Math] Mainly functions which operate on more than one scantable
 
@@ -1723,6 +1927,22 @@ ASAP> commands()
             quotient        - return the on/off quotient
             simple_math     - simple mathematical operations on two scantables,
                               'add', 'sub', 'mul', 'div'
+            quotient        - build quotient of the given on and off scans
+                              (matched pairs and 1 off/n on are valid)
+            merge           - merge a list of scantables
+
+     [Line Catalog]
+        linecatalog              - a linecatalog wrapper, taking an ASCII or
+                                   internal format table
+            summary              - print a summary of the current selection
+            set_name             - select a subset by name pattern, e.g. '*OH*'
+            set_strength_limits  - select a subset by line strength limits
+            set_frequency_limits - select a subset by frequency limits
+            reset                - unset all selections
+            save                 - save the current subset to a table (internal
+                                   format)
+            get_row              - get the name and frequency from a specific
+                                   row in the table
      [Fitting]
         fitter
             auto_fit        - return a scan where the function is
@@ -1745,6 +1965,7 @@ ASAP> commands()
         asapplotter         - a plotter for asap, default plotter is
                               called 'plotter'
             plot            - plot a scantable
+            plot_lines      - plot a linecatalog overlay
             save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
@@ -1759,7 +1980,30 @@ ASAP> commands()
             set_colors      - specify a set of colours to use
             set_linestyles  - specify a set of linestyles to use if only
                               using one color
+            set_font        - set general font properties, e.g. 'family'
+            set_histogram   - plot in historam style
             set_mask        - set a plotting mask for a specific polarization
+            text            - draw text annotations either in data or relative
+                              coordinates
+            arrow           - draw arrow annotations either in data or relative
+                              coordinates
+            set_abcissa     - specify a user label for the abcissa
+            set_ordinate    - specify a user label for the ordinate
+            set_layout      - specify the multi-panel layout (rows,cols)
+            set_colors      - specify a set of colours to use
+            set_linestyles  - specify a set of linestyles to use if only
+                              using one color
+            set_font        - set general font properties, e.g. 'family'
+            set_histogram   - plot in historam style
+            set_mask        - set a plotting mask for a specific polarization
+            text            - draw text annotations either in data or relative
+                              coordinates
+            arrow           - draw arrow annotations either in data or relative
+                              coordinates
+            axhline,axvline - draw horizontal/vertical lines
+            axhspan,axvspan - draw horizontal/vertical regions
+
+        xyplotter           - matplotlib/pylab plotting functions
 
     [Reading files]
         reader              - access rpfits/sdfits files
@@ -1779,23 +2023,11 @@ ASAP> commands()
         help                - print help for one of the listed functions
         execfile            - execute an asap script, e.g. execfile('myscript')
         list_rcparameters   - print out a list of possible values to be
-                              put into $HOME/.asaprc
+                              put into .asaprc
+        rc                  - set rc parameters from within asap
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
-
-    Note:
-        How to use this with help:
-                                         # function 'summary'
-        [xxx] is just a category
-        Every 'sub-level' in this list should be replaces by a '.' Period when
-        using help
-        Example:
-            ASAP> help scantable # to get info on ths scantable
-            ASAP> help scantable.summary # to get help on the scantable's
-            ASAP> help average_time
-
-
 \end{verbatim}
 
 \subsection{ASCII output format}
@@ -1806,8 +2038,6 @@ ASAP> commands()
 
 \asaprc{insitu}{{\bf True}/False}{Apply operations on the input
 scantable or return new one}
-
-% plotting
 
 \asaprc{useplotter}{{\bf True}/False}{Preload a default plotter}
 
@@ -1826,9 +2056,16 @@ share axislabels}
 \asaprc{plotter.decimate}{True/{\bf False}}{Decimate the number of
 points plotted by a factor of nchan/1024}
 
-% default colours/linestyles
-%\asaprc{plotter.colours}{.}{.}
-%\asaprc{plotter.linestyles{.}{.}
+\asaprc{plotter.histogram}{True/{\bf False}}{Plot spectrum using
+histogram rather than lines.}
+
+{\em MALTE TO FIX}
+
+\asaprc{plotter.colours}{}{Set default colours for plotting}
+
+\asaprc{plotter.colours}{}{Set default line styles}
+
+\asaprc{plotter.papersze}{{\bf A4}}{}
 
 % scantable
 \asaprc{scantable.save}{{\bf ASAP} SDFITS FITS ASCII MS2}{Default output
@@ -1840,6 +2077,12 @@ read}
 \asaprc{scantable.freqframe}{{\bf LSRK} TOPO BARY etc}{default
 frequency frame to set when function scantable.set\_freqframe is
 called or the data is imported}
+
+\asaprc{scantable.verbosesummary}{True/{\bf False}}{Control the level
+of information printed by summary}
+
+\asaprc{scantable.storage}{{\bf memory}/disk}{Storage of scantables in
+memory of via based disk tables}
 
 \subsection{Installation}
 
