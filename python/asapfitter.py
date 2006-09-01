@@ -99,6 +99,7 @@ class fitter:
                 raise TypeError(msg)
 
         self.fitter.setexpression(self.fitfunc,n)
+        self.fitted = False
         return
 
     def fit(self, row=0, estimate=False):
@@ -141,6 +142,9 @@ class fitter:
             if len(ps) == 0 or estimate:
                 self.fitter.estimate()
         try:
+            fxdpar = list(self.fitter.getfixedparameters())
+            if len(fxdpar) and fxdpar.count(0) == 0:
+                 raise RuntimeError,"No point fitting, if all parameters are fixed."
             converged = self.fitter.fit()
             if not converged:
                 raise RuntimeError,"Fit didn't converge."
@@ -154,9 +158,12 @@ class fitter:
         print_log()
         return
 
-    def store_fit(self):
+    def store_fit(self, filename=None):
         """
-        Store the fit parameters in the scantable.
+        Save the fit parameters.
+        Parameters:
+            filename:    if specified save as an ASCII file, if None (default)
+                         store it in the scnatable
         """
         if self.fitted and self.data is not None:
             pars = list(self.fitter.getparameters())
@@ -168,7 +175,14 @@ class fitter:
             fit.setfunctions(self.fitfuncs)
             fit.setcomponents(self.components)
             fit.setframeinfo(self.data._getcoordinfo())
-            self.data._addfit(fit,self._fittedrow)
+            if filename is not None:
+                import os
+                filename = os.path.expandvars(os.path.expanduser(filename))
+                if os.path.exists(filename):
+                    raise IOError("File '%s' exists." % filename)
+                fit.save(filename)
+            else:
+                self.data._addfit(fit,self._fittedrow)
 
     #def set_parameters(self, params, fixed=None, component=None):
     def set_parameters(self,*args,**kwargs):
@@ -223,7 +237,7 @@ class fitter:
         """
         Set the Parameters of a 'Gaussian' component, set with set_function.
         Parameters:
-            peak, centre, fhwm:  The gaussian parameters
+            peak, centre, fwhm:  The gaussian parameters
             peakfixed,
             centerfixed,
             fwhmfixed:           Optional parameters to indicate if
@@ -351,7 +365,7 @@ class fitter:
             c = 0
             for i in range(len(pars)):
                 fix = ""
-                if fixed[i]: fix = "(fixed)"
+                if len(fixed) and fixed[i]: fix = "(fixed)"
                 if errors :
                     out += '  p%d%s= %3.6f (%1.6f),' % (c,fix,pars[i], errors[i])
                 else:

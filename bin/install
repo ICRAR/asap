@@ -28,10 +28,12 @@ def get_libs(lib='_asap.so'):
     unresolved = []
     for l in p.readlines():
         lsp = l.split()
-        if lsp[2] == "not":
-            unresolved.append(lsp[0])
-        else:
-            resolved.append(lsp[2])
+        # test this to avoid fails on linux_gate, which has no library
+        if len(lsp) >= 3:
+            if lsp[2] == "not":
+                unresolved.append(lsp[0])
+            else:
+                resolved.append(lsp[2])
     return resolved, unresolved
 
 try:
@@ -78,7 +80,7 @@ try:
     else:
         print "   All required libraries are present."
 except IOError,msg:
-    print msg+" Skipping test."
+    print "Skipping test. (%s)" % msg
 
 print 'Looking for dependent python modules...'
 try:

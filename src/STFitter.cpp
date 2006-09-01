@@ -63,6 +63,7 @@ void Fitter::clear()
   }
   funcs_.resize(0,True);
   parameters_.resize();
+  fixedpar_.resize();
   error_.resize();
   thefit_.resize();
   estimate_.resize();
@@ -204,10 +205,13 @@ bool Fitter::setParameters(std::vector<float> params)
         throw (AipsError("Function not yet set."));
     if (parameters_.nelements() > 0 && tmppar.nelements() != parameters_.nelements())
         throw (AipsError("Number of parameters inconsistent with function."));
-    if (parameters_.nelements() == 0)
+    if (parameters_.nelements() == 0) {
         parameters_.resize(tmppar.nelements());
-        fixedpar_.resize(tmppar.nelements());
-        fixedpar_ = False;
+        if (tmppar.nelements() != fixedpar_.nelements()) {
+            fixedpar_.resize(tmppar.nelements());
+            fixedpar_ = False;
+        }
+    }
     if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) != 0) {
         uInt count = 0;
         for (uInt j=0; j < funcs_.nelements(); ++j) {
@@ -223,32 +227,39 @@ bool Fitter::setParameters(std::vector<float> params)
             (funcs_[0]->parameters())[i] =  tmppar[i];
         }
     }
+    // reset
+    if (params.size() == 0) {
+        parameters_.resize();
+        fixedpar_.resize();
+    }
     return true;
 }
 
 bool Fitter::setFixedParameters(std::vector<bool> fixed)
 {
-    Vector<Bool> tmp(fixed);
     if (funcs_.nelements() == 0)
         throw (AipsError("Function not yet set."));
-    if (fixedpar_.nelements() > 0 && tmp.nelements() != fixedpar_.nelements())
+    if (fixedpar_.nelements() > 0 && fixed.size() != fixedpar_.nelements())
         throw (AipsError("Number of mask elements inconsistent with function."));
+    if (fixedpar_.nelements() == 0) {
+        fixedpar_.resize(parameters_.nelements());
+        fixedpar_ = False;
+    }
     if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) != 0) {
         uInt count = 0;
         for (uInt j=0; j < funcs_.nelements(); ++j) {
             for (uInt i=0; i < funcs_[j]->nparameters(); ++i) {
-                funcs_[j]->mask(i) = !tmp[count];
-                fixedpar_[count] = !tmp[count];
+                funcs_[j]->mask(i) = !fixed[count];
+                fixedpar_[count] = fixed[count];
                 ++count;
             }
         }
     } else if (dynamic_cast<Polynomial<Float>* >(funcs_[0]) != 0) {
         for (uInt i=0; i < funcs_[0]->nparameters(); ++i) {
-            fixedpar_[i] = tmp[i];
-            funcs_[0]->mask(i) =  tmp[i];
+            fixedpar_[i] = fixed[i];
+            funcs_[0]->mask(i) =  !fixed[i];
         }
     }
-    //fixedpar_ = !tmpmsk;
     return true;
 }
 
@@ -262,7 +273,7 @@ std::vector<float> Fitter::getParameters() const {
 std::vector<bool> Fitter::getFixedParameters() const {
   Vector<Bool> out(parameters_.nelements());
   if (fixedpar_.nelements() == 0) {
-    out = False;
+    return std::vector<bool>();
     //throw (AipsError("No parameter mask set."));
   } else {
     out = fixedpar_;
@@ -311,7 +322,6 @@ bool Fitter::fit() {
   residual_.resize();
   residual_ =  y_;
   fitter.residual(residual_,x_);
-
   // use fitter.residual(model=True) to get the model
   thefit_.resize(x_.nelements());
   fitter.residual(thefit_,x_,True);

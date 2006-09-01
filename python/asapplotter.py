@@ -122,8 +122,9 @@ class asapplotter:
         # This doesn't happen in a test script???
         del self._plotter.axes.patches[-1]
     axvspan. __doc__ = matplotlib.axes.Axes.axvspan.__doc__
+
     def axhspan(self, *args, **kwargs):
-        self._axes_callback("ahvspan", *args, **kwargs)
+        self._axes_callback("axhspan", *args, **kwargs)
         # hack to preventy mpl from redrawing the patch
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???

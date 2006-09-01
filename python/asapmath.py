@@ -11,10 +11,13 @@ def average_time(*args, **kwargs):
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
         scanav:   True averages each scan separately.
                   False (default) averages all scans together,
-        weight:   Weighting scheme. 'none, 'var' (1/var(spec)
-                  weighted), 'tsys' (1/Tsys**2 weighted), 'tint'
-                  (integration time weighted) or 'tintsys' (Tsys
-                  and tint). The default is 'tint'
+        weight:   Weighting scheme.
+                    'none'     (mean no weight)
+                    'var'      (1/var(spec) weighted)
+                    'tsys'     (1/Tsys**2 weighted)
+                    'tint'     (integration time weighted)
+                    'tintsys'  (Tint/Tsys**2)
+                    'median'   ( median averaging)
         align:    align the spectra in velocity before averaging. It takes
                   the time of the first spectrum in the first scantable
                   as reference time.
@@ -69,7 +72,17 @@ def average_time(*args, **kwargs):
             alignedlst.append(scan.freq_align(refepoch,insitu=False))
     else:
         alignedlst = lst
-    s = scantable(stm._average(alignedlst, mask, weight.upper(), scanav))
+    if weight.upper() == 'MEDIAN':
+        # median doesn't support list of scantables - merge first
+        merged = None
+        if len(alignedlst) > 1:
+            merged = merge(alignedlst)
+        else:
+            merged = alignedlst[0]
+        s = scantable(stm._averagechannel(merged, 'MEDIAN', scanav))
+        del merged
+    else:
+        s = scantable(stm._average(alignedlst, mask, weight.upper(), scanav))
     s._add_history("average_time",varlist)
     print_log()
     return s

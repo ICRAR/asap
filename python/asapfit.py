@@ -54,17 +54,37 @@ class asapfit(fitentry):
                   'frame' : self.getframeinfo()
                   }
             comp.append(d)
+            k+=1
         out.append(comp)
         return out
+
+    def save(self, filename):
+        f = file(filename, 'w')
+        parstr = ""
+        for i in xrange(self.getcomponents()[0]):
+            pname = "P%d"% (i)
+            parstr += "%-12s " % (pname)
+        header = "#%-12s %s\n" % ("Function", parstr)
+        f.write(header)
+        i = 0
+        funcs=self.getfunctions()
+        pars=self.getparameters()
+        for c in self.getcomponents():
+            line = " %-12s " % (funcs[i])
+            for j in xrange(c):
+                line += "%3.8f " % (pars[i*c+j])
+            i+=1
+            f.write(line+"\n")
+        f.close()
 
     def _format_pars(self, pars, ftype, unit):
         out = ''
         if ftype == 'poly':
             i = 0
             for p in pars:
-                out += ' p%d = %3.3f %s,' % (i,p,unit)
+                out += ' p%d = %3.6f %s,' % (i,p,unit)
                 i+=1
             out = out[1:-1]
         elif ftype == 'gauss':
-            out += 'peak = %3.3f , centre = %3.3f %s, FWHM = %3.3f %s' % (pars[0],pars[1],unit,pars[2],unit)
+            out += 'peak = %3.6f , centre = %3.6f %s, FWHM = %3.6f %s' % (pars[0],pars[1],unit,pars[2],unit)
         return out

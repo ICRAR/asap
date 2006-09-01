@@ -210,6 +210,7 @@ CountedPtr< Scantable >
   ArrayColumn<uChar> flagColOut(tout,"FLAGTRA");
   ArrayColumn<Float> tsysColOut(tout,"TSYS");
   ScalarColumn<uInt> scanColOut(tout,"SCANNO");
+  ScalarColumn<Double> intColOut(tout, "INTERVAL");
   Table tmp = in->table().sort("BEAMNO");
   Block<String> cols(3);
   cols[0] = String("BEAMNO");
@@ -226,6 +227,7 @@ CountedPtr< Scantable >
     Table subt = iter.table();
     ROArrayColumn<Float> specCol, tsysCol;
     ROArrayColumn<uChar> flagCol;
+    ROScalarColumn<Double> intCol(subt, "INTERVAL");
     specCol.attach(subt,"SPECTRA");
     flagCol.attach(subt,"FLAGTRA");
     tsysCol.attach(subt,"TSYS");
@@ -254,7 +256,8 @@ CountedPtr< Scantable >
     specColOut.put(outrowCount, outspec);
     flagColOut.put(outrowCount, outflag);
     tsysColOut.put(outrowCount, outtsys);
-
+    Double intsum = sum(intCol.getColumn());
+    intColOut.put(outrowCount, intsum);
     ++outrowCount;
     ++iter;
   }
@@ -1125,20 +1128,26 @@ CountedPtr< Scantable >
                                 const std::vector<bool>& mask,
                                 const std::string& weight )
 {
-  if (in->getPolType() != "linear"  || in->npol() != 2 )
-    throw(AipsError("averagePolarisations can only be applied to two linear polarisations."));
+  if (in->npol() < 2 )
+    throw(AipsError("averagePolarisations can only be applied to two or more"
+                    "polarisations"));
   bool insitu = insitu_;
   setInsitu(false);
-  CountedPtr< Scantable > pols = getScantable(in, false);
+  CountedPtr< Scantable > pols = getScantable(in, true);
   setInsitu(insitu);
   Table& tout = pols->table();
-  // give all rows the same POLNO
+  std::string taql = "SELECT FROM $1 WHERE POLNO IN [0,1]";
+  Table tab = tableCommand(taql, in->table());
+  if (tab.nrow() == 0 )
+    throw(AipsError("Could not find  any rows with POLNO==0 and POLNO==1"));
+  TableCopy::copyRows(tout, tab);
   TableVector<uInt> vec(tout, "POLNO");
   vec = 0;
   pols->table_.rwKeywordSet().define("nPol", Int(1));
+  pols->table_.rwKeywordSet().define("POLTYPE", String("stokes"));
   std::vector<CountedPtr<Scantable> > vpols;
   vpols.push_back(pols);
-  CountedPtr< Scantable > out = average(vpols, mask, weight, "NONE");
+  CountedPtr< Scantable > out = average(vpols, mask, weight, "SCAN");
   return out;
 }
 
@@ -1158,7 +1167,7 @@ CountedPtr< Scantable >
   beams->table_.rwKeywordSet().define("nBeam", Int(1));
   std::vector<CountedPtr<Scantable> > vbeams;
   vbeams.push_back(beams);
-  CountedPtr< Scantable > out = average(vbeams, mask, weight, "NONE");
+  CountedPtr< Scantable > out = average(vbeams, mask, weight, "SCAN");
   return out;
 }
 
