@@ -349,7 +349,6 @@ CountedPtr< Scantable > STMath::autoQuotient( const CountedPtr< Scantable >& in,
   TableCopy::copyRows(tout, ons);
   TableRow row(tout);
   ROScalarColumn<Double> offtimeCol(offs, "TIME");
-
   ArrayColumn<Float> outspecCol(tout, "SPECTRA");
   ROArrayColumn<Float> outtsysCol(tout, "TSYS");
   ArrayColumn<uChar> outflagCol(tout, "FLAGTRA");
@@ -358,11 +357,19 @@ CountedPtr< Scantable > STMath::autoQuotient( const CountedPtr< Scantable >& in,
     Double ontime = rec.asDouble("TIME");
     ROScalarColumn<Double> offtimeCol(offs, "TIME");
     Double mindeltat = min(abs(offtimeCol.getColumn() - ontime));
-    Table sel = offs( abs(offs.col("TIME")-ontime) <= mindeltat
+    // Timestamp may vary within a cycle ???!!!
+    // increase this by 0.5 sec in case of rounding errors...
+    // There might be a better way to do this.
+    mindeltat += 0.5;
+    Table sel = offs( abs(offs.col("TIME")-ontime) <= (mindeltat+0.5)
                        && offs.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
                        && offs.col("IFNO") == Int(rec.asuInt("IFNO"))
                        && offs.col("POLNO") == Int(rec.asuInt("POLNO")) );
 
+    if ( sel.nrow() < 1 )  {
+      throw(AipsError("No closest in time found... This could be a rounding "
+                      "issue. Try quotient instead."));
+    }
     TableRow offrow(sel);
     const TableRecord& offrec = offrow.get(0);//should only be one row
     RORecordFieldPtr< Array<Float> > specoff(offrec, "SPECTRA");

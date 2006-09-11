@@ -24,19 +24,18 @@ ifeq "$(CASAARCH)" "darwin"
 endif
 
 # cfitsio
-CFITSIOROOT := /usr
-# If aips++ is build with LFS (default) you need to have
-# libcfitsio with lfs support
-# this is default in cfitsio >= 3.0
+CFITSIOROOT := /usr/local
 CFITSIOINC := -I$(CFITSIOROOT)/include
-CFITSIOLIB := -L$(CFITSIOROOT) -lcfitsio
+CFITSIOLIB := -L$(CFITSIOROOT)/lib -lcfitsio
 
 #rpfits
 RPFITSROOT := /usr/local
 RPFITSLIB := $(RPFITSROOT)/lib/librpfits.a
 
-G2CROOT := /usr
-G2CLIB := $(G2CROOT)/lib -lg2c
+G2CROOT := /usr/local
+G2CARCH := $(G2CROOT)/lib/gcc/i386-apple-darwin8.7.1/4.2.0/libgcc.a
+G2CARCH := $(G2CROOT)/lib/gcc/powerpc-apple-darwin8.7.0/4.2.0/libgcc.a
+G2CLIB := $(G2CROOT)/lib/libgfortran.a $(G2CARCH)
 
 # This assumes all casa libs are static only (*.a)
 # if not than there might by symbol resolution errors.
@@ -78,7 +77,7 @@ ifeq "$(CASAARCH)" "darwin"
 endif
 
 # has to be build with same g++ version as casa
-BOOSTROOT := /usr
+BOOSTROOT := /usr/local
 BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python
 BOOSTINC  := -I$(BOOSTROOT)/include/boost
 
@@ -91,6 +90,7 @@ CCOBJECTS := MathUtils.o \
 	     MathUtils2.o \
              RowAccumulator.o \
              Logger.o \
+	     LineCatalog.o \
              STAttr.o \
              STHeader.o \
              STFiller.o \
@@ -123,6 +123,7 @@ PYOBJECTS := python_Scantable.o \
              python_STLineFinder.o \
              python_STFitEntry.o \
              python_STWriter.o \
+             python_LineCatalog.o \
 	     python_asap.o
 
 OBJECTS := $(CCOBJECTS) $(PYOBJECTS)

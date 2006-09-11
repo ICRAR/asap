@@ -411,7 +411,7 @@ class asapplotter:
             rcp('font', size=size)
         if self._data: self.plot(self._data)
 
-    def plot_lines(self, linecat=None, doppler=0.0, deltachan=10, rotate=0.0,
+    def plot_lines(self, linecat=None, doppler=0.0, deltachan=10, rotate=90.0,
                    location=None):
         """
         Plot a line catalog.
@@ -420,23 +420,27 @@ class asapplotter:
             doppler:      the velocity shift to apply to the frequencies
             deltachan:    the number of channels to include each side of the
                           line to determine a local maximum/minimum
-            rotate:       the rotation for the text label
+            rotate:       the rotation (in degrees) )for the text label (default 90.0)
             location:     the location of the line annotation from the 'top',
                           'bottom' or alternate (None - the default)
         Notes:
         If the spectrum is flagged no line will be drawn in that location.
         """
-        if not self._data: return
+        if not self._data:
+            raise RuntimeError("No scantable has been plotted yet.")
         from asap._asap import linecatalog
-        if not isinstance(linecat, linecatalog): return
-        if not self._data.get_unit().endswith("GHz"): return
-        #self._plotter.hold()
+        if not isinstance(linecat, linecatalog):
+            raise ValueError("'linecat' isn't of type linecatalog.")
+        if not self._data.get_unit().endswith("Hz"):
+            raise RuntimeError("Can only overlay linecatalogs when data is in frequency.")
         from matplotlib.numerix import ma
         for j in range(len(self._plotter.subplots)):
             self._plotter.subplot(j)
             lims = self._plotter.axes.get_xlim()
             for row in range(linecat.nrow()):
-                restf = linecat.get_frequency(row)/1000.0
+                # get_frequency returns MHz
+                base = { "GHz": 1000.0, "MHz": 1.0, "Hz": 1.0e-6 }
+                restf = linecat.get_frequency(row)/base[self._data.get_unit()]
                 c = 299792.458
                 freq = restf*(1.0-doppler/c)
                 if lims[0] < freq < lims[1]:
@@ -481,7 +485,6 @@ class asapplotter:
                     self._plotter.vline_with_label(freq, peak,
                                                    linecat.get_name(row),
                                                    location=loc, rotate=rotate)
-        #        self._plotter.release()
         self._plotter.show(hardrefresh=False)
 
 

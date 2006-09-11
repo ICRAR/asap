@@ -95,6 +95,7 @@ std::string LineCatalog::summary(int row) const
       oss << std::right << setw(7) << i << setw(2) << "";
       oss << std::left << setw(20) << getName(i);
       oss << setw(12) << setprecision(8) << std::left << getFrequency(i);
+      oss << setw(12) << setprecision(8) << std::left << getStrength(i);
       oss << endl;
     }
   } else {
@@ -102,6 +103,7 @@ std::string LineCatalog::summary(int row) const
         oss << std::right << setw(7) << row << setw(2) << "";
         oss << std::left << setw(20) << getName(row);
         oss << setw(12) << setprecision(8) << std::left << getFrequency(row);
+        oss << setw(12) << setprecision(8) << std::left << getStrength(row);
         oss << endl;
       } else {
         throw(AipsError("Row doesn't exist"));
@@ -123,6 +125,12 @@ std::string LineCatalog::getName(uint row) const
 double asap::LineCatalog::getFrequency(uint row) const
 {
   ROScalarColumn<Double> col(table_, "Column2");
+  return col(row);
+}
+
+double asap::LineCatalog::getStrength(uint row) const
+{
+  ROScalarColumn<Double> col(table_, "Column3");
   return col(row);
 }
 

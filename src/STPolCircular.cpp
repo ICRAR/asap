@@ -34,6 +34,8 @@ Vector<Float> asap::STPolCircular::getStokes( uint index )
   if (nspec() == 2) {
     if ( index == 0 )
       out = Vector<Float>(getSpectrum(0) + getSpectrum(1));
+    else if ( index == 3 )
+      out = Vector<Float>(getSpectrum(0) - getSpectrum(1));
   }
   return out;
 }

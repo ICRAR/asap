@@ -1,5 +1,19 @@
 Changelog
 =========
+Release Version 2.1 [2006-09-11]
+
+* Processing of Multibeam MX data
+* Line Catalogs for both plotting and setting rest frequencies
+* median averaging
+* support of circular polarisations
+* binaries for fedora (core 3/5), debian, ubuntu, OSX (ppc,intel)
+* text/arrow/line annonations for plotter
+* export of fit parameters to text file
+* disk based scantables for large data sets
+* re-introduced custom quotients
+* fixed major fitter bug
+* fft flagging
+* full support for MOPS data
 
 Release Version 2.0 [2006-04-28]
 
@@ -7,7 +21,7 @@ Release Version 2.0 [2006-04-28]
   different number of spectral channels. This has minimal effect on the
   user interface.
 * Creation of a "selector" object used for data selection. Allow slicing of
-  data in beam, IF, polarisation as well as selection via header values 
+  data in beam, IF, polarisation as well as selection via header values
   (e.g. Tsys). set_cursor is now invalid use set_selection instead.
 * Scantables can be merged
 * scantable.lines() has been removed. Set rest frequencies by value

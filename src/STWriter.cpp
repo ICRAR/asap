@@ -297,7 +297,7 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
                               Vector< Complex > & xpol, const Table & tab )
 {
   String poltype = tab.keywordSet().asString("POLTYPE");
-  if ( poltype != "linear") {
+  if ( poltype == "stokes") {
     String msg = "poltype = " + poltype + " not yet supported in output.";
     throw(AipsError(msg));
   }

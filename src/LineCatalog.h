@@ -84,6 +84,13 @@ public:
   double getFrequency(uint row) const;
 
   /**
+   * Return the line strength value for a specific row
+   * @param row the row number
+   * @return a double rest line strength value
+   */
+  double getStrength(uint row) const;
+
+  /**
    *
    * @param row
    * @return

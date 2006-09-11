@@ -123,7 +123,7 @@ object. In this document member functions will be referred to simply
 as functions. From the command line, the user can execute these
 functions using the syntax:
 \begin{verbatim}
-  ASAP> out = object.function(arguments)
+  ASAP>out = object.function(arguments)
 \end{verbatim}
 
 Where \cmd{out} is the name of the returned variable (could be a new
@@ -135,12 +135,12 @@ either though position or \cmd{name=}.  A mix of the two can be used.
 E.g.
 
 \begin{verbatim}
-  ASAP> av = scans.average_time(msk,weight='tsys')
-  ASAP> av = scans.average_time(mask=msk,weight='tsys')
-  ASAP> av = scans.average_time(msk,tsys)
-  ASAP> scans.poly_baseline(mask=msk, order=0, insitu=True)
-  ASAP> scans.poly_baseline(msk,0,True)
-  ASAP> scans.poly_baseline(mask, insitu=True)
+  ASAP>av = scans.average_time(msk,weight='tsys')
+  ASAP>av = scans.average_time(mask=msk,weight='tsys')
+  ASAP>av = scans.average_time(msk,tsys)
+  ASAP>scans.poly_baseline(mask=msk, order=0, insitu=True)
+  ASAP>scans.poly_baseline(msk,0,True)
+  ASAP>scans.poly_baseline(mask, insitu=True)
 \end{verbatim}
 
 \subsection{Global Functions}
@@ -167,14 +167,14 @@ arguments.
 
 Example
 \begin{verbatim}
-  ASAP> scans = scantable('MyData.rpf')
-  ASAP> scans.se<TAB>
-  ASAP> scans.set_in<TAB>
+  ASAP>scans = scantable('MyData.rpf')
+  ASAP>scans.se<TAB>
+  ASAP>scans.set_in<TAB>
 scans.set_cursor      scans.set_freqframe   scans.set_selection
 scans.set_doppler     scans.set_instrument  scans.set_unit
 scans.set_fluxunit    scans.set_restfreqs
 
-  ASAP> scans.set_instrument()
+  ASAP>scans.set_instrument()
 \end{verbatim}
 
 \subsubsection{Leading Spaces}
@@ -203,10 +203,10 @@ but the shell escape ``$!$'' can be used to run arbitrary
 programs. E.g.
 
 \begin{verbatim}
-  ASAP> pwd
-  ASAP> ls
-  ASAP> cd /my/data/directory
-  ASAP> ! mozilla&
+  ASAP>pwd
+  ASAP>ls
+  ASAP>cd /my/data/directory
+  ASAP>! mozilla&
 \end{verbatim}
 
 \subsection{Help}
@@ -215,26 +215,26 @@ programs. E.g.
 functions type:
 
 \begin{verbatim}
-  ASAP> commands()
+  ASAP>commands()
 \end{verbatim}
 
 To get help on specific functions, the built in help needs to be given
 the object and function name. E.g.
 
 \begin{verbatim}
-  ASAP> help scantable.get_scan # or help(scantable.get_scan)
-  ASAP> help scantable.stats
-  ASAP> help plotter.plot
-  ASAP> help fitter.plot
+  ASAP>help scantable.get_scan # or help(scantable.get_scan)
+  ASAP>help scantable.stats
+  ASAP>help plotter.plot
+  ASAP>help fitter.plot
 
-  ASAP> scans = scantable('mydata.asap')
-  ASAP> help scans.get_scan # Same as above
+  ASAP>scans = scantable('mydata.asap')
+  ASAP>help scans.get_scan # Same as above
 \end{verbatim}
 
 Global functions just need their name
 
 \begin{verbatim}
-  ASAP> help average_time
+  ASAP>help average_time
 \end{verbatim}
 
 Note that if you just type \cmd{help} the internal ipython help is
@@ -284,16 +284,16 @@ row of a scantable. Each row contains just one spectrum for each beam,
 IF and polarisation. For example Parkes OH-multibeam data would
 normally contain 13 beams, 1 IF and 2 polarisations, Parkes
 methanol-multibeam data would contain 7 beams, 2 IFs and 2
-polarisations while the Mopra 8-GHz MOPDS filterbank will produce one
+polarisations while the Mopra 8-GHz MOPS filterbank will produce one
 beam, many IFs, and 2-4 polarisations.
 
 All of the combinations of Beams/IFs an Polarisations are
-contained in seperate rows. These rows are grouped in cycles (same time stamp).
+contained in separate rows. These rows are grouped in cycles (same time stamp).
 
 A collection of cycles for one source is termed a scan (and each scan
 has a unique numeric identifier, the SCANNO). A scantable is then a
 collection of one or more scans. If you have scan-averaged your data
-in time, i.e. you have averegaed all cycles within a scan, then each
+in time, i.e. you have averaged all cycles within a scan, then each
 scan would hold just one (averaged) integration.
 
 Many of the functions which work on scantables can either return a new
@@ -301,7 +301,7 @@ scantable with modified data or change the scantable insitu. Which
 method is used depends on the users preference. The default can be
 changed via the {\tt .asaprc} resource file.
 
-For example a Mopra scan with a  4s intergration time, two IFs and
+For example a Mopra scan with a  4s integration time, two IFs and
 dual polarisations has two (2s) cycles.
 \begin{verbatim}
     SCANNO  CYCLENO BEAMNO IFNO POLNO
@@ -344,18 +344,18 @@ You will find this very useful.
 Example:
 
 \begin{verbatim}
-  ASAP> scans = scantable('MyData.rpf')
-  ASAP> scans.summary()                # Brief listing
+  ASAP>scans = scantable('MyData.rpf')
+  ASAP>scans.summary()                # Brief listing
 
   # Equivalent to brief summary function call
-  ASAP> print scan
+  ASAP>print scan
 \end{verbatim}
 
 The summary function gives you a scan-based summary, presenting the
 scantable as a cascading view of Beams and IFs. Note that the output
 of summary is redirected into your current pager specified by the
 \$PAGER environment variable. If you find the screen is reset to the
-original state when summary is finished (ie the output from summary
+original state when summary is finished (i.e. the output from summary
 disappears), you may need to set the \$LESS environment variable to
 include the \cmd{-X} option.
 
@@ -402,19 +402,19 @@ Note that all indices are zero based.
 Examples:
 
 \begin{verbatim}
-  ASAP> selection = selector()         # Create selection object
-  ASAP> selection.set_ifs(0)           # Just select the first IF
-  ASAP> scans.set_selection(selection) # Apply the selection
-  ASAP> print scans                    # Will just show the first IF
+  ASAP>selection = selector()         # Create selection object
+  ASAP>selection.set_ifs(0)           # Just select the first IF
+  ASAP>scans.set_selection(selection) # Apply the selection
+  ASAP>print scans                    # Will just show the first IF
 
-  ASAP> selection.set_ifs([0,1])       # Select the first two IFs
-  ASAP> selection.set_beams([1,3,5])   # Also select three of the beams
-  ASAP> scans.set_selection(selection) # Apply the selection
+  ASAP>selection.set_ifs([0,1])       # Select the first two IFs
+  ASAP>selection.set_beams([1,3,5])   # Also select three of the beams
+  ASAP>scans.set_selection(selection) # Apply the selection
 
-  ASAP> selection.set_name('G308*')     # Select by source name
+  ASAP>selection.set_name('G308*')     # Select by source name
 
-  ASAP> selection.reset()              # Turn off selection
-  ASAP> scans.set_selection(selection) # Apply the reset selection
+  ASAP>selection.reset()              # Turn off selection
+  ASAP>scans.set_selection(selection) # Apply the reset selection
 
 \end{verbatim}
 
@@ -454,11 +454,11 @@ function, and the frequency reference frame can be changed with the
 Example usage:
 
 \begin{verbatim}
-  ASAP> scans = scantable('2004-11-23_1841-P484.rpf') # Read in the data
-  ASAP> scans.set_freqframe('LSRK')  # Use the LSR velocity frame
-  ASAP> scans.set_unit('km/s')        # Use velocity for plots etc from now on
-  ASAP> scans.set_doppler('OPTICAL')  # Use the optical velocity convention
-  ASAP> scans.set_unit('MHz')         # Use frequency in MHz from now on
+  ASAP>scans = scantable('2004-11-23_1841-P484.rpf') # Read in the data
+  ASAP>scans.set_freqframe('LSRK')  # Use the LSR velocity frame
+  ASAP>scans.set_unit('km/s')        # Use velocity for plots etc from now on
+  ASAP>scans.set_doppler('OPTICAL')  # Use the optical velocity convention
+  ASAP>scans.set_unit('MHz')         # Use frequency in MHz from now on
 \end{verbatim}
 
 
@@ -478,7 +478,7 @@ If you specify just one rest frequency, then it is set for all IF.
 
 \begin{verbatim}
   # Set all IFs
-  ASAP> scans.set_restfreqs(freqs=1.667359e9)
+  ASAP>scans.set_restfreqs(freqs=1.667359e9)
 \end{verbatim}
 
 If set a rest frequency for each IF, specify a list of frequencies (of
@@ -488,7 +488,7 @@ provided list.
 
 \begin{verbatim}
   # Set rest frequency for all IFs
-  ASAP> scans.set_restfreqs(freqs=[1.6654018e9,1.667359e9,])
+  ASAP>scans.set_restfreqs(freqs=[1.6654018e9,1.667359e9,])
 
 \end{verbatim}
 
@@ -500,7 +500,7 @@ names in a known list rather than by their values.
 Examples:
 
 \begin{verbatim}
-  ASAP> scans.set_restfreqs(freqs=['OH1665','OH1667'])
+  ASAP>scans.set_restfreqs(freqs=['OH1665','OH1667'])
 \end{verbatim}
 }
 
@@ -531,12 +531,12 @@ Example :
 \begin{verbatim}
 
   # Select channel range for baselining
-  ASAP> scans.set_unit('channels')
-  ASAP> msk = scans.create_mask([100,400],[600,800])
+  ASAP>scans.set_unit('channels')
+  ASAP>msk = scans.create_mask([100,400],[600,800])
 
   # Select velocity range for fitting
-  ASAP> scans.set_unit('km/s')
-  ASAP> msk = scans.create_mask([-30,-10])
+  ASAP>scans.set_unit('km/s')
+  ASAP>msk = scans.create_mask([-30,-10])
 \end{verbatim}
 
 Sometimes it is more convenient to specify the channels to be
@@ -545,8 +545,8 @@ argument.
 
 Example :
 \begin{verbatim}
-  ASAP> scans.set_unit('channels')
-  ASAP> msk = scans.create_mask([0,100],[900-1023], invert=True)
+  ASAP>scans.set_unit('channels')
+  ASAP>msk = scans.create_mask([0,100],[900-1023], invert=True)
 \end{verbatim}
 
 By default \cmd{create\_mask} uses the frequency setup of the first row
@@ -555,8 +555,8 @@ cover different velocity ranges, the scantable row to use should be
 specified:
 
 \begin{verbatim}
-  ASAP> scans.set_unit('km/s')
-  ASAP> msk = q.create_mask([-30,-10], row=5)
+  ASAP>scans.set_unit('km/s')
+  ASAP>msk = q.create_mask([-30,-10], row=5)
 \end{verbatim}
 
 Because the mask is stored in a simple python variable, the users is
@@ -565,12 +565,12 @@ excluding the edge channels, a strong maser feature and a birdie in
 the middle of the band:
 
 \begin{verbatim}
-  ASAP> scans.set_unit('channels')
-  ASAP> msk1 = q.create_mask([0,100],[511,511],[900,1023],invert=True)
-  ASAP> scans.set_unit('km/s')
-  ASAP> msk2 = q.create_mask([-20,-10],invert=True)
+  ASAP>scans.set_unit('channels')
+  ASAP>msk1 = q.create_mask([0,100],[511,511],[900,1023],invert=True)
+  ASAP>scans.set_unit('km/s')
+  ASAP>msk2 = q.create_mask([-20,-10],invert=True)
 
-  ASAP> mask = msk1 and msk2
+  ASAP>mask = msk1 and msk2
 \end{verbatim}
 
 
@@ -584,12 +584,12 @@ print a list of all scantables and \cmd{del} to remove unneeded ones.
 Example:
 
 \begin{verbatim}
-  ASAP> list_scans()
+  ASAP>list_scans()
   The user created scantables are:
   ['s', 'scans', 'av', 's2', 'ss']
 
-  ASAP> del s2
-  ASAP> del ss
+  ASAP>del s2
+  ASAP>del ss
 \end{verbatim}
 
 \section{Data Input}
@@ -610,10 +610,10 @@ MeasurementSet2 format.
 Example usage:
 
 \begin{verbatim}
-  ASAP> scan = scantable('2004-11-23_1841-P484.rpf')
+  ASAP>scan = scantable('2004-11-23_1841-P484.rpf')
 
   # Don't scan average the data
-  ASAP> scan = scantable('2004-11-23_1841-P484.rpf', average=False)
+  ASAP>scan = scantable('2004-11-23_1841-P484.rpf', average=False)
 \end{verbatim}
 
 
@@ -633,10 +633,10 @@ However, multiple readers can be created and attached to SDFITS files.
 Example usage:
 
 \begin{verbatim}
-  ASAP> r = reader('2003-03-16_082048_t0002.rpf')
-  ASAP> r.summary()
-  ASAP> scan = r.read()
-  ASAP> del r
+  ASAP>r = reader('2003-03-16_082048_t0002.rpf')
+  ASAP>r.summary()
+  ASAP>scan = r.read()
+  ASAP>del r
 \end{verbatim}
 
 \section{Basic Processing}
@@ -654,7 +654,7 @@ have a trailing ``\_R'' in the source name for data from Parkes and
 Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
 
 \begin{verbatim}
-  ASAP> q = s.auto_quotient()
+  ASAP>q = s.auto_quotient()
 \end{verbatim}
 
 By default the quotient spectra is calculated
@@ -662,7 +662,7 @@ to preserve continuum emission. If you wish to remove the continuum
 contribution, use the \cmd{preserve} argument:
 
 \begin{verbatim}
- ASAP> q = s.auto_quotient(preserve=True)
+ ASAP>q = s.auto_quotient(preserve=True)
 \end{verbatim}
 
 If this is not sufficient the following alternative method can be used.
@@ -677,14 +677,14 @@ on source observation for following method will work.
 
 For Mopra and Parkes data:
 \begin{verbatim}
-  ASAP> r = scans.get_scan('*_R')
-  ASAP> s = scans.get_scan('*_S')
+  ASAP>r = scans.get_scan('*_R')
+  ASAP>s = scans.get_scan('*_S')
 \end{verbatim}
 
 For Tidbinbilla data
 \begin{verbatim}
-  ASAP> r = scans.get_scan('*_[ew]')
-  ASAP> s = scans.get_scan('*_[^ew]')
+  ASAP>r = scans.get_scan('*_[ew]')
+  ASAP>s = scans.get_scan('*_[^ew]')
 \end{verbatim}
 
 \subsection{Make the quotient spectra}
@@ -692,7 +692,7 @@ For Tidbinbilla data
 Use the quotient function
 
 \begin{verbatim}
-  ASAP> q = s.quotient(r)
+  ASAP>q = s.quotient(r)
 \end{verbatim}
 
 This uses the rows in scantable \cmd{r} as reference spectra for the
@@ -707,14 +707,14 @@ source/reference cycles you will want to scan-average the quotient
 spectra together.
 
 \begin{verbatim}
- ASAP> av = q.average_time()
+ ASAP>av = q.average_time()
 \end{verbatim}
 
 If for some you want to average multiple sets of scantables together
 you can:
 
 \begin{verbatim}
- ASAP> av = average_time(q1, q2, q3)
+ ASAP>av = average_time(q1, q2, q3)
 \end{verbatim}
 
 The default is to use integration time weighting. The alternative is
@@ -722,23 +722,23 @@ to use none, variance, Tsys weighting, Tsys \& integration time or
 median averaging.
 
 \begin{verbatim}
- ASAP> av = average_time(q, weight='tintsys')
+ ASAP>av = average_time(q, weight='tintsys')
 \end{verbatim}
 
 To use variance based weighting, you need to supply a mask saying which
 channel range you want it to calculate the variance from.
 
 \begin{verbatim}
- ASAP> msk = scans.create_mask([200,400],[600,800])
- ASAP> av = average_time(scans, mask=msk, weight='var')
+ ASAP>msk = scans.create_mask([200,400],[600,800])
+ ASAP>av = average_time(scans, mask=msk, weight='var')
 \end{verbatim}
 
 If you have not observed your data with Doppler tracking (or run
-\cmd{freq\_align} explicitally) you should align the data in frequency
+\cmd{freq\_align} explicitly) you should align the data in frequency
 before averaging.
 
 \begin{verbatim}
- ASAP> av = scans.average_time(align=True)
+ ASAP>av = scans.average_time(align=True)
 \end{verbatim}
 
 Note that, if needed, you should run \cmd{gain\_el} and \cmd{opacity}
@@ -751,8 +751,8 @@ before you average the data in time (\S \ref{sec:gainel} \&
 a mask of channels to use in the baseline fit.
 
 \begin{verbatim}
- ASAP> msk = scans.create_mask([100,400],[600,900])
- ASAP> scans.poly_baseline(msk, order=1)
+ ASAP>msk = scans.create_mask([100,400],[600,900])
+ ASAP>scans.poly_baseline(msk, order=1)
 \end{verbatim}
 
 This will fit a first order polynomial to the selected channels and subtract
@@ -770,7 +770,7 @@ mark the band edge as invalid.
 Simple example
 
 \begin{verbatim}
-  ASAP> scans.auto_poly_baseline(order=2,threshold=5)
+  ASAP>scans.auto_poly_baseline(order=2,threshold=5)
 \end{verbatim}
 
 \cmd{order} is the polynomial order for the fit. \cmd{threshold} is
@@ -785,12 +785,12 @@ Other examples:
 
 \begin{verbatim}
   # Don't try and fit the edge of the bandpass which is noisier
-  ASAP> scans.auto_poly_baseline(edge=(500,450),order=3,threshold=3)
+  ASAP>scans.auto_poly_baseline(edge=(500,450),order=3,threshold=3)
 
   # Only fit a given region around the line
-  ASAP> scans.set_unit('km/s')
-  ASAP> msk = scans.create_mask([-60,-20])
-  ASAP> scans.auto_poly_baseline(mask=msk,order=3,threshold=3)
+  ASAP>scans.set_unit('km/s')
+  ASAP>msk = scans.create_mask([-60,-20])
+  ASAP>scans.auto_poly_baseline(mask=msk,order=3,threshold=3)
 
 \end{verbatim}
 
@@ -800,7 +800,7 @@ Other examples:
 will want to average the parallel polarisations together.
 
 \begin{verbatim}
- ASAP> scans.average_pol()
+ ASAP>scans.average_pol()
 \end{verbatim}
 
 \subsection{Calibration}
@@ -822,10 +822,10 @@ user can either override this value on reading the data or later.
 E.g:
 
 \begin{verbatim}
-  ASAP> scans = scantable('2004-11-23_1841-P484.rpf', unit='Jy')
+  ASAP>scans = scantable('2004-11-23_1841-P484.rpf', unit='Jy')
   # Or in two steps
-  ASAP> scans = scantable('2004-11-23_1841-P484.rpf')
-  ASAP> scans.set_fluxunit('Jy')
+  ASAP>scans = scantable('2004-11-23_1841-P484.rpf')
+  ASAP>scans.set_fluxunit('Jy')
 \end{verbatim}
 
 \subsubsection{Feed Polarisation}
@@ -839,8 +839,8 @@ an argument of \cmd{'linear'} or \cmd{'circular'}.
 E.g:
 
 \begin{verbatim}
-  ASAP> scans = scantable('2004-11-23_1841-P484.rpf')
-  ASAP> scans.set_feedtype('circular')
+  ASAP>scans = scantable('2004-11-23_1841-P484.rpf')
+  ASAP>scans.set_feedtype('circular')
 \end{verbatim}
 
 \subsubsection{Tsys scaling}
@@ -851,7 +851,7 @@ can easily be corrected for with the scale function. By default,
 \cmd{scale} only scans the spectra and not the corresponding Tsys.
 
 \begin{verbatim}
-  ASAP> scans.scale(1.05, tsys=True)
+  ASAP>scans.scale(1.05, tsys=True)
 \end{verbatim}
 
 \subsubsection{Unit Conversion}
@@ -865,10 +865,10 @@ need to supply the aperture efficiency, telescope diameter or the Jy/K
 factor.
 
 \begin{verbatim}
-  ASAP> scans.convert_flux()               # If efficency known
-  ASAP> scans.convert_flux(eta=0.48)       # If telescope diameter known
-  ASAP> scans.convert_flux(eta=0.48,d=35)  # Unknown telescope
-  ASAP> scans.convert_flux(jypk=15)        # Alternative
+  ASAP>scans.convert_flux()               # If efficency known
+  ASAP>scans.convert_flux(eta=0.48)       # If telescope diameter known
+  ASAP>scans.convert_flux(eta=0.48,d=35)  # Unknown telescope
+  ASAP>scans.convert_flux(jypk=15)        # Alternative
 \end{verbatim}
 
 \subsubsection{Gain-Elevation and Opacity Corrections}
@@ -883,7 +883,7 @@ Tidbinbilla rpfits files. This means that gain-elevation and opacity
 corrections will not work unless these get recalculated.
 
 \begin{verbatim}
-  ASAP> scans.recalc_azel()                # recalculate az/el based on pointing
+  ASAP>scans.recalc_azel()                # recalculate az/el based on pointing
 \end{verbatim}
 
 Gain-elevation curves for some telescopes and frequencies are known to
@@ -896,8 +896,8 @@ scantable.gain\_el}).
 Examples:
 
 \begin{verbatim}
-  ASAP> scans.gain_el()   # If gain table known
-  ASAP> scans.gain_el(poly=[3.58788e-1,2.87243e-2,-3.219093e-4])
+  ASAP>scans.gain_el()   # If gain table known
+  ASAP>scans.gain_el(poly=[3.58788e-1,2.87243e-2,-3.219093e-4])
 \end{verbatim}
 
 \index{Opacity}Opacity corrections can be made with the global
@@ -905,7 +905,7 @@ function \cmd{opacity}. This should work on all telescopes as long as
 a measurement of the opacity factor was made during the observation.
 
 \begin{verbatim}
-  ASAP> scans.opacity(0.083)
+  ASAP>scans.opacity(0.083)
 \end{verbatim}
 
 Note that at 3~mm Mopra uses a paddle wheel for Tsys calibration,
@@ -915,7 +915,7 @@ opacity corrections should not be used for Mopra 3-mm data.
 \subsection{Frequency Frame Alignment}
 \label{sec:freqalign}
 
-\index{Frequency alignment}\index{Velicity alignment}When time
+\index{Frequency alignment}\index{Velocity alignment}When time
 averaging a series of scans together, it is possible that the velocity
 scales are not exactly aligned.  This may be for many reasons such as
 not Doppler tracking the observations, errors in the Doppler tracking
@@ -926,8 +926,8 @@ together, they should be frequency aligned using \cmd{freq\_align}.
 E.g.:
 
 \begin{verbatim}
-  ASAP> scans.freq_align()
-  ASAP> av = average_time(scans)
+  ASAP>scans.freq_align()
+  ASAP>av = average_time(scans)
 \end{verbatim}
 
 {\em A Global freq\_align command will be made eventually}
@@ -939,10 +939,10 @@ doing this is to allow ASAP to choose the reference time for the first
 scantable then using this time for the subsequent scantables.
 
 \begin{verbatim}
-  ASAP> scans1.freq_align() # Copy the refeference Epoch from the output
-  ASAP> scans2.freq_align(reftime='2004/11/23/18:43:35')
-  ASAP> scans3.freq_align(reftime='2004/11/23/18:43:35')
-  ASAP> av = average_time(scans1, scans2, scans3)
+  ASAP>scans1.freq_align() # Copy the refeference Epoch from the output
+  ASAP>scans2.freq_align(reftime='2004/11/23/18:43:35')
+  ASAP>scans3.freq_align(reftime='2004/11/23/18:43:35')
+  ASAP>av = average_time(scans1, scans2, scans3)
 \end{verbatim}
 
 \section{Scantable manipulation}
@@ -959,25 +959,25 @@ instead.
 For example:
 
 \begin{verbatim}
-  ASAP> ss = scans.get_scan(10) # Get the 11th scan (zero based)
-  ASAP> ss = scans.get_scan(range(10)) # Get the first 10 scans
-  ASAP> ss = scans.get_scan(range(10,20)) # Get the next 10 scans
-  ASAP> ss = scans.get_scan([2,4,6,8,10]) # Get a selection of scans
+  ASAP>ss = scans.get_scan(10) # Get the 11th scan (zero based)
+  ASAP>ss = scans.get_scan(range(10)) # Get the first 10 scans
+  ASAP>ss = scans.get_scan(range(10,20)) # Get the next 10 scans
+  ASAP>ss = scans.get_scan([2,4,6,8,10]) # Get a selection of scans
 
-  ASAP> ss = scans.get_scan('345p407') # Get a specific source
-  ASAP> ss = scans.get_scan('345*')    # Get a few sources
+  ASAP>ss = scans.get_scan('345p407') # Get a specific source
+  ASAP>ss = scans.get_scan('345*')    # Get a few sources
 
-  ASAP> r = scans.get_scan('*_R') # Get all reference sources (Parkes/Mopra)
-  ASAP> s = scans.get_scan('*_S') # Get all program sources (Parkes/Mopra)
-  ASAP> r = scans.get_scan('*[ew]')  # Get all reference sources (Tid)
-  ASAP> s = scans.get_scan('*[^ew]') # Get all program sources (Tid)
+  ASAP>r = scans.get_scan('*_R') # Get all reference sources (Parkes/Mopra)
+  ASAP>s = scans.get_scan('*_S') # Get all program sources (Parkes/Mopra)
+  ASAP>r = scans.get_scan('*[ew]')  # Get all reference sources (Tid)
+  ASAP>s = scans.get_scan('*[^ew]') # Get all program sources (Tid)
 
 \end{verbatim}
 
 To copy a scantable the following does not work:
 
 \begin{verbatim}
-  ASAP> ss = scans
+  ASAP>ss = scans
 \end{verbatim}
 
 as this just creates a reference to the original scantable. Any
@@ -985,7 +985,7 @@ changes made to \cmd{ss} are also seen in \cmd{scans}. To duplicate a
 scantable, use the copy function.
 
 \begin{verbatim}
-  ASAP> ss = scans.copy()
+  ASAP>ss = scans.copy()
 \end{verbatim}
 
 \section{Data Output}
@@ -1023,19 +1023,20 @@ The default output format can be set in the users {\tt .asaprc} file.
 Typical usages are:
 
 \begin{verbatim}
-  ASAP> scans.save('myscans') # Save in default format
-  ASAP> scans.save('myscans', 'FITS') # Save as FITS for exporting into CLASS
-  ASAP> scans.save('myscans', overwrite=True) # Overwrite an existing file
+  ASAP>scans.save('myscans') # Save in default format
+  ASAP>scans.save('myscans', 'FITS') # Save as FITS for exporting into CLASS
+  ASAP>scans.save('myscans', overwrite=True) # Overwrite an existing file
 \end{verbatim}
 
 \section{Plotter}
 
-\index{Plotter}Scantable spectra can be plotted at any time. An asapplotter object is
-used for plotting, meaning multiple plot windows can be active at the
-same time. On start up a default asapplotter object is created called
-``plotter''. This would normally be used for standard plotting.
+\index{Plotter}Scantable spectra can be plotted at any time. An
+asapplotter object is used for plotting, meaning multiple plot windows
+can be active at the same time. On start up a default asapplotter
+object is created called ``plotter''. This would normally be used for
+standard plotting.
 
-The plotter, optionally, will run in a multipanel mode and contain
+The plotter, optionally, will run in a multi-panel mode and contain
 multiple plots per panel. The user must tell the plotter how they want
 the data distributed. This is done using the set\_mode function. The
 default can be set in the users {\tt .asaprc} file. The units (and frame
@@ -1045,9 +1046,9 @@ etc) of the abscissa will be whatever has previously been set by
 Typical plotter usage would be:
 
 \begin{verbatim}
-  ASAP> scans.set_unit('km/s')
-  ASAP> plotter.set_mode(stacking='p',panelling='t')
-  ASAP> plotter.plot(scans)
+  ASAP>scans.set_unit('km/s')
+  ASAP>plotter.set_mode(stacking='p',panelling='t')
+  ASAP>plotter.plot(scans)
 \end{verbatim}
 
 This will plot multiple polarisation within each plot panel and each
@@ -1057,16 +1058,16 @@ Other possibilities include:
 
 \begin{verbatim}
   # Plot multiple IFs per panel
-  ASAP> plotter.set_mode(stacking='i',panelling='t')
+  ASAP>plotter.set_mode(stacking='i',panelling='t')
 
   # Plot multiple beams per panel
-  ASAP> plotter.set_mode(stacking='b',panelling='t')
+  ASAP>plotter.set_mode(stacking='b',panelling='t')
 
   # Plot one IF per panel, time stacked
-  ASAP> plotter.set_mode('t', 'i')
+  ASAP>plotter.set_mode('t', 'i')
 
   # Plot each scan in a seperate panel
-  ASAP> plotter.set_mode('t', 's')
+  ASAP>plotter.set_mode('t', 's')
 
 \end{verbatim}
 
@@ -1079,29 +1080,29 @@ your own sanity) you need to select a subset of this data. This is
 particularly true for multibeam or multi IF data. The selector object
 should be used for this purpose. Selection can either be applied to
 the scantable or directly to the plotter, the end result is the same.
-You don't have to reset the scantable slection though, if you set
+You don't have to reset the scantable selection though, if you set
 the selection on the plotter.
 
 Examples:
 
 \begin{verbatim}
-  ASAP> selection = selector()
+  ASAP>selection = selector()
   # Select second IF
-  ASAP> selection.set_ifs(1)
-  ASAP> plotter.set_selection(selection)
+  ASAP>selection.set_ifs(1)
+  ASAP>plotter.set_selection(selection)
 
   # Select first 4 beams
-  ASAP> selection.set_beams([0,1,2,3])
-  ASAP> plotter.set_selection(selection)
+  ASAP>selection.set_beams([0,1,2,3])
+  ASAP>plotter.set_selection(selection)
 
   # Select a few scans
-  ASAP> selection.set_scans([2,4,6,10])
-  ASAP> plotter.set_selection(selection)
+  ASAP>selection.set_scans([2,4,6,10])
+  ASAP>plotter.set_selection(selection)
 
   # Multiple selection
-  ASAP> selection.set_ifs(1)
-  ASAP> selection.set_scans([2,4,6,10])
-  ASAP> plotter.set_selection(selection)
+  ASAP>selection.set_ifs(1)
+  ASAP>selection.set_scans([2,4,6,10])
+  ASAP>plotter.set_selection(selection)
 
 \end{verbatim}
 
@@ -1129,7 +1130,7 @@ was previously.
   rectangle around a region of interest then zooms in on that
   region. Use the plot history to unzoom again.
 
-\item[Adjust] (rectangle with 4 arrows) adjust subplot paramaters
+\item[Adjust] (rectangle with 4 arrows) adjust subplot parameters
   (space at edge of plots)
 
 \item[Save] (floppy disk). Save the plot as a postscript or .png file
@@ -1149,29 +1150,29 @@ To set the exact velocity or channel range to be plotted use the
 \cmd{set\_range} with no arguments. E.g.
 
 \begin{verbatim}
-  ASAP> scans.set_unit('km/s')
-  ASAP> plotter.plot(scans)
-  ASAP> plotter.set_range(-150,-50)
-  ASAP> plotter.set_range() # To reset
+  ASAP>scans.set_unit('km/s')
+  ASAP>plotter.plot(scans)
+  ASAP>plotter.set_range(-150,-50)
+  ASAP>plotter.set_range() # To reset
 \end{verbatim}
 
 Both the range of the ``x'' and ``y'' axis can be set at once, if desired:
 
 \begin{verbatim}
-  ASAP> plotter.set_range(-10,30,-1,6.6)
+  ASAP>plotter.set_range(-10,30,-1,6.6)
 \end{verbatim}
 
 To save a hardcopy of the current plot, use the save function, e.g.
 
 \begin{verbatim}
-  ASAP> plotter.save('myplot.ps')
-  ASAP> plotter.save('myplot.png', dpi=80)
+  ASAP>plotter.save('myplot.ps')
+  ASAP>plotter.save('myplot.png', dpi=80)
 \end{verbatim}
 
 \subsection{Plotter Customisation}
 
 The plotter allows the user to change most properties such as text
-size and colour. The \cmd{commands} funcation and {\cmd help\
+size and colour. The \cmd{commands} function and {\cmd help\
 asapplotter} list all the possible commands that can be used with the
 plotter.
 
@@ -1186,76 +1187,76 @@ plotter.set\_colors(`\#0000 blue \#FF00FF')\\ }
 \commanddef{set\_linestyles}{Change the line styles used for
 plots. Allowable values are 'line', 'dashed', 'dotted', 'dashdot', 
 'dashdotdot' and 'dashdashdot. Example: }{
-  ASAP> plotter.set\_linestyles('line dash cotted datshot.)\\
-  ASAP> plotter.set\_font(size=10)\\
+  ASAP>plotter.set\_linestyles('line dash cotted datshot.)\\
+  ASAP>plotter.set\_font(size=10)\\
 }
 
 \commanddef{set\_font}{Change the font style and size. Example}{
-  ASAP> plotter.set\_font(weight='bold')\\
-  ASAP> plotter.set\_font(size=10)\\
-  ASAP> plotter.set\_font(style='italic')\\
+  ASAP>plotter.set\_font(weight='bold')\\
+  ASAP>plotter.set\_font(size=10)\\
+  ASAP>plotter.set\_font(style='italic')\\
 }
 
-\commanddef{set\_layout}{Change the multi-panel layout, ie now many
+\commanddef{set\_layout}{Change the multi-panel layout, i.e. now many
   rows and columns}{
-  ASAP> plotter.set\_layout(3,2)
+  ASAP>plotter.set\_layout(3,2)
 }
 
 \commanddef{set\_legend}{Set the position, size and optional value of the legend}{
-  ASAP> plotter.set\_legend(fontsize=16)\\
-  ASAP> plotter.set\_legend(mode=0)  \# ASAP chooses where to put the legend\\
-  ASAP> plotter.set\_legend(mode=4)  \# Put legend on lower right\\
-  ASAP> plotter.set\_legend(mode=-1) \# No legend\\
-  ASAP> plotter.set\_legend(mp=['RR','LL']) \# Specify legend labels\\
-  ASAP> plotter.set\_legend(mp=[r'\$\^\{12\}CO\$',r'\$\^\{13\}CO\$']) \# Latex labels
+  ASAP>plotter.set\_legend(fontsize=16)\\
+  ASAP>plotter.set\_legend(mode=0)  \# ASAP chooses where to put the legend\\
+  ASAP>plotter.set\_legend(mode=4)  \# Put legend on lower right\\
+  ASAP>plotter.set\_legend(mode=-1) \# No legend\\
+  ASAP>plotter.set\_legend(mp=['RR','LL']) \# Specify legend labels\\
+  ASAP>plotter.set\_legend(mp=[r'\$\^\{12\}CO\$',r'\$\^\{13\}CO\$']) \# Latex labels
 }
 
 \commanddef{set\_title}{Set the plot title. If multiple panels are
   plotted, multiple titles have to be specified}{
-  ASAP> plotter.set\_title(`G323.12$-$1.79`)\\
-  ASAP> plotter.set\_title([`SiO`, 'Methanol'], fontsize=18)\\
+  ASAP>plotter.set\_title(`G323.12$-$1.79`)\\
+  ASAP>plotter.set\_title([`SiO`, 'Methanol'], fontsize=18)\\
 }
 
 \subsection{Plotter Annotations}
 
-The plotter allows various annontations (lines, arrows, text and
+The plotter allows various annotations (lines, arrows, text and
 ``spans'') to be added to the plot. These annotations are
 ``temporary'', when the plotter is next refreshed
 (e.g. \cmd{plotter.plot} or \cmd{plotter.set\_range}) the annotations
 will be removed. 
 
-\bigcommanddef{arrow(x,y,x+dx,y+dy)}{Draw an arrow from a specifed
+\bigcommanddef{arrow(x,y,x+dx,y+dy)}{Draw an arrow from a specified
 \cmd{(x,y)} position to \cmd{(x+dx, y+dy)}. The values are in world
 coordinates. \em {HOW TO SET ARROW HEAD??}}{
-  ASAP> plotter.arrow(-40,7,35,0)
+  ASAP>plotter.arrow(-40,7,35,0)
 }
 
 \bigcommanddef{axhline(y, xmin, xmax)}{Draw a horizontal line at the
-specifed \cmd{y} position (in world coordinates) between xmin and xmax
-(in relative coordinates, ie 0.0 is the left hand edge of the plot
+specified \cmd{y} position (in world coordinates) between xmin and xmax
+(in relative coordinates, i.e. 0.0 is the left hand edge of the plot
 while 1.0 is the right side of the plot.}{
- ASAP> plotter.axhline(6.0,0.2,0.8)
+ ASAP>plotter.axhline(6.0,0.2,0.8)
 }
 
 \bigcommanddef{avhline(x, ymin, ymax)}{Draw a vertical line at the
-specifed \cmd{x} position (in world coordinates) between \cmd{ymin}
-and \cmd{ymax} (in relative coordinates, ie 0.0 is the left hand edge
+specified \cmd{x} position (in world coordinates) between \cmd{ymin}
+and \cmd{ymax} (in relative coordinates, i.e. 0.0 is the left hand edge
 of the plot while 1.0 is the right side of the plot).}{
- ASAP> plotter.axvline(-50.0,0.1,1.0)
+ ASAP>plotter.axvline(-50.0,0.1,1.0)
 }
 
 \bigcommanddef{axhspan(ymin, ymax, \\ \hspace*{20mm}xmin,
  xmax)}{Overlay a transparent colour rectangle. \cmd{ymin} and
- \cmd{ymax} are given in world coordnates while \cmd{xmin} and
+ \cmd{ymax} are given in world coordinates while \cmd{xmin} and
  \cmd{xmax} are given in relative coordinates}{ 
-ASAP> plotter.axhspan(2,4,0.25,0.75) 
+ASAP>plotter.axhspan(2,4,0.25,0.75) 
 }
 
 \bigcommanddef{axvspan(xmin, xmax, \\ \hspace*{20mm} ymin,
  ymax)}{Overlay a transparent colour rectangle. \cmd{ymin} and
- \cmd{ymax} are given in relative coordnates while \cmd{xmin} and
+ \cmd{ymax} are given in relative coordinates while \cmd{xmin} and
  \cmd{xmax} are given in world coordinates}{ 
-ASAP> plotter.axvspan(-50,60,0.2,0.5) 
+ASAP>plotter.axvspan(-50,60,0.2,0.5) 
 }
 
 \bigcommanddef{text(x, y, str)}{Place the string \cmd{str} at the
@@ -1280,9 +1281,110 @@ matplotlib settings. Common ones include:
 
 Examples: 
 \begin{verbatim}
-  ASAP> plotter.axhline(6.0,0.2,0.8, color='red', linewidth=3)
-  ASAP> plotter.text(-10,7,"CO", fontsize=20)
+  ASAP>plotter.axhline(6.0,0.2,0.8, color='red', linewidth=3)
+  ASAP>plotter.text(-10,7,"CO", fontsize=20)
 \end{verbatim}
+
+\section{Line Catalog}
+
+\index{Linecatalog}ASAP can load and manipulate line catlogs to retrieve rest frequencies
+for \cmd{set\_restfreqs} and for line identification in the
+plotter. No line catalogs are built into ASAP, the user must load a
+ASCII based table (which can optionally be saved in an internal
+format) either of the users own creation or a standard line catalog
+such as the JPL line catalog or Lovas. The ATNF asap ftp area as
+copies of the JPL and Lovas catalog in the appropriate format. All
+line catalogs are loaded into a ``linecatalog'' object.
+
+\subsection{Loading a Line Catalog}
+
+\index{Linecatalog|loading}The ASCII text line catalog must have at
+least 4 columns. The first four columns must contain (in order):
+Molecule name, frequency in MHz, frequency error and ``intensity''
+(any units). If the molecule name contains any spaces, they must be
+wrapped in quotes \verb+""+.
+
+A sample from the JPL line catalog:
+
+\begin{verbatim}
+     H2D+    3955.2551 228.8818  -7.1941  
+     H2D+   12104.7712 177.1558  -6.0769  
+     H2D+   45809.2731 118.3223  -3.9494  
+     CH       701.6811    .0441  -7.1641  
+     CH       724.7709    .0456  -7.3912  
+     CH      3263.7940    .1000  -6.3501  
+     CH      3335.4810    .1000  -6.0304  
+\end{verbatim}
+
+To load a line catalog then save it in the internal format:
+
+\begin{verbatim}
+  ASAP>jpl = linecatalog('jpl_pruned.txt')
+  ASAP>jpl.save('jpl.tbl')
+\end{verbatim}
+
+Later the saved line catalog can reloaded:
+
+\begin{verbatim}
+  ASAP>jpl = linecatalog('jpl.tbl')
+\end{verbatim}
+
+\subsection{Line selection}
+
+\index{Linecatalog|line selection}The linecatalog has a number of
+selection functions to select a range of lines from a larger catalog
+(the JPL catalog has $>$180000 lines for
+example). \cmd{set\_frequency\_limits} selects on frequency range,
+\cmd{set\_strength\_limits} selects on intensity while \cmd{set\_name}
+selects on molecule name (wild cards allowed).
+
+\begin{verbatim}
+  ASAP>jpl = linecatalog('jpl.tbl')
+  ASAP>jpl.set_frequency_limits(80,115,'GHz') # Lines for 3mm receiver
+  ASAP>jpl.set_name('*OH')                    # Select all alcohols
+  ASAP>jpl.set_name('OH')                     # Select only OH molecules
+  ASAP>jpl.summary()
+
+  ASAP>jpl.reset()                            # Selections are accumulative
+  ASAP>jpl.set_frequency_limits(80,115,'GHz') 
+  ASAP>jpl.set_strength_limits(-2,10)         # Select brightest lines
+  ASAP>jpl.summary() 
+\end{verbatim}
+
+\subsection{Using Linecatalog}
+
+The line catalogs can be used for line overlays on the plotter or with
+\cmd{set\_restfreq}.
+
+\subsubsection{Plotting linecatalog}
+
+\index{Linecatalog|plotting}
+
+The plotter \cmd{plot\_lines} function takes a line catalog as an
+argument and overlays the lines on the spectrum. {\em Currently this
+only works when plotting in units of frequency (Hz, GHz etc).} If a
+large line catalog has been loaded (e.g. JPL) it is highly recommended
+that you use the selection functions to narrow down the number of
+lines.  By default the line catalog overlay is plotted assuming a line
+velocity of 0.0. This can be set using the \cmd{doppler} argument (in
+km/s). Each time \cmd{plot\_lines} is called the new lines are added
+to any existing line catalog annotations. These are all removed after
+the next call to \cmd{plotter.plot()}.
+
+\begin{verbatim}
+  ASAP>jpl = linecatalog('jpl.tbl')
+  ASAP>jpl.set_frequency_limits(23,24,'GHz')
+  ASAP>data.set_unit('GHz')            # Only works with freq axis currently
+  ASAP>plotter.plot(data)
+  ASAP>plotter.plot_lines(jpl)
+
+  ASAP>plotter.plot()                  # Reset plotter
+  ASAP>plotter.plot_lines(jpl,doppler=-10,location='Top') # On top with -10 km/s velocity
+\end{verbatim}
+
+\subsubsection{Setting Rest Frequencies}
+
+\index{Linecatalog|set_restfreq}
 
 \section{Fitting}
 
@@ -1295,16 +1397,16 @@ current selection includes multiple spectra (beams, IFs, scans etc)
 then the first spectrum in the scantable will be used for fitting.
 
 \begin{verbatim}
- ASAP> f = fitter()
- ASAP> f.set_function(gauss=2) # Fit two Gaussians
- ASAP> f.set_scan(scans)
- ASAP> selection = selector()
- ASAP> selection.set_polarisations(1) # Fit the second polarisation
- ASAP> scans.set_selection(selection)
- ASAP> scans.set_unit('km/s')  # Make fit in velocity units
- ASAP> f.fit(1)                # Run the fit on the second row in the table
- ASAP> f.plot()                # Show fit in a plot window
- ASAP> f.get_parameters()      # Return the fit paramaters
+ ASAP>f = fitter()
+ ASAP>f.set_function(gauss=2) # Fit two Gaussians
+ ASAP>f.set_scan(scans)
+ ASAP>selection = selector()
+ ASAP>selection.set_polarisations(1) # Fit the second polarisation
+ ASAP>scans.set_selection(selection)
+ ASAP>scans.set_unit('km/s')  # Make fit in velocity units
+ ASAP>f.fit(1)                # Run the fit on the second row in the table
+ ASAP>f.plot()                # Show fit in a plot window
+ ASAP>f.get_parameters()      # Return the fit paramaters
 \end{verbatim}
 
 This auto-guesses the initial values of the fit and works well for data
@@ -1315,29 +1417,29 @@ If you want to confine the fitting to a smaller range (e.g. to avoid
 band edge effects or RFI you must set a mask.
 
 \begin{verbatim}
-  ASAP> f = fitter()
-  ASAP> f.set_function(gauss=2)
-  ASAP> scans.set_unit('km/s')  # Set the mask in channel units
-  ASAP> msk = s.create_mask([1800,2200])
-  ASAP> scans.set_unit('km/s')  # Make fit in velocity units
-  ASAP> f.set_scan(s,msk)
-  ASAP> f.fit()
-  ASAP> f.plot()
-  ASAP> f.get_parameters()
+  ASAP>f = fitter()
+  ASAP>f.set_function(gauss=2)
+  ASAP>scans.set_unit('km/s')  # Set the mask in channel units
+  ASAP>msk = s.create_mask([1800,2200])
+  ASAP>scans.set_unit('km/s')  # Make fit in velocity units
+  ASAP>f.set_scan(s,msk)
+  ASAP>f.fit()
+  ASAP>f.plot()
+  ASAP>f.get_parameters()
 \end{verbatim}
 
 If you wish, the initial parameter guesses can be specified and
 specific parameters can be fixed:
 
 \begin{verbatim}
-  ASAP> f = fitter()
-  ASAP> f.set_function(gauss=2)
-  ASAP> f.set_scan(s,msk)
-  ASAP> f.fit() # Fit using auto-estimates
+  ASAP>f = fitter()
+  ASAP>f.set_function(gauss=2)
+  ASAP>f.set_scan(s,msk)
+  ASAP>f.fit() # Fit using auto-estimates
   # Set Peak, centre and fwhm for the second gaussian.
   # Force the centre to be fixed
-  ASAP> f.set_gauss_parameters(0.4,450,150,0,1,0,component=1)
-  ASAP> f.fit() # Re-run the fit
+  ASAP>f.set_gauss_parameters(0.4,450,150,0,1,0,component=1)
+  ASAP>f.fit() # Re-run the fit
 \end{verbatim}
 
 The fitter \cmd{plot} function has a number of options to either view
@@ -1348,13 +1450,13 @@ Examples:
 
 \begin{verbatim}
   # Plot the residual
-  ASAP> f.plot(residual=True)
+  ASAP>f.plot(residual=True)
 
   # Plot the first 2 componentsa
-  ASAP> f.plot(components=[0,1])
+  ASAP>f.plot(components=[0,1])
 
   # Plot the first and third component plus the model sum
-  ASAP> f.plot(components=[-1,0,2])  # -1 means the compoment sum
+  ASAP>f.plot(components=[-1,0,2])  # -1 means the compoment sum
 \end{verbatim}
 
 \subsection{Fit saving}
@@ -1363,7 +1465,7 @@ Examples:
 possible to store it as part of the scantable.
 
 \begin{verbatim}
-  ASAP> f.storefit()
+  ASAP>f.store_fit()
 \end{verbatim}
 
 This will be saved to disk with the data, if the ``ASAP'' file format
@@ -1375,7 +1477,15 @@ stored fits. Currently the fit parameters are just printed to the
 screen.
 
 \begin{verbatim}
-  ASAP> scans.get_fit(4) # Print fits for row 4
+  ASAP>scans.get_fit(4) # Print fits for row 4
+\end{verbatim}
+
+A fit can also be exported to an ASCII file using the \cmd{store\_fit}
+function. Simply give the name of the output file requires as an
+argument.
+
+\begin{verbatim}
+  ASAP>f.store_fit('myfit.txt')
 \end{verbatim}
 
 \section{Polarisation}
@@ -1398,7 +1508,7 @@ error. At this point, the user must know how to determine the size of
 the phase offset themselves.
 
 \begin{verbatim}
-  ASAP> scans.rotate_xyphase(10.5)            # Degrees
+  ASAP>scans.rotate_xyphase(10.5)            # Degrees
 \end{verbatim}
 
 Note that if this function is run twice, the sum of the two values is
@@ -1411,7 +1521,7 @@ the sum of the corrections being applied because it is applied
 in-situ.
 
 \begin{verbatim}
-  ASAP> scans.rotate_linpolphase(-45) # Degrees; correct for receiver mounting
+  ASAP>scans.rotate_linpolphase(-45) # Degrees; correct for receiver mounting
 \end{verbatim}
 
 If the sign of the complex correlation is wrong (this can happen
@@ -1420,15 +1530,15 @@ change take the complex conjugate of the complex correlation
 term. This is always performed in-situ.
 
 \begin{verbatim}
-  ASAP> scans.invert_phase()
+  ASAP>scans.invert_phase()
 \end{verbatim}
 
 Depending on how the correlator is configured, ``BA'' may be
-correlated insead of ``AB''. Use \cmd{swap\_linears} to correct for
+correlated instead of ``AB''. Use \cmd{swap\_linears} to correct for
 this problem:
 
 \begin{verbatim}
-  ASAP> scans.swap_linears()
+  ASAP>scans.swap_linears()
 \end{verbatim}
 
 \subsection{Conversion}
@@ -1438,7 +1548,7 @@ Data can be permanently converted between linear and circular
 polarisations and stokes.
 
 \begin{verbatim}
-  ASAP> stokescans = linearscans.convert_pol("stokes")
+  ASAP>stokescans = linearscans.convert_pol("stokes")
 \end{verbatim}
 
 
@@ -1457,24 +1567,24 @@ angle of linear polarisation).
 Example:
 
 \begin{verbatim}
-  ASAP> selection = selector()
+  ASAP>selection = selector()
 
-  ASAP> selection.set_polarisations(``I Q U V'')
+  ASAP>selection.set_polarisations(``I Q U V'')
   ASAP  plotter.set_selection(selection);              # Select I, Q, U \& V
 
-  ASAP> selection.set_polarisations(``I Q'')
+  ASAP>selection.set_polarisations(``I Q'')
   ASAP  plotter.set_selection(selection);              # Select just I \& Q
 
-  ASAP> selection.set_polarisations(``RR LL'')
+  ASAP>selection.set_polarisations(``RR LL'')
   ASAP  plotter.set_selection(selection);              # Select just RR \& LL
 
-  ASAP> selection.set_polarisations(``XX YY'')
+  ASAP>selection.set_polarisations(``XX YY'')
   ASAP  plotter.set_selection(selection);              # Select linears
 
-  ASAP> selection.set_polarisations(``I Plinear'')
+  ASAP>selection.set_polarisations(``I Plinear'')
   ASAP  plotter.set_selection(selection);              # Fractional linear
 
-  ASAP> selection.set_polarisations(``Pangle'')
+  ASAP>selection.set_polarisations(``Pangle'')
   ASAP  plotter.set_selection(selection);              # Position angle
 
 \end{verbatim}
@@ -1491,7 +1601,7 @@ Stoke values when saving in FITS format.
 Example:
 
 \begin{verbatim}
-  ASAP> scans.save('myscan.sdfits', 'SDFITS', stokes=True)
+  ASAP>scans.save('myscan.sdfits', 'SDFITS', stokes=True)
 \end{verbatim}
 
 \section{Specialised Processing}
@@ -1500,7 +1610,7 @@ Example:
 
 MX mode is a specific observing approach with a multibeam where a
 single source is observed cycling through each beam. The scans when
-the beam is off source is used as a reference for the onsource
+the beam is off source is used as a reference for the on-source
 scan. The function \cmd{mx\_quotient} is used to make a quotient
 spectrum from an MX cycle. This works averaging the ``off-source''
 scans for each beam (either a median average or mean) and using this
@@ -1508,7 +1618,7 @@ as a reference scan in a normal quotient (for each beam). The final
 spectrum for each beam is returned on a new scantable containing
 single scan (it the scan numbers are re-labelled to be the same). Note
 that the current version of \cmd{mx\_quotient} only handles a single
-MX cycle, ie if each beam has observed the source multiple times you
+MX cycle, i.e. if each beam has observed the source multiple times you
 will need to use the selector object multiple times to select a single
 MX cycle, run \cmd{mx\_quotient} for each cycle then merge the
 resulting scan tables back together.
@@ -1516,9 +1626,9 @@ resulting scan tables back together.
 Example:
 
 \begin{verbatim}
-  ASAP> scans = scantable('mydata.rpf')
-  ASAP> q = scans.mx_quotient()
-  ASAP> plotter.plot(q)
+  ASAP>scans = scantable('mydata.rpf')
+  ASAP>q = scans.mx_quotient()
+  ASAP>plotter.plot(q)
 \end{verbatim}
 
 The function \cmd{average\_beam} averages multiple beam data
@@ -1526,12 +1636,25 @@ together. This is need if MX mode has been used to make a long
 integration on a single source. E.g.
 
 \begin{verbatim}
-  ASAP> av = q.average_beam()
+  ASAP>av = q.average_beam()
 \end{verbatim}
 
 \subsection{Frequency Switching}
 
 {\em FILL ME IN}
+
+\subsection{Disk Based Processing}
+\index{Scantable|disk based}
+
+Normally scantables exisit entirely in memory during an ASAP
+session. This has the adtantage of speed, but causes limits on the
+size of the dataset which can be loaded. ASAP can use ``disk based''
+scan tables which
+
+{\bf NOTE: } Currently a bug in ipython means temporary files are not
+cleaned up properly when you exit ASAP. If you use disk based scan
+tables your directory will be left with 'tmp*' directories. These can
+be safely removed if ASAP is not running.
 
 \section{Scantable Mathematics}
 
@@ -1543,19 +1666,19 @@ not work for integers).
 
 {\em Currently mathematics between two scantables is not available }
 
-%  ASAP> sum = scan1+scan2
+%  ASAP>sum = scan1+scan2
 \begin{verbatim}
-  ASAP> scan2 = scan1+2.0
-  ASAP> scan *= 1.05
+  ASAP>scan2 = scan1+2.0
+  ASAP>scan *= 1.05
 \end{verbatim}
 
 \section{Scripting}
 
-\index{Scripting}Because asap is based on python, it easy for the user
+\index{Scripting}Because ASAP is based on python, it easy for the user
 write their own scripts and functions to process data. This is highly
 recommended as most processing of user data could then be done in a
 couple of steps using a few simple user defined functions. A Python
-primer is beyond the scope of this userguide. See the asap home pages
+primer is beyond the scope of this userguide. See the ASAP home pages
 for a scripting tutorial or the main python website for comprehensive
 documentation.
 
@@ -1565,7 +1688,7 @@ documentation.
 
 \subsection{Running scripts}
 
-The asap global function \cmd{execfile} reads the named text file and
+The ASAP global function \cmd{execfile} reads the named text file and
 executes the contained python code. This file can either contain
 function definitions which will be used in subsequent processing or
 just a set of commands to process a specific dataset.
@@ -1573,23 +1696,23 @@ just a set of commands to process a specific dataset.
 \subsection{asapuserfuncs.py}
 
 The file $\sim$/.asap/asapuserfuncs.py is automatically read in when
-asap is started. The user can use this to define a set of user
-functions which are automatically available each time asap is
+ASAP is started. The user can use this to define a set of user
+functions which are automatically available each time ASAP is
 used. The \cmd{execfile} function can be called from within this file.
 
 \section{Worked examples}
 
 In the following section a few examples of end-to-end processing of
-some data in asap are given.
+some data in ASAP are given.
 
 \subsection{Mopra}
 \index{Mopra}
 
 The following example is of some dual polarisation, position switched
-data from Mopra. The source has been observed mulitple times split
-into a number of seperate rpfits files. To make the processing easier,
-the first step is to \cmd{cat} the seeprate rpfits files together and
-load as a whole (future versions of asap will make this unnecessary).
+data from Mopra. The source has been observed multiple times split
+into a number of separate RPFITS files. To make the processing easier,
+the first step is to \cmd{cat} the separate RPFITS files together and
+load as a whole (future versions of ASAP will make this unnecessary).
 
 
 \begin{verbatim}
@@ -1654,7 +1777,7 @@ of some Parkes polarmetric observations of OH masers at
 baselines are stable enough not to require a quotient spectra. The
 4~MHz bandwidth is wide enough to observe both the 1665 and 1667~MHz
 OH maser transitions. Each source was observed once for about 10
-minutes. Tsys information was not written to the rpfits file (a
+minutes. Tsys information was not written to the RPFITS file (a
 nominal 25K values was used), so the amplitudes need to be adjusted
 based on a separate log file. A simple user function is used to
 simplify this, contained in a file called mypol.py:
@@ -1680,7 +1803,7 @@ def xyscale(data,xtsys=1.0,ytsys=1.0,nomtsys=25.0) :
  data.scale((xtsys+ytsys)/(2*nomtsys))
 \end{verbatim}
 
-The typical asap session would be
+The typical ASAP session would be
 
 \begin{verbatim}
 

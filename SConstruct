@@ -26,7 +26,10 @@ opts.AddOptions(PathOption("prefix",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
                  "Make a binary archive giving a suffix, e.g. sarge or fc5",
-                 "")
+                 ""),
+                EnumOption("makedoc", "Build the userguide in specified format",
+                           "none",
+                           ["none", "pdf", "html"], ignorecase=1)
                 )
 
 env = Environment( toolpath = ['./scons'],
@@ -75,7 +78,7 @@ if not env.GetOption('clean'):
     if not conf.CheckCasa(env["casadir"]): Exit(1)
     env = conf.Finish()
 
-env["version"] = "2.1.0b1"
+env["version"] = "2.1.0b2"
 
 # general CPPFLAGS
 env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])
@@ -148,6 +151,8 @@ if len(env["makedist"]):
     arch = env.Archiver(os.path.join("dist",env["stagedir"]),
                         env["stagedir"])
     env.AddPostAction(arch, Delete("$stagedir"))
+if env["makedoc"].lower() != "none":
+    env.SConscript("doc/SConscript")
 
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))

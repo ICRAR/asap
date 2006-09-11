@@ -32,7 +32,7 @@ class scantable(Scantable):
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
-        #varlist = vars()
+        varlist = vars()
         from asap._asap import stmath
         self._math = stmath()
         if isinstance(filename, Scantable):
@@ -71,6 +71,7 @@ class scantable(Scantable):
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
                   and isinstance(filename[-1], str):
                 self._fill(filename, unit, average)
+        self._add_history("scantable", varlist)
         print_log()
 
     def save(self, name=None, format=None, overwrite=False):
@@ -343,10 +344,12 @@ class scantable(Scantable):
             print " ", stat
             print "--------------------------------------------------"
             print out
-        retval = { 'axesnames': ['scanno', 'beamno', 'ifno', 'polno', 'cycleno'],
-                   'axes' : axes,
-                   'data': statvals}
-        return retval
+            return
+        else:
+            retval = { 'axesnames': ['scanno', 'beamno', 'ifno', 'polno', 'cycleno'],
+                       'axes' : axes,
+                       'data': statvals}
+            return retval
 
     def stddev(self, mask=None):
         """
@@ -365,11 +368,11 @@ class scantable(Scantable):
         return self.stats(stat='stddev', mask=mask);
 
 
-    def column_names(self):
+    def get_column_names(self):
         """
         Return a  list of column names, which can be used for selection.
         """
-        return list(Scantable.column_names(self))
+        return list(Scantable.get_column_names(self))
 
     def get_tsys(self):
         """
@@ -808,9 +811,9 @@ class scantable(Scantable):
                 savesel = self._getselection()
                 for i in xrange(len(freqs)):
                     sel.set_ifs([i])
+                    self._setselection(sel)
                     self._setrestfreqs(freqs[i]["value"],
                                        freqs[i]["name"], "MHz")
-                    self._setselection(sel)
                 self._setselection(savesel)
         # freqs are to be taken from a linecatalog
         elif isinstance(freqs, linecatalog):
@@ -830,7 +833,10 @@ class scantable(Scantable):
 
 
 
-    def history(self):
+    def history(self, filename=None):
+        """
+        Print the history. Optionally to a file.
+        """
         hist = list(self._gethistory())
         out = "-"*80
         for h in hist:
@@ -847,13 +853,30 @@ class scantable(Scantable):
                     s = i.split("=")
                     out += "\n   %s = %s" % (s[0], s[1])
                 out += "\n"+"-"*80
-        try:
-            from IPython.genutils import page as pager
-        except ImportError:
-            from pydoc import pager
-        pager(out)
+        if filename is not None:
+            if filename is "":
+                filename = 'scantable_history.txt'
+            import os
+            filename = os.path.expandvars(os.path.expanduser(filename))
+            if not os.path.isdir(filename):
+                data = open(filename, 'w')
+                data.write(out)
+                data.close()
+            else:
+                msg = "Illegal file name '%s'." % (filename)
+                if rcParams['verbose']:
+                    print msg
+                else:
+                    raise IOError(msg)
+        if rcParams['verbose']:
+            try:
+                from IPython.genutils import page as pager
+            except ImportError:
+                from pydoc import pager
+            pager(out)
+        else:
+            return out
         return
-
     #
     # Maths business
     #
@@ -1675,5 +1698,4 @@ class scantable(Scantable):
         if unit is not None:
             self.set_fluxunit(unit)
         self.set_freqframe(rcParams['scantable.freqframe'])
-        #self._add_history("scantable", varlist)
 

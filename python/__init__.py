@@ -148,7 +148,7 @@ plotter.papertype          : A4
 
 # scantable
 
-# default storage of scantable (memory/disk)
+# default storage of scantable ('memory'/'disk')
 scantable.storage          : memory
 # default ouput format when saving
 scantable.save             : ASAP
@@ -354,10 +354,10 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.1b'
+__version__  = '2.1'
 
 def is_ipython():
-    return '__IP' in dir(sys.modules["__main__"]) 
+    return '__IP' in dir(sys.modules["__main__"])
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
     def list_scans(t = scantable):
@@ -396,6 +396,8 @@ if is_ipython():
                               point on
             get_abcissa     - get the abcissa values and name for a given
                               row (time)
+            get_column_names - get the names of the columns in the scantable
+                               for use with selector.set_query
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
             set_doppler     - set the doppler to be used from this point on
@@ -461,6 +463,7 @@ if is_ipython():
                                  or by index
             set_names          - set a selection by name (wildcards allowed)
             set_tsys           - set a selection by tsys thresholds
+            set_query          - set a selection by SQL-like query, e.g. BEAMNO==1
             reset              - unset all selections
             +                  - merge to selections
 

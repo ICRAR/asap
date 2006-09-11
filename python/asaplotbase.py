@@ -12,19 +12,19 @@ from matplotlib.font_manager import FontProperties as FP
 from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import OldScalarFormatter
 from matplotlib.ticker import NullLocator
 from matplotlib.transforms import blend_xy_sep_transform
 
 if int(matplotlib.__version__.split(".")[1]) < 87:
     print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
 
-class MyFormatter(ScalarFormatter):
-    def __call__(self, x, pos=None):
-        #last = len(self.locs)-2
-        if pos==0:
-            return ''
-        else: return ScalarFormatter.__call__(self, x, pos)
+#class MyFormatter(OldScalarFormatter):
+#    def __call__(self, x, pos=None):
+#        last = len(self.locs)-2
+#        if pos==0:
+#            return ''
+#        else: return OldScalarFormatter.__call__(self, x, pos)
 
 class asaplotbase:
     """
@@ -614,15 +614,18 @@ class asaplotbase:
                 if not ganged:
                     self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
+                    self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                 else:
                     if i == 0:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
+                        self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1,
                                                 sharex=self.subplots[0]['axes'],
                                                 sharey=self.subplots[0]['axes'])
+
                     # Suppress tick labelling for interior subplots.
                     if i <= (rows-1)*cols - 1:
                         if i+cols < nplots:

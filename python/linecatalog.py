@@ -24,7 +24,15 @@ class linecatalog(lcbase):
 
     def __init__(self, name):
         fpath = os.path.abspath(os.path.expandvars(os.path.expanduser(name)))
-        lcbase.__init__(self, fpath)
+        if os.path.exists(fpath):
+            lcbase.__init__(self, fpath)
+        else:
+            msg = "File '%s' not found" % fpath
+            if rcParams['verbose']:
+                print msg
+                return
+            else:
+                raise IOError(msg)
 
     def summary(self):
         """
@@ -95,7 +103,7 @@ class linecatalog(lcbase):
         """
         Reset the table to its initial state, i.e. undo all calls to set_
         """
-        lcbase.reset()
+        lcbase.reset(self)
 
     def get_row(self, row=0):
         """
