@@ -1,4 +1,4 @@
-PREFIX := /usr
+PREFIX := ./build
 PYDIR := $(PREFIX)/lib/python2.3/site-packages
 
 ifndef ASAPROOT
