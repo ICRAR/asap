@@ -492,25 +492,27 @@ class fitter:
         tlab = 'Spectrum'
         xlab = 'Abcissa'
         ylab = 'Ordinate'
-        from matplotlib.numerix import ma,logical_not,array
-        m = NUM.ones(len(self.x))
-
+        from matplotlib.numerix import ma,logical_not,logical_and,array
+        m = self.mask
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
-            m = self.data._getmask(self._fittedrow)
+            m =  logical_and(self.mask,
+                             array(self.data._getmask(self._fittedrow)),
+                                   copy=False)
+                             
             ylab = self.data._get_ordinate_label()
 
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
         self._p.palette(0,colours)
         self._p.set_line(label='Spectrum')
-        y = ma.masked_array(self.y,mask=logical_not(array(m,copy=False)))
+        y = ma.masked_array(self.y,mask=logical_not(m))
         self._p.plot(self.x, y)
         if residual:
             self._p.palette(1)
             self._p.set_line(label='Residual')
             y = ma.masked_array(self.get_residual(),
-                                  mask=logical_not(array(m,copy=False)))
+                                  mask=logical_not(m))
             self._p.plot(self.x, y)
         self._p.palette(2)
         if components is not None:
@@ -525,20 +527,20 @@ class fitter:
                     lab = self.fitfuncs[c]+str(c)
                     self._p.set_line(label=lab)
                     y = ma.masked_array(self.fitter.evaluate(c),
-                                          mask=logical_not(array(m,copy=False)))
+                                          mask=logical_not(m))
 
                     self._p.plot(self.x, y)
                 elif c == -1:
                     self._p.palette(2)
                     self._p.set_line(label="Total Fit")
                     y = ma.masked_array(self.fitter.getfit(),
-                                          mask=logical_not(array(m,copy=False)))
+                                          mask=logical_not(m))
                     self._p.plot(self.x, y)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
             y = ma.masked_array(self.fitter.getfit(),
-                                  mask=logical_not(array(m,copy=False)))
+                                  mask=logical_not(m))
             self._p.plot(self.x, y)
         xlim=[min(self.x),max(self.x)]
         self._p.axes.set_xlim(xlim)

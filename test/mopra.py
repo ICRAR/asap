@@ -22,9 +22,11 @@ selection = selector()
 selection.set_ifs(1)
 q.set_selection(selection)
 
+rcParams['plotter.gui'] = 0
 f = fitter()
 f.set_scan(q)
 f.set_function(gauss=2) # fit two gaussians
 f.fit()
+f.plot(filename='output/moprafit.png')
 fp = f.get_parameters()
 print "Mopra Test successful"
