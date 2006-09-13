@@ -9,10 +9,10 @@ if not os.path.exists(outdir):
 rcParams['verbose'] = 0
 
 print "Test of file i/o"
-rc('plotter', storage='disk')
+rc('scantable', storage='disk')
 data = scantable('data/tid-t002.rpf')
 del data
-rc('plotter',storage='memory')
+rc('scantable',storage='memory')
 data = scantable('data/tid-t002.rpf')
 
 data.save('output/test.asap',overwrite=True)

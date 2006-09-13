@@ -47,7 +47,7 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-This userguide is being updated for the ASAP 2.1. Please report any
+This userguide has been updated for the ASAP 2.1. Please report any
 mistakes you find.
 
 \section{Installation and Running}
@@ -64,9 +64,10 @@ Currently there are installations running on Linux machines at
 Or use your own Linux desktop.
 
 {\em Note. ASAP2.1 only runs on ATNF Linux machines which have been
-updated to Debian Sarge and are using the ``DEBIANsarge''
+updated to Debian Sarge and are using the ``DEBIANSarge''
 /usr/local. If your favourite machine has not been upgraded, send a
-request your your friendly IT support.}
+request to your friendly IT support. At the time of writing asap 2.1
+does not run on hydra, bourbon or kaputar.}
 
 \index{Running}To start asap log onto one of these Linux hosts and enter
 
@@ -75,8 +76,8 @@ request your your friendly IT support.}
   > asap
 \end{verbatim}
 
-This starts the ASAP. To quit, you need to type \verb+^+-d
-(control-d) or type \cmd{\%Exit}.
+This starts ASAP. To quit, you need to type \verb+^+-d (control-d) or
+type \cmd{\%Exit}.
 
 \section{Interface}
 
@@ -97,16 +98,18 @@ user deals with. Objects range from the data which have been read from
 disk, to tools used for fitting functions to the data. The following
 main objects are used :
 
-\begin{itemize}
-  \item[\cmd{scantable}] The data container (actual spectra and header
-    information)
-  \item[\cmd{selector}] Allows the user to select a subsection of the
-    data, such as a specified or range of beam numbers, IFs, etc.
-  \item[\cmd{plotter}] A tool used to plot the spectral line data
-  \item[\cmd{fitter}] A tool used to fit functions to the spectral data
-  \item[\cmd{reader}] A tool which can be used to read data from disks
-    into a scantable object (advanced use).
-\end{itemize}
+\begin{tabular}{ll}
+
+\cmd{scantable} & \parbox[t]{0.7\textwidth}{The data container (actual
+  spectra and header information)} \\
+\cmd{selector} & \parbox[t]{0.80\textwidth}{Allows the user to select
+  a subsection of the data, such as a specified or range of beam
+  numbers, IFs, etc.} \\
+\cmd{plotter} & A tool used to plot the spectral line data \\
+\cmd{fitter} & A tool used to fit functions to the spectral data \\
+\cmd{reader} & \parbox[t]{0.8\textwidth}{A tool which can be used to
+    read data from disks into a scantable object (advanced use).}\\
+\end{tabular}
 
 There can be many objects of the same type. Each object is referred to
 by a variable name made by the user. The name of this variable is not
@@ -381,21 +384,24 @@ scantable with active selection, only the selected spectra are copied.
 
 The common selection functions are:
 
-\begin{itemize}
+\begin{tabular}{ll}
 
-\item[\cmd{set\_beams}] Select beams by index number
-\item[\cmd{set\_ifs}] Select ifs by index number
-\item[\cmd{set\_name}] Select by source name. Can contain ``*'' as a
-wildcard, e.g. ``Orion*\_R''.
-\item[\cmd{set\_ifs}] Select IFs by index number
-\item[\cmd{set\_polarisation}] Select by polarisation index or
-name. If polarisation names are given, the data will be on-the-fly
-converted (for example from linears to Stokes).
-\item[\cmd{set\_query}] Set query directly. For power users only!
-\item[\cmd{set\_tsys}] Select data based on Tsys. Also example of user
-definable query.
-\item[\cmd{reset}] Reset the selection to include all spectra.
+\cmd{set\_beams} & Select beams by index number \\
+\cmd{set\_ifs} & Select ifs by index number \\
+\cmd{set\_name} & Select by source name. Can contain ``*'' as a
+wildcard, e.g. ``Orion*\_R''. \\
+\cmd{set\_ifs} & Select IFs by index number \\
 
+\cmd{set\_polarisation} & \parbox[t]{0.73\textwidth}{Select by
+polarisation index or name. If polarisation names are given, the data
+will be on-the-fly onverted (for example from linears to Stokes). }\\
+
+\cmd{set\_query} & Set query directly. For power users only! \\
+\cmd{set\_tsys} & Select data based on Tsys. Also example of user
+definable query. \\
+\cmd{reset} & Reset the selection to include all spectra. \\
+
+\end{tabular}
 
 Note that all indices are zero based.
 
@@ -417,8 +423,6 @@ Examples:
   ASAP>scans.set_selection(selection) # Apply the reset selection
 
 \end{verbatim}
-
-\end{itemize}
 
 \subsection{State}
 
@@ -492,17 +496,9 @@ provided list.
 
 \end{verbatim}
 
-{\em Currently the following is not implemented
+A predetermined ``line catalog'' can be used to set the rest
+frequency. See section \S \ref{sec:linecat}.
 
-In both of the above modes, you can also specify the rest frequencies via
-names in a known list rather than by their values.
-
-Examples:
-
-\begin{verbatim}
-  ASAP>scans.set_restfreqs(freqs=['OH1665','OH1667'])
-\end{verbatim}
-}
 
 \subsubsection{Masks}
 
@@ -1112,33 +1108,34 @@ Examples:
 lower left. These can be used to control the plotter (mostly for
 zooming the individual plots). From left to right:
 
-\begin{itemize}
+\begin{tabular}{ll}
 
-\item[Home] This will unzoom the plots to the original zoom factor
+Home & This will unzoom the plots to the original zoom factor \\
 
-\item[Plot history] (left and right arrow). The plotter keeps a
-history of zoom settings. The left arrow sets the plot zoom to the
-previous value. The right arrow returns back again. This allows you,
-for example, to zoom in on one feature then return the plot to how it
-was previously.
+Plot history & \parbox[t]{0.8\textwidth}{(left and right arrow) The
+plotter keeps a history of zoom settings. The left arrow sets the plot
+zoom to the previous value. The right arrow returns back again. This
+allows you, for example, to zoom in on one feature then return the
+plot to how it was previously. }\\
 
-\item[Pan] (The Cross) This sets the cursor to pan, or scroll mode
-  allowing you to shift the plot within the window. Useful when
-  zoomed in on a feature.
+Pan & \parbox[t]{0.8\textwidth}{(The Cross) This sets the cursor to
+  pan, or scroll mode allowing you to shift the plot within the
+  window. Useful when zoomed in on a feature. }\\
 
-\item[Zoom] (the letter with the magnifying glass) lets you draw a
-  rectangle around a region of interest then zooms in on that
-  region. Use the plot history to unzoom again.
+Zoom & \parbox[t]{0.8\textwidth}{(the letter with the magnifying
+  glass) lets you draw a rectangle around a region of interest then
+  zooms in on that region. Use the plot history to unzoom again.}\\
 
-\item[Adjust] (rectangle with 4 arrows) adjust subplot parameters
-  (space at edge of plots)
+Adjust & \parbox[t]{0.8\textwidth}{(rectangle with 4 arrows) adjust
+  subplot parameters (space at edge of plots)}\\
 
-\item[Save] (floppy disk). Save the plot as a postscript or .png file
+Save & \parbox[t]{0.8\textwidth}{(floppy disk). Save the plot as a
+postscript or .png file}\\
+
+\end{tabular}
 
 You can also type ``g'' in the plot window to toggle on and off grid
 lines. Typing 'l' turns on and off logarithmic Y-axis.
-
-\end{itemize}
 
 \subsection{Other control}
 
@@ -1227,14 +1224,14 @@ will be removed.
 
 \bigcommanddef{arrow(x,y,x+dx,y+dy)}{Draw an arrow from a specified
 \cmd{(x,y)} position to \cmd{(x+dx, y+dy)}. The values are in world
-coordinates. \em {HOW TO SET ARROW HEAD??}}{
-  ASAP>plotter.arrow(-40,7,35,0)
+coordinates. Addition arguments which must be passed are {\cmd head\_width} and \cmd{head\_length}}{
+  ASAP>plotter.arrow(-40,7,35,0,head\_width=0.2, head\_length=10)
 }
 
 \bigcommanddef{axhline(y, xmin, xmax)}{Draw a horizontal line at the
 specified \cmd{y} position (in world coordinates) between xmin and xmax
 (in relative coordinates, i.e. 0.0 is the left hand edge of the plot
-while 1.0 is the right side of the plot.}{
+while 1.0 is the right side of the plot).}{
  ASAP>plotter.axhline(6.0,0.2,0.8)
 }
 
@@ -1264,15 +1261,13 @@ ASAP>plotter.axvspan(-50,60,0.2,0.5)
 ASAP>plotter.text(-10,7,"CO") 
 }
 
-
-
 These functions all take a set of \cmd{kwargs} commands. These can be
 used to set colour, linewidth fontsize etc. These are standard
 matplotlib settings. Common ones include:
 
 \begin{tabular}{ll}
- \tt color  \\
- \tt linewidth \\
+ \tt color, facecolor, edgecolor \\
+ \tt width, linewidth \\
  \tt fontsize \\
  \tt fontname & Sans, Helvetica, Courier, Times etc\\
  \tt rotation & Text rotation (horizontal, vertical) \\
@@ -1286,19 +1281,23 @@ Examples:
 \end{verbatim}
 
 \section{Line Catalog}
+\label{sec:linecat}
+\index{Linecatalog}ASAP can load and manipulate line catlogs to
+retrieve rest frequencies for \cmd{set\_restfreqs} and for line
+identification in the plotter. All line catalogs are loaded into a ``linecatalog'' object.
 
-\index{Linecatalog}ASAP can load and manipulate line catlogs to retrieve rest frequencies
-for \cmd{set\_restfreqs} and for line identification in the
-plotter. No line catalogs are built into ASAP, the user must load a
-ASCII based table (which can optionally be saved in an internal
-format) either of the users own creation or a standard line catalog
-such as the JPL line catalog or Lovas. The ATNF asap ftp area as
-copies of the JPL and Lovas catalog in the appropriate format. All
-line catalogs are loaded into a ``linecatalog'' object.
+No line catalogs are built into ASAP, the user must load a ASCII based
+table (which can optionally be saved in an internal format) either of
+the users own creation or a standard line catalog such as the JPL line
+catalog or Lovas. The ATNF asap ftp area as copies of the JPL and
+Lovas catalog in the appropriate format:
+
+\hspace{1cm}\cmd{ftp://ftp.atnf.csiro.au/pub/software/asap/data}
+  
 
 \subsection{Loading a Line Catalog}
 
-\index{Linecatalog|loading}The ASCII text line catalog must have at
+\index{Linecatalog!loading}The ASCII text line catalog must have at
 least 4 columns. The first four columns must contain (in order):
 Molecule name, frequency in MHz, frequency error and ``intensity''
 (any units). If the molecule name contains any spaces, they must be
@@ -1329,14 +1328,19 @@ Later the saved line catalog can reloaded:
   ASAP>jpl = linecatalog('jpl.tbl')
 \end{verbatim}
 
+{\em NOTE:} Due to a bug in ipython, if you do not \cmd{del} the
+linecatalog table before quiting asap, you will be left with temporary
+files. It is safe to delete these once asap has finished.
+
 \subsection{Line selection}
 
-\index{Linecatalog|line selection}The linecatalog has a number of
+\index{Linecatalog!line selection}The linecatalog has a number of
 selection functions to select a range of lines from a larger catalog
 (the JPL catalog has $>$180000 lines for
 example). \cmd{set\_frequency\_limits} selects on frequency range,
 \cmd{set\_strength\_limits} selects on intensity while \cmd{set\_name}
-selects on molecule name (wild cards allowed).
+selects on molecule name (wild cards allowed). The \cmd{summary}
+function lists the currently selected lines.
 
 \begin{verbatim}
   ASAP>jpl = linecatalog('jpl.tbl')
@@ -1358,7 +1362,7 @@ The line catalogs can be used for line overlays on the plotter or with
 
 \subsubsection{Plotting linecatalog}
 
-\index{Linecatalog|plotting}
+\index{Linecatalog!plotting}
 
 The plotter \cmd{plot\_lines} function takes a line catalog as an
 argument and overlays the lines on the spectrum. {\em Currently this
@@ -1379,12 +1383,37 @@ the next call to \cmd{plotter.plot()}.
   ASAP>plotter.plot_lines(jpl)
 
   ASAP>plotter.plot()                  # Reset plotter
-  ASAP>plotter.plot_lines(jpl,doppler=-10,location='Top') # On top with -10 km/s velocity
+  ASAP>plotter.plot_lines(jpl,doppler=-10,location='Top') 
+                             # On top with -10 km/s velocity
 \end{verbatim}
 
 \subsubsection{Setting Rest Frequencies}
 
-\index{Linecatalog|set_restfreq}
+\index{Linecatalog!set\_restfreq}A linecatalog can be used as an
+argument for \cmd{set\_restfreqs}. If a personal line catalog has been
+used (which has the same size as the number of number of IFs) or
+linecatalog selection has been used to reduce the number of entries,
+the line catalog can be used directly as an argument to
+\cmd{set\_restfreqs}, e.g.:
+\begin{verbatim}
+  ASAP>jpl = linecatalog('jpl.tbl')
+  ASAP>jpl.set_frequency_limits(23.66,23.75,'GHz')
+  ASAP>data = scantable('data.rpf')
+  ASAP>data.set_restfreqs(jpl)
+\end{verbatim}
+
+If a larger linecatalog is used, individual elements can be used. Use
+the \cmd{summary} to get the index number of the rest frequency you
+wish to use. E.g.:
+
+\begin{verbatim}
+  ASAP>jpl.summary()
+  ASAP>data.set_restfreqs([jpl[11],[jpl[21]])
+\end{verbatim}
+
+For data with many IFs, such as from MOPS, the user it is recommended
+that the user creates their own line cstalog for the data and use this
+to set the rest frequency for each IF.
 
 \section{Fitting}
 
@@ -1644,16 +1673,34 @@ integration on a single source. E.g.
 {\em FILL ME IN}
 
 \subsection{Disk Based Processing}
-\index{Scantable|disk based}
+\index{Scantable!disk based}
 
-Normally scantables exisit entirely in memory during an ASAP
-session. This has the adtantage of speed, but causes limits on the
+Normally scantables exist entirely in memory during an ASAP
+session. This has the advantage of speed, but causes limits on the
 size of the dataset which can be loaded. ASAP can use ``disk based''
-scan tables which
+scan tables which cache the bulk of the scantable on disk and require
+significantly less memory usage.
+
+To use disk based tables you either need to change the default in your
+\cmd{.asapr} file, e.g.
+\begin{verbatim}
+   scantable.storage          : disk
+\end{verbatim}
+
+or use set the ``\cmd{rc}'' value while running asap to change this
+on-the-fly. E.g.
+\begin{verbatim}
+  ASAP>rc('scantable',storage='disk')
+  ASAP>data = scantable('data.rpf')     # Loaded using disk based table
+  ASAP>rc('scantable',storage='memory') # Memory tables will be used now
+\end{verbatim}
+
+Changing the ``\cmd{rc}'' value affects the next time the
+\cmd{scantable} constructor is called.
 
 {\bf NOTE: } Currently a bug in ipython means temporary files are not
 cleaned up properly when you exit ASAP. If you use disk based scan
-tables your directory will be left with 'tmp*' directories. These can
+tables your directory will be left with 'tabXXXXX\_X' directories. These can
 be safely removed if ASAP is not running.
 
 \section{Scantable Mathematics}
@@ -1772,7 +1819,7 @@ f.get_parameters()
 \subsection{Parkes Polarimetry}
 
 \index{Parkes}\index{Polarisation}The following example is processing
-of some Parkes polarmetric observations of OH masers at
+of some Parkes polarimetric observations of OH masers at
 1.6~GHz. Because digital filters where used in the backend, the
 baselines are stable enough not to require a quotient spectra. The
 4~MHz bandwidth is wide enough to observe both the 1665 and 1667~MHz
@@ -1948,8 +1995,7 @@ plotter.plot()
 
 \index{Functions!summary}%
 \begin{verbatim}
-
-    [The scan container]
+   [The scan container]
         scantable           - a container for integrations/scans
                               (can open asap/rpfits/sdfits and ms files)
             copy            - returns a copy of a scan
@@ -1975,6 +2021,8 @@ plotter.plot()
                               point on
             get_abcissa     - get the abcissa values and name for a given
                               row (time)
+            get_column_names - get the names of the columns in the scantable
+                               for use with selector.set_query
             set_freqframe   - set the frame info for the Spectral Axis
                               (e.g. 'LSRK')
             set_doppler     - set the doppler to be used from this point on
@@ -1989,7 +2037,6 @@ plotter.plot()
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
             flag            - flag selected channels in the data
-            lag_flag        - flag specified frequency in the data
             save            - save the scantable to disk as either 'ASAP',
                               'SDFITS' or 'ASCII'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
@@ -2032,14 +2079,14 @@ plotter.plot()
                               beam/if/pol
      [Selection]
          selector              - a selection object to set a subset of a scantable
-            set_scans          - set (a list of) scans by index
-            set_cycles         - set (a list of) cycles by index
+           set_cycles         - set (a list of) cycles by index
             set_beams          - set (a list of) beamss by index
             set_ifs            - set (a list of) ifs by index
             set_polarisations  - set (a list of) polarisations by name
                                  or by index
             set_names          - set a selection by name (wildcards allowed)
             set_tsys           - set a selection by tsys thresholds
+            set_query          - set a selection by SQL-like query, e.g. BEAMNO==1
             reset              - unset all selections
             +                  - merge to selections
 
@@ -2110,17 +2157,13 @@ plotter.plot()
                               coordinates
             arrow           - draw arrow annotations either in data or relative
                               coordinates
-            set_abcissa     - specify a user label for the abcissa
-            set_ordinate    - specify a user label for the ordinate
-            set_layout      - specify the multi-panel layout (rows,cols)
-            set_colors      - specify a set of colours to use
-            set_linestyles  - specify a set of linestyles to use if only
-                              using one color
-            set_font        - set general font properties, e.g. 'family'
-            set_histogram   - plot in historam style
-            set_mask        - set a plotting mask for a specific polarization
-            text            - draw text annotations either in data or relative
-                              coordinates
+            axhline,axvline - draw horizontal/vertical lines
+            axhspan,axvspan - draw horizontal/vertical regions
+
+        xyplotter           - matplotlib/pylab plotting functions
+
+    [Reading files]
+        reader              - access rpfits/sdfits files
             arrow           - draw arrow annotations either in data or relative
                               coordinates
             axhline,axvline - draw horizontal/vertical lines
@@ -2182,8 +2225,6 @@ points plotted by a factor of nchan/1024}
 \asaprc{plotter.histogram}{True/{\bf False}}{Plot spectrum using
 histogram rather than lines.}
 
-{\em MALTE TO FIX}
-
 \asaprc{plotter.colours}{}{Set default colours for plotting}
 
 \asaprc{plotter.colours}{}{Set default line styles}
@@ -2209,20 +2250,12 @@ memory of via based disk tables}
 
 \subsection{Installation}
 
-\index{Installation}ASAP depends on a number of third-party libraries which you must
-have installed before attempting to build ASAP. These are:
+\index{Installation}
 
-\begin{itemize}
-\item AIPS++
-\item Boost
-\item Matplotlib
-\item python/ipython
-\end{itemize}
+Please refer to the asap wiki for instructions on downloading and/or
+building asap from source.
 
-Debian Linux is currently supported and we intend also
-to support other popular Linux flavours, Solaris and Mac.
-
-Of the dependencies, AIPS++ is the most complex to install.
+\hspace{1cm}\cmd{http://www.atnf.csiro.au/computing/software/asap/}
 
 \printindex
 
