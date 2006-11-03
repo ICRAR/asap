@@ -64,8 +64,6 @@ STWriter::STWriter(const std::string &format)
     writer_ = new PKSMS2writer();
   } else if (t== "SDFITS") {
     writer_ = new PKSSDwriter();
-  } else if (t== "FITS") {
-    writer_ = 0;
   } else if (t== "ASCII") {
     writer_ = 0;
   } else {
@@ -93,8 +91,6 @@ Int STWriter::setFormat(const std::string &format)
     writer_ = new PKSMS2writer();
   } else if (t== "SDFITS") {
     writer_ = new PKSSDwriter();
-  } else if (t== "FITS") {
-    writer_ = 0;
   } else if (t== "ASCII") {
     writer_ = 0;
   } else {
@@ -107,23 +103,13 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                     const std::string &filename)
 {
 
-// Image FITS
-
-  if (format_=="FITS") {
-//      Bool verbose = True;
-//      SDFITSImageWriter iw;
-//      if (iw.write(*in, filename, verbose)) {
-//         return 0;
-//      } else {
-//         return 1;
-//      }
-  } else if (format_=="ASCII") {
-     STAsciiWriter iw;
-     if (iw.write(*in, filename)) {
-        return 0;
-     } else {
-        return 1;
-     }
+  if (format_=="ASCII") {
+    STAsciiWriter iw;
+    if (iw.write(*in, filename)) {
+      return 0;
+    } else {
+      return 1;
+    }
   }
 
   // MS or SDFITS
@@ -142,12 +128,9 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   }
 
   const Table table = in->table();
-//   ROArrayColumn<uInt> freqIDCol(table, "FREQ_ID");
-//   Vector<uInt> freqIDs;
 
   // Create the output file and write static data.
   Int status;
-  //Bool havexpol = Bool(in->npol() > 2);
   status = writer_->create(String(filename), hdr.observer, hdr.project,
                                hdr.antennaname, hdr.antennaposition,
                                hdr.obstype, hdr.equinox, hdr.freqref,

@@ -354,7 +354,7 @@ if rcParams['useplotter']:
     del gui
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.1'
+__version__  = '2.1.1b'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])

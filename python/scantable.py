@@ -76,8 +76,8 @@ class scantable(Scantable):
 
     def save(self, name=None, format=None, overwrite=False):
         """
-        Store the scantable on disk. This can be an asap (aips++) Table, SDFITS,
-        Image FITS or MS2 format.
+        Store the scantable on disk. This can be an asap (aips++) Table,
+        SDFITS or MS2 format.
         Parameters:
             name:        the name of the outputfile. For format "ASCII"
                          this is the root file name (data in 'name'.txt
@@ -1222,8 +1222,8 @@ class scantable(Scantable):
 
 
     def auto_poly_baseline(self, mask=[], edge=(0, 0), order=0,
-                           threshold=3, chan_avg_limit=1, plot=False, 
-			   insitu=None):
+                           threshold=3, chan_avg_limit=1, plot=False,
+                           insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
@@ -1242,15 +1242,15 @@ class scantable(Scantable):
             threshold:  the threshold used by line finder. It is better to
                         keep it large as only strong lines affect the
                         baseline solution.
-	    chan_avg_limit:  
-	                a maximum number of consequtive spectral channels to
-	                average during the search of weak and broad lines.
-			The default is no averaging (and no search for weak
-			lines). If such lines can affect the fitted baseline
-			(e.g. a high order polynomial is fitted), increase this
-			parameter (usually values up to 8 are reasonable). Most
-			users of this method should find the default value 
-			sufficient.
+            chan_avg_limit:
+                        a maximum number of consequtive spectral channels to
+                        average during the search of weak and broad lines.
+                        The default is no averaging (and no search for weak
+                        lines). If such lines can affect the fitted baseline
+                        (e.g. a high order polynomial is fitted), increase this
+                        parameter (usually values up to 8 are reasonable). Most
+                        users of this method should find the default value
+                        sufficient.
             plot:       plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'

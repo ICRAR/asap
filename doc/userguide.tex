@@ -1020,7 +1020,6 @@ Typical usages are:
 
 \begin{verbatim}
   ASAP>scans.save('myscans') # Save in default format
-  ASAP>scans.save('myscans', 'FITS') # Save as FITS for exporting into CLASS
   ASAP>scans.save('myscans', overwrite=True) # Overwrite an existing file
 \end{verbatim}
 
@@ -1621,18 +1620,6 @@ Example:
 Scan, beam and IF selection are also available in the selector object as
 describe in section~\ref{sec:selection}.
 
-\subsection{Saving}
-
-\index{Polarisation!saving}When saving data using the \cmd{save}
-function, the \cmd{stokes} argument can be used to save the data as
-Stoke values when saving in FITS format.
-
-Example:
-
-\begin{verbatim}
-  ASAP>scans.save('myscan.sdfits', 'SDFITS', stokes=True)
-\end{verbatim}
-
 \section{Specialised Processing}
 
 \subsection{Multibeam MX mode}
@@ -2232,7 +2219,7 @@ histogram rather than lines.}
 \asaprc{plotter.papersze}{{\bf A4}}{}
 
 % scantable
-\asaprc{scantable.save}{{\bf ASAP} SDFITS FITS ASCII MS2}{Default output
+\asaprc{scantable.save}{{\bf ASAP} SDFITS ASCII MS2}{Default output
 format when saving}
 
 \asaprc{scantable.autoaverage}{{\bf True}/False}{Auto averaging on
