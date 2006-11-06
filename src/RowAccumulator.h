@@ -42,7 +42,7 @@ public:
     * @param m the mask for the spectrum
     * @param tsys the Tsys corresponing to the spectrum
     * @param interval the intergration time
-    * @param the time of the observation
+    * @param time the time of the observation
     */
   void add(const casa::Vector<casa::Float>& v,
            const casa::Vector<casa::Bool>& m,

@@ -1,5 +1,4 @@
 from asap import rcParams, print_log, selector
-from asap import NUM
 import matplotlib.axes
 import sre
 

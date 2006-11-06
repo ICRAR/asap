@@ -9,7 +9,7 @@ from simpletal import simpleTAL, simpleTALES
 #absolute home
 abspath= "/var/www/asapmon/"
 cgiloc = "/cgi-bin/asapmon/"
-tmppath = abspath+"tmp/"
+tmppath = os.path.join(abspath,"tmp/")
 htmlloc = "/asapmon/"
 tmploc = "/asapmon/tmp/"
 
@@ -24,7 +24,7 @@ class WritableObject:
 
 logsink = WritableObject()
 logsink2 = WritableObject()
-sys.stdout =logsink
+sys.stdout = logsink
 sys.stderr = logsink2
 import asap
 sys.stdout = sys.__stdout__
@@ -52,19 +52,19 @@ class myForm:
             return None
         out = []
         for i in fi:
-            out.append(p+"/"+fl.files[i])
+            out.append(os.path.join(p,fl.files[i]))
         return out
 
     def decodeWindow(self,window):
         if not len(window.strip()): return None,None
-        x = window.split(",")
-        return [float(x[0].strip()),float(x[1].strip())]
+        x = window.split(", ")
+        return [float(x[0].strip()), float(x[1].strip())]
 
-    def decodeWindows(self,window):
+    def decodeWindows(self, window):
         import re
         p = re.compile("(\\[*\d+\\.*\d*,\d+\\.*\d*\\]*)")
         r = re.compile("[\\[\\]]")
-        return [self.decodeWindow(re.sub(r,'',s)) for s in re.findall(p,window)]
+        return [self.decodeWindow(re.sub(r, '', s)) for s in re.findall(p, window)]
 
     def setDefaultFields(self):
         self.fields['directories'] = observatory['rpfpath']
@@ -79,14 +79,14 @@ class myForm:
         self.fields['border'] = range(10)
         self.fields['imagename'] = ""
         self.fields['cunit'] = 0
-        self.fields['units'] = ["channel","km/s","GHz"]
+        self.fields['units'] = ["channel", "km/s", "GHz"]
         self.fields['baseline'] = 0
         self.fields['cpolyorder'] = 0
         self.fields['quotient'] = 0
         self.fields['average'] = 0
         self.fields['doppler'] = "RADIO"
         self.fields['frame'] = "LSRK"
-        self.fields['restn'] = [11,1]
+        self.fields['restn'] = [11, 1]
         self.fields['stokes'] = 0
         self.fields['summary'] = ""
         self.fields['bin'] = 0
@@ -97,24 +97,24 @@ class myForm:
 
 
     def getFormFields(self):
-        self.fields['cunit'] = int(self.form.getfirst("unit",0))
-        self.fields['frame'] = self.form.getfirst("frame","TOPO")
-        self.fields['doppler'] = self.form.getfirst("doppler","RADIO")
+        self.fields['cunit'] = int(self.form.getfirst("unit", 0))
+        self.fields['frame'] = self.form.getfirst("frame", "TOPO")
+        self.fields['doppler'] = self.form.getfirst("doppler", "RADIO")
         self.fields['restn'] = []
 
-        self.fields['plotwindow'] = self.form.getfirst("plotwindow","")
+        self.fields['plotwindow'] = self.form.getfirst("plotwindow", "")
         self.fields['baseline'] = int(self.form.has_key("baseline"))
-        self.fields['cpolyorder'] = int(self.form.getfirst("polyorder",0))
+        self.fields['cpolyorder'] = int(self.form.getfirst("polyorder", 0))
         self.fields['quotient'] = int(self.form.has_key("quotient"))
-        self.fields['doppler'] = self.form.getfirst("doppler","RADIO")
-        self.fields['frame'] = self.form.getfirst("frame","LSRK")
-        self.fields['cdir'] = int(self.form.getfirst("dlist",None))
+        self.fields['doppler'] = self.form.getfirst("doppler", "RADIO")
+        self.fields['frame'] = self.form.getfirst("frame", "LSRK")
+        self.fields['cdir'] = int(self.form.getfirst("dlist", None))
         self.fields['cfile'] = [int(k) for k in self.form.getlist("list")]
         self.fields['average'] = int(self.form.has_key("average"))
         self.fields['stokes'] = int(self.form.has_key("stokes"))
         self.fields['bin'] = int(self.form.has_key("bin"))
         self.fields['debug'] = ""#self.fields['restn']
-        self.fields['csource'] = self.form.getfirst("csource","")
+        self.fields['csource'] = self.form.getfirst("csource", "")
 
     def getRest(self):
         alllines = observatory['lines'].values()
@@ -139,7 +139,7 @@ class myForm:
             self.fields['nif'] = range(s.nif())
             for i in self.fields['nif']:
                 name = "rest%d" % i
-                self.fields['restn'].append(int(self.form.getfirst(name,0)))
+                self.fields['restn'].append(int(self.form.getfirst(name, 0)))
             restfs = self.getRest()
 
             # source name selection
@@ -150,7 +150,7 @@ class myForm:
                 i = not i in self.fields['sourcenames'] and i
                 if i:
                     # filter off scans
-                    i = not re.search(re.compile("_[R,e,w]$"),i) and i
+                    i = not re.search(re.compile("_[R, e, w]$"), i) and i
                     if i:
                         self.fields['sourcenames'].append(i)
             # form quotient
@@ -161,7 +161,7 @@ class myForm:
             if len(cs) > 0:
                 if cs in self.fields['sourcenames']:
                     ss = s.get_scan(self.fields['csource'])
-                    if isinstance(ss,asap.scantable):
+                    if isinstance(ss, asap.scantable):
                         s = ss
                     del ss
             else:
@@ -171,11 +171,11 @@ class myForm:
                 self.fields['csource'] = s.get_sourcename()[-1]
             if self.fields['cunit'] == 1:
                 srest = s._getrestfreqs()
-                if isinstance(srest,tuple) and len(srest) != s.nif():
-                    s.set_restfreqs(restfs,unit="GHz")
+                if isinstance(srest, tuple) and len(srest) != s.nif():
+                    s.set_restfreqs(restfs, unit="GHz")
             s.set_unit(self.fields['units'][self.fields['cunit']])
-            s.set_freqframe(self.form.getfirst("frame","LSRK"))
-            s.set_doppler(self.form.getfirst("doppler","RADIO"))
+            s.set_freqframe(self.form.getfirst("frame", "LSRK"))
+            s.set_doppler(self.form.getfirst("doppler", "RADIO"))
 
             # baseline
             if self.form.has_key('baseline'):
@@ -188,7 +188,7 @@ class myForm:
                     if len(brange):
                         self.fields['brangewindow'] = brstr
                         m = s.create_mask(brange)
-                        s.poly_baseline(mask=m,order=order)
+                        s.poly_baseline(mask=m, order=order)
                 else:
                     s.auto_poly_baseline(order=order)
             outscans = None
@@ -216,12 +216,12 @@ class myForm:
             # plotter without GUI
             asap.plotter = asap.asapplotter(False)
             if outscans.nif() > 1:
-                asap.plotter.set_mode("p","i")
+                asap.plotter.set_mode("p", "i")
             else:
                 if outscans.npol() > 2:
-                    asap.plotter.set_mode("t","p")
+                    asap.plotter.set_mode("t", "p")
                 else:
-                    asap.plotter.set_mode("p","t")
+                    asap.plotter.set_mode("p", "t")
             asap.plotter.plot(outscans)
             if self.fields['stokes']:
                 pols = "I"
@@ -230,12 +230,12 @@ class myForm:
                 sel = asap.selector()
                 sel.set_polarisations(pols)
                 asap.plotter.set_selection(sel)
-            x0,x1 = self.decodeWindow(self.fields['plotwindow'])
-            asap.plotter.set_range(x0,x1)
+            x0, x1 = self.decodeWindow(self.fields['plotwindow'])
+            asap.plotter.set_range(x0, x1)
             imname = tmppath+"plot.png"
-            asap.plotter.save(imname,dpi=96)
+            asap.plotter.save(imname, dpi=96)
             self.fields['imagename'] = tmploc+"plot.png"
-        except RuntimeError,e:
+        except RuntimeError, e:
             self.fields['debug'] = e
             return
 

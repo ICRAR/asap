@@ -13,7 +13,7 @@ def generate(env):
     def CheckCasa(context, path=None):
         ''' look for casa libraries'''
         def addCasa(env):
-            casalibs = "casav atnf images ms components coordinates \
+            casalibs = "casav atnf ms components coordinates \
                         lattices fits measures measures_f \
                         tables scimath scimath_f casa wcs".split()
             env.Prepend( LIBS =  casalibs )

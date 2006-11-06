@@ -119,7 +119,7 @@ public:
   void unsetSelection();
   /**
    * set the header
-   * @param[in] sdh an STHeader object
+   * @param[in] sth an STHeader object
    */
   void setHeader( const STHeader& sth );
 
@@ -174,7 +174,7 @@ public:
 
 	/**
 	 * set the direction type as a string, e.g. "J2000"
-	 * @param[in] the direction type
+	 * @param[in] refstr the direction type
 	 */
   void setDirectionRefString(const std::string& refstr="");
   /**
@@ -202,7 +202,7 @@ public:
 
   /**
    * Set the Stokes type of the data
-   * @param a string representing the type, e.g "circular" or "linear"
+   * @param feedtype a string representing the type, e.g "circular" or "linear"
    */
   void setFeedType( const std::string& feedtype );
 

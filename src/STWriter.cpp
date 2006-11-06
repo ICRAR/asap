@@ -118,13 +118,15 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   STHeader hdr = in->getHeader();
   //const Int nPol  = hdr.npol;
   //const Int nChan = hdr.nchan;
-  int nIF = in->nif();
+  std::vector<uint> ifs = in->getIFNos();
+  int nIF = in->nif();//ifs.size();
   Vector<uInt> nPol(nIF),nChan(nIF);
   Vector<Bool> havexpol(nIF);
-  for (int i=0;i<nIF;++i) {
-    nPol(i) = in->npol();
-    nChan(i) = in->nchan(i);
-    havexpol(i) = nPol(i) > 2;
+  nPol = 0;nChan = 0; havexpol = False;
+  for (int i=0;i<ifs.size();++i) {
+    nPol(ifs[i]) = in->npol();
+    nChan(ifs[i]) = in->nchan(ifs[i]);
+    havexpol(ifs[i]) = nPol(ifs[i]) > 2;
   }
 
   const Table table = in->table();
@@ -169,6 +171,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       sdirCol.get(0, srcDir);
       ROScalarColumn<Double> svelCol(btable, "SRCVELOCITY");
       svelCol.get(0, srcVel);
+      ROScalarColumn<uInt> bCol(btable, "BEAMNO");
+      beamno = bCol(0)+1;
       Int cycno = 1;
       while (!cycit.pastEnd() ) {
         Table ctable = cycit.table();
@@ -180,6 +184,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           // use the first row to fill in all the "metadata"
           const TableRecord& rec = row.get(0);
           ROArrayColumn<Float> specCol(itable, "SPECTRA");
+          ifno = rec.asuInt("IFNO")+1;
           uInt nchan = specCol(0).nelements();
           Double cdelt,crval,crpix, restfreq;
           Float focusAxi, focusTan, focusRot,
@@ -243,13 +248,13 @@ Int STWriter::write(const CountedPtr<Scantable> in,
             throw(AipsError("STWriter: Failed to export Scantable."));
           }
           ++count;
-          ++ifno;
+          //++ifno;
           ++ifit;
         }
         ++cycno;
         ++cycit;
       }
-      ++beamno;
+      //++beamno;
       ++beamit;
     }
     ++scanno;

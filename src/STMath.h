@@ -50,7 +50,7 @@ public:
   virtual ~STMath();
 
   /**
-   * get the currnt @attr inistu state
+   * get the currnt @attr inistu_ state
    */
   bool insitu() const { return insitu_;};
 
@@ -64,7 +64,7 @@ public:
   /**
     * average a vector of Scantables
     * @param in the vector of Scantables to average
-    * @param an optional mask to apply on specific weights
+    * @param mask an optional mask to apply on specific weights
     * @param weight weighting scheme
     * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
     * @return a casa::CountedPtr<Scantable> which either holds a new Scantable

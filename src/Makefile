@@ -33,16 +33,15 @@ RPFITSROOT := /usr/local
 RPFITSLIB := $(RPFITSROOT)/lib/librpfits.a
 
 G2CROOT := /usr/local
-G2CARCH := $(G2CROOT)/lib/gcc/i386-apple-darwin8.7.1/4.2.0/libgcc.a
-G2CARCH := $(G2CROOT)/lib/gcc/powerpc-apple-darwin8.7.0/4.2.0/libgcc.a
-G2CLIB := $(G2CROOT)/lib/libgfortran.a $(G2CARCH)
+G2CARCH := #$(G2CROOT)/lib/gcc/powerpc-apple-darwin8.7.0/4.2.0/libgcc.a
+G2CLIB := $(G2CROOT)/lib/libg2c.a $(G2CARCH)
 
 # This assumes all casa libs are static only (*.a)
 # if not than there might by symbol resolution errors.
 CASAPPLIB := $(CASALIB)/version.o \
              -L$(CASALIB) \
-             -latnf -limages -lms -lcomponents -lcoordinates \
-             -llattices -lfits -lmeasures -lmeasures_f \
+             -latnf -lms -lcomponents -lcoordinates \
+             -llattices -lfits -lmeasures \
              -ltables -lscimath -lscimath_f -lcasa  \
              $(CASALIB)/libwcs.a \
              $(RPFITSLIB) $(CFITSIOLIB) $(G2CLIB) -lstdc++

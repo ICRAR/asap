@@ -1,5 +1,5 @@
-PREFIX := /usr
-PYDIR := $(PREFIX)/lib/python2.3/site-packages
+PREFIX := /Library/Frameworks/Python.framework/Versions/2.4
+PYDIR := $(PREFIX)/lib/python2.4/site-packages
 
 ifndef ASAPROOT
    ASAPROOT := $(shell pwd)

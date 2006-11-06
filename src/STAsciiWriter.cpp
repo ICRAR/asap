@@ -108,7 +108,7 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     << "_IF" << rec.asuInt("IFNO");
     String fName = rootName + String(onstr) + String(".txt");
     ofstream of(fName.chars(), ios::trunc);
-    int row0 = t.rowNumbers()[0];
+    int row0 = t.rowNumbers(tab)[0];
     MDirection mdir = stable.getDirection(row0);
     of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
     addLine(of, "Name", rec.asString("SRCNAME"));

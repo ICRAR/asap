@@ -35,11 +35,6 @@ public:
     * @param name the name of the ASCII file or aips++ table
     */
   LineCatalog(const std::string& name = "jpl");
-  /**
-    * select a subset of the table by frequency range
-    * @param fmin the lower frequency bound
-    * @param fmin the upper frequency bound
-    */
 
   virtual ~LineCatalog() {}
 
@@ -49,12 +44,14 @@ public:
    * @param fmax the upper frequency bound
    */
   void setFrequencyLimits(double fmin, double fmax);
+
   /**
     * select a subset of the table by line strength range
     * @param smin the lower strength bound
     * @param smin the upper strength bound
     */
   void setStrengthLimits(double smin, double smax);
+  
   /**
     * select a subset of the data by name pattern match (unix-style)
     * @param name the string pattern e.g. "*CS*"
@@ -63,11 +60,13 @@ public:
     * @li "regex"
     */
   void setPattern(const std::string& name, const std::string& ptype="pattern");
+  
   /**
     * save the table  with current limits to disk (as an aips++ table)
     * @param name the filename
     */
   void save(const std::string& name);
+  
   /**
     * Return a string representation of this table
     * @param row an integer describing the row number to show

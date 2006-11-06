@@ -252,6 +252,8 @@ def rcdefaults():
     """
     rcParams.update(rcParamsDefault)
 
+def _n_bools(n, val):
+    return [ val for i in xrange(n) ] 
 
 def _is_sequence_or_number(param, ptype=int):
     if isinstance(param,tuple) or isinstance(param,list):
@@ -297,10 +299,9 @@ def list_files(path=".",suffix="rpf"):
         'data/2003-04-04_131152_t0002.sdfits',
         'data/Sgr_86p262_best_SPC.sdfits']
     """
-    import os
     if not os.path.isdir(path):
         return None
-    valid = "rpf sdf sdfits mbf asap".split()
+    valid = "rpf rpf.1 rpf.2 sdf sdfits mbf asap".split()
     if not suffix in valid:
         return None
     files = [os.path.expanduser(os.path.expandvars(path+"/"+f)) for f in os.listdir(path)]
@@ -324,13 +325,16 @@ def print_log():
     if len(log) and rcParams['verbose']: print log
     return
 
-try:
-    import numpy.core as NUM
-except ImportError:
-    try:
-        import numarray as NUM
-    except ImportError:
-        raise ImportError("You need to have numpy or numarray installed")
+def mask_and(a, b):
+    assert(len(a)==len(b))
+    return [ a[i] & b[i] for i in xrange(len(a)) ]
+
+def mask_or(a, b):
+    assert(len(a)==len(b))
+    return [ a[i] | b[i] for i in xrange(len(a)) ]
+
+def mask_not(a):
+    return [ not i for i in a ]
 
 from asapfitter import fitter
 from asapreader import reader
@@ -341,17 +345,16 @@ from scantable import scantable
 from asaplinefind import linefinder
 from linecatalog import linecatalog
 
-mask_and = NUM.logical_and
-mask_or = NUM.logical_or
-mask_not = NUM.logical_not
-
 if rcParams['useplotter']:
-    from  asapplotter import asapplotter
-    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
-    if gui:
-        import pylab as xyplotter
-    plotter = asapplotter(gui)
-    del gui
+    try:
+	from  asapplotter import asapplotter
+	gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+	if gui:
+	    import pylab as xyplotter
+	    plotter = asapplotter(gui)
+	    del gui
+    except ImportError:
+	print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
 __version__  = '2.1.1b'
@@ -361,7 +364,7 @@ def is_ipython():
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
     def list_scans(t = scantable):
-        import sys, types
+        import types
         globs = sys.modules['__main__'].__dict__.iteritems()
         print "The user created scantables are:"
         sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))

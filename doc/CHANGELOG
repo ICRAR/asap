@@ -1,6 +1,15 @@
 Changelog
 =========
-Release Version 2.1 [2006-09-11]
+
+Minor Release 2.1.1 []
+
+* fix for Ticket #88 - numpy masks
+* better TAB completion for ipython (handles quotes, don't list private members)
+* Fix for Ticket #81 = scanatble.stats output as list 
+* ticket #64 - speed up of auto_poly_baseline
+* fix for ticket #89 - export of IF sub-selections
+
+Release Version 2.1.0 [2006-09-11]
 
 * Processing of Multibeam MX data
 * Line Catalogs for both plotting and setting rest frequencies

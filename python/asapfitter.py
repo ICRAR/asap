@@ -1,7 +1,7 @@
 import _asap
 from asap import rcParams
 from asap import print_log
-from asap import NUM
+from asap import _n_bools
 
 class fitter:
     """
@@ -41,7 +41,7 @@ class fitter:
         self.x = xdat
         self.y = ydat
         if mask == None:
-            self.mask = NUM.ones(len(xdat))
+            self.mask = _n_bools(len(xdat), True)
         else:
             self.mask = mask
         return
@@ -64,7 +64,7 @@ class fitter:
         self.data = thescan
         self.mask = None
         if mask is None:
-            self.mask = NUM.ones(self.data.nchan())
+            self.mask = _n_bools(self.data.nchan(), True)
         else:
             self.mask = mask
         return
@@ -214,8 +214,8 @@ class fitter:
                 raise RuntimeError(msg)
         if self.fitfunc == "gauss" and component is not None:
             if not self.fitted and sum(self.fitter.getparameters()) == 0:
-                pars = list(NUM.zeros(len(self.components)*3))
-                fxd = list(NUM.zeros(len(pars)))
+                pars = _n_bools(len(self.components)*3, False)
+                fxd = _n_bools(len(pars), False)
             else:
                 pars = list(self.fitter.getparameters())
                 fxd = list(self.fitter.getfixedparameters())

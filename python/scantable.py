@@ -3,8 +3,8 @@ from asap import rcParams
 from asap import print_log
 from asap import asaplog
 from asap import selector
-from asap import NUM
 from asap import linecatalog
+from asap import _n_bools, mask_not, mask_and, mask_or
 
 class scantable(Scantable):
     """
@@ -344,12 +344,11 @@ class scantable(Scantable):
             print " ", stat
             print "--------------------------------------------------"
             print out
-            return
-        else:
-            retval = { 'axesnames': ['scanno', 'beamno', 'ifno', 'polno', 'cycleno'],
-                       'axes' : axes,
-                       'data': statvals}
-            return retval
+        #else:
+            #retval = { 'axesnames': ['scanno', 'beamno', 'ifno', 'polno', 'cycleno'],
+            #           'axes' : axes,
+            #           'data': statvals}
+        return statvals
 
     def stddev(self, mask=None):
         """
@@ -720,7 +719,7 @@ class scantable(Scantable):
                 msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
             asaplog.push(msg)
         n = self.nchan()
-        msk = NUM.zeros(n)
+        msk = _n_bools(n, False)
         # test if args is a 'list' or a 'normal *args - UGLY!!!
 
         ws = (isinstance(args[-1][-1], int) or isinstance(args[-1][-1], float)) \
@@ -730,10 +729,10 @@ class scantable(Scantable):
                 raise TypeError("A window needs to be defined as [min, max]")
             for i in range(n):
                 if data[i] >= window[0] and data[i] <= window[1]:
-                    msk[i] = 1
+                    msk[i] = True
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
-                msk = NUM.logical_not(msk)
+                msk = mask_not(msk)
         print_log()
         return msk
 
@@ -1201,7 +1200,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         varlist = vars()
         if mask is None:
-            mask = list(NUM.ones(self.nchan(-1)))
+            mask = [True for i in xrange(self.nchan(-1))]
         from asap.asapfitter import fitter
         try:
             f = fitter()
