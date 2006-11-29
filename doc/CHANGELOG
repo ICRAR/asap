@@ -1,13 +1,15 @@
 Changelog
 =========
 
-Minor Release 2.1.1 []
+Minor Release 2.1.1 [2006-11-09]
 
 * fix for Ticket #88 - numpy masks
 * better TAB completion for ipython (handles quotes, don't list private members)
 * Fix for Ticket #81 = scanatble.stats output as list 
 * ticket #64 - speed up of auto_poly_baseline
 * fix for ticket #89 - export of IF sub-selections
+* fix for Ticket #83 - export to ms2 crashed asap
+* added file suffix support for name.rpf.1 etc.
 
 Release Version 2.1.0 [2006-09-11]
 

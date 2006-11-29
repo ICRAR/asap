@@ -123,7 +123,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   Vector<uInt> nPol(nIF),nChan(nIF);
   Vector<Bool> havexpol(nIF);
   nPol = 0;nChan = 0; havexpol = False;
-  for (int i=0;i<ifs.size();++i) {
+  for (uint i=0;i<ifs.size();++i) {
     nPol(ifs[i]) = in->npol();
     nChan(ifs[i]) = in->nchan(ifs[i]);
     havexpol(ifs[i]) = nPol(ifs[i]) > 2;

@@ -78,7 +78,7 @@ if not env.GetOption('clean'):
     if not conf.CheckCasa(env["casadir"]): Exit(1)
     env = conf.Finish()
 
-env["version"] = "2.1.1b"
+env["version"] = "2.1.1"
 
 # general CPPFLAGS
 env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])

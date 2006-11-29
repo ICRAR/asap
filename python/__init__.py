@@ -357,7 +357,7 @@ if rcParams['useplotter']:
 	print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.1.1b'
+__version__  = '2.1.1'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])

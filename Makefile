@@ -1,12 +1,13 @@
-PREFIX := /Library/Frameworks/Python.framework/Versions/2.4
-PYDIR := $(PREFIX)/lib/python2.4/site-packages
-
 ifndef ASAPROOT
    ASAPROOT := $(shell pwd)
 endif
 
+PREFIX := /Library/Frameworks/Python.framework/Versions/2.4
+PYDIR := $(PREFIX)/lib/python2.4/site-packages
+
+
 PY := $(wildcard python/*.py)
-LIBS := /tmp/_asap.so
+LIBS := src/_asap.so
 BINS := bin/asap
 
 CASAROOT  := $(word 1, $(AIPSPATH))
