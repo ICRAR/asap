@@ -498,9 +498,9 @@ class fitter:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
             m =  logical_and(self.mask,
-                             array(self.data._getmask(self._fittedrow)),
-                                   copy=False)
-                             
+                             array(self.data._getmask(self._fittedrow),
+                                   copy=False))
+            
             ylab = self.data._get_ordinate_label()
 
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
