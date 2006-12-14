@@ -72,6 +72,13 @@ public:
                   const std::string& mode, bool tsys=false )
   { return ScantableWrapper(STMath::unaryOperate(in.getCP(), val, mode, tsys)); }
 
+  ScantableWrapper binaryOperate( const ScantableWrapper& left,
+				  const ScantableWrapper& right,
+				  const std::string& mode)
+  { return ScantableWrapper( STMath::binaryOperate( left.getCP(), right.getCP(),
+						    mode ) ); }
+
+
   ScantableWrapper autoQuotient( const ScantableWrapper& in,
                                  const std::string& mode = "NEAREST",
                                  bool preserve = true )

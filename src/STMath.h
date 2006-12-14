@@ -118,6 +118,11 @@ public:
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,
                   const std::string& mode, bool tsys=false );
 
+  casa::CountedPtr<Scantable>
+    binaryOperate( const casa::CountedPtr<Scantable>& left, 
+		   const casa::CountedPtr<Scantable>& right, 
+		   const std::string& mode);
+
   casa::CountedPtr<Scantable> autoQuotient(const casa::CountedPtr<Scantable>& in,
                                            const std::string& mode = "NEAREST",
                                            bool preserve = true);

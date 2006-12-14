@@ -1412,7 +1412,7 @@ class scantable(Scantable):
         else:
             return s
 
-    def scale(self, factor, tsys=True, insitu=None, ):
+    def scale(self, factor, tsys=True, insitu=None):
         """
         Return a scan where all spectra are scaled by the give 'factor'
         Parameters:
@@ -1518,8 +1518,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            print "scantable + scantable NYI"
-            return
+	    s = scantable(self._math._binaryop(self, other, "ADD"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "ADD", False))
         else:
@@ -1535,8 +1534,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            print "scantable - scantable NYI"
-            return
+	    s = scantable(self._math._binaryop(self, other, "SUB"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "SUB", False))
         else:
@@ -1552,8 +1550,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            print "scantable * scantable NYI"
-            return
+	    s = scantable(self._math._binaryop(self, other, "MUL"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "MUL", False))
         else:
@@ -1570,8 +1567,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-            print "scantable / scantable NYI"
-            return
+	    s = scantable(self._math._binaryop(self, other, "DIV"))
         elif isinstance(other, float):
             if other == 0.0:
                 raise ZeroDivisionError("Dividing by zero is not recommended")

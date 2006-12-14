@@ -280,7 +280,6 @@ CountedPtr< Scantable > STMath::unaryOperate( const CountedPtr< Scantable >& in,
                                               const std::string& mode,
                                               bool tsys )
 {
-  // modes are "ADD" and "MUL"
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tab = out->table();
   ArrayColumn<Float> specCol(tab,"SPECTRA");
@@ -290,14 +289,16 @@ CountedPtr< Scantable > STMath::unaryOperate( const CountedPtr< Scantable >& in,
     Vector<Float> ts;
     specCol.get(i, spec);
     tsysCol.get(i, ts);
-    if (mode == "MUL") {
+    if (mode == "MUL" || mode == "DIV") {
+      if (mode == "DIV") val = 1.0/val;
       spec *= val;
       specCol.put(i, spec);
       if ( tsys ) {
         ts *= val;
         tsysCol.put(i, ts);
       }
-    } else if ( mode == "ADD" ) {
+    } else if ( mode == "ADD"  || mode == "SUB") {
+      if (mode == "SUB") val *= -1.0;
       spec += val;
       specCol.put(i, spec);
       if ( tsys ) {
@@ -308,6 +309,53 @@ CountedPtr< Scantable > STMath::unaryOperate( const CountedPtr< Scantable >& in,
   }
   return out;
 }
+
+CountedPtr<Scantable> STMath::binaryOperate(const CountedPtr<Scantable>& left, 
+					    const CountedPtr<Scantable>& right, 
+					    const std::string& mode)
+{
+  bool insitu = insitu_;
+  if ( ! left->conformant(*right) ) {
+    throw(AipsError("'left' and 'right' scantables are not conformant."));
+  }
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(left, false);
+  setInsitu(insitu);
+  Table& tout = out->table();
+  Block<String> coln(5);
+  coln[0] = "SCANNO";  coln[1] = "CYCLENO";  coln[2] = "BEAMNO";
+  coln[3] = "IFNO";  coln[4] = "POLNO";
+  Table tmpl = tout.sort(coln);
+  Table tmpr = right->table().sort(coln);
+  ArrayColumn<Float> lspecCol(tmpl,"SPECTRA");
+  ROArrayColumn<Float> rspecCol(tmpr,"SPECTRA");
+  ArrayColumn<uChar> lflagCol(tmpl,"FLAGTRA");
+  ROArrayColumn<uChar> rflagCol(tmpr,"FLAGTRA");
+
+  for (uInt i=0; i<tout.nrow(); ++i) {
+    Vector<Float> lspecvec, rspecvec;
+    Vector<uChar> lflagvec, rflagvec;
+    lspecvec = lspecCol(i);    rspecvec = rspecCol(i);
+    lflagvec = lflagCol(i);    rflagvec = rflagCol(i);
+    MaskedArray<Float> mleft = maskedArray(lspecvec, lflagvec);
+    MaskedArray<Float> mright = maskedArray(rspecvec, rflagvec);
+    if (mode == "ADD") {
+      mleft += mright;
+    } else if ( mode == "SUB") {
+      mleft -= mright;
+    } else if ( mode == "MUL") {
+      mleft *= mright;
+    } else if ( mode == "DIV") {
+      mleft /= mright;
+    } else {
+      throw(AipsError("Illegal binary operator"));
+    }
+    lspecCol.put(i, mleft.getArray());
+  }
+  return out;
+}
+
+
 
 MaskedArray<Float> STMath::maskedArray( const Vector<Float>& s,
                                         const Vector<uChar>& f)
