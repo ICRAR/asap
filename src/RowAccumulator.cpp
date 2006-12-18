@@ -12,7 +12,9 @@
 #include <casa/iomanip.h>
 
 #include <casa/Arrays/MaskArrMath.h>
+#include <casa/Arrays/MaskArrLogi.h>
 #include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/ArrayLogical.h>
 #include "RowAccumulator.h"
 
 
@@ -39,16 +41,20 @@ void RowAccumulator::add( const Vector< Float >& v,
 {
   if (!initialized_) {
     Vector<Float> dummy(v.nelements(), 0.0);
-    spectrum_.setData(dummy, Vector<Bool>(m.nelements(), True));
-    n_.setData(Vector<Float>(v.nelements(), 0.0), m);
-    weightSum_.setData(Vector<Float>(v.nelements(), 0.0), m);
+    Vector<Bool> dummymsk(m.nelements(), True);
+    spectrum_.setData(dummy, dummymsk);
+    n_.setData(Vector<Float>(v.nelements(), 0.0), dummymsk);
+    weightSum_.setData(Vector<Float>(v.nelements(), 0.0), dummymsk);
     tsysSum_.resize(tsys.nelements()); tsysSum_=0.0;
   }
   // add spectrum related weights, so far it is variance only.
   Float totalweight = 1.0;
   totalweight *= addTsys(tsys);
-  totalweight *= addInterval(interval);
-  addTime(time);
+  // only add these if not everything masked
+  if ( !allEQ(m, False) ) {
+    totalweight *= addInterval(interval);
+    addTime(time);
+  }
   addSpectrum(v, m, totalweight);
   initialized_ = True;
 }
@@ -133,7 +139,7 @@ casa::Vector< casa::Bool > RowAccumulator::getMask( ) const
 
 casa::Vector< casa::Float > asap::RowAccumulator::getTsys( ) const
 {
-  // @fixme this assummes tsys.nelements() == 1
+  // @fixme this assumes tsys.nelements() == 1
   return tsysSum_/max(n_);
 }
 

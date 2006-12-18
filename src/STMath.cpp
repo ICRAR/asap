@@ -166,9 +166,11 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
         flagCol.get(k, flag);
         Vector<Bool> bflag(flag.shape());
         convertArray(bflag, flag);
+	/*
         if ( allEQ(bflag, True) ) {
-          continue;//don't accumulate
+	continue;//don't accumulate
         }
+	*/
         specCol.get(k, spec);
         tsysCol.get(k, tsys);
         intCol.get(k, inter);
