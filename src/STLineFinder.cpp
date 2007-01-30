@@ -49,7 +49,7 @@ namespace asap {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // RunningBox -    a running box calculator. This class implements
-//                 interations over the specified spectrum and calculates
+//                 iterations over the specified spectrum and calculates
 //                 running box filter statistics.
 //
 
@@ -398,17 +398,17 @@ void LFAboveThreshold::processChannel(Bool detect,
           // otherwise it could be a spurious detection
           if (last_sign && last_sign!=getAboveMeanSign())
               detect=False;
-          }
-          if (detect) {
-              last_sign=getAboveMeanSign();
-              if (is_detected_before)
-                  cur_line.second=running_box->getChannel()+1;
-              else {
-                  is_detected_before=True;
-                  cur_line.first=running_box->getChannel();
-                  cur_line.second=running_box->getChannel()+1;
-              }
-          } else processCurLine(mask);
+       }
+       if (detect) {
+           last_sign=getAboveMeanSign();
+           if (is_detected_before)
+               cur_line.second=running_box->getChannel()+1;
+           else {
+               is_detected_before=True;
+               cur_line.first=running_box->getChannel();
+               cur_line.second=running_box->getChannel()+1;
+           }
+       } else processCurLine(mask);
   }
   catch (const AipsError &ae) {
       throw;
@@ -425,7 +425,7 @@ void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
 {
   try {
        if (is_detected_before) {
-           if (cur_line.second-cur_line.first>min_nchan) {
+           if (cur_line.second-cur_line.first>=min_nchan) {
                // it was a detection. We need to change the list
                Bool add_new_line=False;
                if (lines.size()) {
@@ -516,14 +516,14 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
 
            signs[ch]=getAboveMeanSign();
            // os<<ch<<" "<<spectrum[ch]<<" "<<fabs(running_box->aboveMean())<<" "<<
-           //   threshold*offline_variance<<endl;
+           // threshold*offline_variance<<endl;
 
            const Float buf=running_box->aboveMean();
            if (buf>0) signs[ch]=1;
            else if (buf<0) signs[ch]=-1;
            else if (buf==0) signs[ch]=0;
-        //   os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
-          //              threshold*offline_variance<<endl;
+           //os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
+           //             threshold*offline_variance<<endl;
       }
       if (lines.size())
           searchForWings(lines,signs,mask,edge);
@@ -767,14 +767,14 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
          if (first_pass) throw;
          // nothing new - proceed to the next step of averaging, if any
          // (to search for broad lines)
-         if (avg_factor>avg_limit) break; // averaging up to avg_limit
+         if (avg_factor>=avg_limit) break; // averaging up to avg_limit
                                           // adjacent channels,
                                           // stop after that
          avg_factor*=2; // twice as more averaging
          subtractBaseline(temp_mask,9);
          averageAdjacentChannels(temp_mask,avg_factor);
          continue;
-     }
+     } 
      keepStrongestOnly(temp_mask,new_lines,max_box_nchan);
      // update the list (lines) merging intervals, if necessary
      addNewSearchResult(new_lines,lines);
@@ -950,7 +950,7 @@ std::vector<int> STLineFinder::getLineRangesInChannels()
 // strongest one (by absolute value). If the lines removed are real,
 // they will be find again at the next iteration. This approach
 // increases the number of iterations required, but is able to remove
-// the sidelobes likely to occur near strong lines.
+// spurious detections likely to occur near strong lines.
 // Later a better criterion may be implemented, e.g.
 // taking into consideration the brightness of different lines. Now
 // use the simplest solution
