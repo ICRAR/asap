@@ -977,7 +977,7 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
   ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
   for ( uInt i=0; i<tab.nrow(); ++i) {
     Float zdist = Float(C::pi_2) - elev(i);
-    Float factor = exp(tau)/cos(zdist);
+    Float factor = exp(tau/cos(zdist));
     MaskedArray<Float> ma = maskedArray(specCol(i), flagCol(i));
     ma *= factor;
     specCol.put(i, ma.getArray());
