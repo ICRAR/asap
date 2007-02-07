@@ -1,6 +1,6 @@
 from asap import rcParams, print_log, selector
 import matplotlib.axes
-import sre
+import re
 
 class asapplotter:
     """
