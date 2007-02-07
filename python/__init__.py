@@ -21,7 +21,8 @@ asapdata = __path__[-1]
 if os.environ.has_key("ASAPDATA"):
     if os.path.exists(os.environ["ASAPDATA"]):
         asapdata = os.environ["ASAPDATA"]
-os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
+if not os.environ.has_key("AIPSPATH"):
+    os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
 # set up user space
 userdir = os.environ["HOME"]+"/.asap"
 if not os.path.exists(userdir):
