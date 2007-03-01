@@ -905,10 +905,13 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
     Vector<Float> factors(tab.nrow(), factor);
     scaleByVector(tab,factors, false);
   } else if ( etaap > 0.0) {
-    Instrument inst =
-      STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), True);
-    STAttr sda;
-    if (d < 0) d = sda.diameter(inst);
+    if (d < 0) {
+      Instrument inst =
+	STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), 
+				  True);
+      STAttr sda;
+      d = sda.diameter(inst);
+    }
     jyperk = STAttr::findJyPerK(etaap, d);
     ostringstream oss;
     oss << "Jy/K = " << jyperk;
