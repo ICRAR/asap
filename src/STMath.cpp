@@ -405,16 +405,18 @@ CountedPtr< Scantable > STMath::autoQuotient( const CountedPtr< Scantable >& in,
   for (uInt i=0; i < tout.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
     Double ontime = rec.asDouble("TIME");
-    ROScalarColumn<Double> offtimeCol(offs, "TIME");
+    Table presel = offs(offs.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+			&& offs.col("IFNO") == Int(rec.asuInt("IFNO"))
+			&& offs.col("POLNO") == Int(rec.asuInt("POLNO")) );
+    ROScalarColumn<Double> offtimeCol(presel, "TIME");
+
     Double mindeltat = min(abs(offtimeCol.getColumn() - ontime));
     // Timestamp may vary within a cycle ???!!!
-    // increase this by 0.5 sec in case of rounding errors...
+    // increase this by 0.01 sec in case of rounding errors...
     // There might be a better way to do this.
-    mindeltat += 0.5;
-    Table sel = offs( abs(offs.col("TIME")-ontime) <= (mindeltat+0.5)
-                       && offs.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
-                       && offs.col("IFNO") == Int(rec.asuInt("IFNO"))
-                       && offs.col("POLNO") == Int(rec.asuInt("POLNO")) );
+    // fix to this fix. TIME is MJD, so 1.0d not 1.0s
+    mindeltat += 0.01/24./60./60.;
+    Table sel = presel( abs(presel.col("TIME")-ontime) <= mindeltat);
 
     if ( sel.nrow() < 1 )  {
       throw(AipsError("No closest in time found... This could be a rounding "
