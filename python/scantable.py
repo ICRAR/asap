@@ -799,8 +799,9 @@ class scantable(Scantable):
             if isinstance(freqs[-1], int) or isinstance(freqs[-1], float):
                 sel = selector()
                 savesel = self._getselection()
+                iflist = self.getifnos()
                 for i in xrange(len(freqs)):
-                    sel.set_ifs([i])
+                    sel.set_ifs(iflist[i])
                     self._setselection(sel)
                     self._setrestfreqs(freqs[i], "",unit)
                 self._setselection(savesel)
@@ -808,8 +809,9 @@ class scantable(Scantable):
             elif isinstance(freqs[-1], dict):
                 sel = selector()
                 savesel = self._getselection()
+                iflist = self.getifnos()
                 for i in xrange(len(freqs)):
-                    sel.set_ifs([i])
+                    sel.set_ifs(iflist[i])
                     self._setselection(sel)
                     self._setrestfreqs(freqs[i]["value"],
                                        freqs[i]["name"], "MHz")
@@ -818,8 +820,9 @@ class scantable(Scantable):
         elif isinstance(freqs, linecatalog):
             sel = selector()
             savesel = self._getselection()
+            iflist = self.getifnos()
             for i in xrange(freqs.nrow()):
-                sel.set_ifs([i])
+                sel.set_ifs(iflist[i])
                 self._setselection(sel)
                 self._setrestfreqs(freqs.get_frequency(i),
                                    freqs.get_name(i), "MHz")
