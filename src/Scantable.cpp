@@ -69,7 +69,7 @@ std::map<std::string, STPol::STPolFactory *> Scantable::factories_;
 void Scantable::initFactories() {
   if ( factories_.empty() ) {
     Scantable::factories_["linear"] = &STPolLinear::myFactory;
-    Scantable::factories_["circular"] = &STPolStokes::myFactory;
+    Scantable::factories_["circular"] = &STPolCircular::myFactory;
     Scantable::factories_["stokes"] = &STPolStokes::myFactory;
   }
 }
