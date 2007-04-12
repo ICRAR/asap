@@ -82,6 +82,13 @@ env.Tool('casa', [casacoretooldir])
 
 if not env.GetOption('clean'):
     conf = Configure(env)
+
+    conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
+					       "lib"))
+    conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
+					       "include", "casacore"))
+    if not conf.CheckLib("casa_casa", language='c++'): Exit(1)
+    conf.env.PrependUnique(LIBS=["casa_ms", "casa_components",  "casa_coordinates", "casa_lattices", "casa_fits", "casa_measures", "casa_scimath", "casa_scimath_f", "casa_tables", "casa_mirlib"])
     conf.env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()])
     if not conf.CheckHeader("Python.h", language='c'):
         Exit(1)
@@ -91,23 +98,6 @@ if not env.GetOption('clean'):
     else:
         if not conf.CheckLib(library=pylib, language='c'): Exit(1)
 
-    conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
-					       "lib"))
-    conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
-					       "include", "casacore"))
-    print conf.env["CPPPATH"]
-#    if not conf.CheckLib("casa_images",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_ms",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_components",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_coordinates",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_lattices",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_fits",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_measures",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_scimath",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_scimath_f",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_tables",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_mirlib",  language='c++'): Exit(1)
-    if not conf.CheckLib("casa_casa",  language='c++'): Exit(1)
     conf.env.AddCustomPackage('boost')
     if not conf.CheckLibWithHeader(env["boostlib"], 
                                    'boost/python.hpp', language='c++'): 
