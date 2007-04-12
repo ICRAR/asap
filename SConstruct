@@ -3,8 +3,6 @@ import sys
 import distutils.sysconfig
 import platform
 import SCons
-# scons plug-ins
-#from installtree import InstallTree
 
 moduledir = distutils.sysconfig.get_python_lib()
 if  platform.architecture()[0] == '64bit':
@@ -13,15 +11,45 @@ if  platform.architecture()[0] == '64bit':
         moduledir = moduledir.replace("lib", "lib64")
 
 opts = Options("userconfig.py")
-opts.AddOptions(PathOption("prefix",
-                           "The root installation path",
+opts.AddOptions(		
+                ("FORTRAN", "The fortran compiler", None),
+                ("f2clib", "The fortran to c library", None),
+                PathOption("prefix",
+	        "The root installation path",
                            distutils.sysconfig.PREFIX),
                 PathOption("moduledir",
                             "The python module path (site-packages))",
                             moduledir),
-                ("rpfitsdir", "Alternative rpfits location.", ""),
-                ("cfitsioincdir", "Alternative cfitsio include dir", ""),
-                ("casadir", "Alternative casa location", ""),
+		PathOption("casacoreroot", "The location of casacore",
+				    "/usr/local"),
+		("boostroot", "The root dir where boost is installed", None),
+		("boostlib", "The name of the boost python library", 
+		 "boost_python"),
+		("boostlibdir", "The boost library location", None),
+		("boostincdir", "The boost header file location", None),
+		("lapackroot", 
+		 "The root directory where lapack is installed", None),
+		("lapacklibdir", "The lapack library location", None),
+		("lapacklib",
+		 "The lapack library name (e.g. for specialized AMD libraries",
+		 None),
+		("blasroot", 
+		 "The root directory where blas is installed", None),
+		("blaslibdir", "The blas library location", None),
+		("blaslib",
+		 "The blas library name (e.g. for specialized AMD libraries",
+		 None),
+		("cfitsioroot", 
+		 "The root directory where cfistio is installed", None),
+		("cfitsiolibdir", "The cfitsio library location", None),
+		("cfitsioincdir", "The cfitsio include location", None),
+		("wcsroot", 
+		 "The root directory where wcs is installed", None),
+		("wcslibdir", "The wcs library location", None),
+		("rpfitsroot", 
+		 "The root directory where rpfits is installed", None),
+		("rpfitslibdir", "The rpfits library location", None),
+		
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
@@ -33,7 +61,7 @@ opts.AddOptions(PathOption("prefix",
                 )
 
 env = Environment( toolpath = ['./scons'],
-                   tools = ["default", "casa", "archiver", "utils",
+                   tools = ["default", "archiver", "utils",
                             "quietinstall"],
                    ENV = { 'PATH' : os.environ[ 'PATH' ],
                           'HOME' : os.environ[ 'HOME' ] },
@@ -41,51 +69,72 @@ env = Environment( toolpath = ['./scons'],
 
 Help(opts.GenerateHelpText(env))
 env.SConsignFile()
-env.Append(CASAARCH = '', CASAROOT = '')
-if (os.path.exists(env["cfitsioincdir"])):
-    env.Append(CPPPATH=[env["cfitsioincdir"]])
-env.AddCustomPath(env["rpfitsdir"])
+
+casacoretooldir = os.path.join(env["casacoreroot"],"share",
+				   "casacore")
+if not os.path.exists(casacoretooldir):
+    print "Could not find casacore scons tools"
+    Exit(1)
+
+# load casacore specific build flags
+print casacoretooldir
+env.Tool('casa', [casacoretooldir])
+
 if not env.GetOption('clean'):
     conf = Configure(env)
-    # import Custom tests
-    env.AddCasaTest(conf)
-    pylib = 'python'+distutils.sysconfig.get_python_version()
-    pyinc = "Python.h"
-    if env['PLATFORM'] == "darwin":
-        pylib = "Python"
-    if not conf.CheckLib(library=pylib, language='c'): Exit(1)
     conf.env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()])
     if not conf.CheckHeader("Python.h", language='c'):
         Exit(1)
-    if not conf.CheckLibWithHeader('boost_python', 'boost/python.hpp', 'c++'): Exit(1)
-    conf.env.AddCustomPath(env["rpfitsdir"])
-    if not conf.CheckLib('rpfits'): Exit(1)
-    # cfitsio is either in include/ or /include/cfitsio
-    # handle this
-    if not conf.CheckLib(library='cfitsio', language='c'): Exit(1)
-    if not conf.CheckHeader('fitsio.h', language='c'):
-        if not conf.CheckHeader('cfitsio/fitsio.h', language='c'):
-            Exit(1)
-        else:
-            conf.env.Append(CPPPATH=['/usr/include/cfitsio'])
-    if (sys.platform == "darwin"):
-        conf.env.Append(LIBS = ['-framework vecLib'])
+    pylib = 'python'+distutils.sysconfig.get_python_version()
+    if env['PLATFORM'] == "darwin":
+        conf.env.Append(FRAMEWORKS=["Python"])
     else:
-        if not conf.CheckLib('lapack'): Exit(1)
-        if not conf.CheckLib('blas'): Exit(1)
-    if not conf.CheckLib('g2c'): Exit(1)
+        if not conf.CheckLib(library=pylib, language='c'): Exit(1)
+
+    conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
+					       "lib"))
+    conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
+					       "include", "casacore"))
+    print conf.env["CPPPATH"]
+#    if not conf.CheckLib("casa_images",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_ms",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_components",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_coordinates",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_lattices",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_fits",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_measures",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_scimath",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_scimath_f",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_tables",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_mirlib",  language='c++'): Exit(1)
+    if not conf.CheckLib("casa_casa",  language='c++'): Exit(1)
+    conf.env.AddCustomPackage('boost')
+    if not conf.CheckLibWithHeader(env["boostlib"], 
+                                   'boost/python.hpp', language='c++'): 
+        Exit(1)
+    # test for cfitsio
+    if not conf.CheckLib("m"): Exit(1)
+    conf.env.AddCustomPackage('cfitsio')
+    if not conf.CheckLibWithHeader('cfitsio', 'fitsio.h', language='c'):
+        Exit(1)
+    conf.env.AddCustomPackage('wcs')
+    if not conf.CheckLibWithHeader('wcs', 'wcslib/wcs.h', language='c'):
+        Exit(1)
+    conf.env.AddCustomPackage('rpfits')
+    if not conf.CheckLib("rpfits"): Exit(1)
+
+    # test for blas/lapack
+    blasname = conf.env.get("blaslib", "blas")
+    conf.env.AddCustomPackage("blas")
+    if not conf.CheckLib(blasname): Exit(1)
+    lapackname = conf.env.get("lapacklib", "lapack")
+    conf.env.AddCustomPackage("lapack")
+    if not conf.CheckLib(lapackname): Exit(1)
+    conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
-    if not conf.CheckCasa(env["casadir"]): Exit(1)
     env = conf.Finish()
 
-env["version"] = "2.1.1"
-
-# general CPPFLAGS
-env.Append(CPPFLAGS=['-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE', '-O3'])
-
-# 64bit flags
-if  platform.architecture()[0] == '64bit':
-    env.Append(CPPFLAGS=['-fPIC', '-D__x86_64__', '-DAIPS_64B'])
+env["version"] = "trunk"
 
 if env['mode'] == 'release':
     env.Append(LINKFLAGS=['-Wl,-O1'])
@@ -93,6 +142,8 @@ if env['mode'] == 'release':
 # Export for SConscript files
 Export("env")
 
+# build externals
+env.SConscript("external/SConscript")
 # build library
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
 # test module import, to see if there are unresolved symbols

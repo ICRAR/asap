@@ -49,9 +49,10 @@ namespace mathutil {
  * @param relaxed a weighting scheme
  * @param ignoreOther drop every second channel (NYI)
  */
-template <class T>
-void hanning(casa::Vector<T>& out, casa::Vector<casa::Bool>& outmask,
-             const casa::Vector<T>& in, const casa::Vector<casa::Bool>& mask,
+void hanning(casa::Vector<casa::Float>& out, 
+	     casa::Vector<casa::Bool>& outmask,
+             const casa::Vector<casa::Float>& in, 
+	     const casa::Vector<casa::Bool>& mask,
              casa::Bool relaxed=casa::False,
              casa::Bool ignoreOther=casa::False);
 

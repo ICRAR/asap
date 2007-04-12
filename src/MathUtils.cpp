@@ -99,3 +99,50 @@ Vector<String> mathutil::toVectorString(const std::vector<std::string>& in)
   }
   return out;
 }
+
+void mathutil::hanning(Vector<Float>& out, Vector<Bool>& outmask,
+                       const Vector<Float>& in, const Vector<Bool>& mask,
+                       Bool relaxed, Bool ignoreOther) {
+  Vector< Vector<Float> > weights(8);
+  Vector<Float> vals(3);
+  vals = 0.0;weights[0] = vals;// FFF
+  vals[0] = 1.0; vals[1] = 0.0; vals[2] = 0.0; weights[1] = vals;// TFF
+  vals[0] = 0.0; vals[1] = 1.0; vals[2] = 0.0; weights[2] = vals;// FTF
+  vals[0] = 1.0/3.0; vals[1] = 2.0/3.0; vals[2] = 0.0; weights[3] = vals;// TTF
+  vals[0] = 0.0; vals[1] = 0.0; vals[2] = 1.0;weights[4] = vals;// FFT
+  vals[0] = 0.5; vals[1] = 0.0; vals[2] = 0.5; weights[5] = vals;// TFT
+  vals[0] = 0.0; vals[1] = 2.0/3.0; vals[2] = 1.0/3.0; weights[6] = vals;// FTT
+  vals[0] = 0.25; vals[1] = 0.5; vals[2] = 0.25; weights[7] = vals;// TTT
+  // Chris' case
+  Vector<Bool> weighted(8);
+  if (relaxed) {
+    weighted = False;
+    weighted[7] = True;
+
+  } else {
+    weighted = True;
+    weighted[0] = False;
+  }
+
+  out.resize(in.nelements());
+  outmask.resize(mask.nelements());
+  // make special case for first and last
+  /// ...here
+  // loop from 1..n-2
+  out.resize(in.nelements());
+  out[0] = in[0];out[out.nelements()-1] = in[in.nelements()-1];
+  outmask.resize(mask.nelements());
+  outmask = False;
+  uInt m;Vector<Float>* w;
+  for (uInt i=1; i < out.nelements()-1;++i) {
+    m = mask[i-1] + 2*mask[i] + 4*mask[i+1];
+    w = &(weights[m]);
+    if (weighted[m]) {
+      out[i] = (*w)[0]*in[i-1] + (*w)[1]*in[i] + (*w)[2]*in[i+1];
+      outmask[i] = True;
+    } else { // mask it
+      out[i] = in[i];//use arbitrary value
+      outmask[i] = False;
+    }
+  }
+}

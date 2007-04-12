@@ -21,8 +21,8 @@
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayAccessor.h>
-#include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/BasicSL/Constants.h>
 #include <casa/Quanta/MVAngle.h>
@@ -41,17 +41,21 @@
 
 #include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableRecord.h>
+#include <casa/Quanta/MVTime.h>
+#include <casa/Quanta/MVAngle.h>
+#include <measures/Measures/MeasRef.h>
+#include <measures/Measures/MeasTable.h>
+// needed to avoid error in .tcc
+#include <measures/Measures/MCDirection.h>
+//
+#include <measures/Measures/MDirection.h>
 #include <measures/Measures/MFrequency.h>
 #include <measures/Measures/MEpoch.h>
-#include <measures/Measures/MeasTable.h>
-#include <measures/Measures/MeasRef.h>
 #include <measures/TableMeasures/TableMeasRefDesc.h>
 #include <measures/TableMeasures/TableMeasValueDesc.h>
 #include <measures/TableMeasures/TableMeasDesc.h>
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
-#include <casa/Quanta/MVTime.h>
-#include <casa/Quanta/MVAngle.h>
 
 #include "Scantable.h"
 #include "STPolLinear.h"
