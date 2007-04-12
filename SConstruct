@@ -81,7 +81,6 @@ if not os.path.exists(casacoretooldir):
     Exit(1)
 
 # load casacore specific build flags
-print casacoretooldir
 env.Tool('casa', [casacoretooldir])
 
 if not env.GetOption('clean'):
@@ -119,11 +118,11 @@ if not env.GetOption('clean'):
     if not conf.CheckLib("rpfits"): Exit(1)
 
     # test for blas/lapack
+    conf.env.AddCustomPackage("lapack")
+    if not conf.CheckLib(conf.env["lapacklib"]): Exit(1)
     blasname = conf.env.get("blaslib", "blas")
     conf.env.AddCustomPackage("blas")
     if not conf.CheckLib(conf.env["blaslib"]): Exit(1)
-    conf.env.AddCustomPackage("lapack")
-    if not conf.CheckLib(conf.env["lapacklib"]): Exit(1)
     conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     env = conf.Finish()
