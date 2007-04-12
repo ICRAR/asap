@@ -32,16 +32,17 @@ opts.AddOptions(
 		("lapacklibdir", "The lapack library location", None),
 		("lapacklib",
 		 "The lapack library name (e.g. for specialized AMD libraries",
-		 None),
+		 "lapack"),
 		("blasroot", 
 		 "The root directory where blas is installed", None),
 		("blaslibdir", "The blas library location", None),
 		("blaslib",
 		 "The blas library name (e.g. for specialized AMD libraries",
-		 None),
+		 "blas"),
 		("cfitsioroot", 
 		 "The root directory where cfistio is installed", None),
 		("cfitsiolibdir", "The cfitsio library location", None),
+		("cfitsiolib", "The cfitsio library name", "cfitsio"),
 		("cfitsioincdir", "The cfitsio include location", None),
 		("wcsroot", 
 		 "The root directory where wcs is installed", None),
@@ -105,7 +106,8 @@ if not env.GetOption('clean'):
     # test for cfitsio
     if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
-    if not conf.CheckLibWithHeader('cfitsio', 'fitsio.h', language='c'):
+    if not conf.CheckLibWithHeader(conf.env["cfitsiolib"], 
+				   'fitsio.h', language='c'):
         Exit(1)
     conf.env.AddCustomPackage('wcs')
     if not conf.CheckLibWithHeader('wcs', 'wcslib/wcs.h', language='c'):
@@ -116,10 +118,9 @@ if not env.GetOption('clean'):
     # test for blas/lapack
     blasname = conf.env.get("blaslib", "blas")
     conf.env.AddCustomPackage("blas")
-    if not conf.CheckLib(blasname): Exit(1)
-    lapackname = conf.env.get("lapacklib", "lapack")
+    if not conf.CheckLib(conf.env["blaslib"]): Exit(1)
     conf.env.AddCustomPackage("lapack")
-    if not conf.CheckLib(lapackname): Exit(1)
+    if not conf.CheckLib(conf.env["lapacklib"]): Exit(1)
     conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     env = conf.Finish()
