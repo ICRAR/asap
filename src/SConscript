@@ -18,6 +18,8 @@ libasap =  myenv.StaticLibrary(target = "asap", source = cpps)
 myenv.Prepend( LIBS =  ['asap'] )
 
 # Finally create the library for the module
+if not hasattr(myenv, "LoadableModule"):
+    myenv.LoadableModule = myenv.SharedLibrary
 so = myenv.LoadableModule( target = "_asap.so", source = pycpps, SHLIBSUFFIX="" )
 #test = myenv.Program("test", cpps)
 Return("so")
