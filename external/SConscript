@@ -7,5 +7,5 @@ sources += glob.glob("atnf/pks/pks_maths.cc")
 #atnflib= env.SConscript("atnf/SConscript")
 env.AppendUnique(CPPPATH=[Dir(".").abspath])
 atnflib=env.Library("atnf", sources)
-
-env.Prepend(LIBS=[atnflib])
+env.AppendUnique(LIBPATH=[Dir(".").abspath])
+env.Prepend(LIBS=["atnf"])
