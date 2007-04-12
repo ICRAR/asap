@@ -71,6 +71,9 @@ env = Environment( toolpath = ['./scons'],
 Help(opts.GenerateHelpText(env))
 env.SConsignFile()
 
+if env["PLATFORM"] == "darwin":
+    env.EnsureSConsVersion(0,96,95)
+
 casacoretooldir = os.path.join(env["casacoreroot"],"share",
 				   "casacore")
 if not os.path.exists(casacoretooldir):
