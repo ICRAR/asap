@@ -124,7 +124,9 @@ casa::Vector< casa::Float > RowAccumulator::getSpectrum( ) const
 
 casa::Double asap::RowAccumulator::getTime( ) const
 {
-  return timeSum_/max(n_);
+  Float n = max(n_);
+  if (n < 1.0) n = 1.0; 
+  return timeSum_/n;
 }
 
 casa::Double asap::RowAccumulator::getInterval( ) const
@@ -134,6 +136,9 @@ casa::Double asap::RowAccumulator::getInterval( ) const
 
 casa::Vector< casa::Bool > RowAccumulator::getMask( ) const
 {
+  // if no elements accumulated the mask is all True
+  // we have to return everything False
+  if (max(n_) < 1.0) return !spectrum_.getMask();
   return spectrum_.getMask();
 }
 

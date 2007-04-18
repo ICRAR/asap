@@ -617,7 +617,14 @@ void Scantable::calculateAZEL()
 
 void Scantable::flag(const std::vector<bool>& msk)
 {
-  if ( selector_.empty()  && msk.size() == 0 )
+  std::vector<bool>::const_iterator it;
+  uInt ntrue = 0;
+  for (it = msk.begin(); it != msk.end(); ++it) {
+    if ( *it ) {
+      ntrue++;
+    }
+  }
+  if ( selector_.empty()  && (msk.size() == 0 || msk.size() == ntrue) )
     throw(AipsError("Trying to flag whole scantable."));
   if ( msk.size() == 0 ) {
     uChar userflag = 1 << 7;

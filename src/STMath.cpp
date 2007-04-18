@@ -137,6 +137,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   ROScalarColumn<Double> mjdCol, intCol;
   ROScalarColumn<Int> scanIDCol;
 
+  Vector<uInt> rowstodelete;
+
   for (uInt i=0; i < tout.nrow(); ++i) {
     for ( int j=0; j < int(in.size()); ++j ) {
       const Table& tin = in[j]->table();
@@ -179,12 +181,19 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
         acc.add(spec, !bflag, tsys, inter, time);
       }
     }
-    //write out
-    specColOut.put(i, acc.getSpectrum());
     const Vector<Bool>& msk = acc.getMask();
+    if ( allEQ(msk, False) ) {
+      uint n = rowstodelete.nelements();
+      rowstodelete.resize(n+1, True);
+      rowstodelete[n] = i;
+      continue;
+    }
+    cout << "write "<<  i << endl;
+    //write out
     Vector<uChar> flg(msk.shape());
     convertArray(flg, !msk);
     flagColOut.put(i, flg);
+    specColOut.put(i, acc.getSpectrum());
     tsysColOut.put(i, acc.getTsys());
     intColOut.put(i, acc.getInterval());
     mjdColOut.put(i, acc.getTime());
@@ -193,6 +202,13 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     // which requires resetting this value
     cycColOut.put(i, uInt(0));
     acc.reset();
+  }
+  if (rowstodelete.nelements() > 0) {
+    cout << rowstodelete << endl;
+    tout.removeRow(rowstodelete);
+    if (tout.nrow() == 0) {
+      throw(AipsError("Can't average fully flagged data."));
+    }
   }
   return out;
 }
