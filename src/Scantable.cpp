@@ -683,24 +683,17 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
   if ( ptype == basetype ) {
     specCol_.get(whichrow, arr);
   } else {
-    STPol* stpol = 0;
-    stpol =STPol::getPolClass(Scantable::factories_, basetype);
-    try {
-      uInt row = uInt(whichrow);
-      stpol->setSpectra(getPolMatrix(row));
-      Float fang,fhand,parang;
-      fang = focusTable_.getTotalFeedAngle(mfocusidCol_(row));
-      fhand = focusTable_.getFeedHand(mfocusidCol_(row));
-      parang = paraCol_(row);
-      /// @todo re-enable this
-      // disable total feed angle to support paralactifying Caswell style
-      stpol->setPhaseCorrections(parang, -parang, fhand);
-      arr = stpol->getSpectrum(requestedpol, ptype);
-      delete stpol;
-    } catch (AipsError& e) {
-      delete stpol;
-      throw(e);
-    }
+    CountedPtr<STPol> stpol(STPol::getPolClass(Scantable::factories_, basetype));
+    uInt row = uInt(whichrow);
+    stpol->setSpectra(getPolMatrix(row));
+    Float fang,fhand,parang;
+    fang = focusTable_.getTotalFeedAngle(mfocusidCol_(row));
+    fhand = focusTable_.getFeedHand(mfocusidCol_(row));
+    parang = paraCol_(row);
+    /// @todo re-enable this
+    // disable total feed angle to support paralactifying Caswell style
+    stpol->setPhaseCorrections(parang, -parang, fhand);
+    arr = stpol->getSpectrum(requestedpol, ptype);
   }
   if ( arr.nelements() == 0 )
     pushLog("Not enough polarisations present to do the conversion.");
