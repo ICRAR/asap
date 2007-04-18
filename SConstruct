@@ -10,8 +10,8 @@ if  platform.architecture()[0] == '64bit':
     if moduledir.startswith("/usr/lib/"):
         moduledir = moduledir.replace("lib", "lib64")
 
-opts = Options("userconfig.py")
-opts.AddOptions(		
+opts = Options("options.cfg")
+opts.AddOptions(
                 ("FORTRAN", "The fortran compiler", None),
                 ("f2clib", "The fortran to c library", None),
                 PathOption("prefix",
@@ -130,7 +130,11 @@ if not env.GetOption('clean'):
 env["version"] = "trunk"
 
 if env['mode'] == 'release':
-    env.Append(LINKFLAGS=['-Wl,-O1'])
+    if env["PLATFORM"] != "darwin":
+	env.Append(LINKFLAGS=['-Wl,-O1', '-s'])
+    env.Append(CCFLAGS=["-O2"])
+else:
+    env.Append(CCFLAGS=["-g"])
 
 # Export for SConscript files
 Export("env")
