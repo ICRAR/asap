@@ -48,6 +48,9 @@ def generate(env):
         if not conf.env.has_key("FORTRAN"):
             # auto-detect fortran
             detect_fortran = conf.env.Detect(['gfortran', 'g77', 'f77'])
+            if not detect_fortran:
+                print "No fortran compiler found. Specify FORTRAN and f2clib."
+                conf.env.Exit(1)
             conf.env["FORTRAN"] = detect_fortran
             fdict = {'gfortran': 'gfortran', 'g77': 'g2c', 'f77': 'f2c'}
             f2clib = conf.env.get("f2clib", fdict[detect_fortran])
