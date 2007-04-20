@@ -1437,28 +1437,44 @@ class scantable(Scantable):
         else:
             return s
 
-    def auto_quotient(self, mode='time', preserve=True):
+    def auto_quotient(self, mode='paired', preserve=True):
         """
         This function allows to build quotients automatically.
         It assumes the observation to have the same numer of
         "ons" and "offs"
         It will support "closest off in time" in the future
         Parameters:
-            mode:           the on/off detection mode; 'suffix' (default)
-                            'suffix' identifies 'off' scans by the
-                            trailing '_R' (Mopra/Parkes) or
-                            '_e'/'_w' (Tid)
+            mode:           the on/off detection mode 
+                            'paired' (default)
+                               identifies 'off' scans by the
+                               trailing '_R' (Mopra/Parkes) or
+                               '_e'/'_w' (Tid) and matches
+			       on/off pairs from the observing pattern
+			    'time'
+			       finds the closest off in time
             preserve:       you can preserve (default) the continuum or
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
         """
-        modes = ["time"]
+        modes = ["time", "suffix"]
         if not mode in modes:
             msg = "please provide valid mode. Valid modes are %s" % (modes)
             raise ValueError(msg)
         varlist = vars()
-        s = scantable(self._math._auto_quotient(self, mode, preserve))
+	s = None
+	if mode.lower() == "suffix":
+	    basesel = self.get_selection()
+	    sel = selector()
+	    self.set_selection(basesel+sel)
+	    offs = self.copy()
+	    sel.set_query("SRCTYPE==0")
+	    self.set_selection(basesel+sel)
+	    ons = self.copy()
+	    s = scantable(self._math._quotient(ons, offs, preserve))
+	    self.set_selection(basesel)
+	elif mode.lower() == "time":
+	    s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient", varlist)
         print_log()
         return s
