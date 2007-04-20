@@ -156,13 +156,31 @@ class selector(_selector):
         return list(self._getpoltypes())
     def get_order(self):
         return list(self._getorder())
-    def get_taql(self):
-        return self._gettaql()
+    def get_query(self):
+	prefix = "SELECT FROM $1 WHERE "
+        return self._gettaql().replace(prefix, "")
     def get_name(self):
         print "NYI"
         s = self._gettaql()
-        return ""
-
+        return
+    def __str__(self):
+	out = ""
+	d = {"SCANNO": self.get_scans(),
+	     "CYCLENO": self.get_cycles(),
+	     "BEAMNO": self.get_beams(),
+	     "IFNO": self.get_ifs(),
+	     "Pol Type": self.get_poltypes(),
+	     "POLNO": self.get_pols(),
+	     "QUERY": self.get_query(),
+	     "Sort Order": self.get_order()
+	     }
+	for k,v in d.iteritems():
+	    if v:
+		out += "%s: %s\n" % (k, v)
+	if len(out):
+	    return out[:-1]
+	else:
+	    return out
     def __add__(self, other):
         """
         Merge two selections.
@@ -177,5 +195,6 @@ class selector(_selector):
             vec = list(v[0]+v[1])
             vec.sort()
             v[2](unique(vec))
-        union._settaql(other._gettaql())
+	
+        union.set_query(other.get_query() + " AND " + self.get_query())
         return union
