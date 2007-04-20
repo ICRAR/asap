@@ -188,7 +188,6 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       rowstodelete[n] = i;
       continue;
     }
-    cout << "write "<<  i << endl;
     //write out
     Vector<uChar> flg(msk.shape());
     convertArray(flg, !msk);
