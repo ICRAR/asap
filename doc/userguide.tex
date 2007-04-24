@@ -647,7 +647,10 @@ default value from \cmd{True}.
 requires the data to have matching source/reference pairs or one
 reference for multiple sources. Auto quotient assumes reference scans
 have a trailing ``\_R'' in the source name for data from Parkes and
-Mopra, and a trailing ``e'' or ``w'' for data fro, Tidbinbilla.
+Mopra, and a trailing ``e'' or ``w'' for data from Tidbinbilla.
+This functions has two \cmd{mode}s. \cmd{paired} (the deafault), which assumes matching
+adjacent pairs of source/reference scans and \cmd{time}, which finds the closest
+reference scan in time.
 
 \begin{verbatim}
   ASAP>q = s.auto_quotient()
@@ -674,7 +677,7 @@ on source observation for following method will work.
 For Mopra and Parkes data:
 \begin{verbatim}
   ASAP>r = scans.get_scan('*_R')
-  ASAP>s = scans.get_scan('*_S')
+  ASAP>s = scans.get_scan('*^_R')
 \end{verbatim}
 
 For Tidbinbilla data
@@ -682,19 +685,6 @@ For Tidbinbilla data
   ASAP>r = scans.get_scan('*_[ew]')
   ASAP>s = scans.get_scan('*_[^ew]')
 \end{verbatim}
-
-\subsection{Make the quotient spectra}
-
-Use the quotient function
-
-\begin{verbatim}
-  ASAP>q = s.quotient(r)
-\end{verbatim}
-
-This uses the rows in scantable \cmd{r} as reference spectra for the
-rows in scantable \cmd{s}. Scantable \cmd{r} must have either 1 row
-(which is applied to all rows in \cmd{s}) or both scantables must have
-the same number of rows.
 
 \subsection{Time average separate scans}
 
@@ -879,7 +869,8 @@ Tidbinbilla rpfits files. This means that gain-elevation and opacity
 corrections will not work unless these get recalculated.
 
 \begin{verbatim}
-  ASAP>scans.recalc_azel()                # recalculate az/el based on pointing
+  ASAP>scans.recalc_azel()                # recalculate az/el 
+              							  # based on pointing
 \end{verbatim}
 
 Gain-elevation curves for some telescopes and frequencies are known to
@@ -964,7 +955,7 @@ For example:
   ASAP>ss = scans.get_scan('345*')    # Get a few sources
 
   ASAP>r = scans.get_scan('*_R') # Get all reference sources (Parkes/Mopra)
-  ASAP>s = scans.get_scan('*_S') # Get all program sources (Parkes/Mopra)
+  ASAP>s = scans.get_scan('*^_R') # Get all program sources (Parkes/Mopra)
   ASAP>r = scans.get_scan('*[ew]')  # Get all reference sources (Tid)
   ASAP>s = scans.get_scan('*[^ew]') # Get all program sources (Tid)
 
@@ -1042,7 +1033,7 @@ Typical plotter usage would be:
 
 \begin{verbatim}
   ASAP>scans.set_unit('km/s')
-  ASAP>plotter.set_mode(stacking='p',panelling='t')
+  ASAP>plotter.set_mode(stacking='p', panelling='t')
   ASAP>plotter.plot(scans)
 \end{verbatim}
 
@@ -1053,10 +1044,10 @@ Other possibilities include:
 
 \begin{verbatim}
   # Plot multiple IFs per panel
-  ASAP>plotter.set_mode(stacking='i',panelling='t')
+  ASAP>plotter.set_mode(stacking='i', panelling='t')
 
   # Plot multiple beams per panel
-  ASAP>plotter.set_mode(stacking='b',panelling='t')
+  ASAP>plotter.set_mode(stacking='b', panelling='t')
 
   # Plot one IF per panel, time stacked
   ASAP>plotter.set_mode('t', 'i')
@@ -1669,7 +1660,7 @@ scan tables which cache the bulk of the scantable on disk and require
 significantly less memory usage.
 
 To use disk based tables you either need to change the default in your
-\cmd{.asapr} file, e.g.
+\cmd{.asaprc} file, e.g.
 \begin{verbatim}
    scantable.storage          : disk
 \end{verbatim}
@@ -1718,6 +1709,8 @@ documentation.
 
 \hspace{1cm} http://www.atnf.csiro.au/computing/software/asap/tutorials
 
+\hspace{1cm} http://svn.atnf.csiro.au/trac/asap/wiki
+
 \hspace{1cm} http://www.python.org/doc/Introduction.html
 
 \subsection{Running scripts}
@@ -1726,6 +1719,17 @@ The ASAP global function \cmd{execfile} reads the named text file and
 executes the contained python code. This file can either contain
 function definitions which will be used in subsequent processing or
 just a set of commands to process a specific dataset.
+
+As an alternative to run scripts without entering ASAP, create a script which
+starts with.
+
+\begin{verbatim}
+from asap import *
+
+<your code>
+\end{verbatim}
+
+And run it with \cmd{python scriptname}.
 
 \subsection{asapuserfuncs.py}
 
