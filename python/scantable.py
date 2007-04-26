@@ -124,6 +124,8 @@ class scantable(Scantable):
     def copy(self):
         """
         Return a copy of this scantable.
+        Note:
+            This makes a full (deep) copy. scan2 = scan1 makes a reference.
         Parameters:
             none
         Example:
@@ -178,6 +180,8 @@ class scantable(Scantable):
         """
         Return a specific scan (by scanno) or collection of scans (by
         source name) in a new scantable.
+        Note:
+            See scantable.drop_scan() for the inverse operation.
         Parameters:
             scanid:    a (list of) scanno or a source name, unix-style
                        patterns are accepted for source name matching, e.g.
@@ -376,8 +380,6 @@ class scantable(Scantable):
     def get_tsys(self):
         """
         Return the System temperatures.
-        Parameters:
-
         Returns:
             a list of Tsys values for the current selection
         """
@@ -426,30 +428,45 @@ class scantable(Scantable):
                 return callback(row)
 
 
-    def get_time(self, row=-1):
+    def get_time(self, row=-1, asdatetime=False):
         """
         Get a list of time stamps for the observations.
-        Return a string for each integration in the scantable.
+        Return a datetime object for each integration time stamp in the scantable.
         Parameters:
-            row:    row no of integration. Default -1 return all rows
+            row:          row no of integration. Default -1 return all rows
+            asdatetime:   return values as datetime objects rather than strings
         Example:
             none
         """
         from time import strptime
         from datetime import datetime
-        times = self._get_column(self._gettime, row)
+        if not asdatetime:
+            return self._get_column(self._gettime, row)
         format = "%Y/%m/%d/%H:%M:%S"
         if isinstance(times, list):
             return [datetime(*strptime(i, format)[:6]) for i in times]
         else:
             return datetime(*strptime(times, format)[:6])
 
+
+    def get_inttime(self, row=-1):
+        """
+        Get a list of integration times for the observations.
+        Return a time in seconds for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows.
+        Example:
+            none
+        """
+        return self._get_column(self._getinttime, row)        
+        
+
     def get_sourcename(self, row=-1):
         """
         Get a list source names for the observations.
         Return a string for each integration in the scantable.
         Parameters:
-            row:    row no of integration. Default -1 return all rows
+            row:    row no of integration. Default -1 return all rows.
         Example:
             none
         """
@@ -460,7 +477,7 @@ class scantable(Scantable):
         Get a list of elevations for the observations.
         Return a float for each integration in the scantable.
         Parameters:
-            row:    row no of integration. Default -1 return all rows
+            row:    row no of integration. Default -1 return all rows.
         Example:
             none
         """
@@ -471,7 +488,7 @@ class scantable(Scantable):
         Get a list of azimuths for the observations.
         Return a float for each integration in the scantable.
         Parameters:
-            row:    row no of integration. Default -1 return all rows
+            row:    row no of integration. Default -1 return all rows.
         Example:
             none
         """
@@ -482,7 +499,7 @@ class scantable(Scantable):
         Get a list of parallactic angles for the observations.
         Return a float for each integration in the scantable.
         Parameters:
-            row:    row no of integration. Default -1 return all rows
+            row:    row no of integration. Default -1 return all rows.
         Example:
             none
         """
@@ -516,7 +533,7 @@ class scantable(Scantable):
 
     def set_instrument(self, instr):
         """
-        Set the instrument for subsequent processing
+        Set the instrument for subsequent processing.
         Parameters:
             instr:    Select from 'ATPKSMB', 'ATPKSHOH', 'ATMOPRA',
                       'DSS-43' (Tid), 'CEDUNA', and 'HOBART'
@@ -598,7 +615,6 @@ class scantable(Scantable):
     def get_unit(self):
         """
         Get the default unit set in this scantable
-        Parameters:
         Returns:
             A unit string
         """
@@ -615,7 +631,7 @@ class scantable(Scantable):
             rowno:    an optional row number in the scantable. Default is the
                       first row, i.e. rowno=0
         Returns:
-            The abcissa values and it's format string (as a dictionary)
+            The abcissa values and the format string (as a dictionary)
         """
         abc = self._getabcissa(rowno)
         lbl = self._getabcissalabel(rowno)
@@ -647,12 +663,14 @@ class scantable(Scantable):
         Flagged data in the scantable gets set to 0.0 before the fft.
         No taper is applied.
         Parameters:
-            frequency:    the frequency (really a period within the bandwidth) to remove
-            width:        the width of the frequency to remove, to remove a range
-                          of frequencies aroung the centre.
+            frequency:    the frequency (really a period within the bandwidth) 
+                          to remove
+            width:        the width of the frequency to remove, to remove a 
+                          range of frequencies aroung the centre.
             unit:         the frequency unit (default "GHz")
         Notes:
-            It is recommended to flag edges of the band or strong signals beforehand.
+            It is recommended to flag edges of the band or strong 
+            signals beforehand.
         """
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
@@ -770,7 +788,7 @@ class scantable(Scantable):
         Example:
             # set the given restfrequency for the whole table
             scan.set_restfreqs(freqs=1.4e9)
-            # If thee number of IFs in the data is >= 2 the IF0 gets the first
+            # If thee number of IFs in the data is >= 2 IF0 gets the first
             # value IF1 the second...
             scan.set_restfreqs(freqs=[1.4e9, 1.67e9])
             #set the given restfrequency for the whole table (by name)
@@ -838,6 +856,8 @@ class scantable(Scantable):
     def history(self, filename=None):
         """
         Print the history. Optionally to a file.
+        Parameters:
+            filename:    The name  of the file to save the history to.
         """
         hist = list(self._gethistory())
         out = "-"*80
@@ -1062,6 +1082,7 @@ class scantable(Scantable):
     def bin(self, width=5, insitu=None):
         """
         Return a scan where all spectra have been binned up.
+        Parameters:
             width:       The bin width (default=5) in pixels
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
@@ -1079,7 +1100,9 @@ class scantable(Scantable):
 
     def resample(self, width=5, method='cubic', insitu=None):
         """
-        Return a scan where all spectra have been binned up
+        Return a scan where all spectra have been binned up.
+        
+        Parameters:
             width:       The bin width (default=5) in pixels
             method:      Interpolation method when correcting from a table.
                          Values are  "nearest", "linear", "cubic" (default)
@@ -1158,7 +1181,6 @@ class scantable(Scantable):
         """
         Smooth the spectrum by the specified kernel (conserving flux).
         Parameters:
-            scan:       The input scan
             kernel:     The type of smoothing kernel. Select from
                         'hanning' (default), 'gaussian' and 'boxcar'.
                         The first three characters are sufficient.
@@ -1186,7 +1208,6 @@ class scantable(Scantable):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
-            scan:       a scantable
             mask:       an optional mask
             order:      the order of the polynomial (default is 0)
             plot:       plot the fit and the residual. In this each
@@ -1377,7 +1398,8 @@ class scantable(Scantable):
 
     def swap_linears(self):
         """
-        Swap the linear polarisations XX and YY
+        Swap the linear polarisations XX and YY, or better the first two 
+        polarisations as this also works for ciculars.
         """
         varlist = vars()
         self._math._swap_linears(self)
@@ -1437,44 +1459,44 @@ class scantable(Scantable):
         else:
             return s
 
-    def auto_quotient(self, mode='paired', preserve=True):
+    def auto_quotient(self, preserve=True, mode='paired'):
         """
         This function allows to build quotients automatically.
         It assumes the observation to have the same numer of
         "ons" and "offs"
-        It will support "closest off in time" in the future
         Parameters:
-            mode:           the on/off detection mode 
-                            'paired' (default)
-                               identifies 'off' scans by the
-                               trailing '_R' (Mopra/Parkes) or
-                               '_e'/'_w' (Tid) and matches
-			       on/off pairs from the observing pattern
-			    'time'
-			       finds the closest off in time
             preserve:       you can preserve (default) the continuum or
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
+            mode:           the on/off detection mode 
+                            'paired' (default)
+                            identifies 'off' scans by the
+                            trailing '_R' (Mopra/Parkes) or
+                            '_e'/'_w' (Tid) and matches
+                            on/off pairs from the observing pattern
+                'time'
+                   finds the closest off in time
+
         """
-        modes = ["time", "suffix"]
+        modes = ["time", "paired"]
         if not mode in modes:
             msg = "please provide valid mode. Valid modes are %s" % (modes)
             raise ValueError(msg)
         varlist = vars()
-	s = None
-	if mode.lower() == "suffix":
-	    basesel = self.get_selection()
-	    sel = selector()
-	    self.set_selection(basesel+sel)
-	    offs = self.copy()
-	    sel.set_query("SRCTYPE==0")
-	    self.set_selection(basesel+sel)
-	    ons = self.copy()
-	    s = scantable(self._math._quotient(ons, offs, preserve))
-	    self.set_selection(basesel)
-	elif mode.lower() == "time":
-	    s = scantable(self._math._auto_quotient(self, mode, preserve))
+        s = None
+        if mode.lower() == "paired":
+            basesel = self.get_selection()
+            sel = selector()
+            self.set_selection(basesel+sel)
+            offs = self.copy()
+            sel.set_query("SRCTYPE==0")
+            self.set_selection(basesel+sel)
+            ons = self.copy()
+            s = scantable(self._math._quotient(ons, offs, preserve))
+            self.set_selection(basesel)
+        elif mode.lower() == "time":
+            s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient", varlist)
         print_log()
         return s
