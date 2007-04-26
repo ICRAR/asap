@@ -136,10 +136,8 @@ casa::Double asap::RowAccumulator::getInterval( ) const
 
 casa::Vector< casa::Bool > RowAccumulator::getMask( ) const
 {
-  // if no elements accumulated the mask is all True
-  // we have to return everything False
-  if (max(n_) < 1.0) return !spectrum_.getMask();
-  return spectrum_.getMask();
+  // Return the "total" mask - False where no points have been accumulated.
+  return (n_.getArray() > Float(0.0));
 }
 
 casa::Vector< casa::Float > asap::RowAccumulator::getTsys( ) const
