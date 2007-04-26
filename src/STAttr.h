@@ -113,6 +113,8 @@ private:
   casa::Vector<casa::Float> TidEtaApY_;
 
   casa::Vector<casa::Float> TidGainElPoly_;   // Gain-el correction poly coeffs
+  casa::Vector<casa::Float> ParkesGainElPoly_;// K-band Gain-el correction 
+                                              //poly coeffs
 
   // Init private data
   void initData();
