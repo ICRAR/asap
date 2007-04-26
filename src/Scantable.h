@@ -71,7 +71,7 @@ public:
   /**
    * Default constructor
    */
-  Scantable(casa::Table::TableType ttype = casa::Table::Memory);
+  explicit Scantable(casa::Table::TableType ttype = casa::Table::Memory);
 
   /**
    * Create a Scantable object form an existing table on disk
@@ -329,6 +329,7 @@ public:
 
   std::string summary(bool verbose=false);
   std::string getTime(int whichrow=-1, bool showdate=true) const;
+  double getIntTime(int whichrow) const { return integrCol_(whichrow); }
 
   // returns unit, conversion frame, doppler, base-frame
 

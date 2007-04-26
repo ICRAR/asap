@@ -43,14 +43,14 @@ public:
     table_ = new Scantable(name, tp);
   }
 
-  ScantableWrapper(int type=0)
+  explicit ScantableWrapper(int type=0)
   {
     casa::Table::TableType tp = casa::Table::Memory;
     if ( type == 1) tp = casa::Table::Plain;
     table_= new Scantable(tp);
   }
 
-  ScantableWrapper(casa::CountedPtr<Scantable> cp) : table_(cp) {;}
+  explicit ScantableWrapper(casa::CountedPtr<Scantable> cp) : table_(cp) {;}
 
   ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
@@ -83,6 +83,9 @@ public:
 
   std::string getTime(int whichrow=0) const
     { return table_->getTime(whichrow); }
+
+  double getIntTime(int whichrow=0) const
+    { return table_->getIntTime(whichrow); }
 
   std::string getDirectionString(int whichrow=0) const
     { return table_->getDirectionString(whichrow); }
