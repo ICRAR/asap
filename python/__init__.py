@@ -391,6 +391,7 @@ if is_ipython():
                               in the scantable
             get_tsys        - get the TSys
             get_time        - get the timestamps of the integrations
+            get_inttime     - get the integration time
             get_sourcename  - get the source names of the scans
             get_azimuth     - get the azimuth of the scans
             get_elevation   - get the elevation of the scans
@@ -448,7 +449,7 @@ if is_ipython():
                               units
             freq_align      - align spectra in frequency frame
             invert_phase    - Invert the phase of the cross-correlation
-            swap_linears    - Swap XX and YY
+            swap_linears    - Swap XX and YY (or RR LL)
             rotate_xyphase  - rotate XY phase of cross correlation
             rotate_linpolphase - rotate the phase of the complex
                                  polarization O=Q+iU correlation
@@ -468,8 +469,9 @@ if is_ipython():
             set_names          - set a selection by name (wildcards allowed)
             set_tsys           - set a selection by tsys thresholds
             set_query          - set a selection by SQL-like query, e.g. BEAMNO==1
+            ( also  get_ functions for all these )
             reset              - unset all selections
-            +                  - merge to selections
+            +                  - merge two selections
 
      [Math] Mainly functions which operate on more than one scantable
 
@@ -479,7 +481,7 @@ if is_ipython():
             simple_math     - simple mathematical operations on two scantables,
                               'add', 'sub', 'mul', 'div'
             quotient        - build quotient of the given on and off scans
-                              (matched pairs and 1 off/n on are valid)
+                              (matched pairs and 1 off - n on are valid)
             merge           - merge a list of scantables
 
      [Line Catalog]
@@ -593,7 +595,7 @@ def welcome():
     return """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
 
 Please report any bugs via:
-http://sourcecode.atnf.csiro.au/cgi-bin/trac_asap.cgi/newticket
+http://svn.atnf.csiro.au/trac/asap/newticket
 
 [IMPORTANT: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.""" % (__version__, __date__)
