@@ -47,10 +47,11 @@ opts.AddOptions(
 		("wcsroot", 
 		 "The root directory where wcs is installed", None),
 		("wcslibdir", "The wcs library location", None),
+		("rpfitslib", "The rpfits library name", "rpfits"),
 		("rpfitsroot", 
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
-		
+#		("rpfitsincdir", "The rpfits include location", None),
                 EnumOption("mode", "The type of build.", "debug",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
@@ -91,7 +92,11 @@ if not env.GetOption('clean'):
     conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
 					       "include", "casacore"))
     if not conf.CheckLib("casa_casa", language='c++'): Exit(1)
-    conf.env.PrependUnique(LIBS=["casa_ms", "casa_components",  "casa_coordinates", "casa_lattices", "casa_fits", "casa_measures", "casa_scimath", "casa_scimath_f", "casa_tables", "casa_mirlib"])
+    conf.env.PrependUnique(LIBS=["casa_ms", "casa_components", 
+                                 "casa_coordinates", "casa_lattices", 
+                                 "casa_fits", "casa_measures", "casa_scimath",
+                                 "casa_scimath_f", "casa_tables", 
+                                 "casa_mirlib"])
     conf.env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()])
     if not conf.CheckHeader("Python.h", language='c'):
         Exit(1)
@@ -115,7 +120,8 @@ if not env.GetOption('clean'):
     if not conf.CheckLibWithHeader('wcs', 'wcslib/wcs.h', language='c'):
         Exit(1)
     conf.env.AddCustomPackage('rpfits')
-    if not conf.CheckLib("rpfits"): Exit(1)
+    if not conf.CheckLib(conf.env["rpfitslib"], language="c"):
+	Exit(1)
 
     # test for blas/lapack
     conf.env.AddCustomPackage("lapack")
