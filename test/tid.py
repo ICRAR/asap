@@ -17,7 +17,8 @@ print "Test of Tidbinbilla"
 
 # Create the quotient spectra
 data = scantable('data/tid-t002.rpf')
-q = data.auto_quotient()
+# IMPORTANT tid needs mode='time'
+q = data.auto_quotient(mode='time')
 # Set the restfreq for each IF
 q.set_restfreqs(freqs= [23694.4700e6,23722.6336e6])
 q.set_unit('km/s')
