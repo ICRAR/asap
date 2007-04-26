@@ -1487,11 +1487,12 @@ class scantable(Scantable):
         s = None
         if mode.lower() == "paired":
             basesel = self.get_selection()
-            sel = selector()
-            self.set_selection(basesel+sel)
+            sel = selector()+basesel
+            sel.set_query("SRCTYPE==1")
+            self.set_selection(sel)
             offs = self.copy()
             sel.set_query("SRCTYPE==0")
-            self.set_selection(basesel+sel)
+            self.set_selection(sel)
             ons = self.copy()
             s = scantable(self._math._quotient(ons, offs, preserve))
             self.set_selection(basesel)
