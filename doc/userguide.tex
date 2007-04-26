@@ -648,9 +648,9 @@ requires the data to have matching source/reference pairs or one
 reference for multiple sources. Auto quotient assumes reference scans
 have a trailing ``\_R'' in the source name for data from Parkes and
 Mopra, and a trailing ``e'' or ``w'' for data from Tidbinbilla.
-This functions has two \cmd{mode}s. \cmd{paired} (the deafault), which assumes matching
-adjacent pairs of source/reference scans and \cmd{time}, which finds the closest
-reference scan in time.
+This functions has two \cmd{mode}s. \cmd{paired} (the deafault), which assumes
+matching adjacent pairs of source/reference scans and \cmd{time}, which finds
+the closest reference scan in time.
 
 \begin{verbatim}
   ASAP>q = s.auto_quotient()
@@ -874,9 +874,9 @@ corrections will not work unless these get recalculated.
 \end{verbatim}
 
 Gain-elevation curves for some telescopes and frequencies are known to
-ASAP (currently only for Tidbinbilla at 20~GHz).  In these cases
-making gain-corrections is simple.  If the gain curve for your data is
-not known, the user can supply either a gain polynomial or text file
+ASAP (currently only for Tidbinbilla at 20~GHz and Parkes at K-band). 
+In these cases making gain-corrections is simple.  If the gain curve for your
+data is not known, the user can supply either a gain polynomial or text file
 tabulating gain factors at a range of elevations (see \cmd{help
 scantable.gain\_el}).
 
@@ -1926,7 +1926,8 @@ observing the (1,1) and (2,2) transitions simultaneously). The second
 half observed only the (4,4) transition due to bandwidth
 limitations. The data is position switched, observing first an
 reference to the west, then the source twice and finally reference to
-the east.
+the east. Important to note, that \cmd{auto\_quotient} should be executed 
+using the \cmd{mode} `time'.
 
 \begin{verbatim}
 
@@ -1935,7 +1936,7 @@ d = scantable('2003-03-16_082048_t0002.rpf')
 print d
 
 # Make the quotient spectra
-q = d.auto_quotient()
+q = d.auto_quotient(mode='time')
 print q
 
 del d

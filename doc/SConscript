@@ -3,19 +3,11 @@ import os,glob,shutil
 # import root environment
 Import( "env")
 myenv = env.Copy()
-# Maybe someday I can use env.DVI() to execute a re-run....
+
 if myenv["makedoc"].lower() == 'pdf':
-    dvif = myenv.File("#/userguide.dvi")
-    tmps = [ "userguide.aux", "userguide.log", "userguide.idx",  "userguide.dvi"]
-    myenv.Command(dvif,"userguide.tex",
-                ["$LATEX $SOURCE", "$LATEX $SOURCE"])
-    pdfit = myenv.PDF("#/userguide.pdf", "#/userguide.dvi")
-    myenv.Install("#/doc", pdfit)
-    for f in tmps:
-        myenv.AddPostAction(pdfit, Delete(f))
-    myenv.AddPostAction(pdfit, Move("doc/userguide.pdf", str(pdfit[0])))
+    dvif = myenv.File("userguide.tex")
+    pdf = env.PDF(dvif)
 elif myenv["makedoc"].lower() == 'html':
     if os.path.exists("/usr/bin/latex2html"):
         myenv.Command("userguide","userguide.tex",
                       "/usr/bin/latex2html -local_icons $TARGET" )
-#Return()
