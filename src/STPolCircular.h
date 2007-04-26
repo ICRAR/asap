@@ -39,7 +39,7 @@ class STPolCircular : public STPol
 public:
   STPolCircular() {}
 
-  STPolCircular(const casa::Matrix<casa::Float>& specs)
+  explicit STPolCircular(const casa::Matrix<casa::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolCircular();

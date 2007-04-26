@@ -82,7 +82,7 @@ protected:
        std::pair<int,int> line1;           // range of the first line
                                            // start channel and stop+1
    public:
-        IntersectsWith(const std::pair<int,int> &in_line1);
+       explicit IntersectsWith(const std::pair<int,int> &in_line1);
 	// return true if line2 intersects with line1 with at least one
 	// common channel, and false otherwise
 	bool operator()(const std::pair<int,int> &line2) const throw();
@@ -94,7 +94,7 @@ protected:
        std::pair<int,int> temp_line;       // range of the first line
                                            // start channel and stop+1
    public:
-        BuildUnion(const std::pair<int,int> &line1);
+        explicit BuildUnion(const std::pair<int,int> &line1);
         // update temp_line with a union of temp_line and new_line
 	// provided there is no gap between the lines
 	void operator()(const std::pair<int,int> &new_line) throw();
@@ -108,7 +108,7 @@ protected:
        std::pair<int,int> line1;           // range of the first line
                                            // start channel and stop+1
    public:
-        LaterThan(const std::pair<int,int> &in_line1);
+        explicit LaterThan(const std::pair<int,int> &in_line1);
 
 	// return true if line2 should be placed later than line1
 	// in the ordered list (so, it is at greater channel numbers)

@@ -27,7 +27,7 @@ class STPolStokes : public STPol
 public:
   STPolStokes() {}
 
-  STPolStokes(const casa::Matrix<casa::Float>& specs)
+  explicit STPolStokes(const casa::Matrix<casa::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolStokes();

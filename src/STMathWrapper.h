@@ -31,7 +31,7 @@ Wrapper class to handle ScantableWrapper
 class STMathWrapper : public STMath {
 public:
   STMathWrapper() {;}
-  STMathWrapper(bool insitu) : STMath(insitu) {;}
+  explicit STMathWrapper(bool insitu) : STMath(insitu) {;}
 
   virtual ~STMathWrapper() {;}
 

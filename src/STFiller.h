@@ -50,7 +50,7 @@ public:
    * Constructor taking an existing Scantable to fill
    * @param stbl
    */
-  STFiller(casa::CountedPtr< Scantable > stbl);
+  explicit STFiller(casa::CountedPtr< Scantable > stbl);
 
 
   /**
@@ -59,7 +59,7 @@ public:
     * @param whichIF read a specific IF only (default -1 means all IFs)
     * @param whichBeam read a specific beam only (default -1 means all beams)
     */
-  STFiller( const std::string& filename, int whichIF=-1,
+  explicit STFiller( const std::string& filename, int whichIF=-1,
                   int whichBeam=-1 );
 
   /**

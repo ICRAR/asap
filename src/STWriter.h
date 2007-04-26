@@ -54,7 +54,7 @@ namespace asap {
 */
 class STWriter : public Logger {
 public:
-  STWriter(const string &format = "SDFITS");
+  explicit STWriter(const string &format = "SDFITS");
   virtual ~STWriter();
 
   /**

@@ -29,8 +29,8 @@ The History subtable of the Scantable
 class STHistory : public STSubTable {
 public:
   STHistory() {;}
-  STHistory(casa::Table tab);
-  STHistory( const Scantable& parent );
+  explicit STHistory(casa::Table tab);
+  explicit STHistory( const Scantable& parent );
 
   virtual ~STHistory();
 

@@ -29,8 +29,8 @@ The Weather subtable of the Scantable
 class STWeather : public STSubTable {
 public:
   STWeather() {;}
-  STWeather(casa::Table tab);
-  STWeather( const Scantable& parent);
+  explicit STWeather(casa::Table tab);
+  explicit STWeather(const Scantable& parent);
 
   virtual ~STWeather();
 

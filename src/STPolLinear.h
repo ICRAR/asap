@@ -38,7 +38,7 @@ class STPolLinear : public STPol
 public:
   STPolLinear() {}
 
-  STPolLinear(const casa::Matrix<casa::Float>& specs)
+  explicit STPolLinear(const casa::Matrix<casa::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolLinear();

@@ -30,8 +30,8 @@ The Tcal subtable of the Scantable
 class STTcal : public STSubTable {
 public:
   STTcal() {;}
-  STTcal(casa::Table tab);
-  STTcal( const Scantable& parent);
+  explicit STTcal(casa::Table tab);
+  explicit STTcal( const Scantable& parent);
 
   virtual ~STTcal();
 

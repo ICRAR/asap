@@ -29,8 +29,8 @@ The Focus subtable of the Scantable
 class STFocus : public STSubTable {
 public:
   STFocus() {;}
-  STFocus(casa::Table tab);
-  STFocus( const Scantable& parent );
+  explicit STFocus(casa::Table tab);
+  explicit STFocus( const Scantable& parent );
 
   virtual ~STFocus();
 

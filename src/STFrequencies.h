@@ -31,8 +31,8 @@ The Frequencies subtable of the Scantable
 class STFrequencies : public STSubTable {
 public:
   STFrequencies() {;}
-  STFrequencies(casa::Table tab);
-  STFrequencies(const Scantable& parent);
+  explicit STFrequencies(casa::Table tab);
+  explicit STFrequencies(const Scantable& parent);
 
   virtual ~STFrequencies();
 

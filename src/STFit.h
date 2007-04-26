@@ -30,8 +30,8 @@ The Fit subtable of the Scantable
 class STFit : public STSubTable {
 public:
   STFit() {;}
-  STFit(casa::Table tab);
-  STFit( const Scantable& parent);
+  explicit STFit(casa::Table tab);
+  explicit STFit( const Scantable& parent);
 
   virtual ~STFit();
 

@@ -29,8 +29,8 @@ The Molecules subtable of the Scantable
 class STMolecules : public STSubTable {
 public:
   STMolecules() {;}
-  STMolecules(casa::Table tab);
-  STMolecules( const Scantable& parent);
+  explicit STMolecules(casa::Table tab);
+  explicit STMolecules( const Scantable& parent);
 
   virtual ~STMolecules();
 

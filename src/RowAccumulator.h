@@ -32,7 +32,7 @@ public:
   /**
    * Constructor taking a weight type as defined in @ref STDefs
    */
-  RowAccumulator(WeightType wt = asap::NONE);
+  explicit RowAccumulator(WeightType wt = asap::NONE);
 
  ~RowAccumulator();
 

@@ -44,7 +44,7 @@ class STWriterWrapper : public STWriter {
 public:
   //STWriterWrapper() {;}
   virtual ~STWriterWrapper() {;}
-  STWriterWrapper(const string& format = "SDFITS") : STWriter(format) {;}
+  explicit STWriterWrapper(const string& format = "SDFITS") : STWriter(format) {;}
 
   casa::Int write(const ScantableWrapper& table, const string &filename) {
     return STWriter::write(table.getCP(), filename);

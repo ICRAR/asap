@@ -34,7 +34,7 @@ public:
     *
     * @param name the name of the ASCII file or aips++ table
     */
-  LineCatalog(const std::string& name = "jpl");
+  explicit LineCatalog(const std::string& name = "jpl");
 
   virtual ~LineCatalog() {}
 

@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef STFILLERWRAPPER_H
 #define STFILLERWRAPPER_H
@@ -41,9 +41,9 @@ namespace asap {
 class STFillerWrapper : public STFiller {
 public:
   STFillerWrapper() {;}
-  STFillerWrapper(const std::string& filename, int ifSel=-1, int beamSel=-1) :
+  explicit STFillerWrapper(const std::string& filename, int ifSel=-1, int beamSel=-1) :
      STFiller(filename, ifSel, beamSel) {;}
-  STFillerWrapper(ScantableWrapper tbl) :
+  explicit STFillerWrapper(ScantableWrapper tbl) :
     STFiller(tbl.getCP()){;}
   ScantableWrapper getScantable() const {
     return ScantableWrapper(getTable());

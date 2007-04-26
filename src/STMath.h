@@ -45,7 +45,7 @@ public:
   * whether to operate on the given Scantable or return a new one
   * @param insitu the toggle for this behaviour
   */
-  STMath(bool insitu=true);
+  explicit STMath(bool insitu=true);
 
   virtual ~STMath();
 

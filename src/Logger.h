@@ -35,7 +35,7 @@ public:
    * Constructor with switch to enable/disable logging
    * @param[in] enabled indicating the deafult state
    */  
-  Logger(bool enabled);
+  explicit Logger(bool enabled);
 
   /*
    * Destructor
