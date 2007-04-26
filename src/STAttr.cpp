@@ -214,6 +214,12 @@ Vector<Float> STAttr::gainElevationPoly(Instrument inst) const
       return TidGainElPoly_.copy();
     }
     break;
+  // assume HOH for K-band
+  case ATPKSHOH:
+    {
+      return ParkesGainElPoly_.copy();
+    }
+    break;
   default:
     {
       Vector<Float> t;
@@ -312,6 +318,11 @@ void STAttr::initData()
    TidGainElPoly_(0) = 3.58788e-1;
    TidGainElPoly_(1) = 2.87243e-2;
    TidGainElPoly_(2) = -3.219093e-4;
+   
+   ParkesGainElPoly_.resize(3);
+   ParkesGainElPoly_(0) = 0.296759e-1;
+   ParkesGainElPoly_(1) = -0.293124e-3;
+   ParkesGainElPoly_(2) = 0.264295e-6;
 }
 
 
