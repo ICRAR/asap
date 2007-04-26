@@ -44,6 +44,9 @@ class selector(_selector):
             self._setpols(vec)
         else:
             raise TypeError('Unknown pol type. Please use [0,1...] or ["XX","YY"...]')
+    
+    # for the americans
+    set_polarization = set_polarisations
 
     def set_ifs(self, ifs=[]):
         """
@@ -195,6 +198,13 @@ class selector(_selector):
             vec = list(v[0]+v[1])
             vec.sort()
             v[2](unique(vec))
-	
-        union.set_query(other.get_query() + " AND " + self.get_query())
+        q = other.get_query()
+        qs = self.get_query()
+        if len(q) and len(qs):
+            union.set_query(qs +" AND " + q)
+        else:
+            if len(q):
+                union.set_query(q)
+            elif len(qs):
+                union.set_query(qs)
         return union
