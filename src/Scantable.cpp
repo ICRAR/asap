@@ -329,7 +329,7 @@ STHeader Scantable::getHeader() const
   return sdh;
 }
 
-void asap::Scantable::setSourceType( int stype )
+void Scantable::setSourceType( int stype )
 {
   if ( stype < 0 || stype > 1 )
     throw(AipsError("Illegal sourcetype."));
@@ -532,7 +532,8 @@ int Scantable::nchan( int ifno ) const
     table_.keywordSet().get("nChan",n);
     return int(n);
   } else {
-    // take the first SCANNO,POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
+    // take the first SCANNO,POLNO,BEAMNO,CYCLENO as nbeam shouldn't
+    // vary with these
     Table t = table_(table_.col("IFNO") == ifno);
     if ( t.nrow() == 0 ) return 0;
     ROArrayColumn<Float> v(t, "SPECTRA");
@@ -701,7 +702,7 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
   return out;
 }
 
-void asap::Scantable::setSpectrum( const std::vector<float>& spec,
+void Scantable::setSpectrum( const std::vector<float>& spec,
                                    int whichrow )
 {
   Vector<Float> spectrum(spec);
@@ -866,7 +867,7 @@ std::string Scantable::getDirectionString(int whichrow) const
   return formatDirection(getDirection(uInt(whichrow)));
 }
 
-std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
+std::vector< double > Scantable::getAbcissa( int whichrow ) const
 {
   if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal ro number"));
   std::vector<double> stlout;
@@ -901,7 +902,7 @@ std::vector< double > asap::Scantable::getAbcissa( int whichrow ) const
   }
   return stlout;
 }
-void asap::Scantable::setDirectionRefString( const std::string & refstr )
+void Scantable::setDirectionRefString( const std::string & refstr )
 {
   MDirection::Types mdt;
   if (refstr != "" && !MDirection::getType(mdt, refstr)) {
@@ -915,7 +916,7 @@ void asap::Scantable::setDirectionRefString( const std::string & refstr )
   }
 }
 
-std::string asap::Scantable::getDirectionRefString( ) const
+std::string Scantable::getDirectionRefString( ) const
 {
   return table_.keywordSet().asString("DIRECTIONREF");
 }
@@ -958,7 +959,7 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
 
 }
 
-void asap::Scantable::setRestFrequencies( double rf, const std::string& name,
+void Scantable::setRestFrequencies( double rf, const std::string& name,
                                           const std::string& unit )
 {
   ///@todo lookup in line table to fill in name and formattedname
@@ -969,13 +970,13 @@ void asap::Scantable::setRestFrequencies( double rf, const std::string& name,
   tabvec = id;
 }
 
-void asap::Scantable::setRestFrequencies( const std::string& name )
+void Scantable::setRestFrequencies( const std::string& name )
 {
   throw(AipsError("setRestFrequencies( const std::string& name ) NYI"));
   ///@todo implement
 }
 
-std::vector< unsigned int > asap::Scantable::rownumbers( ) const
+std::vector< unsigned int > Scantable::rownumbers( ) const
 {
   std::vector<unsigned int> stlout;
   Vector<uInt> vec = table_.rowNumbers();
@@ -984,7 +985,7 @@ std::vector< unsigned int > asap::Scantable::rownumbers( ) const
 }
 
 
-Matrix<Float> asap::Scantable::getPolMatrix( uInt whichrow ) const
+Matrix<Float> Scantable::getPolMatrix( uInt whichrow ) const
 {
   ROTableRow row(table_);
   const TableRecord& rec = row.get(whichrow);
@@ -997,24 +998,33 @@ Matrix<Float> asap::Scantable::getPolMatrix( uInt whichrow ) const
   return speccol.getColumn();
 }
 
-std::vector< std::string > asap::Scantable::columnNames( ) const
+std::vector< std::string > Scantable::columnNames( ) const
 {
   Vector<String> vec = table_.tableDesc().columnNames();
   return mathutil::tovectorstring(vec);
 }
 
-casa::MEpoch::Types asap::Scantable::getTimeReference( ) const
+MEpoch::Types Scantable::getTimeReference( ) const
 {
   return MEpoch::castType(timeCol_.getMeasRef().getType());
 }
 
-void Scantable::addFit( const STFitEntry & fit, int row )
+void Scantable::addFit( const STFitEntry& fit, int row )
 {
   cout << mfitidCol_(uInt(row)) << endl;
   uInt id = fitTable_.addEntry(fit, mfitidCol_(uInt(row)));
   mfitidCol_.put(uInt(row), id);
 }
 
+void Scantable::shift(int npix)
+{
+  Vector<uInt> fids(mfreqidCol_.getColumn());
+  genSort( fids, Sort::Ascending,
+	   Sort::QuickSort|Sort::NoDuplicates );
+  for (uInt i=0; i<fids.nelements(); ++i) {
+    frequencies().shiftRefPix(npix, i);
+  }
+}
 
 }
  //namespace asap

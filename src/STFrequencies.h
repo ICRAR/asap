@@ -133,9 +133,14 @@ public:
    */
   float getRefFreq(casa::uInt id, casa::uInt channel);
 
-
   /**
-   * Rteun this table or s specific row as a string representation
+    * shift the reference pixel by an integer amount
+    * @param npix the shift in pixels
+    * @param id the coordinate id
+    */
+  void shiftRefPix(int npix, casa::uInt id);
+  /**
+   * Return this table or s specific row as a string representation
    * @param id the identifier. If id<0 all rows are returned
    * @return a string
    */

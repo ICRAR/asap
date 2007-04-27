@@ -40,7 +40,7 @@ STFrequencies::STFrequencies(const Scantable& parent) :
   setup();
 }
 
-asap::STFrequencies::STFrequencies( casa::Table tab ) :
+STFrequencies::STFrequencies( casa::Table tab ) :
   STSubTable(tab, name_)
 {
   refpixCol_.attach(table_,"REFPIX");
@@ -53,7 +53,7 @@ STFrequencies::~STFrequencies()
 {
 }
 
-STFrequencies & asap::STFrequencies::operator =( const STFrequencies & other )
+STFrequencies & STFrequencies::operator=( const STFrequencies & other )
 {
   if ( this != &other ) {
     static_cast<STSubTable&>(*this) = other;
@@ -139,17 +139,16 @@ SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt id ) const
   ROTableRow row(t);
   // get first row - there should only be one matching id
   const TableRecord& rec = row.get(0);
-
   return SpectralCoordinate( getFrame(true), rec.asDouble("REFVAL"),
                              rec.asDouble("INCREMENT"),
                              rec.asDouble("REFPIX"));
 }
 
 SpectralCoordinate
-  asap::STFrequencies::getSpectralCoordinate( const MDirection& md,
-                                              const MPosition& mp,
-                                              const MEpoch& me,
-                                              Double restfreq, uInt id ) const
+  STFrequencies::getSpectralCoordinate( const MDirection& md,
+					const MPosition& mp,
+					const MEpoch& me,
+					Double restfreq, uInt id ) const
 {
   SpectralCoordinate spc = getSpectralCoordinate(id);
   spc.setRestFrequency(restfreq, True);
@@ -241,28 +240,28 @@ MFrequency::Types STFrequencies::getFrame(bool base) const
   return mft;
 }
 
-std::string asap::STFrequencies::getFrameString( bool base ) const
+std::string STFrequencies::getFrameString( bool base ) const
 {
   if ( base ) return table_.keywordSet().asString("BASEFRAME");
   else return table_.keywordSet().asString("FRAME");
 }
 
-std::string asap::STFrequencies::getUnitString( ) const
+std::string STFrequencies::getUnitString( ) const
 {
   return table_.keywordSet().asString("UNIT");
 }
 
-Unit asap::STFrequencies::getUnit( ) const
+Unit STFrequencies::getUnit( ) const
 {
   return Unit(table_.keywordSet().asString("UNIT"));
 }
 
-std::string asap::STFrequencies::getDopplerString( ) const
+std::string STFrequencies::getDopplerString( ) const
 {
   return table_.keywordSet().asString("DOPPLER");
 }
 
-MDoppler::Types asap::STFrequencies::getDoppler( ) const
+MDoppler::Types STFrequencies::getDoppler( ) const
 {
   String dpl = table_.keywordSet().asString("DOPPLER");
 
@@ -274,7 +273,7 @@ MDoppler::Types asap::STFrequencies::getDoppler( ) const
   return mdt;
 }
 
-std::string asap::STFrequencies::print( int id )
+std::string STFrequencies::print( int id )
 {
   Table t;
   ostringstream oss;
@@ -302,7 +301,7 @@ float STFrequencies::getRefFreq( uInt id, uInt channel )
           * rec.asDouble("INCREMENT") + rec.asDouble("REFVAL");
 }
 
-bool asap::STFrequencies::conformant( const STFrequencies& other ) const
+bool STFrequencies::conformant( const STFrequencies& other ) const
 {
   const Record& r = table_.keywordSet();
   const Record& ro = other.table_.keywordSet();
@@ -313,7 +312,7 @@ bool asap::STFrequencies::conformant( const STFrequencies& other ) const
           );
 }
 
-std::vector< std::string > asap::STFrequencies::getInfo( ) const
+std::vector< std::string > STFrequencies::getInfo( ) const
 {
   const Record& r = table_.keywordSet();
   std::vector<std::string> out;
@@ -323,7 +322,7 @@ std::vector< std::string > asap::STFrequencies::getInfo( ) const
   return out;
 }
 
-void asap::STFrequencies::setInfo( const std::vector< std::string >& theinfo )
+void STFrequencies::setInfo( const std::vector< std::string >& theinfo )
 {
   if ( theinfo.size() != 3 ) throw(AipsError("setInfo needs three parameters"));
   try {
@@ -335,7 +334,7 @@ void asap::STFrequencies::setInfo( const std::vector< std::string >& theinfo )
   }
 }
 
-void asap::STFrequencies::setUnit( const std::string & unit )
+void STFrequencies::setUnit( const std::string & unit )
 {
   if (unit == "" || unit == "pixel" || unit == "channel" ) {
     table_.rwKeywordSet().define("UNIT", "");
@@ -349,7 +348,7 @@ void asap::STFrequencies::setUnit( const std::string & unit )
   }
 }
 
-void asap::STFrequencies::setFrame(MFrequency::Types frame, bool base )
+void STFrequencies::setFrame(MFrequency::Types frame, bool base )
 {
   String f = MFrequency::showType(frame);
   if (base)
@@ -359,7 +358,7 @@ void asap::STFrequencies::setFrame(MFrequency::Types frame, bool base )
 
 }
 
-void asap::STFrequencies::setFrame( const std::string & frame, bool base )
+void STFrequencies::setFrame( const std::string & frame, bool base )
 {
   MFrequency::Types mdr;
   if (!MFrequency::getType(mdr, frame)) {
@@ -379,7 +378,7 @@ void asap::STFrequencies::setFrame( const std::string & frame, bool base )
   }
 }
 
-void asap::STFrequencies::setDoppler( const std::string & doppler )
+void STFrequencies::setDoppler( const std::string & doppler )
 {
   MDoppler::Types mdt;
   if (!MDoppler::getType(mdt, doppler)) {
@@ -396,5 +395,12 @@ void asap::STFrequencies::setDoppler( const std::string & doppler )
   }
 }
 
+void STFrequencies::shiftRefPix(int npix, uInt id) 
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if ( t.nrow() == 0 ) throw(AipsError("Selected Illegal frequency id"));
+  ScalarColumn<Double> tcol(t, "REFPIX");
+  tcol.put(0, tcol(0)+Double(npix));
+}
 
 } // namespace

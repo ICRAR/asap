@@ -107,6 +107,7 @@ void python_Scantable() {
          (boost::python::arg("verbose")=true) )
     .def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
     .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
+    .def("shift_refpix", &ScantableWrapper::shift)
     .def("_setcoordinfo", &ScantableWrapper::setCoordInfo)
     .def("_getcoordinfo", &ScantableWrapper::getCoordInfo)
     .def("set_dirframe", &ScantableWrapper::setDirection,

@@ -149,6 +149,9 @@ public:
   void setSourceType(int stype)
     { table_->setSourceType(stype); }
 
+  void shift(int npix)
+  { table_->shift(npix); }
+
   void setRestFrequencies(double rf, const std::string& name,
                           const std::string& unit)
     { table_->setRestFrequencies(rf, name, unit); }

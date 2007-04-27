@@ -851,7 +851,16 @@ class scantable(Scantable):
             return
         self._add_history("set_restfreqs", varlist)
 
-
+    def shift_refpix(self, delta):
+	"""
+	Shift the reference pixel of the Spectra Coordinate by an 
+	integer amount.
+	Parameters:
+	    delta:   the amount to shift by
+        Note:
+	    Be careful using this with broadband data.
+        """
+	Scantable.shift(self, delta)
 
     def history(self, filename=None):
         """

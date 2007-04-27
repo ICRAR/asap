@@ -355,6 +355,8 @@ public:
                           const std::string& = "Hz");
   void setRestFrequencies(const std::string& name);
 
+  void shift(int npix);
+
   void convertDirection(const std::string& newframe);
 
   STFrequencies& frequencies() { return freqTable_; }
