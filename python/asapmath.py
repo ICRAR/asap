@@ -123,20 +123,7 @@ def simple_math(left, right, op='add', tsys=True):
         tsys:          if True (default) then apply the operation to Tsys
                        as well as the data
     """
-    varlist = vars()
-    print "Not yet available in asap"
-    return
-    if not isinstance(left,scantable) and not isinstance(right,scantable):
-        msg = "Please provide two scantables as input"
-        if rcParams['verbose']:
-            print msg
-            return
-        else:
-            raise TypeError(msg)
-    s = scantable(stm._bop(left, right, op, tsys))
-    s._add_history("simple_math", varlist)
-    print_log()
-    return s
+    print "simple_math is deprecated use +=/* instead."
 
 def merge(*args):
     """
