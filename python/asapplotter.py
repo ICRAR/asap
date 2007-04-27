@@ -104,23 +104,23 @@ class asapplotter:
     # forwards to matplotlib axes
     def text(self, *args, **kwargs):
         self._axes_callback("text", *args, **kwargs)
-    text. __doc__ = matplotlib.axes.Axes.text.__doc__
+    text.__doc__ = matplotlib.axes.Axes.text.__doc__
     def arrow(self, *args, **kwargs):
         self._axes_callback("arrow", *args, **kwargs)
-    arrow. __doc__ = matplotlib.axes.Axes.arrow.__doc__
+    arrow.__doc__ = matplotlib.axes.Axes.arrow.__doc__
     def axvline(self, *args, **kwargs):
         self._axes_callback("axvline", *args, **kwargs)
-    axvline. __doc__ = matplotlib.axes.Axes.axvline.__doc__
+    axvline.__doc__ = matplotlib.axes.Axes.axvline.__doc__
     def axhline(self, *args, **kwargs):
         self._axes_callback("axhline", *args, **kwargs)
-    axhline. __doc__ = matplotlib.axes.Axes.axhline.__doc__
+    axhline.__doc__ = matplotlib.axes.Axes.axhline.__doc__
     def axvspan(self, *args, **kwargs):
         self._axes_callback("axvspan", *args, **kwargs)
         # hack to preventy mpl from redrawing the patch
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???
         del self._plotter.axes.patches[-1]
-    axvspan. __doc__ = matplotlib.axes.Axes.axvspan.__doc__
+    axvspan.__doc__ = matplotlib.axes.Axes.axvspan.__doc__
 
     def axhspan(self, *args, **kwargs):
         self._axes_callback("axhspan", *args, **kwargs)
@@ -128,7 +128,7 @@ class asapplotter:
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???
         del self._plotter.axes.patches[-1]
-    axhspan. __doc__ = matplotlib.axes.Axes.axhspan.__doc__
+    axhspan.__doc__ = matplotlib.axes.Axes.axhspan.__doc__
 
     def _axes_callback(self, axesfunc, *args, **kwargs):
         panel = 0
