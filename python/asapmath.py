@@ -129,6 +129,15 @@ def simple_math(left, right, op='add', tsys=True):
 
 def merge(*args):
     """
+    Merge a list of scanatables, or comma-sperated scantables into one
+    scnatble.
+    Parameters:
+        A list [scan1, scan2] or scan1, scan2.
+    Example:
+        myscans = [scan1, scan2]
+	allscans = merge(myscans)
+	# or equivalent
+	sameallscans = merge(scan1, scan2)
     """
     varlist = vars()
     if isinstance(args[0],list):
