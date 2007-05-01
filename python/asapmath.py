@@ -7,7 +7,7 @@ def average_time(*args, **kwargs):
     Return the (time) average of a scan or list of scans. [in channels only]
     The cursor of the output scan is set to 0
     Parameters:
-        one scan or comma separated  scans
+        one scan or comma separated  scans or a list of scans
         mask:     an optional mask (only used for 'var' and 'tsys' weighting)
         scanav:   True averages each scan separately.
                   False (default) averages all scans together,
@@ -25,6 +25,8 @@ def average_time(*args, **kwargs):
         # return a time averaged scan from scana and scanb
         # without using a mask
         scanav = average_time(scana,scanb)
+	# or equivalent
+	# scanav = average_time([scana, scanb])
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
         scanav = average_time(scan, scanav=True)
