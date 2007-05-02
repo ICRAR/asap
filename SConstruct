@@ -133,7 +133,7 @@ if not env.GetOption('clean'):
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     env = conf.Finish()
 
-env["version"] = "trunk"
+env["version"] = "2.2.0"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
