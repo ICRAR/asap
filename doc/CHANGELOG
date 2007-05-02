@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Release 2.2.0 [2007-05-02]
+
+* fix for losing flags in average_time
+* changed asap_update_data to contact ATNF ftp server directly
+* Documentation updates
+* changed to use casacore instead of aips++
+* auto_quotient uses on/off pair detection by default, 'time' the old mode can also
+  be accessed
+* Ticket #107 added function to shift reference pixel
+* Ticket #106 added  function to retrieve integration times
+* Ticket #105 added Parkes K-band gain curve
+* Ticket #102 fixed wrong polarisation type in case of 'circular'
+* Ticket #104/94 fixed segmentation fault for time average if all channels are flagged
+* Ticket #98  AIPSPATH is honoured if set
+* Ticket #101 fixed set_restfreqs not working for IFs not starting at 0
+* Ticket #97 fixed error in opacity calculation
+
 Minor Release 2.1.1 [2006-11-09]
 
 * fix for Ticket #88 - numpy masks
