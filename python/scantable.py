@@ -675,7 +675,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        base = { "GHz": 100000000., "MHz": 1000000., "kHz": 1000., "Hz": 1. }
+        base = { "GHz": 1000000000., "MHz": 1000000., "kHz": 1000., "Hz": 1. }
         if not base.has_key(unit):
             raise ValueError("%s is not a valid unit." % unit)
         try:
