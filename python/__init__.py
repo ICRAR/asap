@@ -21,7 +21,9 @@ asapdata = __path__[-1]
 if os.environ.has_key("ASAPDATA"):
     if os.path.exists(os.environ["ASAPDATA"]):
         asapdata = os.environ["ASAPDATA"]
-if not os.environ.has_key("AIPSPATH"):
+# use AIPSPATH if defined and "data" dir present
+if not os.environ.has_key("AIPSPATH") or \
+        not os.path.exists(os.environ["AIPSPATH"].split()[0]+"/data"):
     os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
 # set up user space
 userdir = os.environ["HOME"]+"/.asap"
@@ -358,7 +360,7 @@ if rcParams['useplotter']:
 	print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
-__version__  = '2.2.0'
+__version__  = 'trunk'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])
