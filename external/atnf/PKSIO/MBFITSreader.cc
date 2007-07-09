@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.cc,v 19.32 2007/01/30 23:40:30 cal103 Exp $
+//# $Id: MBFITSreader.cc,v 19.34 2007/07/02 06:12:18 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -131,7 +131,7 @@ int MBFITSreader::open(
             &cBin, &cIFno, &cSrcNo);
 
   if (jstat) {
-    fprintf(stderr, "Failed to open MBFITS file: %s\n", rpname);
+    fprintf(stderr, "ERROR, failed to open MBFITS file: %s\n", rpname);
     return 1;
   }
 
@@ -151,7 +151,7 @@ int MBFITSreader::open(
             &cBin, &cIFno, &cSrcNo);
 
   if (jstat) {
-    fprintf(stderr, "Failed to read MBFITS header: %s\n", rpname);
+    fprintf(stderr, "ERROR, failed to read MBFITS header: %s\n", rpname);
     close();
     return 1;
   }
@@ -159,10 +159,22 @@ int MBFITSreader::open(
   // Mopra data has some peculiarities.
   cMopra = strncmp(names_.instrument, "ATMOPRA", 7) == 0;
 
-  // Tidbinbilla data has some more.
-  cTid = strncmp(names_.sta, "tid", 3) == 0;
-  if (cTid) {
-    // Telescope position is stored in the source table.
+  // Non-ATNF data may not store the position in (u,v,w).
+  if (strncmp(names_.sta, "tid", 3) == 0) {
+    fprintf(stderr, "WARNING, found Tidbinbilla data");
+    cSUpos = 1;
+  } else if (strncmp(names_.sta, "HOB", 3) == 0) {
+    fprintf(stderr, "WARNING, found Hobart data");
+    cSUpos = 1;
+  } else if (strncmp(names_.sta, "CED", 3) == 0) {
+    fprintf(stderr, "WARNING, found Ceduna data");
+    cSUpos = 1;
+  } else {
+    cSUpos = 0;
+  }
+
+  if (cSUpos) {
+    fprintf(stderr, ", using telescope position from SU table.\n");
     cInterp = 0;
   }
 
@@ -176,7 +188,7 @@ int MBFITSreader::open(
   }
 
   if (cNBeam <= 0) {
-    fprintf(stderr, "Couldn't determine number of beams.\n");
+    fprintf(stderr, "ERROR, couldn't determine number of beams.\n");
     close();
     return 1;
   }
@@ -278,7 +290,7 @@ int MBFITSreader::open(
 
   // Read the first syscal record.
   if (rpget(1, cEOS)) {
-    fprintf(stderr, "Error: Failed to read first syscal record.\n");
+    fprintf(stderr, "ERROR, failed to read first syscal record.\n");
     close();
     return 1;
   }
@@ -313,7 +325,7 @@ int MBFITSreader::getHeader(
         double &bandwidth)
 {
   if (!cMBopen) {
-    fprintf(stderr, "An MBFITS file has not been opened.\n");
+    fprintf(stderr, "ERROR, an MBFITS file has not been opened.\n");
     return 1;
   }
 
@@ -435,7 +447,7 @@ int MBFITSreader::read(
   PKSMBrecord *iMBuff = 0x0;
 
   if (!cMBopen) {
-    fprintf(stderr, "An MBFITS file has not been opened.\n");
+    fprintf(stderr, "ERROR, an MBFITS file has not been opened.\n");
     return 1;
   }
 
@@ -563,7 +575,7 @@ int MBFITSreader::read(
           }
 
           if (cNBin > 1 && cNBeamSel > 1) {
-            fprintf(stderr, "Cannot handle binning mode for multiple "
+            fprintf(stderr, "ERROR, cannot handle binning mode for multiple "
                             "beams.\n");
             close();
             return 1;
@@ -890,6 +902,13 @@ int MBFITSreader::read(
         }
       }
 
+      // Sanity check on incomplete integrations within a scan.
+      if (iMBuff->nIF && (iMBuff->cycleNo != cCycleNo)) {
+        // Force the incomplete integration to be flushed before proceeding.
+        cFlushing = 1;
+        continue;
+      }
+
       iMBuff->scanNo  = cScanNo;
       iMBuff->cycleNo = cCycleNo;
 
@@ -928,8 +947,8 @@ int MBFITSreader::read(
       iMBuff->beamNo = beamNo;
 
       // Beam position at the specified time.
-      if (cTid) {
-        // Tidbinbilla data.
+      if (cSUpos) {
+        // Non-ATNF data that does not store the position in (u,v,w).
         iMBuff->ra  = doubles_.su_ra[cSrcNo-1];
         iMBuff->dec = doubles_.su_dec[cSrcNo-1];
       } else {
@@ -1210,7 +1229,7 @@ int MBFITSreader::rpget(int syscalonly, int &EOS)
     }
   }
 
-  fprintf(stderr, "RPFITS read failed too many times.\n");
+  fprintf(stderr, "ERROR, RPFITS read failed too many times.\n");
   return 2;
 }
 
