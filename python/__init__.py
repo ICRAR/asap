@@ -598,7 +598,7 @@ def welcome():
     return """Welcome to ASAP v%s (%s) - the ATNF Spectral Analysis Package
 
 Please report any bugs via:
-http://svn.atnf.csiro.au/trac/asap/newticket
+http://svn.atnf.csiro.au/trac/asap/simpleticket
 
 [IMPORTANT: ASAP is 0-based]
 Type commands() to get a list of all available ASAP commands.""" % (__version__, __date__)
