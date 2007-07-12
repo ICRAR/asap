@@ -221,6 +221,11 @@ private:
   void convertBrightnessUnits(casa::CountedPtr<Scantable>& in,
                               bool tokelvin, float cfac);
 
+  casa::CountedPtr< Scantable > 
+    smoothOther( const casa::CountedPtr< Scantable >& in,
+                 const std::string& kernel,
+                 float width );
+
   casa::CountedPtr< Scantable >
     getScantable(const casa::CountedPtr< Scantable >& in, bool droprows);
 
