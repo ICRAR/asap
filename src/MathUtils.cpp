@@ -165,7 +165,6 @@ void mathutil::runningMedian(Vector<Float>& out, Vector<Bool>& outflag,
   uInt n = in.nelements();
   for (uInt i=hwidth; i<(n-hwidth); ++i) {
     // add data value
-    cout << ms.nval() << endl;
     out[i] = ms.add(in[i], flag[i]); 
     outflag[i] = (ms.nval() == 0);    
   }
