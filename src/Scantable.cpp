@@ -836,7 +836,8 @@ std::string Scantable::summary( bool verbose )
         const TableRecord& irec = irow.get(0);
         oss << setw(10) << "";
         oss << setw(3) << std::right << irec.asuInt("IFNO") << std::left
-            << setw(2) << "" << frequencies().print(irec.asuInt("FREQ_ID"));
+            << setw(2) << "" << frequencies().print(irec.asuInt("FREQ_ID"))
+            << endl;
 
         ++iiter;
       }

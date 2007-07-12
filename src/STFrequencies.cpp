@@ -273,7 +273,7 @@ MDoppler::Types STFrequencies::getDoppler( ) const
   return mdt;
 }
 
-std::string STFrequencies::print( int id )
+std::string STFrequencies::print( int id, Bool strip ) const
 {
   Table t;
   ostringstream oss;
@@ -283,12 +283,25 @@ std::string STFrequencies::print( int id )
   for (uInt i=0; i<t.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
     oss <<  setw(8)
-    << t.keywordSet().asString("FRAME") << setw(16) << setprecision(8)
-    << rec.asDouble("REFVAL") << setw(7)
-    << rec.asDouble("REFPIX") << setw(12)
-    << rec.asDouble("INCREMENT") << endl;
+        << t.keywordSet().asString("FRAME") << setw(16) << setprecision(8)
+        << rec.asDouble("REFVAL") << setw(7)
+        << rec.asDouble("REFPIX")
+        << setw(12)
+        << rec.asDouble("INCREMENT");
   }
-  return String(oss);
+  String outstr(oss);
+  if (strip) {
+    int f = outstr.find_first_not_of(' ');
+    int l = outstr.find_last_not_of(' ', outstr.size());
+    if (f < 0) { 
+      f = 0; 
+    }
+    if ( l < f  || l < f ) { 
+      l = outstr.size();
+    }
+    return outstr.substr(f,l);
+  }
+  return outstr;
 }
 
 float STFrequencies::getRefFreq( uInt id, uInt channel )

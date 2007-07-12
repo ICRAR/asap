@@ -360,12 +360,19 @@ public:
   void convertDirection(const std::string& newframe);
 
   STFrequencies& frequencies() { return freqTable_; }
+  const STFrequencies& frequencies() const { return freqTable_; }
   STWeather& weather() { return weatherTable_; }
+  const STWeather& weather() const { return weatherTable_; }
   STFocus& focus() { return focusTable_; }
+  const STFocus& focus() const { return focusTable_; }
   STTcal& tcal() { return tcalTable_; }
+  const STTcal& tcal() const { return tcalTable_; }
   STMolecules& molecules() { return moleculeTable_; }
+  const STMolecules& molecules() const { return moleculeTable_; }
   STHistory& history() { return historyTable_; }
+  const STHistory& history() const { return historyTable_; }
   STFit& fit() { return fitTable_; }
+  const STFit& fit() const { return fitTable_; }
 
   std::vector<std::string> columnNames() const;
 

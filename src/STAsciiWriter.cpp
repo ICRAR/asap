@@ -119,6 +119,10 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     addLine(of, "Abcissa", stable.getAbcissaLabel(row0));
     addLine(of, "Beam No", rec.asuInt("BEAMNO"));
     addLine(of, "IF No", rec.asuInt("IFNO"));
+    String wcs = stable.frequencies().print(rec.asuInt("FREQ_ID"), True);
+    addLine(of, "WCS", wcs);
+    addLine(of, "Rest Freq.", 
+            stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") ));
     of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
 
     of << std::left << setw(16) << "x";

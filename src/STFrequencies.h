@@ -144,7 +144,7 @@ public:
    * @param id the identifier. If id<0 all rows are returned
    * @return a string
    */
-  std::string print(int id=-1);
+  std::string print(int id=-1, casa::Bool strip=casa::False) const;
 
   std::vector<std::string> getInfo() const;
   void setInfo( const std::vector<std::string>& theinfo );
