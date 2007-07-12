@@ -56,6 +56,22 @@ void hanning(casa::Vector<casa::Float>& out,
              casa::Bool relaxed=casa::False,
              casa::Bool ignoreOther=casa::False);
 
+/**
+ * Apply a running median to  a masked vector.
+ * Edge solution:  The first and last hwidth channels will be replicated 
+ * from the first/last value from a full window.
+ * @param out the smoothed vector
+ * @param outmask  the smoothed mask
+ * @param in the input vector
+ * @param mask the input mask
+ * @param hwidth half-width of the smoothing window
+ */
+ void runningMedian(casa::Vector<casa::Float>& out, 
+                   casa::Vector<casa::Bool>& outmask,
+                   const casa::Vector<casa::Float>& in, 
+                   const casa::Vector<casa::Bool>& mask,
+                   float hwidth);
+
 // Generate specified statistic
 float statistics(const casa::String& which,
                  const casa::MaskedArray<casa::Float>& data);
@@ -65,16 +81,14 @@ void replaceMaskByZero(casa::Vector<casa::Float>& data,
                        const casa::Vector<casa::Bool>& mask);
 
 /**
- * Convert a std::vector of std::string
- * to a casa::Vector casa::String
- * @param in
- * @return
+ * Convert casa implementations to stl
+ * @param in casa string
+ * @return a std vector of std strings
  */
 std::vector<std::string> tovectorstring(const casa::Vector<casa::String>& in);
 
 /**
- * Convert a casa::Vector of casa::String
- * to a stl std::vector of stl std::string
+ * convert stl implementations to casa versions
  * @param in
  * @return
  */

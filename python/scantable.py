@@ -1191,12 +1191,13 @@ class scantable(Scantable):
         Smooth the spectrum by the specified kernel (conserving flux).
         Parameters:
             kernel:     The type of smoothing kernel. Select from
-                        'hanning' (default), 'gaussian' and 'boxcar'.
-                        The first three characters are sufficient.
+                        'hanning' (default), 'gaussian', 'boxcar' and
+                        'rmedian'
             width:      The width of the kernel in pixels. For hanning this is
                         ignored otherwise it defauls to 5 pixels.
                         For 'gaussian' it is the Full Width Half
                         Maximum. For 'boxcar' it is the full width.
+                        For 'rmedian' it is the half width.
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)

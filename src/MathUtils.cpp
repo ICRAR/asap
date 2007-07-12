@@ -31,10 +31,12 @@
 
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/Arrays/Slice.h>
 #include <casa/Arrays/MaskedArray.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/BasicSL/String.h>
+#include <scimath/Mathematics/MedianSlider.h>
 
 #include "MathUtils.h"
 
@@ -144,5 +146,34 @@ void mathutil::hanning(Vector<Float>& out, Vector<Bool>& outmask,
       out[i] = in[i];//use arbitrary value
       outmask[i] = False;
     }
+  }
+}
+
+
+void mathutil::runningMedian(Vector<Float>& out, Vector<Bool>& outflag,
+                             const Vector<Float>& in, const Vector<Bool>& flag,
+                             float width)
+{
+  Int hwidth = Int(width+0.5);
+  Int fwidth = hwidth*2+1;
+  out.resize(in.nelements());
+  outflag.resize(flag.nelements());
+  MedianSlider ms(hwidth);
+  Slice sl(0, fwidth-1);
+  Float medval = ms.add(const_cast<Vector<Float>& >(in)(sl), 
+                  const_cast<Vector<Bool>& >(flag)(sl));
+  uInt n = in.nelements();
+  for (uInt i=hwidth; i<(n-hwidth); ++i) {
+    // add data value
+    cout << ms.nval() << endl;
+    out[i] = ms.add(in[i], flag[i]); 
+    outflag[i] = (ms.nval() == 0);    
+  }
+  // replicate edge values from fisrt value with full width of values
+  for (uInt i=0;i<hwidth;++i) {
+    out[i] = out[hwidth];
+    outflag[i] = outflag[hwidth];    
+    out[n-1-i] = out[n-1-hwidth];
+    outflag[n-1-i] = outflag[n-1-hwidth];    
   }
 }

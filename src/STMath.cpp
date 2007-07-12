@@ -1006,9 +1006,42 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
   return out;
 }
 
+CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
+                                             const std::string& kernel,
+                                             float width )
+{
+  CountedPtr< Scantable > out = getScantable(in, false);
+  Table& table = out->table();
+  ArrayColumn<Float> specCol(table, "SPECTRA");
+  ArrayColumn<uChar> flagCol(table, "FLAGTRA");
+  Vector<Float> spec;
+  Vector<uChar> flag;
+  for ( uInt i=0; i<table.nrow(); ++i) {
+    specCol.get(i, spec);
+    flagCol.get(i, flag);
+    Vector<Bool> mask(flag.nelements());
+    convertArray(mask, flag);
+    Vector<Float> specout;
+    Vector<Bool> maskout;
+    if ( kernel == "hanning" ) {
+      mathutil::hanning(specout, maskout, spec , !mask);
+      convertArray(flag, !maskout);
+    } else if (  kernel == "rmedian" ) {
+      mathutil::runningMedian(specout, maskout, spec , mask, width);
+      convertArray(flag, maskout);
+    }
+    flagCol.put(i, flag);
+    specCol.put(i, specout);
+  }
+  return out;
+}
+
 CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
                                         const std::string& kernel, float width )
 {
+  if (kernel == "rmedian"  || kernel == "hanning") {
+    return smoothOther(in, kernel, width);
+  }
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& table = out->table();
   VectorKernel::KernelTypes type = VectorKernel::toKernelType(kernel);
@@ -1031,17 +1064,9 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
       Vector<Bool> mask(flag.nelements());
       convertArray(mask, flag);
       Vector<Float> specout;
-      if ( type == VectorKernel::HANNING ) {
-        Vector<Bool> maskout;
-        mathutil::hanning(specout, maskout, spec , !mask);
-        convertArray(flag, !maskout);
-        flagCol.put(i, flag);
-        specCol.put(i, specout);
-     } else {
-        mathutil::replaceMaskByZero(specout, mask);
-        conv.linearConv(specout, spec);
-        specCol.put(i, specout);
-      }
+      mathutil::replaceMaskByZero(specout, mask);
+      conv.linearConv(specout, spec);
+      specCol.put(i, specout);
     }
     ++iter;
   }
