@@ -1174,13 +1174,14 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
   cols[2] = String("IFNO");
   cols[3] = String("CYCLENO");
   TableIterator iter(tout, cols);
-  STPol* stpol = STPol::getPolClass(out->factories_, out->getPolType() );
+  CountedPtr<STPol> stpol = STPol::getPolClass(out->factories_, 
+                                               out->getPolType() );
   while (!iter.pastEnd()) {
     Table t = iter.table();
     ArrayColumn<Float> speccol(t, "SPECTRA");
     ScalarColumn<uInt> focidcol(t, "FOCUS_ID");
     ScalarColumn<Float> parancol(t, "PARANGLE");
-    Matrix<Float> pols = speccol.getColumn();
+    Matrix<Float> pols(speccol.getColumn());
     try {
       stpol->setSpectra(pols);
       Float fang,fhand,parang;
@@ -1190,16 +1191,18 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
       /// @todo re-enable this
       // disable total feed angle to support paralactifying Caswell style
       stpol->setPhaseCorrections(parang, -parang, fhand);
-      (stpol->*fptr)(phase);
+      // use a member function pointer in STPol.  This only works on
+      // the STPol pointer itself, not the Counted Pointer so
+      // derefernce it.
+      (&(*(stpol))->*fptr)(phase);
       speccol.putColumn(stpol->getSpectra());
-      Matrix<Float> tmp = stpol->getSpectra();
     } catch (AipsError& e) {
-      delete stpol;stpol=0;
+      //delete stpol;stpol=0;
       throw(e);
     }
     ++iter;
   }
-  delete stpol;stpol=0;
+  //delete stpol;stpol=0;
   return out;
 }
 
