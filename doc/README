@@ -4,10 +4,6 @@ To be able to run the following additional packages need to be installed.
 
 * gcc/g++
 * python
-* boost_python
-* cfitsio
-* lapack
-* blas
 * g2c
 * matplotlib
 * numpy or numarray
