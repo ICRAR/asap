@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Release 2.2.1 [2007-??-??]
+
+* source direction for Hobart data - Ticket #109
+* added running median to scantable.(smooth(kernel='rmedian') 
+
 Release 2.2.0 [2007-05-02]
 
 * fix for losing flags in average_time
