@@ -77,7 +77,7 @@ public:
    * Create a Scantable object form an existing table on disk
    * @param[in] name the name of the existing Scantable
    */
-  Scantable(const std::string& name, casa::Table::TableType ttype = casa::Table::Memory);
+  explicit Scantable(const std::string& name, casa::Table::TableType ttype = casa::Table::Memory);
 
   /// @fixme this is only sensible for MemoryTables....
   Scantable(const Scantable& other, bool clear=true);

@@ -35,7 +35,7 @@ namespace asap {
 class ScantableWrapper {
 
 public:
-  ScantableWrapper( const std::string& name,
+  explicit ScantableWrapper( const std::string& name,
                     int type=0)
   {
     casa::Table::TableType tp = casa::Table::Memory;
