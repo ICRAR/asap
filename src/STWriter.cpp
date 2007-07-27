@@ -159,9 +159,6 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     Int beamno = 1;
     while (!beamit.pastEnd() ) {
       Table btable = beamit.table();
-      // position only varies by beam
-      MDirection::ScalarColumn dirCol(btable, "DIRECTION");
-      Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
       TableIterator cycit(btable, "CYCLENO");
       ROArrayColumn<Double> srateCol(btable, "SCANRATE");
       srateCol.get(0, scanRate);
@@ -177,6 +174,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       while (!cycit.pastEnd() ) {
         Table ctable = cycit.table();
         TableIterator ifit(ctable, "IFNO");
+        MDirection::ScalarColumn dirCol(ctable, "DIRECTION");
+        Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
         Int ifno = 1;
         while (!ifit.pastEnd() ) {
           Table itable = ifit.table();
