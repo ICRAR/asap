@@ -440,8 +440,9 @@ class scantable(Scantable):
         """
         from time import strptime
         from datetime import datetime
+        times = self._get_column(self._gettime, row)
         if not asdatetime:
-            return self._get_column(self._gettime, row)
+            return times
         format = "%Y/%m/%d/%H:%M:%S"
         if isinstance(times, list):
             return [datetime(*strptime(i, format)[:6]) for i in times]
