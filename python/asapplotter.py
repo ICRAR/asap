@@ -740,3 +740,100 @@ class asapplotter:
              't': str(scan.get_time(row)) }
         return userlabel or d[mode]
 
+    def plotazel(self, scan=None):
+        """
+        plot azimuth and elevation  versus time of a scantable
+        """
+        import pylab as PL
+        from matplotlib.dates import DateFormatter, timezone, HourLocator, MinuteLocator, DayLocator
+        from matplotlib.ticker import MultipleLocator
+        from matplotlib.numerix import array, pi
+        self._data = scan
+        dates = self._data.get_time()
+        t = PL.date2num(dates)
+        tz = timezone('UTC')
+        PL.cla()
+        PL.ioff()
+        PL.clf()
+        tdel = max(t) - min(t)
+        ax = PL.subplot(2,1,1)
+        el = array(self._data.get_elevation())*180./pi
+        PL.ylabel('El [deg.]')
+        dstr = dates[0].strftime('%Y/%m/%d')
+        if tdel > 1.0:
+            dstr2 = dates[len(dates)-1].strftime('%Y/%m/%d')
+            dstr = dstr + " - " + dstr2
+            majloc = DayLocator()
+            minloc = HourLocator(range(0,23,12))
+            timefmt = DateFormatter("%b%d")
+        else:
+            timefmt = DateFormatter('%H')
+            majloc = HourLocator()
+            minloc = MinuteLocator(20)
+        PL.title(dstr)
+        PL.plot_date(t,el,'b,', tz=tz)
+        #ax.grid(True)
+        ax.yaxis.grid(True)
+        yloc = MultipleLocator(30)
+        ax.set_ylim(0,90)
+        ax.xaxis.set_major_formatter(timefmt)
+        ax.xaxis.set_major_locator(majloc)
+        ax.xaxis.set_minor_locator(minloc)
+        ax.yaxis.set_major_locator(yloc)
+        if tdel > 1.0:
+            labels = ax.get_xticklabels()
+        #    PL.setp(labels, fontsize=10, rotation=45)
+            PL.setp(labels, fontsize=10)
+        # Az plot
+        az = array(self._data.get_azimuth())*180./pi
+        if min(az) < 0:
+            for irow in range(len(az)):
+                if az[irow] < 0: az[irow] += 360.0
+
+        ax = PL.subplot(2,1,2)
+        PL.xlabel('Time (UT)')
+        PL.ylabel('Az [deg.]')
+        PL.plot_date(t,az,'b,', tz=tz)
+        ax.set_ylim(0,360)
+        #ax.grid(True)
+        ax.yaxis.grid(True)
+        #hfmt = DateFormatter('%H')
+        #hloc = HourLocator()
+        yloc = MultipleLocator(60)
+        ax.xaxis.set_major_formatter(timefmt)
+        ax.xaxis.set_major_locator(majloc)
+        ax.xaxis.set_minor_locator(minloc)
+        ax.yaxis.set_major_locator(yloc)
+        if tdel > 1.0:
+            labels = ax.get_xticklabels()
+            PL.setp(labels, fontsize=10)
+        PL.ion()
+        PL.draw()
+
+    def plotpointing(self, scan=None):
+        """
+        plot telescope pointings
+        """
+        import pylab as PL
+        from matplotlib.dates import DateFormatter, timezone
+        from matplotlib.ticker import MultipleLocator
+        from matplotlib.numerix import array, pi, zeros
+        self._data = scan
+        dir = array(self._data.get_directionval()).transpose()
+        ra = dir[0]*180./pi
+        dec = dir[1]*180./pi
+        PL.cla()
+        PL.ioff()
+        PL.clf()
+        ax = PL.axes([0.1,0.1,0.8,0.8])
+        ax = PL.axes([0.1,0.1,0.8,0.8])
+        ax.set_aspect('equal')
+        PL.plot(ra,dec, 'b,')
+        PL.xlabel('RA [deg.]')
+        PL.ylabel('Declination [deg.]')
+        PL.title('Telescope pointings')
+        [xmin,xmax,ymin,ymax] = PL.axis()
+        PL.axis([xmax,xmin,ymin,ymax])
+        PL.ion()
+        PL.draw()
+

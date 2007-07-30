@@ -115,6 +115,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // MS or SDFITS
 
   // Extract the header from the table.
+  // this is a little different from what I have done
+  // before. Need to check with the Offline User Test data
   STHeader hdr = in->getHeader();
   //const Int nPol  = hdr.npol;
   //const Int nChan = hdr.nchan;
@@ -122,6 +124,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   int nIF = in->nif();//ifs.size();
   Vector<uInt> nPol(nIF),nChan(nIF);
   Vector<Bool> havexpol(nIF);
+  String fluxUnit = hdr.fluxunit;
+
   nPol = 0;nChan = 0; havexpol = False;
   for (uint i=0;i<ifs.size();++i) {
     nPol(ifs[i]) = in->npol();
@@ -263,7 +267,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   oss << "STWriter: wrote " << count << " rows to " << filename;
   pushLog(String(oss));
   writer_->close();
-
+  //if MS2 delete POINTING table exists and copy the one in the keyword
+  if ( format_ == "MS2" ) {
+    replacePtTab(table, filename);
+  }
   return 0;
 }
 
@@ -313,5 +320,22 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
   }
 }
 
+// For writing MS data, if there is the reference to
+// original pointing table it replace it by it.
+void STWriter::replacePtTab (const Table& tab, const std::string& fname)
+{
+  String oldPtTabName = fname;
+  oldPtTabName.append("/POINTING");
+  if ( tab.keywordSet().isDefined("POINTING") ) {
+    String PointingTab = tab.keywordSet().asString("POINTING");
+    if ( Table::isReadable(PointingTab) ) {
+      Table newPtTab(PointingTab, Table::Old);
+      newPtTab.copy(oldPtTabName, Table::New);
+      ostringstream oss;
+      oss << "STWriter: copied  " <<PointingTab  << " to " << fname;
+      pushLog(String(oss));
+    }
+  }
+}
 
 }

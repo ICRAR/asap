@@ -72,6 +72,12 @@ Float STAttr::diameter(Instrument inst)  const
 {
    Float D = 1.0;
    switch (inst) {
+      case ALMA:
+        {
+           D = 12.0;
+        }
+        break;
+
       case ATMOPRA:
         {
            D = 22.0;
@@ -91,6 +97,11 @@ Float STAttr::diameter(Instrument inst)  const
       case CEDUNA:
         {
            D = 30.0;
+        }
+        break;
+      case GBT:
+        {
+           D = 104.9;
         }
         break;
       case HOBART:
@@ -337,6 +348,8 @@ Instrument STAttr::convertInstrument(const String& instrument,
   Instrument inst = asap::UNKNOWNINST;
   if (t==String("DSS-43")) {
     inst = TIDBINBILLA;
+  } else if (t==String("ALMA")) {
+    inst = ALMA;
   } else if (t==String("ATPKSMB")) {
     inst = ATPKSMB;
   } else if (t==String("ATPKSHOH")) {
@@ -345,6 +358,8 @@ Instrument STAttr::convertInstrument(const String& instrument,
     inst = ATMOPRA;
   } else if (t==String("CEDUNA")) {
     inst = CEDUNA;
+  } else if (t==String("GBT")) {
+    inst = GBT;
   } else if (t==String("HOBART")) {
     inst = HOBART;
   } else {

@@ -24,6 +24,7 @@ class fitter:
         self._fittedrow = 0
         self._p = None
         self._selection = None
+        self.uselinear = False
 
     def set_data(self, xdat, ydat, mask=None):
         """
@@ -73,11 +74,13 @@ class fitter:
         """
         Set the function to be fit.
         Parameters:
-            poly:    use a polynomial of the order given
+            poly:    use a polynomial of the order given with nonlinear least squares fit 
+            lpoly:   use polynomial of the order given with linear least squares fit
             gauss:   fit the number of gaussian specified
         Example:
             fitter.set_function(gauss=2) # will fit two gaussians
-            fitter.set_function(poly=3)  # will fit a 3rd order polynomial
+            fitter.set_function(poly=3)  # will fit a 3rd order polynomial via nonlinear method
+            fitter.set_function(lpoly=3)  # will fit a 3rd order polynomial via linear method
         """
         #default poly order 0
         n=0
@@ -85,11 +88,18 @@ class fitter:
             self.fitfunc = 'poly'
             n = kwargs.get('poly')
             self.components = [n]
+            self.uselinear = False 
+        elif kwargs.has_key('lpoly'):
+            self.fitfunc = 'poly'
+            n = kwargs.get('lpoly')
+            self.components = [n]
+            self.uselinear = True
         elif kwargs.has_key('gauss'):
             n = kwargs.get('gauss')
             self.fitfunc = 'gauss'
             self.fitfuncs = [ 'gauss' for i in range(n) ]
             self.components = [ 3 for i in range(n) ]
+            self.uselinear = False 
         else:
             msg = "Invalid function type."
             if rcParams['verbose']:
@@ -145,7 +155,10 @@ class fitter:
             fxdpar = list(self.fitter.getfixedparameters())
             if len(fxdpar) and fxdpar.count(0) == 0:
                  raise RuntimeError,"No point fitting, if all parameters are fixed."
-            converged = self.fitter.fit()
+            if self.uselinear:
+                converged = self.fitter.lfit()
+            else:
+                converged = self.fitter.fit()
             if not converged:
                 raise RuntimeError,"Fit didn't converge."
         except RuntimeError, msg:
@@ -500,7 +513,7 @@ class fitter:
             m =  logical_and(self.mask,
                              array(self.data._getmask(self._fittedrow),
                                    copy=False))
-            
+                             
             ylab = self.data._get_ordinate_label()
 
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]

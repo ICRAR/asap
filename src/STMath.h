@@ -131,6 +131,74 @@ public:
                                         const casa::CountedPtr<Scantable>& off,
                                         bool preserve = true );
 
+  /**
+    * Calibrate total power scans (translated from GBTIDL)
+    * @param calon uncalibrated Scantable with CAL noise signal
+    * @param caloff uncalibrated Scantable with no CAL signal
+    * @param tcal optional scalar Tcal, CAL temperature (K)
+    * @return casa::CountedPtr<Scantable> which holds a calibrated Scantable
+    * (spectrum - average of the two CAL on and off spectra;
+    * tsys - mean Tsys = <caloff>*Tcal/<calon-caloff> + Tcal/2)
+    */
+  casa::CountedPtr<Scantable> dototalpower( const casa::CountedPtr<Scantable>& calon,
+                                            const casa::CountedPtr<Scantable>& caloff,
+                                            casa::Float tcal=1.0 );
+
+  /**
+    * Combine signal and reference scans (translated from GBTIDL)
+    * @param sig Scantable which contains signal scans
+    * @param ref Scantable which contains reference scans
+    * @param smoothref optional Boxcar smooth width of the reference scans
+    * default: no smoothing (=1)
+    * @param tsysv optional scalar Tsys value at the zenith, required to
+    * set tau, as well
+    * @param tau optional scalar Tau value
+    * @return casa::CountedPtr<Scantable> which holds combined scans
+    * (spectrum = (sig-ref)/ref * Tsys )
+    */
+  casa::CountedPtr<Scantable> dosigref( const casa::CountedPtr<Scantable>& sig,
+                                        const casa::CountedPtr<Scantable>& ref,
+                                        int smoothref=1,
+                                        casa::Float tsysv=0.0,
+                                        casa::Float tau=0.0 );
+
+ /**
+    * Calibrate GBT Nod scan pairs (translated from GBTIDL)
+    * @param s Scantable which contains Nod scans
+    * @param scans Vector of scan numbers
+    * @param smoothref optional Boxcar smooth width of the reference scans
+    * @param tsysv optional scalar Tsys value at the zenith, required to
+    * set tau, as well
+    * @param tau optional scalar Tau value
+    * @param tcal optional scalar Tcal, CAL temperature (K)
+    * @return casa::CountedPtr<Scantable> which holds calibrated scans
+    */
+  casa::CountedPtr<Scantable> donod( const casa::CountedPtr<Scantable>& s,
+                                     const std::vector<int>& scans,
+                                     int smoothref=1,
+                                     casa::Float tsysv=0.0,
+                                     casa::Float tau=0.0,
+                                     casa::Float tcal=0.0 );
+
+  /**
+    * Calibrate frequency switched scans (translated from GBTIDL)
+    * @param s Scantable which contains frequency switched  scans
+    * @param scans Vector of scan numbers
+    * @param smoothref optional Boxcar smooth width of the reference scans
+    * @param tsysv optional scalar Tsys value at the zenith, required to
+    * set tau, as well
+    * @param tau optional scalar Tau value
+    * @param tcal optional scalar Tcal, CAL temperature (K)
+    * @return casa::CountedPtr<Scantable> which holds calibrated scans
+    */
+  casa::CountedPtr<Scantable> dofs( const casa::CountedPtr<Scantable>& s,
+                                    const std::vector<int>& scans,
+                                    int smoothref=1,
+                                    casa::Float tsysv=0.0,
+                                    casa::Float tau=0.0,
+                                    casa::Float tcal=0.0 );
+
+
   casa::CountedPtr<Scantable>
     freqSwitch( const casa::CountedPtr<Scantable>& in );
 

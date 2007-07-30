@@ -90,6 +90,27 @@ public:
   { return ScantableWrapper( STMath::quotient( on.getCP(), off.getCP(),
                                                preserve ) ); }
 
+  ScantableWrapper dototalpower( const ScantableWrapper& calon,
+                             const ScantableWrapper& caloff, casa::Float tcal= 0 )
+  { return ScantableWrapper( STMath::dototalpower( calon.getCP(), caloff.getCP(), tcal ) ); }
+
+  ScantableWrapper dosigref( const ScantableWrapper& sig,
+                             const ScantableWrapper& ref,
+                             int smoothref = 0, casa::Float tsysv=0.0, casa::Float tau=0.0)
+  { return ScantableWrapper( STMath::dosigref( sig.getCP(), ref.getCP(), smoothref, tsysv, tau ) ); }
+
+  ScantableWrapper donod( const ScantableWrapper& s,
+                          const std::vector<int>& scans,
+                          int smoothref = 0,
+                          casa::Float tsysv=0.0, casa::Float tau=0.0, casa::Float tcal=0.0 )
+  { return ScantableWrapper( STMath::donod( s.getCP(), scans, smoothref, tsysv, tau, tcal ) ); }
+
+  ScantableWrapper dofs( const ScantableWrapper& s,
+                         const std::vector<int>& scans,
+                         int smoothref = 0,
+                         casa::Float tsysv=0.0, casa::Float tau=0.0, casa::Float tcal=0.0 )
+  { return ScantableWrapper( STMath::dofs( s.getCP(), scans, smoothref, tsysv, tau, tcal ) ); }
+
   ScantableWrapper
     freqSwitch( const ScantableWrapper& in )
   { return ScantableWrapper(STMath::freqSwitch(in.getCP())); }

@@ -67,6 +67,7 @@ void asap::STTcal::setup( )
   tcalCol_.attach(table_,"TCAL");
 }
 
+/*** rewrite this for handling of GBT data 
 uInt STTcal::addEntry( const String& time, const Vector<Float>& cal)
 {
   // test if this already exists
@@ -89,6 +90,32 @@ uInt STTcal::addEntry( const String& time, const Vector<Float>& cal)
   }
   return resultid;
 }
+***/
+
+uInt STTcal::addEntry( const String& time, const Vector<Float>& cal)
+{
+  // test if this already exists
+  // TT - different Tcal values for each polarization, feed, and
+  // data description. So there may be multiple entries for the same
+  // time stamp.
+  uInt resultid;
+  uInt rno = table_.nrow();
+  //table_.addRow();
+  // get last assigned tcal_id and increment
+  if ( rno == 0 ) {
+    resultid = 0;
+  }
+  else {
+    idCol_.get(rno-1, resultid);
+    resultid++;
+  }
+  table_.addRow();
+  tcalCol_.put(rno, cal);
+  timeCol_.put(rno, time);
+  idCol_.put(rno, resultid);
+  return resultid;
+}
+
 
 void STTcal::getEntry( String& time, Vector<Float>& tcal, uInt id )
 {

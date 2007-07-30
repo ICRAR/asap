@@ -25,6 +25,8 @@
 #include <tables/Tables/TableRow.h>
 
 #include <atnf/PKSIO/PKSreader.h>
+//#include <casa/System/ProgressMeter.h>
+
 
 #include "STDefs.h"
 #include "STAttr.h"
@@ -134,6 +136,7 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   }
   // Determine Telescope and set brightness unit
 
+
   Bool throwIt = False;
   Instrument inst = STAttr::convertInstrument(header_->antennaname, throwIt);
   header_->fluxunit = "Jy";
@@ -183,6 +186,24 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   Vector<Int> end(nIF_, 0);
   reader_->select(beams, ifs, start, end, ref, True, haveXPol_[0], False);
   table_->setHeader(*header_);
+  //For MS, add the location of POINTING of the input MS so one get
+  //pointing data from there, if necessary.
+  //Also find nrow in MS 
+  nInDataRow = 0;
+  if (format == "MS2") {
+    Path datapath(inName); 
+    String ptTabPath = datapath.absoluteName();
+    Table inMS(ptTabPath);
+    nInDataRow = inMS.nrow();
+    ptTabPath.append("/POINTING");
+    table_->table().rwKeywordSet().define("POINTING", ptTabPath);
+    if ((header_->antennaname).matches("GBT")) {
+      String GOTabPath = datapath.absoluteName();
+      GOTabPath.append("/GBT_GO");
+      table_->table().rwKeywordSet().define("GBT_GO", GOTabPath);
+    }
+  }
+     
 }
 
 void STFiller::close( )
@@ -208,6 +229,10 @@ int asap::STFiller::read( )
   Matrix<uChar>   flagtra;
   Complex         xCalFctr;
   Vector<Complex> xPol;
+  Double min = 0.0;
+  Double max = nInDataRow;
+  //ProgressMeter fillpm(min, max, "Data importing progress");
+  int n = 0;
   while ( status == 0 ) {
     status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
                           srcName, srcDir, srcPM, srcVel, obsType, IFno,
@@ -219,6 +244,8 @@ int asap::STFiller::read( )
                           tsys, sigma, calFctr, baseLin, baseSub,
                           spectra, flagtra, xCalFctr, xPol);
     if ( status != 0 ) break;
+    n += 1;
+    
     Regex filterrx(".*[SL|PA]$");
     Regex obsrx("^AT.+");
     if ( header_->antennaname.matches(obsrx) && obsType.matches(filterrx)) {
@@ -249,6 +276,8 @@ int asap::STFiller::read( )
     *intCol = interval;
     RecordFieldPtr<String> srcnCol(rec, "SRCNAME");
     RecordFieldPtr<Int> srctCol(rec, "SRCTYPE");
+    RecordFieldPtr<String> fieldnCol(rec, "FIELDNAME");
+    *fieldnCol = fieldName;
     // try to auto-identify if it is on or off.
     Regex rx(".*[e|w|_R]$");
     Regex rx2("_S$");
@@ -339,11 +368,13 @@ int asap::STFiller::read( )
       table_->table().addRow();
       row.put(table_->table().nrow()-1, rec);
     }
+    //fillpm._update(n);
   }
   if (status > 0) {
     close();
     throw(AipsError("Reading error occured, data possibly corrupted."));
   }
+  //fillpm.done();
   return status;
 }
 

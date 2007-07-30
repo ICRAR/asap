@@ -80,6 +80,9 @@ private:
                       casa::Matrix<casa::uChar>& flag,
                       casa::Vector<casa::Complex>& xpol,
                       const casa::Table& tab);
+
+  void replacePtTab(const casa::Table& tab, const std::string& fname);
+
   std::string     format_;
   PKSwriter* writer_;
 };

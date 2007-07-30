@@ -82,7 +82,7 @@ void asap::STSelector::setCycles( const std::vector< int >& cycs )
 
 void asap::STSelector::setName( const std::string& sname )
 {
-  std::string sql = "SELECT from $1 WHERE SRCNAME == pattern('"+sname+"')";
+  std::string sql = "SELECT FROM $1 WHERE SRCNAME == pattern('"+sname+"')";
   setTaQL(sql);
 }
 

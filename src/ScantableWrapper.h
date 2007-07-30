@@ -198,6 +198,15 @@ public:
   std::vector<std::string> columnNames() const
     { return table_->columnNames(); }
 
+  std::string getAntennaName() const
+    { return table_->getAntennaName(); }
+
+  int checkScanInfo(const vector<int>& scanlist) const
+    { return table_->checkScanInfo(scanlist); }
+
+  std::vector<double>  getDirectionVector(int whichrow) const
+    { return table_->getDirectionVector(whichrow); }
+
 private:
   casa::CountedPtr<Scantable> table_;
 };

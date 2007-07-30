@@ -1027,5 +1027,88 @@ void Scantable::shift(int npix)
   }
 }
 
+std::string asap::Scantable::getAntennaName() const
+{
+  String out;
+  table_.keywordSet().get("AntennaName", out);
+  return out;
+}
+
+int asap::Scantable::checkScanInfo(const std::vector<int>& scanlist) const
+{
+  String tbpath;
+  int ret = 0;
+  if ( table_.keywordSet().isDefined("GBT_GO") ) {
+    table_.keywordSet().get("GBT_GO", tbpath);
+    Table t(tbpath,Table::Old);
+    // check each scan if other scan of the pair exist
+    int nscan = scanlist.size();
+    for (int i = 0; i < nscan; i++) {
+      Table subt = t( t.col("SCAN") == scanlist[i]+1 );
+      if (subt.nrow()==0) {
+        cerr <<"Scan "<<scanlist[i]<<" cannot be found in the scantable."<<endl;
+        ret = 1;
+        break;
+      }
+      ROTableRow row(subt);
+      const TableRecord& rec = row.get(0);
+      int scan1seqn = rec.asuInt("PROCSEQN");
+      int laston1 = rec.asuInt("LASTON");
+      if ( rec.asuInt("PROCSIZE")==2 ) {
+        if ( i < nscan-1 ) {
+          Table subt2 = t( t.col("SCAN") == scanlist[i+1]+1 );
+          if ( subt2.nrow() == 0) {
+            cerr<<"Scan "<<scanlist[i+1]<<" cannot be found in the scantable."<<endl;
+            ret = 1;
+            break;
+          }
+          ROTableRow row2(subt2);
+          const TableRecord& rec2 = row2.get(0);
+          int scan2seqn = rec2.asuInt("PROCSEQN");
+          int laston2 = rec2.asuInt("LASTON");
+          if (scan1seqn == 1 && scan2seqn == 2) {
+            if (laston1 == laston2) {
+              cerr<<"A valid scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+              i +=1;
+            }
+            else {
+              cerr<<"Incorrect scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+            }
+          }
+          else if (scan1seqn==2 && scan2seqn == 1) {
+            if (laston1 == laston2) {
+              cerr<<"["<<scanlist[i]<<","<<scanlist[i+1]<<"] is a valid scan pair but in incorrect order."<<endl;
+              ret = 1;
+              break;
+            }
+          }
+          else {
+            cerr<<"The other scan for  "<<scanlist[i]<<" appears to be missing. Check the input scan numbers."<<endl;
+            ret = 1;
+            break;
+          }
+        }
+      }
+      else {
+        cerr<<"The scan does not appear to be standard obsevation."<<endl;
+      }
+    //if ( i >= nscan ) break;
+    }
+  }
+  else {
+    cerr<<"No reference to GBT_GO table."<<endl;
+    ret = 1;
+  }
+  return ret;
+}
+
+std::vector<double>  asap::Scantable::getDirectionVector(int whichrow) const
+{
+  Vector<Double> Dir = dirCol_(whichrow).getAngle("rad").getValue();
+  std::vector<double> dir;
+  Dir.tovector(dir);
+  return dir;
+}
+
 }
  //namespace asap

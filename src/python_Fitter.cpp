@@ -54,6 +54,7 @@ namespace asap {
         .def("getchi2", &Fitter::getChisquared)
         .def("reset", &Fitter::reset)
         .def("fit", &Fitter::fit)
+        .def("lfit", &Fitter::lfit)
         .def("evaluate", &Fitter::evaluate)
       ;
     };

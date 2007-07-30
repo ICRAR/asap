@@ -380,6 +380,29 @@ public:
   STFitEntry getFit(int row) const
     { STFitEntry fe; fitTable_.getEntry(fe, mfitidCol_(row)); return fe; }
 
+  //Added by TT
+  /**
+   * Get the antenna name
+   * @return antenna name string
+   */
+  std::string getAntennaName() const;
+
+  /**
+   * For GBT MS data only. check a scan list
+   * against the information found in GBT_GO table for
+   * scan number orders to get correct pairs.
+   * @param[in] scan list
+   * @return status
+   */
+  int checkScanInfo(const std::vector<int>& scanlist) const;
+
+  /**
+   * Get the direction as a vector, for a specific row
+   * @param[in] whichrow the row numbyyer
+   * @return the direction in a vector
+   */
+  std::vector<double> getDirectionVector(int whichrow) const;
+
 private:
 
   casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;

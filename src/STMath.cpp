@@ -47,6 +47,7 @@
 #include "RowAccumulator.h"
 #include "STAttr.h"
 #include "STMath.h"
+#include "STSelector.h"
 
 using namespace casa;
 
@@ -532,6 +533,447 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable > & on,
     // non <= noff:  matching pairs, non > noff matching pairs then first off
     if ( s2it.pastEnd() ) s2it.reset();
   }
+  return out;
+}
+
+// dototalpower (migration of GBTIDL procedure dototalpower.pro)
+// calibrate the CAL on-off pair. It calculate Tsys and average CAL on-off subintegrations
+// do it for each cycles in a specific scan.
+CountedPtr< Scantable > STMath::dototalpower( const CountedPtr< Scantable >& calon,
+                                              const CountedPtr< Scantable >& caloff, Float tcal )
+{
+if ( ! calon->conformant(*caloff) ) {
+    throw(AipsError("'CAL on' and 'CAL off' scantables are not conformant."));
+  }
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(caloff, false);
+  Table& tout = out->table();
+  const Table& tcon = calon->table();
+  Vector<Float> tcalout;
+  Vector<Float> tcalout2;  //debug
+
+  if ( tout.nrow() != tcon.nrow() ) {
+    throw(AipsError("Mismatch in number of rows to form cal on - off pair."));
+  }
+  // iteration by scanno or cycle no.
+  TableIterator sit(tout, "SCANNO");
+  TableIterator s2it(tcon, "SCANNO");
+  while ( !sit.pastEnd() ) {
+    Table toff = sit.table();
+    TableRow row(toff);
+    Table t = s2it.table();
+    ScalarColumn<Double> outintCol(toff, "INTERVAL");
+    ArrayColumn<Float> outspecCol(toff, "SPECTRA");
+    ArrayColumn<Float> outtsysCol(toff, "TSYS");
+    ArrayColumn<uChar> outflagCol(toff, "FLAGTRA");
+    ROScalarColumn<uInt> outtcalIdCol(toff, "TCAL_ID");
+    ROScalarColumn<uInt> outpolCol(toff, "POLNO");
+    ROScalarColumn<Double> onintCol(t, "INTERVAL");
+    ROArrayColumn<Float> onspecCol(t, "SPECTRA");
+    ROArrayColumn<Float> ontsysCol(t, "TSYS");
+    ROArrayColumn<uChar> onflagCol(t, "FLAGTRA");
+    //ROScalarColumn<uInt> ontcalIdCol(t, "TCAL_ID");
+
+    for (uInt i=0; i < toff.nrow(); ++i) {
+      //skip these checks -> assumes the data order are the same between the cal on off pairs
+      //
+      Vector<Float> specCalon, specCaloff;
+      // to store scalar (mean) tsys
+      Vector<Float> tsysout(1);
+      uInt tcalId, polno;
+      Double offint, onint;
+      outpolCol.get(i, polno);
+      outspecCol.get(i, specCaloff);
+      onspecCol.get(i, specCalon);
+      Vector<uChar> flagCaloff, flagCalon;
+      outflagCol.get(i, flagCaloff);
+      onflagCol.get(i, flagCalon);
+      outtcalIdCol.get(i, tcalId);
+      outintCol.get(i, offint);
+      onintCol.get(i, onint);
+      // caluculate mean Tsys
+      uInt nchan = specCaloff.nelements();
+      // percentage of edge cut off
+      uInt pc = 10;
+      uInt bchan = nchan/pc;
+      uInt echan = nchan-bchan;
+
+      Slicer chansl(IPosition(1,bchan-1), IPosition(1,echan-1), IPosition(1,1),Slicer::endIsLast);
+      Vector<Float> testsubsp = specCaloff(chansl);
+      MaskedArray<Float> spoff = maskedArray( specCaloff(chansl),flagCaloff(chansl) );
+      MaskedArray<Float> spon = maskedArray( specCalon(chansl),flagCalon(chansl) );
+      MaskedArray<Float> spdiff = spon-spoff;
+      uInt noff = spoff.nelementsValid();
+      //uInt non = spon.nelementsValid();
+      uInt ndiff = spdiff.nelementsValid();
+      Float meantsys;
+
+/**
+      Double subspec, subdiff;
+      uInt usednchan;
+      subspec = 0;
+      subdiff = 0;
+      usednchan = 0;
+      for(uInt k=(bchan-1); k<echan; k++) {
+        subspec += specCaloff[k];
+        subdiff += static_cast<Double>(specCalon[k]-specCaloff[k]);
+        ++usednchan;
+      }
+**/
+      // get tcal if input tcal <= 0
+      String tcalt;
+      Float tcalUsed;
+      tcalUsed = tcal;
+      if ( tcal <= 0.0 ) {
+        caloff->tcal().getEntry(tcalt, tcalout, tcalId);
+        if (polno<=3) {
+          tcalUsed = tcalout[polno];
+        }
+        else {
+          tcalUsed = tcalout[0];
+        }
+      }
+
+      Float meanoff;
+      Float meandiff;
+      if (noff && ndiff) {
+         //Debug
+         //if(noff!=ndiff) cerr<<"noff and ndiff is not equal"<<endl;
+         meanoff = sum(spoff)/noff;
+         meandiff = sum(spdiff)/ndiff;
+         meantsys= (meanoff/meandiff )*tcalUsed + tcalUsed/2;
+      }
+      else {
+         meantsys=1;
+      }
+
+      tsysout[0] = Float(meantsys);
+      MaskedArray<Float> mcaloff = maskedArray(specCaloff, flagCaloff);
+      MaskedArray<Float> mcalon = maskedArray(specCalon, flagCalon);
+      MaskedArray<Float> sig =   Float(0.5) * (mcaloff + mcalon);
+      //uInt ncaloff = mcaloff.nelementsValid();
+      //uInt ncalon = mcalon.nelementsValid();
+
+      outintCol.put(i, offint+onint);
+      outspecCol.put(i, sig.getArray());
+      outflagCol.put(i, flagsFromMA(sig));
+      outtsysCol.put(i, tsysout);
+    }
+    ++sit;
+    ++s2it;
+  }
+  return out;
+}
+
+//dosigref - migrated from GBT IDL's dosigref.pro, do calibration of position switch
+// observatiions.
+// input: sig and ref scantables, and an optional boxcar smoothing width(default width=0,
+//        no smoothing).
+// output: resultant scantable [= (sig-ref/ref)*tsys]
+CountedPtr< Scantable > STMath::dosigref( const CountedPtr < Scantable >& sig,
+                                          const CountedPtr < Scantable >& ref,
+                                          int smoothref,
+                                          casa::Float tsysv,
+                                          casa::Float tau )
+{
+if ( ! ref->conformant(*sig) ) {
+    throw(AipsError("'sig' and 'ref' scantables are not conformant."));
+  }
+  setInsitu(false);
+  CountedPtr< Scantable > out = getScantable(sig, false);
+  CountedPtr< Scantable > smref;
+  if ( smoothref > 1 ) {
+    float fsmoothref = static_cast<float>(smoothref);
+    std::string inkernel = "boxcar";
+    smref = smooth(ref, inkernel, fsmoothref );
+    ostringstream oss;
+    oss<<"Applied smoothing of "<<fsmoothref<<" on the reference."<<endl;
+    pushLog(String(oss));
+  }
+  else {
+    smref = ref;
+  }
+  Table& tout = out->table();
+  const Table& tref = smref->table();
+  if ( tout.nrow() != tref.nrow() ) {
+    throw(AipsError("Mismatch in number of rows to form on-source and reference pair."));
+  }
+  // iteration by scanno? or cycle no.
+  TableIterator sit(tout, "SCANNO");
+  TableIterator s2it(tref, "SCANNO");
+  while ( !sit.pastEnd() ) {
+    Table ton = sit.table();
+    Table t = s2it.table();
+    ScalarColumn<Double> outintCol(ton, "INTERVAL");
+    ArrayColumn<Float> outspecCol(ton, "SPECTRA");
+    ArrayColumn<Float> outtsysCol(ton, "TSYS");
+    ArrayColumn<uChar> outflagCol(ton, "FLAGTRA");
+    ArrayColumn<Float> refspecCol(t, "SPECTRA");
+    ROScalarColumn<Double> refintCol(t, "INTERVAL");
+    ROArrayColumn<Float> reftsysCol(t, "TSYS");
+    ArrayColumn<uChar> refflagCol(t, "FLAGTRA");
+    ROScalarColumn<Float> refelevCol(t, "ELEVATION");
+    for (uInt i=0; i < ton.nrow(); ++i) {
+
+      Double onint, refint;
+      Vector<Float> specon, specref;
+      // to store scalar (mean) tsys
+      Vector<Float> tsysref;
+      outintCol.get(i, onint);
+      refintCol.get(i, refint);
+      outspecCol.get(i, specon);
+      refspecCol.get(i, specref);
+      Vector<uChar> flagref, flagon;
+      outflagCol.get(i, flagon);
+      refflagCol.get(i, flagref);
+      reftsysCol.get(i, tsysref);
+
+      Float tsysrefscalar;
+      if ( tsysv > 0.0 ) {
+        ostringstream oss;
+        Float elev;
+        refelevCol.get(i, elev);
+        oss << "user specified Tsys = " << tsysv;
+        // do recalc elevation if EL = 0
+        if ( elev == 0 ) {
+          throw(AipsError("EL=0, elevation data is missing."));
+        } else {
+          if ( tau <= 0.0 ) {
+            throw(AipsError("Valid tau is not supplied."));
+          } else {
+            tsysrefscalar = tsysv * exp(tau/elev);
+          }
+        }
+        oss << ", corrected (for El) tsys= "<<tsysrefscalar;
+        pushLog(String(oss));
+      }
+      else {
+        tsysrefscalar = tsysref[0];
+      }
+      //get quotient spectrum
+      MaskedArray<Float> mref = maskedArray(specref, flagref);
+      MaskedArray<Float> mon = maskedArray(specon, flagon);
+      MaskedArray<Float> specres =   tsysrefscalar*((mon - mref)/mref);
+      Double resint = onint*refint*smoothref/(onint+refint*smoothref);
+
+      //Debug
+      //cerr<<"Tsys used="<<tsysrefscalar<<endl;
+      // fill the result, replay signal tsys by reference tsys
+      outintCol.put(i, resint);
+      outspecCol.put(i, specres.getArray());
+      outflagCol.put(i, flagsFromMA(specres));
+      outtsysCol.put(i, tsysref);
+    }
+    ++sit;
+    ++s2it;
+  }
+  return out;
+}
+
+CountedPtr< Scantable > STMath::donod(const casa::CountedPtr<Scantable>& s,
+                                     const std::vector<int>& scans,
+                                     int smoothref,
+                                     casa::Float tsysv,
+                                     casa::Float tau,
+                                     casa::Float tcal )
+
+{
+  setInsitu(false);
+  STSelector sel;
+  std::vector<int> scan1, scan2, beams;
+  std::vector< vector<int> > scanpair;
+  std::vector<string> calstate;
+  String msg;
+
+  CountedPtr< Scantable > s1b1on, s1b1off, s1b2on, s1b2off;
+  CountedPtr< Scantable > s2b1on, s2b1off, s2b2on, s2b2off;
+
+  std::vector< CountedPtr< Scantable > > sctables;
+  sctables.push_back(s1b1on);
+  sctables.push_back(s1b1off);
+  sctables.push_back(s1b2on);
+  sctables.push_back(s1b2off);
+  sctables.push_back(s2b1on);
+  sctables.push_back(s2b1off);
+  sctables.push_back(s2b2on);
+  sctables.push_back(s2b2off);
+
+  //check scanlist
+  int n=s->checkScanInfo(scans);
+  if (n==1) {
+     throw(AipsError("Incorrect scan pairs. "));
+  }
+
+  // Assume scans contain only a pair of consecutive scan numbers.
+  // It is assumed that first beam, b1,  is on target.
+  // There is no check if the first beam is on or not.
+  if ( scans.size()==1 ) {
+    scan1.push_back(scans[0]);
+    scan2.push_back(scans[0]+1);
+  } else if ( scans.size()==2 ) {
+   scan1.push_back(scans[0]);
+   scan2.push_back(scans[1]);
+  } else {
+    if ( scans.size()%2 == 0 ) {
+      for (uInt i=0; i<scans.size(); i++) {
+        if (i%2 == 0) {
+          scan1.push_back(scans[i]);
+        }
+        else {
+          scan2.push_back(scans[i]);
+        }
+      }
+    } else {
+      throw(AipsError("Odd numbers of scans, cannot form pairs."));
+    }
+  }
+  scanpair.push_back(scan1);
+  scanpair.push_back(scan2);
+  calstate.push_back("*calon");
+  calstate.push_back("*[^calon]");
+  CountedPtr< Scantable > ws = getScantable(s, false);
+  uInt l=0;
+  while ( l < sctables.size() ) {
+    for (uInt i=0; i < 2; i++) {
+      for (uInt j=0; j < 2; j++) {
+        for (uInt k=0; k < 2; k++) {
+          sel.reset();
+          sel.setScans(scanpair[i]);
+          sel.setName(calstate[k]);
+          beams.clear();
+          beams.push_back(j);
+          sel.setBeams(beams);
+          ws->setSelection(sel);
+          sctables[l]= getScantable(ws, false);
+          l++;
+        }
+      }
+    }
+  }
+
+  // replace here by splitData or getData functionality
+  CountedPtr< Scantable > sig1;
+  CountedPtr< Scantable > ref1;
+  CountedPtr< Scantable > sig2;
+  CountedPtr< Scantable > ref2;
+  CountedPtr< Scantable > calb1;
+  CountedPtr< Scantable > calb2;
+
+  msg=String("Processing dototalpower for subset of the data");
+  ostringstream oss1;
+  oss1 << msg  << endl;
+  pushLog(String(oss1));
+  // Debug for IRC CS data
+  //float tcal1=7.0;
+  //float tcal2=4.0;
+  sig1 = dototalpower(sctables[0], sctables[1], tcal=tcal);
+  ref1 = dototalpower(sctables[2], sctables[3], tcal=tcal);
+  ref2 = dototalpower(sctables[4], sctables[5], tcal=tcal);
+  sig2 = dototalpower(sctables[6], sctables[7], tcal=tcal);
+
+  // correction of user-specified tsys for elevation here
+
+  // dosigref calibration
+  msg=String("Processing dosigref for subset of the data");
+  ostringstream oss2;
+  oss2 << msg  << endl;
+  pushLog(String(oss2));
+  calb1=dosigref(sig1,ref2,smoothref,tsysv,tau);
+  calb2=dosigref(sig2,ref1,smoothref,tsysv,tau);
+
+  // iteration by scanno or cycle no.
+  Table& tcalb1 = calb1->table();
+  Table& tcalb2 = calb2->table();
+  TableIterator sit(tcalb1, "SCANNO");
+  TableIterator s2it(tcalb2, "SCANNO");
+  while ( !sit.pastEnd() ) {
+    Table t1 = sit.table();
+    Table t2= s2it.table();
+    ArrayColumn<Float> outspecCol(t1, "SPECTRA");
+    ArrayColumn<Float> outtsysCol(t1, "TSYS");
+    ArrayColumn<uChar> outflagCol(t1, "FLAGTRA");
+    ScalarColumn<Double> outintCol(t1, "INTERVAL");
+    ArrayColumn<Float> t2specCol(t2, "SPECTRA");
+    ROArrayColumn<Float> t2tsysCol(t2, "TSYS");
+    ArrayColumn<uChar> t2flagCol(t2, "FLAGTRA");
+    ROScalarColumn<Double> t2intCol(t2, "INTERVAL");
+    for (uInt i=0; i < t1.nrow(); ++i) {
+      Vector<Float> spec1, spec2;
+      // to store scalar (mean) tsys
+      Vector<Float> tsys1, tsys2;
+      Vector<uChar> flag1, flag2;
+      Double tint1, tint2;
+      outspecCol.get(i, spec1);
+      t2specCol.get(i, spec2);
+      outflagCol.get(i, flag1);
+      t2flagCol.get(i, flag2);
+      outtsysCol.get(i, tsys1);
+      t2tsysCol.get(i, tsys2);
+      outintCol.get(i, tint1);
+      t2intCol.get(i, tint2);
+      // average
+      // assume scalar tsys for weights
+      Float wt1, wt2, tsyssq1, tsyssq2;
+      tsyssq1 = tsys1[0]*tsys1[0];
+      tsyssq2 = tsys2[0]*tsys2[0];
+      wt1 = Float(tint1)/tsyssq1;
+      wt2 = Float(tint2)/tsyssq2;
+      Float invsumwt=1/(wt1+wt2);
+      MaskedArray<Float> mspec1 = maskedArray(spec1, flag1);
+      MaskedArray<Float> mspec2 = maskedArray(spec2, flag2);
+      MaskedArray<Float> avspec =  invsumwt * (wt1*mspec1 + wt2*mspec2);
+      //Array<Float> avtsys =  Float(0.5) * (tsys1 + tsys2);
+      // cerr<< "Tsys1="<<tsys1<<" Tsys2="<<tsys2<<endl;
+      tsys1[0] = sqrt(tsyssq1 + tsyssq2);
+      Array<Float> avtsys =  tsys1;
+
+      outspecCol.put(i, avspec.getArray());
+      outflagCol.put(i, flagsFromMA(avspec));
+      outtsysCol.put(i, avtsys);
+    }
+    ++sit;
+    ++s2it;
+  }
+  return calb1;
+}
+
+//GBTIDL version of frequency switched data calibration
+CountedPtr< Scantable > STMath::dofs( const CountedPtr< Scantable >& s,
+                                      const std::vector<int>& scans,
+                                      int smoothref,
+                                      casa::Float tsysv,
+                                      casa::Float tau,
+                                      casa::Float tcal )
+{
+
+
+  STSelector sel;
+  CountedPtr< Scantable > ws = getScantable(s, false);
+  CountedPtr< Scantable > sig, sigwcal, ref, refwcal;
+  CountedPtr< Scantable > calsig, calref, out;
+
+  //split the data
+  sel.setName("*_fs");
+  ws->setSelection(sel);
+  sig = getScantable(ws,false);
+  sel.reset();
+  sel.setName("*_fs_calon");
+  ws->setSelection(sel);
+  sigwcal = getScantable(ws,false);
+  sel.reset();
+  sel.setName("*_fsr");
+  ws->setSelection(sel);
+  ref = getScantable(ws,false);
+  sel.reset();
+  sel.setName("*_fsr_calon");
+  ws->setSelection(sel);
+  refwcal = getScantable(ws,false);
+
+  calsig = dototalpower(sigwcal, sig, tcal=tcal);
+  calref = dototalpower(refwcal, ref, tcal=tcal);
+
+  out=dosigref(calsig,calref,smoothref,tsysv,tau);
+
   return out;
 }
 
@@ -1249,7 +1691,8 @@ CountedPtr< Scantable >
   TableVector<uInt> vec(tout, "POLNO");
   vec = 0;
   pols->table_.rwKeywordSet().define("nPol", Int(1));
-  pols->table_.rwKeywordSet().define("POLTYPE", String("stokes"));
+  //pols->table_.rwKeywordSet().define("POLTYPE", String("stokes"));
+  pols->table_.rwKeywordSet().define("POLTYPE", in->getPolType());
   std::vector<CountedPtr<Scantable> > vpols;
   vpols.push_back(pols);
   CountedPtr< Scantable > out = average(vpols, mask, weight, "SCAN");

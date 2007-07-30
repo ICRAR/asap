@@ -328,6 +328,43 @@ bool Fitter::fit() {
   return true;
 }
 
+bool Fitter::lfit() {
+  LinearFit<Float> fitter;
+  CompoundFunction<Float> func;
+
+  uInt n = funcs_.nelements();
+  for (uInt i=0; i<n; ++i) {
+    func.addFunction(*funcs_[i]);
+  }
+
+  fitter.setFunction(func);
+  //fitter.setMaxIter(50+n*10);
+  // Convergence criterium
+  //fitter.setCriteria(0.001);
+
+  // Fit
+  Vector<Float> sigma(x_.nelements());
+  sigma = 1.0;
+
+  parameters_.resize();
+  parameters_ = fitter.fit(x_, y_, sigma, &m_);
+  std::vector<float> ps;
+  parameters_.tovector(ps);
+  setParameters(ps);
+
+  error_.resize();
+  error_ = fitter.errors();
+
+  chisquared_ = fitter.getChi2();
+
+  residual_.resize();
+  residual_ =  y_;
+  fitter.residual(residual_,x_);
+  // use fitter.residual(model=True) to get the model
+  thefit_.resize(x_.nelements());
+  fitter.residual(thefit_,x_,True);
+  return true;
+}
 
 std::vector<float> Fitter::evaluate(int whichComp) const
 {

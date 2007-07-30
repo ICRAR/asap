@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef STFITTER_H
 #define STFITTER_H
@@ -63,6 +63,8 @@ public:
   float getChisquared() const;
   void reset();
   bool fit();
+  // Fit via linear method
+  bool lfit();
   bool computeEstimate();
 
   std::vector<float> evaluate(int whichComp) const;

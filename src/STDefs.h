@@ -40,11 +40,13 @@ namespace asap {
                 nAxes};
 
   enum Instrument {UNKNOWNINST=0,
+                   ALMA,
                    ATPKSMB,
                    ATPKSHOH,
                    ATMOPRA,
                    TIDBINBILLA,
                    CEDUNA,
+                   GBT,
                    HOBART,
                    N_INSTRUMENTS};
 

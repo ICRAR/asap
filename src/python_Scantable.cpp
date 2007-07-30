@@ -101,6 +101,7 @@ void python_Scantable() {
          (boost::python::arg("whichrow")=0) )
     .def("_getdirection", &ScantableWrapper::getDirectionString,
          (boost::python::arg("whichrow")=0) )
+    .def("get_antennaname", &ScantableWrapper::getAntennaName)
     .def("_flag", &ScantableWrapper::flag)
     .def("_save",  &ScantableWrapper::makePersistent)
     .def("_summary",  &ScantableWrapper::summary,
@@ -120,6 +121,7 @@ void python_Scantable() {
     .def("_getfit", &ScantableWrapper::getFit)
     .def("_recalcazel", &ScantableWrapper::calculateAZEL)
     .def("_setsourcetype", &ScantableWrapper::setSourceType)
+    .def("_getdirectionvec", &ScantableWrapper::getDirectionVector)
   ;
 };
 

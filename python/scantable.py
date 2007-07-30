@@ -516,6 +516,18 @@ class scantable(Scantable):
         """
         return self._get_column(self._getdirection, row)
 
+    def get_directionval(self, row=-1):
+        """
+        Get a list of Positions on the sky (direction) for the observations.
+        Return a float for each integration in the scantable.
+        Parameters:
+            row:    row no of integration. Default -1 return all rows
+        Example:
+            none
+        """
+        return self._get_column(self._getdirectionvec, row)
+
+
     def set_unit(self, unit='channel'):
         """
         Set the unit for all following operations on this scantable
@@ -1214,7 +1226,7 @@ class scantable(Scantable):
         else: return s
 
 
-    def poly_baseline(self, mask=None, order=0, plot=False, insitu=None):
+    def poly_baseline(self, mask=None, order=0, plot=False, uselin=False, insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
@@ -1223,6 +1235,7 @@ class scantable(Scantable):
             plot:       plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+            uselin:     use linear polynomial fit
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -1239,7 +1252,11 @@ class scantable(Scantable):
         try:
             f = fitter()
             f.set_scan(self, mask)
-            f.set_function(poly=order)
+            #f.set_function(poly=order)
+            if uselin:
+                f.set_function(lpoly=order)
+            else:
+                f.set_function(poly=order)
             s = f.auto_fit(insitu, plot=plot)
             s._add_history("poly_baseline", varlist)
             print_log()
