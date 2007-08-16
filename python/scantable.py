@@ -792,7 +792,7 @@ class scantable(Scantable):
         to the corresponding value you give in the 'freqs' vector.
         E.g. 'freqs=[1e9, 2e9]'  would mean IF 0 gets restfreq 1e9 and
         IF 1 gets restfreq 2e9.
-        You can also specify the frequencies via a linecatalog/
+        You can also specify the frequencies via a linecatalog.
 
         Parameters:
             freqs:   list of rest frequency values or string idenitfiers
