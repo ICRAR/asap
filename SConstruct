@@ -140,7 +140,7 @@ if env['mode'] == 'release':
 	env.Append(LINKFLAGS=['-Wl,-O1', '-s'])
     env.Append(CCFLAGS=["-O2"])
 else:
-    env.Append(CCFLAGS=["-g"])
+    env.Append(CCFLAGS=["-g", "-Wall"])
 
 # Export for SConscript files
 Export("env")
