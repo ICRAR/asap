@@ -43,7 +43,7 @@ void RowAccumulator::add( const Vector< Float >& v,
     Vector<Float> dummy(v.nelements(), 0.0);
     Vector<Bool> dummymsk(m.nelements(), True);
     spectrum_.setData(dummy, dummymsk);
-    n_.setData(Vector<Float>(v.nelements(), 0.0), dummymsk);
+    n_.setData(Vector<uInt>(v.nelements(), 0), dummymsk);
     weightSum_.setData(Vector<Float>(v.nelements(), 0.0), dummymsk);
     tsysSum_.resize(tsys.nelements()); tsysSum_=0.0;
   }
@@ -78,7 +78,7 @@ void RowAccumulator::addSpectrum( const Vector< Float >& v,
   MaskedArray<Float> wadd(Vector<Float>(m.nelements(),totalweight), m);
   weightSum_ += wadd;
   spectrum_ += data;
-  const MaskedArray<Float> inc(Vector<Float>(m.nelements(),1.0), m);
+  const MaskedArray<uInt> inc(Vector<uInt>(m.nelements(),1), m);
   n_ += inc;
 }
 
@@ -124,9 +124,8 @@ casa::Vector< casa::Float > RowAccumulator::getSpectrum( ) const
 
 casa::Double asap::RowAccumulator::getTime( ) const
 {
-  Float n = max(n_);
-  if (n < 1.0) n = 1.0; 
-  return timeSum_/n;
+  uInt n = max(n_);
+  return timeSum_/Float(n);
 }
 
 casa::Double asap::RowAccumulator::getInterval( ) const
@@ -137,13 +136,13 @@ casa::Double asap::RowAccumulator::getInterval( ) const
 casa::Vector< casa::Bool > RowAccumulator::getMask( ) const
 {
   // Return the "total" mask - False where no points have been accumulated.
-  return (n_.getArray() > Float(0.0));
+  return (n_.getArray() > uInt(0));
 }
 
 casa::Vector< casa::Float > asap::RowAccumulator::getTsys( ) const
 {
   // @fixme this assumes tsys.nelements() == 1
-  return tsysSum_/max(n_);
+  return tsysSum_/Float(max(n_));
 }
 
 void asap::RowAccumulator::setUserMask( const casa::Vector< casa::Bool > & m )
