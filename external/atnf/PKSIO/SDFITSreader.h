@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSreader.h: ATNF CFITSIO interface class for SDFITS input.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: SDFITSreader.h,v 19.12 2006/07/05 05:24:35 mcalabre Exp $
+//# $Id: SDFITSreader.h,v 19.13 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The SDFITSreader class reads single dish FITS files such as those written
 //# by SDFITSwriter containing Parkes Multibeam data.
@@ -75,6 +75,7 @@ class SDFITSreader : public FITSreader
         char   telescope[32],
         double antPos[3],
         char   obsMode[32],
+        char   bunit[32],
         float  &equinox,
         char   radecsys[32],
         char   dopplerFrame[32],

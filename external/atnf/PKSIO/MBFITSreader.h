@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.h,v 19.13 2007/07/02 06:11:22 cal103 Exp $
+//# $Id: MBFITSreader.h,v 19.14 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -77,6 +77,7 @@ class MBFITSreader : public FITSreader
         char   telescope[32],
         double antPos[3],
         char   obsType[32],
+        char   bunit[32],
         float  &equinox,
         char   radecsys[32],
         char   dopplerFrame[32],

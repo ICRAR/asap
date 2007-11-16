@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# FITSreader.h: ATNF single-dish FITS reader.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: FITSreader.h,v 19.5 2006/05/19 02:18:02 mcalabre Exp $
+//# $Id: FITSreader.h,v 19.6 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The FITSreader class is an abstract base class for the Parkes Multibeam
 //# RPFITS and SDFITS readers.
@@ -73,6 +73,7 @@ class FITSreader
         char   telescope[32],
         double antPos[3],
         char   obsType[32],
+        char   bunit[32],
         float  &equinox,
         char   radecsys[32],
         char   dopplerFrame[32],

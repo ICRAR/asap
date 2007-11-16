@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSSDwriter.cc: Class to write Parkes multibeam data to an SDFITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSSDwriter.cc,v 19.11 2006/07/05 05:41:12 mcalabre Exp $
+//# $Id: PKSSDwriter.cc,v 19.13 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #include <atnf/PKSIO/PKSMBrecord.h>
@@ -62,6 +62,7 @@ Int PKSSDwriter::create(
         const String antName,
         const Vector<Double> antPosition,
         const String obsMode,
+        const String bunit,
         const Float  equinox,
         const String dopplerFrame,
         const Vector<uInt> nChan,
@@ -100,8 +101,8 @@ Int PKSSDwriter::create(
   Bool deleteIt;
   Int status = cSDwriter.create((char *)sdName.chars(),
         (char *)observer.chars(), (char *)project.chars(),
-        (char *)antName.chars(), antPos, (char *)obsMode.chars(), equinox,
-        (char *)dopplerFrame.chars(), cNIF,
+        (char *)antName.chars(), antPos, (char *)obsMode.chars(),
+        (char *)bunit.chars(), equinox, (char *)dopplerFrame.chars(), cNIF,
         (int *)cNChan.getStorage(deleteIt),
         (int *)cNPol.getStorage(deleteIt),
         (int *)cHaveXPol.getStorage(deleteIt), (int)cHaveBase, 1);
@@ -313,6 +314,20 @@ Int PKSSDwriter::write(
   xPol.freeStorage(xpolstor, delXPol);
 
   return status;
+}
+
+//------------------------------------------------------- PKSSDwriter::history
+
+// Write a history record.
+
+Int PKSSDwriter::history(const String text)
+{
+  return cSDwriter.history((char *)text.chars());
+}
+
+Int PKSSDwriter::history(const char *text)
+{
+  return cSDwriter.history((char *)text);
 }
 
 //--------------------------------------------------------- PKSSDwriter::close

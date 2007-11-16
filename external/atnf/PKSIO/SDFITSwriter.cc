@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSwriter.cc: ATNF CFITSIO interface class for SDFITS output.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: SDFITSwriter.cc,v 19.10 2006/07/05 05:44:52 mcalabre Exp $
+//# $Id: SDFITSwriter.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/07/24, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -75,6 +75,7 @@ int SDFITSwriter::create(
         char*  telescope,
         double antPos[3],
         char*  obsMode,
+        char*  bunit,
         float  equinox,
         char*  dopplerFrame,
         int    nIF,
@@ -112,7 +113,7 @@ int SDFITSwriter::create(
       cDoTDIM = 2;
       break;
     }
-    
+
     if (cNChan[iIF] != cNChan[0] || cNPol[iIF] != cNPol[0]) {
       // Varying channels and/or polarizations, need a TDIM column at least.
       cDoTDIM = 1;
@@ -158,8 +159,8 @@ int SDFITSwriter::create(
   char text[72];
   char version[7];
   char date[11];
-  sscanf("$Revision: 19.10 $", "%*s%s", version);
-  sscanf("$Date: 2006/07/05 05:44:52 $", "%*s%s", date);
+  sscanf("$Revision: 19.12 $", "%*s%s", version);
+  sscanf("$Date: 2007/11/12 03:37:56 $", "%*s%s", date);
   sprintf(text, "SDFITSwriter (v%s, %s)", version, date);
   fits_write_key_str(cSDptr, "ORIGIN", text, "output class", &cStatus);
 
@@ -354,7 +355,7 @@ int SDFITSwriter::create(
   sprintf(tform, "%dE", maxNPol);
   fits_insert_col(cSDptr, ++ncol, "TSYS", tform, &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
-  fits_write_key_str(cSDptr, tunit, "Jy", "units of field", &cStatus);
+  fits_write_key_str(cSDptr, tunit, bunit, "units of field", &cStatus);
 
   // CALFCTR (additional, real).
   sprintf(tform, "%dE", maxNPol);
@@ -395,7 +396,7 @@ int SDFITSwriter::create(
   }
 
   sprintf(tunit, "TUNIT%d", ncol);
-  fits_write_key_str(cSDptr, tunit, "Jy", "units of field", &cStatus);
+  fits_write_key_str(cSDptr, tunit, bunit, "units of field", &cStatus);
 
   // FLAGGED (additional, logical).
   if (cDoTDIM < 2) {
@@ -443,7 +444,7 @@ int SDFITSwriter::create(
     }
 
     sprintf(tunit, "TUNIT%d", ncol);
-    fits_write_key_str(cSDptr, tunit, "Jy", "units of field", &cStatus);
+    fits_write_key_str(cSDptr, tunit, bunit, "units of field", &cStatus);
   }
 
   if (cExtraSysCal) {
@@ -741,6 +742,18 @@ int SDFITSwriter::write(PKSMBrecord &mbrec)
   return cStatus;
 }
 
+
+//------------------------------------------------------ SDFITSwriter::history
+
+// Write a history record.
+
+int SDFITSwriter::history(char *text)
+
+{
+  fits_write_history(cSDptr, text, &cStatus);
+
+  return cStatus;
+}
 
 //-------------------------------------------------- SDFITSwriter::reportError
 

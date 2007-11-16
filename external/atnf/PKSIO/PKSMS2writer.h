@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2writer.h: Class to write Parkes Multibeam data to a measurementset.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2writer.h,v 19.11 2006/07/05 05:35:31 mcalabre Exp $
+//# $Id: PKSMS2writer.h,v 19.12 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #ifndef ATNF_PKSMS2WRITER_H
@@ -63,6 +63,7 @@ class PKSMS2writer : public PKSwriter
         const String antName,
         const Vector<Double> antPosition,
         const String obsMode,
+        const String bunit,
         const Float  equinox,
         const String dopplerFrame,
         const Vector<uInt> nChan,

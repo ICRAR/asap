@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
-//# PKSSDWriter.h: Class to write Parkes multibeam data to an SDFITS file.
+//# PKSSDwriter.h: Class to write Parkes multibeam data to an SDFITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSSDwriter.h,v 19.12 2006/07/05 05:37:32 mcalabre Exp $
+//# $Id: PKSSDwriter.h,v 19.14 2007/11/12 03:37:56 cal103 Exp $
 //# Original: 2000/07/21, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
@@ -63,6 +63,7 @@ class PKSSDwriter : public PKSwriter
         const String antName,
         const Vector<Double> antPosition,
         const String obsMode,
+        const String bunit,
         const Float  equinox,
         const String dopplerFrame,
         const Vector<uInt> nChan,
@@ -113,6 +114,10 @@ class PKSSDwriter : public PKSwriter
         const Matrix<uChar>   &flagged,
         const Complex         xCalFctr,
         const Vector<Complex> &xPol);
+
+    // Write a history record.
+    virtual Int history(const String text);
+    virtual Int history(const char *text);
 
     // Close the SDFITS file.
     virtual void close();

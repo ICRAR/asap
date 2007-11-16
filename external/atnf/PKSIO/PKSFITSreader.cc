@@ -1,7 +1,6 @@
-//#---------------------------------------------------------------------------
 //# PKSFITSreader.cc: Class to read Parkes multibeam data from a FITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +24,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSFITSreader.cc,v 19.12 2006/07/05 04:49:57 mcalabre Exp $
+//# $Id: PKSFITSreader.cc,v 19.13 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -137,20 +136,21 @@ Int PKSFITSreader::getHeader(
         String &antName,
         Vector<Double> &antPosition,
         String &obsType,
+        String &bunit,
         Float  &equinox,
         String &dopplerFrame,
         Double &mjd,
         Double &refFreq,
         Double &bandwidth)
 {
-  char   datobs[32], dopplerFrame_[32], observer_[32], obsType_[32],
-         project_[32], radecsys[32], telescope[32];
+  char   bunit_[32], datobs[32], dopplerFrame_[32], observer_[32],
+         obsType_[32], project_[32], radecsys[32], telescope[32];
   float  equinox_;
   double antPos[3], utc;
 
   if (cReader->getHeader(observer_, project_, telescope, antPos, obsType_,
-                         equinox_, radecsys, dopplerFrame_, datobs, utc,
-                         refFreq, bandwidth)) {
+                         bunit_, equinox_, radecsys, dopplerFrame_,
+                         datobs, utc, refFreq, bandwidth)) {
     return 1;
   }
 
@@ -162,6 +162,7 @@ Int PKSFITSreader::getHeader(
   antPosition(1) = antPos[1];
   antPosition(2) = antPos[2];
   obsType = trim(obsType_);
+  bunit   = trim(bunit_);
   equinox = equinox_;
   dopplerFrame = trim(dopplerFrame_);
 

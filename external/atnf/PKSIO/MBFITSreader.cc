@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.cc,v 19.34 2007/07/02 06:12:18 cal103 Exp $
+//# $Id: MBFITSreader.cc,v 19.36 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -316,6 +316,7 @@ int MBFITSreader::getHeader(
         char   telescope[32],
         double antPos[3],
         char   obsType[32],
+        char   bunit[32],
         float  &equinox,
         char   radecsys[32],
         char   dopplerFrame[32],
@@ -390,6 +391,14 @@ int MBFITSreader::getHeader(
     if (obsType[j] == '\'') break;
   }
   obsType[j] = '\0';
+
+  // Brightness unit.
+  sprintf(bunit, "%-16.16s", names_.bunit);
+  if (strcmp(bunit, "JY") == 0) {
+    bunit[1] = 'y';
+  } else if (strcmp(bunit, "JY/BEAM") == 0) {
+    strcpy(bunit, "Jy/beam");
+  }
 
   // Coordinate frames.
   equinox = 2000.0f;
@@ -612,20 +621,6 @@ int MBFITSreader::read(
           cPrevUTC = 0.0;
         }
 
-        // Apply beam selection.
-        beamNo = int(cBaseline / 256.0);
-        iBeamSel = cBeamSel[beamNo-1];
-        if (iBeamSel < 0) continue;
-
-        // Sanity check (mainly for MOPS).
-        if (cIFno > cNIF) continue;
-
-        // Apply IF selection.
-        iIFSel = cIFSel[cIFno - 1];
-        if (iIFSel < 0) continue;
-
-        sprintf(cDateObs, "%-10.10s", names_.datobs);
-
         // Check for change-of-day.
         if (cUTC < cPrevUTC - 85800.0) {
           cUTC += 86400.0;
@@ -641,6 +636,20 @@ int MBFITSreader::read(
           cCycleNo++;
           cPrevUTC = cUTC + 0.0001;
         }
+
+        // Apply beam selection.
+        beamNo = int(cBaseline / 256.0);
+        iBeamSel = cBeamSel[beamNo-1];
+        if (iBeamSel < 0) continue;
+
+        // Sanity check (mainly for MOPS).
+        if (cIFno > cNIF) continue;
+
+        // Apply IF selection.
+        iIFSel = cIFSel[cIFno - 1];
+        if (iIFSel < 0) continue;
+
+        sprintf(cDateObs, "%-10.10s", names_.datobs);
 
         // Compute buffer number.
         iMBuff = cBuffer + iBeamSel;
@@ -894,7 +903,7 @@ int MBFITSreader::read(
 
     if (!cFlushing) {
       // Buffer this MBrec.
-      if (cCycleNo == 1 && iMBuff->IFno[0]) {
+      if ((cScanNo > iMBuff->scanNo) && iMBuff->IFno[0]) {
         // Sanity check on the number of IFs in the new scan.
         if (if_.n_if != cNIF) {
           fprintf(stderr, "WARNING, scan %d has %d IFs instead of %d, "

@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSwriter.h: Class to write out Parkes multibeam data.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSwriter.h,v 19.12 2006/07/05 05:33:31 mcalabre Exp $
+//# $Id: PKSwriter.h,v 19.14 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #ifndef ATNF_PKSWRITER_H
@@ -56,6 +56,7 @@ class PKSwriter
         const String antName,
         const Vector<Double> antPosition,
         const String obsMode,
+        const String bunit,
         const Float  equinox,
         const String dopplerFrame,
         const Vector<uInt> nChan,
@@ -106,6 +107,10 @@ class PKSwriter
         const Matrix<uChar>   &flagged,
         const Complex         xCalFctr,
         const Vector<Complex> &xPol) = 0;
+
+    // Write a history record.
+    virtual Int history(const String text) {return 0;};
+    virtual Int history(const char *text)  {return 0;};
 
     // Close the output file.
     virtual void close() = 0;

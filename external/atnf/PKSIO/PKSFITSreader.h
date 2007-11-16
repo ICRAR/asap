@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSFITSreader.h: Class to read Parkes Multibeam data from a FITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSFITSreader.h,v 19.11 2006/07/05 04:49:57 mcalabre Exp $
+//# $Id: PKSFITSreader.h,v 19.12 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# This class is basically a wrapper class for reading data from either an
 //# MBFITS (single dish variant of RPFITS) or SDFITS file using the relevant
@@ -81,6 +81,7 @@ class PKSFITSreader : public PKSreader
         String &antName,
         Vector<Double> &antPosition,
         String &obsType,
+        String &bunit,
         Float  &equinox,
         String &dopplerFrame,
         Double &mjd,

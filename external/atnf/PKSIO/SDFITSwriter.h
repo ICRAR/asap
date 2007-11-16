@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSwriter.h: ATNF CFITSIO interface class for SDFITS output.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: SDFITSwriter.h,v 19.5 2006/05/19 02:19:58 mcalabre Exp $
+//# $Id: SDFITSwriter.h,v 19.7 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/07/24, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -59,6 +59,7 @@ class SDFITSwriter
         char*  telescope,
         double antPos[3],
         char*  obsMode,
+        char*  bunit,
         float  equinox,
         char*  dopplerFrame,
         int    nIF,
@@ -70,6 +71,9 @@ class SDFITSwriter
 
     // Store time-variable data.
     int write(PKSMBrecord &record);
+
+    // Write a history record.
+    int history(char* text);
 
     // Print out CFITSIO error messages.
     void reportError();

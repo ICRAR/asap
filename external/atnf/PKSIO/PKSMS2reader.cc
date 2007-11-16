@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2reader.cc: Class to read Parkes Multibeam data from a v2 MS.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.cc,v 19.11 2006/07/05 04:59:20 mcalabre Exp $
+//# $Id: PKSMS2reader.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -248,6 +248,7 @@ Int PKSMS2reader::getHeader(
         String &antName,
         Vector<Double> &antPosition,
         String &obsMode,
+        String &bunit,
         Float  &equinox,
         String &dopplerFrame,
         Double &mjd,
@@ -276,6 +277,8 @@ Int PKSMS2reader::getHeader(
     obsMode = "RF";
   }
 
+  // Brightness units.
+  bunit = cPKSMS.unit(MSMainEnums::FLOAT_DATA);
 
   // Coordinate equinox.
   ROMSPointingColumns pointingCols(cPKSMS.pointing());

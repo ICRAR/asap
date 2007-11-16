@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2writer.cc: Class to write Parkes multibeam data to a measurementset.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2writer.cc,v 19.11 2006/11/06 22:25:22 mmarquar Exp $
+//# $Id: PKSMS2writer.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #include <atnf/PKSIO/PKSMS2writer.h>
@@ -75,6 +75,7 @@ Int PKSMS2writer::create(
         const String antName,
         const Vector<Double> antPosition,
         const String obsMode,
+        const String bunit,
         const Float  equinox,
         const String dopplerFrame,
         const Vector<uInt> nChan,
@@ -99,7 +100,7 @@ Int PKSMS2writer::create(
   // Add the optional FLOAT_DATA column.
   MS::addColumnToDesc(pksDesc, MS::FLOAT_DATA, 2);
   pksDesc.rwColumnDesc(MS::columnName(MS::FLOAT_DATA)).rwKeywordSet().
-                define("UNIT", String("Jy"));
+                define("UNIT", bunit);
   pksDesc.rwColumnDesc(MS::columnName(MS::FLOAT_DATA)).rwKeywordSet().
                 define("MEASURE_TYPE", "");
 
@@ -119,7 +120,7 @@ Int PKSMS2writer::create(
 
     MS::addColumnToDesc(pksDesc, MS::DATA, 2);
     pksDesc.rwColumnDesc(MS::columnName(MS::DATA)).rwKeywordSet().
-                define("UNIT", "Jy");
+                define("UNIT", bunit);
     pksDesc.rwColumnDesc(MS::columnName(MS::DATA)).rwKeywordSet().
                 define("MEASURE_TYPE", "");
   }
@@ -566,7 +567,7 @@ void PKSMS2writer::close()
   if (ntrue(cHaveXPol)) {
     delete cXCalFctrCol; cXCalFctrCol=0;
   }
- 
+
   // Release all subtables.
   cAntenna         = MSAntenna();
   cDataDescription = MSDataDescription();

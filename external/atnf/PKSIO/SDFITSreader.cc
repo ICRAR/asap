@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSreader.cc: ATNF CFITSIO interface class for SDFITS input.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2007
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: SDFITSreader.cc,v 19.22 2006/07/12 00:14:26 mcalabre Exp $
+//# $Id: SDFITSreader.cc,v 19.23 2007/11/12 03:37:56 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The SDFITSreader class reads single dish FITS files such as those written
 //# by SDFITSwriter containing Parkes Multibeam data.
@@ -56,6 +56,7 @@ class FITSparm
     int  coltype;	// Column data type, as found.
     long nelem;		// Column data repeat count; < 0 for vardim.
     int  tdimcol;	// TDIM column number; 0 for keyword; -1 absent.
+    char units[32];	// Units from TUNITn keyword.
 };
 
 // Numerical constants.
@@ -181,7 +182,7 @@ int SDFITSreader::open(
     }
 
     if (cALFA_BD) {
-      // ALFA BDFITS: variable length arrays don't actually vary and there is 
+      // ALFA BDFITS: variable length arrays don't actually vary and there is
       // no TDIM (or MAXISn) card; use the LAGS_IN value.
       cNAxis = 5;
       readParm("LAGS_IN", TLONG, cNAxes);
@@ -724,6 +725,7 @@ int SDFITSreader::getHeader(
         char   telescope[32],
         double antPos[3],
         char   obsMode[32],
+        char   bunit[32],
         float  &equinox,
         char   radecsys[32],
         char   dopplerFrame[32],
@@ -771,6 +773,14 @@ int SDFITSreader::getHeader(
   }
 
   readData(OBSMODE, 1, obsMode);			// Shared.
+
+  // Brightness unit.
+  strcpy(bunit, cData[DATA].units);
+  if (strcmp(bunit, "JY") == 0) {
+    bunit[1] = 'y';
+  } else if (strcmp(bunit, "JY/BEAM") == 0) {
+    strcpy(bunit, "Jy/beam");
+  }
 
   readParm("EQUINOX",  TFLOAT,  &equinox);		// Shared.
   if (cStatus == 405) {
@@ -1241,7 +1251,7 @@ int SDFITSreader::read(
   readData(EXPOSURE, cRow, &mbrec.exposure);
 
   // Source identification.
-  readData(OBJECT,  cRow,  mbrec.srcName);
+  readData(OBJECT, cRow, mbrec.srcName);
 
   readData(OBJ_RA,  cRow, &mbrec.srcRA);
   if (strcmp(cData[OBJ_RA].name, "OBJ-RA") == 0) {
@@ -1736,6 +1746,8 @@ void SDFITSreader::findData(
     int  coltype;
     long nelem, width;
     fits_get_coltype(cSDptr, colnum, &coltype, &nelem, &width, &cStatus);
+    fits_get_bcolparms(cSDptr, colnum, 0x0, cData[iData].units, 0x0, 0x0, 0x0,
+      0x0, 0x0, 0x0, &cStatus);
 
     // Look for a TDIMnnn keyword or column.
     char tdim[8];
