@@ -204,7 +204,6 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     acc.reset();
   }
   if (rowstodelete.nelements() > 0) {
-    cout << rowstodelete << endl;
     tout.removeRow(rowstodelete);
     if (tout.nrow() == 0) {
       throw(AipsError("Can't average fully flagged data."));
