@@ -52,14 +52,15 @@ opts.AddOptions(
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
 #		("rpfitsincdir", "The rpfits include location", None),
-                EnumOption("mode", "The type of build.", "debug",
+                EnumOption("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
                  "Make a binary archive giving a suffix, e.g. sarge or fc5",
                  ""),
                 EnumOption("makedoc", "Build the userguide in specified format",
                            "none",
-                           ["none", "pdf", "html"], ignorecase=1)
+                           ["none", "pdf", "html"], ignorecase=1),
+                BoolOption("apps", "Build cpp apps", False)
                 )
 
 env = Environment( toolpath = ['./scons'],
@@ -82,6 +83,9 @@ if not os.path.exists(casacoretooldir):
     Exit(1)
 
 # load casacore specific build flags
+env.Tool('casaoptions', [casacoretooldir])
+env.AddCommonOptions(opts)
+opts.Update(env)
 env.Tool('casa', [casacoretooldir])
 
 if not env.GetOption('clean'):
@@ -207,6 +211,9 @@ if len(env["makedist"]):
     env.AddPostAction(arch, Delete("$stagedir"))
 if env["makedoc"].lower() != "none":
     env.SConscript("doc/SConscript")
+
+if env["apps"]:
+    env.SConscript("apps/SConscript")
 
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
