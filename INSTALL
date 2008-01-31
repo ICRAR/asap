@@ -8,7 +8,6 @@ Installation
 
 scons has several targets. It is recommended to execute them sequentially.
 The normal install procedure is as follows:
-   . <path_to_casa_asap>/aipsinit.sh
    scons
    # Do this if you haven't got a data directory already
    export ASAPDATA=.
@@ -19,13 +18,13 @@ The normal install procedure is as follows:
 
 Obtaining the data directory
 ============================
-The data repository can be obtained seperately after installing ASAP.
+The data repository can be obtained separately after installing ASAP.
 Before you run asap for the first time simply run
     asap_update_data
 This will install the data repository into the correct location.
 
 There are several ways to do this. 
-a) If you already hae the 'data' directory, copy it to the root directory and run the normal install procedure.
+a) If you already have the 'data' directory, copy it to the root directory and run the normal install procedure.
    scons
    scons install
 
