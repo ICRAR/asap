@@ -1774,3 +1774,26 @@ class scantable(Scantable):
             self.set_fluxunit(unit)
         self.set_freqframe(rcParams['scantable.freqframe'])
 
+    def __getitem__(self, key):
+        if key < 0:
+            key += self.nrow()
+        if key >= self.nrow():
+            raise IndexError("Row index out of range.")
+        return self._getspectrum(key)
+
+    def __setitem__(self, key, value):
+        if key < 0:
+            key += self.nrow()
+        if key >= self.nrow():
+            raise IndexError("Row index out of range.")
+        if not hasattr(value, "__len__") or \
+                len(value) > self.nchan(self.getif(key)):
+            raise ValueError("Spectrum length doesn't match.")
+        return self._setspectrum(value, key)
+
+    def __len__(self):
+        return self.nrow()
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
