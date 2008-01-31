@@ -49,9 +49,10 @@ void RowAccumulator::add( const Vector< Float >& v,
   }
   // add spectrum related weights, so far it is variance only.
   Float totalweight = 1.0;
-  totalweight *= addTsys(tsys);
+
   // only add these if not everything masked
   if ( !allEQ(m, False) ) {
+    totalweight *= addTsys(tsys);
     totalweight *= addInterval(interval);
     addTime(time);
   }
