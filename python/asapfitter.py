@@ -244,7 +244,7 @@ class fitter:
         return
 
     def set_gauss_parameters(self, peak, centre, fwhm,
-                             peakfixed=0, centerfixed=0,
+                             peakfixed=0, centrefixed=0,
                              fwhmfixed=0,
                              component=0):
         """
@@ -252,7 +252,7 @@ class fitter:
         Parameters:
             peak, centre, fwhm:  The gaussian parameters
             peakfixed,
-            centerfixed,
+            centrefixed,
             fwhmfixed:           Optional parameters to indicate if
                                  the paramters should be held fixed during
                                  the fitting process. The default is to keep
@@ -269,7 +269,7 @@ class fitter:
                 raise ValueError(msg)
         if 0 <= component < len(self.components):
             d = {'params':[peak, centre, fwhm],
-                 'fixed':[peakfixed, centerfixed, fwhmfixed]}
+                 'fixed':[peakfixed, centrefixed, fwhmfixed]}
             self.set_parameters(d, component)
         else:
             msg = "Please select a valid  component."
