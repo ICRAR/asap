@@ -138,9 +138,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // Create the output file and write static data.
   Int status;
   status = writer_->create(String(filename), hdr.observer, hdr.project,
-                               hdr.antennaname, hdr.antennaposition,
-                               hdr.obstype, hdr.equinox, hdr.freqref,
-                               nChan, nPol, havexpol, False);
+                           hdr.antennaname, hdr.antennaposition,
+                           hdr.obstype, hdr.fluxunit,
+                           hdr.equinox, hdr.freqref,
+                           nChan, nPol, havexpol, False);
   if ( status ) {
     throw(AipsError("Failed to create output file"));
   }

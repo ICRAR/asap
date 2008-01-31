@@ -4,7 +4,7 @@
 // Description:
 //
 //
-// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006
+// Author: Malte Marquarding <asap@atnf.csiro.au>, (C) 2006-2007
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -112,10 +112,12 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
   header_->nchan = max(nchans);
   header_->npol = max(npols);
   header_->nbeam = nBeam_;
-
+  
   Int status = reader_->getHeader(header_->observer, header_->project,
                                   header_->antennaname, header_->antennaposition,
-                                  header_->obstype,header_->equinox,
+                                  header_->obstype,
+                                  header_->fluxunit,
+                                  header_->equinox,
                                   header_->freqref,
                                   header_->utc, header_->reffreq,
                                   header_->bandwidth);
@@ -139,9 +141,14 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
 
   Bool throwIt = False;
   Instrument inst = STAttr::convertInstrument(header_->antennaname, throwIt);
-  header_->fluxunit = "Jy";
+
   if (inst==ATMOPRA || inst==TIDBINBILLA) {
-     header_->fluxunit = "K";
+    header_->fluxunit = "K";
+  } else {
+    // downcase for use with Quanta
+    if (header_->fluxunit == "JY") {
+      header_->fluxunit = "Jy";
+    }
   }
   STAttr stattr;
   header_->poltype = stattr.feedPolType(inst);
