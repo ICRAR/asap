@@ -1,0 +1,18 @@
+import os,glob,shutil
+
+# import root environment
+Import( "env")
+myenv = env.Copy()
+
+# gather cpp files
+cpps = env.SGlob("*.cpp")
+
+# location of libcasav.a
+myenv.Prepend( LIBPATH = ['#/build'] )
+myenv.Prepend( CPPPATH = ['#/build'] )
+myenv.Append(CCFLAGS = ["-DWCSLIB_GETWCSTAB"])
+myenv.Prepend(LIBS =  ['asap'])
+
+for cpp in cpps:
+    myenv.Program(cpp)
+
