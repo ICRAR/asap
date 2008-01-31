@@ -152,6 +152,9 @@ public:
 
   casa::MEpoch::Types getTimeReference() const;
 
+
+  casa::MEpoch getEpoch(int whichrow) const;
+
   /**
    * Get global antenna position
    * @return casa::MPosition

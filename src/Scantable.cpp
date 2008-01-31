@@ -863,6 +863,17 @@ std::string Scantable::getTime(int whichrow, bool showdate) const
   return formatTime(me, showdate);
 }
 
+MEpoch Scantable::getEpoch(int whichrow) const
+{
+  if (whichrow > -1) {
+    return timeCol_(uInt(whichrow));
+  } else {
+    Double tm;
+    table_.keywordSet().get("UTC",tm);
+    return MEpoch(MVEpoch(tm));  
+  }
+}
+
 std::string Scantable::getDirectionString(int whichrow) const
 {
   return formatDirection(getDirection(uInt(whichrow)));
