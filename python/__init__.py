@@ -353,7 +353,8 @@ if rcParams['useplotter']:
 	from  asapplotter import asapplotter
 	gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
 	if gui:
-	    import pylab as xyplotter
+	    import pylab
+            xyplotter = pylab
 	    plotter = asapplotter(gui)
 	    del gui
     except ImportError:
