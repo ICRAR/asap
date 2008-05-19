@@ -1539,7 +1539,7 @@ CountedPtr< Scantable >
     if ( ! (*it)->conformant(*out) ) {
       // log message: "ignoring scantable i, as it isn't
       // conformant with the other(s)"
-      cerr << "oh oh" << endl;
+      pushLog(String("Warning: Can't merge scantables as header info differs."));
       ++it;
       continue;
     }
