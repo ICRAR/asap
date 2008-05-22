@@ -104,7 +104,8 @@ defaultParams = {
     'scantable.autoaverage'      : [True, _validate_bool],
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
     'scantable.verbosesummary'   : [False, _validate_bool],
-    'scantable.storage'   : ['memory', str]
+    'scantable.storage'   : ['memory', str],
+    'scantable.history'   : [True, _validate_bool]
     # fitter
     }
 
@@ -153,8 +154,13 @@ plotter.papertype          : A4
 
 # default storage of scantable ('memory'/'disk')
 scantable.storage          : memory
+
+# write history of each call to scantable
+scantable.history          : True
+
 # default ouput format when saving
 scantable.save             : ASAP
+
 # auto averaging on read
 scantable.autoaverage      : True
 
@@ -241,7 +247,10 @@ def rc(group, **kwargs):
 
     for k,v in kwargs.items():
         name = aliases.get(k) or k
-        key = '%s.%s' % (group, name)
+        if len(group):
+            key = '%s.%s' % (group, name)
+        else:
+            key = name
         if not rcParams.has_key(key):
             raise KeyError('Unrecognized key "%s" for group "%s" and name "%s"' % (key, group, name))
 
@@ -350,15 +359,17 @@ from linecatalog import linecatalog
 
 if rcParams['useplotter']:
     try:
-	from  asapplotter import asapplotter
-	gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
-	if gui:
+	    from asapplotter import asapplotter
+	    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+	    if gui:
+            import matplotlib
+            matplotlib.use("TkAgg")
 	    import pylab
-            xyplotter = pylab
+        xyplotter = pylab
 	    plotter = asapplotter(gui)
 	    del gui
     except ImportError:
-	print "Matplotlib not installed. No plotting available"
+	    print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
 __version__  = 'trunk'
@@ -367,6 +378,7 @@ def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
+    
     def list_scans(t = scantable):
         import types
         globs = sys.modules['__main__'].__dict__.iteritems()
@@ -419,14 +431,14 @@ if is_ipython():
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-	    shift_refpix    - shift the reference pixel of the IFs
+	        shift_refpix    - shift the reference pixel of the IFs
             flag            - flag selected channels in the data
             lag_flag        - flag specified frequency in the data
             save            - save the scantable to disk as either 'ASAP',
                               'SDFITS' or 'ASCII'
             nbeam,nif,nchan,npol - the number of beams/IFs/Pols/Chans
             nscan           - the number of scans in the scantable
-            nrow            - te number of spectra in the scantable
+            nrow            - the number of spectra in the scantable
             history         - print the history of the scantable
             get_fit         - get a fit which has been stored witnh the data
             average_time    - return the (weighted) time average of a scan
