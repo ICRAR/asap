@@ -359,17 +359,17 @@ from linecatalog import linecatalog
 
 if rcParams['useplotter']:
     try:
-	    from asapplotter import asapplotter
-	    gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
-	    if gui:
+        from asapplotter import asapplotter
+        gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
+        if gui:
             import matplotlib
             matplotlib.use("TkAgg")
-	    import pylab
+        import pylab
         xyplotter = pylab
-	    plotter = asapplotter(gui)
-	    del gui
+        plotter = asapplotter(gui)
+        del gui
     except ImportError:
-	    print "Matplotlib not installed. No plotting available"
+        print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
 __version__  = 'trunk'
