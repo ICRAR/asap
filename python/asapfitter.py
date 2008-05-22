@@ -52,7 +52,7 @@ class fitter:
         Set the 'data' (a scantable) of the fitter.
         Parameters:
             thescan:     a scantable
-            mask:        a msk retireved from the scantable
+            mask:        a msk retrieved from the scantable
         """
         if not thescan:
             msg = "Please give a correct scan"
