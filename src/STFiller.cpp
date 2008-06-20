@@ -286,7 +286,7 @@ int asap::STFiller::read( )
     RecordFieldPtr<String> fieldnCol(rec, "FIELDNAME");
     *fieldnCol = fieldName;
     // try to auto-identify if it is on or off.
-    Regex rx(".*[e|w|_R]$");
+    Regex rx(".*(e|w|_R)$");
     Regex rx2("_S$");
     Int match = srcName.matches(rx);
     if (match) {
