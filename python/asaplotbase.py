@@ -14,7 +14,12 @@ from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
 from matplotlib.ticker import OldScalarFormatter
 from matplotlib.ticker import NullLocator
-from matplotlib.transforms import blend_xy_sep_transform
+
+# API change in mpl >= 0.98
+try:
+    from matplotlib.transforms import blended_transform_factory
+except ImportError:
+    from matplotlib.transforms import blend_xy_sep_transform  as blended_transform_factory
 
 if int(matplotlib.__version__.split(".")[1]) < 87:
     print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
@@ -780,7 +785,7 @@ class asaplotbase:
             ymax = xy[1]-peakoffset
             valign = 'top'
             ylbl = ymin-0.01
-        trans = blend_xy_sep_transform(ax.transData, ax.transAxes)
+        trans = blended_transform_factory(ax.transData, ax.transAxes)
         l = ax.axvline(x, ymin, ymax, color='black', **kwargs)
         t = ax.text(x, ylbl ,label, verticalalignment=valign,
                                     horizontalalignment='center',
