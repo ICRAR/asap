@@ -103,7 +103,7 @@ void STSelector::setstring( const std::string& key,
 
 void STSelector::setTaQL( const std::string& taql )
 {
-  taql_ = taql;
+  taql_ = "USING STYLE PYTHON " + taql;
 }
 
 
