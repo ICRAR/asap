@@ -26,7 +26,7 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 //# Original: David Barnes, February 1997.
-//# $Id: pksmb_support.h,v 19.9 2007/02/07 06:44:05 cal103 Exp $
+//# $Id: pksmb_support.h,v 19.9 2007-02-07 06:44:05 cal103 Exp $
 //----------------------------------------------------------------------------
 #ifndef ATNF_PKSMB_SUPPORT_H
 #define ATNF_PKSMB_SUPPORT_H

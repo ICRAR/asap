@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSreader.h: Class to read Parkes multibeam data.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSreader.h,v 19.12 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSreader.h,v 19.13 2008-06-26 01:50:24 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -39,11 +39,11 @@
 #include <casa/BasicSL/Complex.h>
 #include <casa/BasicSL/String.h>
 
+#include <casa/namespace.h>
+
 // <summary>
 // Class to read Parkes multibeam data.
 // </summary>
-
-#include <casa/namespace.h>
 
 // Open an appropriate PKSreader for a Parkes Multibeam dataset.
 class PKSreader* getPKSreader(
@@ -75,6 +75,7 @@ class PKSreader* getPKSreader(
         Bool   &haveBase,
         Bool   &haveSpectra);
 
+class MBrecord;
 
 class PKSreader
 {
@@ -131,7 +132,10 @@ class PKSreader
         Vector<Double> &timeSpan,
         Matrix<Double> &positions) = 0;
 
-    // Read the next data record.
+    // Read the next data record (MBrecord is defined below).
+    virtual Int read(MBrecord &mbrec) = 0;
+
+    // Read the next data record (for backwards compatibility, do not use).
     virtual Int read(
         Int             &scanNo,
         Int             &cycleNo,
@@ -173,7 +177,7 @@ class PKSreader
         Matrix<Float>   &spectra,
         Matrix<uChar>   &flagged,
         Complex         &xCalFctr,
-        Vector<Complex> &xPol) = 0;
+        Vector<Complex> &xPol);
 
     // Read the next data record, just the basics.
     virtual Int read(
@@ -193,6 +197,56 @@ class PKSreader
 
     Vector<uInt> cNChan, cNPol;
     Vector<Bool> cHaveXPol;
+};
+
+
+// Essentially just a struct used as a function argument.
+class MBrecord
+{
+  public:
+    Int             scanNo;
+    Int             cycleNo;
+    Double          mjd;
+    Double          interval;
+    String          fieldName;
+    String          srcName;
+    Vector<Double>  srcDir;
+    Vector<Double>  srcPM;
+    Double          srcVel;
+    String          obsType;
+    Int             IFno;
+    Double          refFreq;
+    Double          bandwidth;
+    Double          freqInc;
+    Double          restFreq;
+    Vector<Float>   tcal;
+    String          tcalTime;
+    Float           azimuth;
+    Float           elevation;
+    Float           parAngle;
+    Float           focusAxi;
+    Float           focusTan;
+    Float           focusRot;
+    Float           temperature;
+    Float           pressure;
+    Float           humidity;
+    Float           windSpeed;
+    Float           windAz;
+    Int             refBeam;
+    Int             beamNo;
+    Vector<Double>  direction;
+    Vector<Double>  scanRate;
+    Int             rateAge;
+    Int             rateson;
+    Vector<Float>   tsys;
+    Vector<Float>   sigma;
+    Vector<Float>   calFctr;
+    Matrix<Float>   baseLin;
+    Matrix<Float>   baseSub;
+    Matrix<Float>   spectra;
+    Matrix<uChar>   flagged;
+    Complex         xCalFctr;
+    Vector<Complex> xPol;
 };
 
 #endif

@@ -1,6 +1,6 @@
 //# PKSFITSreader.cc: Class to read Parkes multibeam data from a FITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSFITSreader.cc,v 19.13 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSFITSreader.cc,v 19.14 2008-06-26 02:07:21 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ PKSFITSreader::PKSFITSreader(
         const Int    retry,
         const Bool   interpolate)
 {
-  cMBrec.setNIFs(1);
+  cFITSMBrec.setNIFs(1);
 
   if (fitsType == "SDFITS") {
     cReader = new SDFITSreader();
@@ -320,52 +320,11 @@ Int PKSFITSreader::findRange(
 
 // Read the next data record.
 
-Int PKSFITSreader::read(
-        Int             &scanNo,
-        Int             &cycleNo,
-        Double          &mjd,
-        Double          &interval,
-        String          &fieldName,
-        String          &srcName,
-        Vector<Double>  &srcDir,
-        Vector<Double>  &srcPM,
-        Double          &srcVel,
-        String          &obsType,
-        Int             &IFno,
-        Double          &refFreq,
-        Double          &bandwidth,
-        Double          &freqInc,
-        Double          &restFreq,
-        Vector<Float>   &tcal,
-        String          &tcalTime,
-        Float           &azimuth,
-        Float           &elevation,
-        Float           &parAngle,
-        Float           &focusAxi,
-        Float           &focusTan,
-        Float           &focusRot,
-        Float           &temperature,
-        Float           &pressure,
-        Float           &humidity,
-        Float           &windSpeed,
-        Float           &windAz,
-        Int             &refBeam,
-        Int             &beamNo,
-        Vector<Double>  &direction,
-        Vector<Double>  &scanRate,
-        Vector<Float>   &tsys,
-        Vector<Float>   &sigma,
-        Vector<Float>   &calFctr,
-        Matrix<Float>   &baseLin,
-        Matrix<Float>   &baseSub,
-        Matrix<Float>   &spectra,
-        Matrix<uChar>   &flagged,
-        Complex         &xCalFctr,
-        Vector<Complex> &xPol)
+Int PKSFITSreader::read(MBrecord &MBrec)
 {
   Int status;
 
-  if ((status = cReader->read(cMBrec))) {
+  if ((status = cReader->read(cFITSMBrec))) {
     if (status != -1) {
       status = 1;
     }
@@ -374,104 +333,118 @@ Int PKSFITSreader::read(
   }
 
 
-  uInt nChan = cMBrec.nChan[0];
-  uInt nPol  = cMBrec.nPol[0];
+  uInt nChan = cFITSMBrec.nChan[0];
+  uInt nPol  = cFITSMBrec.nPol[0];
 
-  scanNo  = cMBrec.scanNo;
-  cycleNo = cMBrec.cycleNo;
+  MBrec.scanNo  = cFITSMBrec.scanNo;
+  MBrec.cycleNo = cFITSMBrec.cycleNo;
 
   // Extract MJD.
   Int day, month, year;
-  sscanf(cMBrec.datobs, "%4d-%2d-%2d", &year, &month, &day);
-  mjd = MVTime(year, month, Double(day)).day() + cMBrec.utc/86400.0;
+  sscanf(cFITSMBrec.datobs, "%4d-%2d-%2d", &year, &month, &day);
+  MBrec.mjd = MVTime(year, month, Double(day)).day() + cFITSMBrec.utc/86400.0;
 
-  interval  = cMBrec.exposure;
+  MBrec.interval  = cFITSMBrec.exposure;
 
-  fieldName = trim(cMBrec.srcName);
-  srcName   = fieldName;
-  srcDir(0) = cMBrec.srcRA;
-  srcDir(1) = cMBrec.srcDec;
-  srcPM(0)  = 0.0;
-  srcPM(1)  = 0.0;
-  srcVel    = 0.0;
-  obsType   = trim(cMBrec.obsType);
+  MBrec.fieldName = trim(cFITSMBrec.srcName);
+  MBrec.srcName   = MBrec.fieldName;
 
-  IFno = cMBrec.IFno[0];
-  Double chanWidth = fabs(cMBrec.fqDelt[0]);
-  refFreq   = cMBrec.fqRefVal[0];
-  bandwidth = chanWidth * nChan;
-  freqInc   = cMBrec.fqDelt[0];
-  restFreq  = cMBrec.restFreq;
+  MBrec.srcDir.resize(2);
+  MBrec.srcDir(0) = cFITSMBrec.srcRA;
+  MBrec.srcDir(1) = cFITSMBrec.srcDec;
 
-  tcal.resize(nPol);
+  MBrec.srcPM.resize(2);
+  MBrec.srcPM(0)  = 0.0;
+  MBrec.srcPM(1)  = 0.0;
+  MBrec.srcVel    = 0.0;
+  MBrec.obsType   = trim(cFITSMBrec.obsType);
+
+  MBrec.IFno = cFITSMBrec.IFno[0];
+  Double chanWidth = fabs(cFITSMBrec.fqDelt[0]);
+  MBrec.refFreq   = cFITSMBrec.fqRefVal[0];
+  MBrec.bandwidth = chanWidth * nChan;
+  MBrec.freqInc   = cFITSMBrec.fqDelt[0];
+  MBrec.restFreq  = cFITSMBrec.restFreq;
+
+  MBrec.tcal.resize(nPol);
   for (uInt ipol = 0; ipol < nPol; ipol++) {
-    tcal(ipol) = cMBrec.tcal[0][ipol];
+    MBrec.tcal(ipol) = cFITSMBrec.tcal[0][ipol];
   }
-  tcalTime  = trim(cMBrec.tcalTime);
-  azimuth   = cMBrec.azimuth;
-  elevation = cMBrec.elevation;
-  parAngle  = cMBrec.parAngle;
-  focusAxi  = cMBrec.focusAxi;
-  focusTan  = cMBrec.focusTan;
-  focusRot  = cMBrec.focusRot;
+  MBrec.tcalTime  = trim(cFITSMBrec.tcalTime);
+  MBrec.azimuth   = cFITSMBrec.azimuth;
+  MBrec.elevation = cFITSMBrec.elevation;
+  MBrec.parAngle  = cFITSMBrec.parAngle;
+  MBrec.focusAxi  = cFITSMBrec.focusAxi;
+  MBrec.focusTan  = cFITSMBrec.focusTan;
+  MBrec.focusRot  = cFITSMBrec.focusRot;
 
-  temperature = cMBrec.temp;
-  pressure    = cMBrec.pressure;
-  humidity    = cMBrec.humidity;
-  windSpeed   = cMBrec.windSpeed;
-  windAz      = cMBrec.windAz;
+  MBrec.temperature = cFITSMBrec.temp;
+  MBrec.pressure    = cFITSMBrec.pressure;
+  MBrec.humidity    = cFITSMBrec.humidity;
+  MBrec.windSpeed   = cFITSMBrec.windSpeed;
+  MBrec.windAz      = cFITSMBrec.windAz;
 
-  refBeam = cMBrec.refBeam;
-  beamNo  = cMBrec.beamNo;
+  MBrec.refBeam = cFITSMBrec.refBeam;
+  MBrec.beamNo  = cFITSMBrec.beamNo;
 
-  direction(0) = cMBrec.ra;
-  direction(1) = cMBrec.dec;
-  scanRate(0)  = cMBrec.raRate;
-  scanRate(1)  = cMBrec.decRate;
+  MBrec.direction.resize(2);
+  MBrec.direction(0) = cFITSMBrec.ra;
+  MBrec.direction(1) = cFITSMBrec.dec;
 
-  tsys.resize(nPol);
-  sigma.resize(nPol);
-  calFctr.resize(nPol);
+  MBrec.scanRate.resize(2);
+  MBrec.scanRate(0)  = cFITSMBrec.raRate;
+  MBrec.scanRate(1)  = cFITSMBrec.decRate;
+  MBrec.rateAge      = cFITSMBrec.rateAge;
+  MBrec.rateson      = cFITSMBrec.rateson;
+
+  MBrec.tsys.resize(nPol);
+  MBrec.sigma.resize(nPol);
+  MBrec.calFctr.resize(nPol);
   for (uInt ipol = 0; ipol < nPol; ipol++) {
-    tsys(ipol)  = cMBrec.tsys[0][ipol];
-    sigma(ipol) = tsys(ipol) / 0.81 / sqrt(interval * chanWidth);
-    calFctr(ipol) = cMBrec.calfctr[0][ipol];
+    MBrec.tsys(ipol)  = cFITSMBrec.tsys[0][ipol];
+    MBrec.sigma(ipol) = (MBrec.tsys(ipol) / 0.81) /
+                         sqrt(MBrec.interval * chanWidth);
+    MBrec.calFctr(ipol) = cFITSMBrec.calfctr[0][ipol];
   }
 
-  if (cMBrec.haveBase) {
-    baseLin.resize(2,nPol);
-    baseSub.resize(9,nPol);
+  if (cFITSMBrec.haveBase) {
+    MBrec.baseLin.resize(2,nPol);
+    MBrec.baseSub.resize(9,nPol);
 
     for (uInt ipol = 0; ipol < nPol; ipol++) {
-      baseLin(0,ipol) = cMBrec.baseLin[0][ipol][0];
-      baseLin(1,ipol) = cMBrec.baseLin[0][ipol][1];
+      MBrec.baseLin(0,ipol) = cFITSMBrec.baseLin[0][ipol][0];
+      MBrec.baseLin(1,ipol) = cFITSMBrec.baseLin[0][ipol][1];
 
       for (uInt j = 0; j < 9; j++) {
-        baseSub(j,ipol) = cMBrec.baseSub[0][ipol][j];
+        MBrec.baseSub(j,ipol) = cFITSMBrec.baseSub[0][ipol][j];
       }
     }
 
   } else {
-    baseLin.resize(0,0);
-    baseSub.resize(0,0);
+    MBrec.baseLin.resize(0,0);
+    MBrec.baseSub.resize(0,0);
   }
 
-  if (cGetSpectra && cMBrec.haveSpectra) {
-    spectra.resize(nChan,nPol);
-    spectra.takeStorage(IPosition(2,nChan,nPol), cMBrec.spectra[0], SHARE);
+  if (cGetSpectra && cFITSMBrec.haveSpectra) {
+    MBrec.spectra.resize(nChan,nPol);
+    MBrec.spectra.takeStorage(IPosition(2,nChan,nPol), cFITSMBrec.spectra[0],
+      SHARE);
 
-    flagged.resize(nChan,nPol);
-    flagged.takeStorage(IPosition(2,nChan,nPol), cMBrec.flagged[0], SHARE);
+    MBrec.flagged.resize(nChan,nPol);
+    MBrec.flagged.takeStorage(IPosition(2,nChan,nPol), cFITSMBrec.flagged[0],
+      SHARE);
 
   } else {
-    spectra.resize(0,0);
-    flagged.resize(0,0);
+    MBrec.spectra.resize(0,0);
+    MBrec.flagged.resize(0,0);
   }
 
   if (cGetXPol) {
-    xCalFctr = Complex(cMBrec.xcalfctr[0][0], cMBrec.xcalfctr[0][1]);
-    xPol.resize(nChan);
-    xPol.takeStorage(IPosition(1,nChan), (Complex *)cMBrec.xpol[0], SHARE);
+    MBrec.xCalFctr = Complex(cFITSMBrec.xcalfctr[0][0],
+                             cFITSMBrec.xcalfctr[0][1]);
+    MBrec.xPol.resize(nChan);
+    MBrec.xPol.takeStorage(IPosition(1,nChan), (Complex *)cFITSMBrec.xpol[0],
+      SHARE);
   }
 
   return 0;
@@ -492,7 +465,7 @@ Int PKSFITSreader::read(
 {
   Int status;
 
-  if ((status = cReader->read(cMBrec))) {
+  if ((status = cReader->read(cFITSMBrec))) {
     if (status != -1) {
       status = 1;
     }
@@ -500,28 +473,28 @@ Int PKSFITSreader::read(
     return status;
   }
 
-  IFno = cMBrec.IFno[0];
+  IFno = cFITSMBrec.IFno[0];
 
-  uInt nChan = cMBrec.nChan[0];
-  uInt nPol  = cMBrec.nPol[0];
+  uInt nChan = cFITSMBrec.nChan[0];
+  uInt nPol  = cFITSMBrec.nPol[0];
 
   tsys.resize(nPol);
   calFctr.resize(nPol);
   for (uInt ipol = 0; ipol < nPol; ipol++) {
-    tsys(ipol) = cMBrec.tsys[0][ipol];
-    calFctr(ipol) = cMBrec.calfctr[0][ipol];
+    tsys(ipol) = cFITSMBrec.tsys[0][ipol];
+    calFctr(ipol) = cFITSMBrec.calfctr[0][ipol];
   }
 
-  if (cMBrec.haveBase) {
+  if (cFITSMBrec.haveBase) {
     baseLin.resize(2,nPol);
     baseSub.resize(9,nPol);
 
     for (uInt ipol = 0; ipol < nPol; ipol++) {
-      baseLin(0,ipol) = cMBrec.baseLin[0][ipol][0];
-      baseLin(1,ipol) = cMBrec.baseLin[0][ipol][1];
+      baseLin(0,ipol) = cFITSMBrec.baseLin[0][ipol][0];
+      baseLin(1,ipol) = cFITSMBrec.baseLin[0][ipol][1];
 
       for (uInt j = 0; j < 9; j++) {
-        baseSub(j,ipol) = cMBrec.baseSub[0][ipol][j];
+        baseSub(j,ipol) = cFITSMBrec.baseSub[0][ipol][j];
       }
     }
 
@@ -530,12 +503,14 @@ Int PKSFITSreader::read(
     baseSub.resize(0,0);
   }
 
-  if (cGetSpectra && cMBrec.haveSpectra) {
+  if (cGetSpectra && cFITSMBrec.haveSpectra) {
     spectra.resize(nChan,nPol);
-    spectra.takeStorage(IPosition(2,nChan,nPol), cMBrec.spectra[0], SHARE);
+    spectra.takeStorage(IPosition(2,nChan,nPol), cFITSMBrec.spectra[0],
+      SHARE);
 
     flagged.resize(nChan,nPol);
-    flagged.takeStorage(IPosition(2,nChan,nPol), cMBrec.flagged[0], SHARE);
+    flagged.takeStorage(IPosition(2,nChan,nPol), cFITSMBrec.flagged[0],
+      SHARE);
 
   } else {
     spectra.resize(0,0);

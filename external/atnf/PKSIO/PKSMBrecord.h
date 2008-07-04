@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMBrecord.h: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: PKSMBrecord.h,v 19.8 2006/07/05 04:52:07 mcalabre Exp $
+//# $Id: PKSMBrecord.h,v 19.9 2008-06-26 02:10:21 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The PKSMBrecord class stores an MBFITS single-dish data record.
 //#
@@ -108,6 +108,11 @@ class PKSMBrecord
     double dec;			// J2000 declination, radian,
     float  raRate;		// Scan rate in right ascension, radian/s.
     float  decRate;		// Scan rate in declination, radian/s.
+    short  rateAge;		// Scan rate age (staleness), cycles.
+    short  rateson;		// Staleness reason code:
+				//   1: position and timestamp unchanged,
+				//   2: position changed but not timestamp,
+				//   3: position timestamp went backwards.
 
     // IF-dependent parameters.
     short  nIF;			// Number of IFs.

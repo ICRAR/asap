@@ -26,7 +26,7 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 //# Original: Mark Calabretta
-//# $Id: pks_maths.h,v 1.6 2006/05/19 00:12:06 mcalabre Exp $
+//# $Id: pks_maths.h,v 1.6 2006-05-19 00:12:06 mcalabre Exp $
 //----------------------------------------------------------------------------
 #ifndef ATNF_PKS_MATHS_H
 #define ATNF_PKS_MATHS_H

@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSreader.cc: Class to read Parkes multibeam data.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSreader.cc,v 19.4 2006/05/19 02:14:50 mcalabre Exp $
+//# $Id: PKSreader.cc,v 19.6 2008-06-26 01:54:08 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/23, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -74,19 +74,26 @@ PKSreader* getPKSreader(
   PKSreader *reader = 0;
   if (inFile.isRegular()) {
     // Is it MBFITS or SDFITS?
-    RegularFileIO file(name);
-    char buf[32];
-    file.read(30, buf, False);
-    buf[30] = '\0';
-    if (String(buf) == "SIMPLE  =                    T") {
-      // Looks like SDFITS.
+    if (strstr(name.chars(), ".sdfits")) {
+      // Looks like SDFITS, possibly gzip'd.
       format = "SDFITS";
       reader = new PKSFITSreader("SDFITS");
 
     } else {
-      // Assume it's MBFITS.
-      format = "MBFITS";
-      reader = new PKSFITSreader("MBFITS", retry, interpolate);
+      RegularFileIO file(name);
+      char buf[32];
+      file.read(30, buf, False);
+      buf[30] = '\0';
+      if (String(buf) == "SIMPLE  =                    T") {
+        // Looks like SDFITS.
+        format = "SDFITS";
+        reader = new PKSFITSreader("SDFITS");
+
+      } else {
+        // Assume it's MBFITS.
+        format = "MBFITS";
+        reader = new PKSFITSreader("MBFITS", retry, interpolate);
+      }
     }
 
   } else if (inFile.isDirectory()) {
@@ -152,5 +159,109 @@ PKSreader* getPKSreader(
   }
 
   iDir = -1;
+  return 0;
+}
+
+
+//-------------------------------------------------------- PKSFITSreader::read
+
+// Read the next data record.
+
+Int PKSreader::read(
+        Int             &scanNo,
+        Int             &cycleNo,
+        Double          &mjd,
+        Double          &interval,
+        String          &fieldName,
+        String          &srcName,
+        Vector<Double>  &srcDir,
+        Vector<Double>  &srcPM,
+        Double          &srcVel,
+        String          &obsType,
+        Int             &IFno,
+        Double          &refFreq,
+        Double          &bandwidth,
+        Double          &freqInc,
+        Double          &restFreq,
+        Vector<Float>   &tcal,
+        String          &tcalTime,
+        Float           &azimuth,
+        Float           &elevation,
+        Float           &parAngle,
+        Float           &focusAxi,
+        Float           &focusTan,
+        Float           &focusRot,
+        Float           &temperature,
+        Float           &pressure,
+        Float           &humidity,
+        Float           &windSpeed,
+        Float           &windAz,
+        Int             &refBeam,
+        Int             &beamNo,
+        Vector<Double>  &direction,
+        Vector<Double>  &scanRate,
+        Vector<Float>   &tsys,
+        Vector<Float>   &sigma,
+        Vector<Float>   &calFctr,
+        Matrix<Float>   &baseLin,
+        Matrix<Float>   &baseSub,
+        Matrix<Float>   &spectra,
+        Matrix<uChar>   &flagged,
+        Complex         &xCalFctr,
+        Vector<Complex> &xPol)
+{
+  Int status;
+  MBrecord MBrec;
+
+  if ((status = read(MBrec))) {
+    if (status != -1) {
+      status = 1;
+    }
+
+    return status;
+  }
+
+  scanNo      = MBrec.scanNo;
+  cycleNo     = MBrec.cycleNo;
+  mjd         = MBrec.mjd;
+  interval    = MBrec.interval;
+  fieldName   = MBrec.fieldName;
+  srcName     = MBrec.srcName;
+  srcDir      = MBrec.srcDir;
+  srcPM       = MBrec.srcPM;
+  srcVel      = MBrec.srcVel;
+  obsType     = MBrec.obsType;
+  IFno        = MBrec.IFno;
+  refFreq     = MBrec.refFreq;
+  bandwidth   = MBrec.bandwidth;
+  freqInc     = MBrec.freqInc;
+  restFreq    = MBrec.restFreq;
+  tcal        = MBrec.tcal;
+  tcalTime    = MBrec.tcalTime;
+  azimuth     = MBrec.azimuth;
+  elevation   = MBrec.elevation;
+  parAngle    = MBrec.parAngle;
+  focusAxi    = MBrec.focusAxi;
+  focusTan    = MBrec.focusTan;
+  focusRot    = MBrec.focusRot;
+  temperature = MBrec.temperature;
+  pressure    = MBrec.pressure;
+  humidity    = MBrec.humidity;
+  windSpeed   = MBrec.windSpeed;
+  windAz      = MBrec.windAz;
+  refBeam     = MBrec.refBeam;
+  beamNo      = MBrec.beamNo;
+  direction   = MBrec.direction;
+  scanRate    = MBrec.scanRate;
+  tsys        = MBrec.tsys;
+  sigma       = MBrec.sigma;
+  calFctr     = MBrec.calFctr;
+  baseLin     = MBrec.baseLin;
+  baseSub     = MBrec.baseSub;
+  spectra     = MBrec.spectra;
+  flagged     = MBrec.flagged;
+  xCalFctr    = MBrec.xCalFctr;
+  xPol        = MBrec.xPol;
+
   return 0;
 }

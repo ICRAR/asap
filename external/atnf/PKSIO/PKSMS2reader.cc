@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2reader.cc: Class to read Parkes Multibeam data from a v2 MS.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSMS2reader.cc,v 19.13 2008-06-26 02:08:02 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -247,7 +247,7 @@ Int PKSMS2reader::getHeader(
         String &project,
         String &antName,
         Vector<Double> &antPosition,
-        String &obsMode,
+        String &obsType,
         String &bunit,
         Float  &equinox,
         String &dopplerFrame,
@@ -271,10 +271,10 @@ Int PKSMS2reader::getHeader(
 
   // Observation type.
   if (cObsModeCol.nrow()) {
-    obsMode = cObsModeCol(0);
-    if (obsMode == "\0") obsMode = "RF";
+    obsType = cObsModeCol(0);
+    if (obsType == "\0") obsType = "RF";
   } else {
-    obsMode = "RF";
+    obsType = "RF";
   }
 
   // Brightness units.
@@ -485,48 +485,7 @@ Int PKSMS2reader::findRange(
 
 // Read the next data record.
 
-Int PKSMS2reader::read(
-        Int             &scanNo,
-        Int             &cycleNo,
-        Double          &mjd,
-        Double          &interval,
-        String          &fieldName,
-        String          &srcName,
-        Vector<Double>  &srcDir,
-        Vector<Double>  &srcPM,
-        Double          &srcVel,
-        String          &obsMode,
-        Int             &IFno,
-        Double          &refFreq,
-        Double          &bandwidth,
-        Double          &freqInc,
-        Double          &restFreq,
-        Vector<Float>   &tcal,
-        String          &tcalTime,
-        Float           &azimuth,
-        Float           &elevation,
-        Float           &parAngle,
-        Float           &focusAxi,
-        Float           &focusTan,
-        Float           &focusRot,
-        Float           &temperature,
-        Float           &pressure,
-        Float           &humidity,
-        Float           &windSpeed,
-        Float           &windAz,
-        Int             &refBeam,
-        Int             &beamNo,
-        Vector<Double>  &direction,
-        Vector<Double>  &scanRate,
-        Vector<Float>   &tsys,
-        Vector<Float>   &sigma,
-        Vector<Float>   &calFctr,
-        Matrix<Float>   &baseLin,
-        Matrix<Float>   &baseSub,
-        Matrix<Float>   &spectra,
-        Matrix<uChar>   &flagged,
-        Complex         &xCalFctr,
-        Vector<Complex> &xPol)
+Int PKSMS2reader::read(MBrecord &MBrec)
 {
   if (!cMSopen) {
     return 1;
@@ -554,76 +513,76 @@ Int PKSMS2reader::read(
   }
 
   // Renumerate scan no. Here still is 1-based
-  scanNo = cScanNoCol(cIdx) - cScanNoCol(0) + 1;
+  MBrec.scanNo = cScanNoCol(cIdx) - cScanNoCol(0) + 1;
 
-  if (scanNo != cScanNo) {
+  if (MBrec.scanNo != cScanNo) {
     // Start of new scan.
-    cScanNo  = scanNo;
+    cScanNo  = MBrec.scanNo;
     cCycleNo = 1;
     cTime    = cTimeCol(cIdx);
   }
 
   Double time = cTimeCol(cIdx);
-  mjd      = time/86400.0;
-  interval = cIntervalCol(cIdx);
+  MBrec.mjd      = time/86400.0;
+  MBrec.interval = cIntervalCol(cIdx);
 
   // Reconstruct the integration cycle number; due to small latencies the
   // integration time is usually slightly less than the time between cycles,
   // resetting cTime will prevent the difference from accumulating.
-  cCycleNo += nint((time - cTime)/interval);
-  cycleNo = cCycleNo;
+  cCycleNo += nint((time - cTime)/MBrec.interval);
+  MBrec.cycleNo = cCycleNo;
   cTime   = time;
 
   Int fieldId = cFieldIdCol(cIdx);
-  fieldName = cFieldNameCol(fieldId);
+  MBrec.fieldName = cFieldNameCol(fieldId);
 
   Int srcId = cSrcIdCol(fieldId);
-  srcName = cSrcNameCol(srcId);
-  srcDir  = cSrcDirCol(srcId);
-  srcPM   = cSrcPMCol(srcId);
+  MBrec.srcName = cSrcNameCol(srcId);
+  MBrec.srcDir  = cSrcDirCol(srcId);
+  MBrec.srcPM   = cSrcPMCol(srcId);
 
   // Systemic velocity.
   if (!cHaveSrcVel) {
-    srcVel = 0.0f;
+    MBrec.srcVel = 0.0f;
   } else {
-    srcVel  = cSrcVelCol(srcId)(IPosition(1,0));
+    MBrec.srcVel  = cSrcVelCol(srcId)(IPosition(1,0));
   }
 
   // Observation type.
   Int stateId = cStateIdCol(cIdx);
-  obsMode = cObsModeCol(stateId);
+  MBrec.obsType = cObsModeCol(stateId);
 
-  IFno = iIF + 1;
+  MBrec.IFno = iIF + 1;
   Int nChan = abs(cEndChan(iIF) - cStartChan(iIF)) + 1;
 
   // Minimal handling on continuum data.
   Vector<Double> chanFreq = cChanFreqCol(iIF);
   if (nChan == 1) {
     cout << "The input is continuum data. "<< endl;
-    freqInc  = chanFreq(0);
-    refFreq  = chanFreq(0);
-    restFreq = 0.0f;
+    MBrec.freqInc  = chanFreq(0);
+    MBrec.refFreq  = chanFreq(0);
+    MBrec.restFreq = 0.0f;
   } else {
     if (cStartChan(iIF) <= cEndChan(iIF)) {
-      freqInc = chanFreq(1) - chanFreq(0);
+      MBrec.freqInc = chanFreq(1) - chanFreq(0);
     } else {
-      freqInc = chanFreq(0) - chanFreq(1);
+      MBrec.freqInc = chanFreq(0) - chanFreq(1);
     }
 
-    refFreq  = chanFreq(cRefChan(iIF)-1);
-    restFreq = cSrcRestFrqCol(srcId)(IPosition(1,0));
+    MBrec.refFreq  = chanFreq(cRefChan(iIF)-1);
+    MBrec.restFreq = cSrcRestFrqCol(srcId)(IPosition(1,0));
   }
-  bandwidth = abs(freqInc * nChan);
+  MBrec.bandwidth = abs(MBrec.freqInc * nChan);
 
-  tcal.resize(cNPol(iIF));
-  tcal      = 0.0f;
-  tcalTime  = "";
-  azimuth   = 0.0f;
-  elevation = 0.0f;
-  parAngle  = 0.0f;
-  focusAxi  = 0.0f;
-  focusTan  = 0.0f;
-  focusRot  = 0.0f;
+  MBrec.tcal.resize(cNPol(iIF));
+  MBrec.tcal      = 0.0f;
+  MBrec.tcalTime  = "";
+  MBrec.azimuth   = 0.0f;
+  MBrec.elevation = 0.0f;
+  MBrec.parAngle  = 0.0f;
+  MBrec.focusAxi  = 0.0f;
+  MBrec.focusTan  = 0.0f;
+  MBrec.focusRot  = 0.0f;
 
   // Find the appropriate entry in the WEATHER subtable.
   Vector<Double> wTimes = cWeatherTimeCol.getColumn();
@@ -636,29 +595,31 @@ Int PKSMS2reader::read(
 
   if (weatherIdx < 0) {
     // No appropriate WEATHER entry.
-    pressure    = 0.0f;
-    humidity    = 0.0f;
-    temperature = 0.0f;
+    MBrec.temperature = 0.0f;
+    MBrec.pressure    = 0.0f;
+    MBrec.humidity    = 0.0f;
   } else {
-    pressure    = cPressureCol(weatherIdx);
-    humidity    = cHumidityCol(weatherIdx);
-    temperature = cTemperatureCol(weatherIdx);
+    MBrec.temperature = cTemperatureCol(weatherIdx);
+    MBrec.pressure    = cPressureCol(weatherIdx);
+    MBrec.humidity    = cHumidityCol(weatherIdx);
   }
 
-  windSpeed = 0.0f;
-  windAz    = 0.0f;
+  MBrec.windSpeed = 0.0f;
+  MBrec.windAz    = 0.0f;
 
-  refBeam = 0;
-  beamNo  = ibeam + 1;
+  MBrec.refBeam = 0;
+  MBrec.beamNo  = ibeam + 1;
 
   Matrix<Double> pointingDir = cPointingCol(fieldId);
-  direction = pointingDir.column(0);
+  MBrec.direction = pointingDir.column(0);
   uInt ncols = pointingDir.ncolumn();
   if (ncols == 1) {
-    scanRate = 0.0f;
+    MBrec.scanRate = 0.0f;
   } else {
-    scanRate  = pointingDir.column(1);
+    MBrec.scanRate  = pointingDir.column(1);
   }
+  MBrec.rateAge = 0;
+  MBrec.rateson = 0;
 
   // Get Tsys assuming that entries in the SYSCAL table match the main table.
   if (cHaveTsys) {
@@ -668,34 +629,34 @@ Int PKSMS2reader::read(
     }
   }
   if (cHaveTsys) {
-    cTsysCol.get(cIdx, tsys, True);
+    cTsysCol.get(cIdx, MBrec.tsys, True);
   } else {
     Int numReceptor;
     cNumReceptorCol.get(0, numReceptor);
-    tsys.resize(numReceptor);
-    tsys = 1.0f;
+    MBrec.tsys.resize(numReceptor);
+    MBrec.tsys = 1.0f;
   }
-  cSigmaCol.get(cIdx, sigma, True);
+  cSigmaCol.get(cIdx, MBrec.sigma, True);
 
   // Calibration factors (if available).
-  calFctr.resize(cNPol(iIF));
+  MBrec.calFctr.resize(cNPol(iIF));
   if (cHaveCalFctr) {
-    cCalFctrCol.get(cIdx, calFctr);
+    cCalFctrCol.get(cIdx, MBrec.calFctr);
   } else {
-    calFctr = 0.0f;
+    MBrec.calFctr = 0.0f;
   }
 
   // Baseline parameters (if available).
   if (cHaveBaseLin) {
-    baseLin.resize(2,cNPol(iIF));
-    cBaseLinCol.get(cIdx, baseLin);
+    MBrec.baseLin.resize(2,cNPol(iIF));
+    cBaseLinCol.get(cIdx, MBrec.baseLin);
 
-    baseSub.resize(9,cNPol(iIF));
-    cBaseSubCol.get(cIdx, baseSub);
+    MBrec.baseSub.resize(9,cNPol(iIF));
+    cBaseSubCol.get(cIdx, MBrec.baseSub);
 
   } else {
-    baseLin.resize(0,0);
-    baseSub.resize(0,0);
+    MBrec.baseLin.resize(0,0);
+    MBrec.baseSub.resize(0,0);
   }
 
 
@@ -708,14 +669,14 @@ Int PKSMS2reader::read(
 
     // Transpose spectra.
     Int nPol = tmpData.nrow();
-    spectra.resize(nChan, nPol);
-    flagged.resize(nChan, nPol);
+    MBrec.spectra.resize(nChan, nPol);
+    MBrec.flagged.resize(nChan, nPol);
     if (cEndChan(iIF) >= cStartChan(iIF)) {
       // Simple transposition.
       for (Int ipol = 0; ipol < nPol; ipol++) {
         for (Int ichan = 0; ichan < nChan; ichan++) {
-          spectra(ichan,ipol) = tmpData(ipol,ichan);
-          flagged(ichan,ipol) = tmpFlag(ipol,ichan);
+          MBrec.spectra(ichan,ipol) = tmpData(ipol,ichan);
+          MBrec.flagged(ichan,ipol) = tmpFlag(ipol,ichan);
         }
       }
 
@@ -724,8 +685,8 @@ Int PKSMS2reader::read(
       Int jchan = nChan - 1;
       for (Int ipol = 0; ipol < nPol; ipol++) {
         for (Int ichan = 0; ichan < nChan; ichan++, jchan--) {
-          spectra(ichan,ipol) = tmpData(ipol,jchan);
-          flagged(ichan,ipol) = tmpFlag(ipol,jchan);
+          MBrec.spectra(ichan,ipol) = tmpData(ipol,jchan);
+          MBrec.flagged(ichan,ipol) = tmpFlag(ipol,jchan);
         }
       }
     }
@@ -734,20 +695,20 @@ Int PKSMS2reader::read(
   // Get cross-polarization data.
   if (cGetXPol) {
     if (cHaveXCalFctr) {
-      cXCalFctrCol.get(cIdx, xCalFctr);
+      cXCalFctrCol.get(cIdx, MBrec.xCalFctr);
     } else {
-      xCalFctr = Complex(0.0f, 0.0f);
+      MBrec.xCalFctr = Complex(0.0f, 0.0f);
     }
 
-    cDataCol.get(cIdx, xPol, True);
+    cDataCol.get(cIdx, MBrec.xPol, True);
 
     if (cEndChan(iIF) < cStartChan(iIF)) {
       Complex ctmp;
       Int jchan = nChan - 1;
       for (Int ichan = 0; ichan < nChan/2; ichan++, jchan--) {
-        ctmp = xPol(ichan);
-        xPol(ichan) = xPol(jchan);
-        xPol(jchan) = ctmp;
+        ctmp = MBrec.xPol(ichan);
+        MBrec.xPol(ichan) = MBrec.xPol(jchan);
+        MBrec.xPol(jchan) = ctmp;
       }
     }
   }

@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2reader.h: Class to read Parkes Multibeam data from a v2 MS.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.h,v 19.13 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSMS2reader.h,v 19.14 2008-06-26 02:03:51 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -110,48 +110,7 @@ class PKSMS2reader : public PKSreader
         Matrix<Double> &positions);
 
     // Read the next data record.
-    virtual Int read(
-        Int             &scanNo,
-        Int             &cycleNo,
-        Double          &mjd,
-        Double          &interval,
-        String          &fieldName,
-        String          &srcName,
-        Vector<Double>  &srcDir,
-        Vector<Double>  &srcPM,
-        Double          &srcVel,
-        String          &obsMode,
-        Int             &IFno,
-        Double          &refFreq,
-        Double          &bandwidth,
-        Double          &freqInc,
-        Double          &restFreq,
-        Vector<Float>   &tcal,
-        String          &tcalTime,
-        Float           &azimuth,
-        Float           &elevation,
-        Float           &parAngle,
-        Float           &focusAxi,
-        Float           &focusTan,
-        Float           &focusRot,
-        Float           &temperature,
-        Float           &pressure,
-        Float           &humidity,
-        Float           &windSpeed,
-        Float           &windAz,
-        Int             &refBeam,
-        Int             &beamNo,
-        Vector<Double>  &direction,
-        Vector<Double>  &scanRate,
-        Vector<Float>   &tsys,
-        Vector<Float>   &sigma,
-        Vector<Float>   &calFctr,
-        Matrix<Float>   &baseLin,
-        Matrix<Float>   &baseSub,
-        Matrix<Float>   &spectra,
-        Matrix<uChar>   &flagged,
-        Complex         &xCalFctr,
-        Vector<Complex> &xPol);
+    virtual Int read(MBrecord &mbrec);
 
     // Read the next data record, just the basics.
     virtual Int read(

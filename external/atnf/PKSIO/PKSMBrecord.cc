@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMBrecord.cc: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2006
+//# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: PKSMBrecord.cc,v 19.6 2006/07/05 04:52:07 mcalabre Exp $
+//# $Id: PKSMBrecord.cc,v 19.7 2008-06-26 02:10:21 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The PKSMBrecord class stores an MBFITS single-dish data record.
 //#
@@ -52,6 +52,7 @@ PKSMBrecord::PKSMBrecord(int nif)
   beamNo  = 0;
   raRate  = 0.0f;
   decRate = 0.0f;
+  rateAge = 0;
   nIF     = 0;
 }
 
@@ -225,10 +226,12 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
 
   // Beam-dependent parameters.
   beamNo  = other.beamNo;
-  ra       = other.ra;
-  dec      = other.dec;
-  raRate   = other.raRate;
-  decRate  = other.decRate;
+  ra      = other.ra;
+  dec     = other.dec;
+  raRate  = other.raRate;
+  decRate = other.decRate;
+  rateAge = other.rateAge;
+  rateson = other.rateson;
 
   // IF-dependent parameters.
   nIF = other.nIF;
@@ -342,10 +345,12 @@ int PKSMBrecord::extract(const PKSMBrecord &other, int iIF)
 
   // Beam-dependent parameters.
   beamNo  = other.beamNo;
-  ra       = other.ra;
-  dec      = other.dec;
-  raRate   = other.raRate;
-  decRate  = other.decRate;
+  ra      = other.ra;
+  dec     = other.dec;
+  raRate  = other.raRate;
+  decRate = other.decRate;
+  rateAge = other.rateAge;
+  rateson = other.rateson;
 
   // IF-dependent parameters.
   nIF = 1;

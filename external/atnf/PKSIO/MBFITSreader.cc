@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# MBFITSreader.cc: ATNF single-dish RPFITS reader.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.cc,v 19.36 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: MBFITSreader.cc,v 19.38 2008-06-26 02:24:22 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -51,6 +51,7 @@ using namespace std;
 // Numerical constants.
 const double PI = 3.141592653589793238462643;
 const double TWOPI = 2.0 * PI;
+const double R2D = 180.0 / PI;
 
 //------------------------------------------------- MBFITSreader::MBFITSreader
 
@@ -500,7 +501,7 @@ int MBFITSreader::read(
         cFlushIF  = 0;
 
 #ifdef PKSIO_DEBUG
-        printf("End-of-file detected, flushing last scan.\n");
+        printf("\nEnd-of-file detected, flushing last scan.\n");
 #endif
 
       } else if (status) {
@@ -608,10 +609,6 @@ int MBFITSreader::read(
           cScanNo  = 1;
           cCycleNo = 0;
           cPrevUTC = 0.0;
-          cStaleness = new int[cNBeamSel];
-          for (int iBeamSel = 0; iBeamSel < cNBeamSel; iBeamSel++) {
-            cStaleness[iBeamSel] = 0;
-          }
         }
 
         // Check for end-of-scan.
@@ -669,7 +666,7 @@ int MBFITSreader::read(
         }
 
 #ifdef PKSIO_DEBUG
-        printf(" In:%4d%4d%3d%3d\n", cScanNo, cCycleNo, beamNo, cIFno);
+        printf("\n In:%4d%4d%3d%3d\n", cScanNo, cCycleNo, beamNo, cIFno);
         if (cEOS) printf("Start of new scan, flushing previous scan.\n");
 #endif
       }
@@ -729,43 +726,70 @@ int MBFITSreader::read(
 
 
     if (cFlushing && cFlushBin == 0 && cFlushIF == 0 && cInterp) {
-      // Interpolate the beam position at the start of the flush cycle.
-#ifdef PKSIO_DEBUG
-      printf("Doing position interpolation for beam %d.\n", iMBuff->beamNo);
-#endif
+      // Start of flush cycle, interpolate the beam position.
+      //
+      // The position is measured by the control system at a time returned by
+      // RPFITSIN as the 'w' visibility coordinate.  The ra and dec, returned
+      // as the 'u' and 'v' visibility coordinates, must be interpolated to
+      // the integration time which RPFITSIN returns as 'cUTC', this usually
+      // being a second or two later.
+      //
+      // "This" RA, Dec, and UTC refers to the position currently stored in
+      // the buffer marked for output (iMBuff).  This position will be
+      // interpolated to the midpoint of that integration using the position
+      // recorded in the "next" integration which is currently sitting in the
+      // RPFITS commons.  The interpolation method used here is based on the
+      // scan rate.  At the end of a scan, or if the next position has not
+      // been updated, the most recent determination of the scan rate will be
+      // used for extrapolation.
+      //
+      // The rate "age" is the offset from "this" integration (in iMBuff) of
+      // the earliest integration in the pair used to compute the rate.  A
+      // rate "age" of 0 thus refers to the normal situation where the rate
+      // is determined from "this" integration and the "next" one.  An age
+      // of 1 cycle means that it is determined from "this" integration and
+      // the one preceding it, which should be equally reliable.  An age
+      // of 2 cycles means that the rate is determined from the previous
+      // integration and the one before that, so the extrapolation spans one
+      // integration cycle.  Thus it has a "staleness" of 1.
 
-      double prevRA  = iMBuff->ra;
-      double prevDec = iMBuff->dec;
-      double prevUTC = cPosUTC[iBeamSel];
+      double thisRA  = iMBuff->ra;
+      double thisDec = iMBuff->dec;
+      double thisUTC = cPosUTC[iBeamSel];
 
-      if (!cEOF && !cEOS) {
-        // The position is measured by the control system at a time returned
-        // by RPFITSIN as the 'w' visibility coordinate.  The ra and dec,
-        // returned as the 'u' and 'v' visibility coordinates, must be
-        // interpolated to the integration time which RPFITSIN returns as
-        // 'cUTC', this usually being a second or two later.
-        //
+      if (cEOF || cEOS) {
+        iMBuff->rateAge++;
+        iMBuff->rateson = 0;
+        
+      } else {
         // Note that the time recorded as the 'w' visibility coordinate
         // cycles through 86400 back to 0 at midnight, whereas that in 'cUTC'
         // continues to increase past 86400.
 
-        double thisRA  = cU;
-        double thisDec = cV;
-        double thisUTC = cW;
+        double nextRA  = cU;
+        double nextDec = cV;
+        double nextUTC = cW;
 
-        if (thisUTC < prevUTC) {
+        if (nextUTC < thisUTC) {
           // Must have cycled through midnight.
-          thisUTC += 86400.0;
+          nextUTC += 86400.0;
         }
 
         // Guard against RA cycling through 24h in either direction.
-        if (fabs(thisRA - prevRA) > PI) {
-          if (thisRA < prevRA) {
-            thisRA += TWOPI;
+        if (fabs(nextRA - thisRA) > PI) {
+          if (nextRA < thisRA) {
+            nextRA += TWOPI;
           } else {
-            thisRA -= TWOPI;
+            nextRA -= TWOPI;
           }
         }
+
+#ifdef PKSIO_DEBUG
+        printf("Previous ra, dec, UTC:  %8.4f  %8.4f  %7.1f\n", thisRA*R2D,
+          thisDec*R2D, thisUTC);
+        printf("Current  ra, dec, UTC:  %8.4f  %8.4f  %7.1f\n", nextRA*R2D,
+          nextDec*R2D, nextUTC);
+#endif
 
         // The control system at Mopra typically does not update the
         // positions between successive integration cycles at the end of a
@@ -773,65 +797,57 @@ int MBFITSreader::read(
         // computed rates, even if from the previous scan since these are
         // likely to be a better guess than anything else.
 
-        double dUTC = thisUTC - prevUTC;
+        double dUTC = nextUTC - thisUTC;
 
         // Scan rate for this beam.
         if (dUTC > 0.0) {
-          iMBuff->raRate  = (thisRA  - prevRA)  / dUTC;
-          iMBuff->decRate = (thisDec - prevDec) / dUTC;
+          iMBuff->raRate  = (nextRA  - thisRA)  / dUTC;
+          iMBuff->decRate = (nextDec - thisDec) / dUTC;
+          iMBuff->rateAge = 0;
+          iMBuff->rateson = 0;
 
           if (cInterp == 2) {
             // Use the same interpolation scheme as the original pksmbfits
-            // client.  This incorrectly assumed that (thisUTC - prevUTC) is
+            // client.  This incorrectly assumed that (nextUTC - thisUTC) is
             // equal to the integration time and interpolated by computing a
             // weighted sum of the positions before and after the required
             // time.
 
             double utc = iMBuff->utc;
-            if (utc - prevUTC > 100.0) {
+            if (utc - thisUTC > 100.0) {
               // Must have cycled through midnight.
               utc -= 86400.0;
             }
 
-            double tw1 = 1.0 - (utc - prevUTC) / iMBuff->exposure;
-            double tw2 = 1.0 - (thisUTC - utc) / iMBuff->exposure;
-            double gamma = (tw2 / (tw1 + tw2)) * dUTC / (utc - prevUTC);
+            double tw1 = 1.0 - (utc - thisUTC) / iMBuff->exposure;
+            double tw2 = 1.0 - (nextUTC - utc) / iMBuff->exposure;
+            double gamma = (tw2 / (tw1 + tw2)) * dUTC / (utc - thisUTC);
 
             iMBuff->raRate  *= gamma;
             iMBuff->decRate *= gamma;
           }
 
-          cStaleness[iBeamSel] = 0;
-
         } else {
-          // Issue warnings.
-          int nch = 0;
-          fprintf(stderr, "WARNING, scan %d,%n cycle %d: Position ",
-            iMBuff->scanNo, &nch, iMBuff->cycleNo);
+          iMBuff->rateAge++;
 
+          // Staleness codes.
           if (dUTC < 0.0) {
-            fprintf(stderr, "timestamp went backwards!\n");
+            iMBuff->rateson = 3;
           } else {
-            if (thisRA != prevRA || thisDec != prevDec) {
-              fprintf(stderr, "changed but timestamp unchanged!\n");
+            if (nextRA != thisRA || nextDec != thisDec) {
+              iMBuff->rateson = 2;
             } else {
-              fprintf(stderr, "and timestamp unchanged!\n");
-            }
-          }
-
-          cStaleness[iBeamSel]++;
-          fprintf(stderr, "%-*s Using stale scan rate, staleness = %d "
-            "cycle%s.\n", nch, "WARNING,", cStaleness[iBeamSel],
-            (cStaleness[iBeamSel] == 1) ? "" : "s");
-
-          if (thisRA != prevRA || thisDec != prevDec) {
-            if (iMBuff->raRate == 0.0 && iMBuff->decRate == 0.0) {
-              fprintf(stderr, "%-*s But the previous rate was zero!  "
-                "Position will be inaccurate.\n", nch, "WARNING,");
+              iMBuff->rateson = 1;
             }
           }
         }
       }
+
+#ifdef PKSIO_DEBUG
+      printf("Doing position interpolation for beam %d.\n", iMBuff->beamNo);
+      printf("RA and Dec rates and age: %7.4f  %7.4f  %d\n",
+        iMBuff->raRate*R2D, iMBuff->decRate*R2D, iMBuff->rateAge);
+#endif
 
       // Compute the position of this beam for all bins.
       for (int idx = 0; idx < cNBin; idx++) {
@@ -840,14 +856,14 @@ int MBFITSreader::read(
         cBuffer[jbuff].raRate  = iMBuff->raRate;
         cBuffer[jbuff].decRate = iMBuff->decRate;
 
-        double dutc = cBuffer[jbuff].utc - prevUTC;
+        double dutc = cBuffer[jbuff].utc - thisUTC;
         if (dutc > 100.0) {
           // Must have cycled through midnight.
           dutc -= 86400.0;
         }
 
-        cBuffer[jbuff].ra  = prevRA  + cBuffer[jbuff].raRate  * dutc;
-        cBuffer[jbuff].dec = prevDec + cBuffer[jbuff].decRate * dutc;
+        cBuffer[jbuff].ra  = thisRA  + cBuffer[jbuff].raRate  * dutc;
+        cBuffer[jbuff].dec = thisDec + cBuffer[jbuff].decRate * dutc;
         if (cBuffer[jbuff].ra < 0.0) {
           cBuffer[jbuff].ra += TWOPI;
         } else if (cBuffer[jbuff].ra > TWOPI) {

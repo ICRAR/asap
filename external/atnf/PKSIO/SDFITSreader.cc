@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSreader.cc: ATNF CFITSIO interface class for SDFITS input.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: SDFITSreader.cc,v 19.23 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: SDFITSreader.cc,v 19.24 2008-06-26 02:13:11 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The SDFITSreader class reads single dish FITS files such as those written
 //# by SDFITSwriter containing Parkes Multibeam data.
@@ -1288,6 +1288,8 @@ int SDFITSreader::read(
     mbrec.raRate  = scanrate[0] * D2R;
     mbrec.decRate = scanrate[1] * D2R;
   }
+  mbrec.rateAge = 0;
+  mbrec.rateson = 0;
 
   // IF-dependent parameters.
   int startChan = cStartChan[iIF];
