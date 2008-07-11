@@ -225,7 +225,8 @@ public:
    * param[in] msk a boolean mask of length nchan describing the points to
    * to be flagged
    */
-  void flag( const std::vector<bool>& msk = std::vector<bool>());
+  //void flag( const std::vector<bool>& msk = std::vector<bool>());
+  void flag( const std::vector<bool>& msk = std::vector<bool>(), bool unflag=false);
 
   /**
    * Return a list of row numbers with respect to the original table.

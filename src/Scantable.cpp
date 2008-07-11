@@ -616,7 +616,7 @@ void Scantable::calculateAZEL()
   pushLog(String(oss));
 }
 
-void Scantable::flag(const std::vector<bool>& msk)
+void Scantable::flag(const std::vector<bool>& msk, bool unflag)
 {
   std::vector<bool>::const_iterator it;
   uInt ntrue = 0;
@@ -629,6 +629,9 @@ void Scantable::flag(const std::vector<bool>& msk)
     throw(AipsError("Trying to flag whole scantable."));
   if ( msk.size() == 0 ) {
     uChar userflag = 1 << 7;
+    if ( unflag ) {
+      userflag = 0 << 7;
+    }
     for ( uInt i=0; i<table_.nrow(); ++i) {
       Vector<uChar> flgs = flagsCol_(i);
       flgs = userflag;
@@ -648,6 +651,9 @@ void Scantable::flag(const std::vector<bool>& msk)
     std::vector<bool>::const_iterator it;
     uInt j = 0;
     uChar userflag = 1 << 7;
+    if ( unflag ) {
+      userflag = 0 << 7;
+    }
     for (it = msk.begin(); it != msk.end(); ++it) {
       if ( *it ) {
         flgs(j) = userflag;

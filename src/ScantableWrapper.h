@@ -100,8 +100,12 @@ public:
   std::vector<bool> getMask(int whichrow=0) const
     { return table_->getMask(whichrow); }
 
+  /**
   void flag(const std::vector<bool>& msk=std::vector<bool>())
     { table_->flag(msk); }
+  **/
+  void flag(const std::vector<bool>& msk=std::vector<bool>(), bool unflag=false)
+    { table_->flag(msk, unflag); }
 
   std::string getSourceName(int whichrow=0) const
     { return table_->getSourceName(whichrow); }
