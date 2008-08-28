@@ -60,7 +60,8 @@ opts.AddOptions(
                 EnumOption("makedoc", "Build the userguide in specified format",
                            "none",
                            ["none", "pdf", "html"], ignorecase=1),
-                BoolOption("apps", "Build cpp apps", False)
+                BoolOption("apps", "Build cpp apps", False),
+                BoolOption("alma", "Enable alma specific functionality", False)
                 )
 
 env = Environment( toolpath = ['./scons'],
@@ -135,6 +136,8 @@ if not env.GetOption('clean'):
     if not conf.CheckLib(conf.env["blaslib"]): Exit(1)
     conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
+    if conf.env["alma"]:
+        conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
 env["version"] = "2.2.x"
