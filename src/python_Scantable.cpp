@@ -102,7 +102,8 @@ void python_Scantable() {
     .def("_getdirection", &ScantableWrapper::getDirectionString,
          (boost::python::arg("whichrow")=0) )
     .def("get_antennaname", &ScantableWrapper::getAntennaName)
-    .def("_flag", &ScantableWrapper::flag)
+    .def("_flag", &ScantableWrapper::flag,
+                  (boost::python::arg("unflag") = false) )
     .def("_save",  &ScantableWrapper::makePersistent)
     .def("_summary",  &ScantableWrapper::summary,
          (boost::python::arg("verbose")=true) )
