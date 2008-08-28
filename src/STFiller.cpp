@@ -25,8 +25,9 @@
 #include <tables/Tables/TableRow.h>
 
 #include <atnf/PKSIO/PKSreader.h>
-//#include <casa/System/ProgressMeter.h>
-
+#ifdef HAS_ALMA
+ #include <casa/System/ProgressMeter.h>
+#endif
 
 #include "STDefs.h"
 #include "STAttr.h"
@@ -238,7 +239,9 @@ int asap::STFiller::read( )
   Vector<Complex> xPol;
   Double min = 0.0;
   Double max = nInDataRow;
-  //ProgressMeter fillpm(min, max, "Data importing progress");
+#ifdef HAS_ALMA
+  ProgressMeter fillpm(min, max, "Data importing progress");
+#endif
   int n = 0;
   while ( status == 0 ) {
     status = reader_->read(scanNo, cycleNo, mjd, interval, fieldName,
@@ -375,13 +378,17 @@ int asap::STFiller::read( )
       table_->table().addRow();
       row.put(table_->table().nrow()-1, rec);
     }
-    //fillpm._update(n);
+#ifdef HAS_ALMA
+    fillpm._update(n);
+#endif
   }
   if (status > 0) {
     close();
     throw(AipsError("Reading error occured, data possibly corrupted."));
   }
-  //fillpm.done();
+#ifdef HAS_ALMA
+  fillpm.done();
+#endif
   return status;
 }
 
