@@ -31,6 +31,8 @@ if not os.path.exists(userdir):
     print 'First time ASAP use. Setting up ~/.asap'
     os.mkdir(userdir)
     shutil.copyfile(asapdata+"/data/ipythonrc-asap", userdir+"/ipythonrc-asap")
+    shutil.copyfile(asapdata+"/data/ipy_user_conf.py", 
+                    userdir+"/ipy_user_conf.py")
     f = file(userdir+"/asapuserfuncs.py", "w")
     f.close()
     f = file(userdir+"/ipythonrc", "w")

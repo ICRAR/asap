@@ -50,5 +50,5 @@ else
         $p -c "import asap"
     fi
     # now execute ipython using the profile
-    $ip -ipythondir "${HOME}/.asap" -p 'asap' $*
+    $ip -ipythondir "${HOME}/.asap" $*
 fi
