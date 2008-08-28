@@ -38,7 +38,9 @@ class scantable(Scantable):
         if isinstance(filename, Scantable):
             Scantable.__init__(self, filename)
         else:
-            if isinstance(filename, str):
+            if isinstance(filename, str):# or \
+#                (isinstance(filename, list) or isinstance(filename, tuple)) \
+#                  and isinstance(filename[-1], str):
                 import os.path
                 filename = os.path.expandvars(filename)
                 filename = os.path.expanduser(filename)
@@ -1665,6 +1667,8 @@ class scantable(Scantable):
             return fit.as_dict()
 
     def _add_history(self, funcname, parameters):
+        if not rcParams['scantable.history']:
+            return
         # create date
         sep = "##"
         from datetime import datetime
