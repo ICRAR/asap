@@ -1537,11 +1537,8 @@ CountedPtr< Scantable >
   ++it;
   while ( it != in.end() ){
     if ( ! (*it)->conformant(*out) ) {
-      // log message: "ignoring scantable i, as it isn't
-      // conformant with the other(s)"
+      // non conformant.
       pushLog(String("Warning: Can't merge scantables as header info differs."));
-      ++it;
-      continue;
     }
     out->appendToHistoryTable((*it)->history());
     const Table& tab = (*it)->table();

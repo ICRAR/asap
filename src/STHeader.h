@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #ifndef STHEADER_H
 #define STHEADER_H
@@ -49,6 +49,8 @@ namespace asap {
 struct STHeader {
 
   bool conformant(const STHeader& other);
+  casa::String diff( const STHeader& other );
+
 
   casa::Int nchan;
   casa::Int npol;
