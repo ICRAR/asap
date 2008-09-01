@@ -90,6 +90,9 @@ class scantable(Scantable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
+                                       'FITS' (save as image FITS - not 
+                                               readable by class)
+                                       'CLASS' (save as FITS readable by CLASS)
             overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
                          without writing the output. USE WITH CARE.

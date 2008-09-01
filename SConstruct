@@ -97,7 +97,7 @@ if not env.GetOption('clean'):
     conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
 					       "include", "casacore"))
     if not conf.CheckLib("casa_casa", language='c++'): Exit(1)
-    conf.env.PrependUnique(LIBS=["casa_ms", "casa_components", 
+    conf.env.PrependUnique(LIBS=["casa_images", "casa_ms", "casa_components", 
                                  "casa_coordinates", "casa_lattices", 
                                  "casa_fits", "casa_measures", "casa_scimath",
                                  "casa_scimath_f", "casa_tables", 

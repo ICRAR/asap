@@ -46,7 +46,7 @@
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/ArrayColumn.h>
 
-//#include "SDFITSImageWriter.h"
+#include "STFITSImageWriter.h"
 #include "STAsciiWriter.h"
 #include "STHeader.h"
 
@@ -60,11 +60,11 @@ STWriter::STWriter(const std::string &format)
   format_ = format;
   String t(format_);
   t.upcase();
-  if (t== "MS2") {
+  if (t == "MS2") {
     writer_ = new PKSMS2writer();
-  } else if (t== "SDFITS") {
+  } else if (t == "SDFITS") {
     writer_ = new PKSSDwriter();
-  } else if (t== "ASCII") {
+  } else if (t == "ASCII" || t == "FITS" || t == "CLASS") {
     writer_ = 0;
   } else {
     throw (AipsError("Unrecognized export format"));
@@ -91,7 +91,7 @@ Int STWriter::setFormat(const std::string &format)
     writer_ = new PKSMS2writer();
   } else if (t== "SDFITS") {
     writer_ = new PKSSDwriter();
-  } else if (t== "ASCII") {
+  } else if (t == "ASCII" || t == "FITS" || t == "CLASS") {
     writer_ = 0;
   } else {
     throw (AipsError("Unrecognized Format"));
@@ -109,6 +109,14 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       return 0;
     } else {
       return 1;
+    }
+  } else if ( format_ == "FITS" || format_ == "CLASS") {
+    STFITSImageWriter iw;
+    if (format_ == "CLASS") {
+      iw.setClass(True);
+    }
+    if (iw.write(*in, filename)) {
+      return 0;
     }
   }
 
