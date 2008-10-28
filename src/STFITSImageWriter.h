@@ -60,6 +60,10 @@ private:
   casa::DirectionCoordinate getDirectionCoordinate(const casa::String& reff,
                                                    casa::Double lon, 
                                                    casa::Double lat);
+  // Apply hacks to fits file so it can be read by class
+  // modifications are
+  // CTYPE1 :  FREQ-XYZ -> FREQ
+  // CRVAL1 :  -> CRVAL1-RESTFREQ
   void classHackHeader(const casa::String& filename);
 
   casa::Bool isClass_;

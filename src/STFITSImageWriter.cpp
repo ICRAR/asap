@@ -29,6 +29,7 @@
 //# $Id: $
 //#---------------------------------------------------------------------------
 
+#include <fitsio.h>
 #include <images/Images/TempImage.h>
 
 #include <lattices/Lattices/ArrayLattice.h>
@@ -216,5 +217,23 @@ STFITSImageWriter::getDirectionCoordinate(const String& reff,
 }
 
 void STFITSImageWriter::classHackHeader(const String& filename) {
-  cout << "Not yet implemented" << endl;
+  int status = 0;
+  fitsfile *fptr;     
+  cout << "filename" << endl;
+  if( fits_open_file(&fptr, filename.c_str(), READWRITE, &status) ) 
+    throw AipsError("FCoudn't open fits file for CLASS modification");
+
+  if ( fits_update_key(fptr, TSTRING, "CTYPE1", (char *)"FREQ",
+                       NULL, &status) )
+    throw AipsError("Couldn't modify CTYPE1.");
+  float restf,refval,newfreq;
+  fits_read_key(fptr, TFLOAT, "CRVAL1", 
+                &refval, NULL, &status);
+  fits_read_key(fptr, TFLOAT, "RESTFREQ", 
+                &restf, NULL, &status);
+  newfreq = refval - restf;
+  if ( fits_update_key(fptr, TFLOAT, "CRVAL1", &newfreq,  NULL, &status) )
+    throw AipsError("Couldn't modify CRVAL1");
+  fits_close_file(fptr, &status);
+
 }
