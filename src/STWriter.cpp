@@ -38,6 +38,7 @@
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Utilities/Assert.h>
 
+#include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
 
@@ -154,122 +155,103 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     throw(AipsError("Failed to create output file"));
   }
 
-  Double          srcVel;
 
-  String          fieldName, srcName, tcalTime;
-  Vector<Float>   calFctr, sigma, tcal, tsys;
-  Vector<Double>  direction(2), scanRate(2), srcDir(2), srcPM(2);
-  Matrix<Float>   spectra;
-  Matrix<uChar>   flagtra;
-  Complex         xCalFctr;
   Int count = 0;
-  Int scanno = 1;
+  PKSrecord pksrec;
+  pksrec.scanNo = 1;
   // use spearate iterators to ensure renumbering of all numbers
   TableIterator scanit(table, "SCANNO");
   while (!scanit.pastEnd() ) {
     Table stable = scanit.table();
     TableIterator beamit(stable, "BEAMNO");
-    Int beamno = 1;
+    pksrec.beamNo = 1;
     while (!beamit.pastEnd() ) {
       Table btable = beamit.table();
       TableIterator cycit(btable, "CYCLENO");
       ROArrayColumn<Double> srateCol(btable, "SCANRATE");
-      srateCol.get(0, scanRate);
+      srateCol.get(0, pksrec.scanRate);
       ROArrayColumn<Double> spmCol(btable, "SRCPROPERMOTION");
-      spmCol.get(0, srcPM);
+      spmCol.get(0, pksrec.srcPM);
       ROArrayColumn <Double> sdirCol(btable, "SRCDIRECTION");
-      sdirCol.get(0, srcDir);
+      sdirCol.get(0, pksrec.srcDir);
       ROScalarColumn<Double> svelCol(btable, "SRCVELOCITY");
-      svelCol.get(0, srcVel);
+      svelCol.get(0, pksrec.srcVel);
       ROScalarColumn<uInt> bCol(btable, "BEAMNO");
-      beamno = bCol(0)+1;
-      Int cycno = 1;
+      pksrec.beamNo = bCol(0)+1;
+      pksrec.cycleNo = 1;
       while (!cycit.pastEnd() ) {
         Table ctable = cycit.table();
         TableIterator ifit(ctable, "IFNO");
         MDirection::ScalarColumn dirCol(ctable, "DIRECTION");
-        Vector<Double> direction = dirCol(0).getAngle("rad").getValue();
-        Int ifno = 1;
+        pksrec.direction = dirCol(0).getAngle("rad").getValue();
+        pksrec.IFno = 1;
         while (!ifit.pastEnd() ) {
           Table itable = ifit.table();
           TableRow row(itable);
           // use the first row to fill in all the "metadata"
           const TableRecord& rec = row.get(0);
           ROArrayColumn<Float> specCol(itable, "SPECTRA");
-          ifno = rec.asuInt("IFNO")+1;
+          pksrec.IFno = rec.asuInt("IFNO")+1;
           uInt nchan = specCol(0).nelements();
-          Double cdelt,crval,crpix, restfreq;
-          Float focusAxi, focusTan, focusRot,
-                temperature, pressure, humidity, windSpeed, windAz;
+          Double crval,crpix;
           Float tmp0,tmp1,tmp2,tmp3,tmp4;
-          Vector<Float> tcalval;
-          String stmp0,stmp1, tcalt;
-          in->frequencies().getEntry(crpix,crval,cdelt, rec.asuInt("FREQ_ID"));
-          in->focus().getEntry(focusAxi, focusTan, focusRot,
-                               tmp0,tmp1,tmp2,tmp3,tmp4,
+          String stmp0,stmp1;
+          in->frequencies().getEntry(crpix,crval, pksrec.freqInc,
+                                     rec.asuInt("FREQ_ID"));
+          in->focus().getEntry(pksrec.focusAxi, pksrec.focusTan,
+                               pksrec.focusRot, tmp0,tmp1,tmp2,tmp3,tmp4,
                                rec.asuInt("FOCUS_ID"));
-          in->molecules().getEntry(restfreq,stmp0,stmp1,rec.asuInt("MOLECULE_ID"));
-          in->tcal().getEntry(tcalt,tcalval,rec.asuInt("TCAL_ID"));
-          in->weather().getEntry(temperature, pressure, humidity,
-                                 windSpeed, windAz,
-                                 rec.asuInt("WEATHER_ID"));
+          in->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
+                                   rec.asuInt("MOLECULE_ID"));
+          in->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
+                              rec.asuInt("TCAL_ID"));
+          in->weather().getEntry(pksrec.temperature, pksrec.pressure,
+                                 pksrec.humidity, pksrec.windSpeed,
+                                 pksrec.windAz, rec.asuInt("WEATHER_ID"));
           Double pixel = Double(nchan/2);
-          Double refFreqNew = (pixel-crpix)*cdelt + crval;
+          pksrec.refFreq = (pixel-crpix)*pksrec.freqInc + crval;
           // ok, now we have nrows for the n polarizations in this table
-          Matrix<Float> specs;
-          Matrix<uChar> flags;
-          Vector<Complex> xpol;
-          polConversion(specs, flags, xpol, itable);
-          Vector<Float> tsys = tsysFromTable(itable);
+          polConversion(pksrec.spectra, pksrec.flagged, pksrec.xpol, itable);
+          pksrec.tsys = tsysFromTable(itable);
           // dummy data
-          uInt npol = specs.ncolumn();
+          uInt npol = spectra.ncolumn();
 
-          Matrix<Float>   baseLin(npol,2, 0.0f);
-          Matrix<Float>   baseSub(npol,9, 0.0f);
-          Complex         xCalFctr;
-          Vector<Double>  scanRate(2, 0.0);
-          Vector<Float>   sigma(npol, 0.0f);
-          Vector<Float>   calFctr(npol, 0.0f);
-          status = writer_->write(scanno, cycno, rec.asDouble("TIME"),
-                                      rec.asDouble("INTERVAL"),
-                                      rec.asString("FIELDNAME"),
-                                      rec.asString("SRCNAME"),
-                                      srcDir, srcPM, srcVel,hdr.obstype,
-                                      ifno,
-                                      refFreqNew, nchan*abs(cdelt), cdelt,
-                                      restfreq,
-                                      tcal,
-                                      tcalt,
-                                      rec.asFloat("AZIMUTH"),
-                                      rec.asFloat("ELEVATION"),
-                                      rec.asFloat("PARANGLE"),
-                                      focusAxi, focusTan, focusRot,
-                                      temperature,
-                                      pressure, humidity, windSpeed, windAz,
-                                      rec.asInt("REFBEAMNO")+1, beamno,
-                                      direction,
-                                      scanRate,
-                                      tsys,
-                                      sigma, calFctr,// not in scantable
-                                      baseLin, baseSub,// not in scantable
-                                      specs, flags,
-                                      xCalFctr,//
-                                      xpol);
+          pksrec.mjd       = rec.asDouble("TIME");
+          pksrec.interval  = rec.asDouble("INTERVAL");
+          pksrec.fieldName = rec.asString("FIELDNAME");
+          pksrec.srcName   = rec.asString("SRCNAME");
+          pksrec.obsType   = hdr.obstype;
+          pksrec.bandwidth = nchan * abs(pksrec.freqInc);
+          pksrec.azimuth   = rec.asFloat("AZIMUTH");
+          pksrec.elevation = rec.asFloat("ELEVATION");
+          pksrec.parAngle  = rec.asFloat("PARANGLE");
+          pksrec.refBeam   = rec.asInt("REFBEAMNO") + 1;
+          pksrec.sigma.resize(npol);
+          pksrec.sigma     = 0.0f;
+          pksrec.calFctr.resize(npol);
+          pksrec.calFctr   = 0.0f;
+          pksrec.baseLin.resize(npol,2);
+          pksrec.baseLin   = 0.0f;
+          pksrec.baseSub.resize(npol,9);
+          pksrec.baseSub   = 0.0f;
+          pksrec.xCalFctr  = 0.0;
+
+          status = writer_->write(pksrec);
           if ( status ) {
             writer_->close();
             throw(AipsError("STWriter: Failed to export Scantable."));
           }
           ++count;
-          //++ifno;
+          //++pksrec.IFno;
           ++ifit;
         }
-        ++cycno;
+        ++pksrec.cycleNo;
         ++cycit;
       }
-      //++beamno;
+      //++pksrec.beamNo;
       ++beamit;
     }
-    ++scanno;
+    ++pksrec.scanNo;
     ++scanit;
   }
   ostringstream oss;
