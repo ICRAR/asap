@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2writer.cc: Class to write Parkes multibeam data to a measurementset.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2writer.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSMS2writer.cc,v 19.14 2008-11-17 06:56:13 cal103 Exp $
 //#---------------------------------------------------------------------------
 
+#include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSMS2writer.h>
 
 #include <casa/Arrays/ArrayUtil.h>
@@ -53,6 +54,10 @@
 
 PKSMS2writer::PKSMS2writer()
 {
+  cPKSMS = 0x0;
+
+  // By default, messages are written to stderr.
+  initMsg();
 }
 
 //------------------------------------------------ PKSMS2writer::~PKSMS2writer
@@ -83,6 +88,14 @@ Int PKSMS2writer::create(
         const Vector<Bool> haveXPol,
         const Bool   haveBase)
 {
+  if (cPKSMS) {
+    logMsg("ERROR: Output MS already open, close it first.");
+    return 1;
+  }
+
+  // Clear the message stack.
+  clearMsg();
+
   // Open a MS table.
   TableDesc pksDesc = MS::requiredTableDesc();
 
@@ -368,91 +381,60 @@ Int PKSMS2writer::create(
 // Write the next data record.
 
 Int PKSMS2writer::write(
-        const Int             scanNo,
-        const Int             cycleNo,
-        const Double          mjd,
-        const Double          interval,
-        const String          fieldName,
-        const String          srcName,
-        const Vector<Double>  srcDir,
-        const Vector<Double>  srcPM,
-        const Double          srcVel,
-        const String          obsMode,
-        const Int             IFno,
-        const Double          refFreq,
-        const Double          bandwidth,
-        const Double          freqInc,
-        const Double          restFreq,
-        const Vector<Float>   tcal,
-        const String          tcalTime,
-        const Float           azimuth,
-        const Float           elevation,
-        const Float           parAngle,
-        const Float           focusAxi,
-        const Float           focusTan,
-        const Float           focusRot,
-        const Float           temperature,
-        const Float           pressure,
-        const Float           humidity,
-        const Float           windSpeed,
-        const Float           windAz,
-        const Int             refBeam,
-        const Int             beamNo,
-        const Vector<Double>  direction,
-        const Vector<Double>  scanRate,
-        const Vector<Float>   tsys,
-        const Vector<Float>   sigma,
-        const Vector<Float>   calFctr,
-        const Matrix<Float>   baseLin,
-        const Matrix<Float>   baseSub,
-        const Matrix<Float>   &spectra,
-        const Matrix<uChar>   &flagged,
-        const Complex         xCalFctr,
-        const Vector<Complex> &xPol)
+        const PKSrecord &pksrec)
 {
   // Extend the time range in the OBSERVATION subtable.
   Vector<Double> timerange(2);
   cObservationCols->timeRange().get(0, timerange);
-  Double time = mjd*86400.0;
+  Double time = pksrec.mjd*86400.0;
   if (timerange(0) == 0.0) {
     timerange(0) = time;
   }
   timerange(1) = time;
   cObservationCols->timeRange().put(0, timerange);
 
-  Int iIF = IFno - 1;
+  Int iIF = pksrec.IFno - 1;
   Int nChan = cNChan(iIF);
   Int nPol  = cNPol(iIF);
 
   // IFno is the 1-relative row number in the DATA_DESCRIPTION,
   // SPECTRAL_WINDOW, and POLARIZATION subtables.
-  if (Int(cDataDescription.nrow()) < IFno) {
+  if (Int(cDataDescription.nrow()) < pksrec.IFno) {
     // Add a new entry to each subtable.
-    addDataDescriptionEntry(IFno);
-    addSpectralWindowEntry(IFno, nChan, refFreq, bandwidth, freqInc);
-    addPolarizationEntry(IFno, nPol);
+    addDataDescriptionEntry(pksrec.IFno);
+    addSpectralWindowEntry(pksrec.IFno, nChan, pksrec.refFreq,
+      pksrec.bandwidth, pksrec.freqInc);
+    addPolarizationEntry(pksrec.IFno, nPol);
   }
 
   // Find or add the source to the SOURCE subtable.
-  Int srcId = addSourceEntry(srcName, srcDir, srcPM, restFreq, srcVel);
+  Int srcId = addSourceEntry(pksrec.srcName, pksrec.srcDir, pksrec.srcPM,
+    pksrec.restFreq, pksrec.srcVel);
 
-  // Find or add the obsMode to the STATE subtable.
-  Int stateId = addStateEntry(obsMode);
+  // Find or add the obsType to the STATE subtable.
+  Int stateId = addStateEntry(pksrec.obsType);
 
   // FIELD subtable.
-  Int fieldId = addFieldEntry(fieldName, time, direction, scanRate, srcId);
+  Vector<Double> scanRate(2);
+  scanRate(0) = pksrec.scanRate(0);
+  scanRate(1) = pksrec.scanRate(1);
+  Int fieldId = addFieldEntry(pksrec.fieldName, time, pksrec.direction,
+    scanRate, srcId);
 
   // POINTING subtable.
-  addPointingEntry(time, interval, fieldName, direction, scanRate);
+  addPointingEntry(time, pksrec.interval, pksrec.fieldName, pksrec.direction,
+    scanRate);
 
   // SYSCAL subtable.
-  addSysCalEntry(beamNo, iIF, time, interval, tcal, tsys);
+  addSysCalEntry(pksrec.beamNo, iIF, time, pksrec.interval, pksrec.tcal,
+    pksrec.tsys);
 
   // Handle weather information.
   ROScalarColumn<Double> wTime(cWeather, "TIME");
   Int nWeather = wTime.nrow();
   if (nWeather == 0 || time > wTime(nWeather-1)) {
-    addWeatherEntry(time, interval, pressure, humidity, temperature);
+    addWeatherEntry(time, pksrec.interval, pksrec.pressure, pksrec.humidity,
+      pksrec.temperature);
   }
 
 
@@ -464,17 +446,17 @@ Int PKSMS2writer::write(
   cMSCols->time().put(irow, time);
   cMSCols->antenna1().put(irow, 0);
   cMSCols->antenna2().put(irow, 0);
-  cMSCols->feed1().put(irow, beamNo-1);
-  cMSCols->feed2().put(irow, beamNo-1);
+  cMSCols->feed1().put(irow, pksrec.beamNo-1);
+  cMSCols->feed2().put(irow, pksrec.beamNo-1);
   cMSCols->dataDescId().put(irow, iIF);
   cMSCols->processorId().put(irow, 0);
   cMSCols->fieldId().put(irow, fieldId);
 
   // Non-key attributes.
-  cMSCols->interval().put(irow, interval);
-  cMSCols->exposure().put(irow, interval);
+  cMSCols->interval().put(irow, pksrec.interval);
+  cMSCols->exposure().put(irow, pksrec.interval);
   cMSCols->timeCentroid().put(irow, time);
-  cMSCols->scanNumber().put(irow, scanNo);
+  cMSCols->scanNumber().put(irow, pksrec.scanNo);
   cMSCols->arrayId().put(irow, 0);
   cMSCols->observationId().put(irow, 0);
   cMSCols->stateId().put(irow, stateId);
@@ -484,16 +466,16 @@ Int PKSMS2writer::write(
 
   // Baseline fit parameters.
   if (cHaveBase) {
-    cBaseLinCol->put(irow, baseLin);
+    cBaseLinCol->put(irow, pksrec.baseLin);
 
-    if (baseSub.nrow() == 9) {
-      cBaseSubCol->put(irow, baseSub);
+    if (pksrec.baseSub.nrow() == 9) {
+      cBaseSubCol->put(irow, pksrec.baseSub);
 
     } else {
       Matrix<Float> tmp(9, 2, 0.0f);
       for (Int ipol = 0; ipol < nPol; ipol++) {
-        for (uInt j = 0; j < baseSub.nrow(); j++) {
-          tmp(j,ipol) = baseSub(j,ipol);
+        for (uInt j = 0; j < pksrec.baseSub.nrow(); j++) {
+          tmp(j,ipol) = pksrec.baseSub(j,ipol);
         }
       }
       cBaseSubCol->put(irow, tmp);
@@ -505,22 +487,22 @@ Int PKSMS2writer::write(
   Matrix<Bool>  tmpFlag(nPol, nChan);
   for (Int ipol = 0; ipol < nPol; ipol++) {
     for (Int ichan = 0; ichan < nChan; ichan++) {
-      tmpData(ipol,ichan) = spectra(ichan,ipol);
-      tmpFlag(ipol,ichan) = flagged(ichan,ipol);
+      tmpData(ipol,ichan) = pksrec.spectra(ichan,ipol);
+      tmpFlag(ipol,ichan) = pksrec.flagged(ichan,ipol);
     }
   }
 
-  cCalFctrCol->put(irow, calFctr);
+  cCalFctrCol->put(irow, pksrec.calFctr);
   cMSCols->floatData().put(irow, tmpData);
   cMSCols->flag().put(irow, tmpFlag);
 
   // Cross-polarization spectra.
   if (cHaveXPol(iIF)) {
-    cXCalFctrCol->put(irow, xCalFctr);
-    cMSCols->data().put(irow, xPol);
+    cXCalFctrCol->put(irow, pksrec.xCalFctr);
+    cMSCols->data().put(irow, pksrec.xPol);
   }
 
-  cMSCols->sigma().put(irow, sigma);
+  cMSCols->sigma().put(irow, pksrec.sigma);
 
   Vector<Float> weight(1, 1.0f);
   cMSCols->weight().put(irow, weight);
@@ -585,8 +567,10 @@ void PKSMS2writer::close()
   cState           = MSState();
   cSysCal          = MSSysCal();
   cWeather         = MSWeather();
+
   // Release the main table.
-  delete cPKSMS; cPKSMS=0;
+  delete cPKSMS;
+  cPKSMS = 0x0;
 }
 
 //---------------------------------------------- PKSMS2writer::addAntennaEntry
@@ -983,11 +967,11 @@ Int PKSMS2writer::addSpectralWindowEntry(
 // Add an entry to the STATE subtable.
 
 Int PKSMS2writer::addStateEntry(
-        const String obsMode)
+        const String obsType)
 {
   // Look for an entry in the STATE subtable.
   for (uInt n = 0; n < cStateCols->nrow(); n++) {
-    if (cStateCols->obsMode()(n) == obsMode) {
+    if (cStateCols->obsMode()(n) == obsType) {
       return n;
     }
   }
@@ -997,10 +981,10 @@ Int PKSMS2writer::addStateEntry(
   uInt n = cStateCols->nrow() - 1;
 
   // Data.
-  if (obsMode.contains("RF")) {
+  if (obsType.contains("RF")) {
     cStateCols->sig().put(n, False);
     cStateCols->ref().put(n, True);
-  } else if (!obsMode.contains("PA")) {
+  } else if (!obsType.contains("PA")) {
     // Signal and reference are both false for "paddle" data.
     cStateCols->sig().put(n, True);
     cStateCols->ref().put(n, False);
@@ -1009,7 +993,7 @@ Int PKSMS2writer::addStateEntry(
   cStateCols->load().put(n, 0.0);
   cStateCols->cal().put(n, 0.0);
   cStateCols->subScan().put(n, 0);
-  cStateCols->obsMode().put(n, obsMode);
+  cStateCols->obsMode().put(n, obsType);
 
   // Flags.
   cStateCols->flagRow().put(n, False);

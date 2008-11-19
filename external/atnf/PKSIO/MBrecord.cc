@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# PKSMBrecord.cc: Class to store an MBFITS single-dish data record.
+//# MBrecord.cc: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
@@ -26,22 +26,22 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: PKSMBrecord.cc,v 19.7 2008-06-26 02:10:21 cal103 Exp $
+//# $Id: MBrecord.cc,v 19.12 2008-11-17 06:52:35 cal103 Exp $
 //#---------------------------------------------------------------------------
-//# The PKSMBrecord class stores an MBFITS single-dish data record.
+//# The MBrecord class stores an MBFITS single-dish data record.
 //#
 //# Original: 2000/08/01 Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
-#include <atnf/PKSIO/PKSMBrecord.h>
+#include <atnf/PKSIO/MBrecord.h>
 
 #include <string.h>
 
-//--------------------------------------------------- PKSMBrecord::PKSMBrecord
+//--------------------------------------------------------- MBrecord::MBrecord
 
 // Default constructor.
 
-PKSMBrecord::PKSMBrecord(int nif)
+MBrecord::MBrecord(int nif)
 {
   // Construct arrays for the required number of IFs.
   cNIF = 0;
@@ -50,27 +50,28 @@ PKSMBrecord::PKSMBrecord(int nif)
   scanNo  = 0;
   cycleNo = 0;
   beamNo  = 0;
+  pCode   = 0;
+  rateAge = 0.0f;
   raRate  = 0.0f;
   decRate = 0.0f;
-  rateAge = 0;
   nIF     = 0;
 }
 
-//-------------------------------------------------- PKSMBrecord::~PKSMBrecord
+//-------------------------------------------------------- MBrecord::~MBrecord
 
 // Destructor.
 
-PKSMBrecord::~PKSMBrecord()
+MBrecord::~MBrecord()
 {
   free();
 }
 
-//------------------------------------------------------- PKSMBrecord::setNIFs
+//---------------------------------------------------------- MBrecord::setNIFs
 
 // Expand arrays if necessary to accomodate the required number of IFs; never
 // contracts them.
 
-void PKSMBrecord::setNIFs(int nif)
+void MBrecord::setNIFs(int nif)
 {
   if (nif < 1) return;
 
@@ -114,14 +115,14 @@ void PKSMBrecord::setNIFs(int nif)
   }
 }
 
-//------------------------------------------------------ PKSMBrecord::allocate
+//--------------------------------------------------------- MBrecord::allocate
 
 // Ensure there is enough storage for the specified number of spectral
 // products (channels x polarizations) for IF with array index iIF (i.e.
 // the actual IF number is IFno[iIF]).  Expands arrays if necessary but
 // never contracts.
 
-void PKSMBrecord::allocate(
+void MBrecord::allocate(
         int iIF,
         int nprod,
         int nxpol)
@@ -156,11 +157,11 @@ void PKSMBrecord::allocate(
   }
 }
 
-//---------------------------------------------------------- PKSMBrecord::free
+//------------------------------------------------------------- MBrecord::free
 
 // Free all allocated storage.
 
-void PKSMBrecord::free()
+void MBrecord::free()
 {
   if (cNIF) {
     for (int iIF = 0; iIF < cNIF; iIF++) {
@@ -201,11 +202,11 @@ void PKSMBrecord::free()
   }
 }
 
-//----------------------------------------------------- PKSMBrecord::operator=
+//-------------------------------------------------------- MBrecord::operator=
 
-// Do a deep copy of one PKSMBrecord to another.
+// Do a deep copy of one MBrecord to another.
 
-PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
+MBrecord &MBrecord::operator=(const MBrecord &other)
 {
   if (this == &other) {
     return *this;
@@ -217,6 +218,7 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
   cycleNo = other.cycleNo;
   strcpy(datobs, other.datobs);
   utc = other.utc;
+
   exposure = other.exposure;
   strcpy(srcName, other.srcName);
   srcRA  = other.srcRA;
@@ -228,10 +230,10 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
   beamNo  = other.beamNo;
   ra      = other.ra;
   dec     = other.dec;
+  pCode   = other.pCode;
+  rateAge = other.rateAge;
   raRate  = other.raRate;
   decRate = other.decRate;
-  rateAge = other.rateAge;
-  rateson = other.rateson;
 
   // IF-dependent parameters.
   nIF = other.nIF;
@@ -301,6 +303,7 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
   azimuth   = other.azimuth;
   elevation = other.elevation;
   parAngle  = other.parAngle;
+  paRate    = other.paRate;
 
   focusAxi  = other.focusAxi;
   focusTan  = other.focusTan;
@@ -309,7 +312,6 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
   temp      = other.temp;
   pressure  = other.pressure;
   humidity  = other.humidity;
-
   windSpeed = other.windSpeed;
   windAz    = other.windAz;
 
@@ -320,11 +322,11 @@ PKSMBrecord &PKSMBrecord::operator=(const PKSMBrecord &other)
   return *this;
 }
 
-//------------------------------------------------------- PKSMBrecord::extract
+//---------------------------------------------------------- MBrecord::extract
 
-// Extract a selected IF from one PKSMBrecord into another.
+// Extract a selected IF from one MBrecord into another.
 
-int PKSMBrecord::extract(const PKSMBrecord &other, int iIF)
+int MBrecord::extract(const MBrecord &other, int iIF)
 {
   if (this == &other) {
     return 1;
@@ -336,6 +338,7 @@ int PKSMBrecord::extract(const PKSMBrecord &other, int iIF)
   cycleNo = other.cycleNo;
   strcpy(datobs, other.datobs);
   utc = other.utc;
+
   exposure = other.exposure;
   strcpy(srcName, other.srcName);
   srcRA  = other.srcRA;
@@ -347,10 +350,11 @@ int PKSMBrecord::extract(const PKSMBrecord &other, int iIF)
   beamNo  = other.beamNo;
   ra      = other.ra;
   dec     = other.dec;
+  pCode   = other.pCode;
+  rateAge = other.rateAge;
   raRate  = other.raRate;
   decRate = other.decRate;
-  rateAge = other.rateAge;
-  rateson = other.rateson;
+  paRate  = other.paRate;
 
   // IF-dependent parameters.
   nIF = 1;
@@ -422,7 +426,6 @@ int PKSMBrecord::extract(const PKSMBrecord &other, int iIF)
   temp      = other.temp;
   pressure  = other.pressure;
   humidity  = other.humidity;
-
   windSpeed = other.windSpeed;
   windAz    = other.windAz;
 

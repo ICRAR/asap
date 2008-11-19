@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSwriter.h: ATNF CFITSIO interface class for SDFITS output.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: SDFITSwriter.h,v 19.7 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: SDFITSwriter.h,v 19.9 2008-11-17 06:48:32 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/07/24, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -34,22 +34,25 @@
 #ifndef ATNF_SDFITSWRITER_H
 #define ATNF_SDFITSWRITER_H
 
-#include <atnf/PKSIO/PKSMBrecord.h>
+#include <atnf/PKSIO/MBrecord.h>
+#include <atnf/PKSIO/PKSmsg.h>
 
 #include <fitsio.h>
+
+using namespace std;
 
 // <summary>
 // ATNF CFITSIO interface class for SDFITS output.
 // </summary>
 
-class SDFITSwriter
+class SDFITSwriter : public PKSmsg
 {
   public:
     // Default constructor.
     SDFITSwriter();
 
     // Destructor.
-    ~SDFITSwriter();
+    virtual ~SDFITSwriter();
 
     // Create a new SDFITSwriter and store static data.
     int create(
@@ -70,13 +73,10 @@ class SDFITSwriter
         int    extraSysCal);
 
     // Store time-variable data.
-    int write(PKSMBrecord &record);
+    int write(MBrecord &record);
 
     // Write a history record.
     int history(char* text);
-
-    // Print out CFITSIO error messages.
-    void reportError();
 
     // Close the SDFITS file.
     void close();
@@ -89,6 +89,10 @@ class SDFITSwriter
     int  cDoTDIM, cDoXPol, cExtraSysCal, cHaveBase, *cHaveXPol, cIsMX,
          *cNChan, cNIF, *cNPol, cStatus;
     long cRow;
+
+    // Message handling.
+    char cMsg[256];
+    virtual void logMsg(const char *msg = 0x0);
 };
 
 #endif

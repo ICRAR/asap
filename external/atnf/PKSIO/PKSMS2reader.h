@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.h,v 19.14 2008-06-26 02:03:51 cal103 Exp $
+//# $Id: PKSMS2reader.h,v 19.17 2008-11-17 06:38:53 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -34,6 +34,7 @@
 #define ATNF_PKSMS2READER_H
 
 #include <atnf/PKSIO/PKSreader.h>
+#include <atnf/PKSIO/PKSrecord.h>
 
 #include <casa/aips.h>
 #include <casa/Arrays/Matrix.h>
@@ -45,11 +46,11 @@
 #include <tables/Tables/ArrayColumn.h>
 #include <tables/Tables/ScalarColumn.h>
 
+#include <casa/namespace.h>
+
 // <summary>
 // Class to read Parkes Multibeam data from a v2 MS.
 // </summary>
-
-#include <casa/namespace.h>
 
 class PKSMS2reader : public PKSreader
 {
@@ -100,7 +101,7 @@ class PKSMS2reader : public PKSreader
         const Vector<Int>  refChan,
         const Bool getSpectra = True,
         const Bool getXPol    = False,
-        const Bool getFeedPos = False);
+        const Int  coordSys   = 0);
 
     // Find the range of the data selected in time and position.
     virtual Int findRange(
@@ -110,17 +111,7 @@ class PKSMS2reader : public PKSreader
         Matrix<Double> &positions);
 
     // Read the next data record.
-    virtual Int read(MBrecord &mbrec);
-
-    // Read the next data record, just the basics.
-    virtual Int read(
-        Int           &IFno,
-        Vector<Float> &tsys,
-        Vector<Float> &calFctr,
-        Matrix<Float> &baseLin,
-        Matrix<Float> &baseSub,
-        Matrix<Float> &spectra,
-        Matrix<uChar> &flagged);
+    virtual Int read(PKSrecord &pksrec);
 
     // Close the MS.
     virtual void close(void);

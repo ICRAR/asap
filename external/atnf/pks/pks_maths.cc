@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# pks_maths.cc: Mathematical functions for Parkes single-dish data reduction
 //#---------------------------------------------------------------------------
-//# Copyright (C) 1994-2006
+//# Copyright (C) 1994-2008
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 //# Original: Mark Calabretta
-//# $Id: pks_maths.cc,v 1.5 2006-05-19 00:12:35 mcalabre Exp $
+//# $Id: pks_maths.cc,v 1.6 2008-10-17 02:36:16 cal103 Exp $
 //----------------------------------------------------------------------------
 
 // AIPS++ includes.
@@ -294,14 +294,13 @@ void gst(Double ut1, Double &gmst, Double &gast)
 
 //----------------------------------------------------------------------- azel
 
-// Convert (ra,dec) to (az,el), from
-// http://aa.usno.navy.mil/faq/docs/Alt_Az.html.  Position as a Cartesian
-// triplet in m, UT1 in MJD form, and all angles in radian.
+// Convert (ra,dec) to (az,el).  Position as a Cartesian triplet in m, UT1 in
+// MJD form, and all angles in radian.
 
 void azel(const Vector<Double> position, Double ut1, Double ra, Double dec,
           Double &az, Double &el)
 {
-  // Get gocentric longitude and latitude (rad).
+  // Get geocentric longitude and latitude (rad).
   Double x = position(0);
   Double y = position(1);
   Double z = position(2);
@@ -317,9 +316,11 @@ void azel(const Vector<Double> position, Double ut1, Double ra, Double dec,
   Double ha = (gast + lng) - ra;
 
   // Azimuth and elevation (rad).
-  az = atan2(cos(dec)*sin(ha), cos(dec)*sin(lat)*cos(ha) - sin(dec)*cos(lat));
+  az = atan2(-cos(dec)*sin(ha),
+            sin(dec)*cos(lat) - cos(dec)*sin(lat)*cos(ha));
+  el = asin(sin(dec)*sin(lat) + cos(dec)*cos(lat)*cos(ha));
+
   if (az < 0.0) az += C::_2pi;
-  el = asin(cos(dec)*cos(lat)*cos(ha) + sin(dec)*sin(lat));
 }
 
 //---------------------------------------------------------------------- solel

@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSreader.cc,v 19.6 2008-06-26 01:54:08 cal103 Exp $
+//# $Id: PKSreader.cc,v 19.12 2008-11-17 06:58:07 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/23, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -40,7 +40,6 @@
 #include <casa/IO/RegularFileIO.h>
 #include <casa/OS/File.h>
 
-
 //--------------------------------------------------------------- getPKSreader
 
 // Return an appropriate PKSreader for a Parkes Multibeam dataset.
@@ -49,29 +48,22 @@ PKSreader* getPKSreader(
         const String name,
         const Int retry,
         const Int interpolate,
-        String &format,
-        Vector<Bool> &beams,
-        Vector<Bool> &IFs,
-        Vector<uInt> &nChan,
-        Vector<uInt> &nPol,
-        Vector<Bool> &haveXPol,
-        Bool   &haveBase,
-        Bool   &haveSpectra)
+        String &format)
 {
   // Check accessibility of the input.
   File inFile(name);
   if (!inFile.exists()) {
     format = "DATASET NOT FOUND";
-    return 0;
+    return 0x0;
   }
 
   if (!inFile.isReadable()) {
     format = "DATASET UNREADABLE";
-    return 0;
+    return 0x0;
   }
 
   // Determine the type of input.
-  PKSreader *reader = 0;
+  PKSreader *reader = 0x0;
   if (inFile.isRegular()) {
     // Is it MBFITS or SDFITS?
     if (strstr(name.chars(), ".sdfits")) {
@@ -111,6 +103,56 @@ PKSreader* getPKSreader(
     format = "UNRECOGNIZED INPUT FORMAT";
   }
 
+  return reader;
+}
+
+//--------------------------------------------------------------- getPKSreader
+
+// Search a list of directories for a Parkes Multibeam dataset and return an
+// appropriate PKSreader for it.
+
+PKSreader* getPKSreader(
+        const String name,
+        const Vector<String> directories,
+        const Int retry,
+        const Int interpolate,
+        Int    &iDir,
+        String &format)
+{
+  PKSreader *reader = 0x0;
+
+  iDir = -1;
+  Int nDir = directories.nelements();
+  for (Int i = 0; i < nDir; i++) {
+    String inName = directories(i) + "/" + name;
+    reader = getPKSreader(inName, retry, interpolate, format);
+    if (reader) {
+      iDir = i;
+      break;
+    }
+  }
+
+  return reader;
+}
+
+//--------------------------------------------------------------- getPKSreader
+
+// Open an appropriate PKSreader for a Parkes Multibeam dataset.
+
+PKSreader* getPKSreader(
+        const String name,
+        const Int retry,
+        const Int interpolate,
+        String &format,
+        Vector<Bool> &beams,
+        Vector<Bool> &IFs,
+        Vector<uInt> &nChan,
+        Vector<uInt> &nPol,
+        Vector<Bool> &haveXPol,
+        Bool   &haveBase,
+        Bool   &haveSpectra)
+{
+  PKSreader *reader = getPKSreader(name, retry, interpolate, format);
 
   // Try to open it.
   if (reader) {
@@ -118,18 +160,16 @@ PKSreader* getPKSreader(
                      haveSpectra)) {
       format += " OPEN ERROR";
       delete reader;
-    } else {
-      return reader;
+      reader = 0x0;
     }
   }
 
-  return 0;
+  return reader;
 }
-
 
 //--------------------------------------------------------------- getPKSreader
 
-// Search a list of directories for a Parkes Multibeam dataset and return an
+// Search a list of directories for a Parkes Multibeam dataset and open an
 // appropriate PKSreader for it.
 
 PKSreader* getPKSreader(
@@ -147,121 +187,18 @@ PKSreader* getPKSreader(
         Bool   &haveBase,
         Bool   &haveSpectra)
 {
-  Int nDir = directories.nelements();
-  for (iDir = 0; iDir < nDir; iDir++) {
-    String inName = directories(iDir) + "/" + name;
-    PKSreader *reader = getPKSreader(inName, retry, interpolate, format,
-                                     beams, IFs, nChan, nPol, haveXPol,
-                                     haveBase, haveSpectra);
-    if (reader != 0) {
-      return reader;
+  PKSreader *reader = getPKSreader(name, directories, retry, interpolate,
+                                   iDir, format);
+
+  // Try to open it.
+  if (reader) {
+    if (reader->open(name, beams, IFs, nChan, nPol, haveXPol, haveBase,
+                     haveSpectra)) {
+      format += " OPEN ERROR";
+      delete reader;
+      reader = 0x0;
     }
   }
 
-  iDir = -1;
-  return 0;
-}
-
-
-//-------------------------------------------------------- PKSFITSreader::read
-
-// Read the next data record.
-
-Int PKSreader::read(
-        Int             &scanNo,
-        Int             &cycleNo,
-        Double          &mjd,
-        Double          &interval,
-        String          &fieldName,
-        String          &srcName,
-        Vector<Double>  &srcDir,
-        Vector<Double>  &srcPM,
-        Double          &srcVel,
-        String          &obsType,
-        Int             &IFno,
-        Double          &refFreq,
-        Double          &bandwidth,
-        Double          &freqInc,
-        Double          &restFreq,
-        Vector<Float>   &tcal,
-        String          &tcalTime,
-        Float           &azimuth,
-        Float           &elevation,
-        Float           &parAngle,
-        Float           &focusAxi,
-        Float           &focusTan,
-        Float           &focusRot,
-        Float           &temperature,
-        Float           &pressure,
-        Float           &humidity,
-        Float           &windSpeed,
-        Float           &windAz,
-        Int             &refBeam,
-        Int             &beamNo,
-        Vector<Double>  &direction,
-        Vector<Double>  &scanRate,
-        Vector<Float>   &tsys,
-        Vector<Float>   &sigma,
-        Vector<Float>   &calFctr,
-        Matrix<Float>   &baseLin,
-        Matrix<Float>   &baseSub,
-        Matrix<Float>   &spectra,
-        Matrix<uChar>   &flagged,
-        Complex         &xCalFctr,
-        Vector<Complex> &xPol)
-{
-  Int status;
-  MBrecord MBrec;
-
-  if ((status = read(MBrec))) {
-    if (status != -1) {
-      status = 1;
-    }
-
-    return status;
-  }
-
-  scanNo      = MBrec.scanNo;
-  cycleNo     = MBrec.cycleNo;
-  mjd         = MBrec.mjd;
-  interval    = MBrec.interval;
-  fieldName   = MBrec.fieldName;
-  srcName     = MBrec.srcName;
-  srcDir      = MBrec.srcDir;
-  srcPM       = MBrec.srcPM;
-  srcVel      = MBrec.srcVel;
-  obsType     = MBrec.obsType;
-  IFno        = MBrec.IFno;
-  refFreq     = MBrec.refFreq;
-  bandwidth   = MBrec.bandwidth;
-  freqInc     = MBrec.freqInc;
-  restFreq    = MBrec.restFreq;
-  tcal        = MBrec.tcal;
-  tcalTime    = MBrec.tcalTime;
-  azimuth     = MBrec.azimuth;
-  elevation   = MBrec.elevation;
-  parAngle    = MBrec.parAngle;
-  focusAxi    = MBrec.focusAxi;
-  focusTan    = MBrec.focusTan;
-  focusRot    = MBrec.focusRot;
-  temperature = MBrec.temperature;
-  pressure    = MBrec.pressure;
-  humidity    = MBrec.humidity;
-  windSpeed   = MBrec.windSpeed;
-  windAz      = MBrec.windAz;
-  refBeam     = MBrec.refBeam;
-  beamNo      = MBrec.beamNo;
-  direction   = MBrec.direction;
-  scanRate    = MBrec.scanRate;
-  tsys        = MBrec.tsys;
-  sigma       = MBrec.sigma;
-  calFctr     = MBrec.calFctr;
-  baseLin     = MBrec.baseLin;
-  baseSub     = MBrec.baseSub;
-  spectra     = MBrec.spectra;
-  flagged     = MBrec.flagged;
-  xCalFctr    = MBrec.xCalFctr;
-  xPol        = MBrec.xPol;
-
-  return 0;
+  return reader;
 }

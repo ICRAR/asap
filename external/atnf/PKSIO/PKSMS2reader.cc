@@ -25,23 +25,21 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.cc,v 19.13 2008-06-26 02:08:02 cal103 Exp $
+//# $Id: PKSMS2reader.cc,v 19.21 2008-11-17 06:55:18 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
+#include <atnf/pks/pks_maths.h>
+#include <atnf/PKSIO/PKSmsg.h>
+#include <atnf/PKSIO/PKSrecord.h>
+#include <atnf/PKSIO/PKSMS2reader.h>
 
-// AIPS++ includes.
 #include <casa/stdio.h>
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/Slice.h>
 #include <ms/MeasurementSets/MSColumns.h>
 #include <tables/Tables.h>
-
-// Parkes includes.
-#include <atnf/pks/pks_maths.h>
-#include <atnf/PKSIO/PKSMS2reader.h>
-
 
 //------------------------------------------------- PKSMS2reader::PKSMS2reader
 
@@ -50,6 +48,9 @@
 PKSMS2reader::PKSMS2reader()
 {
   cMSopen = False;
+
+  // By default, messages are written to stderr.
+  initMsg();
 }
 
 //------------------------------------------------ PKSMS2reader::~PKSMS2reader
@@ -352,7 +353,7 @@ uInt PKSMS2reader::select(
         const Vector<Int>  refChan,
         const Bool getSpectra,
         const Bool getXPol,
-        const Bool getFeedPos)
+        const Int  coordSys)
 {
   if (!cMSopen) {
     return 1;
@@ -431,8 +432,8 @@ uInt PKSMS2reader::select(
   // Get cross-polarization data?
   cGetXPol = cGetXPol && getXPol;
 
-  // Get feed positions?  (Not available.)
-  cGetFeedPos = False;
+  // Coordinate system?  (Only equatorial available.)
+  cCoordSys = 0;
 
   return maxNChan;
 }
@@ -485,7 +486,7 @@ Int PKSMS2reader::findRange(
 
 // Read the next data record.
 
-Int PKSMS2reader::read(MBrecord &MBrec)
+Int PKSMS2reader::read(PKSrecord &pksrec)
 {
   if (!cMSopen) {
     return 1;
@@ -513,76 +514,77 @@ Int PKSMS2reader::read(MBrecord &MBrec)
   }
 
   // Renumerate scan no. Here still is 1-based
-  MBrec.scanNo = cScanNoCol(cIdx) - cScanNoCol(0) + 1;
+  pksrec.scanNo = cScanNoCol(cIdx) - cScanNoCol(0) + 1;
 
-  if (MBrec.scanNo != cScanNo) {
+  if (pksrec.scanNo != cScanNo) {
     // Start of new scan.
-    cScanNo  = MBrec.scanNo;
+    cScanNo  = pksrec.scanNo;
     cCycleNo = 1;
     cTime    = cTimeCol(cIdx);
   }
 
   Double time = cTimeCol(cIdx);
-  MBrec.mjd      = time/86400.0;
-  MBrec.interval = cIntervalCol(cIdx);
+  pksrec.mjd      = time/86400.0;
+  pksrec.interval = cIntervalCol(cIdx);
 
   // Reconstruct the integration cycle number; due to small latencies the
   // integration time is usually slightly less than the time between cycles,
   // resetting cTime will prevent the difference from accumulating.
-  cCycleNo += nint((time - cTime)/MBrec.interval);
-  MBrec.cycleNo = cCycleNo;
-  cTime   = time;
+  cCycleNo += nint((time - cTime)/pksrec.interval);
+  pksrec.cycleNo = cCycleNo;
+  cTime = time;
 
   Int fieldId = cFieldIdCol(cIdx);
-  MBrec.fieldName = cFieldNameCol(fieldId);
+  pksrec.fieldName = cFieldNameCol(fieldId);
 
   Int srcId = cSrcIdCol(fieldId);
-  MBrec.srcName = cSrcNameCol(srcId);
-  MBrec.srcDir  = cSrcDirCol(srcId);
-  MBrec.srcPM   = cSrcPMCol(srcId);
+  pksrec.srcName = cSrcNameCol(srcId);
+  pksrec.srcDir  = cSrcDirCol(srcId);
+  pksrec.srcPM   = cSrcPMCol(srcId);
 
   // Systemic velocity.
   if (!cHaveSrcVel) {
-    MBrec.srcVel = 0.0f;
+    pksrec.srcVel = 0.0f;
   } else {
-    MBrec.srcVel  = cSrcVelCol(srcId)(IPosition(1,0));
+    pksrec.srcVel = cSrcVelCol(srcId)(IPosition(1,0));
   }
 
   // Observation type.
   Int stateId = cStateIdCol(cIdx);
-  MBrec.obsType = cObsModeCol(stateId);
+  pksrec.obsType = cObsModeCol(stateId);
 
-  MBrec.IFno = iIF + 1;
+  pksrec.IFno = iIF + 1;
   Int nChan = abs(cEndChan(iIF) - cStartChan(iIF)) + 1;
 
   // Minimal handling on continuum data.
   Vector<Double> chanFreq = cChanFreqCol(iIF);
   if (nChan == 1) {
     cout << "The input is continuum data. "<< endl;
-    MBrec.freqInc  = chanFreq(0);
-    MBrec.refFreq  = chanFreq(0);
-    MBrec.restFreq = 0.0f;
+    pksrec.freqInc  = chanFreq(0);
+    pksrec.refFreq  = chanFreq(0);
+    pksrec.restFreq = 0.0f;
   } else {
     if (cStartChan(iIF) <= cEndChan(iIF)) {
-      MBrec.freqInc = chanFreq(1) - chanFreq(0);
+      pksrec.freqInc = chanFreq(1) - chanFreq(0);
     } else {
-      MBrec.freqInc = chanFreq(0) - chanFreq(1);
+      pksrec.freqInc = chanFreq(0) - chanFreq(1);
     }
 
-    MBrec.refFreq  = chanFreq(cRefChan(iIF)-1);
-    MBrec.restFreq = cSrcRestFrqCol(srcId)(IPosition(1,0));
+    pksrec.refFreq  = chanFreq(cRefChan(iIF)-1);
+    pksrec.restFreq = cSrcRestFrqCol(srcId)(IPosition(1,0));
   }
-  MBrec.bandwidth = abs(MBrec.freqInc * nChan);
+  pksrec.bandwidth = abs(pksrec.freqInc * nChan);
 
-  MBrec.tcal.resize(cNPol(iIF));
-  MBrec.tcal      = 0.0f;
-  MBrec.tcalTime  = "";
-  MBrec.azimuth   = 0.0f;
-  MBrec.elevation = 0.0f;
-  MBrec.parAngle  = 0.0f;
-  MBrec.focusAxi  = 0.0f;
-  MBrec.focusTan  = 0.0f;
-  MBrec.focusRot  = 0.0f;
+  pksrec.tcal.resize(cNPol(iIF));
+  pksrec.tcal      = 0.0f;
+  pksrec.tcalTime  = "";
+  pksrec.azimuth   = 0.0f;
+  pksrec.elevation = 0.0f;
+  pksrec.parAngle  = 0.0f;
+
+  pksrec.focusAxi  = 0.0f;
+  pksrec.focusTan  = 0.0f;
+  pksrec.focusRot  = 0.0f;
 
   // Find the appropriate entry in the WEATHER subtable.
   Vector<Double> wTimes = cWeatherTimeCol.getColumn();
@@ -595,31 +597,33 @@ Int PKSMS2reader::read(MBrecord &MBrec)
 
   if (weatherIdx < 0) {
     // No appropriate WEATHER entry.
-    MBrec.temperature = 0.0f;
-    MBrec.pressure    = 0.0f;
-    MBrec.humidity    = 0.0f;
+    pksrec.temperature = 0.0f;
+    pksrec.pressure    = 0.0f;
+    pksrec.humidity    = 0.0f;
   } else {
-    MBrec.temperature = cTemperatureCol(weatherIdx);
-    MBrec.pressure    = cPressureCol(weatherIdx);
-    MBrec.humidity    = cHumidityCol(weatherIdx);
+    pksrec.temperature = cTemperatureCol(weatherIdx);
+    pksrec.pressure    = cPressureCol(weatherIdx);
+    pksrec.humidity    = cHumidityCol(weatherIdx);
   }
 
-  MBrec.windSpeed = 0.0f;
-  MBrec.windAz    = 0.0f;
+  pksrec.windSpeed = 0.0f;
+  pksrec.windAz    = 0.0f;
 
-  MBrec.refBeam = 0;
-  MBrec.beamNo  = ibeam + 1;
+  pksrec.refBeam = 0;
+  pksrec.beamNo  = ibeam + 1;
 
   Matrix<Double> pointingDir = cPointingCol(fieldId);
-  MBrec.direction = pointingDir.column(0);
+  pksrec.direction = pointingDir.column(0);
+  pksrec.pCode = 0;
+  pksrec.rateAge = 0.0f;
   uInt ncols = pointingDir.ncolumn();
   if (ncols == 1) {
-    MBrec.scanRate = 0.0f;
+    pksrec.scanRate = 0.0f;
   } else {
-    MBrec.scanRate  = pointingDir.column(1);
+    pksrec.scanRate(0) = pointingDir.column(1)(0);
+    pksrec.scanRate(1) = pointingDir.column(1)(1);
   }
-  MBrec.rateAge = 0;
-  MBrec.rateson = 0;
+  pksrec.paRate = 0.0f;
 
   // Get Tsys assuming that entries in the SYSCAL table match the main table.
   if (cHaveTsys) {
@@ -629,34 +633,34 @@ Int PKSMS2reader::read(MBrecord &MBrec)
     }
   }
   if (cHaveTsys) {
-    cTsysCol.get(cIdx, MBrec.tsys, True);
+    cTsysCol.get(cIdx, pksrec.tsys, True);
   } else {
     Int numReceptor;
     cNumReceptorCol.get(0, numReceptor);
-    MBrec.tsys.resize(numReceptor);
-    MBrec.tsys = 1.0f;
+    pksrec.tsys.resize(numReceptor);
+    pksrec.tsys = 1.0f;
   }
-  cSigmaCol.get(cIdx, MBrec.sigma, True);
+  cSigmaCol.get(cIdx, pksrec.sigma, True);
 
   // Calibration factors (if available).
-  MBrec.calFctr.resize(cNPol(iIF));
+  pksrec.calFctr.resize(cNPol(iIF));
   if (cHaveCalFctr) {
-    cCalFctrCol.get(cIdx, MBrec.calFctr);
+    cCalFctrCol.get(cIdx, pksrec.calFctr);
   } else {
-    MBrec.calFctr = 0.0f;
+    pksrec.calFctr = 0.0f;
   }
 
   // Baseline parameters (if available).
   if (cHaveBaseLin) {
-    MBrec.baseLin.resize(2,cNPol(iIF));
-    cBaseLinCol.get(cIdx, MBrec.baseLin);
+    pksrec.baseLin.resize(2,cNPol(iIF));
+    cBaseLinCol.get(cIdx, pksrec.baseLin);
 
-    MBrec.baseSub.resize(9,cNPol(iIF));
-    cBaseSubCol.get(cIdx, MBrec.baseSub);
+    pksrec.baseSub.resize(9,cNPol(iIF));
+    cBaseSubCol.get(cIdx, pksrec.baseSub);
 
   } else {
-    MBrec.baseLin.resize(0,0);
-    MBrec.baseSub.resize(0,0);
+    pksrec.baseLin.resize(0,0);
+    pksrec.baseSub.resize(0,0);
   }
 
 
@@ -669,14 +673,14 @@ Int PKSMS2reader::read(MBrecord &MBrec)
 
     // Transpose spectra.
     Int nPol = tmpData.nrow();
-    MBrec.spectra.resize(nChan, nPol);
-    MBrec.flagged.resize(nChan, nPol);
+    pksrec.spectra.resize(nChan, nPol);
+    pksrec.flagged.resize(nChan, nPol);
     if (cEndChan(iIF) >= cStartChan(iIF)) {
       // Simple transposition.
       for (Int ipol = 0; ipol < nPol; ipol++) {
         for (Int ichan = 0; ichan < nChan; ichan++) {
-          MBrec.spectra(ichan,ipol) = tmpData(ipol,ichan);
-          MBrec.flagged(ichan,ipol) = tmpFlag(ipol,ichan);
+          pksrec.spectra(ichan,ipol) = tmpData(ipol,ichan);
+          pksrec.flagged(ichan,ipol) = tmpFlag(ipol,ichan);
         }
       }
 
@@ -685,8 +689,8 @@ Int PKSMS2reader::read(MBrecord &MBrec)
       Int jchan = nChan - 1;
       for (Int ipol = 0; ipol < nPol; ipol++) {
         for (Int ichan = 0; ichan < nChan; ichan++, jchan--) {
-          MBrec.spectra(ichan,ipol) = tmpData(ipol,jchan);
-          MBrec.flagged(ichan,ipol) = tmpFlag(ipol,jchan);
+          pksrec.spectra(ichan,ipol) = tmpData(ipol,jchan);
+          pksrec.flagged(ichan,ipol) = tmpFlag(ipol,jchan);
         }
       }
     }
@@ -695,122 +699,20 @@ Int PKSMS2reader::read(MBrecord &MBrec)
   // Get cross-polarization data.
   if (cGetXPol) {
     if (cHaveXCalFctr) {
-      cXCalFctrCol.get(cIdx, MBrec.xCalFctr);
+      cXCalFctrCol.get(cIdx, pksrec.xCalFctr);
     } else {
-      MBrec.xCalFctr = Complex(0.0f, 0.0f);
+      pksrec.xCalFctr = Complex(0.0f, 0.0f);
     }
 
-    cDataCol.get(cIdx, MBrec.xPol, True);
+    cDataCol.get(cIdx, pksrec.xPol, True);
 
     if (cEndChan(iIF) < cStartChan(iIF)) {
       Complex ctmp;
       Int jchan = nChan - 1;
       for (Int ichan = 0; ichan < nChan/2; ichan++, jchan--) {
-        ctmp = MBrec.xPol(ichan);
-        MBrec.xPol(ichan) = MBrec.xPol(jchan);
-        MBrec.xPol(jchan) = ctmp;
-      }
-    }
-  }
-
-  cIdx++;
-
-  return 0;
-}
-
-//--------------------------------------------------------- PKSMS2reader::read
-
-// Read the next data record, just the basics.
-
-Int PKSMS2reader::read(
-        Int           &IFno,
-        Vector<Float> &tsys,
-        Vector<Float> &calFctr,
-        Matrix<Float> &baseLin,
-        Matrix<Float> &baseSub,
-        Matrix<Float> &spectra,
-        Matrix<uChar> &flagged)
-{
-  if (!cMSopen) {
-    return 1;
-  }
-
-  // Check for EOF.
-  if (cIdx >= cNRow) {
-    return -1;
-  }
-
-  // Find the next selected beam and IF.
-  Int ibeam;
-  Int iIF;
-  while (True) {
-    ibeam = cBeamNoCol(cIdx);
-    iIF   = cDataDescIdCol(cIdx);
-    if (cBeams(ibeam) && cIFs(iIF)) {
-      break;
-    }
-
-    // Check for EOF.
-    if (++cIdx >= cNRow) {
-      return -1;
-    }
-  }
-
-  IFno = iIF + 1;
-
-  // Get Tsys assuming that entries in the SYSCAL table match the main table.
-  cTsysCol.get(cIdx, tsys, True);
-
-  // Calibration factors (if available).
-  if (cHaveCalFctr) {
-    cCalFctrCol.get(cIdx, calFctr, True);
-  } else {
-    calFctr.resize(cNPol(iIF));
-    calFctr = 0.0f;
-  }
-
-  // Baseline parameters (if available).
-  if (cHaveBaseLin) {
-    baseLin.resize(2,cNPol(iIF));
-    cBaseLinCol.get(cIdx, baseLin);
-
-    baseSub.resize(9,cNPol(iIF));
-    cBaseSubCol.get(cIdx, baseSub);
-
-  } else {
-    baseLin.resize(0,0);
-    baseSub.resize(0,0);
-  }
-
-  if (cGetSpectra) {
-    // Get spectral data.
-    Matrix<Float> tmpData;
-    Matrix<Bool>  tmpFlag;
-    cFloatDataCol.getSlice(cIdx, cDataSel(iIF), tmpData, True);
-    cFlagCol.getSlice(cIdx, cDataSel(iIF), tmpFlag, True);
-
-    // Transpose spectra.
-    Int nChan = tmpData.ncolumn();
-    Int nPol  = tmpData.nrow();
-    spectra.resize(nChan, nPol);
-    flagged.resize(nChan, nPol);
-    if (cEndChan(iIF) >= cStartChan(iIF)) {
-      // Simple transposition.
-      for (Int ipol = 0; ipol < nPol; ipol++) {
-        for (Int ichan = 0; ichan < nChan; ichan++) {
-          spectra(ichan,ipol) = tmpData(ipol,ichan);
-          flagged(ichan,ipol) = tmpFlag(ipol,ichan);
-        }
-      }
-
-    } else {
-      // Transpose with inversion.
-      Int jchan = nChan - 1;
-      for (Int ipol = 0; ipol < nPol; ipol++) {
-        for (Int ichan = 0; ichan < nChan; ichan++, jchan--) {
-          spectra(ichan,ipol) = tmpData(ipol,jchan);
-          flagged(ichan,ipol) = tmpFlag(ipol,jchan);
-        }
+        ctmp = pksrec.xPol(ichan);
+        pksrec.xPol(ichan) = pksrec.xPol(jchan);
+        pksrec.xPol(jchan) = ctmp;
       }
     }
   }

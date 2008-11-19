@@ -25,27 +25,29 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2writer.h,v 19.12 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSMS2writer.h,v 19.13 2008-11-17 06:40:25 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #ifndef ATNF_PKSMS2WRITER_H
 #define ATNF_PKSMS2WRITER_H
 
+#include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSwriter.h>
 
 #include <casa/aips.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/Complex.h>
+#include <casa/BasicSL/String.h>
 #include <ms/MeasurementSets/MeasurementSet.h>
 #include <ms/MeasurementSets/MSColumns.h>
-#include <casa/BasicSL/String.h>
+
+#include <casa/namespace.h>
 
 // <summary>
 // Class to write Parkes Multibeam data to a measurementset.
 // </summary>
 
-#include <casa/namespace.h>
 class PKSMS2writer : public PKSwriter
 {
   public:
@@ -73,47 +75,7 @@ class PKSMS2writer : public PKSwriter
 
     // Write the next data record.
     virtual Int write(
-        const Int             scanNo,
-        const Int             cycleNo,
-        const Double          mjd,
-        const Double          interval,
-        const String          fieldName,
-        const String          srcName,
-        const Vector<Double>  srcDir,
-        const Vector<Double>  srcPM,
-        const Double          srcVel,
-        const String          obsMode,
-        const Int             IFno,
-        const Double          refFreq,
-        const Double          bandwidth,
-        const Double          freqInc,
-        const Double          restFreq,
-        const Vector<Float>   tcal,
-        const String          tcalTime,
-        const Float           azimuth,
-        const Float           elevation,
-        const Float           parAngle,
-        const Float           focusAxi,
-        const Float           focusTan,
-        const Float           focusRot,
-        const Float           temperature,
-        const Float           pressure,
-        const Float           humidity,
-        const Float           windSpeed,
-        const Float           windAz,
-        const Int             refBeam,
-        const Int             beamNo,
-        const Vector<Double>  direction,
-        const Vector<Double>  scanRate,
-        const Vector<Float>   tsys,
-        const Vector<Float>   sigma,
-        const Vector<Float>   calFctr,
-        const Matrix<Float>   baseLin,
-        const Matrix<Float>   baseSub,
-        const Matrix<Float>   &spectra,
-        const Matrix<uChar>   &flagged,
-        const Complex         xCalFctr,
-        const Vector<Complex> &xPol);
+        const PKSrecord &pksrec);
 
     // Close the MS, flushing all associated Tables.
     virtual void close();

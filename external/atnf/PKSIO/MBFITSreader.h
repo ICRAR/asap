@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.h,v 19.15 2008-06-26 02:14:36 cal103 Exp $
+//# $Id: MBFITSreader.h,v 19.21 2008-11-17 06:33:10 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -38,7 +38,9 @@
 #define ATNF_MBFITSREADER_H
 
 #include <atnf/PKSIO/FITSreader.h>
-#include <atnf/PKSIO/PKSMBrecord.h>
+#include <atnf/PKSIO/MBrecord.h>
+
+using namespace std;
 
 // <summary>
 // ATNF single-dish RPFITS reader.
@@ -101,7 +103,7 @@ class MBFITSreader : public FITSreader
         double* &positions);
 
     // Read the next data record.
-    virtual int read(PKSMBrecord &record);
+    virtual int read(MBrecord &record);
 
     // Close the RPFITS file.
     virtual void close(void);
@@ -111,20 +113,45 @@ class MBFITSreader : public FITSreader
     int   cBaseline, cFlag, cBin, cIFno, cSrcNo;
     float cUTC, cU, cV, cW, *cVis, *cWgt;
 
-    char   cDateObs[10];
+    char   cDateObs[12];
     int    *cBeamSel, *cChanOff, cFirst, *cIFSel, cInterp, cIntTime, cMBopen,
            cMopra, cNBeamSel, cNBin, cRetry, cSUpos, *cXpolOff;
 
     // The data has to be bufferred to allow positions to be interpolated.
     int    cEOF, cEOS, cFlushBin, cFlushIF, cFlushing;
     double *cPosUTC;
-    PKSMBrecord *cBuffer;
+    MBrecord *cBuffer;
 
+    // Scan and cycle number bookkeeping.
     int    cCycleNo, cScanNo;
     double cPrevUTC;
 
     // Read the next data record from the RPFITS file.
     int rpget(int syscalonly, int &EOS);
+    int rpfitsin(int &jstat);
+
+    // Check and, if necessary, repair a position timestamp.
+    int    cCode5, cNRate;
+    double cAvRate[2];
+    int fixw(const char *datobs, int cycleNo, int beamNo, double avRate[2],
+             double thisRA, double thisDec, double thisUTC,
+             double nextRA, double nextDec, float &nextUTC);
+
+    // Subtract two UTCs (s).
+    double utcDiff(double utc1, double utc2);
+
+    // Compute and apply the scan rate corrected for grid convergence.
+    double cRA0, cDec0;
+    void  scanRate(double ra0, double dec0,
+                   double ra1, double dec1,
+                   double ra2, double dec2, double dt,
+                   double &raRate, double &decRate);
+    void applyRate(double ra0, double dec0,
+                   double ra1, double dec1,
+                   double raRate, double decRate, double dt,
+                   double &ra2, double &dec2);
+    void eulerx(double lng0, double lat0, double phi0, double theta,
+                double phi, double &lng1, double &lat1);
 };
 
 #endif

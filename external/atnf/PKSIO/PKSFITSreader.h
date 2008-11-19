@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSFITSreader.h,v 19.13 2008-06-26 02:02:43 cal103 Exp $
+//# $Id: PKSFITSreader.h,v 19.17 2008-11-17 06:38:05 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# This class is basically a wrapper class for reading data from either an
 //# MBFITS (single dish variant of RPFITS) or SDFITS file using the relevant
@@ -38,19 +38,22 @@
 #define ATNF_PKSFITSREADER_H
 
 #include <atnf/PKSIO/FITSreader.h>
+#include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSreader.h>
 
 #include <casa/aips.h>
+#include <casa/stdio.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/BasicSL/Complex.h>
 #include <casa/BasicSL/String.h>
 
+#include <casa/namespace.h>
+
 // <summary>
 // Class to read Parkes Multibeam data from a FITS file.
 // </summary>
 
-#include <casa/namespace.h>
 class PKSFITSreader : public PKSreader
 {
   public:
@@ -62,6 +65,10 @@ class PKSFITSreader : public PKSreader
 
     // Destructor.
     virtual ~PKSFITSreader();
+
+    // Set message disposition.
+    virtual Int setMsg(
+        FILE *fd = 0x0);
 
     // Open the FITS file for reading.
     virtual Int open(
@@ -103,7 +110,7 @@ class PKSFITSreader : public PKSreader
         const Vector<Int>  refChan,
         const Bool getSpectra = True,
         const Bool getXPol    = False,
-        const Bool getFeedPos = False);
+        const Int  coordSys   = 0);
 
     // Find the range of the data selected in time and position.
     virtual Int findRange(
@@ -113,17 +120,7 @@ class PKSFITSreader : public PKSreader
         Matrix<Double> &positions);
 
     // Read the next data record.
-    virtual Int read(MBrecord &mbrec);
-
-    // Read the next data record, just the basics.
-    virtual Int read(
-        Int           &IFno,
-        Vector<Float> &tsys,
-        Vector<Float> &calFctr,
-        Matrix<Float> &baseLin,
-        Matrix<Float> &baseSub,
-        Matrix<Float> &spectra,
-        Matrix<uChar> &flagged);
+    virtual Int read(PKSrecord &pksrec);
 
     // Close the FITS file.
     virtual void close();
@@ -131,7 +128,7 @@ class PKSFITSreader : public PKSreader
   private:
     Int    *cBeams, *cIFs;
     uInt   cNBeam, cNIF;
-    PKSMBrecord cFITSMBrec;
+    MBrecord cMBrec;
     FITSreader  *cReader;
 
     Char* trim(char *string);

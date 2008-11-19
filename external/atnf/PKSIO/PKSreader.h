@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSreader.h,v 19.13 2008-06-26 01:50:24 cal103 Exp $
+//# $Id: PKSreader.h,v 19.22 2008-11-17 06:44:34 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -33,10 +33,12 @@
 #ifndef ATNF_PKSREADER_H
 #define ATNF_PKSREADER_H
 
+#include <atnf/PKSIO/PKSmsg.h>
+#include <atnf/PKSIO/PKSrecord.h>
+
 #include <casa/aips.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/Vector.h>
-#include <casa/BasicSL/Complex.h>
 #include <casa/BasicSL/String.h>
 
 #include <casa/namespace.h>
@@ -44,6 +46,22 @@
 // <summary>
 // Class to read Parkes multibeam data.
 // </summary>
+
+// Return an appropriate PKSreader for a Parkes Multibeam dataset.
+class PKSreader* getPKSreader(
+        const String name,
+        const Int retry,
+        const Int interpolate,
+        String &format);
+
+// As above, but search a list of directories for it.
+class PKSreader* getPKSreader(
+        const String name,
+        const Vector<String> directories,
+        const Int retry,
+        const Int interpolate,
+        Int    &iDir,
+        String &format);
 
 // Open an appropriate PKSreader for a Parkes Multibeam dataset.
 class PKSreader* getPKSreader(
@@ -75,9 +93,7 @@ class PKSreader* getPKSreader(
         Bool   &haveBase,
         Bool   &haveSpectra);
 
-class MBrecord;
-
-class PKSreader
+class PKSreader : public PKSmsg
 {
   public:
     // Destructor.
@@ -115,6 +131,10 @@ class PKSreader
 
     // Set data selection criteria.  Channel numbering is 1-relative, zero or
     // negative channel numbers are taken to be offsets from the last channel.
+    // Coordinate system selection (only supported for SDFITS input):
+    //   0: equatorial (RA,Dec),
+    //   1: vertical (Az,El),
+    //   2: feed-plane.
     virtual uInt select(
         const Vector<Bool> beamSel,
         const Vector<Bool> IFsel,
@@ -123,7 +143,7 @@ class PKSreader
         const Vector<Int>  refChan,
         const Bool getSpectra = True,
         const Bool getXPol    = False,
-        const Bool getFeedPos = False) = 0;
+        const Int  coordSys   = 0) = 0;
 
     // Find the range of the data selected in time and position.
     virtual Int findRange(
@@ -132,121 +152,18 @@ class PKSreader
         Vector<Double> &timeSpan,
         Matrix<Double> &positions) = 0;
 
-    // Read the next data record (MBrecord is defined below).
-    virtual Int read(MBrecord &mbrec) = 0;
-
-    // Read the next data record (for backwards compatibility, do not use).
-    virtual Int read(
-        Int             &scanNo,
-        Int             &cycleNo,
-        Double          &mjd,
-        Double          &interval,
-        String          &fieldName,
-        String          &srcName,
-        Vector<Double>  &srcDir,
-        Vector<Double>  &srcPM,
-        Double          &srcVel,
-        String          &obsType,
-        Int             &IFno,
-        Double          &refFreq,
-        Double          &bandwidth,
-        Double          &freqInc,
-        Double          &restFreq,
-        Vector<Float>   &tcal,
-        String          &tcalTime,
-        Float           &azimuth,
-        Float           &elevation,
-        Float           &parAngle,
-        Float           &focusAxi,
-        Float           &focusTan,
-        Float           &focusRot,
-        Float           &temperature,
-        Float           &pressure,
-        Float           &humidity,
-        Float           &windSpeed,
-        Float           &windAz,
-        Int             &refBeam,
-        Int             &beamNo,
-        Vector<Double>  &direction,
-        Vector<Double>  &scanRate,
-        Vector<Float>   &tsys,
-        Vector<Float>   &sigma,
-        Vector<Float>   &calFctr,
-        Matrix<Float>   &baseLin,
-        Matrix<Float>   &baseSub,
-        Matrix<Float>   &spectra,
-        Matrix<uChar>   &flagged,
-        Complex         &xCalFctr,
-        Vector<Complex> &xPol);
-
-    // Read the next data record, just the basics.
-    virtual Int read(
-        Int           &IFno,
-        Vector<Float> &tsys,
-        Vector<Float> &calFctr,
-        Matrix<Float> &baseLin,
-        Matrix<Float> &baseSub,
-        Matrix<Float> &spectra,
-        Matrix<uChar> &flagged) = 0;
+    // Read the next data record.
+    virtual Int read(PKSrecord &pksrec) = 0;
 
     // Close the input file.
     virtual void close() = 0;
 
   protected:
-    Bool   cGetFeedPos, cGetSpectra, cGetXPol;
+    Bool  cGetSpectra, cGetXPol;
+    Int   cCoordSys;
 
     Vector<uInt> cNChan, cNPol;
     Vector<Bool> cHaveXPol;
-};
-
-
-// Essentially just a struct used as a function argument.
-class MBrecord
-{
-  public:
-    Int             scanNo;
-    Int             cycleNo;
-    Double          mjd;
-    Double          interval;
-    String          fieldName;
-    String          srcName;
-    Vector<Double>  srcDir;
-    Vector<Double>  srcPM;
-    Double          srcVel;
-    String          obsType;
-    Int             IFno;
-    Double          refFreq;
-    Double          bandwidth;
-    Double          freqInc;
-    Double          restFreq;
-    Vector<Float>   tcal;
-    String          tcalTime;
-    Float           azimuth;
-    Float           elevation;
-    Float           parAngle;
-    Float           focusAxi;
-    Float           focusTan;
-    Float           focusRot;
-    Float           temperature;
-    Float           pressure;
-    Float           humidity;
-    Float           windSpeed;
-    Float           windAz;
-    Int             refBeam;
-    Int             beamNo;
-    Vector<Double>  direction;
-    Vector<Double>  scanRate;
-    Int             rateAge;
-    Int             rateson;
-    Vector<Float>   tsys;
-    Vector<Float>   sigma;
-    Vector<Float>   calFctr;
-    Matrix<Float>   baseLin;
-    Matrix<Float>   baseSub;
-    Matrix<Float>   spectra;
-    Matrix<uChar>   flagged;
-    Complex         xCalFctr;
-    Vector<Complex> xPol;
 };
 
 #endif

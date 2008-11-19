@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: FITSreader.h,v 19.6 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: FITSreader.h,v 19.9 2008-11-17 06:28:04 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The FITSreader class is an abstract base class for the Parkes Multibeam
 //# RPFITS and SDFITS readers.
@@ -37,13 +37,16 @@
 #ifndef ATNF_FITSREADER_H
 #define ATNF_FITSREADER_H
 
-#include <atnf/PKSIO/PKSMBrecord.h>
+#include <atnf/PKSIO/MBrecord.h>
+#include <atnf/PKSIO/PKSmsg.h>
+
+using namespace std;
 
 // <summary>
 // ATNF single-dish FITS reader.
 // </summary>
 
-class FITSreader
+class FITSreader : public PKSmsg
 {
   public:
     // Destructor.
@@ -90,13 +93,17 @@ class FITSreader
 
     // Set data selection criteria.  Channel numbering is 1-relative, zero or
     // negative channel numbers are taken to be offsets from the last channel.
+    // Coordinate systems are
+    //   0: equatorial (RA,Dec),
+    //   1: vertical (Az,El),
+    //   2: feed-plane.
     int select(
         const int startChan[],
         const int endChan[],
         const int refChan[],
         const int getSpectra = 1,
-        const int getXPol = 0,
-        const int getFeedPos = 0);
+        const int getXPol  = 0,
+        const int coordSys = 0);
 
     // Find the range in time and position of the data selected.
     virtual int findRange(
@@ -108,15 +115,18 @@ class FITSreader
 
     // Read the next data record.
     virtual int read(
-        PKSMBrecord &record) = 0;
+        MBrecord &record) = 0;
 
     // Close the RPFITS file.
     virtual void close(void) = 0;
 
   protected:
-    int    *cBeams, *cEndChan, cGetFeedPos, cGetSpectra, cGetXPol, cHaveBase,
-           cHaveSpectra, *cHaveXPol, *cIFs, cNBeam, *cNChan, cNIF, *cNPol,
-           *cRefChan, *cStartChan;
+    int  *cBeams, *cEndChan, cCoordSys, cGetSpectra, cGetXPol, cHaveBase,
+         cHaveSpectra, *cHaveXPol, *cIFs, cNBeam, *cNChan, cNIF, *cNPol,
+         *cRefChan, *cStartChan;
+
+    // For use in constructing messages.
+    char cMsg[256];
 };
 
 #endif

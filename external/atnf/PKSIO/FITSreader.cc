@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: FITSreader.cc,v 19.2 2006/05/19 02:14:50 mcalabre Exp $
+//# $Id: FITSreader.cc,v 19.3 2008-09-12 02:37:37 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The FITSreader class is an abstract base class for the Parkes Multibeam
 //# RPFITS and SDFITS readers.
@@ -52,7 +52,7 @@ int FITSreader::select(
         const int refChan[],
         const int getSpectra,
         const int getXPol,
-        const int getFeedPos)
+        const int coordSys)
 {
   int maxNChan = 0;
 
@@ -82,7 +82,7 @@ int FITSreader::select(
 
   cGetSpectra = getSpectra && cHaveSpectra;
   cGetXPol    = getXPol    && cGetXPol;
-  cGetFeedPos = getFeedPos;
+  cCoordSys   = coordSys;
 
   return maxNChan;
 }

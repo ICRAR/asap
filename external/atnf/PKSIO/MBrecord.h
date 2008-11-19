@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# PKSMBrecord.h: Class to store an MBFITS single-dish data record.
+//# MBrecord.h: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
@@ -26,16 +26,16 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: PKSMBrecord.h,v 19.9 2008-06-26 02:10:21 cal103 Exp $
+//# $Id: MBrecord.h,v 19.14 2008-11-17 06:36:12 cal103 Exp $
 //#---------------------------------------------------------------------------
-//# The PKSMBrecord class stores an MBFITS single-dish data record.
+//# The MBrecord class stores an MBFITS single-dish data record.
 //#
 //# Storage for spectral data may be managed in either of two ways:
 //#
 //#   1) The allocate() member function may be used to allocate storage that
-//#      is subsequently managed by the PKSMBrecord class; the assignment
+//#      is subsequently managed by the MBrecord class; the assignment
 //#      operator automatically deletes and reallocates more if insufficient
-//#      was provided, and the PKSMBrecord destructor deletes it.
+//#      was provided, and the MBrecord destructor deletes it.
 //#
 //#      Allocation of storage for cross-polarization data is optional.
 //#
@@ -55,22 +55,24 @@
 //# Original: 2000/08/01 Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
-#ifndef ATNF_PKSMBRECORD_H
-#define ATNF_PKSMBRECORD_H
+#ifndef ATNF_MBRECORD_H
+#define ATNF_MBRECORD_H
+
+using namespace std;
 
 // <summary>
 // Class to store an MBFITS single-dish data record.
 // </summary>
 
-class PKSMBrecord
+class MBrecord
 {
   public:
     // Default constructor allocates arrays for the required number of IFs.
-    PKSMBrecord(int nIF = 0);
+    MBrecord(int nIF = 0);
 
     // Destructor; deletes any storage that may have been auto-allocated by
     // the assignment operator.
-    ~PKSMBrecord();
+    ~MBrecord();
 
     // Expand arrays if necessary to accomodate the required number of IFs.
     void setNIFs(int nIF);
@@ -86,17 +88,17 @@ class PKSMBrecord
 
     // The assignment operator does a deep copy and will auto-allocate or
     // re-allocate data storage if necessary.
-    PKSMBrecord &operator=(const PKSMBrecord &other);
+    MBrecord &operator=(const MBrecord &other);
 
-    // Extract a selected IF from a PKSMBrecord into another.
-    int extract(const PKSMBrecord &other, int iIF);
+    // Extract a selected IF from a MBrecord into another.
+    int extract(const MBrecord &other, int iIF);
 
     int    scanNo;		// Scan number.
     int    cycleNo;		// Integration cycle number.
-    char   datobs[11];		// Date of observation YYYY-MM-DD.
+    char   datobs[12];		// Date of observation YYYY-MM-DD.
     double utc;			// UTC of the integration, s.
     float  exposure;		// Integration time, s.
-    char   srcName[17];		// Source name.
+    char   srcName[20];		// Source name.
     double srcRA;		// Source J2000 right ascension, radian.
     double srcDec;		// Source J2000 declination, radian.
     double restFreq;		// Line rest frequency, Hz.
@@ -106,13 +108,17 @@ class PKSMBrecord
     short  beamNo;		// Multibeam beam number.
     double ra;			// J2000 right ascension, radian.
     double dec;			// J2000 declination, radian,
-    float  raRate;		// Scan rate in right ascension, radian/s.
-    float  decRate;		// Scan rate in declination, radian/s.
-    short  rateAge;		// Scan rate age (staleness), cycles.
-    short  rateson;		// Staleness reason code:
+    int    pCode;		// Pointing problem code:
 				//   1: position and timestamp unchanged,
 				//   2: position changed but not timestamp,
-				//   3: position timestamp went backwards.
+				//   3: position and timestamp are rubbish,
+				//   4: timestamp/1000 scale error (repaired),
+				//   5: timestamp late by 1.0 sec (repaired),
+				//   6: timestamp late by 0.5 sec (repaired).
+    float  rateAge;		// Scan rate age (staleness), s.
+    float  raRate;		// Scan rate in right ascension, radian/s.
+    float  decRate;		// Scan rate in declination, radian/s.
+    float  paRate;		// Rate of change of position angle, radian/s.
 
     // IF-dependent parameters.
     short  nIF;			// Number of IFs.
@@ -138,20 +144,25 @@ class PKSMBrecord
 
     // Extra syscal data available for Parkes Multibeam observations only.
     int    extraSysCal;		// Is this extra SysCal data available?
+
     float  azimuth;		// Azimuth, radian.
     float  elevation;		// Elevation, radian.
     float  parAngle;		// Parallactic angle, radian.
+
     float  focusAxi;		// Axial focus position, m.
     float  focusTan;		// Focus platform translation, m.
     float  focusRot;		// Focus rotation, radian.
+
     float  temp;		// Temperature, C.
     float  pressure;		// Pressure, Pa.
     float  humidity;		// Relative humidity, %.
     float  windSpeed;		// Wind speed, m/s.
     float  windAz;		// Wind azimuth, radian.
-    char   tcalTime[17];	// Time of measurement of cal signals.
+
+    char   tcalTime[20];	// Time of measurement of cal signals.
+
     short  refBeam;		// Reference beam, in beam-switching (MX)
-				// mode, added 1999/03/17.
+				// mode (added 1999/03/17).
 
   private:
     int    cNIF;		// Number of IFs allocated.

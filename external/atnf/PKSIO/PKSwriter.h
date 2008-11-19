@@ -25,11 +25,14 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSwriter.h,v 19.14 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: PKSwriter.h,v 19.16 2008-11-17 06:46:36 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #ifndef ATNF_PKSWRITER_H
 #define ATNF_PKSWRITER_H
+
+#include <atnf/PKSIO/PKSmsg.h>
+#include <atnf/PKSIO/PKSrecord.h>
 
 #include <casa/aips.h>
 #include <casa/Arrays/Matrix.h>
@@ -37,12 +40,13 @@
 #include <casa/BasicSL/Complex.h>
 #include <casa/BasicSL/String.h>
 
+#include <casa/namespace.h>
+
 // <summary>
 // Class to write out Parkes multibeam data.
 // </summary>
 
-#include <casa/namespace.h>
-class PKSwriter
+class PKSwriter : public PKSmsg
 {
   public:
     // Destructor.
@@ -66,47 +70,7 @@ class PKSwriter
 
     // Write the next data record.
     virtual Int write (
-        const Int             scanNo,
-        const Int             cycleNo,
-        const Double          mjd,
-        const Double          interval,
-        const String          fieldName,
-        const String          srcName,
-        const Vector<Double>  srcDir,
-        const Vector<Double>  srcPM,
-        const Double          srcVel,
-        const String          obsMode,
-        const Int             IFno,
-        const Double          refFreq,
-        const Double          bandwidth,
-        const Double          freqInc,
-        const Double          restFreq,
-        const Vector<Float>   tcal,
-        const String          tcalTime,
-        const Float           azimuth,
-        const Float           elevation,
-        const Float           parAngle,
-        const Float           focusAxi,
-        const Float           focusTan,
-        const Float           focusRot,
-        const Float           temperature,
-        const Float           pressure,
-        const Float           humidity,
-        const Float           windSpeed,
-        const Float           windAz,
-        const Int             refBeam,
-        const Int             beamNo,
-        const Vector<Double>  direction,
-        const Vector<Double>  scanRate,
-        const Vector<Float>   tsys,
-        const Vector<Float>   sigma,
-        const Vector<Float>   calFctr,
-        const Matrix<Float>   baseLin,
-        const Matrix<Float>   baseSub,
-        const Matrix<Float>   &spectra,
-        const Matrix<uChar>   &flagged,
-        const Complex         xCalFctr,
-        const Vector<Complex> &xPol) = 0;
+        const PKSrecord &pksrec) = 0;
 
     // Write a history record.
     virtual Int history(const String text) {return 0;};

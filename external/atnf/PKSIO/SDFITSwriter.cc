@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSwriter.cc: ATNF CFITSIO interface class for SDFITS output.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2007
+//# Copyright (C) 2000-2008
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,20 +26,19 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: SDFITSwriter.cc,v 19.12 2007/11/12 03:37:56 cal103 Exp $
+//# $Id: SDFITSwriter.cc,v 19.15 2008-11-17 06:58:58 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/07/24, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
-#include <algorithm>
-#include <math.h>
+#include <atnf/PKSIO/MBrecord.h>
+#include <atnf/PKSIO/PKSmsg.h>
+#include <atnf/PKSIO/SDFITSwriter.h>
 
-// AIPS++ includes.
 #include <casa/iostream.h>
 
-// ATNF includes.
-#include <atnf/PKSIO/PKSMBrecord.h>
-#include <atnf/PKSIO/SDFITSwriter.h>
+#include <algorithm>
+#include <math.h>
 
 using namespace std;
 
@@ -54,7 +53,10 @@ const double R2D = 180.0 / PI;
 SDFITSwriter::SDFITSwriter()
 {
   // Default constructor.
-  cSDptr = 0;
+  cSDptr = 0x0;
+
+  // By default, messages are written to stderr.
+  initMsg();
 }
 
 //------------------------------------------------ SDFITSwriter::~SDFITSwriter
@@ -85,6 +87,14 @@ int SDFITSwriter::create(
         int    haveBase,
         int    extraSysCal)
 {
+  if (cSDptr) {
+    logMsg("ERROR: Output file already open, close it first.");
+    return 1;
+  }
+
+  // Clear the message stack.
+  clearMsg();
+
   // Prepend an '!' to the output name to force it to be overwritten.
   char sdname[80];
   sdname[0] = '!';
@@ -93,6 +103,8 @@ int SDFITSwriter::create(
   // Create a new SDFITS file.
   cStatus = 0;
   if (fits_create_file(&cSDptr, sdname, &cStatus)) {
+    sprintf(cMsg, "ERROR: Failed to create SDFITS file\n       %s", sdName);
+    logMsg(cMsg);
     return cStatus;
   }
 
@@ -140,6 +152,7 @@ int SDFITSwriter::create(
 
   // Write required primary header keywords.
   if (fits_write_imghdr(cSDptr, 8, 0, 0, &cStatus)) {
+    logMsg("ERROR: Failed to write required primary header keywords.");
     return cStatus;
   }
 
@@ -159,8 +172,8 @@ int SDFITSwriter::create(
   char text[72];
   char version[7];
   char date[11];
-  sscanf("$Revision: 19.12 $", "%*s%s", version);
-  sscanf("$Date: 2007/11/12 03:37:56 $", "%*s%s", date);
+  sscanf("$Revision: 19.15 $", "%*s%s", version);
+  sscanf("$Date: 2008-11-17 06:58:58 $", "%*s%s", date);
   sprintf(text, "SDFITSwriter (v%s, %s)", version, date);
   fits_write_key_str(cSDptr, "ORIGIN", text, "output class", &cStatus);
 
@@ -170,11 +183,18 @@ int SDFITSwriter::create(
   sprintf(text, "using cfitsio v%.3f.", fits_get_version(&cfvers));
   fits_write_comment(cSDptr, text, &cStatus);
 
+  if (cStatus) {
+    logMsg("ERROR: Failed in writing primary header.");
+    return cStatus;
+  }
+
+
   // Create an SDFITS extension.
   long nrow = 0;
   int  ncol = 0;
   if (fits_create_tbl(cSDptr, BINARY_TBL, nrow, ncol, NULL, NULL, NULL,
       "SINGLE DISH", &cStatus)) {
+    logMsg("ERROR: Failed to create a binary table extension.");
     return 1;
   }
 
@@ -523,6 +543,10 @@ int SDFITSwriter::create(
     fits_set_tscale(cSDptr, j, 1.0, 0.0, &cStatus);
   }
 
+  if (cStatus) {
+    logMsg("ERROR: Failed in writing binary table header.");
+  }
+
   return cStatus;
 }
 
@@ -530,7 +554,7 @@ int SDFITSwriter::create(
 
 // Write a record to the SDFITS file.
 
-int SDFITSwriter::write(PKSMBrecord &mbrec)
+int SDFITSwriter::write(MBrecord &mbrec)
 {
   char *cptr;
 
@@ -739,6 +763,10 @@ int SDFITSwriter::write(PKSMBrecord &mbrec)
     fits_write_col_flt(cSDptr, ++icol, cRow, 1, 1, &windAz, &cStatus);
   }
 
+  if (cStatus) {
+    logMsg("ERROR: Failed in writing binary table entry.");
+  }
+
   return cStatus;
 }
 
@@ -750,19 +778,15 @@ int SDFITSwriter::write(PKSMBrecord &mbrec)
 int SDFITSwriter::history(char *text)
 
 {
-  fits_write_history(cSDptr, text, &cStatus);
+  if (!cSDptr) {
+    return 1;
+  }
+
+  if (fits_write_history(cSDptr, text, &cStatus)) {
+    logMsg("ERROR: Failed in writing HISTORY records.");
+  }
 
   return cStatus;
-}
-
-//-------------------------------------------------- SDFITSwriter::reportError
-
-// Print the error message corresponding to the input status value and all the
-// messages on the CFITSIO error stack to stderr.
-
-void SDFITSwriter::reportError()
-{
-  fits_report_error(stderr, cStatus);
 }
 
 //-------------------------------------------------------- SDFITSwriter::close
@@ -773,7 +797,10 @@ void SDFITSwriter::close()
 {
   if (cSDptr) {
     cStatus = 0;
-    fits_close_file(cSDptr, &cStatus);
+    if (fits_close_file(cSDptr, &cStatus)) {
+      logMsg("ERROR: Failed to close file.");
+    }
+
     cSDptr = 0;
   }
 }
@@ -786,7 +813,29 @@ void SDFITSwriter::deleteFile()
 {
   if (cSDptr) {
     cStatus = 0;
-    fits_delete_file(cSDptr, &cStatus);
+    if (fits_delete_file(cSDptr, &cStatus)) {
+      logMsg("ERROR: Failed to close and delete file.");
+    }
+
     cSDptr = 0;
+  }
+}
+
+//------------------------------------------------------- SDFITSwriter::logMsg
+
+// Log a message.  If the current CFITSIO status value is non-zero, also log
+// the corresponding error message and dump the CFITSIO message stack.
+
+void SDFITSwriter::logMsg(const char *msg)
+{
+  PKSmsg::logMsg(msg);
+
+  if (cStatus) {
+    fits_get_errstatus(cStatus, cMsg);
+    PKSmsg::logMsg(cMsg);
+
+    while (fits_read_errmsg(cMsg)) {
+      PKSmsg::logMsg(cMsg);
+    }
   }
 }
