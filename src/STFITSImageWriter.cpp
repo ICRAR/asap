@@ -219,7 +219,6 @@ STFITSImageWriter::getDirectionCoordinate(const String& reff,
 void STFITSImageWriter::classHackHeader(const String& filename) {
   int status = 0;
   fitsfile *fptr;     
-  cout << "filename" << endl;
   if( fits_open_file(&fptr, filename.c_str(), READWRITE, &status) ) 
     throw AipsError("FCoudn't open fits file for CLASS modification");
 
