@@ -10,17 +10,20 @@ if  platform.architecture()[0] == '64bit':
     if moduledir.startswith("/usr/lib/"):
         moduledir = moduledir.replace("lib", "lib64")
 
-opts = Options("options.cfg")
-opts.AddOptions(
+
+EnsureSConsVersion(1,1,0)
+
+opts = Variables("options.cfg")
+opts.AddVariables(
                 ("FORTRAN", "The fortran compiler", None),
                 ("f2clib", "The fortran to c library", None),
-                PathOption("prefix",
+                PathVariable("prefix",
 	        "The root installation path",
                            distutils.sysconfig.PREFIX),
-                PathOption("moduledir",
+                PathVariable("moduledir",
                             "The python module path (site-packages))",
                             moduledir),
-		PathOption("casacoreroot", "The location of casacore",
+		PathVariable("casacoreroot", "The location of casacore",
 				    "/usr/local"),
 		("boostroot", "The root dir where boost is installed", None),
 		("boostlib", "The name of the boost python library", 
@@ -52,16 +55,16 @@ opts.AddOptions(
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
 #		("rpfitsincdir", "The rpfits include location", None),
-                EnumOption("mode", "The type of build.", "release",
+                EnumVariable("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
                  "Make a binary archive giving a suffix, e.g. sarge or fc5",
                  ""),
-                EnumOption("makedoc", "Build the userguide in specified format",
+                EnumVariable("makedoc", "Build the userguide in specified format",
                            "none",
                            ["none", "pdf", "html"], ignorecase=1),
-                BoolOption("apps", "Build cpp apps", False),
-                BoolOption("alma", "Enable alma specific functionality", False)
+                BoolVariable("apps", "Build cpp apps", False),
+                BoolVariable("alma", "Enable alma specific functionality", False)
                 )
 
 env = Environment( toolpath = ['./scons'],
@@ -73,9 +76,6 @@ env = Environment( toolpath = ['./scons'],
 
 Help(opts.GenerateHelpText(env))
 env.SConsignFile()
-
-if env["PLATFORM"] == "darwin":
-    env.EnsureSConsVersion(0,96,95)
 
 casacoretooldir = os.path.join(env["casacoreroot"],"share",
 				   "casacore")
