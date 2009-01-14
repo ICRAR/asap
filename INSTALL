@@ -1,7 +1,12 @@
 Requirements
 ============
 
-* scons
+* scons >= 1.1
+* rpfits >= 2.19
+* cfitso >= 2
+* python >= 2.4
+* boost >= 1.33
+* casacore >= 0.4.0
 
 Installation
 ============
@@ -11,7 +16,7 @@ The normal install procedure is as follows
 .. code::
 
    scons
-   # Do this if you haven't got a data directory already
+   # Do this if you haven't got a measures data directory already
    export ASAPDATA=.
    ./bin/asap_update_data
    #
