@@ -249,7 +249,10 @@ int asap::STFiller::read( )
     TableRecord& rec = row.record();
     // fields that don't get used and are just passed through asap
     RecordFieldPtr<Array<Double> > srateCol(rec, "SCANRATE");
-    *srateCol = pksrec.scanRate;
+    // MRC changed type from double to float
+    Vector<Double> sratedbl;
+    convertArray(sratedbl, pksrec.scanRate);
+    *srateCol = sratedbl;
     RecordFieldPtr<Array<Double> > spmCol(rec, "SRCPROPERMOTION");
     *spmCol = pksrec.srcPM;
     RecordFieldPtr<Array<Double> > sdirCol(rec, "SRCDIRECTION");
@@ -339,7 +342,7 @@ int asap::STFiller::read( )
       *polnoCol = i;
 
       *specCol = pksrec.spectra.column(i);
-      *flagCol = pksrec.flagtra.column(i);
+      *flagCol = pksrec.flagged.column(i);
       table_->table().addRow();
       row.put(table_->table().nrow()-1, rec);
     }
@@ -353,7 +356,7 @@ int asap::STFiller::read( )
       *specCol = r;
       // make up flags from linears
       /// @fixme this has to be a bitwise or of both pols
-      *flagCol = pksrec.flagtra.column(0);// | pksrec.flagtra.column(1);
+      *flagCol = pksrec.flagged.column(0);// | pksrec.flagged.column(1);
       table_->table().addRow();
       row.put(table_->table().nrow()-1, rec);
       // ad imaginary part of cross pol

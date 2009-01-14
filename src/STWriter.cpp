@@ -169,7 +169,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       Table btable = beamit.table();
       TableIterator cycit(btable, "CYCLENO");
       ROArrayColumn<Double> srateCol(btable, "SCANRATE");
-      srateCol.get(0, pksrec.scanRate);
+      Vector<Double> sratedbl;
+      Vector<Float> srateflt;
+      srateCol.get(0, sratedbl);
+      convertArray(srateflt, sratedbl);
+      pksrec.scanRate = srateflt;
       ROArrayColumn<Double> spmCol(btable, "SRCPROPERMOTION");
       spmCol.get(0, pksrec.srcPM);
       ROArrayColumn <Double> sdirCol(btable, "SRCDIRECTION");
@@ -211,10 +215,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           Double pixel = Double(nchan/2);
           pksrec.refFreq = (pixel-crpix)*pksrec.freqInc + crval;
           // ok, now we have nrows for the n polarizations in this table
-          polConversion(pksrec.spectra, pksrec.flagged, pksrec.xpol, itable);
+          polConversion(pksrec.spectra, pksrec.flagged, pksrec.xPol, itable);
           pksrec.tsys = tsysFromTable(itable);
           // dummy data
-          uInt npol = spectra.ncolumn();
+          uInt npol = pksrec.spectra.ncolumn();
 
           pksrec.mjd       = rec.asDouble("TIME");
           pksrec.interval  = rec.asDouble("INTERVAL");
