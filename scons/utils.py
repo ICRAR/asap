@@ -120,6 +120,21 @@ def generate(env):
 
     env.CheckFortran = CheckFortran
 
+    def WalkDirTree(targetroot, sourceroot, sources):
+        ifiles = []
+        ofiles = []
+        for s in sources:
+            if os.path.isdir(os.path.join(sourceroot ,s)):
+                for d,ld,f in os.walk(os.path.join(sourceroot ,s)):
+                    for fl in f:
+                        ifile = os.path.join(d, fl)
+                        ifiles.append(ifile)
+                        ofile = ifile.replace(sourceroot, targetroot)
+                        ofiles.append(ofile)
+        return ofiles, ifiles
+    env.WalkDirTree = WalkDirTree
+
+
     def null_action(target, source, env): return 0
 
     def message(target, source, env):
