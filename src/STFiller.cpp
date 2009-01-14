@@ -250,7 +250,7 @@ int asap::STFiller::read( )
     // fields that don't get used and are just passed through asap
     RecordFieldPtr<Array<Double> > srateCol(rec, "SCANRATE");
     // MRC changed type from double to float
-    Vector<Double> sratedbl;
+    Vector<Double> sratedbl(pksrec.scanRate.nelements());
     convertArray(sratedbl, pksrec.scanRate);
     *srateCol = sratedbl;
     RecordFieldPtr<Array<Double> > spmCol(rec, "SRCPROPERMOTION");
