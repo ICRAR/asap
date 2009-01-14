@@ -36,6 +36,7 @@
 #include <atnf/PKSIO/SDFITSwriter.h>
 
 #include <casa/iostream.h>
+#include <cstring>
 
 #include <algorithm>
 #include <math.h>
