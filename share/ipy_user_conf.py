@@ -47,6 +47,7 @@ def main():
     o.readline_omit__names = 1
     import_all("asap")
     # asap banner
+    execf("~/.asap/asapuserfuncs.py")
     ip.ex('print welcome()')
 
 # some config helper functions you can use 
