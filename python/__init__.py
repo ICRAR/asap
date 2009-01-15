@@ -433,7 +433,10 @@ if is_ipython():
                               are NOT masked
             get_restfreqs   - get the current list of rest frequencies
             set_restfreqs   - set a list of rest frequencies
-	        shift_refpix    - shift the reference pixel of the IFs
+            shift_refpix    - shift the reference pixel of the IFs
+            set_spectrum    - overwrite the spectrum for a given row
+            get_spectrum    - retrieve the spectrum for a given
+            get_mask        - retrieve the mask for a given
             flag            - flag selected channels in the data
             lag_flag        - flag specified frequency in the data
             save            - save the scantable to disk as either 'ASAP',

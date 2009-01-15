@@ -276,6 +276,28 @@ class scantable(Scantable):
         else:
             return info
 
+    def get_spectrum(self, rownow):
+        """Return the spectrum for the current row in the scantable as a list.
+        Parameters:
+             rowno:   the row number to retrieve the spectrum from        
+        """
+        return self._getspectrum(rowno)
+
+    def get_mask(self, rowno):
+        """Return the mask for the current row in the scantable as a list.
+        Parameters:
+             rowno:   the row number to retrieve the mask from        
+        """
+        return self._getmask(rowno)
+
+    def set_spectrum(self, spec, rowno):
+        """Return the spectrum for the current row in the scantable as a list.
+        Parameters:
+             spec:   the spectrum
+             rowno:    the row number to set the spectrum for        
+        """
+        assert(len(spec) == self.nchan())
+        return self._setspectrum(spec, rowno)
 
     def get_selection(self):
         """
@@ -684,7 +706,7 @@ class scantable(Scantable):
             frequency:    the frequency (really a period within the bandwidth) 
                           to remove
             width:        the width of the frequency to remove, to remove a 
-                          range of frequencies aroung the centre.
+                          range of frequencies around the centre.
             unit:         the frequency unit (default "GHz")
         Notes:
             It is recommended to flag edges of the band or strong 
