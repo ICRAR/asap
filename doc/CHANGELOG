@@ -1,8 +1,18 @@
 Changelog
 =========
 
-Release 2.2.1 [2007-??-??]
+Release 2.3.0 [2009-01-??]
 
+* made functions available to directly manipulate spectra
+  scantable.get/set_spectrum
+* Added export to CLASS readable FITS files 
+  scantable.save("myfile.fits", "CLASS")
+* upgrade to support ipython >= 0.8.1
+* support gcc-4.3
+* use scons >= 1.1.0
+* update to latest livedata I/O functions
+* add WCS info to the exported text files
+* allow supression of history in the scantable via rc parameters
 * source direction for Hobart data - Ticket #109
 * added running median to scantable.(smooth(kernel='rmedian') 
 
