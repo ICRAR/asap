@@ -37,6 +37,12 @@ if not os.path.exists(userdir):
     f.close()
     f = file(userdir+"/ipythonrc", "w")
     f.close()
+else:
+    # upgrade to support later ipython versions
+    if not os.path.exists(userdir+"/ipy_user_conf.py"):
+        shutil.copyfile(asapdata+"/data/ipy_user_conf.py", 
+                        userdir+"/ipy_user_conf.py")
+
 # remove from namespace
 del asapdata, userdir, shutil, platform
 
