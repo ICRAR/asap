@@ -412,8 +412,8 @@ class asaplotbase:
             try:
                 if fname[-3:].lower() == ".ps":
                     from matplotlib import __version__ as mv
-                    w = self.figure.figwidth.get()
-                    h = self.figure.figheight.get()
+                    w = self.figure.get_figwidth()
+                    h = self.figure.get_figheight()
 
                     if orientation is None:
                         # oriented
@@ -430,10 +430,10 @@ class asaplotbase:
                         ds = min(pw/w, ph/h)
                     ow = ds * w
                     oh = ds * h
-                    self.figure.set_figsize_inches((ow, oh))
+                    self.figure.set_size_inches((ow, oh))
                     self.figure.savefig(fname, orientation=orientation,
                                         papertype=papertype.lower())
-                    self.figure.set_figsize_inches((w, h))
+                    self.figure.set_size_inches((w, h))
                     print 'Written file %s' % (fname)
                 else:
                     if dpi is None:
