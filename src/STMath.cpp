@@ -1745,12 +1745,17 @@ CountedPtr< Scantable >
   MPosition refPos = in->getAntennaPosition();
 
   InterpolateArray1D<Double,Float>::InterpolationMethod interp = stringToIMethod(method);
+  /*
+  // Comment from MV.
+  // the following code has been commented out because different FREQ_IDs have to be aligned together even
+  // if the frame doesn't change. So far, lack of this check didn't cause any problems.
   // test if user frame is different to base frame
   if ( in->frequencies().getFrameString(true)
        == in->frequencies().getFrameString(false) ) {
     throw(AipsError("Can't convert as no output frame has been set"
                     " (use set_freqframe) or it is aligned already."));
   }
+  */
   MFrequency::Types system = in->frequencies().getFrame();
   MVTime mvt(refEpoch.getValue());
   String epochout = mvt.string(MVTime::YMD) + String(" (") + refEpoch.getRefString() + String(")");
@@ -1776,33 +1781,45 @@ CountedPtr< Scantable >
     // we are iterating over BEAMNO and IFNO    // we should have constant direction
 
     ROArrayColumn<Float> sCol(t, "SPECTRA");
-    MDirection direction = dirCol(0);
-    uInt nchan = sCol(0).nelements();
+    const MDirection direction = dirCol(0);
+    const uInt nchan = sCol(0).nelements();
+
+    // skip operations if there is nothing to align
+    if (fiter.pastEnd()) {
+        continue;
+    }
+
+    Table ftab = fiter.table();
+    // align all frequency ids with respect to the first encountered id
+    ScalarColumn<uInt> freqidCol(ftab, "FREQ_ID");
+    // get the SpectralCoordinate for the freqid, which we are iterating over
+    SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
+    FrequencyAligner<Float> fa( sC, nchan, refEpoch,
+                                direction, refPos, system );
+    // realign the SpectralCoordinate and put into the output Scantable
+    Vector<String> units(1);
+    units = String("Hz");
+    Bool linear=True;
+    SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
+    sc2.setWorldAxisUnits(units);
+    const uInt id = out->frequencies().addEntry(sc2.referencePixel()[0],
+                                                sc2.referenceValue()[0],
+                                                sc2.increment()[0]);
     while ( !fiter.pastEnd() ) {
-      Table ftab = fiter.table();
-      ScalarColumn<uInt> freqidCol(ftab, "FREQ_ID");
-      // get the SpectralCoordinate for the freqid, which we are iterating over
-      SpectralCoordinate sC = in->frequencies().getSpectralCoordinate(freqidCol(0));
-      FrequencyAligner<Float> fa( sC, nchan, refEpoch,
-                                  direction, refPos, system );
-      // realign the SpectralCoordinate and put into the output Scantable
-      Vector<String> units(1);
-      units = String("Hz");
-      Bool linear=True;
-      SpectralCoordinate sc2 = fa.alignedSpectralCoordinate(linear);
-      sc2.setWorldAxisUnits(units);
-      uInt id = out->frequencies().addEntry(sc2.referencePixel()[0],
-                                            sc2.referenceValue()[0],
-                                            sc2.increment()[0]);
-      TableVector<uInt> tvec(ftab, "FREQ_ID");
-      tvec = id;
+      ftab = fiter.table();
+      // spectral coordinate for the current FREQ_ID
+      ScalarColumn<uInt> freqidCol2(ftab, "FREQ_ID");
+      sC = in->frequencies().getSpectralCoordinate(freqidCol2(0));
       // create the "global" abcissa for alignment with same FREQ_ID
       Vector<Double> abc(nchan);
-      Double w;
       for (uInt i=0; i<nchan; i++) {
-        sC.toWorld(w,Double(i));
-        abc[i] = w;
+           Double w;
+           sC.toWorld(w,Double(i));
+           abc[i] = w;
       }
+      TableVector<uInt> tvec(ftab, "FREQ_ID");
+      // assign new frequency id to all rows
+      tvec = id;
       // cache abcissa for same time stamps, so iterate over those
       TableIterator timeiter(ftab, "TIME");
       while ( !timeiter.pastEnd() ) {
@@ -1811,8 +1828,8 @@ CountedPtr< Scantable >
         ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
         MEpoch::ROScalarColumn timeCol(tab, "TIME");
         // use align abcissa cache after the first row
-        bool first = true;
         // these rows should be just be POLNO
+        bool first = true;
         for (int i=0; i<int(tab.nrow()); ++i) {
           // input values
           Vector<uChar> flag = flagCol(i);
