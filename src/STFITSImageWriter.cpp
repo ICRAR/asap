@@ -171,7 +171,6 @@ Bool STFITSImageWriter::write(const Scantable& stable,
     // Create casacore Image
     IPosition shp(4, 1);
     shp(0)= spec.nelements();
-    cout << shp << spec << endl;
     TempImage<Float> tIm(shp, cSys);
     tIm.put(spec);
     ArrayLattice<Bool> latMask(shp);
