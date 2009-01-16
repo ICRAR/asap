@@ -170,8 +170,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       TableIterator cycit(btable, "CYCLENO");
       ROArrayColumn<Double> srateCol(btable, "SCANRATE");
       Vector<Double> sratedbl;
-      Vector<Float> srateflt;
       srateCol.get(0, sratedbl);
+      Vector<Float> srateflt(sratedbl.nelements());
       convertArray(srateflt, sratedbl);
       pksrec.scanRate = srateflt;
       ROArrayColumn<Double> spmCol(btable, "SRCPROPERMOTION");
