@@ -3,18 +3,23 @@ Changelog
 
 Release 2.3.0 [2009-01-??]
 
+* Ticket #110 Added export to CLASS readable FITS files 
+   scantable.save("myfile.fits", "CLASS")
+* Ticket #133 allow supression of history in the scantable via rc parameters
+* Ticket #109 source direction for Hobart data 
+* Ticket #115 added running median to scantable.(smooth(kernel='rmedian') 
+* Ticket #148 opacity correction wan't applied to TSYS
+* Ticket #135 quotient detection failure for specific source names
+* Ticket #140 NaN values not handled - added scantable.flag_nans to ensure
+   that the NaN are flagged
+* added python iterator access to scantable rows
 * made functions available to directly manipulate spectra
-  scantable.get/set_spectrum
-* Added export to CLASS readable FITS files 
-  scantable.save("myfile.fits", "CLASS")
+   scantable.get/set_spectrum
 * upgrade to support ipython >= 0.8.1
 * support gcc-4.3
 * use scons >= 1.1.0
 * update to latest livedata I/O functions
 * add WCS info to the exported text files
-* allow supression of history in the scantable via rc parameters
-* source direction for Hobart data - Ticket #109
-* added running median to scantable.(smooth(kernel='rmedian') 
 
 Release 2.2.0 [2007-05-02]
 
