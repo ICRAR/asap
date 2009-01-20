@@ -1691,6 +1691,26 @@ class scantable(Scantable):
         else:
             return fit.as_dict()
 
+    def flag_nans(self):
+        """
+        Utility function to flag NaN values in the scantable.
+        """
+        import numpy
+        basesel = self.get_selection()
+        for i in range(self.nrow()):
+            sel = selector()+basesel
+            sel.set_scans(self.getscan(i))
+            sel.set_beams(self.getbeam(i))
+            sel.set_ifs(self.getif(i))
+            sel.set_polarisations(self.getpol(i))
+            self.set_selection(sel)
+            nans = numpy.isnan(self._getspectrum(0))
+        if numpy.any(nans):
+            bnans = [ bool(v) for v in nans]
+            self.flag(bnans)
+        self.set_selection(basesel)
+        
+
     def _add_history(self, funcname, parameters):
         if not rcParams['scantable.history']:
             return
