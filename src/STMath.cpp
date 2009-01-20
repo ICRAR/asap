@@ -1436,6 +1436,7 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
   ROScalarColumn<Float> elev(tab, "ELEVATION");
   ArrayColumn<Float> specCol(tab, "SPECTRA");
   ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+  ArrayColumn<Float> tsysCol(tab, "TSYS");
   for ( uInt i=0; i<tab.nrow(); ++i) {
     Float zdist = Float(C::pi_2) - elev(i);
     Float factor = exp(tau/cos(zdist));
@@ -1443,6 +1444,10 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
     ma *= factor;
     specCol.put(i, ma.getArray());
     flagCol.put(i, flagsFromMA(ma));
+    Vector<Float> tsys;
+    tsysCol.get(i, tsys);
+    tsys *= factor;
+    tsysCol.put(i, tsys);
   }
   return out;
 }
