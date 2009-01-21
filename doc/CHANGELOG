@@ -9,7 +9,7 @@ Release 2.3.0 [2009-01-??]
 * Ticket #133 allow supression of history in the scantable via rc parameters
 * Ticket #109 source direction for Hobart data 
 * Ticket #115 added running median to scantable.(smooth(kernel='rmedian') 
-* Ticket #148 opacity correction won't applied to TSYS
+* Ticket #148 opacity correction wasn't applied to TSYS
 * Ticket #135 quotient detection failure for specific source names
 * Ticket #140 NaN values not handled - added scantable.flag_nans to ensure
    that the NaN are flagged
