@@ -17,7 +17,7 @@ data = scantable('data/tid-t002.rpf')
 
 data.save('output/test.asap',overwrite=True)
 data.save('output/testascii',format='ASCII',overwrite=True)
-data.save('output/testsdfits',format='SDFITS',overwrite=True)
+data.save('output/test.sdfits',format='SDFITS',overwrite=True)
 data.save('output/testfits',format='FITS',overwrite=True)
 data.save('output/testclass',format='CLASS',overwrite=True)
 
