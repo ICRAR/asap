@@ -3,6 +3,8 @@ Changelog
 
 Release 2.3.0 [2009-01-??]
 
+* Ticket #149 Fixed the bug causing spectral line search to go into an infinite loop
+   in some rare circumstances
 * Ticket #110 Added export to CLASS readable FITS files 
    scantable.save("myfile.fits", "CLASS")
 * Ticket #142 Fix of the frequency alignment for long observations
