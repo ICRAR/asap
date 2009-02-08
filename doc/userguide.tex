@@ -12,7 +12,7 @@
 \setlength{\parindent}{0mm}
 \setlength{\parskip}{1ex}
 
-\title{ATNF Spectral Analysis Package\\User Guide v2.2 }
+\title{ATNF Spectral Analysis Package\\User Guide v2.3 }
 \author{Chris Phillips}
 
 \newcommand{\cmd}[1]{{\tt #1}}
@@ -47,7 +47,7 @@ antennas, and can probably be used for other antennas if they can
 produce ``Single Dish FITS'' format. It is based on the AIPS++
 package.
 
-This userguide has been updated for the ASAP 2.2. Please report any
+This userguide has been updated for the ASAP 2.3. Please report any
 mistakes you find.
 
 \section{Installation and Running}
@@ -459,7 +459,7 @@ Example usage:
 
 \begin{verbatim}
   ASAP>scans = scantable('2004-11-23_1841-P484.rpf') # Read in the data
-  ASAP>scans.set_freqframe('LSRK')  # Use the LSR velocity frame
+  ASAP>scans.set_freqframe('LSRK')   # Use the LSR velocity frame
   ASAP>scans.set_unit('km/s')        # Use velocity for plots etc from now on
   ASAP>scans.set_doppler('OPTICAL')  # Use the optical velocity convention
   ASAP>scans.set_unit('MHz')         # Use frequency in MHz from now on
@@ -870,7 +870,7 @@ corrections will not work unless these get recalculated.
 
 \begin{verbatim}
   ASAP>scans.recalc_azel()                # recalculate az/el 
-              							  # based on pointing
+              				  # based on pointing
 \end{verbatim}
 
 Gain-elevation curves for some telescopes and frequencies are known to
@@ -995,9 +995,12 @@ formats are:
   for interchange between packages, but few packages actually can read
   it.
 
-%\item[FITS] This uses simple ``image'' fits to save the data, each row
-%  being written to a separate fits file. This format is suitable for
-%  importing the data into CLASS.
+\item[FITS] This uses simple ``image'' fits to save the data, each row
+  being written to a separate fits file.
+
+\item[CLASS] This uses simple ``image'' fits to save the data, each row
+  being written to a separate fits file. This format has modification so it 
+  is suitable for importing the data into CLASS.
 
 \item[ASCII] A simple text based format suitable for the user to
 processing using Perl or, Python, gnuplot etc.
