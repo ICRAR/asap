@@ -178,6 +178,9 @@ Bool STFITSImageWriter::write(const Scantable& stable,
     IPosition stride(4,1);
     latMask.putSlice(!bflag, where, stride);
     tIm.attachMask(latMask);
+    if (isClass_) {
+      preferVelocity = True;
+    }
     Bool ok = ImageFITSConverter::ImageToFITS(errMsg, tIm, fileName, 
                                               maxMem, preferVelocity,
                                               opticalVelocity, bitPix, 
@@ -187,7 +190,49 @@ Bool STFITSImageWriter::write(const Scantable& stable,
       throw(AipsError(errMsg));
     }
     if (isClass_) {
-      classHackHeader(fileName);
+      // Add CLASS specific information
+      // Apply hacks to fits file so it can be read by class
+      // modifications are
+      // CTYPE1 :  FREQ-XYZ -> FREQ
+      // CRVAL1 :  -> CRVAL1-RESTFREQ
+      int status = 0;
+      fitsfile *fptr;     
+      if( fits_open_file(&fptr, fileName.c_str(), READWRITE, &status) ) 
+        throw AipsError("Coudn't open fits file for CLASS modification");
+
+      // Use preferVelocity which seems to work.
+      // When no restfrequency is given this will set up the correct
+      // frequency axis. Otherwise it uses a velocity axis
+      //       if ( fits_update_key(fptr, TSTRING, "CTYPE1", (char *)"FREQ",
+      //                            NULL, &status) )
+      //         throw AipsError("Couldn't modify CTYPE1.");
+      //       float restf,refval,newfreq;
+      //       fits_read_key(fptr, TFLOAT, "CRVAL1", 
+      //                     &refval, NULL, &status);
+      //       fits_read_key(fptr, TFLOAT, "RESTFREQ", 
+      //                     &restf, NULL, &status);
+      //       newfreq = refval - restf;
+      //       if ( fits_update_key(fptr, TFLOAT, "CRVAL1", &newfreq,  NULL, &status) )
+      //         throw AipsError("Couldn't modify CRVAL1");
+
+
+      Float tsys = stable.getTsys(row0);
+      if ( fits_update_key(fptr, TFLOAT, "TSYS", &tsys,
+                           "System temperature", &status) ) {
+        throw AipsError("Couldn't modify TSYS");        
+      }
+      Float otime = Float(stable.getIntTime(row0));
+      if ( fits_update_key(fptr, TFLOAT, "OBSTIME", &otime,
+                           "Integration time", &status) ) {
+        throw AipsError("Couldn't modify OBSTIME");        
+      }
+
+      const char* oname = stable.getSourceName(row0).c_str();
+      if ( fits_update_key(fptr, TSTRING, "OBJECT", (char *)oname,
+                           NULL, &status) ) {
+        throw AipsError("Couldn't modify OBJECT");        
+      }
+      fits_close_file(fptr, &status);
     }
     //pushLog(String(oss));
     ++iter;
@@ -215,23 +260,3 @@ STFITSImageWriter::getDirectionCoordinate(const String& reff,
    
 }
 
-void STFITSImageWriter::classHackHeader(const String& filename) {
-  int status = 0;
-  fitsfile *fptr;     
-  if( fits_open_file(&fptr, filename.c_str(), READWRITE, &status) ) 
-    throw AipsError("FCoudn't open fits file for CLASS modification");
-
-  if ( fits_update_key(fptr, TSTRING, "CTYPE1", (char *)"FREQ",
-                       NULL, &status) )
-    throw AipsError("Couldn't modify CTYPE1.");
-  float restf,refval,newfreq;
-  fits_read_key(fptr, TFLOAT, "CRVAL1", 
-                &refval, NULL, &status);
-  fits_read_key(fptr, TFLOAT, "RESTFREQ", 
-                &restf, NULL, &status);
-  newfreq = refval - restf;
-  if ( fits_update_key(fptr, TFLOAT, "CRVAL1", &newfreq,  NULL, &status) )
-    throw AipsError("Couldn't modify CRVAL1");
-  fits_close_file(fptr, &status);
-
-}
