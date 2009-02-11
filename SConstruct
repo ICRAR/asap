@@ -55,6 +55,16 @@ opts.AddVariables(
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
 #		("rpfitsincdir", "The rpfits include location", None),
+                ("pyraproot", "The root directory where libpyrap is installed",
+                 None),
+                ("pyraplib", "The name of the pyrap library", "pyrap"),
+                ("pyraplibdir", "The directory where libpyrap is installed",
+                 None),
+                ("pyrapincdir", "The pyrap include location",
+                 None),
+                BoolVariable("enable_pyrap", "Use pyrap conversion library", 
+                             True),
+
                 EnumVariable("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
                 ("makedist",
@@ -64,7 +74,8 @@ opts.AddVariables(
                            "none",
                            ["none", "pdf", "html"], ignorecase=1),
                 BoolVariable("apps", "Build cpp apps", False),
-                BoolVariable("alma", "Enable alma specific functionality", False)
+                BoolVariable("alma", "Enable alma specific functionality", 
+                             False),
                 )
 
 env = Environment( toolpath = ['./scons'],
@@ -112,9 +123,17 @@ if not env.GetOption('clean'):
         if not conf.CheckLib(library=pylib, language='c'): Exit(1)
 
     conf.env.AddCustomPackage('boost')
-    if not conf.CheckLibWithHeader(env["boostlib"], 
+    if not conf.CheckLibWithHeader(conf.env["boostlib"], 
                                    'boost/python.hpp', language='c++'): 
         Exit(1)
+
+    conf.env.AddCustomPackage('pyrap')
+    if  conf.env.get("enable_pyrap") and conf.CheckLib(conf.env["pyraplib"], 
+                                                       language='c++', 
+                                                       autoadd=0): 
+        conf.env.Append(CPPFLAGS=['-DHAVE_PYRAP'])
+        conf.env.PrependUnique(LIBS=env['pyraplib'])
+    
     # test for cfitsio
     if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
