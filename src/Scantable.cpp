@@ -210,7 +210,9 @@ void Scantable::setupMainTable()
 
   td.addColumn(ScalarColumnDesc<String>("SRCNAME"));
   // Type of source (on=0, off=1, other=-1)
-  td.addColumn(ScalarColumnDesc<Int>("SRCTYPE", Int(-1)));
+  ScalarColumnDesc<Int> stypeColumn("SRCTYPE");
+  stypeColumn.setDefault(Int(-1));
+  td.addColumn(stypeColumn);
   td.addColumn(ScalarColumnDesc<String>("FIELDNAME"));
 
   //The actual Data Vectors
