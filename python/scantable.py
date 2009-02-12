@@ -1514,6 +1514,33 @@ class scantable(Scantable):
         else:
             return s
 
+    def set_sourcetype(self, match, sourcetype="reference"):
+        """
+        Set the type of the source to be an source or reference scan
+        using the provided pattern:
+        Parameters:
+            match:          a Unix style pattern or asap selector
+            sourcetype:     the type of the source to use (source/reference)
+        """
+        varlist = vars()
+        basesel = self.get_selection()
+        stype = -1
+        if sourcetype.lower().startswith("r"):
+            stype = 1
+        elif sourcetype.lower().startswith("s"):
+            stype = 0
+        if stype == -1:
+            raise ValueError("Illegal sourcetype use s(ource) or r(eference)")
+        sel = selector()
+        if isinstance(match, selector):
+            sel = match
+        else:
+            sel.set_query("SRCNAME == pattern('%s')" % match)
+        self.set_selection(basesel+sel)
+        self._setsourcetype(stype)
+        self.set_selection(basesel)
+        s._add_history("set_sourcetype", varlist)
+
     def auto_quotient(self, preserve=True, mode='paired'):
         """
         This function allows to build quotients automatically.
@@ -1530,8 +1557,8 @@ class scantable(Scantable):
                             trailing '_R' (Mopra/Parkes) or
                             '_e'/'_w' (Tid) and matches
                             on/off pairs from the observing pattern
-                'time'
-                   finds the closest off in time
+                            'time'
+                            finds the closest off in time
 
         """
         modes = ["time", "paired"]
@@ -1808,13 +1835,10 @@ class scantable(Scantable):
             print_log()
             r._open(name, -1, -1)
             r._read()
-            #tbl = r._getdata()
             if average:
                 tbl = self._math._average((tbl, ), (), 'NONE', 'SCAN')
-                #tbl = tbl2
             if not first:
                 tbl = self._math._merge([self, tbl])
-                #tbl = tbl2
             Scantable.__init__(self, tbl)
             r._close()
             del r, tbl
