@@ -1514,12 +1514,15 @@ class scantable(Scantable):
         else:
             return s
 
-    def set_sourcetype(self, match, sourcetype="reference"):
+    def set_sourcetype(self, match, matchtype="pattern",
+                       sourcetype="reference"):
         """
         Set the type of the source to be an source or reference scan
         using the provided pattern:
         Parameters:
-            match:          a Unix style pattern or asap selector
+            match:          a Unix style pattern, regular expression or selector
+            matchtype:      'pattern' (default) UNIX style pattern or
+                            'regex' regular expression
             sourcetype:     the type of the source to use (source/reference)
         """
         varlist = vars()
@@ -1529,13 +1532,19 @@ class scantable(Scantable):
             stype = 1
         elif sourcetype.lower().startswith("s"):
             stype = 0
-        if stype == -1:
+        else:
             raise ValueError("Illegal sourcetype use s(ource) or r(eference)")
+        if matchtype.lower().startswith("p"):
+            matchtype = "pattern"
+        elif matchtype.lower().startswith("r"):
+            matchtype = "regex"
+        else:
+            raise ValueError("Illegal matchtype, use p(attern) or r(egex)")
         sel = selector()
         if isinstance(match, selector):
             sel = match
         else:
-            sel.set_query("SRCNAME == pattern('%s')" % match)
+            sel.set_query("SRCNAME == %s('%s')" % (matchtype, match))
         self.set_selection(basesel+sel)
         self._setsourcetype(stype)
         self.set_selection(basesel)
@@ -1830,6 +1839,8 @@ class scantable(Scantable):
         for name in fullnames:
             tbl = Scantable(stype)
             r = stfiller(tbl)
+            rx = rcParams['scantable.reference']
+            r._setreferenceexpr(rx)
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
             print_log()

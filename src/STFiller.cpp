@@ -43,21 +43,24 @@ namespace asap {
 STFiller::STFiller() :
   reader_(0),
   header_(0),
-  table_(0)
+  table_(0),
+  refRx_(".*(e|w|_R)$")
 {
 }
 
 STFiller::STFiller( CountedPtr< Scantable > stbl ) :
   reader_(0),
   header_(0),
-  table_(stbl)
+  table_(stbl),
+  refRx_(".*(e|w|_R)$")
 {
 }
 
 STFiller::STFiller(const std::string& filename, int whichIF, int whichBeam ) :
   reader_(0),
   header_(0),
-  table_(0)
+  table_(0),
+  refRx_(".*(e|w|_R)$")
 {
   open(filename, whichIF, whichBeam);
 }
@@ -275,7 +278,7 @@ int asap::STFiller::read( )
     RecordFieldPtr<String> fieldnCol(rec, "FIELDNAME");
     *fieldnCol = pksrec.fieldName;
     // try to auto-identify if it is on or off.
-    Regex rx(".*(e|w|_R)$");
+    Regex rx(refRx_);
     Regex rx2("_S$");
     Int match = pksrec.srcName.matches(rx);
     if (match) {

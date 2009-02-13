@@ -113,7 +113,8 @@ defaultParams = {
     'scantable.freqframe' : ['LSRK', str],  #default frequency frame
     'scantable.verbosesummary'   : [False, _validate_bool],
     'scantable.storage'   : ['memory', str],
-    'scantable.history'   : [True, _validate_bool]
+    'scantable.history'   : [True, _validate_bool],
+    'scantable.reference'      : ['.*(e|w|_R)$', str]
     # fitter
     }
 
@@ -179,6 +180,9 @@ scantable.freqframe        : LSRK
 # Control the level of information printed by summary
 scantable.verbosesummary   : False
 
+# Control the identification of reference (off) scans
+# This is has to be a regular expression
+scantable.reference         : .*(e|w|_R)$
 # Fitter
 """
 

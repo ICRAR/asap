@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id:$
+//# $Id$
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 
@@ -46,6 +46,7 @@ namespace asap {
         .def("_read", &STFillerWrapper::read)
         .def("_close", &STFillerWrapper::close)
         .def("_getdata", &STFillerWrapper::getScantable)
+        .def("_setreferenceexpr", &STFillerWrapper::setReferenceExpr)
       ;
     };
 

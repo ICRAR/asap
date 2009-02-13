@@ -92,6 +92,8 @@ public:
 
   casa::CountedPtr<Scantable> getTable() const { return table_;}
 
+  void setReferenceExpr(const std::string& rx) { refRx_ = rx; }
+
 private:
 
   PKSreader* reader_;
@@ -101,6 +103,7 @@ private:
   casa::Int nIF_, nBeam_, nPol_, nChan_, nInDataRow;
   casa::uInt ifOffset_, beamOffset_;
   casa::Vector<casa::Bool> haveXPol_;
+  casa::String refRx_;
 };
 
 } // namespace
