@@ -129,6 +129,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     ++outrowCount;
     ++iter;
   }
+
   RowAccumulator acc(wtype);
   Vector<Bool> cmask(mask);
   acc.setUserMask(cmask);
@@ -284,11 +285,12 @@ CountedPtr< Scantable >
 CountedPtr< Scantable > STMath::getScantable(const CountedPtr< Scantable >& in,
                                              bool droprows)
 {
-  if (insitu_) return in;
+  if (insitu_) {
+    return in;
+  }
   else {
     // clone
-    Scantable* tabp = new Scantable(*in, Bool(droprows));
-    return CountedPtr<Scantable>(tabp);
+    return CountedPtr<Scantable>(new Scantable(*in, Bool(droprows)));
   }
 }
 
@@ -1553,7 +1555,7 @@ CountedPtr< Scantable >
       while ( !freqit.pastEnd() ) {
         Table thetab = freqit.table();
         uInt nrow = tout.nrow();
-        //tout.addRow(thetab.nrow());
+        tout.addRow(thetab.nrow());
         TableCopy::copyRows(tout, thetab, nrow, 0, thetab.nrow());
         ROTableRow row(thetab);
         for ( uInt i=0; i<thetab.nrow(); ++i) {
