@@ -3,6 +3,9 @@ Changelog
 
 Release 2.3.0 [2009-01-??]
 
+* Ticket #151 added rc parameter and function set_sourcetype to identify on/off scans
+* Ticket #78/#112 Resolved the issue with random errors occuring under linux for large
+   data files, which corrupted the identifaction of off scans
 * Ticket #149 Fixed the bug causing spectral line search to go into an infinite loop
    in some rare circumstances
 * Ticket #110 Added export to CLASS readable FITS files 
@@ -23,6 +26,7 @@ Release 2.3.0 [2009-01-??]
 * use scons >= 1.1.0
 * update to latest livedata I/O functions
 * add WCS info to the exported text files
+
 
 Release 2.2.0 [2007-05-02]
 
