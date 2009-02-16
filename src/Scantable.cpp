@@ -889,7 +889,7 @@ std::string Scantable::getDirectionString(int whichrow) const
 
 std::vector< double > Scantable::getAbcissa( int whichrow ) const
 {
-  if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal ro number"));
+  if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal row number"));
   std::vector<double> stlout;
   int nchan = specCol_(whichrow).nelements();
   String us = freqTable_.getUnitString();
