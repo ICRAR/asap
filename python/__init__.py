@@ -438,6 +438,7 @@ if is_ipython():
             set_feedtype    - set the feed type
             get_fluxunit    - get the brightness flux unit
             set_fluxunit    - set the brightness flux unit
+            set_sourcetype  - set the type of the source - source or reference
             create_mask     - return an mask in the current unit
                               for the given region. The specified regions
                               are NOT masked
