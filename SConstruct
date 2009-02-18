@@ -159,7 +159,7 @@ if not env.GetOption('clean'):
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
-env["version"] = "2.2.x"
+env["version"] = "2.3.0"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
@@ -219,6 +219,7 @@ if len(env["makedist"]):
     env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
     env.QInstall("$stagedir", ["bin/install"])
     env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
+    env.QInstall("$stagedir/asap/data", "share/ipy_user_conf.py")
     if rootdir is not None:
         # This creates a directory Using data table... - disabled
         #env.Command("Using data tables in %s" % rootdir,
