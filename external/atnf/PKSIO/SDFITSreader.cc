@@ -40,6 +40,7 @@
 
 #include <casa/math.h>
 #include <casa/stdio.h>
+#include <cstring>
 
 #include <algorithm>
 #include <strings.h>
