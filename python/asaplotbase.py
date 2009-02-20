@@ -619,12 +619,15 @@ class asaplotbase:
                 if not ganged:
                     self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
-                    self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
+                    if asaprcParams['plotter.xaxisformatting'] == 'mpl':
+                        self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                 else:
                     if i == 0:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
-                        self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
+                        if asaprcParams['plotter.xaxisformatting'] != 'mpl':
+                            
+                            self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1,

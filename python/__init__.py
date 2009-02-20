@@ -106,6 +106,7 @@ defaultParams = {
     'plotter.ganged'      : [True, _validate_bool],
     'plotter.histogram'  : [False, _validate_bool],
     'plotter.papertype'  : ['A4', str],
+    'plotter.xaxisformatting' : ['asap', str],
 
     # scantable
     'scantable.save'      : ['ASAP', str],
@@ -145,7 +146,7 @@ plotter.panelling          : scan
 # push panels together, to share axislabels
 plotter.ganged             : True
 
-# decimate the number of points plotted bya afactor of
+# decimate the number of points plotted by a factor of
 # nchan/1024
 plotter.decimate           : False
 
@@ -158,6 +159,9 @@ plotter.histogram          : False
 
 # ps paper type
 plotter.papertype          : A4
+
+# The formatting style of the xaxis
+plotter.xaxisformatting    : 'asap' or 'mpl'
 
 # scantable
 
