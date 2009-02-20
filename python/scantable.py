@@ -276,7 +276,7 @@ class scantable(Scantable):
         else:
             return info
 
-    def get_spectrum(self, rownow):
+    def get_spectrum(self, rowno):
         """Return the spectrum for the current row in the scantable as a list.
         Parameters:
              rowno:   the row number to retrieve the spectrum from        
