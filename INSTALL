@@ -6,7 +6,7 @@ Requirements
 * cfitso >= 2
 * python >= 2.3
 * boost >= 1.32
-* casacore >= 0.4.0
+* casacore >= 0.4.1
 
 Installation
 ============

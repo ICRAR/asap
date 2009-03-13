@@ -159,7 +159,7 @@ if not env.GetOption('clean'):
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
-env["version"] = "2.3.0"
+env["version"] = "2.3.x"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
