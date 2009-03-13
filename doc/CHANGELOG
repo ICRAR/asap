@@ -3,6 +3,7 @@ Changelog
 
 Release 2.3.0 [2009-01-??]
 
+* Ticket #150 fix in casacore for frequency frame conversions
 * Ticket #151 added rc parameter and function set_sourcetype to identify on/off scans
 * Ticket #78/#112 Resolved the issue with random errors occuring under linux for large
    data files, which corrupted the identifaction of off scans
