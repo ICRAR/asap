@@ -1,5 +1,5 @@
 """
-A representation of a spectra line catalog.
+A representation of a spectral line catalog.
 
 Author: Malte Marquarding
 
@@ -33,6 +33,9 @@ class linecatalog(lcbase):
                 return
             else:
                 raise IOError(msg)
+
+    def __repr__(self):
+        return lcbase.summary(self, -1)
 
     def summary(self):
         """
