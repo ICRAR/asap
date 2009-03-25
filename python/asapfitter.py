@@ -2,6 +2,7 @@ import _asap
 from asap import rcParams
 from asap import print_log
 from asap import _n_bools
+from asap import mask_and
 
 class fitter:
     """
@@ -141,10 +142,15 @@ class fitter:
             if self.data is not None:
                 self.x = self.data._getabcissa(row)
                 self.y = self.data._getspectrum(row)
+                self.mask = mask_and(self.mask, self.data._getmask(row))
                 from asap import asaplog
                 asaplog.push("Fitting:")
                 i = row
-                out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (self.data.getscan(i),self.data.getbeam(i),self.data.getif(i),self.data.getpol(i), self.data.getcycle(i))
+                out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (self.data.getscan(i),
+                                                                      self.data.getbeam(i),
+                                                                      self.data.getif(i),
+                                                                      self.data.getpol(i), 
+                                                                      self.data.getcycle(i))
                 asaplog.push(out,False)
         self.fitter.setdata(self.x, self.y, self.mask)
         if self.fitfunc == 'gauss':
@@ -588,10 +594,15 @@ class fitter:
         from asap import asaplog
         asaplog.push("Fitting:")
         for r in rows:
-            out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (scan.getscan(r),scan.getbeam(r),scan.getif(r),scan.getpol(r), scan.getcycle(r))
+            out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (scan.getscan(r),
+                                                                   scan.getbeam(r),
+                                                                   scan.getif(r),
+                                                                   scan.getpol(r), 
+                                                                   scan.getcycle(r))
             asaplog.push(out, False)
             self.x = scan._getabcissa(r)
             self.y = scan._getspectrum(r)
+            self.mask = mask_and(self.mask, scan._getmask(r))
             self.data = None
             self.fit()
             x = self.get_parameters()

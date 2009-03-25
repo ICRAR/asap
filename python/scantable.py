@@ -1397,10 +1397,8 @@ class scantable(Scantable):
 
             # setup line finder
             fl.find_lines(r, mask, curedge)
-            f.set_scan(workscan, fl.get_mask())
-            f.x = workscan._getabcissa(r)
-            f.y = workscan._getspectrum(r)
-            f.data = None
+            f.set_data(workscan._getabcissa(r),  workscan._getspectrum(r),
+                        mask_and(workscan._getmask(r), fl.get_mask()))
             f.fit()
             x = f.get_parameters()
             if plot:
