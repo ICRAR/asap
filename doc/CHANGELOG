@@ -1,7 +1,13 @@
 Changelog
 =========
 
-Release 2.3.0 [2009-01-??]
+Release 2.3.1 [2009-03-25]
+
+* Ticket #154 Flagged data wasn't hnoured in fitting
+* Ticket #153 plotter.plot_lines fixed for matplotlib >= 0.98
+* Ticket #90  Support integer values for frequencies/errors/intensities
+
+Release 2.3.0 [2009-03-13]
 
 * Ticket #150 fix in casacore for frequency frame conversions
 * Ticket #151 added rc parameter and function set_sourcetype to identify on/off scans
