@@ -103,7 +103,7 @@ void STSelector::setstring( const std::string& key,
 
 void STSelector::setTaQL( const std::string& taql )
 {
-  taql_ = "USING STYLE PYTHON " + taql;
+  taql_ = taql;
 }
 
 
@@ -142,11 +142,12 @@ Table STSelector::apply( const Table& tab )
   // add taql query
   if ( taql_.size() > 0 ) {
     Table tmpt = tab;
+    std::string pytaql = "USING STYLE PYTHON " + taql_;
 
     if ( !query.isNull() ) { // taql and selection
-      tmpt = tableCommand(taql_, tab(query));
+      tmpt = tableCommand(pytaql, tab(query));
     } else { // taql only
-      tmpt = tableCommand(taql_, tab);
+      tmpt = tableCommand(pytaql, tab);
     }
     return sort(tmpt);
   } else {
