@@ -775,9 +775,17 @@ class asaplotbase:
         # a rough estimate for the bb of the text
         if rotate > 0.0: lbloffset = 0.03*len(label)
         peakoffset = 0.01
-        xy0 = ax.transData.xy_tup((x,y))
-        # get relative coords
-        xy = ax.transAxes.inverse_xy_tup(xy0)
+        xy = None
+        xy0 = None
+        # matplotlib api change 0.98 is using transform now
+        if hasattr(ax.transData, "inverse_xy_tup"):
+            # get relative coords
+            xy0 = ax.transData.xy_tup((x,y))
+            xy = ax.transAxes.inverse_xy_tup(xy0)
+        else:
+            xy0 = ax.transData.transform((x,y))
+            # get relative coords
+            xy = ax.transAxes.inverted().transform(xy0)
         if location.lower() == 'top':
             ymax = 1.0-lbloffset
             ymin = xy[1]+peakoffset
