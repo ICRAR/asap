@@ -117,10 +117,11 @@ class asapplotter:
         
         for w in xrange(nwindows):
             wpos = []
-            self.text(0.05,0.95, "Add mask boundary", coords="relative")
+            self.text(0.05,1.0, "Add start boundary", coords="relative", fontsize=10)
             wpos.append(self._plotter.get_point()[0])
             del self._plotter.axes.texts[-1]
             self.axvline(wpos[0], **kwargs)
+            self.text(0.05,1.0, "Add end boundary", coords="relative", fontsize=10)
             wpos.append(self._plotter.get_point()[0])
             del self._plotter.axes.lines[-1]
             kwargs["alpha"] = 0.1
