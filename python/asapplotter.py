@@ -1,4 +1,4 @@
-from asap import rcParams, print_log, selector
+from asap import rcParams, print_log, selector, scantable
 import matplotlib.axes
 import re
 
@@ -100,34 +100,84 @@ class asapplotter:
         print_log()
         return
 
+    def create_mask(self, **kwargs):
+        nwindows = 1
+        if kwargs.has_key("nwindows"):
+            nwindows = kwargs.pop("nwindows")
+        outmask = []
+        for w in xrange(nwindows):
+            wpos = []
+            wpos.append(self._plotter.get_point()[0])
+            self.axvline(wpos[0], **kwargs)
+            wpos.append(self._plotter.get_point()[0])
+            del self._plotter.axes.lines[-1]
+            kwargs["alpha"] = 0.1
+            self.axvspan(wpos[0], wpos[1], **kwargs)
+            outmask.append(wpos)
+        return self._data.create_mask(*outmask)
 
     # forwards to matplotlib axes
     def text(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_point()
+                args = tuple(pos)+args
         self._axes_callback("text", *args, **kwargs)
+
     text.__doc__ = matplotlib.axes.Axes.text.__doc__
     def arrow(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_region()
+                dpos = (pos[0][0], pos[0][1],
+                        pos[1][0]-pos[0][0],
+                        pos[1][1] - pos[0][1])
+                args = dpos + args
         self._axes_callback("arrow", *args, **kwargs)
+
     arrow.__doc__ = matplotlib.axes.Axes.arrow.__doc__
     def axvline(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_point()
+                args = (pos[0],)+args
         self._axes_callback("axvline", *args, **kwargs)
     axvline.__doc__ = matplotlib.axes.Axes.axvline.__doc__
+
     def axhline(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_point()
+                args = (pos[1],)+args
         self._axes_callback("axhline", *args, **kwargs)
     axhline.__doc__ = matplotlib.axes.Axes.axhline.__doc__
+
     def axvspan(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_region()
+                dpos = (pos[0][0], pos[1][0])
+                args = dpos + args
         self._axes_callback("axvspan", *args, **kwargs)
         # hack to preventy mpl from redrawing the patch
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???
-        del self._plotter.axes.patches[-1]
+        #del self._plotter.axes.patches[-1]
+
     axvspan.__doc__ = matplotlib.axes.Axes.axvspan.__doc__
 
     def axhspan(self, *args, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                pos = self._plotter.get_region()
+                dpos = (pos[0][1], pos[1][1])
+                args = dpos + args
+
         self._axes_callback("axhspan", *args, **kwargs)
         # hack to preventy mpl from redrawing the patch
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???
-        del self._plotter.axes.patches[-1]
+        #del self._plotter.axes.patches[-1]
     axhspan.__doc__ = matplotlib.axes.Axes.axhspan.__doc__
 
     def _axes_callback(self, axesfunc, *args, **kwargs):
@@ -147,6 +197,7 @@ class asapplotter:
         self._plotter.show(False)
         self._plotter.axes.set_autoscale_on(True)
     # end matplotlib.axes fowarding functions
+
 
     def set_mode(self, stacking=None, panelling=None):
         """
@@ -389,7 +440,7 @@ class asapplotter:
             rcp('lines', linewidth=linewidth)
         if self._data: self.plot(self._data)
 
-    def set_font(self, family=None, style=None, weight=None, size=None):
+    def set_font(self, **kwargs):
         """
         Set font properties.
         Parameters:
@@ -400,15 +451,13 @@ class asapplotter:
                        seperately
         """
         from matplotlib import rc as rcp
-        if isinstance(family, str):
-            rcp('font', family=family)
-        if isinstance(style, str):
-            rcp('font', style=style)
-        if isinstance(weight, str):
-            rcp('font', weight=weight)
-        if isinstance(size, float) or isinstance(size, int):
-            rcp('font', size=size)
-        if self._data: self.plot(self._data)
+        fdict = {}
+        for k,v in kwargs.iteritems():
+            if v:
+                fdict[k] = v
+        rcp('font', **fdict)
+        if self._data:
+            self.plot(self._data)
 
     def plot_lines(self, linecat=None, doppler=0.0, deltachan=10, rotate=90.0,
                    location=None):
@@ -631,8 +680,8 @@ class asapplotter:
                        or scan._getabcissalabel()
                 ylab = self._ordinate and self._ordinate[panelcount] \
                        or scan._get_ordinate_label()
-                self._plotter.set_axes('xlabel',xlab)
-                self._plotter.set_axes('ylabel',ylab)
+                self._plotter.set_axes('xlabel', xlab)
+                self._plotter.set_axes('ylabel', ylab)
                 lbl = self._get_label(scan, r, self._panelling, self._title)
                 if isinstance(lbl, list) or isinstance(lbl, tuple):
                     if 0 <= panelcount < len(lbl):
