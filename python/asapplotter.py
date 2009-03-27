@@ -102,9 +102,14 @@ class asapplotter:
 
     def create_mask(self, **kwargs):
         nwindows = 1
+        panel = kwargs.get("panel", 0)
         if kwargs.has_key("nwindows"):
             nwindows = kwargs.pop("nwindows")
         outmask = []
+        xmin, xmax = self._plotter.subplots[panel]['axes'].get_xlim()
+        marg = 0.05*(xmax-xmin)
+        self._plotter.subplots[panel]['axes'].set_xlim(xmin-marg, xmax+marg)
+
         for w in xrange(nwindows):
             wpos = []
             wpos.append(self._plotter.get_point()[0])
