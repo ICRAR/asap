@@ -100,6 +100,9 @@ class asapplotter:
         print_log()
         return
 
+    def refresh(self):
+        self._plotter.figure.show()
+
     def create_mask(self, **kwargs):
         nwindows = 1
         panel = kwargs.get("panel", 0)
@@ -110,11 +113,13 @@ class asapplotter:
         xmin, xmax = self._plotter.axes.get_xlim()
         marg = 0.05*(xmax-xmin)
         self._plotter.axes.set_xlim(xmin-marg, xmax+marg)
-        self._plotter.show(False)
-
+        self.refresh()
+        
         for w in xrange(nwindows):
             wpos = []
+            self.text(0.05,0.95, "Add mask boundary", coords="relative")
             wpos.append(self._plotter.get_point()[0])
+            del self._plotter.axes.texts[-1]
             self.axvline(wpos[0], **kwargs)
             wpos.append(self._plotter.get_point()[0])
             del self._plotter.axes.lines[-1]
