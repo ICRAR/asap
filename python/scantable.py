@@ -783,8 +783,12 @@ class scantable(Scantable):
         ws = (isinstance(args[-1][-1], int) or isinstance(args[-1][-1], float)) \
              and args or args[0]
         for window in ws:
-            if (len(window) != 2 or window[0] > window[1] ):
-                raise TypeError("A window needs to be defined as [min, max]")
+            if len(window) != 2:
+                raise ValueError("A window needs to be defined as [start, end]")
+            if window[0] > window[1]:
+                tmp = window[0]
+                window[0] = window[1]
+                window[1] = tmp
             for i in range(n):
                 if data[i] >= window[0] and data[i] <= window[1]:
                     msk[i] = True
