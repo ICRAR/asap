@@ -278,6 +278,18 @@ class asaplotbase:
         self.register('button_press', position_disable)
 
 
+    def get_region(self):
+        pos = []
+        print "Please select the bottom/left point" 
+        pos.append(self.figure.ginput(n=1, show_clicks=False)[0])
+        print "Please select the top/right point" 
+        pos.append(self.figure.ginput(n=1, show_clicks=False)[0])
+        return pos
+
+    def get_point(self):
+        print "Please select the point" 
+        return self.figure.ginput(n=1, show_clicks=False)[0]
+
     def region(self):
         """
         Use the mouse to get a rectangular region from a plot.
