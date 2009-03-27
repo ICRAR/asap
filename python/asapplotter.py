@@ -106,9 +106,11 @@ class asapplotter:
         if kwargs.has_key("nwindows"):
             nwindows = kwargs.pop("nwindows")
         outmask = []
-        xmin, xmax = self._plotter.subplots[panel]['axes'].get_xlim()
+        self._plotter.subplot(panel)
+        xmin, xmax = self._plotter.axes.get_xlim()
         marg = 0.05*(xmax-xmin)
-        self._plotter.subplots[panel]['axes'].set_xlim(xmin-marg, xmax+marg)
+        self._plotter.axes.set_xlim(xmin-marg, xmax+marg)
+        self._plotter.show(False)
 
         for w in xrange(nwindows):
             wpos = []
