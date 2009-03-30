@@ -154,6 +154,7 @@ class asaplotbase:
         """
         from matplotlib.numerix import array
         from matplotlib.numerix.ma import MaskedArray
+        
         if x is None:
             if y is None: return
             x = range(len(y))
@@ -165,8 +166,16 @@ class asaplotbase:
         y2 = range(12)
         y2 = range(l2)
         m2 = range(l2)
-        ymsk = y.raw_mask()
-        ydat = y.raw_data()
+        ymsk = None
+        ydat = None
+        if hasattr(y, "raw_mask"):
+            # numpy < 1.1
+            ymsk = y.raw_mask()
+            ydat = y.raw_data()
+        else:
+            ymsk = y.mask
+            ydat = y.data
+
         for i in range(l2):
             x2[i] = x[i/2]
             m2[i] = ymsk[i/2]
@@ -288,7 +297,11 @@ class asaplotbase:
 
     def get_point(self):
         print "Please select the point" 
-        return self.figure.ginput(n=1, show_clicks=False)[0]
+        pt = self.figure.ginput(n=1, show_clicks=False)
+        if pt:
+            return pt[0]
+        else:
+            return None
 
     def region(self):
         """
