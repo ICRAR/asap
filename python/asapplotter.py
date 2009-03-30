@@ -1,5 +1,8 @@
 from asap import rcParams, print_log, selector, scantable
 import matplotlib.axes
+from matplotlib.font_manager import FontProperties
+from matplotlib.text import Text
+
 import re
 
 class asapplotter:
@@ -37,6 +40,7 @@ class asapplotter:
         self._maskselection = None
         self._selection = selector()
         self._hist = rcParams['plotter.histogram']
+        self._fp = FontProperties()
 
     def _translate(self, instr):
         keys = "s b i p t".split()
@@ -488,9 +492,9 @@ class asapplotter:
         for k,v in kwargs.iteritems():
             if v:
                 fdict[k] = v
-        rcp('font', **fdict)
+        self._fp = FontProperties(**fdict)
         if self._data:
-            self.plot(self._data)
+            self.plot()
 
     def plot_lines(self, linecat=None, doppler=0.0, deltachan=10, rotate=90.0,
                    location=None):
@@ -786,6 +790,10 @@ class asapplotter:
             r+=1 # next row
         #reset the selector to the scantable's original
         scan.set_selection(savesel)
+        if self._fp is not None:
+            for o in self._plotter.figure.findobj(Text):
+                o.set_fontproperties(self._fp)
+
 
     def set_selection(self, selection=None, refresh=True):
         self._selection = isinstance(selection,selector) and selection or selector()
@@ -822,7 +830,7 @@ class asapplotter:
              't': str(scan.get_time(row)) }
         return userlabel or d[mode]
 
-    def plotazel(self, scan=None):
+    def plotazel(self):
         """
         plot azimuth and elevation  versus time of a scantable
         """
@@ -830,8 +838,7 @@ class asapplotter:
         from matplotlib.dates import DateFormatter, timezone, HourLocator, MinuteLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
         from matplotlib.numerix import array, pi
-        self._data = scan
-        dates = self._data.get_time()
+        dates = self._data.get_time(asdatetime=True)
         t = PL.date2num(dates)
         tz = timezone('UTC')
         PL.cla()
@@ -892,7 +899,7 @@ class asapplotter:
         PL.ion()
         PL.draw()
 
-    def plotpointing(self, scan=None):
+    def plotpointing(self):
         """
         plot telescope pointings
         """
@@ -900,7 +907,6 @@ class asapplotter:
         from matplotlib.dates import DateFormatter, timezone
         from matplotlib.ticker import MultipleLocator
         from matplotlib.numerix import array, pi, zeros
-        self._data = scan
         dir = array(self._data.get_directionval()).transpose()
         ra = dir[0]*180./pi
         dec = dir[1]*180./pi
