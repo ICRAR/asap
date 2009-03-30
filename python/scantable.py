@@ -762,11 +762,9 @@ class scantable(Scantable):
             # and 800 and 900 in the unit 'channel'
             c)
             mask only channel 400
-            msk =  scan.create_mask([400, 400])
+            msk =  scan.create_mask([400])
         """
-        row = 0
-        if kwargs.has_key("row"):
-            row = kwargs.get("row")
+        row = kwargs.get("row", 0)
         data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
         if rcParams['verbose']:
@@ -783,8 +781,10 @@ class scantable(Scantable):
         ws = (isinstance(args[-1][-1], int) or isinstance(args[-1][-1], float)) \
              and args or args[0]
         for window in ws:
-            if len(window) != 2:
-                raise ValueError("A window needs to be defined as [start, end]")
+            if len(window) == 1:
+                window = [window[0], window[0]]
+            if len(window) == 0 or  len(window) > 2:
+                raise ValueError("A window needs to be defined as [start(, end)]")
             if window[0] > window[1]:
                 tmp = window[0]
                 window[0] = window[1]
