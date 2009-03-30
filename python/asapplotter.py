@@ -162,6 +162,7 @@ class asapplotter:
         self._axes_callback("text", *args, **kwargs)
 
     text.__doc__ = matplotlib.axes.Axes.text.__doc__
+
     def arrow(self, *args, **kwargs):
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
@@ -173,12 +174,25 @@ class asapplotter:
         self._axes_callback("arrow", *args, **kwargs)
 
     arrow.__doc__ = matplotlib.axes.Axes.arrow.__doc__
+
+    def annotate(self, text, xy=None, xytext=None, **kwargs):
+        if kwargs.has_key("interactive"):
+            if kwargs.pop("interactive"):
+                xy = self._plotter.get_point()
+                xytext = self._plotter.get_point()
+        if not kwargs.has_key("arrowprops"):
+            kwargs["arrowprops"] = dict(arrowstyle="->")
+        self._axes_callback("annotate", text, xy, xytext, **kwargs)
+
+    annotate.__doc__ = matplotlib.axes.Axes.annotate.__doc__
+
     def axvline(self, *args, **kwargs):
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_point()
                 args = (pos[0],)+args
         self._axes_callback("axvline", *args, **kwargs)
+
     axvline.__doc__ = matplotlib.axes.Axes.axvline.__doc__
 
     def axhline(self, *args, **kwargs):
@@ -187,6 +201,7 @@ class asapplotter:
                 pos = self._plotter.get_point()
                 args = (pos[1],)+args
         self._axes_callback("axhline", *args, **kwargs)
+
     axhline.__doc__ = matplotlib.axes.Axes.axhline.__doc__
 
     def axvspan(self, *args, **kwargs):
@@ -215,6 +230,7 @@ class asapplotter:
         # it seem to convert the patch into lines on every draw.
         # This doesn't happen in a test script???
         #del self._plotter.axes.patches[-1]
+
     axhspan.__doc__ = matplotlib.axes.Axes.axhspan.__doc__
 
     def _axes_callback(self, axesfunc, *args, **kwargs):
