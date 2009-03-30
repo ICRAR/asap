@@ -103,11 +103,9 @@ class asapplotter:
     def refresh(self):
         self._plotter.figure.show()
 
-    def create_mask(self, **kwargs):
-        nwindows = 1
-        panel = kwargs.get("panel", 0)
-        if kwargs.has_key("nwindows"):
-            nwindows = kwargs.pop("nwindows")
+    def create_mask(self, nwin=1, panel=0, color=None):
+        if self._data is None:
+            return []
         outmask = []
         self._plotter.subplot(panel)
         xmin, xmax = self._plotter.axes.get_xlim()
@@ -115,19 +113,41 @@ class asapplotter:
         self._plotter.axes.set_xlim(xmin-marg, xmax+marg)
         self.refresh()
         
-        for w in xrange(nwindows):
+        def cleanup(lines=False, texts=False, refresh=False):
+            if lines:
+                del self._plotter.axes.lines[-1]
+            if texts:
+                del self._plotter.axes.texts[-1]
+            if refresh:
+                self.refresh()
+
+        for w in xrange(nwin):
             wpos = []
-            self.text(0.05,1.0, "Add start boundary", coords="relative", fontsize=10)
-            wpos.append(self._plotter.get_point()[0])
-            del self._plotter.axes.texts[-1]
-            self.axvline(wpos[0], **kwargs)
+            self.text(0.05,1.0, "Add start boundary", 
+                      coords="relative", fontsize=10)
+            point = self._plotter.get_point()
+            cleanup(texts=True)
+            if point is None:
+                continue
+            wpos.append(point[0])
+            self.axvline(wpos[0], color=color)                
             self.text(0.05,1.0, "Add end boundary", coords="relative", fontsize=10)
-            wpos.append(self._plotter.get_point()[0])
-            del self._plotter.axes.lines[-1]
-            kwargs["alpha"] = 0.1
-            self.axvspan(wpos[0], wpos[1], **kwargs)
+            point = self._plotter.get_point()
+            cleanup(texts=True, lines=True)
+            if point is None:
+                self.refresh()
+                continue
+            wpos.append(point[0])
+            self.axvspan(wpos[0], wpos[1], alpha=0.1,
+                         edgecolor=color, facecolor=color)
+            ymin, ymax = self._plotter.axes.get_ylim()
             outmask.append(wpos)
-        return self._data.create_mask(*outmask)
+
+        self._plotter.axes.set_xlim(xmin, xmax)
+        self.refresh()
+        if len(outmask) > 0:
+            return self._data.create_mask(*outmask)
+        return []
 
     # forwards to matplotlib axes
     def text(self, *args, **kwargs):
