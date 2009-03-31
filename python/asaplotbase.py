@@ -13,23 +13,15 @@ from matplotlib.numerix import sqrt
 from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
 from matplotlib.ticker import OldScalarFormatter
-from matplotlib.ticker import NullLocator
 
 # API change in mpl >= 0.98
 try:
     from matplotlib.transforms import blended_transform_factory
 except ImportError:
-    from matplotlib.transforms import blend_xy_sep_transform  as blended_transform_factory
+    from matplotlib.transforms import blend_xy_sep_transform as blended_transform_factory
 
 if int(matplotlib.__version__.split(".")[1]) < 87:
     print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
-
-#class MyFormatter(OldScalarFormatter):
-#    def __call__(self, x, pos=None):
-#        last = len(self.locs)-2
-#        if pos==0:
-#            return ''
-#        else: return OldScalarFormatter.__call__(self, x, pos)
 
 class asaplotbase:
     """
@@ -644,13 +636,13 @@ class asaplotbase:
                 if not ganged:
                     self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
-                    if asaprcParams['plotter.xaxisformatting'] == 'mpl':
+                    if asaprcParams['plotter.axesformatting'] != 'mpl':
                         self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                 else:
                     if i == 0:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
-                        if asaprcParams['plotter.xaxisformatting'] != 'mpl':
+                        if asaprcParams['plotter.axesformatting'] != 'mpl':
                             
                             self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
@@ -732,29 +724,31 @@ class asaplotbase:
                     else:
                         sp['axes'].legend((' '))
 
+
             from matplotlib.artist import setp
-            fp = FP(size=rcParams['xtick.labelsize'])
-            xts = fp.get_size_in_points()- (self.cols)/2
-            fp = FP(size=rcParams['ytick.labelsize'])
-            yts = fp.get_size_in_points() - (self.rows)/2
+            fpx = FP(size=rcParams['xtick.labelsize'])
+            xts = fpx.get_size_in_points()- (self.cols)/2
+            fpy = FP(size=rcParams['ytick.labelsize'])
+            yts = fpy.get_size_in_points() - (self.rows)/2
+            fpa = FP(size=rcParams['axes.labelsize'])
+            fpat = FP(size=rcParams['axes.titlesize'])
+            axsize =  fpa.get_size_in_points()
+            tsize =  fpat.get_size_in_points()
             for sp in self.subplots:
                 ax = sp['axes']
-                s = ax.title.get_size()
-                tsize = s-(self.cols+self.rows)
-                ax.title.set_size(tsize)
-                fp = FP(size=rcParams['axes.labelsize'])
+                off = 0
+                if len(self.subplots) > 1:
+                    off = self.cols+self.rows
+                ax.title.set_size(tsize-off)
                 setp(ax.get_xticklabels(), fontsize=xts)
                 setp(ax.get_yticklabels(), fontsize=yts)
-                origx =  fp.get_size_in_points()
-                origy = origx
                 off = 0
-                if self.cols > 1: off = self.cols
-                xfsize = origx-off
-                ax.xaxis.label.set_size(xfsize)
-                off = 0
-                if self.rows > 1: off = self.rows
-                yfsize = origy-off
-                ax.yaxis.label.set_size(yfsize)
+                if self.cols > 1:
+                    off = self.cols
+                ax.xaxis.label.set_size(axsize-off)
+                if self.rows > 1:
+                    off = self.rows
+                ax.yaxis.label.set_size(axsize-off)
 
     def subplot(self, i=None, inc=None):
         """

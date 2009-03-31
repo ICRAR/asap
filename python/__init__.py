@@ -106,7 +106,7 @@ defaultParams = {
     'plotter.ganged'      : [True, _validate_bool],
     'plotter.histogram'  : [False, _validate_bool],
     'plotter.papertype'  : ['A4', str],
-    'plotter.xaxisformatting' : ['asap', str],
+    'plotter.axesformatting' : ['mpl', str],
 
     # scantable
     'scantable.save'      : ['ASAP', str],
@@ -143,7 +143,7 @@ plotter.stacking           : Pol
 # default mode for panelling
 plotter.panelling          : scan
 
-# push panels together, to share axislabels
+# push panels together, to share axis labels
 plotter.ganged             : True
 
 # decimate the number of points plotted by a factor of
@@ -161,7 +161,7 @@ plotter.histogram          : False
 plotter.papertype          : A4
 
 # The formatting style of the xaxis
-plotter.xaxisformatting    : 'asap' or 'mpl'
+plotter.axesformatting    : 'mpl' (default) or 'asap' (for old versions of matplotlib)
 
 # scantable
 
@@ -187,6 +187,7 @@ scantable.verbosesummary   : False
 # Control the identification of reference (off) scans
 # This is has to be a regular expression
 scantable.reference         : .*(e|w|_R)$
+
 # Fitter
 """
 
@@ -388,20 +389,21 @@ if rcParams['useplotter']:
         print "Matplotlib not installed. No plotting available"
 
 __date__ = '$Date$'.split()[1]
-__version__  = '$Revision:$'
+__version__  = '$Revision$'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
     
-    def list_scans(t = scantable):
-        import types
-        globs = sys.modules['__main__'].__dict__.iteritems()
-        print "The user created scantables are:"
-        sts = map(lambda x: x[0], filter(lambda x: isinstance(x[1], t), globs))
-        print filter(lambda x: not x.startswith('_'), sts)
-        return
+    def list_scans(t = scantable):        
+        import inspect
+        print "The user created scantables are: ",
+        globs=inspect.currentframe().f_back.f_locals.copy()
+        out = [ k for k,v in globs.iteritems() \
+                     if isinstance(v, scantable) and not k.startswith("_") ]
+        print out
+        return out
 
     def commands():
         x = """
@@ -471,7 +473,8 @@ if is_ipython():
                               in time off is selected)
             mx_quotient     - Form a quotient using MX data (off beams)
             scale, *, /     - return a scan scaled by a given factor
-            add, +, -       - return a scan with given value added
+            add, +          - return a scan with given value added
+            sub, -          - return a scan with given value subtracted
             bin             - return a scan with binned channels
             resample        - return a scan with resampled channels
             smooth          - return the spectrally smoothed scan
@@ -578,6 +581,8 @@ if is_ipython():
                               coordinates
             axhline,axvline - draw horizontal/vertical lines
             axhspan,axvspan - draw horizontal/vertical regions
+            annotate        - draw an arrow with label
+            create_mask     - create a scnatble mask interactively
 
         xyplotter           - matplotlib/pylab plotting functions
 
@@ -591,7 +596,7 @@ if is_ipython():
     [General]
         commands            - this command
         print               - print details about a variable
-        list_scans          - list all scantables created bt the user
+        list_scans          - list all scantables created by the user
         list_files          - list all files readable by asap (default rpf)
         del                 - delete the given variable from memory
         range               - create a list of values, e.g.
