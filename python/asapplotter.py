@@ -14,11 +14,11 @@ class asapplotter:
         Currenly it only plots 'spectra' not Tsys or
         other variables.
     """
-    def __init__(self, visible=None):
+    def __init__(self, visible=None , **kwargs):
         self._visible = rcParams['plotter.gui']
         if visible is not None:
             self._visible = visible
-        self._plotter = self._newplotter()
+        self._plotter = self._newplotter(**kwargs)
 
         self._panelling = None
         self._stacking = None
@@ -50,12 +50,12 @@ class asapplotter:
                     return key
         return None
 
-    def _newplotter(self):
+    def _newplotter(self, **kwargs):
         if self._visible:
             from asap.asaplotgui import asaplotgui as asaplot
         else:
             from asap.asaplot import asaplot
-        return asaplot()
+        return asaplot(**kwargs)
 
 
     def plot(self, scan=None):
