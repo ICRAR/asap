@@ -1213,9 +1213,10 @@ class scantable(Scantable):
     def convert_pol(self, poltype=None):
         """
         Convert the data to a different polarisation type.
+        Note that you will need cross-polarisation terms for most conversions.
         Parameters:
             poltype:    The new polarisation type. Valid types are:
-                        "linear", "stokes" and "circular"
+                        "linear", "circular", "stokes" and "linpol"
         """
         varlist = vars()
         try:
