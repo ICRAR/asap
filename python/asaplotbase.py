@@ -146,7 +146,7 @@ class asaplotbase:
         """
         from matplotlib.numerix import array
         from matplotlib.numerix.ma import MaskedArray
-        
+
         if x is None:
             if y is None: return
             x = range(len(y))
@@ -281,14 +281,14 @@ class asaplotbase:
 
     def get_region(self):
         pos = []
-        print "Please select the bottom/left point" 
+        print "Please select the bottom/left point"
         pos.append(self.figure.ginput(n=1, show_clicks=False)[0])
-        print "Please select the top/right point" 
+        print "Please select the top/right point"
         pos.append(self.figure.ginput(n=1, show_clicks=False)[0])
         return pos
 
     def get_point(self):
-        print "Please select the point" 
+        print "Please select the point"
         pt = self.figure.ginput(n=1, show_clicks=False)
         if pt:
             return pt[0]
@@ -458,7 +458,7 @@ class asaplotbase:
                     self.figure.savefig(fname,dpi=dpi)
                     print 'Written file %s' % (fname)
             except IOError, msg:
-                print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
+                print 'Failed to save %s: Error msg was\n\n%s' % (fname, msg)
                 return
         else:
             print "Invalid image type. Valid types are:"
@@ -643,7 +643,7 @@ class asaplotbase:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
                         if asaprcParams['plotter.axesformatting'] != 'mpl':
-                            
+
                             self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
