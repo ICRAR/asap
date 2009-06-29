@@ -1231,18 +1231,21 @@ class scantable(Scantable):
         print_log()
         return s
 
-    def smooth(self, kernel="hanning", width=5.0, insitu=None):
+    def smooth(self, kernel="hanning", width=5.0, order=2, insitu=None):
         """
         Smooth the spectrum by the specified kernel (conserving flux).
         Parameters:
             kernel:     The type of smoothing kernel. Select from
-                        'hanning' (default), 'gaussian', 'boxcar' and
-                        'rmedian'
+                        'hanning' (default), 'gaussian', 'boxcar', 'rmedian'
+                        or 'poly'
             width:      The width of the kernel in pixels. For hanning this is
                         ignored otherwise it defauls to 5 pixels.
                         For 'gaussian' it is the Full Width Half
                         Maximum. For 'boxcar' it is the full width.
-                        For 'rmedian' it is the half width.
+                        For 'rmedian' and 'poly' it is the half width.
+            order:      Optional parameter for 'poly' kernel (default is 2), to
+                        specify the order of the polnomial. Ignored by all other
+                        kernels.
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -1252,7 +1255,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        s = scantable(self._math._smooth(self, kernel.lower(), width))
+        s = scantable(self._math._smooth(self, kernel.lower(), width, order))
         s._add_history("smooth", varlist)
         print_log()
         if insitu: self._assign(s)
