@@ -1961,7 +1961,8 @@ CountedPtr< Scantable >
 
 CountedPtr< Scantable >
   asap::STMath::lagFlag( const CountedPtr< Scantable > & in,
-                          double frequency, double width )
+                         double start, double end,
+                         const std::string& mode)
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tout = out->table();
@@ -1979,21 +1980,52 @@ CountedPtr< Scantable >
     for (int i=0; i<int(tab.nrow()); ++i) {
       Vector<Float> spec = specCol(i);
       Vector<uChar> flag = flagCol(i);
-      Int lag0 = Int(spec.nelements()*abs(inc)/(frequency+width)+0.5);
-      Int lag1 = Int(spec.nelements()*abs(inc)/(frequency-width)+0.5);
+      int fstart = -1;
+      int fend = -1;
       for (int k=0; k < flag.nelements(); ++k ) {
         if (flag[k] > 0) {
-          spec[k] = 0.0;
+          fstart = k;
+          while (flag[k] > 0 && k < flag.nelements()) {
+            fend = k;
+            k++;
+          }
         }
+        Float interp = 0.0;
+        if (fstart-1 > 0 ) {
+          interp = spec[fstart-1];
+          if (fend+1 < spec.nelements()) {
+            interp = (interp+spec[fend+1])/2.0;
+          }
+        } else {
+          interp = spec[fend+1];
+        }
+        if (fstart > -1 && fend > -1) {
+          for (int j=fstart;j<=fend;++j) {
+            spec[j] = interp;
+          }
+        }
+        fstart =-1;
+        fend = -1;
       }
       Vector<Complex> lags;
       ffts.fft0(lags, spec);
-      Int start =  max(0, lag0);
-      Int end =  min(Int(lags.nelements()-1), lag1);
-      if (start == end) {
-        lags[start] = Complex(0.0);
+      Int lag0(start+0.5);
+      Int lag1(end+0.5);
+      if (mode == "frequency") {
+        lag0 = Int(spec.nelements()*abs(inc)/(start)+0.5);
+        lag1 = Int(spec.nelements()*abs(inc)/(end)+0.5);
+      }
+      Int lstart =  max(0, lag0);
+      Int lend =  min(Int(lags.nelements()-1), lag1);
+      if (lstart == lend) {
+        lags[lstart] = Complex(0.0);
       } else {
-        for (int j=start; j <=end ;++j) {
+        if (lstart > lend) {
+          Int tmp = lend;
+          lend = lstart;
+          lstart = tmp;
+        }
+        for (int j=lstart; j <=lend ;++j) {
           lags[j] = Complex(0.0);
         }
       }

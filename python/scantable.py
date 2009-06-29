@@ -707,30 +707,33 @@ class scantable(Scantable):
             else: raise
         self._add_history("flag", varlist)
 
-    def lag_flag(self, frequency, width=0.0, unit="GHz", insitu=None):
+    def lag_flag(self, start, end, unit="GHz", insitu=None):
         """
         Flag the data in 'lag' space by providing a frequency to remove.
         Flagged data in the scantable gets set to 0.0 before the fft.
         No taper is applied.
         Parameters:
-            frequency:    the frequency (really a period within the bandwidth) 
-                          to remove
-            width:        the width of the frequency to remove, to remove a 
-                          range of frequencies around the centre.
-            unit:         the frequency unit (default "GHz")
+            start:    the start frequency (really a period within the
+                      bandwidth)  or period to remove
+            end:      the end frequency or period to remove
+            unit:     the frequency unit (default "GHz") or "" for
+                      explicit lag channels
         Notes:
-            It is recommended to flag edges of the band or strong 
+            It is recommended to flag edges of the band or strong
             signals beforehand.
         """
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        base = { "GHz": 1000000000., "MHz": 1000000., "kHz": 1000., "Hz": 1. }
-        if not base.has_key(unit):
+        base = { "GHz": 1000000000., "MHz": 1000000., "kHz": 1000., "Hz": 1.}
+        if not (unit == "" or base.has_key(unit)):
             raise ValueError("%s is not a valid unit." % unit)
         try:
-            s = scantable(self._math._lag_flag(self, frequency*base[unit],
-                                               width*base[unit]))
+            if unit == "":
+                s = scantable(self._math._lag_flag(self, start, end, "lags"))
+            else:
+                s = scantable(self._math._lag_flag(self, start*base[unit],
+                                                   end*base[unit], "frequency"))
         except RuntimeError, msg:
             if rcParams['verbose']:
                 print msg
