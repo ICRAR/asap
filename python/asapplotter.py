@@ -696,7 +696,7 @@ class asapplotter:
         else: n = len(n0)
         if isinstance(nstack0, int): nstack = nstack0
         else: nstack = len(nstack0)
-        maxpanel, maxstack = 16,8
+        maxpanel, maxstack = 16,16
         if n > maxpanel or nstack > maxstack:
             from asap import asaplog
             maxn = 0
@@ -815,8 +815,22 @@ class asapplotter:
                 o.set_fontproperties(self._fp)
 
 
-    def set_selection(self, selection=None, refresh=True):
-        self._selection = isinstance(selection,selector) and selection or selector()
+    def set_selection(self, selection=None, refresh=True, **kw):
+        if selection is None:
+            # reset
+            if len(kw) == 0:
+                self._selection = selector()
+            else:
+                # try keywords
+                for k in kw:
+                    if k not in selector.fields:
+                        raise KeyError("Invalid selection key '%s', valid keys are %s" % (k, selector.fields))
+                self._selection = selector(**kw)
+        elif isinstance(selection, selector):
+            self._selection = selection
+        else:
+            raise TypeError("'selection' is not of type selector")
+
         d0 = {'s': 'SCANNO', 'b': 'BEAMNO', 'i':'IFNO',
               'p': 'POLNO', 'c': 'CYCLENO', 't' : 'TIME' }
         order = [d0[self._panelling],d0[self._stacking]]
