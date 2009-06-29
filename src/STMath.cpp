@@ -1488,10 +1488,11 @@ CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
 }
 
 CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
-                                        const std::string& kernel, float width )
+                                        const std::string& kernel, float width,
+                                        int order)
 {
-  if (kernel == "rmedian"  || kernel == "hanning") {
-    return smoothOther(in, kernel, width);
+  if (kernel == "rmedian"  || kernel == "hanning" || kernel == "poly") {
+    return smoothOther(in, kernel, width, order);
   }
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& table = out->table();
