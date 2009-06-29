@@ -1042,7 +1042,7 @@ void Scantable::shift(int npix)
   genSort( fids, Sort::Ascending,
 	   Sort::QuickSort|Sort::NoDuplicates );
   for (uInt i=0; i<fids.nelements(); ++i) {
-    frequencies().shiftRefPix(npix, i);
+    frequencies().shiftRefPix(npix, fids[i]);
   }
 }
 
