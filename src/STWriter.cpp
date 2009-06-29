@@ -50,6 +50,8 @@
 #include "STFITSImageWriter.h"
 #include "STAsciiWriter.h"
 #include "STHeader.h"
+#include "STMath.h"
+
 
 #include "STWriter.h"
 
@@ -103,9 +105,19 @@ Int STWriter::setFormat(const std::string &format)
 Int STWriter::write(const CountedPtr<Scantable> in,
                     const std::string &filename)
 {
+  // If we write out foreign formats we have to convert the frequency system
+  // into the output frame, as we do everything related to SPectarlCoordinates
+  // in asap on-the-fly.
+
+  CountedPtr<Scantable> inst = in;
+  if (in->frequencies().getFrame(true) != in->frequencies().getFrame(false)) {
+    STMath stm(false);
+    inst = stm.frequencyAlign(in);
+  }
 
   if (format_=="ASCII") {
     STAsciiWriter iw;
+    // ASCII calls SpectralCoordinate::toWorld so no freqAlign use 'in'
     if (iw.write(*in, filename)) {
       return 0;
     } else {
@@ -116,7 +128,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     if (format_ == "CLASS") {
       iw.setClass(True);
     }
-    if (iw.write(*in, filename)) {
+    if (iw.write(*inst, filename)) {
       return 0;
     }
   }
@@ -126,23 +138,23 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // Extract the header from the table.
   // this is a little different from what I have done
   // before. Need to check with the Offline User Test data
-  STHeader hdr = in->getHeader();
+  STHeader hdr = inst->getHeader();
   //const Int nPol  = hdr.npol;
   //const Int nChan = hdr.nchan;
-  std::vector<uint> ifs = in->getIFNos();
-  int nIF = in->nif();//ifs.size();
+  std::vector<uint> ifs = inst->getIFNos();
+  int nIF = inst->nif();//ifs.size();
   Vector<uInt> nPol(nIF),nChan(nIF);
   Vector<Bool> havexpol(nIF);
   String fluxUnit = hdr.fluxunit;
 
   nPol = 0;nChan = 0; havexpol = False;
   for (uint i=0;i<ifs.size();++i) {
-    nPol(ifs[i]) = in->npol();
-    nChan(ifs[i]) = in->nchan(ifs[i]);
+    nPol(ifs[i]) = inst->npol();
+    nChan(ifs[i]) = inst->nchan(ifs[i]);
     havexpol(ifs[i]) = nPol(ifs[i]) > 2;
   }
 
-  const Table table = in->table();
+  const Table table = inst->table();
 
   // Create the output file and write static data.
   Int status;
@@ -154,7 +166,6 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   if ( status ) {
     throw(AipsError("Failed to create output file"));
   }
-
 
   Int count = 0;
   PKSrecord pksrec;
@@ -200,16 +211,16 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           Double crval,crpix;
           Float tmp0,tmp1,tmp2,tmp3,tmp4;
           String stmp0,stmp1;
-          in->frequencies().getEntry(crpix,crval, pksrec.freqInc,
+          inst->frequencies().getEntry(crpix,crval, pksrec.freqInc,
                                      rec.asuInt("FREQ_ID"));
-          in->focus().getEntry(pksrec.focusAxi, pksrec.focusTan,
+          inst->focus().getEntry(pksrec.focusAxi, pksrec.focusTan,
                                pksrec.focusRot, tmp0,tmp1,tmp2,tmp3,tmp4,
                                rec.asuInt("FOCUS_ID"));
-          in->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
+          inst->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
                                    rec.asuInt("MOLECULE_ID"));
-          in->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
+          inst->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
                               rec.asuInt("TCAL_ID"));
-          in->weather().getEntry(pksrec.temperature, pksrec.pressure,
+          inst->weather().getEntry(pksrec.temperature, pksrec.pressure,
                                  pksrec.humidity, pksrec.windSpeed,
                                  pksrec.windAz, rec.asuInt("WEATHER_ID"));
           Double pixel = Double(nchan/2);
