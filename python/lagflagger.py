@@ -42,20 +42,23 @@ class lagplotter(object):
             self.fftaxes.semilogy(abs(yfft)[0:nfft])
             self.figure.show()
             raw_input("Press any key to continue...")
+            print "Now select a start and end point by clicking on the middle plot"
+            print
             flagstart = int(ginput(show_clicks=False)[0][0]+0.5)
             flagend = int(ginput(show_clicks=False)[0][0]+0.5)
             xfft = range(len(yfft))
             self.fftaxes.axvspan(flagstart, flagend, alpha=0.3)
-            self.fftaxes.axvspan(xfft[-flagend], xfft[-flagstart], alpha=0.3)
             yfft[flagstart:flagend] = 0+0j
             yfft[-flagend:-flagstart] = 0+0j
             yi = ifft(yfft)
             self.resultaxes.plot(x, yi)
             self.figure.show()
-            approve=raw_input("Commit flags y/n ? ")
-            if approve in ["y", "Y"]:
+            inp = raw_input("Commit flags (c), keep (k) or ignore(i)? ").lower()
+            if inp.startswith("c")
                 self.flags.append([flagstart, flagend])
                 self._scan.set_spectrum(yi.real, i)
+            elif inp.startswith("k"):
+                self.flags.append([flagstart, flagend])
             else:
                 del self.fftaxes.patches[-1]
             cont = raw_input("Continue (c) or quit (q)? ")
