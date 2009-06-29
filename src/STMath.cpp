@@ -46,9 +46,9 @@
 #include "MathUtils.h"
 #include "RowAccumulator.h"
 #include "STAttr.h"
-#include "STMath.h"
 #include "STSelector.h"
 
+#include "STMath.h"
 using namespace casa;
 
 using namespace asap;
@@ -329,8 +329,8 @@ CountedPtr< Scantable > STMath::unaryOperate( const CountedPtr< Scantable >& in,
   return out;
 }
 
-CountedPtr<Scantable> STMath::binaryOperate(const CountedPtr<Scantable>& left, 
-					    const CountedPtr<Scantable>& right, 
+CountedPtr<Scantable> STMath::binaryOperate(const CountedPtr<Scantable>& left,
+					    const CountedPtr<Scantable>& right,
 					    const std::string& mode)
 {
   bool insitu = insitu_;
@@ -1175,11 +1175,11 @@ WeightType STMath::stringToWeight(const std::string& in)
 
   // initialize the lookup table if necessary
   if ( lookup.empty() ) {
-    lookup["NONE"]   = asap::NONE;
-    lookup["TINT"] = asap::TINT;
-    lookup["TINTSYS"]  = asap::TINTSYS;
-    lookup["TSYS"]  = asap::TSYS;
-    lookup["VAR"]  = asap::VAR;
+    lookup["NONE"]   = asap::W_NONE;
+    lookup["TINT"] = asap::W_TINT;
+    lookup["TINTSYS"]  = asap::W_TINTSYS;
+    lookup["TSYS"]  = asap::W_TSYS;
+    lookup["VAR"]  = asap::W_VAR;
   }
 
   std::map<std::string, WeightType>::const_iterator iter = lookup.find(in);
@@ -1619,7 +1619,7 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
   cols[2] = String("IFNO");
   cols[3] = String("CYCLENO");
   TableIterator iter(tout, cols);
-  CountedPtr<STPol> stpol = STPol::getPolClass(out->factories_, 
+  CountedPtr<STPol> stpol = STPol::getPolClass(out->factories_,
                                                out->getPolType() );
   while (!iter.pastEnd()) {
     Table t = iter.table();
