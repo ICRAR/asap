@@ -311,7 +311,7 @@ class scantable(Scantable):
         """
         return selector(self._getselection())
 
-    def set_selection(self, selection=selector()):
+    def set_selection(self, selection=None, **kw):
         """
         Select a subset of the data. All following operations on this scantable
         are only applied to thi selection.
@@ -324,6 +324,16 @@ class scantable(Scantable):
             scan.summary()           # will only print summary of scanno 0 an 3
             scan.set_selection()     # unset the selection
         """
+        if selection is None:
+            # reset
+            if len(kw) == 0:
+                selection = selector()
+            else:
+                # try keywords
+                for k in kw:
+                    if k not in selector.fields:
+                        raise KeyError("Invalid selection key '%s', valid keys are %s" % (k, selector.fields))
+                selection = selector(**kw)
         self._setselection(selection)
 
     def stats(self, stat='stddev', mask=None):
