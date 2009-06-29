@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Release 2.4.0 []
+
+* Ticket #155 Better output filenames. Ignore non-existsing beams/pols/ifs/scans
+* Ticket #157 numpy >= 1.1 support
+* Ticket #158 fixed plotter.set_font
+* Ticket #160 Aspect ration of pplotter customisable
+* Ticket #162 - fill in
+* Ticket #163 fixed for scantable.set_sourcetype
+* Ticket #164 Upgrade note in wiki FAQ
+* Ticket #167 Added running polynomial filter to scantable.smooth
+* Ticket #168 Data exported vi scnatable.save now contains correct frequency
+  or velocity information
+* Ticket #169 Simplified selection of data
+* Ticket #46  Interactive lag flagging 
+
+* Added OS X 10.5 Disk image installer
+* Interactive plotting annotations via optional argument interactive=True
+* Interactive creation of masks on the plotter - plotter.create_mask
+
 Release 2.3.1 [2009-03-25]
 
 * Ticket #154 Flagged data wasn't hnoured in fitting
