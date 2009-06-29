@@ -90,7 +90,7 @@ class scantable(Scantable):
                                        'ASCII' (saves as ascii text file)
                                        'MS2' (saves as an aips++
                                               MeasurementSet V2)
-                                       'FITS' (save as image FITS - not 
+                                       'FITS' (save as image FITS - not
                                                readable by class)
                                        'CLASS' (save as FITS readable by CLASS)
             overwrite:   If the file should be overwritten if it exists.
@@ -279,14 +279,14 @@ class scantable(Scantable):
     def get_spectrum(self, rowno):
         """Return the spectrum for the current row in the scantable as a list.
         Parameters:
-             rowno:   the row number to retrieve the spectrum from        
+             rowno:   the row number to retrieve the spectrum from
         """
         return self._getspectrum(rowno)
 
     def get_mask(self, rowno):
         """Return the mask for the current row in the scantable as a list.
         Parameters:
-             rowno:   the row number to retrieve the mask from        
+             rowno:   the row number to retrieve the mask from
         """
         return self._getmask(rowno)
 
@@ -294,7 +294,7 @@ class scantable(Scantable):
         """Return the spectrum for the current row in the scantable as a list.
         Parameters:
              spec:   the spectrum
-             rowno:    the row number to set the spectrum for        
+             rowno:    the row number to set the spectrum for
         """
         assert(len(spec) == self.nchan())
         return self._setspectrum(spec, rowno)
@@ -486,8 +486,8 @@ class scantable(Scantable):
         Example:
             none
         """
-        return self._get_column(self._getinttime, row)        
-        
+        return self._get_column(self._getinttime, row)
+
 
     def get_sourcename(self, row=-1):
         """
@@ -897,7 +897,7 @@ class scantable(Scantable):
 
     def shift_refpix(self, delta):
 	"""
-	Shift the reference pixel of the Spectra Coordinate by an 
+	Shift the reference pixel of the Spectra Coordinate by an
 	integer amount.
 	Parameters:
 	    delta:   the amount to shift by
@@ -1154,7 +1154,7 @@ class scantable(Scantable):
     def resample(self, width=5, method='cubic', insitu=None):
         """
         Return a scan where all spectra have been binned up.
-        
+
         Parameters:
             width:       The bin width (default=5) in pixels
             method:      Interpolation method when correcting from a table.
@@ -1456,7 +1456,7 @@ class scantable(Scantable):
 
     def swap_linears(self):
         """
-        Swap the linear polarisations XX and YY, or better the first two 
+        Swap the linear polarisations XX and YY, or better the first two
         polarisations as this also works for ciculars.
         """
         varlist = vars()
@@ -1551,7 +1551,7 @@ class scantable(Scantable):
         self.set_selection(basesel+sel)
         self._setsourcetype(stype)
         self.set_selection(basesel)
-        s._add_history("set_sourcetype", varlist)
+        self._add_history("set_sourcetype", varlist)
 
     def auto_quotient(self, preserve=True, mode='paired'):
         """
@@ -1563,7 +1563,7 @@ class scantable(Scantable):
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
-            mode:           the on/off detection mode 
+            mode:           the on/off detection mode
                             'paired' (default)
                             identifies 'off' scans by the
                             trailing '_R' (Mopra/Parkes) or
@@ -1654,7 +1654,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-	    s = scantable(self._math._binaryop(self, other, "ADD"))
+            s = scantable(self._math._binaryop(self, other, "ADD"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "ADD", False))
         else:
@@ -1748,7 +1748,7 @@ class scantable(Scantable):
             bnans = [ bool(v) for v in nans]
             self.flag(bnans)
         self.set_selection(basesel)
-        
+
 
     def _add_history(self, funcname, parameters):
         if not rcParams['scantable.history']:
