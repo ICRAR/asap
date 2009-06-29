@@ -1367,7 +1367,7 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
   } else if ( etaap > 0.0) {
     if (d < 0) {
       Instrument inst =
-	STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"), 
+	STAttr::convertInstrument(tab.keywordSet().asString("AntennaName"),
 				  True);
       STAttr sda;
       d = sda.diameter(inst);
@@ -1456,7 +1456,7 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
 
 CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
                                              const std::string& kernel,
-                                             float width )
+                                             float width, int order)
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& table = out->table();
@@ -1477,6 +1477,9 @@ CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
     } else if (  kernel == "rmedian" ) {
       mathutil::runningMedian(specout, maskout, spec , mask, width);
       convertArray(flag, maskout);
+    } else if ( kernel == "poly" ) {
+      mathutil::polyfit(specout, maskout, spec, !mask, width, order);
+      convertArray(flag, !maskout);
     }
     flagCol.put(i, flag);
     specCol.put(i, specout);

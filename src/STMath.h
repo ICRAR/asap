@@ -119,8 +119,8 @@ public:
                   const std::string& mode, bool tsys=false );
 
   casa::CountedPtr<Scantable>
-    binaryOperate( const casa::CountedPtr<Scantable>& left, 
-		   const casa::CountedPtr<Scantable>& right, 
+    binaryOperate( const casa::CountedPtr<Scantable>& left,
+		   const casa::CountedPtr<Scantable>& right,
 		   const std::string& mode);
 
   casa::CountedPtr<Scantable> autoQuotient(const casa::CountedPtr<Scantable>& in,
@@ -214,7 +214,7 @@ public:
 
   casa::CountedPtr<Scantable>
     smooth(const casa::CountedPtr<Scantable>& in, const std::string& kernel,
-                      float width);
+                      float width, int order=2);
 
   casa::CountedPtr<Scantable>
     gainElevation(const casa::CountedPtr<Scantable>& in,
@@ -262,8 +262,8 @@ public:
    * @param width the number of lags to flag left to the side of the frequency
    */
   casa::CountedPtr<Scantable>
-    lagFlag( const casa::CountedPtr<Scantable>& in, double frequency,
-              double width);
+    lagFlag( const casa::CountedPtr<Scantable>& in, double start,
+             double end, const std::string& mode="frequency");
 
 private:
   casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
@@ -289,10 +289,10 @@ private:
   void convertBrightnessUnits(casa::CountedPtr<Scantable>& in,
                               bool tokelvin, float cfac);
 
-  casa::CountedPtr< Scantable > 
+  casa::CountedPtr< Scantable >
     smoothOther( const casa::CountedPtr< Scantable >& in,
                  const std::string& kernel,
-                 float width );
+                 float width, int order=2 );
 
   casa::CountedPtr< Scantable >
     getScantable(const casa::CountedPtr< Scantable >& in, bool droprows);
