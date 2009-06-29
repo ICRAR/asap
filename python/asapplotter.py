@@ -104,7 +104,11 @@ class asapplotter:
         print_log()
         return
 
+    def gca(self):
+        return self._plotter.figure.gca()
+
     def refresh(self):
+        """Do a soft refresh"""
         self._plotter.figure.show()
 
     def create_mask(self, nwin=1, panel=0, color=None):
