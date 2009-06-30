@@ -190,7 +190,6 @@ casa::Float STFocus::getFeedHand( casa::uInt id ) const
 }
 
 void STFocus::setParallactify(bool istrue) {
-  cout << "called setPara" << endl;
   table_.rwKeywordSet().define("PARALLACTIFY", Bool(istrue));
 }
 
