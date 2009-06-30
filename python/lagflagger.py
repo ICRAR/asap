@@ -43,8 +43,9 @@ class lagplotter(object):
             self.figure.show()
             raw_input("Press any key to continue...")
             print "Now select a start and end point by clicking on the middle plot"
-            print
+            print "Start point ..."
             flagstart = int(ginput(show_clicks=False)[0][0]+0.5)
+            print "End point ..."
             flagend = int(ginput(show_clicks=False)[0][0]+0.5)
             xfft = range(len(yfft))
             self.fftaxes.axvspan(flagstart, flagend, alpha=0.3)
@@ -53,7 +54,8 @@ class lagplotter(object):
             yi = ifft(yfft)
             self.resultaxes.plot(x, yi)
             self.figure.show()
-            inp = raw_input("Commit flags (c), keep (k) or ignore(i)? ").lower()
+            inp = raw_input("Commit flags (c), keep (k) or ignore(i)? ")\
+                            .lower()
             if inp.startswith("c")
                 self.flags.append([flagstart, flagend])
                 self._scan.set_spectrum(yi.real, i)
