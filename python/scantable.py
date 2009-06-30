@@ -707,16 +707,16 @@ class scantable(Scantable):
             else: raise
         self._add_history("flag", varlist)
 
-    def lag_flag(self, start, end, unit="GHz", insitu=None):
+    def lag_flag(self, start, end, unit="MHz", insitu=None):
         """
         Flag the data in 'lag' space by providing a frequency to remove.
-        Flagged data in the scantable gets set to 0.0 before the fft.
+        Flagged data in the scantable gets interpolated over the region.
         No taper is applied.
         Parameters:
             start:    the start frequency (really a period within the
                       bandwidth)  or period to remove
             end:      the end frequency or period to remove
-            unit:     the frequency unit (default "GHz") or "" for
+            unit:     the frequency unit (default "MHz") or "" for
                       explicit lag channels
         Notes:
             It is recommended to flag edges of the band or strong
