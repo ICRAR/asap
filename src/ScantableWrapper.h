@@ -211,6 +211,9 @@ public:
   std::vector<double>  getDirectionVector(int whichrow) const
     { return table_->getDirectionVector(whichrow); }
 
+  void parallactify(bool flag)
+    { table_->parallactify(flag); }
+
 private:
   casa::CountedPtr<Scantable> table_;
 };

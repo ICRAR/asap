@@ -1575,11 +1575,11 @@ CountedPtr< Scantable >
           (*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
           id = out->molecules().addEntry(rf, name, fname);
           molidcol.put(k, id);
-          Float frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
-          (*it)->focus().getEntry(fax, ftan, frot, fhand,
+          Float fpa,frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
+          (*it)->focus().getEntry(fpa, fax, ftan, frot, fhand,
                                   fmount,fuser, fxy, fxyp,
                                   rec.asuInt("FOCUS_ID"));
-          id = out->focus().addEntry(fax, ftan, frot, fhand,
+          id = out->focus().addEntry(fpa, fax, ftan, frot, fhand,
                                      fmount,fuser, fxy, fxyp);
           focusidcol.put(k, id);
         }
@@ -1629,17 +1629,13 @@ CountedPtr< Scantable > STMath::applyToPol( const CountedPtr<Scantable>& in,
     Table t = iter.table();
     ArrayColumn<Float> speccol(t, "SPECTRA");
     ScalarColumn<uInt> focidcol(t, "FOCUS_ID");
-    ScalarColumn<Float> parancol(t, "PARANGLE");
     Matrix<Float> pols(speccol.getColumn());
     try {
       stpol->setSpectra(pols);
-      Float fang,fhand,parang;
-      fang = in->focusTable_.getTotalFeedAngle(focidcol(0));
+      Float fang,fhand;
+      fang = in->focusTable_.getTotalAngle(focidcol(0));
       fhand = in->focusTable_.getFeedHand(focidcol(0));
-      parang = parancol(0);
-      /// @todo re-enable this
-      // disable total feed angle to support paralactifying Caswell style
-      stpol->setPhaseCorrections(parang, -parang, fhand);
+      stpol->setPhaseCorrections(fang, fhand);
       // use a member function pointer in STPol.  This only works on
       // the STPol pointer itself, not the Counted Pointer so
       // derefernce it.
@@ -1905,13 +1901,10 @@ CountedPtr<Scantable>
       Table tab = it.table();
       uInt row = tab.rowNumbers()[0];
       stpol->setSpectra(in->getPolMatrix(row));
-      Float fang,fhand,parang;
-      fang = in->focusTable_.getTotalFeedAngle(in->mfocusidCol_(row));
+      Float fang,fhand;
+      fang = in->focusTable_.getTotalAngle(in->mfocusidCol_(row));
       fhand = in->focusTable_.getFeedHand(in->mfocusidCol_(row));
-      parang = in->paraCol_(row);
-      /// @todo re-enable this
-      // disable total feed angle to support paralactifying Caswell style
-      stpol->setPhaseCorrections(parang, -parang, fhand);
+      stpol->setPhaseCorrections(fang, fhand);
       Int npolout = 0;
       for (uInt i=0; i<tab.nrow(); ++i) {
         Vector<Float> outvec = stpol->getSpectrum(i, newtype);

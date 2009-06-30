@@ -11,7 +11,7 @@ class scantable(Scantable):
         The ASAP container for scans
     """
 
-    def __init__(self, filename, average=None, unit=None):
+    def __init__(self, filename, average=None, unit=None, parallactify=None):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
@@ -29,9 +29,13 @@ class scantable(Scantable):
                          Over-rides the default selected by the reader
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
+            parallactify: Indcicate that the data had been parallatified.
+                          Default is taken form rc file.
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
+        if parallactify is None:
+            parallactify = rcParams['scantable.parallactify']
         varlist = vars()
         from asap._asap import stmath
         self._math = stmath()
@@ -73,6 +77,7 @@ class scantable(Scantable):
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
                   and isinstance(filename[-1], str):
                 self._fill(filename, unit, average)
+        self.parallactify(parallactify)
         self._add_history("scantable", varlist)
         print_log()
 
@@ -1222,6 +1227,11 @@ class scantable(Scantable):
         s._add_history("average_beam", varlist)
         print_log()
         return s
+
+    def parallactify(self, pflag):
+        varlist = vars()
+        self._parallactify(pflag)
+        self._add_history("parallactify", varlist)
 
     def convert_pol(self, poltype=None):
         """

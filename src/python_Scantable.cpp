@@ -123,6 +123,7 @@ void python_Scantable() {
     .def("_recalcazel", &ScantableWrapper::calculateAZEL)
     .def("_setsourcetype", &ScantableWrapper::setSourceType)
     .def("_getdirectionvec", &ScantableWrapper::getDirectionVector)
+    .def("_parallactify", &ScantableWrapper::parallactify)
   ;
 };
 

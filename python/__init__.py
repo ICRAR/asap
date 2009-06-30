@@ -115,7 +115,8 @@ defaultParams = {
     'scantable.verbosesummary'   : [False, _validate_bool],
     'scantable.storage'   : ['memory', str],
     'scantable.history'   : [True, _validate_bool],
-    'scantable.reference'      : ['.*(e|w|_R)$', str]
+    'scantable.reference'      : ['.*(e|w|_R)$', str],
+    'scantable.parallactify'   : [False, _validate_bool]
     # fitter
     }
 

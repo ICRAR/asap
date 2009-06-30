@@ -215,7 +215,7 @@ void STFiller::open( const std::string& filename, int whichIF, int whichBeam )
       table_->table().rwKeywordSet().define("GBT_GO", GOTabPath);
     }
   }
-     
+  //table_->focus().setParallactify(true);
 }
 
 void STFiller::close( )
@@ -299,7 +299,7 @@ int asap::STFiller::read( )
     uInt id;
     /// @todo this has to change when nchan isn't global anymore
     id = table_->frequencies().addEntry(Double(header_->nchan/2),
-                                            pksrec.refFreq, pksrec.freqInc);
+                                        pksrec.refFreq, pksrec.freqInc);
     RecordFieldPtr<uInt> mfreqidCol(rec, "FREQ_ID");
     *mfreqidCol = id;
 
@@ -315,9 +315,10 @@ int asap::STFiller::read( )
                                     pksrec.windAz);
     RecordFieldPtr<uInt> mweatheridCol(rec, "WEATHER_ID");
     *mweatheridCol = id;
+
     RecordFieldPtr<uInt> mfocusidCol(rec, "FOCUS_ID");
-    id = table_->focus().addEntry(pksrec.focusAxi, pksrec.focusTan,
-                                  pksrec.focusRot);
+    id = table_->focus().addEntry(pksrec.parAngle, pksrec.focusAxi, 
+                                  pksrec.focusTan, pksrec.focusRot);
     *mfocusidCol = id;
     RecordFieldPtr<Array<Double> > dirCol(rec, "DIRECTION");
     *dirCol = pksrec.direction;
@@ -325,9 +326,6 @@ int asap::STFiller::read( )
     *azCol = pksrec.azimuth;
     RecordFieldPtr<Float> elCol(rec, "ELEVATION");
     *elCol = pksrec.elevation;
-
-    RecordFieldPtr<Float> parCol(rec, "PARANGLE");
-    *parCol = pksrec.parAngle;
 
     RecordFieldPtr< Array<Float> > specCol(rec, "SPECTRA");
     RecordFieldPtr< Array<uChar> > flagCol(rec, "FLAGTRA");

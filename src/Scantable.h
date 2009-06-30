@@ -297,7 +297,7 @@ public:
   float getAzimuth(int whichrow) const
     { return azCol_(whichrow); }
   float getParAngle(int whichrow) const
-    { return paraCol_(whichrow); }
+  { return focus().getParAngle(mfocusidCol_(whichrow)); }
 
   std::string getSourceName(int whichrow) const
     { return srcnCol_(whichrow); }
@@ -401,6 +401,12 @@ public:
    */
   std::vector<double> getDirectionVector(int whichrow) const;
 
+  /**
+   * Set a flag indicating whether the data was parallactified
+   * @param[in] flag true or false
+   */
+  void parallactify(bool flag) 
+  {focus().setParallactify(flag);}
 private:
 
   casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;
@@ -450,7 +456,7 @@ private:
 
   std::vector<uint> getNumbers(casa::ScalarColumn<casa::uInt>& col);
 
-  static const casa::uInt version_ = 2;
+  static const casa::uInt version_ = 3;
 
   STSelector selector_;
 
@@ -474,7 +480,6 @@ private:
   casa::MEpoch::ScalarColumn timeCol_;
   casa::ScalarColumn<casa::Float> azCol_;
   casa::ScalarColumn<casa::Float> elCol_;
-  casa::ScalarColumn<casa::Float> paraCol_;
   casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
   casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_;
   casa::ScalarColumn<casa::Int> rbeamCol_, srctCol_;

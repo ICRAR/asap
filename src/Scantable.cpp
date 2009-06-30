@@ -233,7 +233,6 @@ void Scantable::setupMainTable()
   mdirCol.write(td);
   td.addColumn(ScalarColumnDesc<Float>("AZIMUTH"));
   td.addColumn(ScalarColumnDesc<Float>("ELEVATION"));
-  td.addColumn(ScalarColumnDesc<Float>("PARANGLE"));
   td.addColumn(ScalarColumnDesc<Float>("OPACITY"));
 
   td.addColumn(ScalarColumnDesc<uInt>("TCAL_ID"));
@@ -276,7 +275,6 @@ void Scantable::attach()
   azCol_.attach(table_, "AZIMUTH");
   elCol_.attach(table_, "ELEVATION");
   dirCol_.attach(table_, "DIRECTION");
-  paraCol_.attach(table_, "PARANGLE");
   fldnCol_.attach(table_, "FIELDNAME");
   rbeamCol_.attach(table_, "REFBEAMNO");
 
@@ -692,16 +690,14 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
   if ( ptype == basetype ) {
     specCol_.get(whichrow, arr);
   } else {
-    CountedPtr<STPol> stpol(STPol::getPolClass(Scantable::factories_, basetype));
+    CountedPtr<STPol> stpol(STPol::getPolClass(Scantable::factories_, 
+                                               basetype));
     uInt row = uInt(whichrow);
     stpol->setSpectra(getPolMatrix(row));
     Float fang,fhand,parang;
-    fang = focusTable_.getTotalFeedAngle(mfocusidCol_(row));
+    fang = focusTable_.getTotalAngle(mfocusidCol_(row));
     fhand = focusTable_.getFeedHand(mfocusidCol_(row));
-    parang = paraCol_(row);
-    /// @todo re-enable this
-    // disable total feed angle to support paralactifying Caswell style
-    stpol->setPhaseCorrections(parang, -parang, fhand);
+    stpol->setPhaseCorrections(fang, fhand);
     arr = stpol->getSpectrum(requestedpol, ptype);
   }
   if ( arr.nelements() == 0 )

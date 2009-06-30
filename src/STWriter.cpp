@@ -213,9 +213,9 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           String stmp0,stmp1;
           inst->frequencies().getEntry(crpix,crval, pksrec.freqInc,
                                      rec.asuInt("FREQ_ID"));
-          inst->focus().getEntry(pksrec.focusAxi, pksrec.focusTan,
-                               pksrec.focusRot, tmp0,tmp1,tmp2,tmp3,tmp4,
-                               rec.asuInt("FOCUS_ID"));
+          inst->focus().getEntry(pksrec.parAngle, pksrec.focusAxi, pksrec.focusTan,
+                                 pksrec.focusRot, tmp0,tmp1,tmp2,tmp3,tmp4,
+                                 rec.asuInt("FOCUS_ID"));
           inst->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
                                    rec.asuInt("MOLECULE_ID"));
           inst->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
@@ -239,7 +239,6 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.bandwidth = nchan * abs(pksrec.freqInc);
           pksrec.azimuth   = rec.asFloat("AZIMUTH");
           pksrec.elevation = rec.asFloat("ELEVATION");
-          pksrec.parAngle  = rec.asFloat("PARANGLE");
           pksrec.refBeam   = rec.asInt("REFBEAMNO") + 1;
           pksrec.sigma.resize(npol);
           pksrec.sigma     = 0.0f;
