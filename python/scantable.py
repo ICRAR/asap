@@ -357,43 +357,16 @@ class scantable(Scantable):
         """
         if mask == None:
             mask = []
-        axes = ['Beam', 'IF', 'Pol', 'Time']
         if not self._check_ifs():
             raise ValueError("Cannot apply mask as the IFs have different "
                              "number of channels. Please use setselection() "
                              "to select individual IFs")
 
         statvals = self._math._stats(self, mask, stat)
-        out = ''
-        axes = []
-        for i in range(self.nrow()):
-            axis = []
-            axis.append(self.getscan(i))
-            axis.append(self.getbeam(i))
-            axis.append(self.getif(i))
-            axis.append(self.getpol(i))
-            axis.append(self.getcycle(i))
-            axes.append(axis)
-            tm = self._gettime(i)
-            src = self._getsourcename(i)
-            out += 'Scan[%d] (%s) ' % (axis[0], src)
-            out += 'Time[%s]:\n' % (tm)
-            if self.nbeam(-1) > 1: out +=  ' Beam[%d] ' % (axis[1])
-            if self.nif(-1) > 1: out +=  ' IF[%d] ' % (axis[2])
-            if self.npol(-1) > 1: out +=  ' Pol[%d] ' % (axis[3])
-            out += '= %3.3f\n' % (statvals[i])
-            out +=  "--------------------------------------------------\n"
+        def cb(i):
+            return statvals[i]
 
-        if rcParams['verbose']:
-            print "--------------------------------------------------"
-            print " ", stat
-            print "--------------------------------------------------"
-            print out
-        #else:
-            #retval = { 'axesnames': ['scanno', 'beamno', 'ifno', 'polno', 'cycleno'],
-            #           'axes' : axes,
-            #           'data': statvals}
-        return statvals
+        return self._row_callback(cb, stat)
 
     def stddev(self, mask=None):
         """
@@ -428,35 +401,26 @@ class scantable(Scantable):
         return self._row_callback(self._gettsys, "Tsys")
 
     def _row_callback(self, callback, label):
-        axes = []
-        axesnames = ['scanno', 'beamno', 'ifno', 'polno', 'cycleno']
         out = ""
         outvec = []
+        sep = '-'*50
         for i in range(self.nrow()):
-            axis = []
-            axis.append(self.getscan(i))
-            axis.append(self.getbeam(i))
-            axis.append(self.getif(i))
-            axis.append(self.getpol(i))
-            axis.append(self.getcycle(i))
-            axes.append(axis)
             tm = self._gettime(i)
             src = self._getsourcename(i)
-            out += 'Scan[%d] (%s) ' % (axis[0], src)
+            out += 'Scan[%d] (%s) ' % (self.getscan(i), src)
             out += 'Time[%s]:\n' % (tm)
-            if self.nbeam(-1) > 1: out +=  ' Beam[%d] ' % (axis[1])
-            if self.nif(-1) > 1: out +=  ' IF[%d] ' % (axis[2])
-            if self.npol(-1) > 1: out +=  ' Pol[%d] ' % (axis[3])
+            if self.nbeam(-1) > 1:
+                out +=  ' Beam[%d] ' % (self.getbeam(i))
+            if self.nif(-1) > 1: out +=  ' IF[%d] ' % (self.getif(i))
+            if self.npol(-1) > 1: out +=  ' Pol[%d] ' % (self.getpol(i))
             outvec.append(callback(i))
             out += '= %3.3f\n' % (outvec[i])
-            out +=  "--------------------------------------------------\n"
+            out +=  sep+'\n'
         if rcParams['verbose']:
-            print "--------------------------------------------------"
+            print sep
             print " %s" % (label)
-            print "--------------------------------------------------"
+            print sep
             print out
-        # disabled because the vector seems more useful
-        #retval = {'axesnames': axesnames, 'axes': axes, 'data': outvec}
         return outvec
 
     def _get_column(self, callback, row=-1):
