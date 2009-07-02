@@ -34,8 +34,7 @@ class scantable(Scantable):
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
-        if parallactify is None:
-            parallactify = rcParams['scantable.parallactify']
+        parallactify = parallactify or rcParams['scantable.parallactify']
         varlist = vars()
         from asap._asap import stmath
         self._math = stmath()
@@ -106,7 +105,7 @@ class scantable(Scantable):
             scan.save('myscan.sdfits', 'SDFITS')
         """
         from os import path
-        if format is None: format = rcParams['scantable.save']
+        format = format or rcParams['scantable.save']
         suffix = '.'+format.lower()
         if name is None or name == "":
             name = 'scantable'+suffix
@@ -172,8 +171,7 @@ class scantable(Scantable):
             else: raise
         try:
             bsel = self.get_selection()
-            sel = selector()
-            sel.set_scans(allscans)
+            sel = selector(scans=allscans)
             self.set_selection(bsel+sel)
             scopy = self._copy()
             self.set_selection(bsel)
@@ -183,7 +181,6 @@ class scantable(Scantable):
                 print "Couldn't find any match."
             else:
                 raise
-
 
     def get_scan(self, scanid=None):
         """
@@ -255,7 +252,6 @@ class scantable(Scantable):
                          The default (False) is taken from .asaprc
         """
         info = Scantable._summary(self, True)
-        #if verbose is None: verbose = rcParams['scantable.verbosesummary']
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
@@ -355,8 +351,7 @@ class scantable(Scantable):
             msk = scan.create_mask([100, 200], [500, 600])
             scan.stats(stat='mean', mask=m)
         """
-        if mask == None:
-            mask = []
+        mask = mask or []
         if not self._check_ifs():
             raise ValueError("Cannot apply mask as the IFs have different "
                              "number of channels. Please use setselection() "
@@ -594,7 +589,7 @@ class scantable(Scantable):
         Examples:
             scan.set_freqframe('BARY')
         """
-        if frame is None: frame = rcParams['scantable.freqframe']
+        frame = frame or rcParams['scantable.freqframe']
         varlist = vars()
         valid = ['REST', 'TOPO', 'LSRD', 'LSRK', 'BARY', \
                    'GEO', 'GALACTO', 'LGROUP', 'CMB']
@@ -663,8 +658,7 @@ class scantable(Scantable):
                     (no mask) is all channels.
         """
         varlist = vars()
-        if mask is None:
-            mask = []
+        mask = mask or []
         try:
             self._flag(mask)
         except RuntimeError, msg:
@@ -821,7 +815,7 @@ class scantable(Scantable):
             To do more sophisticate Restfrequency setting, e.g. on a
             source and IF basis, use scantable.set_selection() before using
             this function.
-            # provide your scantable is call scan
+            # provide your scantable is called scan
             selection = selector()
             selection.set_name("ORION*")
             selection.set_ifs([1])
@@ -960,10 +954,9 @@ class scantable(Scantable):
             newscan = scan.average_time()
         """
         varlist = vars()
-        if weight is None: weight = 'TINT'
-        if mask is None: mask = ()
-        if scanav: scanav = "SCAN"
-        else: scanav = "NONE"
+        weight = weight or 'TINT'
+        mask = mask or ()
+        scanav = (scanav and 'SCAN') or 'NONE'
         scan = (self, )
         try:
             if align:
@@ -1003,9 +996,9 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        if jyperk is None: jyperk = -1.0
-        if d is None: d = -1.0
-        if eta is None: eta = -1.0
+        jyperk = jyperk or -1.0
+        d = d or -1.0
+        eta = eta or -1.0
         s = scantable(self._math._convertflux(self, d, eta, jyperk))
         s._add_history("convert_flux", varlist)
         if insitu: self._assign(s)
@@ -1055,14 +1048,15 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        if poly is None:
-            poly = ()
+        poly = poly or ()
         from os.path import expandvars
         filename = expandvars(filename)
         s = scantable(self._math._gainel(self, poly, filename, method))
         s._add_history("gain_el", varlist)
-        if insitu: self._assign(s)
-        else: return s
+        if insitu:
+            self._assign(s)
+        else:
+            return s
 
     @print_log_dec
     def freq_align(self, reftime=None, method='cubic', insitu=None):
@@ -1083,7 +1077,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams["insitu"]
         self._math._setinsitu(insitu)
         varlist = vars()
-        if reftime is None: reftime = ""
+        reftime = reftime or ""
         s = scantable(self._math._freq_align(self, reftime, method))
         s._add_history("freq_align", varlist)
         if insitu: self._assign(s)
@@ -1164,8 +1158,7 @@ class scantable(Scantable):
                          weighted), or 'tsys' (1/Tsys**2 weighted)
         """
         varlist = vars()
-        if mask is None:
-            mask = ()
+        mask = mask or ()
         s = scantable(self._math._averagepol(self, mask, weight.upper()))
         s._add_history("average_pol", varlist)
         return s
@@ -1182,8 +1175,7 @@ class scantable(Scantable):
                          weighted), or 'tsys' (1/Tsys**2 weighted)
         """
         varlist = vars()
-        if mask is None:
-            mask = ()
+        mask = mask or ()
         s = scantable(self._math._averagebeams(self, mask, weight.upper()))
         s._add_history("average_beam", varlist)
         return s
@@ -1591,7 +1583,7 @@ class scantable(Scantable):
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
         """
-        if mask is None: mask = ()
+        mask = mask or ()
         varlist = vars()
         on = scantable(self._math._mx_extract(self, 'on'))
         preoff = scantable(self._math._mx_extract(self, 'off'))
