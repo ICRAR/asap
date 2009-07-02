@@ -23,7 +23,7 @@ class ScantableTest(unittest.TestCase):
     def test_copy(self):
         st = self.st.copy()
         self.assertNotEqual(id(st), id(self.st))
-        
+
     def test_drop_scan(self):
         st = self.st.drop_scan([1])
         self.assertEqual(st.nscan(), 1)
@@ -42,7 +42,7 @@ class ScantableTest(unittest.TestCase):
     def test_get_mask(self):
         spec = self.st.get_mask(0)
         self.assertEqual(len(spec), 4096)
-        
+
     def test_set_spectrum(self):
         spec = [ 1.0 for i in range(self.st.nchan()) ]
         self.st.set_spectrum(spec, 0)
@@ -62,8 +62,8 @@ class ScantableTest(unittest.TestCase):
                   'max':215.279830933, 'sumsq':128759200.0,
                   'sum':720262.375, 'mean':175.845306396,
                   'var':513.95324707, 'stddev':22.6705360413,
-                  'avdev':16.3966751099, 'rms':177.300170898, 
-                  'median':182.891845703} 
+                  'avdev':16.3966751099, 'rms':177.300170898,
+                  'median':182.891845703}
         for k,v in stats.iteritems():
             sval = self.st.stats(stat=k)
             self.assertAlmostEqual(sval[0], v)
@@ -71,18 +71,21 @@ class ScantableTest(unittest.TestCase):
         self.assertAlmostEqual(self.st.stats("sum", msk)[0], 35216.87890625)
 
     def test_get_column_names(self):
-        cnames = ['SCANNO', 'CYCLENO', 'BEAMNO', 'IFNO', 
+        cnames = ['SCANNO', 'CYCLENO', 'BEAMNO', 'IFNO',
                   'POLNO', 'FREQ_ID', 'MOLECULE_ID', 'REFBEAMNO',
-                  'TIME', 'INTERVAL', 'SRCNAME', 'SRCTYPE', 
+                  'TIME', 'INTERVAL', 'SRCNAME', 'SRCTYPE',
                   'FIELDNAME', 'SPECTRA', 'FLAGTRA', 'TSYS',
-                  'DIRECTION', 'AZIMUTH', 'ELEVATION', 
-                  'PARANGLE', 'OPACITY', 'TCAL_ID', 'FIT_ID',
+                  'DIRECTION', 'AZIMUTH', 'ELEVATION',
+                  'OPACITY', 'TCAL_ID', 'FIT_ID',
                   'FOCUS_ID', 'WEATHER_ID', 'SRCVELOCITY',
                   'SRCPROPERMOTION', 'SRCDIRECTION',
                   'SCANRATE']
         self.assertEqual(self.st.get_column_names(), cnames)
 
+    def test_average_pol(self):
+        ap = self.st.average_pol()
+        self.assertEqual(ap.npol(), 1)
+
 
 if __name__ == '__main__':
     unittest.main()
-
