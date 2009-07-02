@@ -1,8 +1,9 @@
 from asap.scantable import scantable
 from asap import rcParams
-from asap import print_log
+from asap import print_log_dec
 from asap import selector
 
+@print_log_dec
 def average_time(*args, **kwargs):
     """
     Return the (time) average of a scan or list of scans. [in channels only]
@@ -26,8 +27,8 @@ def average_time(*args, **kwargs):
         # return a time averaged scan from scana and scanb
         # without using a mask
         scanav = average_time(scana,scanb)
-	# or equivalent
-	# scanav = average_time([scana, scanb])
+        # or equivalent
+        # scanav = average_time([scana, scanb])
         # return the (time) averaged scan, i.e. the average of
         # all correlator cycles
         scanav = average_time(scan, scanav=True)
@@ -87,7 +88,6 @@ def average_time(*args, **kwargs):
     else:
         s = scantable(stm._average(alignedlst, mask, weight.upper(), scanav))
     s._add_history("average_time",varlist)
-    print_log()
     return s
 
 def quotient(source, reference, preserve=True):
@@ -110,9 +110,9 @@ def quotient(source, reference, preserve=True):
     stm._setinsitu(False)
     s = scantable(stm._quotient(source, reference, preserve))
     s._add_history("quotient",varlist)
-    print_log()
     return s
 
+@print_log_dec
 def dototalpower(calon, caloff, tcalval=0.0):
     """
     Do calibration for CAL on,off signals.
@@ -128,9 +128,9 @@ def dototalpower(calon, caloff, tcalval=0.0):
     stm._setinsitu(False)
     s = scantable(stm._dototalpower(calon, caloff, tcalval))
     s._add_history("dototalpower",varlist)
-    print_log()
     return s
 
+@print_log_dec
 def dosigref(sig, ref, smooth, tsysval=0.0, tauval=0.0):
     """
     Calculate a quotient (sig-ref/ref * Tsys)
@@ -148,9 +148,9 @@ def dosigref(sig, ref, smooth, tsysval=0.0, tauval=0.0):
     stm._setinsitu(False)
     s = scantable(stm._dosigref(sig, ref, smooth, tsysval, tauval))
     s._add_history("dosigref",varlist)
-    print_log()
     return s
 
+@print_log_dec
 def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
     """
     Calibrate GBT position switched data
@@ -236,9 +236,9 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
     #ress = dosigref(sig, ref, smooth, tsysval)
     ress = dosigref(sig, ref, smooth, tsysval, tauval)
     ress._add_history("calps", varlist)
-    print_log()
     return ress
 
+@print_log_dec
 def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
     """
     Do full (but a pair of scans at time) processing of GBT Nod data
@@ -307,9 +307,9 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
             scantab.recalc_azel()
     resspec = scantable(stm._donod(scantab, pairScans, smooth, tsysval,tauval,tcalval))
     resspec._add_history("calnod",varlist)
-    print_log()
     return resspec
 
+@print_log_dec
 def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
     """
     Calibrate GBT frequency switched data.
@@ -348,7 +348,6 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
 
     resspec = scantable(stm._dofs(s, scannos, smooth, tsysval,tauval,tcalval))
     resspec._add_history("calfs",varlist)
-    print_log()
     return resspec
 
 def simple_math(left, right, op='add', tsys=True):
@@ -366,6 +365,7 @@ def simple_math(left, right, op='add', tsys=True):
     """
     print "simple_math is deprecated use +=/* instead."
 
+@print_log_dec
 def merge(*args):
     """
     Merge a list of scanatables, or comma-sperated scantables into one
@@ -374,9 +374,9 @@ def merge(*args):
         A list [scan1, scan2] or scan1, scan2.
     Example:
         myscans = [scan1, scan2]
-	allscans = merge(myscans)
-	# or equivalent
-	sameallscans = merge(scan1, scan2)
+        allscans = merge(myscans)
+        # or equivalent
+        sameallscans = merge(scan1, scan2)
     """
     varlist = vars()
     if isinstance(args[0],list):
@@ -399,6 +399,4 @@ def merge(*args):
                 raise TypeError(msg)
     s = scantable(stm._merge(lst))
     s._add_history("merge", varlist)
-    print_log()
     return s
-

@@ -3,6 +3,7 @@ This is the ATNF Single Dish Analysis package.
 
 """
 import os,sys,shutil, platform
+import functools
 
 # Set up AIPSPATH and first time use of asap i.e. ~/.asap/*
 plf = None
@@ -350,8 +351,17 @@ if rcParams['verbose']:
 else:
     asaplog.disable()
 
+
+def print_log_dec(f):
+    @functools.wraps(f)
+    def wrap_it(*args, **kw):
+        val = f(*args, **kw)
+        print_log()
+        return val
+    return wrap_it
+
 def print_log():
-    log = asaplog.pop()
+    log = asaplog.pop().strip()
     if len(log) and rcParams['verbose']: print log
     return
 
@@ -394,7 +404,7 @@ __version__  = '$Revision$'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])
-    
+
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
 
