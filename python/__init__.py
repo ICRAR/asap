@@ -31,7 +31,7 @@ if not os.path.exists(userdir):
     print 'First time ASAP use. Setting up ~/.asap'
     os.mkdir(userdir)
     shutil.copyfile(asapdata+"/data/ipythonrc-asap", userdir+"/ipythonrc-asap")
-    shutil.copyfile(asapdata+"/data/ipy_user_conf.py", 
+    shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
                     userdir+"/ipy_user_conf.py")
     f = file(userdir+"/asapuserfuncs.py", "w")
     f.close()
@@ -40,7 +40,7 @@ if not os.path.exists(userdir):
 else:
     # upgrade to support later ipython versions
     if not os.path.exists(userdir+"/ipy_user_conf.py"):
-        shutil.copyfile(asapdata+"/data/ipy_user_conf.py", 
+        shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
                         userdir+"/ipy_user_conf.py")
 
 # remove from namespace
@@ -283,7 +283,7 @@ def rcdefaults():
     rcParams.update(rcParamsDefault)
 
 def _n_bools(n, val):
-    return [ val for i in xrange(n) ] 
+    return [ val for i in xrange(n) ]
 
 def _is_sequence_or_number(param, ptype=int):
     if isinstance(param,tuple) or isinstance(param,list):
@@ -394,10 +394,11 @@ __version__  = '$Revision$'
 
 def is_ipython():
     return '__IP' in dir(sys.modules["__main__"])
+    
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
-    
-    def list_scans(t = scantable):        
+
+    def list_scans(t = scantable):
         import inspect
         print "The user created scantables are: ",
         globs=inspect.currentframe().f_back.f_locals.copy()
@@ -498,6 +499,8 @@ if is_ipython():
                               'max', 'rms' etc.
             stddev          - Determine the standard deviation of the current
                               beam/if/pol
+            get_row_selector - get the selection object for a specified row
+                               number
      [Selection]
          selector              - a selection object to set a subset of a scantable
             set_scans          - set (a list of) scans by index

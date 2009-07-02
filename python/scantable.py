@@ -1696,7 +1696,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-	    s = scantable(self._math._binaryop(self, other, "SUB"))
+            s = scantable(self._math._binaryop(self, other, "SUB"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "SUB", False))
         else:
@@ -1712,7 +1712,7 @@ class scantable(Scantable):
         varlist = vars()
         s = None
         if isinstance(other, scantable):
-	    s = scantable(self._math._binaryop(self, other, "MUL"))
+            s = scantable(self._math._binaryop(self, other, "MUL"))
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "MUL", False))
         else:
@@ -1775,6 +1775,12 @@ class scantable(Scantable):
             self.flag(bnans)
         self.set_selection(basesel)
 
+    def get_row_selector(self, rowno):
+        return selector(beams=self.getbeam(rowno),
+                        ifs=self.getif(rowno),
+                        pols=self.getpol(rowno),
+                        scans=self.getscan(rowno),
+                        cycles=self.getcycle(rowno))
 
     def _add_history(self, funcname, parameters):
         if not rcParams['scantable.history']:
