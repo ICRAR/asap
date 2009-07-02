@@ -350,20 +350,6 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0):
     resspec._add_history("calfs",varlist)
     return resspec
 
-def simple_math(left, right, op='add', tsys=True):
-    """
-    Apply simple mathematical binary operations to two
-    scan tables,  returning the result in a new scan table.
-    The operation is applied to both the correlations and the TSys data
-    The cursor of the output scan is set to 0
-    Parameters:
-        left:          the 'left' scan
-        right:         the 'right' scan
-        op:            the operation: 'add' (default), 'sub', 'mul', 'div'
-        tsys:          if True (default) then apply the operation to Tsys
-                       as well as the data
-    """
-    print "simple_math is deprecated use +=/* instead."
 
 @print_log_dec
 def merge(*args):
