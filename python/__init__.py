@@ -188,7 +188,10 @@ scantable.verbosesummary   : False
 
 # Control the identification of reference (off) scans
 # This is has to be a regular expression
-scantable.reference         : .*(e|w|_R)$
+scantable.reference        : .*(e|w|_R)$
+
+# Indicate whether the data was parallactified (total phase offest == 0.0)
+scantable.parallactify     : False
 
 # Fitter
 """
