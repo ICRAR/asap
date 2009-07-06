@@ -204,6 +204,10 @@ class selector(_selector):
         """
         Merge two selections.
         """
+        if self.is_empty():
+            return other
+        elif other.is_empty():
+            return self
         union = selector()
         gets = [[self._getscans(), other._getscans(), union._setscans],
                 [self._getcycles(), other._getcycles(),union._setcycles],
