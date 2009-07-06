@@ -170,17 +170,20 @@ class scantable(Scantable):
                 return
             else: raise
         try:
-            bsel = self.get_selection()
             sel = selector(scans=allscans)
-            self.set_selection(bsel+sel)
-            scopy = self._copy()
-            self.set_selection(bsel)
-            return scantable(scopy)
+            return self._select_copy(sel)
         except RuntimeError:
             if rcParams['verbose']:
                 print "Couldn't find any match."
             else:
                 raise
+
+    def _select_copy(self, selection):
+        orig = self.get_selection()
+        self.set_selection(orig+selection)
+        cp = self.copy()
+        self.set_selection(orig)
+        return cp
 
     def get_scan(self, scanid=None):
         """
@@ -213,22 +216,13 @@ class scantable(Scantable):
             sel = selector()
             if type(scanid) is str:
                 sel.set_name(scanid)
-                self.set_selection(bsel+sel)
-                scopy = self._copy()
-                self.set_selection(bsel)
-                return scantable(scopy)
+                return self._select_copy(sel)
             elif type(scanid) is int:
                 sel.set_scans([scanid])
-                self.set_selection(bsel+sel)
-                scopy = self._copy()
-                self.set_selection(bsel)
-                return scantable(scopy)
+                return self._select_copy(sel)
             elif type(scanid) is list:
                 sel.set_scans(scanid)
-                self.set_selection(sel)
-                scopy = self._copy()
-                self.set_selection(bsel)
-                return scantable(scopy)
+                return self._select_copy(sel)
             else:
                 msg = "Illegal scanid type, use 'int' or 'list' if ints."
                 if rcParams['verbose']:
@@ -509,7 +503,7 @@ class scantable(Scantable):
     def get_direction(self, row=-1):
         """
         Get a list of Positions on the sky (direction) for the observations.
-        Return a float for each integration in the scantable.
+        Return a string for each integration in the scantable.
         Parameters:
             row:    row no of integration. Default -1 return all rows
         Example:
