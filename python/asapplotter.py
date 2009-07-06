@@ -112,6 +112,15 @@ class asapplotter:
         self._plotter.figure.show()
 
     def create_mask(self, nwin=1, panel=0, color=None):
+        """
+        Interactively define a mask.It retruns a mask that is equivalent to
+        the one created manually with scantable.create_mask.
+        Parameters:
+            nwin:       The number of mask windows to create interactively
+                        default is 1.
+            panel:      Which panel to use for mask selection. This is useful
+                        if different IFs are spread over panels (default 0)
+        """
         if self._data is None:
             return []
         outmask = []
