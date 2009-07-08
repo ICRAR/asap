@@ -46,6 +46,7 @@ namespace asap {
     void python_STWriter();
     void python_LineCatalog();
     void python_Logger();
+    void python_STCoordinate();
 
   } // python
 } //asap

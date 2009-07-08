@@ -19,6 +19,7 @@
 #include "MathUtils.h"
 #include "STFit.h"
 #include "Scantable.h"
+#include "STCoordinate.h"
 
 namespace asap {
 /**
@@ -214,10 +215,13 @@ public:
   void parallactify(bool flag)
     { table_->parallactify(flag); }
 
+  STCoordinate getCoordinate(int row) {
+    return STCoordinate(table_->getSpectralCoordinate(row));
+  }
+
 private:
   casa::CountedPtr<Scantable> table_;
 };
 
 } // namespace
 #endif
-

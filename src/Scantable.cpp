@@ -690,7 +690,7 @@ std::vector<float> Scantable::getSpectrum( int whichrow,
   if ( ptype == basetype ) {
     specCol_.get(whichrow, arr);
   } else {
-    CountedPtr<STPol> stpol(STPol::getPolClass(Scantable::factories_, 
+    CountedPtr<STPol> stpol(STPol::getPolClass(Scantable::factories_,
                                                basetype));
     uInt row = uInt(whichrow);
     stpol->setSpectra(getPolMatrix(row));
@@ -874,13 +874,23 @@ MEpoch Scantable::getEpoch(int whichrow) const
   } else {
     Double tm;
     table_.keywordSet().get("UTC",tm);
-    return MEpoch(MVEpoch(tm));  
+    return MEpoch(MVEpoch(tm));
   }
 }
 
 std::string Scantable::getDirectionString(int whichrow) const
 {
   return formatDirection(getDirection(uInt(whichrow)));
+}
+
+
+SpectralCoordinate Scantable::getSpectralCoordinate(int whichrow) const {
+  const MPosition& mp = getAntennaPosition();
+  const MDirection& md = getDirection(whichrow);
+  const MEpoch& me = timeCol_(whichrow);
+  Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
+  return freqTable_.getSpectralCoordinate(md, mp, me, rf,
+                                          mfreqidCol_(whichrow));
 }
 
 std::vector< double > Scantable::getAbcissa( int whichrow ) const
@@ -895,13 +905,7 @@ std::vector< double > Scantable::getAbcissa( int whichrow ) const
     }
     return stlout;
   }
-
-  const MPosition& mp = getAntennaPosition();
-  const MDirection& md = getDirection(whichrow);
-  const MEpoch& me = timeCol_(whichrow);
-  Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
-  SpectralCoordinate spc =
-    freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
+  SpectralCoordinate spc = getSpectralCoordinate(whichrow);
   Vector<Double> pixel(nchan);
   Vector<Double> world;
   indgen(pixel);

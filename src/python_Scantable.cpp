@@ -124,6 +124,7 @@ void python_Scantable() {
     .def("_setsourcetype", &ScantableWrapper::setSourceType)
     .def("_getdirectionvec", &ScantableWrapper::getDirectionVector)
     .def("_parallactify", &ScantableWrapper::parallactify)
+    .def("get_coordinate", &ScantableWrapper::getCoordinate)
   ;
 };
 

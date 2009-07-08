@@ -27,6 +27,8 @@
 
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 
+#include <coordinates/Coordinates/SpectralCoordinate.h>
+
 #include "Logger.h"
 #include "STHeader.h"
 #include "STFrequencies.h"
@@ -165,7 +167,7 @@ public:
    * return casa::MDirection
    */
   casa::MDirection getDirection( int whichrow ) const;
-  
+
   /**
    * get the direction type as a string, e.g. "J2000"
    * @param[in] whichrow the row number
@@ -183,7 +185,7 @@ public:
    * get the direction reference string
    * @return a string describing the direction reference
    */
-  std::string getDirectionRefString() const;	
+  std::string getDirectionRefString() const;
 
   /**
    *  Return the Flux unit of the data, e.g. "Jy" or "K"
@@ -355,6 +357,8 @@ public:
 
   void shift(int npix);
 
+  casa::SpectralCoordinate getSpectralCoordinate(int whichrow) const;
+
   void convertDirection(const std::string& newframe);
 
   STFrequencies& frequencies() { return freqTable_; }
@@ -405,7 +409,7 @@ public:
    * Set a flag indicating whether the data was parallactified
    * @param[in] flag true or false
    */
-  void parallactify(bool flag) 
+  void parallactify(bool flag)
   {focus().setParallactify(flag);}
 private:
 

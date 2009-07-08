@@ -74,6 +74,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STWriter();
   asap::python::python_LineCatalog();
   asap::python::python_Logger();
+  asap::python::python_STCoordinate();
 
 #ifndef HAVE_LIBPYRAP
   // Use built-in pyconversions.h
