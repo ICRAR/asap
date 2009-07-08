@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Release 2.4.0 []
+Release 3.0.0 []
 
 * Ticket #155 Better output filenames. Ignore non-existsing beams/pols/ifs/scans
 * Ticket #157 numpy >= 1.1 support
@@ -10,12 +10,14 @@ Release 2.4.0 []
 * Ticket #162 - fill in
 * Ticket #163 fixed for scantable.set_sourcetype
 * Ticket #164 Upgrade note in wiki FAQ
+* Ticket #165 Handle non-parallactified polarimtery data (if supported in rpfits)
 * Ticket #167 Added running polynomial filter to scantable.smooth
-* Ticket #168 Data exported vi scnatable.save now contains correct frequency
-  or velocity information
+* Ticket #168 Data exported via scantable.save now contains correct frequency
+              or velocity information
 * Ticket #169 Simplified selection of data
-* Ticket #46  Interactive lag flagging 
-
+* Ticket #46  Interactive lag flagging
+* Ticket #170 Provided access to frequency coordinate information via
+              scantable.get_coordinate
 * Added OS X 10.5 Disk image installer
 * Interactive plotting annotations via optional argument interactive=True
 * Interactive creation of masks on the plotter - plotter.create_mask
@@ -34,12 +36,12 @@ Release 2.3.0 [2009-03-13]
    data files, which corrupted the identifaction of off scans
 * Ticket #149 Fixed the bug causing spectral line search to go into an infinite loop
    in some rare circumstances
-* Ticket #110 Added export to CLASS readable FITS files 
+* Ticket #110 Added export to CLASS readable FITS files
    scantable.save("myfile.fits", "CLASS")
 * Ticket #142 Fix of the frequency alignment for long observations
 * Ticket #133 allow supression of history in the scantable via rc parameters
-* Ticket #109 source direction for Hobart data 
-* Ticket #115 added running median to scantable.(smooth(kernel='rmedian') 
+* Ticket #109 source direction for Hobart data
+* Ticket #115 added running median to scantable.(smooth(kernel='rmedian')
 * Ticket #148 opacity correction wasn't applied to TSYS
 * Ticket #135 quotient detection failure for specific source names
 * Ticket #140 NaN values not handled - added scantable.flag_nans to ensure
@@ -75,7 +77,7 @@ Minor Release 2.1.1 [2006-11-09]
 
 * fix for Ticket #88 - numpy masks
 * better TAB completion for ipython (handles quotes, don't list private members)
-* Fix for Ticket #81 = scanatble.stats output as list 
+* Fix for Ticket #81 = scanatble.stats output as list
 * ticket #64 - speed up of auto_poly_baseline
 * fix for ticket #89 - export of IF sub-selections
 * fix for Ticket #83 - export to ms2 crashed asap

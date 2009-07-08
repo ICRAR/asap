@@ -1,4 +1,5 @@
 import unittest
+import datetime
 from asap import scantable, selector, rcParams
 rcParams["verbose"] = False
 
@@ -56,6 +57,8 @@ class ScantableTest(unittest.TestCase):
         self.assertEqual(self.st.getpolnos(), (1,))
         sel1 = self.st.get_selection()
         self.assertEqual(sel1.get_pols(), [1])
+        self.st.set_selection(pols="XX")
+        self.assertEqual(self.st.getpolnos(), (0,))
 
     def test_stats(self):
         stats = { 'min': 113.767166138,
@@ -82,9 +85,54 @@ class ScantableTest(unittest.TestCase):
                   'SCANRATE']
         self.assertEqual(self.st.get_column_names(), cnames)
 
+    def test_get_tsys(self):
+        self.assertAlmostEqual(self.st.get_tsys()[0], 175.830429077)
+
+    def test_get_time(self):
+        self.assertEqual(self.st.get_time(0), '2008/03/12/09:32:50')
+        dt = datetime.datetime(2008,3,12,9,32,50)
+        self.assertEqual(self.st.get_time(0, True), dt)
+
+    def test_get_inttime(self):
+        self.assertAlmostEqual(self.st.get_inttime()[0], 30.720016479)
+
+    def test_get_sourcename(self):
+        self.assertEqual(self.st.get_sourcename(0), 'Orion_SiO_R')
+        self.assertEqual(self.st.get_sourcename()[:2], ['Orion_SiO_R', 'Orion_SiO'])
+
+    def test_get_azimuth(self):
+        self.assertAlmostEqual(self.st.get_azimuth()[0], 5.628767013)
+
+    def test_get_elevation(self):
+        self.assertAlmostEqual(self.st.get_elevation()[0], 1.01711678504)
+
+    def test_get_parangle(self):
+        self.assertAlmostEqual(self.st.get_parangle()[0], 2.5921990871)
+
+    def test_get_direction(self):
+        self.assertEqual(self.st.get_direction()[0], '05:35:14.5 -04.52.29.5')
+
+    def test_get_directionval(self):
+        dv = self.st.get_directionval()[0]
+        self.assertAlmostEqual(dv[0], 1.4627692699)
+        self.assertAlmostEqual(dv[1], -0.0850824415)
+
+    def test_unit(self):
+        self.st.set_unit('')
+        self.st.set_unit('GHz')
+        self.st.set_unit('km/s')
+        self.assertRaises(RuntimeError, self.st.set_unit, 'junk')
+        self.assertEquals(self.st.get_unit(), 'km/s')
+
     def test_average_pol(self):
         ap = self.st.average_pol()
         self.assertEqual(ap.npol(), 1)
+
+    def test_drop_scan(self):
+        s0 = self.st.drop_scan(1)
+        self.assertEqual(s0.getscannos(), (0,))
+        s1 = self.st.drop_scan([0])
+        self.assertEqual(s1.getscannos(), (1,))
 
 
 if __name__ == '__main__':

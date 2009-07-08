@@ -4,6 +4,7 @@ from asap import print_log, print_log_dec
 from asap import asaplog
 from asap import selector
 from asap import linecatalog
+from asap.coordinate import coordinate
 from asap import _n_bools, mask_not, mask_and, mask_or
 
 class scantable(Scantable):
@@ -292,6 +293,25 @@ class scantable(Scantable):
         """
         assert(len(spec) == self.nchan())
         return self._setspectrum(spec, rowno)
+
+    def get_coordinate(self, rowno):
+        """Return the (spectral) coordinate for a a given 'rowno'.
+        NOTE:
+            * This coordinate is only valid until a scantable method modifies
+              the frequency axis.
+            * This coordinate does contain the original frequency set-up
+              NOT the new frame. The conversions however are done using the user
+              specified frame (e.g. LSRK/TOPO). To get the 'real' coordinate,
+              use scantable.freq_align first. Without it there is no closure,
+              i.e.
+              c = myscan.get_coordinate(0)
+              c.to_frequency(c.get_reference_pixel()) != c.get_reference_value()
+
+        Parameters:
+             rowno:    the row number for the spectral coordinate
+
+        """
+        return coordinate(Scantable.get_coordinate(self, rowno))
 
     def get_selection(self):
         """

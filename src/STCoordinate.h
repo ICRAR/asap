@@ -24,6 +24,9 @@ namespace asap {
 class STCoordinate {
   public:
     STCoordinate() {};
+
+    STCoordinate(const STCoordinate& other) : spec_(other.spec_) {};
+
     STCoordinate(const casa::SpectralCoordinate& spec) :
       spec_(spec) {};
 
