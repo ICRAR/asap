@@ -1223,13 +1223,13 @@ CountedPtr< Scantable > STMath::gainElevation( const CountedPtr< Scantable >& in
     Vector<Float> coeff;
     String msg;
     if ( nc > 0 ) {
-      ppoly = new Polynomial<Float>(nc);
+      ppoly = new Polynomial<Float>(nc-1);
       coeff = coeffs;
       msg = String("user");
     } else {
       STAttr sdAttr;
       coeff = sdAttr.gainElevationPoly(inst);
-      ppoly = new Polynomial<Float>(3);
+      ppoly = new Polynomial<Float>(coeff.nelements()-1);
       msg = String("built in");
     }
 
