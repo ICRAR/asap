@@ -1195,6 +1195,13 @@ class scantable(Scantable):
         return s
 
     def parallactify(self, pflag):
+        """
+        Set a flag to inidcate whether this data should be treated as having
+        been 'parallactified' (total phase == 0.0)
+        Parameters:
+            pflag:  Bool inidcating whether to turn this on (True) or
+                    off (False)
+        """
         varlist = vars()
         self._parallactify(pflag)
         self._add_history("parallactify", varlist)
@@ -1251,7 +1258,8 @@ class scantable(Scantable):
         else: return s
 
     @print_log_dec
-    def poly_baseline(self, mask=None, order=0, plot=False, uselin=False, insitu=None):
+    def poly_baseline(self, mask=None, order=0, plot=False, uselin=False,
+                      insitu=None):
         """
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
