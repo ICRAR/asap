@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSSDwriter.cc: Class to write Parkes multibeam data to an SDFITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSSDwriter.cc,v 19.15 2008-11-17 06:56:50 cal103 Exp $
+//# $Id: PKSSDwriter.cc,v 19.16 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #include <atnf/PKSIO/MBrecord.h>
@@ -238,7 +238,7 @@ Int PKSSDwriter::write(
       for (uInt j = 0; j < pksrec.baseSub.nrow(); j++) {
         mbrec.baseSub[0][ipol][j] = pksrec.baseSub(j,ipol);
       }
-      for (uInt j = pksrec.baseSub.nrow(); j < 9; j++) {
+      for (uInt j = pksrec.baseSub.nrow(); j < 24; j++) {
         mbrec.baseSub[0][ipol][j] = 0.0f;
       }
     }

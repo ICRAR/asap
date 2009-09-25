@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.h,v 19.21 2008-11-17 06:33:10 cal103 Exp $
+//# $Id: MBFITSreader.h,v 19.22 2009-01-20 06:36:03 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -115,7 +115,7 @@ class MBFITSreader : public FITSreader
 
     char   cDateObs[12];
     int    *cBeamSel, *cChanOff, cFirst, *cIFSel, cInterp, cIntTime, cMBopen,
-           cMopra, cNBeamSel, cNBin, cRetry, cSUpos, *cXpolOff;
+           cMopra, cNBeamSel, cNBin, cRetry, cSimulIF, cSUpos, *cXpolOff;
 
     // The data has to be bufferred to allow positions to be interpolated.
     int    cEOF, cEOS, cFlushBin, cFlushIF, cFlushing;

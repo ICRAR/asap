@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2reader.cc: Class to read Parkes Multibeam data from a v2 MS.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2reader.cc,v 19.21 2008-11-17 06:55:18 cal103 Exp $
+//# $Id: PKSMS2reader.cc,v 19.22 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/03, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -655,7 +655,7 @@ Int PKSMS2reader::read(PKSrecord &pksrec)
     pksrec.baseLin.resize(2,cNPol(iIF));
     cBaseLinCol.get(cIdx, pksrec.baseLin);
 
-    pksrec.baseSub.resize(9,cNPol(iIF));
+    pksrec.baseSub.resize(24,cNPol(iIF));
     cBaseSubCol.get(cIdx, pksrec.baseSub);
 
   } else {

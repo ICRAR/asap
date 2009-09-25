@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSreader.h,v 19.22 2008-11-17 06:44:34 cal103 Exp $
+//# $Id: PKSreader.h,v 19.23 2008-11-27 04:28:24 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -133,8 +133,9 @@ class PKSreader : public PKSmsg
     // negative channel numbers are taken to be offsets from the last channel.
     // Coordinate system selection (only supported for SDFITS input):
     //   0: equatorial (RA,Dec),
-    //   1: vertical (Az,El),
-    //   2: feed-plane.
+    //   1: horizontal (Az,El),
+    //   2: feed-plane,
+    //   3: zenithal position angle of feed and elevation, (ZPA,El).
     virtual uInt select(
         const Vector<Bool> beamSel,
         const Vector<Bool> IFsel,

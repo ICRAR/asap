@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# MBrecord.cc: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBrecord.cc,v 19.12 2008-11-17 06:52:35 cal103 Exp $
+//# $Id: MBrecord.cc,v 19.13 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBrecord class stores an MBFITS single-dish data record.
 //#
@@ -92,7 +92,7 @@ void MBrecord::setNIFs(int nif)
     calfctr  = new float[nif][2];
     xcalfctr = new float[nif][2];
     baseLin  = new float[nif][2][2];
-    baseSub  = new float[nif][2][9];
+    baseSub  = new float[nif][2][24];
     spectra  = new float*[nif];
     flagged  = new unsigned char*[nif];
     xpol     = new float*[nif];
@@ -259,7 +259,7 @@ MBrecord &MBrecord::operator=(const MBrecord &other)
       baseLin[iIF][ipol][0] = other.baseLin[iIF][ipol][0];
       baseLin[iIF][ipol][1] = other.baseLin[iIF][ipol][1];
 
-      for (int j = 0; j < 9; j++) {
+      for (int j = 0; j < 24; j++) {
         baseSub[iIF][ipol][j] = other.baseSub[iIF][ipol][j];
       }
     }
@@ -379,7 +379,7 @@ int MBrecord::extract(const MBrecord &other, int iIF)
     baseLin[0][ipol][0] = other.baseLin[iIF][ipol][0];
     baseLin[0][ipol][1] = other.baseLin[iIF][ipol][1];
 
-    for (int j = 0; j < 9; j++) {
+    for (int j = 0; j < 24; j++) {
       baseSub[0][ipol][j] = other.baseSub[iIF][ipol][j];
     }
   }

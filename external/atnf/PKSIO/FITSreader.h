@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: FITSreader.h,v 19.9 2008-11-17 06:28:04 cal103 Exp $
+//# $Id: FITSreader.h,v 19.10 2008-11-27 04:28:24 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The FITSreader class is an abstract base class for the Parkes Multibeam
 //# RPFITS and SDFITS readers.
@@ -95,8 +95,9 @@ class FITSreader : public PKSmsg
     // negative channel numbers are taken to be offsets from the last channel.
     // Coordinate systems are
     //   0: equatorial (RA,Dec),
-    //   1: vertical (Az,El),
-    //   2: feed-plane.
+    //   1: horizontal (Az,El),
+    //   2: feed-plane,
+    //   3: zenithal position angle of feed and elevation, (ZPA,El).
     int select(
         const int startChan[],
         const int endChan[],

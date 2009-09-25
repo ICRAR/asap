@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# PKSMS2writer.cc: Class to write Parkes multibeam data to a measurementset.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSMS2writer.cc,v 19.14 2008-11-17 06:56:13 cal103 Exp $
+//# $Id: PKSMS2writer.cc,v 19.15 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 
 #include <atnf/PKSIO/PKSrecord.h>
@@ -122,7 +122,7 @@ Int PKSMS2writer::create(
     pksDesc.addColumn(ArrayColumnDesc<Float>("BASELIN", "Linear baseline fit",
                 IPosition(2,2,maxNPol), ColumnDesc::Direct));
     pksDesc.addColumn(ArrayColumnDesc<Float>("BASESUB", "Baseline subtracted",
-                IPosition(2,9,maxNPol), ColumnDesc::Direct));
+                IPosition(2,24,maxNPol), ColumnDesc::Direct));
   }
 
   // Add the optional DATA column if cross-polarizations are to be recorded.
@@ -468,11 +468,11 @@ Int PKSMS2writer::write(
   if (cHaveBase) {
     cBaseLinCol->put(irow, pksrec.baseLin);
 
-    if (pksrec.baseSub.nrow() == 9) {
+    if (pksrec.baseSub.nrow() == 24) {
       cBaseSubCol->put(irow, pksrec.baseSub);
 
     } else {
-      Matrix<Float> tmp(9, 2, 0.0f);
+      Matrix<Float> tmp(24, 2, 0.0f);
       for (Int ipol = 0; ipol < nPol; ipol++) {
         for (uInt j = 0; j < pksrec.baseSub.nrow(); j++) {
           tmp(j,ipol) = pksrec.baseSub(j,ipol);

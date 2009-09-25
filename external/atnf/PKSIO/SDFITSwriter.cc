@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSwriter.cc: ATNF CFITSIO interface class for SDFITS output.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: SDFITSwriter.cc,v 19.15 2008-11-17 06:58:58 cal103 Exp $
+//# $Id: SDFITSwriter.cc,v 19.17 2009-09-18 07:29:26 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/07/24, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -36,7 +36,6 @@
 #include <atnf/PKSIO/SDFITSwriter.h>
 
 #include <casa/iostream.h>
-#include <cstring>
 
 #include <algorithm>
 #include <math.h>
@@ -173,8 +172,8 @@ int SDFITSwriter::create(
   char text[72];
   char version[7];
   char date[11];
-  sscanf("$Revision: 19.15 $", "%*s%s", version);
-  sscanf("$Date: 2008-11-17 06:58:58 $", "%*s%s", date);
+  sscanf("$Revision: 19.17 $", "%*s%s", version);
+  sscanf("$Date: 2009-09-18 07:29:26 $", "%*s%s", date);
   sprintf(text, "SDFITSwriter (v%s, %s)", version, date);
   fits_write_key_str(cSDptr, "ORIGIN", text, "output class", &cStatus);
 
@@ -230,7 +229,7 @@ int SDFITSwriter::create(
   fits_insert_col(cSDptr, ++ncol, "SCAN", "1I", &cStatus);
 
   // CYCLE (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "CYCLE", "1I", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, "CYCLE", "1J", &cStatus);
 
   // DATE-OBS (core, real).
   fits_insert_col(cSDptr, ++ncol, "DATE-OBS", "10A", &cStatus);
@@ -390,9 +389,9 @@ int SDFITSwriter::create(
     fits_write_tdim(cSDptr, ncol, 2, tdim, &cStatus);
 
     // BASESUB (additional, real).
-    sprintf(tform, "%dE", 9*maxNPol);
+    sprintf(tform, "%dE", 24*maxNPol);
     fits_insert_col(cSDptr, ++ncol, "BASESUB", tform, &cStatus);
-    tdim[0] = 9;
+    tdim[0] = 24;
     fits_write_tdim(cSDptr, ncol, 2, tdim, &cStatus);
   }
 
@@ -680,7 +679,7 @@ int SDFITSwriter::write(MBrecord &mbrec)
                        &cStatus);
 
     // BASESUB.
-    fits_write_col_flt(cSDptr, ++icol, cRow, 1, 9*nPol, mbrec.baseSub[0][0],
+    fits_write_col_flt(cSDptr, ++icol, cRow, 1, 24*nPol, mbrec.baseSub[0][0],
                        &cStatus);
   }
 

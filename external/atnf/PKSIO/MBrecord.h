@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# MBrecord.h: Class to store an MBFITS single-dish data record.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Mark Calabretta, ATNF
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id: MBrecord.h,v 19.14 2008-11-17 06:36:12 cal103 Exp $
+//# $Id: MBrecord.h,v 19.15 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBrecord class stores an MBFITS single-dish data record.
 //#
@@ -133,7 +133,7 @@ class MBrecord
     float  (*xcalfctr)[2];	// Calibration factor for cross-polarizations.
     int    haveBase;		// Are baseline parameters present?
     float  (*baseLin)[2][2];	// Linear baseline fit for each polarization.
-    float  (*baseSub)[2][9];	// Polynomial baseline subtracted.
+    float  (*baseSub)[2][24];	// Polynomial baseline subtracted.
     int    haveSpectra;		// Is spectral data present?
     float* *spectra;		// Spectra for each polarization, Jy.
     unsigned char* *flagged;	// Channel flagging, 0 = good, else bad.

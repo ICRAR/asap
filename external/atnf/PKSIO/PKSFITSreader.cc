@@ -1,6 +1,6 @@
 //# PKSFITSreader.cc: Class to read Parkes multibeam data from a FITS file.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: PKSFITSreader.cc,v 19.21 2008-11-17 06:54:25 cal103 Exp $
+//# $Id: PKSFITSreader.cc,v 19.22 2009-03-24 06:15:33 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# Original: 2000/08/02, Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
@@ -445,13 +445,13 @@ Int PKSFITSreader::read(PKSrecord &pksrec)
 
   if (cMBrec.haveBase) {
     pksrec.baseLin.resize(2,nPol);
-    pksrec.baseSub.resize(9,nPol);
+    pksrec.baseSub.resize(24,nPol);
 
     for (uInt ipol = 0; ipol < nPol; ipol++) {
       pksrec.baseLin(0,ipol) = cMBrec.baseLin[0][ipol][0];
       pksrec.baseLin(1,ipol) = cMBrec.baseLin[0][ipol][1];
 
-      for (uInt j = 0; j < 9; j++) {
+      for (uInt j = 0; j < 24; j++) {
         pksrec.baseSub(j,ipol) = cMBrec.baseSub[0][ipol][j];
       }
     }

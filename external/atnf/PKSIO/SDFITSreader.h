@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# SDFITSreader.h: ATNF CFITSIO interface class for SDFITS input.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
+//# Copyright (C) 2000-2009
 //# Associated Universities, Inc. Washington DC, USA.
 //#
 //# This library is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 //#
-//# $Id: SDFITSreader.h,v 19.16 2008-11-17 06:47:05 cal103 Exp $
+//# $Id: SDFITSreader.h,v 19.21 2009-03-18 07:11:51 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The SDFITSreader class reads single dish FITS files such as those written
 //# by SDFITSwriter containing Parkes Multibeam data.
@@ -107,8 +107,9 @@ class SDFITSreader : public FITSreader
     virtual void close(void);
 
   private:
-    int      cCycleNo, cExtraSysCal, cNAxis, cStatus;
-    long     cNAxes[5], cNRow, cReqax[4], cRow;
+    int      cCycleNo, cExtraSysCal, cNAxes, cStatus;
+    long     cBeamAxis, cDecAxis, cFreqAxis, cNAxis[5], cNAxisTime, cNRow,
+             cRaAxis, cRow, cStokesAxis, cTimeAxis, cTimeIdx;
     double   cLastUTC;
     fitsfile *cSDptr;
     class FITSparm *cData;
@@ -117,26 +118,34 @@ class SDFITSreader : public FITSreader
     int  cBeam_1rel, cIF_1rel;
 
     enum {SCAN, CYCLE, DATE_OBS, TIME, EXPOSURE, OBJECT, OBJ_RA, OBJ_DEC,
-          RESTFRQ, OBSMODE, BEAM, IF, FqRefPix, FqRefVal, FqDelt, RA, DEC,
-          SCANRATE, TSYS, CALFCTR, XCALFCTR, BASELIN, BASESUB, DATA, FLAGGED,
-          DATAXED, XPOLDATA, REFBEAM, TCAL, TCALTIME, AZIMUTH, ELEVATIO,
-          PARANGLE, FOCUSAXI, FOCUSTAN, FOCUSROT, TAMBIENT, PRESSURE,
-          HUMIDITY, WINDSPEE, WINDDIRE, NDATA};
+          RESTFRQ, OBSMODE, BEAM, IF, FqRefVal, FqDelt, FqRefPix, RA, DEC,
+          TimeRefVal, TimeDelt, TimeRefPix, SCANRATE, TSYS, CALFCTR, XCALFCTR,
+          BASELIN, BASESUB, DATA, FLAGGED, DATAXED, XPOLDATA, REFBEAM, TCAL,
+          TCALTIME, AZIMUTH, ELEVATIO, PARANGLE, FOCUSAXI, FOCUSTAN, FOCUSROT,
+          TAMBIENT, PRESSURE, HUMIDITY, WINDSPEE, WINDDIRE, NDATA};
 
     // Message handling.
     virtual void logMsg(const char *msg = 0x0);
 
     void findData(int iData, char *name, int type);
+    void  findCol(char *name, int *colnum);
     int   readDim(int iData, long iRow, int *naxis, long naxes[]);
     int  readParm(char *name, int type, void *value);
     int  readData(char *name, int type, long iRow, void *value);
     int  readData(int iData, long iRow, void *value);
-    void  findCol(char *name, int *colnum);
+    int  readCol(int iData, void *value);
+    int  readTime(long iRow, int iPix, char *datobs, double &utc);
 
-    // These are for ALFA data: "BDFITS" or "CIMAFITS".
+    // These are for ALFA data: "BDFITS" or "CIMAFITS".  Statics are required
+    // for CIMAFITS v2.0 because CAL ON/OFF data is split into separate files.
+    static int  sInit, sReset;
+    static int  (*sALFAcalNon)[2], (*sALFAcalNoff)[2];
+    static float (*sALFAcal)[2], (*sALFAcalOn)[2], (*sALFAcalOff)[2];
+
     int   cALFA, cALFA_BD, cALFA_CIMA, cALFAscan, cScanNo;
-    float cALFAcal[8][2], cALFAcalOn[8][2], cALFAcalOff[8][2];
+    float cALFAacc;
     int   alfaCal(short iBeam, short iIF, short iPol);
+    float alfaGain(float zd);
 
     // These are for GBT data.
     int   cGBT, cFirstScanNo;
