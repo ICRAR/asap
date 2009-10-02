@@ -473,7 +473,6 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
       if (running_box!=NULL) delete running_box;
       running_box=new RunningBox(spectrum,mask,edge,max_box_nchan);
 
-
       // determine the off-line variance first
       // an assumption made: lines occupy a small part of the spectrum
 
@@ -515,15 +514,8 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
            else processCurLine(mask); // just finish what was accumulated before
 
            signs[ch]=getAboveMeanSign();
-           // os<<ch<<" "<<spectrum[ch]<<" "<<fabs(running_box->aboveMean())<<" "<<
-           // threshold*offline_variance<<endl;
-
-           const Float buf=running_box->aboveMean();
-           if (buf>0) signs[ch]=1;
-           else if (buf<0) signs[ch]=-1;
-           else if (buf==0) signs[ch]=0;
-           //os<<ch<<" "<<spectrum[ch]<<" "<<running_box->getLinMean()<<" "<<
-           //             threshold*offline_variance<<endl;
+            //os<<ch<<" "<<spectrum[ch]<<" "<<fabs(running_box->aboveMean())<<" "<<
+            //threshold*offline_variance<<endl;
       }
       if (lines.size())
           searchForWings(lines,signs,mask,edge);
@@ -699,6 +691,19 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
   if (mask.nelements()!=nchan)
       throw AipsError("STLineFinder::findLines - in_scan and in_mask have different"
             "number of spectral channels.");
+
+  // taking flagged channels into account
+  vector<bool> flaggedChannels = scan->getMask(whichRow);
+  if (flaggedChannels.size()) {
+      // there is a mask set for this row
+      if (flaggedChannels.size() != mask.nelements()) {
+          throw AipsError("STLineFinder::findLines - internal inconsistency: number of mask elements do not match the number of channels");
+      }
+      for (size_t ch = 0; ch<mask.nelements(); ++ch) {
+           mask[ch] &= flaggedChannels[ch];
+      }
+  }
+
   // number of elements in in_edge
   if (in_edge.size()>2)
       throw AipsError("STLineFinder::findLines - the length of the in_edge parameter"
