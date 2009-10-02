@@ -33,6 +33,7 @@
 // ASAP
 #include "STLineFinder.h"
 #include "STFitter.h"
+#include "IndexedCompare.h"
 
 // STL
 #include <functional>
@@ -199,7 +200,240 @@ protected:
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFNoiseEstimator  a helper class designed to estimate off-line variance
+//                   using statistics depending on the distribution of 
+//                   values (e.g. like a median)
+//
+//                   Two statistics are supported: median and an average of
+//                   80% of smallest values. 
+//
+
+struct LFNoiseEstimator {
+   // construct an object
+   // size - maximum sample size. After a size number of elements is processed
+   // any new samples would cause the algorithm to drop the oldest samples in the
+   // buffer.
+   explicit LFNoiseEstimator(size_t size);
+
+   // add a new sample 
+   // in - the new value
+   void add(float in);
+
+   // median of the distribution
+   float median() const;
+
+   // mean of lowest 80% of the samples
+   float meanLowest80Percent() const;
+
+protected:
+   // update cache of sorted indices
+   // (it is assumed that itsSampleNumber points to the newly
+   // replaced element)
+   void updateSortedCache() const;
+
+   // build sorted cache from the scratch
+   void buildSortedCache() const;
+
+   // number of samples accumulated so far
+   // (can be less than the buffer size)
+   size_t numberOfSamples() const;
+
+   // this helper method builds the cache if
+   // necessary using one of the methods
+   void fillCacheIfNecessary() const;
+
+private:
+   // buffer with samples (unsorted)
+   std::vector<float> itsVariances;
+   // current sample number (<=itsVariances.size())
+   size_t itsSampleNumber;
+   // true, if the buffer all values in the sample buffer are used
+   bool itsBufferFull;
+   // cached indices into vector of samples
+   mutable std::vector<size_t> itsSortedIndices;
+   // true if any of the statistics have been obtained at least
+   // once. This flag allows to implement a more efficient way of
+   // calculating statistics, if they are needed at once and not 
+   // after each addition of a new element
+   mutable bool itsStatisticsAccessed;
+};
+
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
 } // namespace asap
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LFNoiseEstimator  a helper class designed to estimate off-line variance
+//                   using statistics depending on the distribution of 
+//                   values (e.g. like a median)
+//
+//                   Two statistics are supported: median and an average of
+//                   80% of smallest values. 
+//
+
+// construct an object
+// size - maximum sample size. After a size number of elements is processed
+// any new samples would cause the algorithm to drop the oldest samples in the
+// buffer.
+LFNoiseEstimator::LFNoiseEstimator(size_t size) : itsVariances(size),
+     itsSampleNumber(0), itsBufferFull(false), itsSortedIndices(size),
+     itsStatisticsAccessed(false)
+{
+   AlwaysAssert(size>0,AipsError);
+} 
+
+
+// add a new sample 
+// in - the new value
+void LFNoiseEstimator::add(float in)
+{
+   itsVariances[itsSampleNumber] = in;
+
+   if (itsStatisticsAccessed) {
+       // only do element by element addition if on-the-fly 
+       // statistics are needed
+       updateSortedCache();
+   }
+
+   // advance itsSampleNumber now
+   ++itsSampleNumber;
+   if (itsSampleNumber == itsVariances.size()) {
+       itsSampleNumber = 0;
+       itsBufferFull = true;
+   } 
+   AlwaysAssert(itsSampleNumber<itsVariances.size(),AipsError);
+}
+
+// number of samples accumulated so far
+// (can be less than the buffer size)
+size_t LFNoiseEstimator::numberOfSamples() const
+{
+  // the number of samples accumulated so far may be less than the
+  // buffer size
+  const size_t nSamples = itsBufferFull ? itsVariances.size(): itsSampleNumber;
+  AlwaysAssert( (nSamples > 0) && (nSamples < itsVariances.size()), AipsError);
+  return nSamples;
+}
+
+// this helper method builds the cache if
+// necessary using one of the methods
+void LFNoiseEstimator::fillCacheIfNecessary() const
+{
+  if (!itsStatisticsAccessed) {
+      if ((itsSampleNumber!=0) || itsBufferFull) {
+          // build the whole cache efficiently 
+          buildSortedCache();
+      } else {
+          updateSortedCache();
+      }
+      itsStatisticsAccessed = true;
+  } // otherwise, it is updated in 'add' using on-the-fly method
+}
+
+// median of the distribution
+float LFNoiseEstimator::median() const
+{
+  fillCacheIfNecessary();
+  // the number of samples accumulated so far may be less than the
+  // buffer size
+  const size_t nSamples = numberOfSamples();
+  const size_t medSample = nSamples / 2;
+  AlwaysAssert(medSample < itsSortedIndices.size(), AipsError);
+  return itsVariances[itsSortedIndices[medSample]];
+}
+
+// mean of lowest 80% of the samples
+float LFNoiseEstimator::meanLowest80Percent() const
+{
+  fillCacheIfNecessary();
+  // the number of samples accumulated so far may be less than the
+  // buffer size
+  const size_t nSamples = numberOfSamples();
+  float result = 0;
+  size_t numpt=size_t(0.8*nSamples);
+  if (!numpt) {
+      numpt=nSamples; // no much else left,
+                     // although it is very inaccurate
+  }
+  AlwaysAssert( (numpt > 0) && (numpt<itsSortedIndices.size()), AipsError);
+  for (size_t ch=0; ch<numpt; ++ch) {
+       result += itsVariances[itsSortedIndices[ch]];
+  }
+  result /= float(numpt);
+  return result;
+}
+
+// update cache of sorted indices
+// (it is assumed that itsSampleNumber points to the newly
+// replaced element)
+void LFNoiseEstimator::updateSortedCache() const
+{
+  // the number of samples accumulated so far may be less than the
+  // buffer size
+  const size_t nSamples = numberOfSamples();
+
+  if (itsBufferFull) {
+      // first find the index of the element which is being replaced
+      size_t index = nSamples;
+      for (size_t i=0; i<nSamples; ++i) {
+           AlwaysAssert(i < itsSortedIndices.size(), AipsError);
+           if (itsSortedIndices[i] == itsSampleNumber) {
+               index = i;
+               break;
+           }
+      }
+      AlwaysAssert( index < nSamples, AipsError);
+
+      const vector<size_t>::iterator indStart = itsSortedIndices.begin();
+      // merge this element with preceeding block first
+      if (index != 0) {
+          // merge indices on the basis of variances
+          inplace_merge(indStart,indStart+index,indStart+index+1, 
+                        indexedCompare<size_t>(itsVariances.begin()));
+      }
+      // merge with the following block
+      if (index + 1 != nSamples) {
+          // merge indices on the basis of variances
+          inplace_merge(indStart,indStart+index+1,indStart+nSamples, 
+                        indexedCompare<size_t>(itsVariances.begin()));
+      }
+  } else {
+      // itsSampleNumber is the index of the new element
+      AlwaysAssert(itsSampleNumber < itsSortedIndices.size(), AipsError);
+      itsSortedIndices[itsSampleNumber] = itsSampleNumber;
+      if (itsSampleNumber >= 1) {
+          // we have to place this new sample in
+          const vector<size_t>::iterator indStart = itsSortedIndices.begin();
+          // merge indices on the basis of variances
+          inplace_merge(indStart,indStart+itsSampleNumber,indStart+itsSampleNumber+1, 
+                        indexedCompare<size_t>(itsVariances.begin()));
+      }
+  }
+}
+
+// build sorted cache from the scratch
+void LFNoiseEstimator::buildSortedCache() const
+{
+  // the number of samples accumulated so far may be less than the
+  // buffer size
+  const size_t nSamples = numberOfSamples();
+  AlwaysAssert(nSamples < itsSortedIndices.size(), AipsError);
+  for (size_t i=0; i<nSamples; ++i) {
+       itsSortedIndices[i]=i;
+  }
+
+  // sort indices, but check the array of variances
+  const vector<size_t>::iterator indStart = itsSortedIndices.begin();
+  stable_sort(indStart,indStart+nSamples, indexedCompare<size_t>(itsVariances.begin()));
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 //
