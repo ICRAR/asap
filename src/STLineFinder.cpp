@@ -316,7 +316,7 @@ size_t LFNoiseEstimator::numberOfSamples() const
   // the number of samples accumulated so far may be less than the
   // buffer size
   const size_t nSamples = itsBufferFull ? itsVariances.size(): itsSampleNumber;
-  AlwaysAssert( (nSamples > 0) && (nSamples < itsVariances.size()), AipsError);
+  AlwaysAssert( (nSamples > 0) && (nSamples <= itsVariances.size()), AipsError);
   return nSamples;
 }
 
@@ -422,7 +422,7 @@ void LFNoiseEstimator::buildSortedCache() const
   // the number of samples accumulated so far may be less than the
   // buffer size
   const size_t nSamples = numberOfSamples();
-  AlwaysAssert(nSamples < itsSortedIndices.size(), AipsError);
+  AlwaysAssert(nSamples <= itsSortedIndices.size(), AipsError);
   for (size_t i=0; i<nSamples; ++i) {
        itsSortedIndices[i]=i;
   }
@@ -710,26 +710,14 @@ void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
       // determine the off-line variance first
       // an assumption made: lines occupy a small part of the spectrum
 
-      std::vector<float> variances(edge.second-edge.first);
-      DebugAssert(variances.size(),AipsError);
+      DebugAssert(edge.second-edge.first,AipsError);
+      LFNoiseEstimator ne(edge.second-edge.first);
 
-      for (;running_box->haveMore();running_box->next())
-           variances[running_box->getChannel()-edge.first]=
-                                running_box->getLinVariance();
+      for (;running_box->haveMore();running_box->next()) {
+           ne.add(running_box->getLinVariance());
+      }
 
-      // in the future we probably should do a proper Chi^2 estimation
-      // now a simple 80% of smaller values will be used.
-      // it may degrade the performance of the algorithm for weak lines
-      // due to a bias of the Chi^2 distribution.
-      stable_sort(variances.begin(),variances.end());
-
-      Float offline_variance=0;
-      uInt offline_cnt=uInt(0.8*variances.size());
-      if (!offline_cnt) offline_cnt=variances.size(); // no much else left,
-                                    // although it is very inaccurate
-      for (uInt n=0;n<offline_cnt;++n)
-           offline_variance+=variances[n];
-      offline_variance/=Float(offline_cnt);
+      const Float offline_variance = ne.meanLowest80Percent();
 
       // actual search algorithm
       is_detected_before=False;
@@ -908,7 +896,6 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
                 const std::vector<int> &in_edge,
                 const casa::uInt &whichRow) throw(casa::AipsError)
 {
-  //const int minboxnchan=4;
   if (scan.null())
       throw AipsError("STLineFinder::findLines - a scan should be set first,"
                       " use set_scan");
