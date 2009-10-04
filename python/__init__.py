@@ -386,6 +386,7 @@ from selector import selector
 from asapmath import *
 from scantable import scantable
 from asaplinefind import linefinder
+from simplelinefinder import simplelinefinder
 from linecatalog import linecatalog
 
 if rcParams['useplotter']:
