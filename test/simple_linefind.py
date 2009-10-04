@@ -1,4 +1,7 @@
 #!/usr/bin/env python 
+# run this script with a command line parameter "wait" in order it to wait
+# pressing enter instead of a time delay
+
 from asap import *
 import time,sys
 
@@ -55,4 +58,5 @@ for line in rng:
    else:
       raw_input()
       
+plotter.save('output/simple_linefinder.png', dpi=80)
 print "Test of simple line finder is successful"
