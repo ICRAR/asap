@@ -29,7 +29,7 @@ print "Found %i lines.%s" % (len(rng),wait_str)
 b=len(spc)/4
 e=len(spc)*3/4
 plotter._plotter.plot(range(b,e),spc[b:e])
-plotter._plotter.set_line(number=0,label='Full spectrum')
+plotter._plotter.set_line(number=0,label='Input spectrum')
 plotter._plotter.show()
 if wait_str == "":
    time.sleep(1.5)
@@ -45,7 +45,7 @@ for line in rng:
    e = line[1]+1
    if e>len(spc):
       e=len(spc)
-   print "Showing line %s.%s" % (line,wait_str)
+   print "Showing line %i located at %s.%s" % (cnt,line,wait_str)
    plotter._plotter.set_line(label='Line %i' % cnt)
    cnt = cnt + 1
    plotter._plotter.plot(range(b,e),spc[b:e])
@@ -55,3 +55,4 @@ for line in rng:
    else:
       raw_input()
       
+print "Test of simple line finder is successful"
