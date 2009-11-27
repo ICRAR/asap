@@ -153,8 +153,11 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     nChan(ifs[i]) = inst->nchan(ifs[i]);
     havexpol(ifs[i]) = nPol(ifs[i]) > 2;
   }
-
+  Vector<String> obstypes(2);
+  obstypes(0) = "TR";//on
+  obstypes(1) = "RF TR";//off
   const Table table = inst->table();
+
 
   // Create the output file and write static data.
   Int status;
@@ -235,7 +238,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.interval  = rec.asDouble("INTERVAL");
           pksrec.fieldName = rec.asString("FIELDNAME");
           pksrec.srcName   = rec.asString("SRCNAME");
-          pksrec.obsType   = hdr.obstype;
+          pksrec.obsType   = obstypes[rec.asInt("SRCTYPE")];
           pksrec.bandwidth = nchan * abs(pksrec.freqInc);
           pksrec.azimuth   = rec.asFloat("AZIMUTH");
           pksrec.elevation = rec.asFloat("ELEVATION");
