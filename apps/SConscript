@@ -7,7 +7,7 @@ myenv = env.Clone()
 # gather cpp files
 cpps = env.SGlob("*.cpp")
 
-# location of libcasav.a
+# location of libasap.a
 myenv.Prepend( LIBPATH = ['#/build'] )
 myenv.Prepend( CPPPATH = ['#/build'] )
 myenv.Append(CCFLAGS = ["-DWCSLIB_GETWCSTAB"])
