@@ -299,7 +299,8 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
                               Vector< Complex > & xpol, const Table & tab )
 {
   String poltype = tab.keywordSet().asString("POLTYPE");
-  if ( poltype == "stokes") {
+// Full stokes is not supported. Just allow stokes I
+  if ( poltype == "stokes" && tab.nrow() != 1) {
     String msg = "poltype = " + poltype + " not yet supported in output.";
     throw(AipsError(msg));
   }
