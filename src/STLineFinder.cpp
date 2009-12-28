@@ -303,6 +303,10 @@ LFNoiseEstimator::LFNoiseEstimator(size_t size) : itsVariances(size),
 // in - the new value
 void LFNoiseEstimator::add(float in)
 {
+   if (isnan(in)) {
+       // normally it shouldn't happen
+       return;
+   }
    itsVariances[itsSampleNumber] = in;
 
    if (itsStatisticsAccessed) {
@@ -583,8 +587,14 @@ void RunningBox::updateDerivativeStatistics() const throw(AipsError)
       Float coeff=(sumfch/Float(box_chan_cntr)-meanch*mean)/
                 (meanch2-square(meanch));
       linmean=coeff*(Float(cur_channel)-meanch)+mean;
-      linvariance=sqrt(sumf2/Float(box_chan_cntr)-square(mean)-
-                    square(coeff)*(meanch2-square(meanch)));
+      linvariance=sumf2/Float(box_chan_cntr)-square(mean)-
+                    square(coeff)*(meanch2-square(meanch));
+      if (linvariance<0.) {
+          // this shouldn't happen normally, but could be due to round-off error
+          linvariance = 0; 
+      } else {
+          linvariance = sqrt(linvariance);
+      }
   }
   need2recalculate=False;
 }
