@@ -63,7 +63,7 @@ opts.AddVariables(
                 ("pyrapincdir", "The pyrap include location",
                  None),
                 BoolVariable("enable_pyrap", "Use pyrap conversion library", 
-                             True),
+                             False),
 
                 EnumVariable("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
@@ -96,7 +96,6 @@ if not os.path.exists(casacoretooldir):
 
 # load casacore specific build flags
 env.Tool('casaoptions', [casacoretooldir])
-env.AddCommonOptions(opts)
 opts.Update(env)
 env.Tool('casa', [casacoretooldir])
 
