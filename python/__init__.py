@@ -3,7 +3,10 @@ This is the ATNF Single Dish Analysis package.
 
 """
 import os,sys,shutil, platform
-import functools
+try:
+    from functools import wraps as wraps_dec
+except ImportError:
+    from asap.compatibility import wraps as wraps_dec
 
 # Set up AIPSPATH and first time use of asap i.e. ~/.asap/*
 plf = None
@@ -356,7 +359,7 @@ else:
 
 
 def print_log_dec(f):
-    @functools.wraps(f)
+    @wraps_dec(f)
     def wrap_it(*args, **kw):
         val = f(*args, **kw)
         print_log()
@@ -397,7 +400,7 @@ if rcParams['useplotter']:
         if gui:
             import matplotlib
             matplotlib.use("TkAgg")
-        import pylab
+        from matplotlib import pylab
         xyplotter = pylab
         plotter = asapplotter(gui)
         del gui

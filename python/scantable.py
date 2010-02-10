@@ -1,4 +1,8 @@
-import functools
+try:
+    from functools import wraps as wraps_dec
+except ImportError:
+    from asap.compatibility import wraps as wraps_dec
+
 from asap._asap import Scantable
 from asap import rcParams
 from asap import print_log, print_log_dec
@@ -10,7 +14,7 @@ from asap import _n_bools, mask_not, mask_and, mask_or
 
 
 def preserve_selection(func):
-    @functools.wraps(func)
+    @wraps_dec(func)
     def wrap(obj, *args, **kw):
         basesel = obj.get_selection()
         val = func(obj, *args, **kw)
