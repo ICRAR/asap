@@ -211,7 +211,7 @@ SpectralCoordinate STFrequencies::resampleCsys(const SpectralCoordinate& sc,
                                                Float width)
 {
   Vector<Float> offset(1,0.0);
-  Vector<Float> factors(1,1.0/width);
+  Vector<Float> factors(1,width);
   Vector<Int> newshape;
   CoordinateSystem csys;
   csys.addCoordinate(sc);
@@ -286,17 +286,17 @@ std::string STFrequencies::print( int id, Bool strip ) const
         << t.keywordSet().asString("FRAME") << setw(16) << setprecision(8)
         << rec.asDouble("REFVAL") << setw(7)
         << rec.asDouble("REFPIX")
-        << setw(12)
+        << setw(15)
         << rec.asDouble("INCREMENT");
   }
   String outstr(oss);
   if (strip) {
     int f = outstr.find_first_not_of(' ');
     int l = outstr.find_last_not_of(' ', outstr.size());
-    if (f < 0) { 
-      f = 0; 
+    if (f < 0) {
+      f = 0;
     }
-    if ( l < f  || l < f ) { 
+    if ( l < f  || l < f ) {
       l = outstr.size();
     }
     return outstr.substr(f,l);
@@ -408,7 +408,7 @@ void STFrequencies::setDoppler( const std::string & doppler )
   }
 }
 
-void STFrequencies::shiftRefPix(int npix, uInt id) 
+void STFrequencies::shiftRefPix(int npix, uInt id)
 {
   Table t = table_(table_.col("ID") == Int(id) );
   if ( t.nrow() == 0 ) throw(AipsError("Selected Illegal frequency id"));

@@ -265,15 +265,15 @@ public:
   int nrow(int scanno=-1) const;
 
   int getBeam(int whichrow) const;
-  std::vector<uint> getBeamNos() { return getNumbers(beamCol_); }
+  std::vector<uint> getBeamNos() const { return getNumbers(beamCol_); }
 
   int getIF(int whichrow) const;
-  std::vector<uint> getIFNos() { return getNumbers(ifCol_); }
+  std::vector<uint> getIFNos() const { return getNumbers(ifCol_); }
 
   int getPol(int whichrow) const;
-  std::vector<uint> getPolNos() { return getNumbers(polCol_); }
+  std::vector<uint> getPolNos() const { return getNumbers(polCol_); }
 
-  std::vector<uint> getScanNos() { return getNumbers(scanCol_); }
+  std::vector<uint> getScanNos() const { return getNumbers(scanCol_); }
   int getScan(int whichrow) const { return scanCol_(whichrow); }
 
   /**
@@ -458,7 +458,7 @@ private:
    */
   int rowToScanIndex(int therow);
 
-  std::vector<uint> getNumbers(casa::ScalarColumn<casa::uInt>& col);
+  std::vector<uint> getNumbers(const casa::ScalarColumn<casa::uInt>& col) const;
 
   static const casa::uInt version_ = 3;
 

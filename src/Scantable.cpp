@@ -559,7 +559,7 @@ int Scantable::getBeam(int whichrow) const
   return beamCol_(whichrow);
 }
 
-std::vector<uint> Scantable::getNumbers(ScalarColumn<uInt>& col)
+std::vector<uint> Scantable::getNumbers(const ScalarColumn<uInt>& col) const
 {
   Vector<uInt> nos(col.getColumn());
   uInt n = genSort( nos, Sort::Ascending, Sort::QuickSort|Sort::NoDuplicates );
@@ -769,8 +769,7 @@ std::string Scantable::summary( bool verbose )
       << setw(15) << "IFs:" << setw(4) << nif() << endl
       << setw(15) << "Polarisations:" << setw(4) << npol()
       << "(" << getPolType() << ")" << endl
-      << setw(15) << "Channels:"  << setw(4) << nchan() << endl;
-  oss << endl;
+      << setw(15) << "Channels:" << nchan() << endl;
   String tmp;
   oss << setw(15) << "Observer:"
       << table_.keywordSet().asString("Observer") << endl;
@@ -801,9 +800,11 @@ std::string Scantable::summary( bool verbose )
   oss << setw(5) << "Scan" << setw(15) << "Source"
       << setw(10) << "Time" << setw(18) << "Integration" << endl;
   oss << setw(5) << "" << setw(5) << "Beam" << setw(3) << "" << dirtype << endl;
-  oss << setw(10) << "" << setw(3) << "IF" << setw(6) << ""
+  oss << setw(10) << "" << setw(3) << "IF" << setw(3) << ""
       << setw(8) << "Frame" << setw(16)
-      << "RefVal" << setw(10) << "RefPix" << setw(12) << "Increment" <<endl;
+      << "RefVal" << setw(10) << "RefPix" << setw(12) << "Increment"
+      << setw(7) << "Channels"
+      << endl;
   oss << asap::SEPERATOR << endl;
   TableIterator iter(table_, "SCANNO");
   while (!iter.pastEnd()) {
@@ -838,9 +839,10 @@ std::string Scantable::summary( bool verbose )
         Table isubt = iiter.table();
         ROTableRow irow(isubt);
         const TableRecord& irec = irow.get(0);
-        oss << setw(10) << "";
+        oss << setw(9) << "";
         oss << setw(3) << std::right << irec.asuInt("IFNO") << std::left
-            << setw(2) << "" << frequencies().print(irec.asuInt("FREQ_ID"))
+            << setw(1) << "" << frequencies().print(irec.asuInt("FREQ_ID"))
+            << setw(3) << "" << nchan(irec.asuInt("IFNO"))
             << endl;
 
         ++iiter;
