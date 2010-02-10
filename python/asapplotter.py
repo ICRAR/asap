@@ -1,4 +1,5 @@
-from asap import rcParams, print_log, selector, scantable
+from asap import rcParams, print_log, print_log_dec
+from asap import selector, scantable
 import matplotlib.axes
 from matplotlib.font_manager import FontProperties
 from matplotlib.text import Text
@@ -57,7 +58,7 @@ class asapplotter:
             from asap.asaplot import asaplot
         return asaplot(**kwargs)
 
-
+    @print_log_dec
     def plot(self, scan=None):
         """
         Plot a scantable.
@@ -101,7 +102,6 @@ class asapplotter:
         self._plotter.release()
         self._plotter.tidy()
         self._plotter.show(hardrefresh=False)
-        print_log()
         return
 
     def gca(self):
@@ -129,7 +129,7 @@ class asapplotter:
         marg = 0.05*(xmax-xmin)
         self._plotter.axes.set_xlim(xmin-marg, xmax+marg)
         self.refresh()
-        
+
         def cleanup(lines=False, texts=False, refresh=False):
             if lines:
                 del self._plotter.axes.lines[-1]
@@ -140,14 +140,14 @@ class asapplotter:
 
         for w in xrange(nwin):
             wpos = []
-            self.text(0.05,1.0, "Add start boundary", 
+            self.text(0.05,1.0, "Add start boundary",
                       coords="relative", fontsize=10)
             point = self._plotter.get_point()
             cleanup(texts=True)
             if point is None:
                 continue
             wpos.append(point[0])
-            self.axvline(wpos[0], color=color)                
+            self.axvline(wpos[0], color=color)
             self.text(0.05,1.0, "Add end boundary", coords="relative", fontsize=10)
             point = self._plotter.get_point()
             cleanup(texts=True, lines=True)
@@ -967,4 +967,3 @@ class asapplotter:
         PL.axis([xmax,xmin,ymin,ymax])
         PL.ion()
         PL.draw()
-
