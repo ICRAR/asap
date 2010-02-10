@@ -146,7 +146,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   Vector<uInt> nPol(nIF),nChan(nIF);
   Vector<Bool> havexpol(nIF);
   String fluxUnit = hdr.fluxunit;
-
+  fluxUnit.upcase();
   nPol = 0;nChan = 0; havexpol = False;
   for (uint i=0;i<ifs.size();++i) {
     nPol(ifs[i]) = inst->npol();
