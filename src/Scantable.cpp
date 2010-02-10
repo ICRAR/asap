@@ -667,10 +667,6 @@ void Scantable::flag(const std::vector<bool>& msk, bool unflag)
 std::vector<bool> Scantable::getMask(int whichrow) const
 {
   Vector<uChar> flags;
-  if (flagsCol_.shape(uInt(whichrow)) == IPosition()) {
-      // nothing defined, return empty vector
-      return std::vector<bool>();
-  }
   flagsCol_.get(uInt(whichrow), flags);
   Vector<Bool> bflag(flags.shape());
   convertArray(bflag, flags);
