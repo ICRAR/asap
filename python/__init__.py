@@ -388,6 +388,7 @@ from scantable import scantable
 from asaplinefind import linefinder
 from simplelinefinder import simplelinefinder
 from linecatalog import linecatalog
+from opacity import skydip
 
 if rcParams['useplotter']:
     try:

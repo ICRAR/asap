@@ -1430,26 +1430,47 @@ void STMath::convertBrightnessUnits( CountedPtr<Scantable>& in,
 }
 
 CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
-                                         float tau )
+                                         const std::vector<float>& tau )
 {
   CountedPtr< Scantable > out = getScantable(in, false);
 
-  Table tab = out->table();
-  ROScalarColumn<Float> elev(tab, "ELEVATION");
-  ArrayColumn<Float> specCol(tab, "SPECTRA");
-  ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
-  ArrayColumn<Float> tsysCol(tab, "TSYS");
-  for ( uInt i=0; i<tab.nrow(); ++i) {
-    Float zdist = Float(C::pi_2) - elev(i);
-    Float factor = exp(tau/cos(zdist));
-    MaskedArray<Float> ma = maskedArray(specCol(i), flagCol(i));
-    ma *= factor;
-    specCol.put(i, ma.getArray());
-    flagCol.put(i, flagsFromMA(ma));
-    Vector<Float> tsys;
-    tsysCol.get(i, tsys);
-    tsys *= factor;
-    tsysCol.put(i, tsys);
+  Table outtab = out->table();
+
+  const uInt ntau = uInt(tau.size());
+  std::vector<float>::const_iterator tauit = tau.begin();
+  AlwaysAssert((ntau == 1 || ntau == in->nif() || ntau == in->nif() * in->npol()),
+               AipsError);
+  TableIterator iiter(outtab, "IFNO");
+  while ( !iiter.pastEnd() ) {
+    Table itab = iiter.table();
+    TableIterator piter(outtab, "POLNO");
+    while ( !piter.pastEnd() ) {
+      Table tab = piter.table();
+      ROScalarColumn<Float> elev(tab, "ELEVATION");
+      ArrayColumn<Float> specCol(tab, "SPECTRA");
+      ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+      ArrayColumn<Float> tsysCol(tab, "TSYS");
+      for ( uInt i=0; i<tab.nrow(); ++i) {
+        Float zdist = Float(C::pi_2) - elev(i);
+        Float factor = exp(*tauit/cos(zdist));
+        MaskedArray<Float> ma = maskedArray(specCol(i), flagCol(i));
+        ma *= factor;
+        specCol.put(i, ma.getArray());
+        flagCol.put(i, flagsFromMA(ma));
+        Vector<Float> tsys;
+        tsysCol.get(i, tsys);
+        tsys *= factor;
+        tsysCol.put(i, tsys);
+      }
+      if (ntau == in->nif()*in->npol() ) {
+        tauit++;
+      }
+      piter++;
+    }
+    if (ntau >= in->nif() ) {
+      tauit++;
+    }
+    iiter++;
   }
   return out;
 }

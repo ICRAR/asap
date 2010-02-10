@@ -484,7 +484,8 @@ class fitter:
         return scan
 
     @print_log_dec
-    def plot(self, residual=False, components=None, plotparms=False, filename=None):
+    def plot(self, residual=False, components=None, plotparms=False,
+             filename=None):
         """
         Plot the last fit.
         Parameters:

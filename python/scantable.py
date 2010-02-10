@@ -1,3 +1,4 @@
+import functools
 from asap._asap import Scantable
 from asap import rcParams
 from asap import print_log, print_log_dec
@@ -6,6 +7,17 @@ from asap import selector
 from asap import linecatalog
 from asap.coordinate import coordinate
 from asap import _n_bools, mask_not, mask_and, mask_or
+
+
+def preserve_selection(func):
+    @functools.wraps(func)
+    def wrap(obj, *args, **kw):
+        basesel = obj.get_selection()
+        val = func(obj, *args, **kw)
+        obj.set_selection(basesel)
+        return val
+    return wrap
+
 
 class scantable(Scantable):
     """
@@ -1103,9 +1115,12 @@ class scantable(Scantable):
         Apply an opacity correction. The data
         and Tsys are multiplied by the correction factor.
         Parameters:
-            tau:         Opacity from which the correction factor is
+            tau:         (list of) opacity from which the correction factor is
                          exp(tau*ZD)
-                         where ZD is the zenith-distance
+                         where ZD is the zenith-distance.
+                         If a list is provided, it has to be of length nIF,
+                         nIF*nPol or 1 and in order of IF/POL, e.g.
+                         [opif0pol0, opif0pol1, opif1pol0 ...]
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1113,6 +1128,8 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
+        if not hasattr(tau, "__len__"):
+            tau = [tau]
         s = scantable(self._math._opacity(self, tau))
         s._add_history("opacity", varlist)
         if insitu: self._assign(s)

@@ -148,7 +148,7 @@ public:
   { return ScantableWrapper(STMath::convertFlux(in.getCP(), d, etaap, jyperk)); }
 
   ScantableWrapper opacity(const ScantableWrapper& in,
-                                      float tau)
+                          const std::vector<float>& tau)
   { return ScantableWrapper(STMath::opacity(in.getCP(), tau)); }
 
   ScantableWrapper

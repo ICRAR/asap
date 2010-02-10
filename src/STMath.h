@@ -226,7 +226,7 @@ public:
                 float etaap, float jyperk);
 
   casa::CountedPtr<Scantable> opacity(const casa::CountedPtr<Scantable>& in,
-                                      float tau);
+                                      const std::vector<float>& tau);
 
   casa::CountedPtr<Scantable>
     merge(const std::vector<casa::CountedPtr<Scantable> >& in);
