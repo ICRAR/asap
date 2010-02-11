@@ -449,6 +449,8 @@ if is_ipython():
             get_azimuth     - get the azimuth of the scans
             get_elevation   - get the elevation of the scans
             get_parangle    - get the parallactic angle of the scans
+            get_coordinate  - get the spectral coordinate for the given row,
+                              which can be used for coordinate conversions
             get_unit        - get the current unit
             set_unit        - set the abcissa unit to be used from this
                               point on
@@ -580,6 +582,8 @@ if is_ipython():
                               called 'plotter'
             plot            - plot a scantable
             plot_lines      - plot a linecatalog overlay
+            plotazel        - plot azimuth and elevation versus time
+            plotpointing    - plot telescope pointings
             save            - save the plot to a file ('png' ,'ps' or 'eps')
             set_mode        - set the state of the plotter, i.e.
                               what is to be plotted 'colour stacked'
@@ -631,6 +635,7 @@ if is_ipython():
         mask_and,mask_or,
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
+        skydip              - gain opacity values from a sky dip observation
 
     Note:
         How to use this with help:

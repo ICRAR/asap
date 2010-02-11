@@ -1,5 +1,5 @@
 from asap import scantable
-from pylab import *
+from matplotlib.pylab import *
 from numpy import array, ma, logical_not
 from numpy.fft import fft, ifft
 
@@ -24,7 +24,7 @@ class lagplotter(object):
             self.dataaxes.cla()
             self.fftaxes.cla()
             self.resultaxes.cla()
-            
+
 
     def flag(self):
         self._init_plot()
@@ -56,7 +56,7 @@ class lagplotter(object):
             self.figure.show()
             inp = raw_input("Commit flags (c), keep (k) or ignore(i)? ")\
                             .lower()
-            if inp.startswith("c")
+            if inp.startswith("c"):
                 self.flags.append([flagstart, flagend])
                 self._scan.set_spectrum(yi.real, i)
             elif inp.startswith("k"):

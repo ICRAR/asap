@@ -1,7 +1,7 @@
 from asap._asap import coordinate as _coordinate
 
 class coordinate(_coordinate):
-    """Representation of the spectrall coordinate of the data (frequency axis).
+    """Representation of the spectral coordinate of the data (frequency axis).
     """
     def to_frequency(self, pixel, unit='Hz'):
         """

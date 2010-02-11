@@ -1,3 +1,4 @@
+import os
 try:
     from functools import wraps as wraps_dec
 except ImportError:
@@ -21,6 +22,12 @@ def preserve_selection(func):
         obj.set_selection(basesel)
         return val
     return wrap
+
+
+def is_scantable(filename):
+    return (os.path.isdir(filename)
+            and not os.path.exists(filename+'/table.f1')
+            and os.path.exists(filename+'/table.info'))
 
 
 class scantable(Scantable):
@@ -58,36 +65,21 @@ class scantable(Scantable):
         if isinstance(filename, Scantable):
             Scantable.__init__(self, filename)
         else:
-            if isinstance(filename, str):# or \
-#                (isinstance(filename, list) or isinstance(filename, tuple)) \
-#                  and isinstance(filename[-1], str):
-                import os.path
+            if isinstance(filename, str):
                 filename = os.path.expandvars(filename)
                 filename = os.path.expanduser(filename)
                 if not os.path.exists(filename):
                     s = "File '%s' not found." % (filename)
                     if rcParams['verbose']:
                         asaplog.push(s)
-                        #print asaplog.pop().strip()
                         return
                     raise IOError(s)
-                if os.path.isdir(filename) \
-                    and not os.path.exists(filename+'/table.f1'):
-                    # crude check if asap table
-                    if os.path.exists(filename+'/table.info'):
-                        ondisk = rcParams['scantable.storage'] == 'disk'
-                        Scantable.__init__(self, filename, ondisk)
-                        if unit is not None:
-                            self.set_fluxunit(unit)
-                        self.set_freqframe(rcParams['scantable.freqframe'])
-                    else:
-                        msg = "The given file '%s'is not a valid " \
-                              "asap table." % (filename)
-                        if rcParams['verbose']:
-                            print msg
-                            return
-                        else:
-                            raise IOError(msg)
+                if is_scantable(filename):
+                    ondisk = rcParams['scantable.storage'] == 'disk'
+                    Scantable.__init__(self, filename, ondisk)
+                    if unit is not None:
+                        self.set_fluxunit(unit)
+                    self.set_freqframe(rcParams['scantable.freqframe'])
                 else:
                     self._fill([filename], unit, average)
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
@@ -259,8 +251,6 @@ class scantable(Scantable):
         Parameters:
             filename:    the name of a file to write the putput to
                          Default - no file output
-            verbose:     print extra info such as the frequency table
-                         The default (False) is taken from .asaprc
         """
         info = Scantable._summary(self, True)
         if filename is not None:
@@ -346,11 +336,21 @@ class scantable(Scantable):
         Select a subset of the data. All following operations on this scantable
         are only applied to thi selection.
         Parameters:
-            selection:    a selector object (default unset the selection)
+            selection:    a selector object (default unset the selection),
+
+            or
+
+            any combination of
+            "pols", "ifs", "beams", "scans", "cycles", "name", "query"
+
         Examples:
             sel = selector()         # create a selection object
             self.set_scans([0, 3])    # select SCANNO 0 and 3
             scan.set_selection(sel)  # set the selection
+            scan.summary()           # will only print summary of scanno 0 an 3
+            scan.set_selection()     # unset the selection
+            # or the equivalent
+            scan.set_selection(scans=[0,3])
             scan.summary()           # will only print summary of scanno 0 an 3
             scan.set_selection()     # unset the selection
         """
