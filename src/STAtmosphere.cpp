@@ -150,8 +150,8 @@ void STAtmosphere::recomputeAtmosphereModel()
        itsVapourPressures[layer] = casa::min(itsGndHumidity*exp(-height/itsWVScale)*wvGndSaturationPressure,
                                              wvSaturationPressure(itsTemperatures[layer]));
        itsDryPressures[layer] = pressure - itsVapourPressures[layer];                                      
-       std::cout<<"layer="<<layer<<": H="<<itsHeights[layer]<<" T="<<itsTemperatures[layer]<<
-           " Pvap="<<itsVapourPressures[layer]<<" Pdry="<<itsDryPressures[layer]<<endl;
+       //std::cout<<"layer="<<layer<<": H="<<itsHeights[layer]<<" T="<<itsTemperatures[layer]<<
+       //    " Pvap="<<itsVapourPressures[layer]<<" Pdry="<<itsDryPressures[layer]<<endl;
   }
 }
   
