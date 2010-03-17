@@ -64,10 +64,10 @@ using namespace asap;
  *            default is 50 to match MIRIAD.
  **/
 STAtmosphere::STAtmosphere(double wvScale, double maxAlt, size_t nLayers) :
-   itsGndTemperature(288.), itsGndPressure(101325.), itsGndHumidity(0.5), 
-   itsLapseRate(0.0065), itsWVScale(wvScale), itsMaxAlt(maxAlt),
    itsHeights(nLayers), itsTemperatures(nLayers), 
-   itsDryPressures(nLayers), itsVapourPressures(nLayers) 
+   itsDryPressures(nLayers), itsVapourPressures(nLayers),
+   itsGndTemperature(288.), itsPressure(101325.), itsGndHumidity(0.5), 
+   itsLapseRate(0.0065), itsWVScale(wvScale), itsMaxAlt(maxAlt), itsObsHeight(200.)
 {
   recomputeAtmosphereModel();
 }
@@ -75,7 +75,7 @@ STAtmosphere::STAtmosphere(double wvScale, double maxAlt, size_t nLayers) :
 /**
  * Constructor with explicitly given parameters of the atmosphere 
  * @param[in] temperature air temperature at the observatory (K)
- * @param[in] pressure air pressure at the observatory (Pascals)
+ * @param[in] pressure air pressure at the sea level (Pascals)
  * @param[in] humidity air humidity at the observatory (fraction)
  * @param[in] lapseRate temperature lapse rate (K/m), default is 0.0065 K/m to match MIRIAD and ISA 
  * @param[in] wvScale water vapour scale height (m), default is 1540m to match MIRIAD's model
@@ -86,10 +86,10 @@ STAtmosphere::STAtmosphere(double wvScale, double maxAlt, size_t nLayers) :
  **/
 STAtmosphere::STAtmosphere(double temperature, double pressure, double humidity, double lapseRate, 
                double wvScale, double maxAlt, size_t nLayers) :
-   itsGndTemperature(temperature), itsGndPressure(pressure), itsGndHumidity(humidity), 
-   itsLapseRate(lapseRate), itsWVScale(wvScale), itsMaxAlt(maxAlt),
    itsHeights(nLayers), itsTemperatures(nLayers), 
-   itsDryPressures(nLayers), itsVapourPressures(nLayers) 
+   itsDryPressures(nLayers), itsVapourPressures(nLayers),
+   itsGndTemperature(temperature), itsPressure(pressure), itsGndHumidity(humidity), 
+   itsLapseRate(lapseRate), itsWVScale(wvScale), itsMaxAlt(maxAlt), itsObsHeight(200.)
 {
   recomputeAtmosphereModel();
 }
@@ -97,16 +97,28 @@ STAtmosphere::STAtmosphere(double temperature, double pressure, double humidity,
 /**
  * Set the new weather station data, recompute the model 
  * @param[in] temperature air temperature at the observatory (K)
- * @param[in] pressure air pressure at the observatory (Pascals)
+ * @param[in] pressure air pressure at the sea level (Pascals)
  * @param[in] humidity air humidity at the observatory (fraction)
  **/
 void STAtmosphere::setWeather(double temperature, double pressure, double humidity)
 {
   itsGndTemperature = temperature;
-  itsGndPressure = pressure;
+  itsPressure = pressure;
   itsGndHumidity = humidity;
   recomputeAtmosphereModel();
 }
+
+/**
+ * Set the elevation of the observatory (height above mean sea level)
+ * By default, 200m is assumed.
+ * @param[in] elev elevation in metres
+ **/
+void STAtmosphere::setObservatoryElevation(double elev)
+{
+  itsObsHeight = elev;
+  recomputeAtmosphereModel();  
+}
+
 
 /**
  * Build the atmosphere model based on exponential fall-off, ideal gas and hydrostatic
@@ -115,7 +127,7 @@ void STAtmosphere::setWeather(double temperature, double pressure, double humidi
 void STAtmosphere::recomputeAtmosphereModel()
 {
   AlwaysAssert(itsGndTemperature > 0, AipsError);
-  AlwaysAssert(itsGndPressure > 0., AipsError);
+  AlwaysAssert(itsPressure > 0., AipsError);
   AlwaysAssert((itsGndHumidity >= 0.) && (itsGndHumidity<=1.), AipsError);
   AlwaysAssert(itsMaxAlt > 0., AipsError);
   AlwaysAssert(itsWVScale > 0., AipsError);
@@ -125,16 +137,21 @@ void STAtmosphere::recomputeAtmosphereModel()
   const double M = 28.96e-3;
   // free-fall acceleration
   const double g = 9.81;
+  
   const double wvGndSaturationPressure = wvSaturationPressure(itsGndTemperature);
+  const double gndPressure = itsPressure*exp(-M*g/(QC::R.get().getValue()*itsGndTemperature)*
+                   (itsObsHeight+0.5*itsLapseRate*itsObsHeight*itsObsHeight/itsGndTemperature));
   for (size_t layer = 0; layer < nLayers(); ++layer) {
        const double height = double(layer)*heightStep;
        itsHeights[layer] = height;
        itsTemperatures[layer] = itsGndTemperature/(1.+itsLapseRate*height/itsGndTemperature);
-       const double pressure = itsGndPressure * exp(-M*g/(QC::R.get().getValue()*itsGndTemperature)*
+       const double pressure = gndPressure * exp(-M*g/(QC::R.get().getValue()*itsGndTemperature)*
                    (height+0.5*itsLapseRate*height*height/itsGndTemperature));
        itsVapourPressures[layer] = casa::min(itsGndHumidity*exp(-height/itsWVScale)*wvGndSaturationPressure,
                                              wvSaturationPressure(itsTemperatures[layer]));
        itsDryPressures[layer] = pressure - itsVapourPressures[layer];                                      
+       std::cout<<"layer="<<layer<<": H="<<itsHeights[layer]<<" T="<<itsTemperatures[layer]<<
+           " Pvap="<<itsVapourPressures[layer]<<" Pdry="<<itsDryPressures[layer]<<endl;
   }
 }
   
@@ -165,7 +182,7 @@ size_t STAtmosphere::nLayers() const
  **/
 double STAtmosphere::wvSaturationPressure(double temperature)
 {
-  if (temperature > 215.) {
+  if (temperature <= 215.) {
       return 0.;
   }
   const double theta = 300.0/temperature;

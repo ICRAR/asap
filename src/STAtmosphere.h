@@ -109,6 +109,13 @@ public:
   void setWeather(double temperature, double pressure, double humidity);
 
   /**
+   * Set the elevation of the observatory (height above mean sea level)
+   * By default, 200m is assumed.
+   * @param[in] elev elevation in metres
+   **/
+  void setObservatoryElevation(double elev);
+
+  /**
    * Calculate zenith opacity at the given frequency. This is a simplified version
    * of the routine implemented in MIRIAD, which calculates just zenith opacity and
    * nothing else. Note, that if the opacity is high, 1/sin(el) law is not correct 
@@ -135,7 +142,7 @@ public:
    * @param[in] el elevation in radians
    * @return zenith opacity (nepers, i.e. dimensionless)
    **/ 
-   double opacity(double freq, double el) const;
+  double opacity(double freq, double el) const;
 
   /**
    * Calculate opacities for the range of frequencies at the given elevation. Same as
@@ -225,8 +232,8 @@ private:
   // ground level temperature (K)
   double itsGndTemperature;
   
-  // ground level pressure (Pascals)
-  double itsGndPressure;
+  // sea level pressure (Pascals)
+  double itsPressure;
   
   // ground level humidity (fraction)
   double itsGndHumidity;
@@ -239,6 +246,9 @@ private:
   
   // altitude of the highest layer of the model (m)
   double itsMaxAlt;
+  
+  // observatory elevation (m)
+  double itsObsHeight;
 };
 
 } // namespace asap

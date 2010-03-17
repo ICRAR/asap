@@ -1,5 +1,5 @@
 //#---------------------------------------------------------------------------
-//# python_asap.h: python module for single dish package asap
+//# python_STAtmosphere.cc: python exposure of c++ STAtmosphere class
 //#---------------------------------------------------------------------------
 //# Copyright (C) 2004
 //# ATNF
@@ -26,30 +26,31 @@
 //#                        Epping, NSW, 2121,
 //#                        AUSTRALIA
 //#
-//# $Id$
+//# $Id:
 //#---------------------------------------------------------------------------
-#ifndef PYTHON_ASAP_H
-#define PYTHON_ASAP_H
 
-class casa::AipsError;
+#include <boost/python.hpp>
+
+#include "STAtmosphere.h"
+
+using namespace boost::python;
 
 namespace asap {
   namespace python {
-    void translate_ex(const casa::AipsError& e);
-    void python_Scantable();
-    void python_STFiller();
-    void python_STSelector();
-    void python_STMath();
-    void python_Fitter();
-    void python_STLineFinder();
-    void python_STFitEntry();
-    void python_STWriter();
-    void python_LineCatalog();
-    void python_Logger();
-    void python_STCoordinate();
-    void python_STAtmosphere();
 
-  } // python
-} //asap
+    void python_STAtmosphere() {
+      class_<STAtmosphere>("atmosphere")
+        .def( init < > () )
+        .def( init < double, double, double > () )
+        .def("set_weather", &STAtmosphere::setWeather)
+        .def("set_observatory_elevation", &STAtmosphere::setObservatoryElevation)
+        .def("zenith_opacity", &STAtmosphere::zenithOpacity)
+        .def("zenith_opacities", &STAtmosphere::zenithOpacities)
+        .def("opacity", &STAtmosphere::opacity)
+        .def("opacities", &STAtmosphere::opacities)
+     ;
+    };
 
-#endif
+  } // namespace python
+} // namespace asap
+
