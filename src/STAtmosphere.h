@@ -42,7 +42,9 @@
 #ifndef STATMOSPHERE_H
 #define STATMOSPHERE_H
 
+// std includes
 #include <vector>
+#include <complex>
 
 namespace asap {
 
@@ -131,6 +133,18 @@ protected:
    * @return vapour saturation pressure (Pascals) 
    **/
   static double wvSaturationPressure(double temperature);
+   
+  /**
+   * Compute the complex refractivity of the dry components of the atmosphere
+   * (oxygen lines) at the given frequency.
+   * @param[in] freq frequency (Hz)
+   * @param[in] temperature air temperature (K)
+   * @param[in] pDry partial pressure of dry components (Pascals)
+   * @param[in] pVapour partial pressure of water vapour (Pascals)
+   * @return complex refractivity
+   **/
+   static std::complex<double> dryRefractivity(double freq, double temperature, 
+                     double pDry, double pVapour);
    
 private:
   
