@@ -108,6 +108,16 @@ public:
    **/
   void setWeather(double temperature, double pressure, double humidity);
 
+  /**
+   * Calculate zenith opacity at the given frequency. This is a simplified version
+   * of the routine implemented in MIRIAD, which calculates just zenith opacity and
+   * nothing else. Note, that if the opacity is high, 1/sin(el) law is not correct 
+   * even in the plane parallel case due to refraction. 
+   * @param[in] freq frequency of interest in Hz
+   * @return zenith opacity (nepers, i.e. dimensionless)
+   **/
+  double zenithOpacity(double freq) const;
+
 protected:
   /**
    * Build the atmosphere model based on exponential fall-off, ideal gas and hydrostatic

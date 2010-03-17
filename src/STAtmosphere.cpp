@@ -146,7 +146,7 @@ void STAtmosphere::recomputeAtmosphereModel()
 size_t STAtmosphere::nLayers() const
 {
   const size_t result = itsHeights.size();
-  DebugAssert(result > 0, AipsError);
+  DebugAssert(result > 2, AipsError);
   DebugAssert(itsTemperatures.size() == result, AipsError);
   DebugAssert(itsDryPressures.size() == result, AipsError);
   DebugAssert(itsVapourPressures.size() == result, AipsError);  
@@ -350,5 +350,35 @@ std::complex<double> STAtmosphere::vapourRefractivity(double freq, double temper
   }
   
   return result; 
+}
+
+/**
+ * Calculate zenith opacity at the given frequency. This is a simplified version
+ * of the routine implemented in MIRIAD, which calculates just zenith opacity and
+ * nothing else. Note, that if the opacity is high, 1/sin(el) law is not correct 
+ * even in the plane parallel case due to refraction. 
+ * @param[in] freq frequency of interest in Hz
+ * @return zenith opacity (nepers, i.e. dimensionless)
+ **/
+double STAtmosphere::zenithOpacity(double freq) const
+{
+  // essentially a numerical integration with the Trapezium method
+  double tau = 0.;
+  for (int layer = int(nLayers()) - 1; layer>=0; --layer) {
+       double dH = 0.;
+       if (layer == 0) {
+           dH = 0.5*(itsHeights[1]-itsHeights[0]);
+       } else if (layer + 1 == int(nLayers())) {
+           dH = 0.5*(itsHeights[nLayers()-1]-itsHeights[nLayers()-2]);
+       } else {
+           dH = 0.5*(itsHeights[layer+1]-itsHeights[layer-1]);
+       }
+       // imaginary part of the total complex refractivity
+       const double nImag = 1e-6*std::imag(dryRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer],
+             itsVapourPressures[layer])+vapourRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer],
+             itsVapourPressures[layer]));
+       tau += dH*4.*casa::C::pi/QC::c.get().getValue()*freq*nImag;
+  }
+  return tau;
 }
 
