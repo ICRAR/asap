@@ -118,6 +118,34 @@ public:
    **/
   double zenithOpacity(double freq) const;
 
+  /**
+   * Calculate zenith opacity for the range of frequencies. Same as zenithOpacity, but
+   * for a vector of frequencies.
+   * @param[in] freqs vector of frequencies in Hz
+   * @return vector of zenith opacities, one value per frequency (nepers, i.e. dimensionless)
+   **/
+  std::vector<double> zenithOpacities(const std::vector<double> &freqs) const;
+  
+  /**
+   * Calculate opacity at the given frequency and elevation. This is a simplified 
+   * version of the routine implemented in MIRIAD, which calculates just the opacity and
+   * nothing else. In contract to zenithOpacity, this method takes into account refraction
+   * and is more accurate than if one assumes 1/sin(el) factor.
+   * @param[in] freq frequency of interest in Hz
+   * @param[in] el elevation in radians
+   * @return zenith opacity (nepers, i.e. dimensionless)
+   **/ 
+   double opacity(double freq, double el) const;
+
+  /**
+   * Calculate opacities for the range of frequencies at the given elevation. Same as
+   * opacity, but for a vector of frequencies.
+   * @param[in] freqs vector of frequencies in Hz
+   * @param[in] el elevation in radians
+   * @return vector of opacities, one value per frequency (nepers, i.e. dimensionless)
+   **/
+  std::vector<double> opacities(const std::vector<double> &freqs, double el) const;
+          
 protected:
   /**
    * Build the atmosphere model based on exponential fall-off, ideal gas and hydrostatic

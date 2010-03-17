@@ -382,3 +382,72 @@ double STAtmosphere::zenithOpacity(double freq) const
   return tau;
 }
 
+/**
+ * Calculate zenith opacity for the range of frequencies. Same as zenithOpacity, but
+ * for a vector of frequencies.
+ * @param[in] freqs vector of frequencies in Hz
+ * @return vector of zenith opacities, one value per frequency (nepers, i.e. dimensionless)
+ **/
+std::vector<double> STAtmosphere::zenithOpacities(const std::vector<double> &freqs) const
+{
+  std::vector<double> result(freqs.size());
+  for (size_t ch = 0; ch<freqs.size(); ++ch) {
+       result[ch] = zenithOpacity(freqs[ch]);
+  }
+  return result;
+}
+
+/**
+ * Calculate opacity at the given frequency and elevation. This is a simplified 
+ * version of the routine implemented in MIRIAD, which calculates just the opacity and
+ * nothing else. In contract to zenithOpacity, this method takes into account refraction
+ * and is more accurate than if one assumes 1/sin(el) factor.
+ * @param[in] freq frequency of interest in Hz
+ * @param[in] el elevation in radians
+ * @return zenith opacity (nepers, i.e. dimensionless)
+ **/ 
+double STAtmosphere::opacity(double freq, double el) const
+{
+  // essentially a numerical integration with the Trapezium method
+  double tau = 0.;
+  const double sineEl = sin(el);
+  for (int layer = int(nLayers()) - 1; layer>=0; --layer) {
+       double dH = 0.;
+       if (layer == 0) {
+           dH = 0.5*(itsHeights[1]-itsHeights[0]);
+       } else if (layer + 1 == int(nLayers())) {
+           dH = 0.5*(itsHeights[nLayers()-1]-itsHeights[nLayers()-2]);
+       } else {
+           dH = 0.5*(itsHeights[layer+1]-itsHeights[layer-1]);
+       }
+       // total complex refractivity
+       const std::complex<double> n = dryRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer], 
+                                                      itsVapourPressures[layer]) + 
+                                      vapourRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer],
+                                                      itsVapourPressures[layer]);
+       // real and imaginary part of the total complex refractivity scaled appropriately
+       const double nImag = 1e-6*std::imag(n);
+       const double nReal = 1. + 1e-6*std::real(n);
+       // length increment
+       const double dL = dH*nReal/sqrt(nReal*nReal+sineEl*sineEl-1.);
+       tau += dL*4.*casa::C::pi/QC::c.get().getValue()*freq*nImag;
+  }
+  return tau;  
+}
+
+/**
+ * Calculate opacities for the range of frequencies at the given elevation. Same as
+ * opacity, but for a vector of frequencies.
+ * @param[in] freqs vector of frequencies in Hz
+ * @param[in] el elevation in radians
+ * @return vector of opacities, one value per frequency (nepers, i.e. dimensionless)
+ **/
+std::vector<double> STAtmosphere::opacities(const std::vector<double> &freqs, double el) const
+{
+  std::vector<double> result(freqs.size());
+  for (size_t ch = 0; ch<freqs.size(); ++ch) {
+       result[ch] = opacity(freqs[ch],el);
+  }
+  return result;
+}
+
