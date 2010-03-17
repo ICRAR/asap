@@ -120,6 +120,18 @@ protected:
    **/
   size_t nLayers() const;
   
+  /**
+   * Determine the saturation pressure of water vapour for the given temperature.
+   *
+   * Reference:
+   * Waters, Refraction effects in the neutral atmosphere. Methods of
+   * Experimental Physics, vol 12B, p 186-200 (1976).
+   *   
+   * @param[in] temperature temperature in K
+   * @return vapour saturation pressure (Pascals) 
+   **/
+  static double wvSaturationPressure(double temperature);
+   
 private:
   
   // heights of all model layers
@@ -142,10 +154,10 @@ private:
   double itsGndTemperature;
   
   // ground level pressure (Pascals)
-  double itsPressure;
+  double itsGndPressure;
   
   // ground level humidity (fraction)
-  double itsHumidity;
+  double itsGndHumidity;
   
   // lapse rate (K/m)
   double itsLapseRate;

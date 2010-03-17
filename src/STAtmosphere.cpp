@@ -44,6 +44,10 @@
 
 // casa includes
 #include <casa/Utilities/Assert.h>
+#include <casa/Quanta.h>
+
+// std includes
+#include <cmath>
 
 using namespace casa;
 using namespace asap;
@@ -60,7 +64,7 @@ using namespace asap;
  *            default is 50 to match MIRIAD.
  **/
 STAtmosphere::STAtmosphere(double wvScale, double maxAlt, size_t nLayers) :
-   itsGndTemperature(288.), itsPressure(101325.), itsHumidity(0.5), 
+   itsGndTemperature(288.), itsGndPressure(101325.), itsGndHumidity(0.5), 
    itsLapseRate(0.0065), itsWVScale(wvScale), itsMaxAlt(maxAlt),
    itsHeights(nLayers), itsTemperatures(nLayers), 
    itsDryPressures(nLayers), itsVapourPressures(nLayers) 
@@ -82,7 +86,7 @@ STAtmosphere::STAtmosphere(double wvScale, double maxAlt, size_t nLayers) :
  **/
 STAtmosphere::STAtmosphere(double temperature, double pressure, double humidity, double lapseRate, 
                double wvScale, double maxAlt, size_t nLayers) :
-   itsGndTemperature(temperature), itsPressure(pressure), itsHumidity(humidity), 
+   itsGndTemperature(temperature), itsGndPressure(pressure), itsGndHumidity(humidity), 
    itsLapseRate(lapseRate), itsWVScale(wvScale), itsMaxAlt(maxAlt),
    itsHeights(nLayers), itsTemperatures(nLayers), 
    itsDryPressures(nLayers), itsVapourPressures(nLayers) 
@@ -99,8 +103,8 @@ STAtmosphere::STAtmosphere(double temperature, double pressure, double humidity,
 void STAtmosphere::setWeather(double temperature, double pressure, double humidity)
 {
   itsGndTemperature = temperature;
-  itsPressure = pressure;
-  itsHumidity = humidity;
+  itsGndPressure = pressure;
+  itsGndHumidity = humidity;
   recomputeAtmosphereModel();
 }
 
@@ -110,6 +114,28 @@ void STAtmosphere::setWeather(double temperature, double pressure, double humidi
  **/
 void STAtmosphere::recomputeAtmosphereModel()
 {
+  AlwaysAssert(itsGndTemperature > 0, AipsError);
+  AlwaysAssert(itsGndPressure > 0., AipsError);
+  AlwaysAssert((itsGndHumidity >= 0.) && (itsGndHumidity<=1.), AipsError);
+  AlwaysAssert(itsMaxAlt > 0., AipsError);
+  AlwaysAssert(itsWVScale > 0., AipsError);
+  
+  const double heightStep = itsMaxAlt/double(nLayers());
+  // molar mass of the air
+  const double M = 28.96e-3;
+  // free-fall acceleration
+  const double g = 9.81;
+  const double wvGndSaturationPressure = wvSaturationPressure(itsGndTemperature);
+  for (size_t layer = 0; layer < nLayers(); ++layer) {
+       const double height = double(layer)*heightStep;
+       itsHeights[layer] = height;
+       itsTemperatures[layer] = itsGndTemperature/(1.+itsLapseRate*height/itsGndTemperature);
+       const double pressure = itsGndPressure * exp(-M*g/(QC::R.get().getValue()*itsGndTemperature)*
+                   (height+0.5*itsLapseRate*height*height/itsGndTemperature));
+       itsVapourPressures[layer] = casa::min(itsGndHumidity*exp(-height/itsWVScale)*wvGndSaturationPressure,
+                                             wvSaturationPressure(itsTemperatures[layer]));
+       itsDryPressures[layer] = pressure - itsVapourPressures[layer];                                      
+  }
 }
   
 /**
@@ -120,9 +146,29 @@ void STAtmosphere::recomputeAtmosphereModel()
 size_t STAtmosphere::nLayers() const
 {
   const size_t result = itsHeights.size();
+  DebugAssert(result > 0, AipsError);
   DebugAssert(itsTemperatures.size() == result, AipsError);
   DebugAssert(itsDryPressures.size() == result, AipsError);
   DebugAssert(itsVapourPressures.size() == result, AipsError);  
   return result;
+}
+
+/**
+ * Determine the saturation pressure of water vapour for the given temperature.
+ *
+ * Reference:
+ * Waters, Refraction effects in the neutral atmosphere. Methods of
+ * Experimental Physics, vol 12B, p 186-200 (1976).
+ *   
+ * @param[in] temperature temperature in K
+ * @return vapour saturation pressure (Pascals) 
+ **/
+double STAtmosphere::wvSaturationPressure(double temperature)
+{
+  if (temperature > 215.) {
+      return 0.;
+  }
+  const double theta = 300.0/temperature;
+  return 1e5/(41.51/std::pow(theta,5)*std::pow(10.,9.834*theta-10.0));
 }
 
