@@ -180,6 +180,10 @@ double STAtmosphere::wvSaturationPressure(double temperature)
  * @param[in] pDry partial pressure of dry components (Pascals)
  * @param[in] pVapour partial pressure of water vapour (Pascals)
  * @return complex refractivity
+ * 
+ * Reference:
+ * Liebe, An updated model for millimeter wave propogation in moist air,
+ * Radio Science, 20, 1069-1089 (1985).
  **/
 std::complex<double> STAtmosphere::dryRefractivity(double freq, double temperature, 
                      double pDry, double pVapour)
@@ -252,6 +256,7 @@ std::complex<double> STAtmosphere::dryRefractivity(double freq, double temperatu
          3.07e-4*(1.0/(1.0+std::pow(fGHz/gamma0,2))-1)*kPaPDry*theta*theta,
          (2*3.07e-4/(gamma0*(1+std::pow(fGHz/gamma0,2))*(1+std::pow(fGHz/60,2))) + 
           ap*kPaPDry*std::pow(theta,2.5))*fGHz*kPaPDry*theta*theta);
+          
   // sum the contributions of all the lines
   for (size_t l = 0; l < nLines; ++l) {
        const double S = lines[l][1]*kPaPDry*std::pow(theta,3)*exp(lines[l][2]*(1.-theta));
@@ -268,3 +273,82 @@ std::complex<double> STAtmosphere::dryRefractivity(double freq, double temperatu
   
   return result;
 }
+
+/**
+ * Compute the complex refractivity of the water vapour monomers
+ * at the given frequency.
+ * @param[in] freq frequency (Hz)
+ * @param[in] temperature air temperature (K)
+ * @param[in] pDry partial pressure of dry components (Pascals)
+ * @param[in] pVapour partial pressure of water vapour (Pascals)
+ * @return complex refractivity
+ * 
+ * Reference:
+ * Liebe, An updated model for millimeter wave propogation in moist air,
+ * Radio Science, 20, 1069-1089 (1985).
+ **/
+std::complex<double> STAtmosphere::vapourRefractivity(double freq, double temperature, 
+                     double pDry, double pVapour)
+{
+  // the number of parameters per atmospheric line and the number of lines taken into account
+  const size_t nLineParams = 4;
+  const size_t nLines = 30;
+  // actual tabulated values
+  const double lines[nLines][nLineParams] = 
+    {{22.235080,  0.1090, 2.143, 27.84E-3},
+     {67.813960,  0.0011, 8.730, 27.60E-3},
+     {119.995940,  0.0007, 8.347, 27.00E-3},
+     {183.310117,  2.3000, 0.653, 28.35E-3},
+     {321.225644,  0.0464, 6.156, 21.40E-3},
+     {325.152919,  1.5400, 1.515, 27.00E-3},
+     {336.187000,  0.0010, 9.802, 26.50E-3},
+     {380.197372, 11.9000, 1.018, 27.60E-3},
+     {390.134508,  0.0044, 7.318, 19.00E-3},
+     {437.346667,  0.0637, 5.015, 13.70E-3},
+     {439.150812,  0.9210, 3.561, 16.40E-3},
+     {443.018295,  0.1940, 5.015, 14.40E-3},
+     {448.001075, 10.6000, 1.370, 23.80E-3},
+     {470.888947,  0.3300, 3.561, 18.20E-3},
+     {474.689127,  1.2800, 2.342, 19.80E-3},
+     {488.491133,  0.2530, 2.814, 24.90E-3},
+     {503.568532,  0.0374, 6.693, 11.50E-3},
+     {504.482692,  0.0125, 6.693, 11.90E-3},
+     {556.936002, 510.000, 0.114, 30.00E-3},
+     {620.700807,  5.0900, 2.150, 22.30E-3},
+     {658.006500,  0.2740, 7.767, 30.00E-3},
+     {752.033227, 250.000, 0.336, 28.60E-3},
+     {841.073593,  0.0130, 8.113, 14.10E-3},
+     {859.865000,  0.1330, 7.989, 28.60E-3},
+     {899.407000,  0.0550, 7.845, 28.60E-3},
+     {902.555000,  0.0380, 8.360, 26.40E-3},
+     {906.205524,  0.1830, 5.039, 23.40E-3},
+     {916.171582,  8.5600, 1.369, 25.30E-3},
+     {970.315022,  9.1600, 1.842, 24.00E-3},
+     {987.926764, 138.000, 0.178, 28.60E-3}};
+
+  // convert to the units of Liebe
+  const double theta = 300./temperature;
+  const double kPaPVap = 0.001*pVapour;
+  const double kPaPDry = 0.001*pDry;
+  const double fGHz = freq * 1e-9;
+ 
+  // initial refractivity
+  std::complex<double> result(2.39*kPaPVap*theta + 41.6*kPaPVap*theta*theta +
+            6.47e-6*std::pow(fGHz,2.05)*kPaPVap*std::pow(theta,2.4),
+            (0.915*1.40e-6*kPaPDry + 5.41e-5*kPaPVap*theta*theta*theta)*
+             fGHz*kPaPVap*std::pow(theta,2.5));
+             
+  // sum contributions of all the lines 
+  for (size_t l = 0; l < nLines; ++l) {
+       const double S = lines[l][1]*kPaPVap*std::pow(theta,3.5)*exp(lines[l][2]*(1.-theta));
+       const double gamma = lines[l][3]*(kPaPDry*std::pow(theta,0.8) + 4.80*kPaPVap*theta);
+       const double x = (lines[l][0]-fGHz)*(lines[l][0]-fGHz) + gamma*gamma;
+       const double y = (lines[l][0]+fGHz)*(lines[l][0]+fGHz) + gamma*gamma;
+       const double z = (lines[l][0]+gamma*gamma/lines[l][0]);
+       result += std::complex<double>(S*((z-fGHz)/x + (z+fGHz)/y - 2./lines[l][0]),
+                           S*((1./x+1./y)*gamma*fGHz/lines[l][0]));
+  }
+  
+  return result; 
+}
+

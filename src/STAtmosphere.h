@@ -142,10 +142,30 @@ protected:
    * @param[in] pDry partial pressure of dry components (Pascals)
    * @param[in] pVapour partial pressure of water vapour (Pascals)
    * @return complex refractivity
+   * 
+   * Reference:
+   * Liebe, An updated model for millimeter wave propogation in moist air,
+   * Radio Science, 20, 1069-1089 (1985).
    **/
-   static std::complex<double> dryRefractivity(double freq, double temperature, 
+  static std::complex<double> dryRefractivity(double freq, double temperature, 
                      double pDry, double pVapour);
-   
+  
+  /**
+   * Compute the complex refractivity of the water vapour monomers
+   * at the given frequency.
+   * @param[in] freq frequency (Hz)
+   * @param[in] temperature air temperature (K)
+   * @param[in] pDry partial pressure of dry components (Pascals)
+   * @param[in] pVapour partial pressure of water vapour (Pascals)
+   * @return complex refractivity
+   * 
+   * Reference:
+   * Liebe, An updated model for millimeter wave propogation in moist air,
+   * Radio Science, 20, 1069-1089 (1985).
+   **/
+  static std::complex<double> vapourRefractivity(double freq, double temperature, 
+                     double pDry, double pVapour);
+      
 private:
   
   // heights of all model layers
