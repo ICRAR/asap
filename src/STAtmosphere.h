@@ -88,6 +88,9 @@ public:
   /**
    * Constructor with explicitly given parameters of the atmosphere 
    * @param[in] temperature air temperature at the observatory (K)
+   * @param[in] pressure air pressure at the sea level if the observatory elevation 
+   *            is set to non-zero value (note, by default is set to 200m) or at the 
+   *            observatory ground level if the elevation is set to 0. (The value is in Pascals)
    * @param[in] pressure air pressure at the observatory (Pascals)
    * @param[in] humidity air humidity at the observatory (fraction)
    * @param[in] lapseRate temperature lapse rate (K/m), default is 0.0065 K/m to match MIRIAD and ISA 
@@ -103,13 +106,21 @@ public:
   /**
    * Set the new weather station data, recompute the model 
    * @param[in] temperature air temperature at the observatory (K)
-   * @param[in] pressure air pressure at the observatory (Pascals)
+   * @param[in] pressure air pressure at the sea level if the observatory elevation 
+   *            is set to non-zero value (note, by default is set to 200m) or at the 
+   *            observatory ground level if the elevation is set to 0. (The value is in Pascals)
    * @param[in] humidity air humidity at the observatory (fraction)
    **/
   void setWeather(double temperature, double pressure, double humidity);
 
   /**
    * Set the elevation of the observatory (height above mean sea level)
+   *
+   * The observatory elevation affects only interpretation of the pressure supplied as part 
+   * of the weather data, if this value is non-zero, the pressure (e.g. in setWeather or 
+   * constructor) is that at mean sea level. If the observatory elevation is set to zero, 
+   * regardless on real elevation, the pressure is that at the observatory ground level.
+   *
    * By default, 200m is assumed.
    * @param[in] elev elevation in metres
    **/
