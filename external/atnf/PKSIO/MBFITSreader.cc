@@ -1,32 +1,34 @@
 //#---------------------------------------------------------------------------
 //# MBFITSreader.cc: ATNF single-dish RPFITS reader.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2008
-//# Mark Calabretta, ATNF
+//# livedata - processing pipeline for single-dish, multibeam spectral data.
+//# Copyright (C) 2000-2009, Australia Telescope National Facility, CSIRO
 //#
-//# This library is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU Library General Public License as published by
-//# the Free Software Foundation; either version 2 of the License, or (at your
-//# option) any later version.
+//# This file is part of livedata.
 //#
-//# This library is distributed in the hope that it will be useful, but WITHOUT
+//# livedata is free software: you can redistribute it and/or modify it under
+//# the terms of the GNU General Public License as published by the Free
+//# Software Foundation, either version 3 of the License, or (at your option)
+//# any later version.
+//#
+//# livedata is distributed in the hope that it will be useful, but WITHOUT
 //# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public
-//# License for more details.
+//# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//# more details.
 //#
-//# You should have received a copy of the GNU Library General Public License
-//# along with this library; if not, write to the Free Software Foundation,
-//# Inc., 675 Massachusetts Ave, Cambridge, MA 02139, USA.
+//# You should have received a copy of the GNU General Public License along
+//# with livedata.  If not, see <http://www.gnu.org/licenses/>.
 //#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: mcalabre@atnf.csiro.au.
-//#        Postal address: Dr. Mark Calabretta,
-//#                        Australia Telescope National Facility,
-//#                        P.O. Box 76,
-//#                        Epping, NSW, 2121,
+//# Correspondence concerning livedata may be directed to:
+//#        Internet email: mcalabre@atnf.csiro.au
+//#        Postal address: Dr. Mark Calabretta
+//#                        Australia Telescope National Facility, CSIRO
+//#                        PO Box 76
+//#                        Epping NSW 1710
 //#                        AUSTRALIA
 //#
-//# $Id: MBFITSreader.cc,v 19.55 2009-01-20 06:45:33 cal103 Exp $
+//# http://www.atnf.csiro.au/computing/software/livedata.html
+//# $Id: MBFITSreader.cc,v 19.57 2009-10-30 06:34:36 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The MBFITSreader class reads single dish RPFITS files (such as Parkes
 //# Multibeam MBFITS files).
@@ -695,7 +697,8 @@ int MBFITSreader::read(
         // Sanity check (mainly for MOPS).
         if (cIFno > cNIF) continue;
 
-        // Apply IF selection.
+        // Apply IF selection; iIFSel == 0 for the first selected IF, == 1
+        // for the second, etc.
         iIFSel = cIFSel[cIFno - 1];
         if (iIFSel < 0) continue;
 
@@ -720,15 +723,27 @@ int MBFITSreader::read(
           // changing dateobs) so change-of-day must be recorded separately as
           // an offset to be applied when comparing integration timestamps.
           cod = 86400.0;
+        }
 
-        } else if (cUTC < cPrevUTC - 1.0) {
-          sprintf(cMsg,
-            "WARNING: Cycle %d:%03d-%03d, UTC went backwards from\n"
-            "         %.1f to %.1f!  Incrementing day number,\n"
-            "         positions may be unreliable.", cScanNo, cCycleNo,
-            cCycleNo+1, cPrevUTC, cUTC);
-          logMsg(cMsg);
-          cUTC += 86400.0;
+        if ((cUTC+cod) < cPrevUTC - 1.0) {
+          if (cBin == 1 && iIFSel) {
+            // Multiple-IF, binning-mode data is only partially time ordered.
+#ifdef PKSIO_DEBUG
+            fprintf(stderr, "New IF in multiple-IF, binning-mode data.\n");
+#endif
+            cCycleNo -= cNBin;
+            cPrevUTC = -1.0;
+
+          } else {
+            // All other data should be fully time ordered.
+            sprintf(cMsg,
+              "WARNING: Cycle %d:%03d-%03d, UTC went backwards from\n"
+              "         %.1f to %.1f!  Incrementing day number,\n"
+              "         positions may be unreliable.", cScanNo, cCycleNo,
+              cCycleNo+1, cPrevUTC, cUTC);
+            logMsg(cMsg);
+            cUTC += 86400.0;
+          }
         }
 
         // New integration cycle?
@@ -800,6 +815,9 @@ int MBFITSreader::read(
           // Found an integration to flush.
           break;
         }
+
+        // Start with the first IF in the next bin.
+        cFlushIF = 0;
       }
 
       if (beamNo) {

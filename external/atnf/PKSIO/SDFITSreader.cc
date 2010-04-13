@@ -1,31 +1,34 @@
 //#---------------------------------------------------------------------------
 //# SDFITSreader.cc: ATNF interface class for SDFITS input using CFITSIO.
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2000-2009
-//# Associated Universities, Inc. Washington DC, USA.
+//# livedata - processing pipeline for single-dish, multibeam spectral data.
+//# Copyright (C) 2000-2009, Australia Telescope National Facility, CSIRO
 //#
-//# This library is free software; you can redistribute it and/or modify it
-//# under the terms of the GNU Library General Public License as published by
-//# the Free Software Foundation; either version 2 of the License, or (at your
-//# option) any later version.
+//# This file is part of livedata.
 //#
-//# This library is distributed in the hope that it will be useful, but WITHOUT
+//# livedata is free software: you can redistribute it and/or modify it under
+//# the terms of the GNU General Public License as published by the Free
+//# Software Foundation, either version 3 of the License, or (at your option)
+//# any later version.
+//#
+//# livedata is distributed in the hope that it will be useful, but WITHOUT
 //# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public
-//# License for more details.
+//# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//# more details.
 //#
-//# You should have received a copy of the GNU Library General Public License
-//# along with this library; if not, write to the Free Software Foundation,
-//# Inc., 675 Massachusetts Ave, Cambridge, MA 02139, USA.
+//# You should have received a copy of the GNU General Public License along
+//# with livedata.  If not, see <http://www.gnu.org/licenses/>.
 //#
-//# Correspondence concerning this software should be addressed as follows:
-//#        Internet email: aips2-request@nrao.edu.
-//#        Postal address: AIPS++ Project Office
-//#                        National Radio Astronomy Observatory
-//#                        520 Edgemont Road
-//#                        Charlottesville, VA 22903-2475 USA
+//# Correspondence concerning livedata may be directed to:
+//#        Internet email: mcalabre@atnf.csiro.au
+//#        Postal address: Dr. Mark Calabretta
+//#                        Australia Telescope National Facility, CSIRO
+//#                        PO Box 76
+//#                        Epping NSW 1710
+//#                        AUSTRALIA
 //#
-//# $Id: SDFITSreader.cc,v 19.43 2009-05-06 03:28:17 cal103 Exp $
+//# http://www.atnf.csiro.au/computing/software/livedata.html
+//# $Id: SDFITSreader.cc,v 19.45 2009-09-30 07:23:48 cal103 Exp $
 //#---------------------------------------------------------------------------
 //# The SDFITSreader class reads single dish FITS files such as those written
 //# by SDFITSwriter containing Parkes Multibeam data.
@@ -1209,7 +1212,7 @@ int SDFITSreader::findRange(
               distPA(ra[irow]*D2R, dec[irow]*D2R, srcRA[irow]*D2R,
                      srcDec[irow]*D2R, dist, pa);
 
-              Double spin = (par[irow] + rot[irow])*D2R - pa + PI;
+              Double spin = (par[irow] + rot[irow])*D2R - pa;
               if (spin > 2.0*PI) spin -= 2.0*PI;
               Double squint = PI/2.0 - dist;
 
