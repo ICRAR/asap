@@ -612,13 +612,6 @@ if is_ipython():
 
         xyplotter           - matplotlib/pylab plotting functions
 
-    [Reading files]
-        reader              - access rpfits/sdfits files
-            open            - attach reader to a file
-            close           - detach reader from file
-            read            - read in integrations
-            summary         - list info about all integrations
-
     [General]
         commands            - this command
         print               - print details about a variable
