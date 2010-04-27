@@ -43,7 +43,8 @@ namespace asap {
         .def( init < > () )
         .def( init < double, double, double > () )
         .def("set_weather", &STAtmosphere::setWeather)
-        .def("set_observatory_elevation", &STAtmosphere::setObservatoryElevation)
+        .def("set_observatory_elevation", 
+	     &STAtmosphere::setObservatoryElevation)
         .def("zenith_opacity", &STAtmosphere::zenithOpacity)
         .def("zenith_opacities", &STAtmosphere::zenithOpacities)
         .def("opacity", &STAtmosphere::opacity)

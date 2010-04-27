@@ -240,7 +240,6 @@ int asap::STFiller::read( )
     status = reader_->read(pksrec);
     if ( status != 0 ) break;
     n += 1;
-    
     Regex filterrx(".*[SL|PA]$");
     Regex obsrx("^AT.+");
     if ( header_->antennaname.matches(obsrx) &&

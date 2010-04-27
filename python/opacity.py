@@ -5,7 +5,98 @@ from asap import merge
 from asap import fitter
 from asap import selector
 from asap import rcParams
-from asap import xyplotter
+from asap._asap import atmosphere
+
+
+class model(object):
+    def _to_pascals(self, val):
+        if val > 2000:
+            return val
+        return val*100
+
+    def __init__(self, temperature=288, pressure=101325., humidity=0.5,
+                 elevation=700.):
+        """
+        This class implements opacity/atmospheric brightness temperature model
+        equivalent to the model available in MIRIAD. The actual math is a 
+        convertion of the Fortran code written by Bob Sault for MIRIAD.
+        It implements a simple model of the atmosphere and Liebe's model (1985) 
+        of the complex refractive index of air.
+
+        The model of the atmosphere is one with an exponential fall-off in
+        the water vapour content (scale height of 1540 m) and a temperature 
+        lapse rate of 6.5 mK/m. Otherwise the atmosphere obeys the ideal gas 
+        equation and hydrostatic equilibrium.
+
+        Note, the model includes atmospheric lines up to 800 GHz, but was not 
+        rigorously tested above 100 GHz and for instruments located at 
+        a significant elevation. For high-elevation sites it may be necessary to
+        adjust scale height and lapse rate.
+
+        Parameters:
+            temperature:    air temperature at the observatory (K)
+            pressure:       air pressure at the sea level if the observatory 
+                            elevation is set to non-zero value (note, by 
+                            default is set to 700m) or at the observatory
+                            ground level if the elevation is set to 0. (The 
+                            value is in Pascals or hPa, default 101325 Pa
+            humidity:       air humidity at the observatory (fractional), 
+                            default is 0.5
+            elevation:     observatory elevation about sea level (in meters)
+        """
+        self._atm = atmosphere(temp, self._to_pascals(pressure), humidity)
+        self.set_observatory_elevation(elevation):
+
+    def get_opacities(self, freq, elevation=None):
+        """Get the opacity value(s) for the fiven frequency(ies).
+        If no elevation is given the opacities for the zenith are returned.
+        If an elevation is specified refraction is also taken into account.
+        Parameters:
+            freq:       a frequency value in Hz, or a list of frequency values.
+                        One opacity value per frequency is returned as a scalar
+                        or list.
+            elevation:  the elevation at which to compute the opacity. If `None`
+                        is given (default) the zenith opacity is returned.
+
+
+        """
+        func = None
+        if isinstance(freq, (list, tuple)):
+            if elevation is None:
+                return self._atm.zenith_opacities(freq)
+            else:
+                elevation *= math.pi/180.
+                return self._atm.opacities(freq, elevation)
+        else:
+            if elevation is None:
+                return self._atm.zenith_opacity(freq)
+            else:
+                elevation *= math.pi/180.
+                return self._atm.opacity(freq, elevation)
+
+    def set_weather(self, temperature, pressure, humidity):
+        """Update the model using the given environmental parameters.
+        Parameters:
+            temperature:    air temperature at the observatory (K)
+            pressure:       air pressure at the sea level if the observatory 
+                            elevation is set to non-zero value (note, by 
+                            default is set to 700m) or at the observatory
+                            ground level if the elevation is set to 0. (The 
+                            value is in Pascals or hPa, default 101325 Pa
+            humidity:       air humidity at the observatory (fractional), 
+                            default is 0.5
+        """
+        pressure = self._to_pascals(pressure)
+        self._atm.set_weather(temperature, pressure, humidity)
+
+    def set_observatory_elevation(self, elevation:
+        """Update the model using the given the observatory elevation
+        Parameters:
+            elevation:  the elevation at which to compute the opacity. If `None`
+                        is given (default) the zenith opacity is returned.
+        """
+        self._atm.set_observatory_elevation(el)
+
 
 def _import_data(data):
     if not isinstance(data, (list,tuple)):
@@ -26,7 +117,8 @@ def _import_data(data):
             raise TypeError("data is not a scantable or valid file")
     return merge(tables)
 
-def skydip(data, averagepol=True, tsky=300., plot=False):
+def skydip(data, averagepol=True, tsky=300., plot=False,
+           temperature=288, pressure=101325., humidity=0.5):
     """Determine the opacity from a set of 'skydip' obervations.
     This can be any set of observations over a range of elevations,
     but will ususally be a dedicated (set of) scan(s).
@@ -59,6 +151,8 @@ def skydip(data, averagepol=True, tsky=300., plot=False):
     """
     rcsave = rcParams['verbose']
     rcParams['verbose'] = False
+    if plot:
+        from matplotlib import pylab
     scan = _import_data(data)
     f = fitter()
     f.set_function(poly=1)
@@ -67,19 +161,19 @@ def skydip(data, averagepol=True, tsky=300., plot=False):
     inos = scan.getifnos()
     pnos = scan.getpolnos()
     opacities = []
+    om = opacitymodel(temperature, pressure, humidity)
     for ino in inos:
         sel.set_ifs(ino)
         opacity = []
         fits = []
         airms = []
         tsyss = []
-
         if plot:
-            xyplotter.cla()
-            xyplotter.ioff()
-            xyplotter.clf()
-            xyplotter.xlabel("Airmass")
-            xyplotter.ylabel(r"$T_{sys}$")
+            pylab.cla()
+            pylab.ioff()
+            pylab.clf()
+            pylab.xlabel("Airmass")
+            pylab.ylabel(r"$T_{sys}$")
         for pno in pnos:
             sel.set_polarisations(pno)
             scan.set_selection(basesel+sel)
@@ -101,25 +195,31 @@ def skydip(data, averagepol=True, tsky=300., plot=False):
             opacities += opacity
         if plot:
             colors = ['b','g','k']
-            for i in range(len(airms)):
-                xyplotter.plot(airms[i], tsyss[i], 'o', color=colors[i])
-                xyplotter.plot(airms[i], fits[i], '-', color=colors[i])
-                xyplotter.figtext(0.7,0.3-(i/30.0),
+            n = len(airms)
+            for i in range(n):
+                pylab.plot(airms[i], tsyss[i], 'o', color=colors[i])
+                pylab.plot(airms[i], fits[i], '-', color=colors[i])
+                pylab.figtext(0.7,0.3-(i/30.0),
                                   r"$\tau_{fit}=%0.2f$" % opacity[i],
                                   color=colors[i])
             if averagepol:
-                xyplotter.figtext(0.7,0.3-(len(airms)/30.0),
-                                  r"$\tau=%0.2f$" % opacities[-1],
+                pylab.figtext(0.7,0.3-(n/30.0),
+                                  r"$\tau_{avg}=%0.2f$" % opacities[-1],
                                   color='r')
-            xyplotter.title("IF%d : %s" % (ino, freqstr))
+                n +=1
+            pylab.figtext(0.7,0.3-(n/30.0),
+                          r"$\tau_{model}=%0.2f$" % om.get_opacities(freq*1e9),
+                          color='grey')
+            
+            pylab.title("IF%d : %s" % (ino, freqstr))
 
-            xyplotter.ion()
-            xyplotter.draw()
+            pylab.ion()
+            pylab.draw()
             raw_input("Hit <return> for next fit...")
         sel.reset()
 
     scan.set_selection(basesel)
     rcParams['verbose'] = rcsave
     if plot:
-        xyplotter.close()
+        pylab.close()
     return opacities

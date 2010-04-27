@@ -392,6 +392,7 @@ from asaplinefind import linefinder
 from simplelinefinder import simplelinefinder
 from linecatalog import linecatalog
 from opacity import skydip
+from opacity import model as opacity_model
 
 if rcParams['useplotter']:
     try:
@@ -411,7 +412,7 @@ __date__ = '$Date$'.split()[1]
 __version__  = '$Revision$'
 
 def is_ipython():
-    return '__IP' in dir(sys.modules["__main__"])
+    return 'IPython' in sys.modules.keys()
 
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
@@ -629,6 +630,8 @@ if is_ipython():
         mask_not            - boolean operations on masks created with
                               scantable.create_mask
         skydip              - gain opacity values from a sky dip observation
+        opacity_model       - compute opacities fro given frequencies based on
+                              atmospheric model
 
     Note:
         How to use this with help:

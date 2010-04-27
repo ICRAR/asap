@@ -1,13 +1,14 @@
 Changelog
 =========
 
-Release 3.0.0 []
+Release 3.0.0 [2010-04-??]
 
+* Ticket #177 Added function skydip to determine opacities.
+* Ticket #172 Fixed non-working scantable.resample
 * Ticket #155 Better output filenames. Ignore non-existsing beams/pols/ifs/scans
 * Ticket #157 numpy >= 1.1 support
 * Ticket #158 fixed plotter.set_font
-* Ticket #160 Aspect ration of pplotter customisable
-* Ticket #162 - fill in
+* Ticket #160 Aspect ratio of plotter is customisable now
 * Ticket #163 fixed for scantable.set_sourcetype
 * Ticket #164 Upgrade note in wiki FAQ
 * Ticket #165 Handle non-parallactified polarimtery data (if supported in rpfits)
@@ -21,6 +22,7 @@ Release 3.0.0 []
 * Added OS X 10.5 Disk image installer
 * Interactive plotting annotations via optional argument interactive=True
 * Interactive creation of masks on the plotter - plotter.create_mask
+* Tidy up date range in asapplotter.plotazel/plotpointings
 
 Release 2.3.1 [2009-03-25]
 

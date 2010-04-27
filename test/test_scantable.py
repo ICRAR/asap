@@ -1,12 +1,14 @@
 import unittest
 import datetime
-from asap import scantable, selector, rcParams
+from asap import scantable, selector, rcParams, mask_not
 rcParams["verbose"] = False
 
 class ScantableTest(unittest.TestCase):
     def setUp(self):
 
         self.st = scantable("data/MOPS.rpf", average=True)
+        restfreqs = [86.243]     # 13CO-1/0, SiO the two IF
+        self.st.set_restfreqs(restfreqs,"GHz")
 
     def test_init(self):
         st = scantable("data/MOPS.rpf", average=False)
@@ -134,6 +136,16 @@ class ScantableTest(unittest.TestCase):
         s1 = self.st.drop_scan([0])
         self.assertEqual(s1.getscannos(), (1,))
 
+    def test_flag(self):
+        q = self.st.auto_quotient()
+        q.set_unit('km/s')
+        q0 = q.copy()
+        q1 = q.copy()
+        msk = q0.create_mask([-10,20])
+        q0.flag(mask=mask_not(msk))
+        self.assertAlmostEqual(q0.stats(stat='max')[0], 95.62171936)
+        q1.flag(mask=msk)
+        self.assertAlmostEqual(q1.stats(stat='max')[0], 2.66563416)
 
 if __name__ == '__main__':
     unittest.main()

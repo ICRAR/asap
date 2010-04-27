@@ -1114,7 +1114,7 @@ class scantable(Scantable):
         else: return s
 
     @print_log_dec
-    def opacity(self, tau, insitu=None):
+    def opacity(self, tau=None, insitu=None):
         """
         Apply an opacity correction. The data
         and Tsys are multiplied by the correction factor.
@@ -1125,6 +1125,8 @@ class scantable(Scantable):
                          If a list is provided, it has to be of length nIF,
                          nIF*nPol or 1 and in order of IF/POL, e.g.
                          [opif0pol0, opif0pol1, opif1pol0 ...]
+                         if tau is `None` the opacities are determined from a
+                         model.
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
