@@ -18,34 +18,34 @@ class model(object):
                  elevation=700.):
         """
         This class implements opacity/atmospheric brightness temperature model
-        equivalent to the model available in MIRIAD. The actual math is a 
+        equivalent to the model available in MIRIAD. The actual math is a
         convertion of the Fortran code written by Bob Sault for MIRIAD.
-        It implements a simple model of the atmosphere and Liebe's model (1985) 
+        It implements a simple model of the atmosphere and Liebe's model (1985)
         of the complex refractive index of air.
 
         The model of the atmosphere is one with an exponential fall-off in
-        the water vapour content (scale height of 1540 m) and a temperature 
-        lapse rate of 6.5 mK/m. Otherwise the atmosphere obeys the ideal gas 
+        the water vapour content (scale height of 1540 m) and a temperature
+        lapse rate of 6.5 mK/m. Otherwise the atmosphere obeys the ideal gas
         equation and hydrostatic equilibrium.
 
-        Note, the model includes atmospheric lines up to 800 GHz, but was not 
-        rigorously tested above 100 GHz and for instruments located at 
+        Note, the model includes atmospheric lines up to 800 GHz, but was not
+        rigorously tested above 100 GHz and for instruments located at
         a significant elevation. For high-elevation sites it may be necessary to
         adjust scale height and lapse rate.
 
         Parameters:
             temperature:    air temperature at the observatory (K)
-            pressure:       air pressure at the sea level if the observatory 
-                            elevation is set to non-zero value (note, by 
+            pressure:       air pressure at the sea level if the observatory
+                            elevation is set to non-zero value (note, by
                             default is set to 700m) or at the observatory
-                            ground level if the elevation is set to 0. (The 
+                            ground level if the elevation is set to 0. (The
                             value is in Pascals or hPa, default 101325 Pa
-            humidity:       air humidity at the observatory (fractional), 
+            humidity:       air humidity at the observatory (fractional),
                             default is 0.5
             elevation:     observatory elevation about sea level (in meters)
         """
         self._atm = atmosphere(temp, self._to_pascals(pressure), humidity)
-        self.set_observatory_elevation(elevation):
+        self.set_observatory_elevation(elevation)
 
     def get_opacities(self, freq, elevation=None):
         """Get the opacity value(s) for the fiven frequency(ies).
@@ -78,18 +78,18 @@ class model(object):
         """Update the model using the given environmental parameters.
         Parameters:
             temperature:    air temperature at the observatory (K)
-            pressure:       air pressure at the sea level if the observatory 
-                            elevation is set to non-zero value (note, by 
+            pressure:       air pressure at the sea level if the observatory
+                            elevation is set to non-zero value (note, by
                             default is set to 700m) or at the observatory
-                            ground level if the elevation is set to 0. (The 
+                            ground level if the elevation is set to 0. (The
                             value is in Pascals or hPa, default 101325 Pa
-            humidity:       air humidity at the observatory (fractional), 
+            humidity:       air humidity at the observatory (fractional),
                             default is 0.5
         """
         pressure = self._to_pascals(pressure)
         self._atm.set_weather(temperature, pressure, humidity)
 
-    def set_observatory_elevation(self, elevation:
+    def set_observatory_elevation(self, elevation):
         """Update the model using the given the observatory elevation
         Parameters:
             elevation:  the elevation at which to compute the opacity. If `None`
@@ -210,7 +210,7 @@ def skydip(data, averagepol=True, tsky=300., plot=False,
             pylab.figtext(0.7,0.3-(n/30.0),
                           r"$\tau_{model}=%0.2f$" % om.get_opacities(freq*1e9),
                           color='grey')
-            
+
             pylab.title("IF%d : %s" % (ino, freqstr))
 
             pylab.ion()
