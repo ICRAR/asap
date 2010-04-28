@@ -428,7 +428,14 @@ void Scantable::makePersistent(const std::string& filename)
   Path path(inname);
   /// @todo reindex SCANNO, recompute nbeam, nif, npol
   inname = path.expandedName();
-  table_.deepCopy(inname, Table::New);
+  // WORKAROUND !!! for Table bug
+  // Remove when fixed in casacore
+  if ( table_.tableType() == Table::Memory  && selector_.empty() ) {
+    Table tab = table_.copyToMemoryTable(generateName());
+    tab.deepCopy(inname, Table::New);
+  } else {
+    table_.deepCopy(inname, Table::New);
+  }
 }
 
 int Scantable::nbeam( int scanno ) const

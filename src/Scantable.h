@@ -410,7 +410,8 @@ public:
    * @param[in] flag true or false
    */
   void parallactify(bool flag)
-  {focus().setParallactify(flag);}
+    { focus().setParallactify(flag); }
+
 private:
 
   casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;
