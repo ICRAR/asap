@@ -430,7 +430,7 @@ void Scantable::makePersistent(const std::string& filename)
   inname = path.expandedName();
   // WORKAROUND !!! for Table bug
   // Remove when fixed in casacore
-  if ( table_.tableType() == Table::Memory  && selector_.empty() ) {
+  if ( table_.tableType() == Table::Memory  && !selector_.empty() ) {
     Table tab = table_.copyToMemoryTable(generateName());
     tab.deepCopy(inname, Table::New);
   } else {
