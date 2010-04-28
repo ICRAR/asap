@@ -416,14 +416,33 @@ class scantable(Scantable):
         """
         return list(Scantable.get_column_names(self))
 
-    def get_tsys(self):
+    def get_tsys(self, row=-1):
         """
         Return the System temperatures.
         Returns:
             a list of Tsys values for the current selection
         """
-
+        if row > -1:
+            return self._get_column(self._gettsys, row)
         return self._row_callback(self._gettsys, "Tsys")
+
+
+    def get_weather(self, row=-1):
+        values = self._get_column(self._get_weather, row)
+        if row > -1:
+            return {'temperature': values[0],
+                    'pressure': values[1], 'humidity' : values[2],
+                    'windspeed' : values[3], 'windaz' : values[4]
+                    }
+        else:
+            out = []
+            for r in values:
+
+                out.append({'temperature': r[0],
+                            'pressure': r[1], 'humidity' : r[2],
+                            'windspeed' : r[3], 'windaz' : r[4]
+                    })
+            return out
 
     def _row_callback(self, callback, label):
         out = ""
@@ -454,7 +473,7 @@ class scantable(Scantable):
         if row == -1:
             return [callback(i) for i in range(self.nrow())]
         else:
-            if  0 <= row < self.nrow():
+            if 0 <= row < self.nrow():
                 return callback(row)
 
 
@@ -558,7 +577,7 @@ class scantable(Scantable):
         """
         return self._get_column(self._getdirectionvec, row)
 
-
+    @print_log_dec
     def set_unit(self, unit='channel'):
         """
         Set the unit for all following operations on this scantable

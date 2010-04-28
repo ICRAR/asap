@@ -347,6 +347,8 @@ public:
 
   std::vector<double> getAbcissa(int whichrow) const;
 
+  std::vector<float> getWeather(int whichrow) const;
+
   std::string getAbcissaLabel(int whichrow) const;
   std::vector<double> getRestFrequencies() const
     { return moleculeTable_.getRestFrequencies(); }

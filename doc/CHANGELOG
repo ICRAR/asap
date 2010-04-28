@@ -3,6 +3,9 @@ Changelog
 
 Release 3.0.0 [2010-04-??]
 
+* Ticket #183 Added scantable.get_weather
+* Ticket #181 Added work-around for casacore bug in saving tables with selection
+* Ticket #178 Added opacity_model based on  miriad's atmospheric model
 * Ticket #177 Added function skydip to determine opacities.
 * Ticket #172 Fixed non-working scantable.resample
 * Ticket #155 Better output filenames. Ignore non-existsing beams/pols/ifs/scans
@@ -20,6 +23,7 @@ Release 3.0.0 [2010-04-??]
 * Ticket #170 Provided access to frequency coordinate information via
               scantable.get_coordinate
 * Added OS X 10.5 Disk image installer
+* Added support for OS X 10.6
 * Interactive plotting annotations via optional argument interactive=True
 * Interactive creation of masks on the plotter - plotter.create_mask
 * Tidy up date range in asapplotter.plotazel/plotpointings

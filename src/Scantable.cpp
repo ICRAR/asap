@@ -278,6 +278,7 @@ void Scantable::attach()
   fldnCol_.attach(table_, "FIELDNAME");
   rbeamCol_.attach(table_, "REFBEAMNO");
 
+  mweatheridCol_.attach(table_,"WEATHER_ID");
   mfitidCol_.attach(table_,"FIT_ID");
   mfreqidCol_.attach(table_, "FREQ_ID");
   mtcalidCol_.attach(table_, "TCAL_ID");
@@ -433,6 +434,8 @@ void Scantable::makePersistent(const std::string& filename)
   if ( table_.tableType() == Table::Memory  && !selector_.empty() ) {
     Table tab = table_.copyToMemoryTable(generateName());
     tab.deepCopy(inname, Table::New);
+    tab.markForDelete();
+
   } else {
     table_.deepCopy(inname, Table::New);
   }
@@ -1055,14 +1058,14 @@ void Scantable::shift(int npix)
   }
 }
 
-std::string asap::Scantable::getAntennaName() const
+std::string Scantable::getAntennaName() const
 {
   String out;
   table_.keywordSet().get("AntennaName", out);
   return out;
 }
 
-int asap::Scantable::checkScanInfo(const std::vector<int>& scanlist) const
+int Scantable::checkScanInfo(const std::vector<int>& scanlist) const
 {
   String tbpath;
   int ret = 0;
@@ -1130,12 +1133,23 @@ int asap::Scantable::checkScanInfo(const std::vector<int>& scanlist) const
   return ret;
 }
 
-std::vector<double>  asap::Scantable::getDirectionVector(int whichrow) const
+std::vector<double> Scantable::getDirectionVector(int whichrow) const
 {
   Vector<Double> Dir = dirCol_(whichrow).getAngle("rad").getValue();
   std::vector<double> dir;
   Dir.tovector(dir);
   return dir;
+}
+
+std::vector<float> Scantable::getWeather(int whichrow) const
+{
+  std::vector<float> out(5);
+  //Float temperature, pressure, humidity, windspeed, windaz;
+  weatherTable_.getEntry(out[0], out[1], out[2], out[3], out[4],
+                         mweatheridCol_(uInt(whichrow)));
+
+
+  return out;
 }
 
 }

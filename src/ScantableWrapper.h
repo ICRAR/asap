@@ -209,7 +209,7 @@ public:
   int checkScanInfo(const vector<int>& scanlist) const
     { return table_->checkScanInfo(scanlist); }
 
-  std::vector<double>  getDirectionVector(int whichrow) const
+  std::vector<double> getDirectionVector(int whichrow) const
     { return table_->getDirectionVector(whichrow); }
 
   void parallactify(bool flag)
@@ -218,6 +218,9 @@ public:
   STCoordinate getCoordinate(int row) {
     return STCoordinate(table_->getSpectralCoordinate(row));
   }
+
+  std::vector<float> getWeather(int whichrow) const
+    { return table_->getWeather(whichrow); }
 
 private:
   casa::CountedPtr<Scantable> table_;

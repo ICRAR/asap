@@ -125,6 +125,7 @@ void python_Scantable() {
     .def("_getdirectionvec", &ScantableWrapper::getDirectionVector)
     .def("_parallactify", &ScantableWrapper::parallactify)
     .def("get_coordinate", &ScantableWrapper::getCoordinate)
+    .def("_get_weather", &ScantableWrapper::getWeather)
   ;
 };
 
