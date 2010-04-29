@@ -926,7 +926,7 @@ class scantable(Scantable):
         Note:
             Be careful using this with broadband data.
         """
-        Scantable.shift(self, delta)
+        Scantable.shift_refpix(self, delta)
 
     def history(self, filename=None):
         """
