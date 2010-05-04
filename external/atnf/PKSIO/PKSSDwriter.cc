@@ -37,6 +37,8 @@
 #include <casa/stdio.h>
 #include <casa/Quanta/MVTime.h>
 
+#include <cstring>
+
 //--------------------------------------------------- PKSSDwriter::PKSSDwriter
 
 // Default constructor.
