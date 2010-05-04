@@ -38,6 +38,7 @@
 #include <casa/stdio.h>
 
 #include <string>
+#include <cstring>
 
 //------------------------------------------------------------- PKSmsg::PKSmsg
 
