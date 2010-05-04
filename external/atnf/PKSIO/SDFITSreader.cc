@@ -46,6 +46,7 @@
 
 #include <algorithm>
 #include <strings.h>
+#include <cstring>
 
 class FITSparm
 {
