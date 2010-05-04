@@ -547,7 +547,7 @@ class asapplotter:
             raise ValueError("'linecat' isn't of type linecatalog.")
         if not self._data.get_unit().endswith("Hz"):
             raise RuntimeError("Can only overlay linecatalogs when data is in frequency.")
-        from matplotlib.numerix import ma
+        from numpy import ma
         for j in range(len(self._plotter.subplots)):
             self._plotter.subplot(j)
             lims = self._plotter.axes.get_xlim()
@@ -766,12 +766,12 @@ class asapplotter:
                 else:
                     y = scan._getspectrum(r)
                 m = scan._getmask(r)
-                from matplotlib.numerix import logical_not, logical_and
+                from numpy import logical_not, logical_and
                 if self._maskselection and len(self._usermask) == len(m):
                     if d[self._stacking](r) in self._maskselection[self._stacking]:
                         m = logical_and(m, self._usermask)
                 x = scan._getabcissa(r)
-                from matplotlib.numerix import ma, array
+                from numpy import ma, array
                 y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
                 if self._minmaxx is not None:
                     s,e = self._slice_indeces(x)
@@ -881,7 +881,7 @@ class asapplotter:
         from matplotlib.dates import DateFormatter, timezone
         from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
-        from matplotlib.numerix import array, pi
+        from numpy import array, pi
         dates = self._data.get_time(asdatetime=True)
         t = PL.date2num(dates)
         tz = timezone('UTC')
@@ -939,7 +939,7 @@ class asapplotter:
         plot telescope pointings
         """
         from matplotlib import pylab as PL
-        from matplotlib.numerix import array
+        from numpy import array
         dir = array(self._data.get_directionval()).transpose()
         ra = dir[0]*180./pi
         dec = dir[1]*180./pi

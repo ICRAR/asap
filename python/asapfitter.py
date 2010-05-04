@@ -512,7 +512,7 @@ class fitter:
         tlab = 'Spectrum'
         xlab = 'Abcissa'
         ylab = 'Ordinate'
-        from matplotlib.numerix import ma,logical_not,logical_and,array
+        from numpy import ma,logical_not,logical_and,array
         m = self.mask
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)

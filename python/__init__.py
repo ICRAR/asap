@@ -75,7 +75,6 @@ def _asap_fname():
      * HOME/.asaprc
 
     """
-
     fname = os.path.join( os.getcwd(), '.asaprc')
     if os.path.exists(fname): return fname
 
@@ -452,6 +451,7 @@ if is_ipython():
             get_parangle    - get the parallactic angle of the scans
             get_coordinate  - get the spectral coordinate for the given row,
                               which can be used for coordinate conversions
+            get_weather     - get the weather condition parameters
             get_unit        - get the current unit
             set_unit        - set the abcissa unit to be used from this
                               point on

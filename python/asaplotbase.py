@@ -9,7 +9,7 @@ import matplotlib
 
 from matplotlib.figure import Figure, Text
 from matplotlib.font_manager import FontProperties as FP
-from matplotlib.numerix import sqrt
+from numpy import sqrt
 from matplotlib import rc, rcParams
 from asap import rcParams as asaprcParams
 from matplotlib.ticker import OldScalarFormatter
@@ -144,8 +144,8 @@ class asaplotbase:
 
         fmt is the line style as in plot().
         """
-        from matplotlib.numerix import array
-        from matplotlib.numerix.ma import MaskedArray
+        from numpy import array
+        from numpy.ma import MaskedArray
 
         if x is None:
             if y is None: return
