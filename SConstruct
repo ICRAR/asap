@@ -5,11 +5,11 @@ import platform
 import SCons
 
 moduledir = distutils.sysconfig.get_python_lib()
-if  platform.architecture()[0] == '64bit':
+
+if sys.platform.startswith('linux') and platform.architecture()[0] == '64bit':
     # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
     if moduledir.startswith("/usr/lib/"):
         moduledir = moduledir.replace("lib", "lib64")
-
 
 EnsureSConsVersion(1,1,0)
 
@@ -24,7 +24,7 @@ opts.AddVariables(
                             "The python module path (site-packages))",
                             moduledir),
 		PathVariable("casacoreroot", "The location of casacore",
-				    "/usr/local"),
+                             "/usr/local"),
 		("boostroot", "The root dir where boost is installed", None),
 		("boostlib", "The name of the boost python library", 
 		 "boost_python"),
@@ -47,6 +47,7 @@ opts.AddVariables(
 		("cfitsiolibdir", "The cfitsio library location", None),
 		("cfitsiolib", "The cfitsio library name", "cfitsio"),
 		("cfitsioincdir", "The cfitsio include location", None),
+		("wcslib", "The wcs library name", "wcs"),
 		("wcsroot", 
 		 "The root directory where wcs is installed", None),
 		("wcslibdir", "The wcs library location", None),
@@ -54,7 +55,6 @@ opts.AddVariables(
 		("rpfitsroot", 
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
-#		("rpfitsincdir", "The rpfits include location", None),
                 ("pyraproot", "The root directory where libpyrap is installed",
                  None),
                 ("pyraplib", "The name of the pyrap library", "pyrap"),
@@ -73,7 +73,7 @@ opts.AddVariables(
                 EnumVariable("makedoc", "Build the userguide in specified format",
                            "none",
                            ["none", "pdf", "html"], ignorecase=1),
-                BoolVariable("apps", "Build cpp apps", False),
+                BoolVariable("apps", "Build cpp apps", True),
                 BoolVariable("alma", "Enable alma specific functionality", 
                              False),
                 )
@@ -140,25 +140,27 @@ if not env.GetOption('clean'):
 				   'fitsio.h', language='c'):
         Exit(1)
     conf.env.AddCustomPackage('wcs')
-    if not conf.CheckLibWithHeader('wcs', 'wcslib/wcs.h', language='c'):
+    if not conf.CheckLibWithHeader(conf.env["wcslib"], 
+                                   'wcslib/wcs.h', language='c'):
         Exit(1)
     conf.env.AddCustomPackage('rpfits')
     if not conf.CheckLib(conf.env["rpfitslib"], language="c"):
 	Exit(1)
 
     # test for blas/lapack
+    lapackname = conf.env.get("lapacklib", "lapack")
     conf.env.AddCustomPackage("lapack")
-    if not conf.CheckLib(conf.env["lapacklib"]): Exit(1)
+    if not conf.CheckLib(lapackname): Exit(1)
     blasname = conf.env.get("blaslib", "blas")
     conf.env.AddCustomPackage("blas")
-    if not conf.CheckLib(conf.env["blaslib"]): Exit(1)
+    if not conf.CheckLib(blasname): Exit(1)
     conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
-env["version"] = "2.x"
+env["version"] = "3.x"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
@@ -189,15 +191,17 @@ taction = Action(test_module, test_str)
 env.AddPostAction(so, taction)
 
 # install targets
-somod = env.Install("$moduledir/asap", so )
-pymods = env.Install("$moduledir/asap", env.SGlob("python/*.py"))
-bins = env.Install("$prefix/bin", ["bin/asap", "bin/asap_update_data"])
-shares = [env.Install("$moduledir/asap/data", "share/ipythonrc-asap")]
-shares.append(env.Install("$moduledir/asap/data", "share/ipy_user_conf.py"))
-env.Alias('install', [somod, pymods, bins]+shares)
+installs = []
+installs.append(env.Install("$moduledir/asap", so))
+installs.append(env.Install("$moduledir/asap", env.SGlob("python/*.py")))
+installs.append(env.Install("$prefix/bin", 
+                            ["bin/asap", "bin/asap_update_data"]))
+installs.append(env.Install("$moduledir/asap/data", "share/ipythonrc-asap"))
+installs.append(env.Install("$moduledir/asap/data", "share/ipy_user_conf.py"))
+env.Alias('install', installs)
 
 # install aips++ data repos
-rootdir=None
+rootdir = None
 outdir =  os.path.join(env["moduledir"],'asap','data')
 sources = ['ephemerides','geodetic']
 if os.path.exists("/nfs/aips++/data"):
