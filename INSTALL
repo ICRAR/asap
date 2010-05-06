@@ -4,9 +4,9 @@ Requirements
 * scons >= 1.1
 * rpfits >= 2.19
 * cfitso >= 2
-* python >= 2.3
-* boost >= 1.32
-* casacore >= 0.4.1
+* python >= 2.4
+* boost >= 1.37
+* casacore >= 1.0
 
 Installation
 ============
