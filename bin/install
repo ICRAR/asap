@@ -148,6 +148,7 @@ try:
     else:
         shutil.copy2("bin/asap", bindir)
     shutil.copy2("bin/asap_update_data", bindir)
+    shutil.copy2("bin/asap2to3", bindir)
     if not os.path.exists("asap/data/ephemerides"):
         print "Warning - no data directory present"
         print "Please run asap_update_data after the installation is completed."

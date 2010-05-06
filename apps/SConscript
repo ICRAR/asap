@@ -17,4 +17,7 @@ installs = []
 for cpp in cpps:
     prog = myenv.Program(cpp)    
     installs.append(myenv.Install("$prefix/bin", prog))
+    if len(myenv["makedist"]):
+        myenv.QInstall("#/$stagedir/bin", prog)
+
 myenv.Alias('install', installs)
