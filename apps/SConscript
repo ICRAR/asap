@@ -11,8 +11,10 @@ cpps = env.SGlob("*.cpp")
 myenv.Prepend( LIBPATH = ['#/build'] )
 myenv.Prepend( CPPPATH = ['#/build'] )
 myenv.Append(CCFLAGS = ["-DWCSLIB_GETWCSTAB"])
-myenv.Prepend(LIBS =  ['asap'])
+myenv.Prepend(LIBS = ['asap'])
 
+installs = []
 for cpp in cpps:
-    myenv.Program(cpp)
-
+    prog = myenv.Program(cpp)    
+    installs.append(myenv.Install("$prefix/bin", prog))
+myenv.Alias('install', installs)
