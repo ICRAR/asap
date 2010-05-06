@@ -415,7 +415,7 @@ void Scantable::setFeedType(const std::string& feedtype)
   table_.rwKeywordSet().define(String("POLTYPE"), feedtype);
 }
 
-MPosition Scantable::getAntennaPosition () const
+MPosition Scantable::getAntennaPosition() const
 {
   Vector<Double> antpos;
   table_.keywordSet().get("AntennaPosition", antpos);
