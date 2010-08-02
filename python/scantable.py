@@ -4,14 +4,14 @@ try:
 except ImportError:
     from asap.compatibility import wraps as wraps_dec
 
+from asap.env import is_casapy
 from asap._asap import Scantable
-from asap import rcParams
-from asap import print_log, print_log_dec
-from asap import asaplog
-from asap import selector
-from asap import linecatalog
+from asap.parameters import rcParams
+from asap.logging import asaplog, print_log, print_log_dec
+from asap.selector import selector
+from asap.linecatalog import linecatalog
 from asap.coordinate import coordinate
-from asap import _n_bools, mask_not, mask_and, mask_or
+from asap.utils import _n_bools, mask_not, mask_and, mask_or
 
 
 def preserve_selection(func):
@@ -36,7 +36,8 @@ class scantable(Scantable):
     """
 
     @print_log_dec
-    def __init__(self, filename, average=None, unit=None, getpt=None, antenna=None, parallactify=None):
+    def __init__(self, filename, average=None, unit=None, getpt=None,
+                 antenna=None, parallactify=None):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
@@ -2398,7 +2399,8 @@ class scantable(Scantable):
             first = False
         if unit is not None:
             self.set_fluxunit(unit)
-        #self.set_freqframe(rcParams['scantable.freqframe'])
+        if not is_casapy():
+            self.set_freqframe(rcParams['scantable.freqframe'])
 
     def __getitem__(self, key):
         if key < 0:

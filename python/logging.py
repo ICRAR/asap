@@ -24,11 +24,12 @@ class _asaplog(object):
         """Post the messages to the logger. This will clear the buffered
         logs.
         """
-        if len(self._log) > 0:
-            self.logger.post(self._log, priority=level)
+        logs = self._log.strip()
+        if len(logs) > 0:
+           self.logger.post(logs, priority=level)
         if isinstance(self.logger, LogSink):
-            logs = self.logger.pop()
-            if logs > 0:
+            logs = self.logger.pop().strip()
+            if len(logs) > 0:
                 print logs
         self._log = ""
 

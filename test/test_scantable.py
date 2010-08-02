@@ -1,12 +1,16 @@
 import unittest
 import datetime
-from asap import scantable, selector, rcParams, mask_not
-rcParams["verbose"] = False
+from asap import scantable, selector, rcParams, mask_not, asaplog
+asaplog.disable()
 
 class ScantableTest(unittest.TestCase):
     def setUp(self):
-
-        self.st = scantable("data/MOPS.rpf", average=True)
+        s = scantable("data/MOPS.rpf", average=True)
+        sel = selector()
+        # make sure this order is always correct - in can be random
+        sel.set_order(["SCANNO", "POLNO"])
+        s.set_selection(sel)
+        self.st = s.copy()
         restfreqs = [86.243]     # 13CO-1/0, SiO the two IF
         self.st.set_restfreqs(restfreqs,"GHz")
 
@@ -77,7 +81,7 @@ class ScantableTest(unittest.TestCase):
 
     def test_get_column_names(self):
         cnames = ['SCANNO', 'CYCLENO', 'BEAMNO', 'IFNO',
-                  'POLNO', 'FREQ_ID', 'MOLECULE_ID', 'REFBEAMNO',
+                  'POLNO', 'FREQ_ID', 'MOLECULE_ID', 'REFBEAMNO', 'FLAGROW',
                   'TIME', 'INTERVAL', 'SRCNAME', 'SRCTYPE',
                   'FIELDNAME', 'SPECTRA', 'FLAGTRA', 'TSYS',
                   'DIRECTION', 'AZIMUTH', 'ELEVATION',
@@ -100,7 +104,9 @@ class ScantableTest(unittest.TestCase):
 
     def test_get_sourcename(self):
         self.assertEqual(self.st.get_sourcename(0), 'Orion_SiO_R')
-        self.assertEqual(self.st.get_sourcename()[:2], ['Orion_SiO_R', 'Orion_SiO'])
+        self.assertEqual(self.st.get_sourcename(),
+                         ['Orion_SiO_R', 'Orion_SiO_R',
+                          'Orion_SiO', 'Orion_SiO'])
 
     def test_get_azimuth(self):
         self.assertAlmostEqual(self.st.get_azimuth()[0], 5.628767013)
@@ -143,8 +149,8 @@ class ScantableTest(unittest.TestCase):
         q1 = q.copy()
         msk = q0.create_mask([-10,20])
         q0.flag(mask=mask_not(msk))
-        self.assertAlmostEqual(q0.stats(stat='max')[0], 95.62171936)
         q1.flag(mask=msk)
+        self.assertAlmostEqual(q0.stats(stat='max')[0], 95.62171936)
         self.assertAlmostEqual(q1.stats(stat='max')[0], 2.66563416)
 
 if __name__ == '__main__':
