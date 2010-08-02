@@ -1,8 +1,9 @@
 import _asap
 from asap import rcParams
-from asap import print_log_dec
+from asap import print_log, print_log_dec
 from asap import _n_bools
 from asap import mask_and
+from asap import asaplog
 
 class fitter:
     """
@@ -58,7 +59,9 @@ class fitter:
         if not thescan:
             msg = "Please give a correct scan"
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise TypeError(msg)
@@ -78,10 +81,12 @@ class fitter:
             poly:    use a polynomial of the order given with nonlinear least squares fit
             lpoly:   use polynomial of the order given with linear least squares fit
             gauss:   fit the number of gaussian specified
+            lorentz: fit the number of lorentzian specified
         Example:
-            fitter.set_function(gauss=2) # will fit two gaussians
             fitter.set_function(poly=3)  # will fit a 3rd order polynomial via nonlinear method
             fitter.set_function(lpoly=3)  # will fit a 3rd order polynomial via linear method
+            fitter.set_function(gauss=2) # will fit two gaussians
+            fitter.set_function(lorentz=2) # will fit two lorentzians
         """
         #default poly order 0
         n=0
@@ -101,10 +106,18 @@ class fitter:
             self.fitfuncs = [ 'gauss' for i in range(n) ]
             self.components = [ 3 for i in range(n) ]
             self.uselinear = False
+        elif kwargs.has_key('lorentz'):
+            n = kwargs.get('lorentz')
+            self.fitfunc = 'lorentz'
+            self.fitfuncs = [ 'lorentz' for i in range(n) ]
+            self.components = [ 3 for i in range(n) ]
+            self.uselinear = False
         else:
             msg = "Invalid function type."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise TypeError(msg)
@@ -134,7 +147,9 @@ class fitter:
                or self.fitfunc is None:
             msg = "Fitter not yet initialised. Please set data & fit function"
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
@@ -144,7 +159,6 @@ class fitter:
                 self.x = self.data._getabcissa(row)
                 self.y = self.data._getspectrum(row)
                 self.mask = mask_and(self.mask, self.data._getmask(row))
-                from asap import asaplog
                 asaplog.push("Fitting:")
                 i = row
                 out = "Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (self.data.getscan(i),
@@ -154,7 +168,7 @@ class fitter:
                                                                       self.data.getcycle(i))
                 asaplog.push(out,False)
         self.fitter.setdata(self.x, self.y, self.mask)
-        if self.fitfunc == 'gauss':
+        if self.fitfunc == 'gauss' or self.fitfunc == 'lorentz':
             ps = self.fitter.getparameters()
             if len(ps) == 0 or estimate:
                 self.fitter.estimate()
@@ -170,11 +184,15 @@ class fitter:
                 raise RuntimeError,"Fit didn't converge."
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push(str(msg))
+                print_log('ERROR')
             else:
                 raise
         self._fittedrow = row
         self.fitted = True
+        print_log()
         return
 
     def store_fit(self, filename=None):
@@ -227,11 +245,13 @@ class fitter:
         if self.fitfunc is None:
             msg = "Please specify a fitting function first."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
-        if self.fitfunc == "gauss" and component is not None:
+        if (self.fitfunc == "gauss" or self.fitfunc == 'lorentz') and component is not None:
             if not self.fitted and sum(self.fitter.getparameters()) == 0:
                 pars = _n_bools(len(self.components)*3, False)
                 fxd = _n_bools(len(pars), False)
@@ -246,6 +266,7 @@ class fitter:
         self.fitter.setparameters(params)
         if fixed is not None:
             self.fitter.setfixedparameters(fixed)
+        print_log()
         return
 
     def set_gauss_parameters(self, peak, centre, fwhm,
@@ -268,7 +289,9 @@ class fitter:
         if self.fitfunc != "gauss":
             msg = "Function only operates on Gaussian components."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise ValueError(msg)
@@ -279,25 +302,70 @@ class fitter:
         else:
             msg = "Please select a valid  component."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
+                return
+            else:
+                raise ValueError(msg)
+
+    def set_lorentz_parameters(self, peak, centre, fwhm,
+                             peakfixed=0, centrefixed=0,
+                             fwhmfixed=0,
+                             component=0):
+        """
+        Set the Parameters of a 'Lorentzian' component, set with set_function.
+        Parameters:
+            peak, centre, fwhm:  The gaussian parameters
+            peakfixed,
+            centrefixed,
+            fwhmfixed:           Optional parameters to indicate if
+                                 the paramters should be held fixed during
+                                 the fitting process. The default is to keep
+                                 all parameters flexible.
+            component:           The number of the component (Default is the
+                                 component 0)
+        """
+        if self.fitfunc != "lorentz":
+            msg = "Function only operates on Lorentzian components."
+            if rcParams['verbose']:
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
+                return
+            else:
+                raise ValueError(msg)
+        if 0 <= component < len(self.components):
+            d = {'params':[peak, centre, fwhm],
+                 'fixed':[peakfixed, centrefixed, fwhmfixed]}
+            self.set_parameters(d, component)
+        else:
+            msg = "Please select a valid  component."
+            if rcParams['verbose']:
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise ValueError(msg)
 
     def get_area(self, component=None):
         """
-        Return the area under the fitted gaussian component.
+        Return the area under the fitted gaussian/lorentzian component.
         Parameters:
-              component:   the gaussian component selection,
+              component:   the gaussian/lorentzian component selection,
                            default (None) is the sum of all components
         Note:
-              This will only work for gaussian fits.
+              This will only work for gaussian/lorentzian fits.
         """
         if not self.fitted: return
-        if self.fitfunc == "gauss":
+        if self.fitfunc == "gauss" or self.fitfunc == "lorentz":
             pars = list(self.fitter.getparameters())
             from math import log,pi,sqrt
-            fac = sqrt(pi/log(16.0))
+            if self.fitfunc == "gauss":
+                fac = sqrt(pi/log(16.0))
+            elif self.fitfunc == "lorentz":
+                fac = pi/2.0
             areas = []
             for i in range(len(self.components)):
                 j = i*3
@@ -320,14 +388,16 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
         errs = list(self.fitter.geterrors())
         cerrs = errs
         if component is not None:
-            if self.fitfunc == "gauss":
+            if self.fitfunc == "gauss" or self.fitfunc == "lorentz":
                 i = 3*component
                 if i < len(errs):
                     cerrs = errs[i:i+3]
@@ -343,7 +413,9 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
@@ -352,7 +424,7 @@ class fitter:
         errs = list(self.fitter.geterrors())
         area = []
         if component is not None:
-            if self.fitfunc == "gauss":
+            if self.fitfunc == "gauss" or self.fitfunc == "lorentz":
                 i = 3*component
                 cpars = pars[i:i+3]
                 cfixed = fixed[i:i+3]
@@ -367,13 +439,15 @@ class fitter:
             cpars = pars
             cfixed = fixed
             cerrs = errs
-            if self.fitfunc == "gauss":
+            if self.fitfunc == "gauss" or self.fitfunc == "lorentz":
                 for c in range(len(self.components)):
                   a = self.get_area(c)
                   area += [a for i in range(3)]
         fpars = self._format_pars(cpars, cfixed, errors and cerrs, area)
         if rcParams['verbose']:
-            print fpars
+            #print fpars
+            asaplog.push(fpars)
+            print_log()
         return {'params':cpars, 'fixed':cfixed, 'formatted': fpars,
                 'errors':cerrs}
 
@@ -390,7 +464,7 @@ class fitter:
                     out += '  p%d%s= %3.6f,' % (c,fix,pars[i])
                 c+=1
             out = out[:-1]  # remove trailing ','
-        elif self.fitfunc == 'gauss':
+        elif self.fitfunc == 'gauss' or self.fitfunc == 'lorentz':
             i = 0
             c = 0
             aunit = ''
@@ -414,7 +488,9 @@ class fitter:
         pars = self.fitter.getestimate()
         fixed = self.fitter.getfixedparameters()
         if rcParams['verbose']:
-            print self._format_pars(pars,fixed,None)
+            #print self._format_pars(pars,fixed,None)
+            asaplog.push(self._format_pars(pars,fixed,None))
+            print_log()
         return pars
 
     def get_residual(self):
@@ -424,7 +500,9 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
@@ -437,13 +515,17 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
         ch2 = self.fitter.getchi2()
         if rcParams['verbose']:
-            print 'Chi^2 = %3.3f' % (ch2)
+            #print 'Chi^2 = %3.3f' % (ch2)
+            asaplog.push( 'Chi^2 = %3.3f' % (ch2) )
+            print_log()
         return ch2
 
     def get_fit(self):
@@ -453,7 +535,9 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
@@ -467,7 +551,9 @@ class fitter:
         if not self.fitted:
             msg = "Not yet fitted."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise RuntimeError(msg)
@@ -475,12 +561,15 @@ class fitter:
         if not isinstance(self.data, scantable):
             msg = "Not a scantable"
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise TypeError(msg)
         scan = self.data.copy()
         scan._setspectrum(self.fitter.getresidual())
+        print_log()
         return scan
 
     @print_log_dec
@@ -524,12 +613,24 @@ class fitter:
             ylab = self.data._get_ordinate_label()
 
         colours = ["#777777","#dddddd","red","orange","purple","green","magenta", "cyan"]
+        nomask=True
+        for i in range(len(m)):
+            nomask = nomask and m[i]
+        label0='Masked Region'
+        label1='Spectrum'
+        if ( nomask ):
+            label0=label1
+        else:
+            y = ma.masked_array( self.y, mask = m )
+            self._p.palette(1,colours)
+            self._p.set_line( label = label1 )
+            self._p.plot( self.x, y )
         self._p.palette(0,colours)
-        self._p.set_line(label='Spectrum')
+        self._p.set_line(label=label0)
         y = ma.masked_array(self.y,mask=logical_not(m))
         self._p.plot(self.x, y)
         if residual:
-            self._p.palette(1)
+            self._p.palette(7)
             self._p.set_line(label='Residual')
             y = ma.masked_array(self.get_residual(),
                                   mask=logical_not(m))
@@ -570,6 +671,7 @@ class fitter:
         self._p.release()
         if (not rcParams['plotter.gui']):
             self._p.save(filename)
+        print_log()
 
     @print_log_dec
     def auto_fit(self, insitu=None, plot=False):
@@ -582,7 +684,9 @@ class fitter:
         if not isinstance(self.data, scantable) :
             msg = "Data is not a scantable"
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push(msg)
+                print_log('ERROR')
                 return
             else:
                 raise TypeError(msg)
@@ -592,7 +696,9 @@ class fitter:
         else:
             scan = self.data
         rows = xrange(scan.nrow())
-        from asap import asaplog
+        # Save parameters of baseline fits as a class attribute. 
+        # NOTICE: This does not reflect changes in scantable!
+        if len(rows) > 0: self.blpars=[]
         asaplog.push("Fitting:")
         for r in rows:
             out = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % (scan.getscan(r),
@@ -607,13 +713,17 @@ class fitter:
             self.data = None
             self.fit()
             x = self.get_parameters()
+            fpar = self.get_parameters()
             if plot:
                 self.plot(residual=True)
                 x = raw_input("Accept fit ([y]/n): ")
                 if x.upper() == 'N':
+                    self.blpars.append(None)
                     continue
             scan._setspectrum(self.fitter.getresidual(), r)
+            self.blpars.append(fpar)
         if plot:
             self._p.unmap()
             self._p = None
+        print_log()
         return scan

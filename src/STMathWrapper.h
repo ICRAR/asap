@@ -72,6 +72,17 @@ public:
                   const std::string& mode, bool tsys=false )
   { return ScantableWrapper(STMath::unaryOperate(in.getCP(), val, mode, tsys)); }
 
+  ScantableWrapper arrayOperate( const ScantableWrapper& in, 
+                                 const std::vector<float> val,
+                                 const std::string& mode,
+                                 bool tsys=false )
+  { return ScantableWrapper(STMath::arrayOperateChannel(in.getCP(), val, mode, tsys)); }
+
+  ScantableWrapper array2dOperate( const ScantableWrapper& in, 
+                                   const std::vector< std::vector<float> > val,
+                                   const std::string& mode, bool tsys=false )
+  { return ScantableWrapper(STMath::array2dOperate(in.getCP(), val, mode, tsys)); }
+
   ScantableWrapper binaryOperate( const ScantableWrapper& left,
 				  const ScantableWrapper& right,
 				  const std::string& mode)
@@ -119,6 +130,11 @@ public:
                                const std::vector<bool>& mask,
                                const std::string& which)
   { return STMath::statistic(in.getCP(), mask, which); }
+
+  std::vector<int> minMaxChan(const ScantableWrapper& in,
+                               const std::vector<bool>& mask,
+                               const std::string& which)
+  { return STMath::minMaxChan(in.getCP(), mask, which); }
 
   ScantableWrapper bin( const ScantableWrapper& in, int width=5)
   { return ScantableWrapper(STMath::bin(in.getCP(), width)); }
@@ -174,7 +190,7 @@ public:
   ScantableWrapper frequencyAlign( const ScantableWrapper& in,
                                    const std::string& refTime,
                                    const std::string& method  )
-  { return ScantableWrapper(STMath::frequencyAlign(in.getCP(), refTime, method)); }
+  { return ScantableWrapper(STMath::frequencyAlign(in.getCP())); }
 
   ScantableWrapper convertPolarisation( const ScantableWrapper& in,
                                         const std::string& newtype )
@@ -190,6 +206,37 @@ public:
   { return ScantableWrapper(STMath::lagFlag(in.getCP(), start, end,
                                             mode)); }
 
+  // test for average spectra with different channel/resolution
+  ScantableWrapper
+    new_average( const std::vector<ScantableWrapper>& in,
+		 const bool& compel,
+		 const std::vector<bool>& mask,
+		 const std::string& weight,
+		 const std::string& avmode )
+  {
+    std::vector<casa::CountedPtr<Scantable> > sts;
+    for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
+    return ScantableWrapper(STMath::new_average(sts, compel, mask, weight, avmode));
+  }
+
+  // cwcal
+  ScantableWrapper cwcal( const ScantableWrapper &in,
+                          const std::string calmode,
+                          const std::string antname )
+  {
+    casa::CountedPtr<Scantable> tab = in.getCP() ;
+    casa::String mode( calmode ) ;
+    casa::String name( antname ) ;
+    return ScantableWrapper( STMath::cwcal( tab, mode, name ) ) ;
+  }
+  // almacal
+  ScantableWrapper almacal( const ScantableWrapper &in,
+                          const std::string calmode )
+  {
+    casa::CountedPtr<Scantable> tab = in.getCP() ;
+    casa::String mode( calmode ) ;
+    return ScantableWrapper( STMath::almacal( tab, mode ) ) ;
+  }
 };
 
 }

@@ -25,6 +25,9 @@ int main(int argc, const char* argv[]) {
   ScalarColumnDesc<Float> pa("PARANGLE");
   pa.setDefault(Float(0.0));
   tfocus.addColumn(pa);
+  //tfocus.rwKeywordSet().define("PARALLACTIFY", False)
+  Int verid=tab.rwKeywordSet().fieldNumber("VERSION");
+  tab.rwKeywordSet().define(verid,uInt(3));
   cout << "WARNING: This has invalidated the parallactic angle in the data. Reprocess the data in ASAP 3 "
        << "if you need to handle polarisation conversions"
        << endl;

@@ -10,6 +10,7 @@
 //
 //
 #include <map>
+#include <fstream>
 
 #include <casa/aips.h>
 #include <casa/iostream.h>
@@ -23,11 +24,13 @@
 #include <casa/Arrays/ArrayAccessor.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorSTLIterator.h>
+#include <casa/Arrays/Slice.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/BasicSL/Constants.h>
 #include <casa/Quanta/MVAngle.h>
 #include <casa/Containers/RecordField.h>
 #include <casa/Utilities/GenSort.h>
+#include <casa/Logging/LogIO.h>
 
 #include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableDesc.h>
@@ -105,6 +108,7 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   type_(ttype)
 {
   initFactories();
+
   Table tab(name, Table::Update);
   uInt version = tab.keywordSet().asuInt("VERSION");
   if (version != version_) {
@@ -120,6 +124,27 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   originalTable_ = table_;
   attach();
 }
+/*
+Scantable::Scantable(const std::string& name, Table::TableType ttype) :
+  type_(ttype)
+{
+  initFactories();
+  Table tab(name, Table::Update);
+  uInt version = tab.keywordSet().asuInt("VERSION");
+  if (version != version_) {
+    throw(AipsError("Unsupported version of ASAP file."));
+  }
+  if ( type_ == Table::Memory ) {
+    table_ = tab.copyToMemoryTable(generateName());
+  } else {
+    table_ = tab;
+  }
+
+  attachSubtables();
+  originalTable_ = table_;
+  attach();
+}
+*/
 
 Scantable::Scantable( const Scantable& other, bool clear )
 {
@@ -198,7 +223,14 @@ void Scantable::setupMainTable()
 
   td.addColumn(ScalarColumnDesc<uInt>("FREQ_ID"));
   td.addColumn(ScalarColumnDesc<uInt>("MOLECULE_ID"));
-  td.addColumn(ScalarColumnDesc<Int>("REFBEAMNO"));
+
+  ScalarColumnDesc<Int> refbeamnoColumn("REFBEAMNO");
+  refbeamnoColumn.setDefault(Int(-1));
+  td.addColumn(refbeamnoColumn);
+
+  ScalarColumnDesc<uInt> flagrowColumn("FLAGROW");
+  flagrowColumn.setDefault(uInt(0));
+  td.addColumn(flagrowColumn);
 
   td.addColumn(ScalarColumnDesc<Double>("TIME"));
   TableMeasRefDesc measRef(MEpoch::UTC); // UTC as default
@@ -257,7 +289,6 @@ void Scantable::setupMainTable()
   originalTable_ = table_;
 }
 
-
 void Scantable::attach()
 {
   timeCol_.attach(table_, "TIME");
@@ -284,6 +315,64 @@ void Scantable::attach()
   mtcalidCol_.attach(table_, "TCAL_ID");
   mfocusidCol_.attach(table_, "FOCUS_ID");
   mmolidCol_.attach(table_, "MOLECULE_ID");
+
+  //Add auxiliary column for row-based flagging (CAS-1433 Wataru Kawasaki)
+  attachAuxColumnDef(flagrowCol_, "FLAGROW", 0);
+
+}
+
+template<class T, class T2>
+void Scantable::attachAuxColumnDef(ScalarColumn<T>& col,
+				   const String& colName,
+				   const T2& defValue)
+{
+  try {
+    col.attach(table_, colName);
+  } catch (TableError& err) {
+    String errMesg = err.getMesg();
+    if (errMesg == "Table column " + colName + " is unknown") {
+      table_.addColumn(ScalarColumnDesc<T>(colName));
+      col.attach(table_, colName);
+      col.fillColumn(static_cast<T>(defValue));
+    } else {
+      throw;
+    }
+  } catch (...) {
+    throw;
+  }
+}
+
+template<class T, class T2>
+void Scantable::attachAuxColumnDef(ArrayColumn<T>& col,
+				   const String& colName,
+				   const Array<T2>& defValue)
+{
+  try {
+    col.attach(table_, colName);
+  } catch (TableError& err) {
+    String errMesg = err.getMesg();
+    if (errMesg == "Table column " + colName + " is unknown") {
+      table_.addColumn(ArrayColumnDesc<T>(colName));
+      col.attach(table_, colName);
+
+      int size = 0;
+      ArrayIterator<T2>& it = defValue.begin();
+      while (it != defValue.end()) {
+	++size;
+	++it;
+      }
+      IPosition ip(1, size);
+      Array<T>& arr(ip);
+      for (int i = 0; i < size; ++i)
+	arr[i] = static_cast<T>(defValue[i]);
+
+      col.fillColumn(arr);
+    } else {
+      throw;
+    }
+  } catch (...) {
+    throw;
+  }
 }
 
 void Scantable::setHeader(const STHeader& sdh)
@@ -626,6 +715,58 @@ void Scantable::calculateAZEL()
   pushLog(String(oss));
 }
 
+void Scantable::clip(const Float uthres, const Float dthres, bool clipoutside, bool unflag)
+{
+  for (uInt i=0; i<table_.nrow(); ++i) {
+    Vector<uChar> flgs = flagsCol_(i);
+    srchChannelsToClip(i, uthres, dthres, clipoutside, unflag, flgs);
+    flagsCol_.put(i, flgs);
+  }
+}
+
+std::vector<bool> Scantable::getClipMask(int whichrow, const Float uthres, const Float dthres, bool clipoutside, bool unflag)
+{
+  Vector<uChar> flags;
+  flagsCol_.get(uInt(whichrow), flags);
+  srchChannelsToClip(uInt(whichrow), uthres, dthres, clipoutside, unflag, flags);
+  Vector<Bool> bflag(flags.shape());
+  convertArray(bflag, flags);
+  //bflag = !bflag;
+
+  std::vector<bool> mask;
+  bflag.tovector(mask);
+  return mask;
+}
+
+void Scantable::srchChannelsToClip(uInt whichrow, const Float uthres, const Float dthres, bool clipoutside, bool unflag,
+				   Vector<uChar> flgs)
+{
+    Vector<Float> spcs = specCol_(whichrow);
+    uInt nchannel = nchan();
+    if (spcs.nelements() != nchannel) {
+      throw(AipsError("Data has incorrect number of channels"));
+    }
+    uChar userflag = 1 << 7;
+    if (unflag) {
+      userflag = 0 << 7;
+    }
+    if (clipoutside) {
+      for (uInt j = 0; j < nchannel; ++j) {
+        Float spc = spcs(j);
+        if ((spc >= uthres) || (spc <= dthres)) {
+	  flgs(j) = userflag;
+	}
+      }
+    } else {
+      for (uInt j = 0; j < nchannel; ++j) {
+        Float spc = spcs(j);
+        if ((spc < uthres) && (spc > dthres)) {
+	  flgs(j) = userflag;
+	}
+      }
+    }
+}
+
 void Scantable::flag(const std::vector<bool>& msk, bool unflag)
 {
   std::vector<bool>::const_iterator it;
@@ -672,6 +813,17 @@ void Scantable::flag(const std::vector<bool>& msk, bool unflag)
     }
     flagsCol_.put(i, flgs);
   }
+}
+
+void Scantable::flagRow(const std::vector<uInt>& rows, bool unflag)
+{
+  if ( selector_.empty() && (rows.size() == table_.nrow()) )
+    throw(AipsError("Trying to flag whole scantable."));
+
+  uInt rowflag = (unflag ? 0 : 1);
+  std::vector<uInt>::const_iterator it;
+  for (it = rows.begin(); it != rows.end(); ++it)
+    flagrowCol_.put(*it, rowflag);
 }
 
 std::vector<bool> Scantable::getMask(int whichrow) const
@@ -792,12 +944,26 @@ std::string Scantable::summary( bool verbose )
   oss << setw(15) << "Antenna Name:" << tmp << endl;
   table_.keywordSet().get("FluxUnit", tmp);
   oss << setw(15) << "Flux Unit:" << tmp << endl;
-  Vector<Double> vec(moleculeTable_.getRestFrequencies());
+  //Vector<Double> vec(moleculeTable_.getRestFrequencies());
+  int nid = moleculeTable_.nrow();
+  Bool firstline = True;
   oss << setw(15) << "Rest Freqs:";
-  if (vec.nelements() > 0) {
-      oss << setprecision(10) << vec << " [Hz]" << endl;
-  } else {
-      oss << "none" << endl;
+  for (int i=0; i<nid; i++) {
+      Table t = table_(table_.col("MOLECULE_ID") == i);
+      if (t.nrow() >  0) {
+          Vector<Double> vec(moleculeTable_.getRestFrequency(i));
+          if (vec.nelements() > 0) {
+               if (firstline) {
+                   oss << setprecision(10) << vec << " [Hz]" << endl;
+                   firstline=False;
+               }
+               else{
+                   oss << setw(15)<<" " << setprecision(10) << vec << " [Hz]" << endl;
+               }
+          } else {
+              oss << "none" << endl;
+          }
+      }
   }
 
   oss << setw(15) << "Abcissa:" << getAbcissaLabel(0) << endl;
@@ -900,7 +1066,8 @@ SpectralCoordinate Scantable::getSpectralCoordinate(int whichrow) const {
   const MPosition& mp = getAntennaPosition();
   const MDirection& md = getDirection(whichrow);
   const MEpoch& me = timeCol_(whichrow);
-  Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
+  //Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
+  Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   return freqTable_.getSpectralCoordinate(md, mp, me, rf,
                                           mfreqidCol_(whichrow));
 }
@@ -974,7 +1141,8 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
   const MPosition& mp = getAntennaPosition();
   const MDirection& md = getDirection(whichrow);
   const MEpoch& me = timeCol_(whichrow);
-  const Double& rf = mmolidCol_(whichrow);
+  //const Double& rf = mmolidCol_(whichrow);
+  const Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   SpectralCoordinate spc =
     freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
 
@@ -991,20 +1159,37 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
 
 }
 
-void Scantable::setRestFrequencies( double rf, const std::string& name,
+/**
+void asap::Scantable::setRestFrequencies( double rf, const std::string& name,
                                           const std::string& unit )
+**/
+void Scantable::setRestFrequencies( vector<double> rf, const vector<std::string>& name,
+                                          const std::string& unit )
+
 {
   ///@todo lookup in line table to fill in name and formattedname
   Unit u(unit);
-  Quantum<Double> urf(rf, u);
-  uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), name, "");
+  //Quantum<Double> urf(rf, u);
+  Quantum<Vector<Double> >urf(rf, u);
+  Vector<String> formattedname(0);
+  //cerr<<"Scantable::setRestFrequnecies="<<urf<<endl;
+
+  //uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), name, "");
+  uInt id = moleculeTable_.addEntry(urf.getValue("Hz"), mathutil::toVectorString(name), formattedname);
   TableVector<uInt> tabvec(table_, "MOLECULE_ID");
   tabvec = id;
 }
 
-void Scantable::setRestFrequencies( const std::string& name )
+/**
+void asap::Scantable::setRestFrequencies( const std::string& name )
 {
   throw(AipsError("setRestFrequencies( const std::string& name ) NYI"));
+  ///@todo implement
+}
+**/
+void Scantable::setRestFrequencies( const vector<std::string>& name )
+{
+  throw(AipsError("setRestFrequencies( const vector<std::string>& name ) NYI"));
   ///@todo implement
 }
 
@@ -1043,7 +1228,9 @@ MEpoch::Types Scantable::getTimeReference( ) const
 
 void Scantable::addFit( const STFitEntry& fit, int row )
 {
-  cout << mfitidCol_(uInt(row)) << endl;
+  //cout << mfitidCol_(uInt(row)) << endl;
+  LogIO os( LogOrigin( "Scantable", "addFit()", WHERE ) ) ;
+  os << mfitidCol_(uInt(row)) << LogIO::POST ;
   uInt id = fitTable_.addEntry(fit, mfitidCol_(uInt(row)));
   mfitidCol_.put(uInt(row), id);
 }
@@ -1058,7 +1245,7 @@ void Scantable::shift(int npix)
   }
 }
 
-std::string Scantable::getAntennaName() const
+String Scantable::getAntennaName() const
 {
   String out;
   table_.keywordSet().get("AntennaName", out);
@@ -1077,7 +1264,9 @@ int Scantable::checkScanInfo(const std::vector<int>& scanlist) const
     for (int i = 0; i < nscan; i++) {
       Table subt = t( t.col("SCAN") == scanlist[i]+1 );
       if (subt.nrow()==0) {
-        cerr <<"Scan "<<scanlist[i]<<" cannot be found in the scantable."<<endl;
+        //cerr <<"Scan "<<scanlist[i]<<" cannot be found in the scantable."<<endl;
+        LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+        os <<LogIO::WARN<<"Scan "<<scanlist[i]<<" cannot be found in the scantable."<<LogIO::POST;
         ret = 1;
         break;
       }
@@ -1089,7 +1278,10 @@ int Scantable::checkScanInfo(const std::vector<int>& scanlist) const
         if ( i < nscan-1 ) {
           Table subt2 = t( t.col("SCAN") == scanlist[i+1]+1 );
           if ( subt2.nrow() == 0) {
-            cerr<<"Scan "<<scanlist[i+1]<<" cannot be found in the scantable."<<endl;
+            LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+
+            //cerr<<"Scan "<<scanlist[i+1]<<" cannot be found in the scantable."<<endl;
+            os<<LogIO::WARN<<"Scan "<<scanlist[i+1]<<" cannot be found in the scantable."<<LogIO::POST;
             ret = 1;
             break;
           }
@@ -1099,35 +1291,47 @@ int Scantable::checkScanInfo(const std::vector<int>& scanlist) const
           int laston2 = rec2.asuInt("LASTON");
           if (scan1seqn == 1 && scan2seqn == 2) {
             if (laston1 == laston2) {
-              cerr<<"A valid scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+              LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+              //cerr<<"A valid scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+              os<<"A valid scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<LogIO::POST;
               i +=1;
             }
             else {
-              cerr<<"Incorrect scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+              LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+              //cerr<<"Incorrect scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<endl;
+              os<<LogIO::WARN<<"Incorrect scan pair ["<<scanlist[i]<<","<<scanlist[i+1]<<"]"<<LogIO::POST;
             }
           }
           else if (scan1seqn==2 && scan2seqn == 1) {
             if (laston1 == laston2) {
-              cerr<<"["<<scanlist[i]<<","<<scanlist[i+1]<<"] is a valid scan pair but in incorrect order."<<endl;
+              LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+              //cerr<<"["<<scanlist[i]<<","<<scanlist[i+1]<<"] is a valid scan pair but in incorrect order."<<endl;
+              os<<LogIO::WARN<<"["<<scanlist[i]<<","<<scanlist[i+1]<<"] is a valid scan pair but in incorrect order."<<LogIO::POST;
               ret = 1;
               break;
             }
           }
           else {
-            cerr<<"The other scan for  "<<scanlist[i]<<" appears to be missing. Check the input scan numbers."<<endl;
+            LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+            //cerr<<"The other scan for  "<<scanlist[i]<<" appears to be missing. Check the input scan numbers."<<endl;
+            os<<LogIO::WARN<<"The other scan for  "<<scanlist[i]<<" appears to be missing. Check the input scan numbers."<<LogIO::POST;
             ret = 1;
             break;
           }
         }
       }
       else {
-        cerr<<"The scan does not appear to be standard obsevation."<<endl;
+        LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+        //cerr<<"The scan does not appear to be standard obsevation."<<endl;
+        os<<LogIO::WARN<<"The scan does not appear to be standard obsevation."<<LogIO::POST;
       }
     //if ( i >= nscan ) break;
     }
   }
   else {
-    cerr<<"No reference to GBT_GO table."<<endl;
+    LogIO os( LogOrigin( "Scantable", "checkScanInfo()", WHERE ) ) ;
+    //cerr<<"No reference to GBT_GO table."<<endl;
+    os<<LogIO::WARN<<"No reference to GBT_GO table."<<LogIO::POST;
     ret = 1;
   }
   return ret;
@@ -1139,6 +1343,358 @@ std::vector<double> Scantable::getDirectionVector(int whichrow) const
   std::vector<double> dir;
   Dir.tovector(dir);
   return dir;
+}
+
+void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
+  throw( casa::AipsError )
+{
+  // assumed that all rows have same nChan
+  Vector<Float> arr = specCol_( 0 ) ;
+  int nChan = arr.nelements() ;
+
+  // if nmin < 0 or nmax < 0, nothing to do
+  if (  nmin < 0 ) {
+    throw( casa::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
+    }
+  if (  nmax < 0  ) {
+    throw( casa::indexError<int>( nmax, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
+  }
+
+  // if nmin > nmax, exchange values
+  if ( nmin > nmax ) {
+    int tmp = nmax ;
+    nmax = nmin ;
+    nmin = tmp ;
+    LogIO os( LogOrigin( "Scantable", "reshapeSpectrum()", WHERE ) ) ;
+    os << "Swap values. Applied range is ["
+       << nmin << ", " << nmax << "]" << LogIO::POST ;
+  }
+
+  // if nmin exceeds nChan, nothing to do
+  if ( nmin >= nChan ) {
+    throw( casa::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Specified minimum exceeds nChan." ) ) ;
+  }
+
+  // if nmax exceeds nChan, reset nmax to nChan
+  if ( nmax >= nChan ) {
+    if ( nmin == 0 ) {
+      // nothing to do
+      LogIO os( LogOrigin( "Scantable", "reshapeSpectrum()", WHERE ) ) ;
+      os << "Whole range is selected. Nothing to do." << LogIO::POST ;
+      return ;
+    }
+    else {
+      LogIO os( LogOrigin( "Scantable", "reshapeSpectrum()", WHERE ) ) ;
+      os << "Specified maximum exceeds nChan. Applied range is ["
+         << nmin << ", " << nChan-1 << "]." << LogIO::POST ;
+      nmax = nChan - 1 ;
+    }
+  }
+
+  // reshape specCol_ and flagCol_
+  for ( int irow = 0 ; irow < nrow() ; irow++ ) {
+    reshapeSpectrum( nmin, nmax, irow ) ;
+  }
+
+  // update FREQUENCIES subtable
+  Double refpix ;
+  Double refval ;
+  Double increment ;
+  int freqnrow = freqTable_.table().nrow() ;
+  Vector<uInt> oldId( freqnrow ) ;
+  Vector<uInt> newId( freqnrow ) ;
+  for ( int irow = 0 ; irow < freqnrow ; irow++ ) {
+    freqTable_.getEntry( refpix, refval, increment, irow ) ;
+    /***
+     * need to shift refpix to nmin
+     * note that channel nmin in old index will be channel 0 in new one
+     ***/
+    refval = refval - ( refpix - nmin ) * increment ;
+    refpix = 0 ;
+    freqTable_.setEntry( refpix, refval, increment, irow ) ;
+  }
+
+  // update nchan
+  int newsize = nmax - nmin + 1 ;
+  table_.rwKeywordSet().define( "nChan", newsize ) ;
+
+  // update bandwidth
+  // assumed all spectra in the scantable have same bandwidth
+  table_.rwKeywordSet().define( "Bandwidth", increment * newsize ) ;
+
+  return ;
+}
+
+void asap::Scantable::reshapeSpectrum( int nmin, int nmax, int irow )
+{
+  // reshape specCol_ and flagCol_
+  Vector<Float> oldspec = specCol_( irow ) ;
+  Vector<uChar> oldflag = flagsCol_( irow ) ;
+  uInt newsize = nmax - nmin + 1 ;
+  specCol_.put( irow, oldspec( Slice( nmin, newsize, 1 ) ) ) ;
+  flagsCol_.put( irow, oldflag( Slice( nmin, newsize, 1 ) ) ) ;
+
+  return ;
+}
+
+void asap::Scantable::regridChannel( int nChan, double dnu )
+{
+  LogIO os( LogOrigin( "Scantable", "regridChannel()", WHERE ) ) ;
+  os << "Regrid abcissa with channel number " << nChan << " and spectral resoultion " << dnu << "Hz." << LogIO::POST ;
+  // assumed that all rows have same nChan
+  Vector<Float> arr = specCol_( 0 ) ;
+  int oldsize = arr.nelements() ;
+
+  // if oldsize == nChan, nothing to do
+  if ( oldsize == nChan ) {
+    os << "Specified channel number is same as current one. Nothing to do." << LogIO::POST ;
+    return ;
+  }
+
+  // if oldChan < nChan, unphysical operation
+  if ( oldsize < nChan ) {
+    os << "Unphysical operation. Nothing to do." << LogIO::POST ;
+    return ;
+  }
+
+  // change channel number for specCol_ and flagCol_
+  Vector<Float> newspec( nChan, 0 ) ;
+  Vector<uChar> newflag( nChan, false ) ;
+  vector<string> coordinfo = getCoordInfo() ;
+  string oldinfo = coordinfo[0] ;
+  coordinfo[0] = "Hz" ;
+  setCoordInfo( coordinfo ) ;
+  for ( int irow = 0 ; irow < nrow() ; irow++ ) {
+    regridChannel( nChan, dnu, irow ) ;
+  }
+  coordinfo[0] = oldinfo ;
+  setCoordInfo( coordinfo ) ;
+
+
+  // NOTE: this method does not update metadata such as
+  //       FREQUENCIES subtable, nChan, Bandwidth, etc.
+
+  return ;
+}
+
+void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
+{
+  // logging
+  //ofstream ofs( "average.log", std::ios::out | std::ios::app ) ;
+  //ofs << "IFNO = " << getIF( irow ) << " irow = " << irow << endl ;
+
+  Vector<Float> oldspec = specCol_( irow ) ;
+  Vector<uChar> oldflag = flagsCol_( irow ) ;
+  Vector<Float> newspec( nChan, 0 ) ;
+  Vector<uChar> newflag( nChan, false ) ;
+
+  // regrid
+  vector<double> abcissa = getAbcissa( irow ) ;
+  int oldsize = abcissa.size() ;
+  double olddnu = abcissa[1] - abcissa[0] ;
+  //int refChan = 0 ;
+  //double frac = 0.0 ;
+  //double wedge = 0.0 ;
+  //double pile = 0.0 ;
+  int ichan = 0 ;
+  double wsum = 0.0 ;
+  Vector<Float> z( nChan ) ;
+  z[0] = abcissa[0] - 0.5 * olddnu + 0.5 * dnu ;
+  for ( int ii = 1 ; ii < nChan ; ii++ )
+    z[ii] = z[ii-1] + dnu ;
+  Vector<Float> zi( nChan+1 ) ;
+  Vector<Float> yi( oldsize + 1 ) ;
+  zi[0] = z[0] - 0.5 * dnu ;
+  zi[1] = z[0] + 0.5 * dnu ;
+  for ( int ii = 2 ; ii < nChan ; ii++ )
+    zi[ii] = zi[ii-1] + dnu ;
+  zi[nChan] = z[nChan-1] + 0.5 * dnu ;
+  yi[0] = abcissa[0] - 0.5 * olddnu ;
+  yi[1] = abcissa[1] + 0.5 * olddnu ;
+  for ( int ii = 2 ; ii < oldsize ; ii++ )
+    yi[ii] = abcissa[ii-1] + olddnu ;
+  yi[oldsize] = abcissa[oldsize-1] + 0.5 * olddnu ;
+  if ( dnu > 0.0 ) {
+    for ( int ii = 0 ; ii < nChan ; ii++ ) {
+      double zl = zi[ii] ;
+      double zr = zi[ii+1] ;
+      for ( int j = ichan ; j < oldsize ; j++ ) {
+        double yl = yi[j] ;
+        double yr = yi[j+1] ;
+        if ( yl <= zl ) {
+          if ( yr <= zl ) {
+            continue ;
+          }
+          else if ( yr <= zr ) {
+            newspec[ii] += oldspec[j] * ( yr - zl ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += ( yr - zl ) ;
+          }
+          else {
+            newspec[ii] += oldspec[j] * dnu ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += dnu ;
+            ichan = j ;
+            break ;
+          }
+        }
+        else if ( yl < zr ) {
+          if ( yr <= zr ) {
+              newspec[ii] += oldspec[j] * ( yr - yl ) ;
+              newflag[ii] = newflag[ii] || oldflag[j] ;
+              wsum += ( yr - yl ) ;
+          }
+          else {
+            newspec[ii] += oldspec[j] * ( zr - yl ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += ( zr - yl ) ;
+            ichan = j ;
+            break ;
+          }
+        }
+        else {
+          ichan = j - 1 ;
+          break ;
+        }
+      }
+      newspec[ii] /= wsum ;
+      wsum = 0.0 ;
+    }
+  }
+  else if ( dnu < 0.0 ) {
+    for ( int ii = 0 ; ii < nChan ; ii++ ) {
+      double zl = zi[ii] ;
+      double zr = zi[ii+1] ;
+      for ( int j = ichan ; j < oldsize ; j++ ) {
+        double yl = yi[j] ;
+        double yr = yi[j+1] ;
+        if ( yl >= zl ) {
+          if ( yr >= zl ) {
+            continue ;
+          }
+          else if ( yr >= zr ) {
+            newspec[ii] += oldspec[j] * abs( yr - zl ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += abs( yr - zl ) ;
+          }
+          else {
+            newspec[ii] += oldspec[j] * abs( dnu ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += abs( dnu ) ;
+            ichan = j ;
+            break ;
+          }
+        }
+        else if ( yl > zr ) {
+          if ( yr >= zr ) {
+            newspec[ii] += oldspec[j] * abs( yr - yl ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += abs( yr - yl ) ;
+          }
+          else {
+            newspec[ii] += oldspec[j] * abs( zr - yl ) ;
+            newflag[ii] = newflag[ii] || oldflag[j] ;
+            wsum += abs( zr - yl ) ;
+            ichan = j ;
+            break ;
+          }
+        }
+        else {
+          ichan = j - 1 ;
+          break ;
+        }
+      }
+      newspec[ii] /= wsum ;
+      wsum = 0.0 ;
+    }
+  }
+//    * ichan = 0
+//    ***/
+//   //ofs << "olddnu = " << olddnu << ", dnu = " << dnu << endl ;
+//   pile += dnu ;
+//   wedge = olddnu * ( refChan + 1 ) ;
+//   while ( wedge < pile ) {
+//     newspec[0] += olddnu * oldspec[refChan] ;
+//     newflag[0] = newflag[0] || oldflag[refChan] ;
+//     //ofs << "channel " << refChan << " is included in new channel 0" << endl ;
+//     refChan++ ;
+//     wedge += olddnu ;
+//     wsum += olddnu ;
+//     //ofs << "newspec[0] = " << newspec[0] << " wsum = " << wsum << endl ;
+//   }
+//   frac = ( wedge - pile ) / olddnu ;
+//   wsum += ( 1.0 - frac ) * olddnu ;
+//   newspec[0] += ( 1.0 - frac ) * olddnu * oldspec[refChan] ;
+//   newflag[0] = newflag[0] || oldflag[refChan] ;
+//   //ofs << "channel " << refChan << " is partly included in new channel 0" << " with fraction of " << ( 1.0 - frac ) << endl ;
+//   //ofs << "newspec[0] = " << newspec[0] << " wsum = " << wsum << endl ;
+//   newspec[0] /= wsum ;
+//   //ofs << "newspec[0] = " << newspec[0] << endl ;
+//   //ofs << "wedge = " << wedge << ", pile = " << pile << endl ;
+
+//   /***
+//    * ichan = 1 - nChan-2
+//    ***/
+//   for ( int ichan = 1 ; ichan < nChan - 1 ; ichan++ ) {
+//     pile += dnu ;
+//     newspec[ichan] += frac * olddnu * oldspec[refChan] ;
+//     newflag[ichan] = newflag[ichan] || oldflag[refChan] ;
+//     //ofs << "channel " << refChan << " is partly included in new channel " << ichan << " with fraction of " << frac << endl ;
+//     refChan++ ;
+//     wedge += olddnu ;
+//     wsum = frac * olddnu ;
+//     //ofs << "newspec[" << ichan << "] = " << newspec[ichan] << " wsum = " << wsum << endl ;
+//     while ( wedge < pile ) {
+//       newspec[ichan] += olddnu * oldspec[refChan] ;
+//       newflag[ichan] = newflag[ichan] || oldflag[refChan] ;
+//       //ofs << "channel " << refChan << " is included in new channel " << ichan << endl ;
+//       refChan++ ;
+//       wedge += olddnu ;
+//       wsum += olddnu ;
+//       //ofs << "newspec[" << ichan << "] = " << newspec[ichan] << " wsum = " << wsum << endl ;
+//     }
+//     frac = ( wedge - pile ) / olddnu ;
+//     wsum += ( 1.0 - frac ) * olddnu ;
+//     newspec[ichan] += ( 1.0 - frac ) * olddnu * oldspec[refChan] ;
+//     newflag[ichan] = newflag[ichan] || oldflag[refChan] ;
+//     //ofs << "channel " << refChan << " is partly included in new channel " << ichan << " with fraction of " << ( 1.0 - frac ) << endl ;
+//     //ofs << "wedge = " << wedge << ", pile = " << pile << endl ;
+//     //ofs << "newspec[" << ichan << "] = " << newspec[ichan] << " wsum = " << wsum << endl ;
+//     newspec[ichan] /= wsum ;
+//     //ofs << "newspec[" << ichan << "] = " << newspec[ichan] << endl ;
+//   }
+
+//   /***
+//    * ichan = nChan-1
+//    ***/
+//   // NOTE: Assumed that all spectra have the same bandwidth
+//   pile += dnu ;
+//   newspec[nChan-1] += frac * olddnu * oldspec[refChan] ;
+//   newflag[nChan-1] = newflag[nChan-1] || oldflag[refChan] ;
+//   //ofs << "channel " << refChan << " is partly included in new channel " << nChan-1 << " with fraction of " << frac << endl ;
+//   refChan++ ;
+//   wedge += olddnu ;
+//   wsum = frac * olddnu ;
+//   //ofs << "newspec[" << nChan - 1 << "] = " << newspec[nChan-1] << " wsum = " << wsum << endl ;
+//   for ( int jchan = refChan ; jchan < oldsize ; jchan++ ) {
+//     newspec[nChan-1] += olddnu * oldspec[jchan] ;
+//     newflag[nChan-1] = newflag[nChan-1] || oldflag[jchan] ;
+//     wsum += olddnu ;
+//     //ofs << "channel " << jchan << " is included in new channel " << nChan-1 << " with fraction of " << frac << endl ;
+//     //ofs << "newspec[" << nChan - 1 << "] = " << newspec[nChan-1] << " wsum = " << wsum << endl ;
+//   }
+//   //ofs << "wedge = " << wedge << ", pile = " << pile << endl ;
+//   //ofs << "newspec[" << nChan - 1 << "] = " << newspec[nChan-1] << " wsum = " << wsum << endl ;
+//   newspec[nChan-1] /= wsum ;
+//   //ofs << "newspec[" << nChan - 1 << "] = " << newspec[nChan-1] << endl ;
+
+//   specCol_.put( irow, newspec ) ;
+//   flagsCol_.put( irow, newflag ) ;
+
+//   // ofs.close() ;
+
+
+  return ;
 }
 
 std::vector<float> Scantable::getWeather(int whichrow) const
@@ -1153,4 +1709,4 @@ std::vector<float> Scantable::getWeather(int whichrow) const
 }
 
 }
- //namespace asap
+//namespace asap

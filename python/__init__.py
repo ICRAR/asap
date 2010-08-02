@@ -8,7 +8,7 @@ try:
 except ImportError:
     from asap.compatibility import wraps as wraps_dec
 
-# Set up AIPSPATH and first time use of asap i.e. ~/.asap/*
+# Set up CASAPATH and first time use of asap i.e. ~/.asap/*
 plf = None
 if sys.platform == "linux2":
     if platform.architecture()[0] == '64bit':
@@ -25,27 +25,29 @@ asapdata = __path__[-1]
 if os.environ.has_key("ASAPDATA"):
     if os.path.exists(os.environ["ASAPDATA"]):
         asapdata = os.environ["ASAPDATA"]
-# use AIPSPATH if defined and "data" dir present
-if not os.environ.has_key("AIPSPATH") or \
-        not os.path.exists(os.environ["AIPSPATH"].split()[0]+"/data"):
-    os.environ["AIPSPATH"] = "%s %s somwhere" % ( asapdata, plf)
+# use CASAPATH if defined and "data" dir present
+if not os.environ.has_key("CASAPATH") or \
+        not os.path.exists(os.environ["CASAPATH"].split()[0]+"/data"):
+    os.environ["CASAPATH"] = "%s %s somwhere" % ( asapdata, plf)
 # set up user space
 userdir = os.environ["HOME"]+"/.asap"
 if not os.path.exists(userdir):
     print 'First time ASAP use. Setting up ~/.asap'
     os.mkdir(userdir)
-    shutil.copyfile(asapdata+"/data/ipythonrc-asap", userdir+"/ipythonrc-asap")
-    shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
-                    userdir+"/ipy_user_conf.py")
+    #shutil.copyfile(asapdata+"/data/ipythonrc-asap", userdir+"/ipythonrc-asap")
+    # commented out by TT on 2009.06.23 for casapy use
+    ##shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
+    ##                userdir+"/ipy_user_conf.py")
     f = file(userdir+"/asapuserfuncs.py", "w")
     f.close()
     f = file(userdir+"/ipythonrc", "w")
     f.close()
-else:
+# commented out by TT on 2009.06.23 for casapy use
+##else:
     # upgrade to support later ipython versions
-    if not os.path.exists(userdir+"/ipy_user_conf.py"):
-        shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
-                        userdir+"/ipy_user_conf.py")
+    ##if not os.path.exists(userdir+"/ipy_user_conf.py"):
+    ##    shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
+    ##                    userdir+"/ipy_user_conf.py")
 
 # remove from namespace
 del asapdata, userdir, shutil, platform
@@ -109,7 +111,9 @@ defaultParams = {
     'plotter.ganged'      : [True, _validate_bool],
     'plotter.histogram'  : [False, _validate_bool],
     'plotter.papertype'  : ['A4', str],
-    'plotter.axesformatting' : ['mpl', str],
+    ## for older Matplotlib version
+    #'plotter.axesformatting' : ['mpl', str],
+    'plotter.axesformatting' : ['asap', str],
 
     # scantable
     'scantable.save'      : ['ASAP', str],
@@ -217,13 +221,17 @@ def rc_params():
         if line.startswith('#'): continue
         tup = line.split(':',1)
         if len(tup) !=2:
-            print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            #print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            asaplog.push('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            print_log('WARN')
             continue
 
         key, val = tup
         key = key.strip()
         if not defaultParams.has_key(key):
-            print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            #print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            asaplog.push('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            print_log('WARN')
             continue
 
         default, converter =  defaultParams[key]
@@ -233,7 +241,9 @@ def rc_params():
         val = val.strip()
         try: cval = converter(val)   # try to convert to proper type or raise
         except ValueError, msg:
-            print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
+            #print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
+            asaplog.push('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, str(msg)))
+            print_log('WARN')
             continue
         else:
             # Alles Klar, update dict
@@ -365,9 +375,11 @@ def print_log_dec(f):
         return val
     return wrap_it
 
-def print_log():
-    log = asaplog.pop().strip()
-    if len(log) and rcParams['verbose']: print log
+def print_log(level='INFO'):
+    from taskinit import casalog
+    log = asaplog.pop()
+    #if len(log) and rcParams['verbose']: print log
+    if len(log) and rcParams['verbose']: casalog.post( log, priority=level )
     return
 
 def mask_and(a, b):
@@ -390,6 +402,7 @@ from scantable import scantable
 from asaplinefind import linefinder
 from simplelinefinder import simplelinefinder
 from linecatalog import linecatalog
+from interactivemask import interactivemask
 from opacity import skydip
 from opacity import model as opacity_model
 
@@ -399,20 +412,43 @@ if rcParams['useplotter']:
         gui = os.environ.has_key('DISPLAY') and rcParams['plotter.gui']
         if gui:
             import matplotlib
-            matplotlib.use("TkAgg")
+            if not matplotlib.sys.modules['matplotlib.backends']: matplotlib.use("TkAgg")
         from matplotlib import pylab
         xyplotter = pylab
         plotter = asapplotter(gui)
         del gui
     except ImportError:
-        print "Matplotlib not installed. No plotting available"
+        #print "Matplotlib not installed. No plotting available"
+        asaplog.post( "Matplotlib not installed. No plotting available")
+        print_log('WARN')
 
 __date__ = '$Date$'.split()[1]
-__version__  = '$Revision$'
+__version__  = '3.0.0 alma'
+# nrao casapy specific, get revision number
+#__revision__ = ' unknown '
+casapath=os.environ["CASAPATH"].split()
+#svninfo.txt path 
+if os.path.isdir(casapath[0]+'/'+casapath[1]+'/python/2.5/asap'):
+    # for casa developer environment (linux or darwin)
+    revinfo=casapath[0]+'/'+casapath[1]+'/python/2.5/asap/svninfo.txt'
+else:
+    # for end-user environments
+    if casapath[1]=='darwin':
+        revinfo=casapath[0]+'/Resources/python/asap/svninfo.txt'
+    else:
+        revinfo=casapath[0]+'/lib/python2.5/asap/svninfo.txt'
+if os.path.isfile(revinfo):
+    f = file(revinfo)
+    f.readline()
+    revsionno=f.readline()
+    f.close()
+    del f
+    __revision__ = revsionno.rstrip()
+else:
+    __revision__ = ' unknown '
 
 def is_ipython():
     return 'IPython' in sys.modules.keys()
-
 if is_ipython():
     def version(): print  "ASAP %s(%s)"% (__version__, __date__)
 

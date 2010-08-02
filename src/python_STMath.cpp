@@ -48,6 +48,8 @@ namespace asap {
         .def("_averagepol", &STMathWrapper::averagePolarisations)
         .def("_averagebeams", &STMathWrapper::averageBeams)
         .def("_unaryop", &STMathWrapper::unaryOperate)
+        .def("_arrayop", &STMathWrapper::arrayOperate)
+        //.def("_array2dop", &STMathWrapper::array2dOperate)
         .def("_binaryop", &STMathWrapper::binaryOperate)
         .def("_auto_quotient", &STMathWrapper::autoQuotient)
         .def("_quotient", &STMathWrapper::quotient)
@@ -56,6 +58,7 @@ namespace asap {
         .def("_donod", &STMathWrapper::donod)
         .def("_dofs", &STMathWrapper::dofs)
         .def("_stats", &STMathWrapper::statistic)
+        .def("_minmaxchan", &STMathWrapper::minMaxChan)
         .def("_freqswitch", &STMathWrapper::freqSwitch)
         .def("_bin", &STMathWrapper::bin)
         .def("_resample", &STMathWrapper::resample)
@@ -72,6 +75,11 @@ namespace asap {
         .def("_freq_align", &STMathWrapper::frequencyAlign)
         .def("_mx_extract", &STMathWrapper::mxExtract)
         .def("_lag_flag", &STMathWrapper::lagFlag)
+	// testing average spectra with different channel/resolution
+        .def("_new_average", &STMathWrapper::new_average)
+        // cwcal
+        .def("cwcal", &STMathWrapper::cwcal)
+        .def("almacal", &STMathWrapper::almacal)
           ;
     };
 

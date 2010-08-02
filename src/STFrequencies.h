@@ -58,6 +58,18 @@ public:
   void getEntry( casa::Double& refpix, casa::Double& refval,
                  casa::Double& inc, casa::uInt id );
 
+  /***
+   * Set the frequency values for a specific id via references
+   * @param refpix the reference pixel
+   * @param refval the reference value
+   * @param inc    the increment
+   * @param id     the identifier
+   *
+   * 17/09/2008 Takeshi Nakazato
+   ***/
+  void setEntry( casa::Double refpix, casa::Double refval, 
+		 casa::Double inc, casa::uInt id ) ;
+
 
   bool conformant(const STFrequencies& other) const;
 
@@ -68,10 +80,18 @@ public:
    */
   casa::SpectralCoordinate getSpectralCoordinate( casa::uInt freqID ) const;
 
+  /**
   casa::SpectralCoordinate getSpectralCoordinate( const casa::MDirection& md,
                                                   const casa::MPosition& mp,
                                                   const casa::MEpoch& me,
                                                   casa::Double restfreq,
+                                                  casa::uInt freqID
+                                                  ) const;
+  **/
+  casa::SpectralCoordinate getSpectralCoordinate( const casa::MDirection& md,
+                                                  const casa::MPosition& mp,
+                                                  const casa::MEpoch& me,
+                                                  casa::Vector<casa::Double> restfreq,
                                                   casa::uInt freqID
                                                   ) const;
 

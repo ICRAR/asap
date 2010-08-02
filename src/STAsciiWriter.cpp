@@ -1,3 +1,4 @@
+
 //#---------------------------------------------------------------------------
 //# STAsciiWriter.cc: ASAP class to write out single dish spectra as FITS images
 //#---------------------------------------------------------------------------
@@ -87,7 +88,7 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
 // Open and write header file
 
    String rootName(fileName);
-   
+
   Block<String> cols(4);
   cols[0] = String("SCANNO");
   cols[1] = String("CYCLENO");
@@ -131,8 +132,19 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     addLine(of, "IF No", rec.asuInt("IFNO"));
     String wcs = stable.frequencies().print(rec.asuInt("FREQ_ID"), True);
     addLine(of, "WCS", wcs);
-    addLine(of, "Rest Freq.", 
-            stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") ));
+    std::vector<double> restfreqs= stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID"));
+    int nf = restfreqs.size();
+    //addLine(of, "Rest Freq.", 
+    //        stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") ));
+    addLine(of, "Rest Freq.", restfreqs[0]);
+    for ( unsigned int i=1; i<nf; ++i) {
+      addLine(of, " ", restfreqs[i]);
+    }
+    ostringstream osflagrow;
+    for ( unsigned int i=0; i<t.nrow(); ++i) {
+      osflagrow << "Pol" << i << ":" << ((row.get(i).asuInt("FLAGROW") > 0) ? "True" : "False") << " ";
+    }
+    addLine(of, "Row_Flagged", String(osflagrow));
     of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
 
     of << std::left << setw(16) << "x";

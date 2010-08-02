@@ -57,6 +57,7 @@ void python_Scantable() {
     .def("getscan", &ScantableWrapper::getScan)
     .def("getscannos", &ScantableWrapper::getScanNos)
     .def("getcycle", &ScantableWrapper::getCycle)
+    .def("getmolnos", &ScantableWrapper::getMolNos)
     .def("nif", &ScantableWrapper::nif,
          (boost::python::arg("scanno")=-1) )
     .def("nbeam", &ScantableWrapper::nbeam,
@@ -86,6 +87,8 @@ void python_Scantable() {
          (boost::python::arg("whichrow")=0) )
     .def("_getmask", &ScantableWrapper::getMask,
          (boost::python::arg("whichrow")=0) )
+    .def("_getclipmask", &ScantableWrapper::getClipMask,
+	 (boost::python::arg("whichrow")=0) )
     .def("_gettsys", &ScantableWrapper::getTsys)
     .def("_getsourcename", &ScantableWrapper::getSourceName,
          (boost::python::arg("whichrow")=0) )
@@ -102,12 +105,18 @@ void python_Scantable() {
     .def("_getdirection", &ScantableWrapper::getDirectionString,
          (boost::python::arg("whichrow")=0) )
     .def("get_antennaname", &ScantableWrapper::getAntennaName)
-    .def("_flag", &ScantableWrapper::flag,
-                  (boost::python::arg("unflag") = false) )
+    .def("_flag", &ScantableWrapper::flag)
+    .def("_flag_row", &ScantableWrapper::flagRow)
+    .def("_getflagrow", &ScantableWrapper::getFlagRow,
+	 (boost::python::arg("whichrow")=0) )
+    .def("_clip", &ScantableWrapper::clip,
+	 (boost::python::arg("clipoutside")=true,
+	  boost::python::arg("unflag")=false) )
     .def("_save",  &ScantableWrapper::makePersistent)
     .def("_summary",  &ScantableWrapper::summary,
          (boost::python::arg("verbose")=true) )
-    .def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
+    //.def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
+    .def("_getrestfreqs",  &ScantableWrapper::getRestFrequency)
     .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
     .def("shift_refpix", &ScantableWrapper::shift)
     .def("_setcoordinfo", &ScantableWrapper::setCoordInfo)
@@ -126,6 +135,9 @@ void python_Scantable() {
     .def("_parallactify", &ScantableWrapper::parallactify)
     .def("get_coordinate", &ScantableWrapper::getCoordinate)
     .def("_get_weather", &ScantableWrapper::getWeather)
+    .def("_reshape", &ScantableWrapper::reshapeSpectrum, 
+	 (boost::python::arg("nmin")=-1, 
+	  boost::python::arg("nmax")=-1) )
   ;
 };
 

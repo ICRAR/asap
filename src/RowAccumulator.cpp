@@ -151,3 +151,10 @@ void asap::RowAccumulator::setUserMask( const casa::Vector< casa::Bool > & m )
   userMask_.resize();
   userMask_ = m;
 }
+
+// Added by TT  check the state of RowAccumulator
+casa::Bool RowAccumulator::state() const
+{
+  return initialized_;
+}
+

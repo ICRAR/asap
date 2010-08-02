@@ -38,6 +38,7 @@ namespace asap {
     void translate_ex(const casa::AipsError& e);
     void python_Scantable();
     void python_STFiller();
+    void python_Filler();
     void python_STSelector();
     void python_STMath();
     void python_Fitter();
@@ -46,8 +47,10 @@ namespace asap {
     void python_STWriter();
     void python_LineCatalog();
     void python_Logger();
+    void python_LogSink();
     void python_STCoordinate();
     void python_STAtmosphere();
+    void python_SrcType();
 
   } // python
 } //asap

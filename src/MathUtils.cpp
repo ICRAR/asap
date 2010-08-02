@@ -37,6 +37,7 @@
 #include <casa/Arrays/VectorSTLIterator.h>
 #include <casa/BasicSL/String.h>
 #include <scimath/Mathematics/MedianSlider.h>
+#include <casa/Exceptions/Error.h>
 
 #include <scimath/Fitting/LinearFit.h>
 #include <scimath/Functionals/Polynomial.h>
@@ -52,31 +53,52 @@ float mathutil::statistics(const String& which,
 {
    String str(which);
    str.upcase();
-   if (str.contains(String("MIN"))) {
+   if (str.matches(String("MIN"))) {
       return min(data);
-   } else if (str.contains(String("MAX"))) {
+   } else if (str.matches(String("MAX"))) {
       return max(data);
-   } else if (str.contains(String("SUMSQ"))) {
+   } else if (str.matches(String("SUMSQ"))) {
       return sumsquares(data);
-   } else if (str.contains(String("SUM"))) {
+   } else if (str.matches(String("SUM"))) {
       return sum(data);
-   } else if (str.contains(String("MEAN"))) {
+   } else if (str.matches(String("MEAN"))) {
       return mean(data);
-   } else if (str.contains(String("VAR"))) {
+   } else if (str.matches(String("VAR"))) {
       return variance(data);
-   } else if (str.contains(String("STDDEV"))) {
+      } else if (str.matches(String("STDDEV"))) {
       return stddev(data);
-   } else if (str.contains(String("AVDEV"))) {
+   } else if (str.matches(String("AVDEV"))) {
       return avdev(data);
-   } else if (str.contains(String("RMS"))) {
+   } else if (str.matches(String("RMS"))) {
       uInt n = data.nelementsValid();
       return sqrt(sumsquares(data)/n);
-   } else if (str.contains(String("MED"))) {
+   } else if (str.matches(String("MEDIAN"))) {
       return median(data);
-   }
+   } else {
+      String msg = str + " is not a valid type of statistics";
+      throw(AipsError(msg));
+   } 
    return 0.0;
 }
 
+IPosition mathutil::minMaxPos(const String& which,
+                           const MaskedArray<Float>& data)
+{
+   Float minVal, maxVal;
+   IPosition minPos(data.ndim(), 0), maxPos(data.ndim(), 0); 
+   minMax(minVal, maxVal, minPos, maxPos, data);
+   String str(which);
+   str.upcase();
+   if (str.contains(String("MIN"))) {
+     return minPos;
+   } else if (str.contains(String("MAX"))) {
+     return maxPos;
+   } else {
+      String msg = str + " is not a valid type of statistics";
+      throw(AipsError(msg));
+   } 
+   //return 0.0;
+}
 
 void mathutil::replaceMaskByZero(Vector<Float>& data, const Vector<Bool>& mask)
 {

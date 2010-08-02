@@ -160,7 +160,7 @@ if not env.GetOption('clean'):
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
-env["version"] = "3.x"
+env["version"] = "3.0.0"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
@@ -173,7 +173,7 @@ else:
 Export("env")
 
 # build externals
-env.SConscript("external/SConscript")
+env.SConscript("external-alma/SConscript")
 # build library
 so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
 # test module import, to see if there are unresolved symbols

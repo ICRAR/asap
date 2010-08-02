@@ -150,7 +150,9 @@ Bool STFITSImageWriter::write(const Scantable& stable,
     const MEpoch& me = stable.getEpoch(row0);
     oi.setObsDate(me);
     
-    const Double& rf =  
+    //const Double& rf =  
+    //  stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") );
+    const std::vector<double>& rf =  
       stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") );
     SpectralCoordinate sC =
       stable.frequencies().getSpectralCoordinate(md, mp, me, rf, 

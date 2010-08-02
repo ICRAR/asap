@@ -36,6 +36,7 @@
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/String.h>
+#include <casa/Arrays/IPosition.h>
 
 namespace mathutil {
 
@@ -78,9 +79,12 @@ void hanning(casa::Vector<casa::Float>& out,
                    const casa::Vector<casa::Bool>& mask,
                    float hwidth, int order);
 
-
 // Generate specified statistic
 float statistics(const casa::String& which,
+                 const casa::MaskedArray<casa::Float>& data);
+
+// Return a position of min or max value
+ casa::IPosition minMaxPos(const casa::String& which,
                  const casa::MaskedArray<casa::Float>& data);
 
 // Replace masked value by zero

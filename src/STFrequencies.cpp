@@ -127,6 +127,23 @@ void STFrequencies::getEntry( Double& refpix, Double& refval, Double& inc,
   inc = rec.asDouble("INCREMENT");
 }
 
+void STFrequencies::setEntry( Double refpix, Double refval, Double inc, uInt id )
+{
+  Table t = table_(table_.col("ID") == Int(id) );
+  if (t.nrow() == 0 ) {
+    throw(AipsError("STFrequencies::getEntry - freqID out of range"));
+  }
+  for ( uInt i = 0 ; i < table_.nrow() ; i++ ) {
+    uInt fid ;
+    idCol_.get( i, fid ) ;
+    if ( fid == id ) {
+      refpixCol_.put( i, refpix ) ;
+      refvalCol_.put( i, refval ) ;
+      incrCol_.put( i, inc ) ;
+    }
+  }
+}
+
 SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt id ) const
 {
   Table t = table_(table_.col("ID") == Int(id) );
@@ -144,14 +161,27 @@ SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt id ) const
                              rec.asDouble("REFPIX"));
 }
 
+/**
 SpectralCoordinate
   STFrequencies::getSpectralCoordinate( const MDirection& md,
 					const MPosition& mp,
 					const MEpoch& me,
 					Double restfreq, uInt id ) const
+**/
+SpectralCoordinate
+  STFrequencies::getSpectralCoordinate( const MDirection& md,
+                                              const MPosition& mp,
+                                              const MEpoch& me,
+                                              Vector<Double> restfreq, uInt id ) const
 {
   SpectralCoordinate spc = getSpectralCoordinate(id);
-  spc.setRestFrequency(restfreq, True);
+  //spc.setRestFrequency(restfreq, True);
+  // for now just use the first rest frequency 
+  if (restfreq.nelements()==0 ) {
+    restfreq.resize(1);
+    restfreq[0] = 0;
+  }
+  spc.setRestFrequency(restfreq[0], True);
   if ( !spc.setReferenceConversion(getFrame(), me, mp, md) ) {
     throw(AipsError("Couldn't convert frequency frame."));
   }

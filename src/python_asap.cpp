@@ -66,6 +66,7 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_Scantable();
   asap::python::python_STFiller();
+  asap::python::python_Filler();
   asap::python::python_STSelector();
   asap::python::python_STMath();
   asap::python::python_Fitter();
@@ -74,8 +75,10 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STWriter();
   asap::python::python_LineCatalog();
   asap::python::python_Logger();
+  asap::python::python_LogSink();
   asap::python::python_STCoordinate();
   asap::python::python_STAtmosphere();
+  asap::python::python_SrcType();
 
 #ifndef HAVE_LIBPYRAP
   // Use built-in pyconversions.h

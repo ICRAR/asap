@@ -1,5 +1,5 @@
 from asap._asap import stfiller
-from asap import print_log_dec
+from asap import print_log, print_log_dec
 
 class reader(stfiller):
     """
@@ -45,6 +45,7 @@ class reader(stfiller):
         from os.path import expandvars
         filename = expandvars(filename)
         stfiller.__init__(self, filename, theif, thebeam)
+        print_log()
 
     @print_log_dec
     def read(self):
@@ -58,6 +59,7 @@ class reader(stfiller):
         tbl = stfiller._getdata(self)
         if self.unit is not None:
             tbl.set_fluxunit(self.unit)
+        print_log()
         return scantable(tbl)
 
     def close(self):

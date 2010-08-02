@@ -108,6 +108,18 @@ public:
   void flag(const std::vector<bool>& msk=std::vector<bool>(), bool unflag=false)
     { table_->flag(msk, unflag); }
 
+  void flagRow(const std::vector<casa::uInt>& rows=std::vector<casa::uInt>(), bool unflag=false)
+    { table_->flagRow(rows, unflag); }
+
+  bool getFlagRow(int whichrow=0) const
+    { return table_->getFlagRow(whichrow); }
+
+  void clip(const casa::Float uthres, const casa::Float dthres, bool clipoutside=true, bool unflag=false)
+    { table_->clip(uthres, dthres, clipoutside, unflag); }
+
+  std::vector<bool> getClipMask(int whichrow, const casa::Float uthres, const casa::Float dthres, bool clipoutside, bool unflag) const
+    { return table_->getClipMask(whichrow, uthres, dthres, clipoutside, unflag); }
+
   std::string getSourceName(int whichrow=0) const
     { return table_->getSourceName(whichrow); }
 
@@ -133,6 +145,7 @@ public:
   int getCycle(int whichrow) const {return table_->getCycle(whichrow);}
   std::vector<uint> getScanNos() { return table_->getScanNos(); }
   int getScan(int whichrow) const {return table_->getScan(whichrow);}
+  std::vector<uint> getMolNos() { return table_->getMolNos();}
 
   STSelector getSelection() const { return table_->getSelection(); }
   void setSelection(const STSelector& sts)
@@ -157,17 +170,28 @@ public:
   void shift(int npix)
   { table_->shift(npix); }
 
+/**
+  commented out by TT
   void setRestFrequencies(double rf, const std::string& name,
                           const std::string& unit)
     { table_->setRestFrequencies(rf, name, unit); }
+**/
+  void setRestFrequencies(vector<double> rf, const vector<std::string>& name,
+                          const std::string& unit)
+    { table_->setRestFrequencies(rf, name, unit); }
+
 /*
   void setRestFrequencies(const std::string& name) {
     table_->setRestFrequencies(name);
   }
 */
 
+/*
   std::vector<double> getRestFrequencies() const
     { return table_->getRestFrequencies(); }
+*/
+  std::vector<double> getRestFrequency(int id) const
+    { return table_->getRestFrequency(id); }
 
   void setCoordInfo(std::vector<string> theinfo) {
     table_->setCoordInfo(theinfo);
@@ -208,7 +232,7 @@ public:
 
   int checkScanInfo(const vector<int>& scanlist) const
     { return table_->checkScanInfo(scanlist); }
-
+ 
   std::vector<double> getDirectionVector(int whichrow) const
     { return table_->getDirectionVector(whichrow); }
 
@@ -222,9 +246,13 @@ public:
   std::vector<float> getWeather(int whichrow) const
     { return table_->getWeather(whichrow); }
 
+  void reshapeSpectrum( int nmin, int nmax )
+  { table_->reshapeSpectrum( nmin, nmax ); }
+
 private:
   casa::CountedPtr<Scantable> table_;
 };
 
 } // namespace
 #endif
+

@@ -26,6 +26,7 @@
 #include "Logger.h"
 
 class PKSreader;
+class NROReader;
 
 namespace asap {
 
@@ -60,7 +61,7 @@ public:
     * @param whichBeam read a specific beam only (default -1 means all beams)
     */
   explicit STFiller( const std::string& filename, int whichIF=-1,
-                  int whichBeam=-1 );
+                     int whichBeam=-1 );
 
   /**
    * Destructor
@@ -74,7 +75,7 @@ public:
    * @param whichBeam read a specific beam only (default -1 means all beams)
    * @exception AipsError Creation of PKSreader failed
    */
-  void open( const std::string& filename, int whichIF=-1, int whichBeam=-1 );
+  void open( const std::string& filename, const std::string& antenna, int whichIF=-1, int whichBeam=-1, casa::Bool getPt=casa::False );
 
   /**
    * detach from file and clean up pointers
@@ -92,6 +93,23 @@ public:
 
   casa::CountedPtr<Scantable> getTable() const { return table_;}
 
+  /**
+   * For NRO data
+   *
+   * 2008/11/11 Takeshi Nakazato
+   *
+   * openNRO  : NRO version of open(), which performs to open file and 
+   *            read header data.
+   *  
+   * readNRO  : NRO version of read(), which performs to read scan 
+   *            records.
+   *
+   * fileCheck: Identify a type (NRO data or not) of filename_.
+   **/
+  void openNRO( int whichIF=-1, int whichBeam=-1 ) ;
+  int readNRO() ;
+  casa::Bool fileCheck() ;
+
   void setReferenceExpr(const std::string& rx) { refRx_ = rx; }
 
 private:
@@ -104,6 +122,8 @@ private:
   casa::uInt ifOffset_, beamOffset_;
   casa::Vector<casa::Bool> haveXPol_;
   casa::String refRx_;
+  NROReader *nreader_ ;
+  casa::Bool isNRO_ ;
 };
 
 } // namespace

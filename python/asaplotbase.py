@@ -20,8 +20,12 @@ try:
 except ImportError:
     from matplotlib.transforms import blend_xy_sep_transform as blended_transform_factory
 
+from asap import asaplog
+
 if int(matplotlib.__version__.split(".")[1]) < 87:
-    print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
+    #print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
+    asaplog.push( "matplotlib version < 0.87. This might cause errors. Please upgrade." )
+    print_log( 'WARN' )
 
 class asaplotbase:
     """
@@ -146,7 +150,6 @@ class asaplotbase:
         """
         from numpy import array
         from numpy.ma import MaskedArray
-
         if x is None:
             if y is None: return
             x = range(len(y))
@@ -167,7 +170,6 @@ class asaplotbase:
         else:
             ymsk = y.mask
             ydat = y.data
-
         for i in range(l2):
             x2[i] = x[i/2]
             m2[i] = ymsk[i/2]
@@ -303,9 +305,7 @@ class asaplotbase:
         """
 
         def region_start(event):
-            height = self.canvas.figure.bbox.height()
-            self.rect = {'fig': None, 'height': height,
-                         'x': event.x, 'y': height - event.y,
+            self.rect = {'x': event.x, 'y': event.y,
                          'world': [event.xdata, event.ydata,
                                    event.xdata, event.ydata]}
             self.register('button_press', None)
@@ -313,21 +313,18 @@ class asaplotbase:
             self.register('button_release', region_disable)
 
         def region_draw(event):
-            self.canvas._tkcanvas.delete(self.rect['fig'])
-            self.rect['fig'] = self.canvas._tkcanvas.create_rectangle(
-                                self.rect['x'], self.rect['y'],
-                                event.x, self.rect['height'] - event.y)
-
+            self.figmgr.toolbar.draw_rubberband(event, event.x, event.y,
+                                                self.rect['x'], self.rect['y'])
+            
         def region_disable(event):
             self.register('motion_notify', None)
             self.register('button_release', None)
-
-            self.canvas._tkcanvas.delete(self.rect['fig'])
 
             self.rect['world'][2:4] = [event.xdata, event.ydata]
             print '(%.2f, %.2f)  (%.2f, %.2f)' % (self.rect['world'][0],
                 self.rect['world'][1], self.rect['world'][2],
                 self.rect['world'][3])
+            self.figmgr.toolbar.release(event)
 
         self.register('button_press', region_start)
 
@@ -380,16 +377,16 @@ class asaplotbase:
                 self.canvas.mpl_disconnect(self.events[type])
                 self.events[type] = None
 
-                # It seems to be necessary to return events to the toolbar.
-                if type == 'motion_notify':
-                    self.canvas.mpl_connect(type + '_event',
-                        self.figmgr.toolbar.mouse_move)
-                elif type == 'button_press':
-                    self.canvas.mpl_connect(type + '_event',
-                        self.figmgr.toolbar.press)
-                elif type == 'button_release':
-                    self.canvas.mpl_connect(type + '_event',
-                        self.figmgr.toolbar.release)
+                # It seems to be necessary to return events to the toolbar. <-- Not ture. 2010.Jul.14.kana.
+                #if type == 'motion_notify':
+                #    self.canvas.mpl_connect(type + '_event',
+                #        self.figmgr.toolbar.mouse_move)
+                #elif type == 'button_press':
+                #    self.canvas.mpl_connect(type + '_event',
+                #        self.figmgr.toolbar.press)
+                #elif type == 'button_release':
+                #    self.canvas.mpl_connect(type + '_event',
+                #        self.figmgr.toolbar.release)
 
         else:
             self.events[type] = self.canvas.mpl_connect(type + '_event', func)
@@ -458,11 +455,17 @@ class asaplotbase:
                     self.figure.savefig(fname,dpi=dpi)
                     print 'Written file %s' % (fname)
             except IOError, msg:
-                print 'Failed to save %s: Error msg was\n\n%s' % (fname, msg)
+                #print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
+                print_log()
+                asaplog.push('Failed to save %s: Error msg was\n\n%s' % (fname, str(msg)))
+                print_log( 'ERROR' )
                 return
         else:
-            print "Invalid image type. Valid types are:"
-            print "'ps', 'eps', 'png'"
+            #print "Invalid image type. Valid types are:"
+            #print "'ps', 'eps', 'png'"
+            asaplog.push( "Invalid image type. Valid types are:" )
+            asaplog.push( "'ps', 'eps', 'png'" )
+            print_log('WARN')
 
 
     def set_axes(self, what=None, *args, **kwargs):
@@ -574,7 +577,8 @@ class asaplotbase:
         if redraw: self.show(hardrefresh=False)
 
 
-    def set_panels(self, rows=1, cols=0, n=-1, nplots=-1, ganged=True):
+    #def set_panels(self, rows=1, cols=0, n=-1, nplots=-1, ganged=True):
+    def set_panels(self, rows=1, cols=0, n=-1, nplots=-1, layout=None,ganged=True):
         """
         Set the panel layout.
 
@@ -597,6 +601,12 @@ class asaplotbase:
             self.figure.clear()
             self.set_title()
 
+        if layout:
+            lef, bot, rig, top, wsp, hsp = layout
+            self.figure.subplots_adjust(
+                left=lef,bottom=bot,right=rig,top=top,wspace=wsp,hspace=hsp)
+            del lef,bot,rig,top,wsp,hsp
+
         if rows < 1: rows = 1
 
         if cols <= 0:
@@ -609,6 +619,7 @@ class asaplotbase:
 
         if 0 <= n < rows*cols:
             i = len(self.subplots)
+
             self.subplots.append({})
 
             self.subplots[i]['axes']  = self.figure.add_subplot(rows,
@@ -643,7 +654,7 @@ class asaplotbase:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
                         if asaprcParams['plotter.axesformatting'] != 'mpl':
-
+                            
                             self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
@@ -670,6 +681,7 @@ class asaplotbase:
                 self.rows = rows
                 self.cols = cols
             self.subplot(0)
+        del rows,cols,n,nplots,layout,ganged,i
 
     def tidy(self):
         # this needs to be exceuted after the first "refresh"
@@ -724,7 +736,6 @@ class asaplotbase:
                     else:
                         sp['axes'].legend((' '))
 
-
             from matplotlib.artist import setp
             fpx = FP(size=rcParams['xtick.labelsize'])
             xts = fpx.get_size_in_points()- (self.cols)/2
@@ -733,21 +744,17 @@ class asaplotbase:
             fpa = FP(size=rcParams['axes.labelsize'])
             fpat = FP(size=rcParams['axes.titlesize'])
             axsize =  fpa.get_size_in_points()
-            tsize =  fpat.get_size_in_points()
+            tsize =  fpat.get_size_in_points()-(self.cols)/2
             for sp in self.subplots:
                 ax = sp['axes']
-                off = 0
-                if len(self.subplots) > 1:
-                    off = self.cols+self.rows
-                ax.title.set_size(tsize-off)
+                ax.title.set_size(tsize)
                 setp(ax.get_xticklabels(), fontsize=xts)
                 setp(ax.get_yticklabels(), fontsize=yts)
                 off = 0
-                if self.cols > 1:
-                    off = self.cols
+                if self.cols > 1: off = self.cols
                 ax.xaxis.label.set_size(axsize-off)
-                if self.rows > 1:
-                    off = self.rows
+                off = 0
+                if self.rows > 1: off = self.rows
                 ax.yaxis.label.set_size(axsize-off)
 
     def subplot(self, i=None, inc=None):

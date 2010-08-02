@@ -84,6 +84,10 @@ public:
     * Reset the acummulator to the state at construction.
     */
   void reset();
+  /**
+    * check the initialization state 
+    */ 
+  casa::Bool state() const;
 
 private:
   void addSpectrum( const casa::Vector<casa::Float>& v,

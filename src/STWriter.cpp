@@ -41,6 +41,7 @@
 #include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSMS2writer.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
+#include <atnf/PKSIO/SrcType.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/TableIter.h>
@@ -153,9 +154,9 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     nChan(ifs[i]) = inst->nchan(ifs[i]);
     havexpol(ifs[i]) = nPol(ifs[i]) > 2;
   }
-  Vector<String> obstypes(2);
-  obstypes(0) = "TR";//on
-  obstypes(1) = "RF TR";//off
+//   Vector<String> obstypes(2);
+//   obstypes(0) = "TR";//on
+//   obstypes(1) = "RF TR";//off
   const Table table = inst->table();
 
 
@@ -181,13 +182,16 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     pksrec.beamNo = 1;
     while (!beamit.pastEnd() ) {
       Table btable = beamit.table();
+      //MDirection::ScalarColumn dirCol(btable, "DIRECTION");
+      //pksrec.direction = dirCol(0).getAngle("rad").getValue();
       TableIterator cycit(btable, "CYCLENO");
       ROArrayColumn<Double> srateCol(btable, "SCANRATE");
       Vector<Double> sratedbl;
       srateCol.get(0, sratedbl);
       Vector<Float> srateflt(sratedbl.nelements());
       convertArray(srateflt, sratedbl);
-      pksrec.scanRate = srateflt;
+      //pksrec.scanRate = srateflt;
+      pksrec.scanRate = sratedbl;
       ROArrayColumn<Double> spmCol(btable, "SRCPROPERMOTION");
       spmCol.get(0, pksrec.srcPM);
       ROArrayColumn <Double> sdirCol(btable, "SRCDIRECTION");
@@ -199,7 +203,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
       pksrec.cycleNo = 1;
       while (!cycit.pastEnd() ) {
         Table ctable = cycit.table();
-        TableIterator ifit(ctable, "IFNO");
+        TableIterator ifit(ctable, "IFNO", TableIterator::Ascending, TableIterator::HeapSort);
         MDirection::ScalarColumn dirCol(ctable, "DIRECTION");
         pksrec.direction = dirCol(0).getAngle("rad").getValue();
         pksrec.IFno = 1;
@@ -212,8 +216,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.IFno = rec.asuInt("IFNO")+1;
           uInt nchan = specCol(0).nelements();
           Double crval,crpix;
+          //Vector<Double> restfreq;
           Float tmp0,tmp1,tmp2,tmp3,tmp4;
-          String stmp0,stmp1;
+          String tcalt;
+          Vector<String> stmp0, stmp1;
           inst->frequencies().getEntry(crpix,crval, pksrec.freqInc,
                                      rec.asuInt("FREQ_ID"));
           inst->focus().getEntry(pksrec.parAngle, pksrec.focusAxi, pksrec.focusTan,
@@ -238,7 +244,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.interval  = rec.asDouble("INTERVAL");
           pksrec.fieldName = rec.asString("FIELDNAME");
           pksrec.srcName   = rec.asString("SRCNAME");
-          pksrec.obsType   = obstypes[rec.asInt("SRCTYPE")];
+          //pksrec.obsType   = obstypes[rec.asInt("SRCTYPE")];
+          pksrec.obsType = getObsTypes( rec.asInt("SRCTYPE") ) ;
           pksrec.bandwidth = nchan * abs(pksrec.freqInc);
           pksrec.azimuth   = rec.asFloat("AZIMUTH");
           pksrec.elevation = rec.asFloat("ELEVATION");
@@ -252,6 +259,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.baseSub.resize(npol,9);
           pksrec.baseSub   = 0.0f;
           pksrec.xCalFctr  = 0.0;
+	  pksrec.flagrow = rec.asuInt("FLAGROW");
 
           status = writer_->write(pksrec);
           if ( status ) {
@@ -345,6 +353,96 @@ void STWriter::replacePtTab (const Table& tab, const std::string& fname)
       pushLog(String(oss));
     }
   }
+}
+
+// get obsType string from SRCTYPE value
+String STWriter::getObsTypes( Int srctype )
+{
+  String obsType ;
+  switch( srctype ) {
+  case Int(SrcType::PSON):
+    obsType = "PSON" ;
+    break ;
+  case Int(SrcType::PSOFF):
+    obsType = "PSOFF" ;
+    break ;
+  case Int(SrcType::NOD):
+    obsType = "NOD" ;
+    break ;
+  case Int(SrcType::FSON):
+    obsType = "FSON" ;
+    break ;
+  case Int(SrcType::FSOFF):
+    obsType = "FSOFF" ;
+    break ;
+  case Int(SrcType::SKY):
+    obsType = "SKY" ;
+    break ;
+  case Int(SrcType::HOT):
+    obsType = "HOT" ;
+    break ;
+  case Int(SrcType::WARM):
+    obsType = "WARM" ;
+    break ;
+  case Int(SrcType::COLD):
+    obsType = "COLD" ;
+    break ;
+  case Int(SrcType::PONCAL):
+    obsType = "PSON:CALON" ;
+    break ;
+  case Int(SrcType::POFFCAL):
+    obsType = "PSOFF:CALON" ;
+    break ;
+  case Int(SrcType::NODCAL):
+    obsType = "NOD:CALON" ;
+    break ;
+  case Int(SrcType::FONCAL):
+    obsType = "FSON:CALON" ;
+    break ;
+  case Int(SrcType::FOFFCAL):
+    obsType = "FSOFF:CALOFF" ;
+    break ;
+  case Int(SrcType::FSLO):
+    obsType = "FSLO" ;
+    break ;
+  case Int(SrcType::FLOOFF):
+    obsType = "FS:LOWER:OFF" ;
+    break ;
+  case Int(SrcType::FLOSKY):
+    obsType = "FS:LOWER:SKY" ;
+    break ;
+  case Int(SrcType::FLOHOT):
+    obsType = "FS:LOWER:HOT" ;
+    break ;
+  case Int(SrcType::FLOWARM):
+    obsType = "FS:LOWER:WARM" ;
+    break ;
+  case Int(SrcType::FLOCOLD):
+    obsType = "FS:LOWER:COLD" ;
+    break ;
+  case Int(SrcType::FSHI):
+    obsType = "FSHI" ;
+    break ;
+  case Int(SrcType::FHIOFF):
+    obsType = "FS:HIGHER:OFF" ;
+    break ;
+  case Int(SrcType::FHISKY):
+    obsType = "FS:HIGHER:SKY" ;
+    break ;
+  case Int(SrcType::FHIHOT):
+    obsType = "FS:HIGHER:HOT" ;
+    break ;
+  case Int(SrcType::FHIWARM):
+    obsType = "FS:HIGHER:WARM" ;
+    break ;
+  case Int(SrcType::FHICOLD):
+    obsType = "FS:HIGHER:COLD" ;
+    break ;
+  default:
+    obsType = "NOTYPE" ;
+  }
+
+  return obsType ;
 }
 
 }

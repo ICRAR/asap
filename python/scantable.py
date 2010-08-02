@@ -34,8 +34,9 @@ class scantable(Scantable):
     """
         The ASAP container for scans
     """
+
     @print_log_dec
-    def __init__(self, filename, average=None, unit=None, parallactify=None):
+    def __init__(self, filename, average=None, unit=None, getpt=None, antenna=None, parallactify=None):
         """
         Create a scantable from a saved one or make a reference
         Parameters:
@@ -53,15 +54,39 @@ class scantable(Scantable):
                          Over-rides the default selected by the reader
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
+            getpt:       for MeasurementSet input data only:
+                         If True, all pointing data are filled.
+                         The deafult is False, which makes time to load
+                         the MS data faster in some cases.
+            antenna:     Antenna selection. integer (id) or string (name
+                         or id).
             parallactify: Indcicate that the data had been parallatified.
                           Default is taken form rc file.
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
+        if getpt is None:
+            getpt = True
+        if antenna is None:
+            antenna = ''
+        elif type(antenna) == int:
+            antenna = '%s'%antenna
+        elif type(antenna) == list:
+            tmpstr = ''
+            for i in range( len(antenna) ):
+                if type(antenna[i]) == int:
+                    tmpstr = tmpstr + ('%s,'%(antenna[i]))
+                elif type(antenna[i]) == str:
+                    tmpstr=tmpstr+antenna[i]+','
+                else:
+                    asaplog.push('Bad antenna selection.')
+                    print_log('ERROR')
+                    return
+            antenna = tmpstr.rstrip(',')
         parallactify = parallactify or rcParams['scantable.parallactify']
         varlist = vars()
         from asap._asap import stmath
-        self._math = stmath()
+        self._math = stmath( rcParams['insitu'] )
         if isinstance(filename, Scantable):
             Scantable.__init__(self, filename)
         else:
@@ -72,6 +97,7 @@ class scantable(Scantable):
                     s = "File '%s' not found." % (filename)
                     if rcParams['verbose']:
                         asaplog.push(s)
+                        print_log('ERROR')
                         return
                     raise IOError(s)
                 if is_scantable(filename):
@@ -79,14 +105,27 @@ class scantable(Scantable):
                     Scantable.__init__(self, filename, ondisk)
                     if unit is not None:
                         self.set_fluxunit(unit)
-                    self.set_freqframe(rcParams['scantable.freqframe'])
+                    # do not reset to the default freqframe
+                    #self.set_freqframe(rcParams['scantable.freqframe'])
+                elif os.path.isdir(filename) \
+                         and not os.path.exists(filename+'/table.f1'):
+                    msg = "The given file '%s'is not a valid " \
+                          "asap table." % (filename)
+                    if rcParams['verbose']:
+                        #print msg
+                        asaplog.push( msg )
+                        print_log( 'ERROR' )
+                        return
+                    else:
+                        raise IOError(msg)
                 else:
-                    self._fill([filename], unit, average)
+                    self._fill([filename], unit, average, getpt, antenna)
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
                   and isinstance(filename[-1], str):
-                self._fill(filename, unit, average)
+                self._fill(filename, unit, average, getpt, antenna)
         self.parallactify(parallactify)
         self._add_history("scantable", varlist)
+        print_log()
 
     @print_log_dec
     def save(self, name=None, format=None, overwrite=False):
@@ -125,7 +164,9 @@ class scantable(Scantable):
             if not overwrite:
                 msg = "File %s exists." % name
                 if rcParams['verbose']:
-                    print msg
+                    #print msg
+                    asaplog.push( msg )
+                    print_log( 'ERROR' )
                     return
                 else:
                     raise IOError(msg)
@@ -136,6 +177,7 @@ class scantable(Scantable):
             from asap._asap import stwriter as stw
             writer = stw(format2)
             writer.write(self, name)
+        print_log()
         return
 
     def copy(self):
@@ -163,7 +205,9 @@ class scantable(Scantable):
         from asap import unique
         if not _is_valid(scanid):
             if rcParams['verbose']:
-                print "Please specify a scanno to drop from the scantable"
+                #print "Please specify a scanno to drop from the scantable"
+                asaplog.push( 'Please specify a scanno to drop from the scantable' )
+                print_log( 'ERROR' )
                 return
             else:
                 raise RuntimeError("No scan given")
@@ -175,7 +219,10 @@ class scantable(Scantable):
                 raise ValueError("Can't remove all scans")
         except ValueError:
             if rcParams['verbose']:
-                print "Couldn't find any match."
+                #print "Couldn't find any match."
+                print_log()
+                asaplog.push( "Couldn't find any match." )
+                print_log( 'ERROR' )
                 return
             else: raise
         try:
@@ -183,7 +230,10 @@ class scantable(Scantable):
             return self._select_copy(sel)
         except RuntimeError:
             if rcParams['verbose']:
-                print "Couldn't find any match."
+                #print "Couldn't find any match."
+                print_log()
+                asaplog.push( "Couldn't find any match." )
+                print_log( 'ERROR' )
             else:
                 raise
 
@@ -214,8 +264,10 @@ class scantable(Scantable):
         """
         if scanid is None:
             if rcParams['verbose']:
-                print "Please specify a scan no or name to " \
-                      "retrieve from the scantable"
+                #print "Please specify a scan no or name to " \
+                #      "retrieve from the scantable"
+                asaplog.push( 'Please specify a scan no or name to retrieve from the scantable' )
+                print_log( 'ERROR' )
                 return
             else:
                 raise RuntimeError("No scan given")
@@ -235,11 +287,17 @@ class scantable(Scantable):
             else:
                 msg = "Illegal scanid type, use 'int' or 'list' if ints."
                 if rcParams['verbose']:
-                    print msg
+                    #print msg
+                    asaplog.push( msg )
+                    print_log( 'ERROR' )
                 else:
                     raise TypeError(msg)
         except RuntimeError:
-            if rcParams['verbose']: print "Couldn't find any match."
+            if rcParams['verbose']:
+                #print "Couldn't find any match."
+                print_log()
+                asaplog.push( "Couldn't find any match." )
+                print_log( 'ERROR' )
             else: raise
 
     def __str__(self):
@@ -265,7 +323,9 @@ class scantable(Scantable):
             else:
                 msg = "Illegal file name '%s'." % (filename)
                 if rcParams['verbose']:
-                    print msg
+                    #print msg
+                    asaplog.push( msg )
+                    print_log( 'ERROR' )
                 else:
                     raise IOError(msg)
         if rcParams['verbose']:
@@ -366,16 +426,51 @@ class scantable(Scantable):
                 selection = selector(**kw)
         self._setselection(selection)
 
-    def stats(self, stat='stddev', mask=None):
+    def get_row(self, row=0, insitu=None):
+        """
+        Select a row in the scantable.
+        Return a scantable with single row.
+        Parameters:
+            row: row no of integration, default is 0.
+            insitu: if False a new scantable is returned.
+                    Otherwise, the scaling is done in-situ
+                    The default is taken from .asaprc (False)
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        if not insitu:
+            workscan = self.copy()
+        else:
+            workscan = self
+        # Select a row
+        sel=selector()
+        sel.set_scans([workscan.getscan(row)])
+        sel.set_cycles([workscan.getcycle(row)])
+        sel.set_beams([workscan.getbeam(row)])
+        sel.set_ifs([workscan.getif(row)])
+        sel.set_polarisations([workscan.getpol(row)])
+        sel.set_name(workscan._getsourcename(row))
+        workscan.set_selection(sel)
+        if not workscan.nrow() == 1:
+            msg = "Cloud not identify single row. %d rows selected."%(workscan.nrow())
+            raise RuntimeError(msg)
+        del sel
+        if insitu:
+            self._assign(workscan)
+        else:
+            return workscan
+
+    #def stats(self, stat='stddev', mask=None):
+    def stats(self, stat='stddev', mask=None, form='3.3f'):
         """
         Determine the specified statistic of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
         channels should be excluded.
         Parameters:
-            stat:    'min', 'max', 'sumsq', 'sum', 'mean'
-                     'var', 'stddev', 'avdev', 'rms', 'median'
+            stat:    'min', 'max', 'min_abc', 'max_abc', 'sumsq', 'sum',
+                     'mean', 'var', 'stddev', 'avdev', 'rms', 'median'
             mask:    an optional mask specifying where the statistic
                      should be determined.
+            form:    format string to print statistic values
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100, 200], [500, 600])
@@ -386,12 +481,90 @@ class scantable(Scantable):
             raise ValueError("Cannot apply mask as the IFs have different "
                              "number of channels. Please use setselection() "
                              "to select individual IFs")
+        rtnabc = False
+        if stat.lower().endswith('_abc'): rtnabc = True
+        getchan = False
+        if stat.lower().startswith('min') or stat.lower().startswith('max'):
+            chan = self._math._minmaxchan(self, mask, stat)
+            getchan = True
+            statvals = []
+        if not rtnabc: statvals = self._math._stats(self, mask, stat)
 
-        statvals = self._math._stats(self, mask, stat)
-        def cb(i):
-            return statvals[i]
+        #def cb(i):
+        #    return statvals[i]
 
-        return self._row_callback(cb, stat)
+        #return self._row_callback(cb, stat)
+
+        label=stat
+        #callback=cb
+        out = ""
+        #outvec = []
+        sep = '-'*50
+        for i in range(self.nrow()):
+            refstr = ''
+            statunit= ''
+            if getchan:
+                qx, qy = self.chan2data(rowno=i, chan=chan[i])
+                if rtnabc:
+                    statvals.append(qx['value'])
+                    refstr = ('(value: %'+form) % (qy['value'])+' ['+qy['unit']+'])'
+                    statunit= '['+qx['unit']+']'
+                else:
+                    refstr = ('(@ %'+form) % (qx['value'])+' ['+qx['unit']+'])'
+
+            tm = self._gettime(i)
+            src = self._getsourcename(i)
+            out += 'Scan[%d] (%s) ' % (self.getscan(i), src)
+            out += 'Time[%s]:\n' % (tm)
+            if self.nbeam(-1) > 1:
+                out +=  ' Beam[%d] ' % (self.getbeam(i))
+            if self.nif(-1) > 1: out +=  ' IF[%d] ' % (self.getif(i))
+            if self.npol(-1) > 1: out +=  ' Pol[%d] ' % (self.getpol(i))
+            #outvec.append(callback(i))
+            #out += ('= %'+form) % (outvec[i]) +'   '+refstr+'\n'
+            out += ('= %'+form) % (statvals[i]) +'   '+refstr+'\n'
+            out +=  sep+"\n"
+
+        if rcParams['verbose']:
+            import os
+            if os.environ.has_key( 'USER' ):
+                usr=os.environ['USER']
+            else:
+                import commands
+                usr=commands.getoutput( 'whoami' )
+            tmpfile='/tmp/tmp_'+usr+'_casapy_asap_scantable_stats'
+            f=open(tmpfile,'w')
+            print >> f, sep
+            print >> f, ' %s %s' % (label, statunit)
+            print >> f, sep
+            print >> f, out
+            f.close()
+            f=open(tmpfile,'r')
+            x=f.readlines()
+            f.close()
+            blanc=''
+            asaplog.push(blanc.join(x), False)
+            #for xx in x:
+            #    asaplog.push( xx, False )
+            print_log()
+        return statvals
+
+    def chan2data(self, rowno=0, chan=0):
+        """
+        Returns channel/frequency/velocity and spectral value
+        at an arbitrary row and channel in the scantable.
+        Parameters:
+            rowno:   a row number in the scantable. Default is the
+                     first row, i.e. rowno=0
+            chan:    a channel in the scantable. Default is the first
+                     channel, i.e. pos=0
+        """
+        if isinstance(rowno, int) and isinstance(chan, int):
+            qx = {'unit': self.get_unit(),
+                  'value': self._getabcissa(rowno)[chan]}
+            qy = {'unit': self.get_fluxunit(),
+                  'value': self._getspectrum(rowno)[chan]}
+            return qx, qy
 
     def stddev(self, mask=None):
         """
@@ -461,10 +634,11 @@ class scantable(Scantable):
             out += '= %3.3f\n' % (outvec[i])
             out +=  sep+'\n'
         if rcParams['verbose']:
-            print sep
-            print " %s" % (label)
-            print sep
-            print out
+            asaplog.push(sep)
+            asaplog.push(" %s" % (label))
+            asaplog.push(sep)
+            asaplog.push(out)
+            print_log()
         return outvec
 
     def _get_column(self, callback, row=-1):
@@ -473,7 +647,7 @@ class scantable(Scantable):
         if row == -1:
             return [callback(i) for i in range(self.nrow())]
         else:
-            if 0 <= row < self.nrow():
+            if  0 <= row < self.nrow():
                 return callback(row)
 
 
@@ -603,6 +777,7 @@ class scantable(Scantable):
         """
         self._setInstrument(instr)
         self._add_history("set_instument", vars())
+        print_log()
 
     @print_log_dec
     def set_feedtype(self, feedtype):
@@ -613,6 +788,7 @@ class scantable(Scantable):
         """
         self._setfeedtype(feedtype)
         self._add_history("set_feedtype", vars())
+        print_log()
 
     @print_log_dec
     def set_doppler(self, doppler='RADIO'):
@@ -626,6 +802,7 @@ class scantable(Scantable):
         inf[2] = doppler
         self._setcoordinfo(inf)
         self._add_history("set_doppler", vars())
+        print_log()
 
     @print_log_dec
     def set_freqframe(self, frame=None):
@@ -633,14 +810,17 @@ class scantable(Scantable):
         Set the frame type of the Spectral Axis.
         Parameters:
             frame:   an optional frame type, default 'LSRK'. Valid frames are:
-                     'REST', 'TOPO', 'LSRD', 'LSRK', 'BARY',
+                     'TOPO', 'LSRD', 'LSRK', 'BARY',
                      'GEO', 'GALACTO', 'LGROUP', 'CMB'
         Examples:
             scan.set_freqframe('BARY')
         """
         frame = frame or rcParams['scantable.freqframe']
         varlist = vars()
-        valid = ['REST', 'TOPO', 'LSRD', 'LSRK', 'BARY', \
+        # "REST" is not implemented in casacore
+        #valid = ['REST', 'TOPO', 'LSRD', 'LSRK', 'BARY', \
+        #           'GEO', 'GALACTO', 'LGROUP', 'CMB']
+        valid = ['TOPO', 'LSRD', 'LSRK', 'BARY', \
                    'GEO', 'GALACTO', 'LGROUP', 'CMB']
 
         if frame in valid:
@@ -651,9 +831,12 @@ class scantable(Scantable):
         else:
             msg  = "Please specify a valid freq type. Valid types are:\n", valid
             if rcParams['verbose']:
-                print msg
+                #print msg
+                asaplog.push( msg )
+                print_log( 'ERROR' )
             else:
                 raise TypeError(msg)
+        print_log()
 
     def set_dirframe(self, frame=""):
         """
@@ -669,7 +852,10 @@ class scantable(Scantable):
             Scantable.set_dirframe(self, frame)
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
             else:
                 raise
         self._add_history("set_dirframe", varlist)
@@ -697,28 +883,75 @@ class scantable(Scantable):
         """
         abc = self._getabcissa(rowno)
         lbl = self._getabcissalabel(rowno)
+        print_log()
         return abc, lbl
 
-    def flag(self, mask=None):
+    def flag(self, mask=None, unflag=False):
         """
         Flag the selected data using an optional channel mask.
         Parameters:
             mask:   an optional channel mask, created with create_mask. Default
                     (no mask) is all channels.
+            unflag:    if True, unflag the data
         """
         varlist = vars()
         mask = mask or []
         try:
-            self._flag(mask)
+            self._flag(mask, unflag)
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
                 return
             else: raise
         self._add_history("flag", varlist)
 
+    def flag_row(self, rows=[], unflag=False):
+        """
+        Flag the selected data in row-based manner.
+        Parameters:
+            rows:   list of row numbers to be flagged. Default is no row (must be explicitly specified to execute row-based flagging).
+            unflag: if True, unflag the data.
+        """
+        varlist = vars()
+        try:
+            self._flag_row(rows, unflag)
+        except RuntimeError, msg:
+            if rcParams['verbose']:
+                print_log()
+                asaplog.push( str(msg) )
+                print_log('ERROR')
+                return
+            else: raise
+        self._add_history("flag_row", varlist)
+
+    def clip(self, uthres=None, dthres=None, clipoutside=True, unflag=False):
+        """
+        Flag the selected data outside a specified range (in channel-base)
+        Parameters:
+            uthres:      upper threshold.
+            dthres:      lower threshold
+            clipoutside: True for flagging data outside the range [dthres:uthres].
+                         False for glagging data inside the range.
+            unflag     : if True, unflag the data.
+        """
+        varlist = vars()
+        try:
+            self._clip(uthres, dthres, clipoutside, unflag)
+        except RuntimeError, msg:
+            if rcParams['verbose']:
+                print_log()
+                asaplog.push(str(msg))
+                print_log('ERROR')
+                return
+            else: raise
+        self._add_history("clip", varlist)
+
     @print_log_dec
     def lag_flag(self, start, end, unit="MHz", insitu=None):
+    #def lag_flag(self, frequency, width=0.0, unit="GHz", insitu=None):
         """
         Flag the data in 'lag' space by providing a frequency to remove.
         Flagged data in the scantable gets interpolated over the region.
@@ -747,10 +980,14 @@ class scantable(Scantable):
                                                    end*base[unit], "frequency"))
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
                 return
             else: raise
         s._add_history("lag_flag", varlist)
+        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -818,22 +1055,118 @@ class scantable(Scantable):
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
                 msk = mask_not(msk)
+        print_log()
         return msk
 
-    def get_restfreqs(self):
+    def get_masklist(self, mask=None, row=0):
+        """
+        Compute and return a list of mask windows, [min, max].
+        Parameters:
+            mask:       channel mask, created with create_mask.
+            row:        calcutate the masklist using the specified row
+                        for unit conversions, default is row=0
+                        only necessary if frequency varies over rows.
+        Returns:
+            [min, max], [min2, max2], ...
+                Pairs of start/end points (inclusive)specifying
+                the masked regions
+        """
+        if not (isinstance(mask,list) or isinstance(mask, tuple)):
+            raise TypeError("The mask should be list or tuple.")
+        if len(mask) < 2:
+            raise TypeError("The mask elements should be > 1")
+        if self.nchan() != len(mask):
+            msg = "Number of channels in scantable != number of mask elements"
+            raise TypeError(msg)
+        data = self._getabcissa(row)
+        u = self._getcoordinfo()[0]
+        if rcParams['verbose']:
+            if u == "": u = "channel"
+            msg = "The current mask window unit is %s" % u
+            i = self._check_ifs()
+            if not i:
+                msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
+            asaplog.push(msg)
+        masklist=[]
+        ist, ien = None, None
+        ist, ien=self.get_mask_indices(mask)
+        if ist is not None and ien is not None:
+            for i in xrange(len(ist)):
+                range=[data[ist[i]],data[ien[i]]]
+                range.sort()
+                masklist.append([range[0],range[1]])
+        return masklist
+
+    def get_mask_indices(self, mask=None):
+        """
+        Compute and Return lists of mask start indices and mask end indices.
+         Parameters:
+            mask:       channel mask, created with create_mask.
+        Returns:
+            List of mask start indices and that of mask end indices,
+            i.e., [istart1,istart2,....], [iend1,iend2,....].
+        """
+        if not (isinstance(mask,list) or isinstance(mask, tuple)):
+            raise TypeError("The mask should be list or tuple.")
+        if len(mask) < 2:
+            raise TypeError("The mask elements should be > 1")
+        istart=[]
+        iend=[]
+        if mask[0]: istart.append(0)
+        for i in range(len(mask)-1):
+            if not mask[i] and mask[i+1]:
+                istart.append(i+1)
+            elif mask[i] and not mask[i+1]:
+                iend.append(i)
+        if mask[len(mask)-1]: iend.append(len(mask)-1)
+        if len(istart) != len(iend):
+            raise RuntimeError("Numbers of mask start != mask end.")
+        for i in range(len(istart)):
+            if istart[i] > iend[i]:
+                raise RuntimeError("Mask start index > mask end index")
+                break
+        return istart,iend
+
+#    def get_restfreqs(self):
+#        """
+#        Get the restfrequency(s) stored in this scantable.
+#        The return value(s) are always of unit 'Hz'
+#        Parameters:
+#            none
+#        Returns:
+#            a list of doubles
+#        """
+#        return list(self._getrestfreqs())
+
+    def get_restfreqs(self, ids=None):
         """
         Get the restfrequency(s) stored in this scantable.
         The return value(s) are always of unit 'Hz'
         Parameters:
-            none
+            ids: (optional) a list of MOLECULE_ID for that restfrequency(s) to
+                 be retrieved
         Returns:
-            a list of doubles
+            dictionary containing ids and a list of doubles for each id
         """
-        return list(self._getrestfreqs())
-
+        if ids is None:
+            rfreqs={}
+            idlist = self.getmolnos()
+            for i in idlist:
+                rfreqs[i]=list(self._getrestfreqs(i))
+            return rfreqs
+        else:
+            if type(ids)==list or type(ids)==tuple:
+                rfreqs={}
+                for i in ids:
+                    rfreqs[i]=list(self._getrestfreqs(i))
+                return rfreqs
+            else:
+                return list(self._getrestfreqs(ids))
+            #return list(self._getrestfreqs(ids))
 
     def set_restfreqs(self, freqs=None, unit='Hz'):
         """
+        ********NEED TO BE UPDATED begin************
         Set or replace the restfrequency specified and
         If the 'freqs' argument holds a scalar,
         then that rest frequency will be applied to all the selected
@@ -845,6 +1178,7 @@ class scantable(Scantable):
         to the corresponding value you give in the 'freqs' vector.
         E.g. 'freqs=[1e9, 2e9]'  would mean IF 0 gets restfreq 1e9 and
         IF 1 gets restfreq 2e9.
+        ********NEED TO BE UPDATED end************
         You can also specify the frequencies via a linecatalog.
 
         Parameters:
@@ -852,11 +1186,14 @@ class scantable(Scantable):
             unit:    unit for rest frequency (default 'Hz')
 
         Example:
-            # set the given restfrequency for the whole table
+            # set the given restfrequency for the all currently selected IFs
             scan.set_restfreqs(freqs=1.4e9)
-            # If thee number of IFs in the data is >= 2 IF0 gets the first
-            # value IF1 the second...
-            scan.set_restfreqs(freqs=[1.4e9, 1.67e9])
+            # set multiple restfrequencies to all the selected data
+            scan.set_restfreqs(freqs=[1.4e9, 1.41e9, 1.42e9])
+            # If the number of IFs in the data is >= 2 the IF0 gets the first
+            # value IF1 the second... NOTE that freqs needs to be
+            # specified in list of list (e.g. [[],[],...] ).
+            scan.set_restfreqs(freqs=[[1.4e9],[1.67e9]])
             #set the given restfrequency for the whole table (by name)
             scan.set_restfreqs(freqs="OH1667")
 
@@ -876,35 +1213,41 @@ class scantable(Scantable):
         from asap import linecatalog
         # simple  value
         if isinstance(freqs, int) or isinstance(freqs, float):
-            self._setrestfreqs(freqs, "",unit)
+            # TT mod
+            #self._setrestfreqs(freqs, "",unit)
+            self._setrestfreqs([freqs], [""],unit)
         # list of values
         elif isinstance(freqs, list) or isinstance(freqs, tuple):
             # list values are scalars
             if isinstance(freqs[-1], int) or isinstance(freqs[-1], float):
-                sel = selector()
-                savesel = self._getselection()
-                iflist = self.getifnos()
-                for i in xrange(len(freqs)):
-                    sel.set_ifs(iflist[i])
-                    self._setselection(sel)
-                    self._setrestfreqs(freqs[i], "",unit)
-                self._setselection(savesel)
+                self._setrestfreqs(freqs, [""], unit)
             # list values are tuples, (value, name)
             elif isinstance(freqs[-1], dict):
+                #sel = selector()
+                #savesel = self._getselection()
+                #iflist = self.getifnos()
+                #for i in xrange(len(freqs)):
+                #    sel.set_ifs(iflist[i])
+                #    self._setselection(sel)
+                #    self._setrestfreqs(freqs[i], "",unit)
+                #self._setselection(savesel)
+                self._setrestfreqs(freqs["value"],
+                                   freqs["name"], unit)
+            elif isinstance(freqs[-1], list) or isinstance(freqs[-1], tuple):
                 sel = selector()
                 savesel = self._getselection()
                 iflist = self.getifnos()
+                if len(freqs)>len(iflist):
+                    raise ValueError("number of elements in list of list exeeds the current IF selections")
                 for i in xrange(len(freqs)):
                     sel.set_ifs(iflist[i])
                     self._setselection(sel)
-                    self._setrestfreqs(freqs[i]["value"],
-                                       freqs[i]["name"], "MHz")
+                    self._setrestfreqs(freqs[i], [""], unit)
                 self._setselection(savesel)
         # freqs are to be taken from a linecatalog
         elif isinstance(freqs, linecatalog):
             sel = selector()
             savesel = self._getselection()
-            iflist = self.getifnos()
             for i in xrange(freqs.nrow()):
                 sel.set_ifs(iflist[i])
                 self._setselection(sel)
@@ -962,7 +1305,9 @@ class scantable(Scantable):
             else:
                 msg = "Illegal file name '%s'." % (filename)
                 if rcParams['verbose']:
-                    print msg
+                    #print msg
+                    asaplog.push( msg )
+                    print_log( 'ERROR' )
                 else:
                     raise IOError(msg)
         if rcParams['verbose']:
@@ -1019,10 +1364,14 @@ class scantable(Scantable):
                               scanav))
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
                 return
             else: raise
         s._add_history("average_time", varlist)
+        print_log()
         return s
 
     @print_log_dec
@@ -1050,6 +1399,7 @@ class scantable(Scantable):
         eta = eta or -1.0
         s = scantable(self._math._convertflux(self, d, eta, jyperk))
         s._add_history("convert_flux", varlist)
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1102,6 +1452,7 @@ class scantable(Scantable):
         filename = expandvars(filename)
         s = scantable(self._math._gainel(self, poly, filename, method))
         s._add_history("gain_el", varlist)
+        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1129,6 +1480,7 @@ class scantable(Scantable):
         reftime = reftime or ""
         s = scantable(self._math._freq_align(self, reftime, method))
         s._add_history("freq_align", varlist)
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1157,6 +1509,7 @@ class scantable(Scantable):
             tau = [tau]
         s = scantable(self._math._opacity(self, tau))
         s._add_history("opacity", varlist)
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1175,6 +1528,7 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._bin(self, width))
         s._add_history("bin", varlist)
+        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1199,6 +1553,7 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._resample(self, method, width))
         s._add_history("resample", varlist)
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1217,6 +1572,7 @@ class scantable(Scantable):
         mask = mask or ()
         s = scantable(self._math._averagepol(self, mask, weight.upper()))
         s._add_history("average_pol", varlist)
+        print_log()
         return s
 
     @print_log_dec
@@ -1234,6 +1590,7 @@ class scantable(Scantable):
         mask = mask or ()
         s = scantable(self._math._averagebeams(self, mask, weight.upper()))
         s._add_history("average_beam", varlist)
+        print_log()
         return s
 
     def parallactify(self, pflag):
@@ -1262,15 +1619,19 @@ class scantable(Scantable):
             s = scantable(self._math._convertpol(self, poltype))
         except RuntimeError, msg:
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
                 return
             else:
                 raise
         s._add_history("convert_pol", varlist)
+        print_log()
         return s
 
     @print_log_dec
-    def smooth(self, kernel="hanning", width=5.0, order=2, insitu=None):
+    def smooth(self, kernel="hanning", width=5.0, order=2, plot=False, insitu=None):
         """
         Smooth the spectrum by the specified kernel (conserving flux).
         Parameters:
@@ -1285,6 +1646,9 @@ class scantable(Scantable):
             order:      Optional parameter for 'poly' kernel (default is 2), to
                         specify the order of the polnomial. Ignored by all other
                         kernels.
+            plot:       plot the original and the smoothed spectra.
+                        In this each indivual fit has to be approved, by
+                        typing 'y' or 'n'
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -1294,8 +1658,49 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
+
+        if plot: orgscan = self.copy()
+
         s = scantable(self._math._smooth(self, kernel.lower(), width, order))
         s._add_history("smooth", varlist)
+
+        if plot:
+            if rcParams['plotter.gui']:
+                from asap.asaplotgui import asaplotgui as asaplot
+            else:
+                from asap.asaplot import asaplot
+            self._p=asaplot()
+            self._p.set_panels()
+            ylab=s._get_ordinate_label()
+            #self._p.palette(0,["#777777","red"])
+            for r in xrange(s.nrow()):
+                xsm=s._getabcissa(r)
+                ysm=s._getspectrum(r)
+                xorg=orgscan._getabcissa(r)
+                yorg=orgscan._getspectrum(r)
+                self._p.clear()
+                self._p.hold()
+                self._p.set_axes('ylabel',ylab)
+                self._p.set_axes('xlabel',s._getabcissalabel(r))
+                self._p.set_axes('title',s._getsourcename(r))
+                self._p.set_line(label='Original',color="#777777")
+                self._p.plot(xorg,yorg)
+                self._p.set_line(label='Smoothed',color="red")
+                self._p.plot(xsm,ysm)
+                ### Ugly part for legend
+                for i in [0,1]:
+                    self._p.subplots[0]['lines'].append([self._p.subplots[0]['axes'].lines[i]])
+                self._p.release()
+                ### Ugly part for legend
+                self._p.subplots[0]['lines']=[]
+                res = raw_input("Accept smoothing ([y]/n): ")
+                if res.upper() == 'N':
+                    s._setspectrum(yorg, r)
+            self._p.unmap()
+            self._p = None
+            del orgscan
+
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1320,29 +1725,70 @@ class scantable(Scantable):
             bscan = scan.poly_baseline(order=3)
         """
         if insitu is None: insitu = rcParams['insitu']
+        if not insitu:
+            workscan = self.copy()
+        else:
+            workscan = self
         varlist = vars()
         if mask is None:
             mask = [True for i in xrange(self.nchan(-1))]
+
         from asap.asapfitter import fitter
         try:
             f = fitter()
-            f.set_scan(self, mask)
-            #f.set_function(poly=order)
             if uselin:
                 f.set_function(lpoly=order)
             else:
                 f.set_function(poly=order)
-            s = f.auto_fit(insitu, plot=plot)
-            s._add_history("poly_baseline", varlist)
-            if insitu: self._assign(s)
-            else: return s
+
+            rows = range(workscan.nrow())
+            if len(rows) > 0:
+                self.blpars = []
+
+            for r in rows:
+                # take into account flagtra info (CAS-1434)
+                flagtra = workscan._getmask(r)
+                actualmask = mask[:]
+                if len(actualmask) == 0:
+                    actualmask = list(flagtra[:])
+                else:
+                    if len(actualmask) != len(flagtra):
+                        raise RuntimeError, "Mask and flagtra have different length"
+                    else:
+                        for i in range(0, len(actualmask)):
+                            actualmask[i] = actualmask[i] and flagtra[i]
+                f.set_scan(workscan, actualmask)
+                f.x = workscan._getabcissa(r)
+                f.y = workscan._getspectrum(r)
+                f.data = None
+                f.fit()
+                if plot:
+                    f.plot(residual=True)
+                    x = raw_input("Accept fit ( [y]/n ): ")
+                    if x.upper() == 'N':
+                        self.blpars.append(None)
+                        continue
+                workscan._setspectrum(f.fitter.getresidual(), r)
+                self.blpars.append(f.get_parameters())
+
+            if plot:
+                f._p.unmap()
+                f._p = None
+            workscan._add_history("poly_baseline", varlist)
+            print_log()
+            if insitu: self._assign(workscan)
+            else: return workscan
         except RuntimeError:
             msg = "The fit failed, possibly because it didn't converge."
             if rcParams['verbose']:
-                print msg
+                #print msg
+                print_log()
+                asaplog.push( str(msg) )
+                print_log( 'ERROR' )
                 return
             else:
                 raise RuntimeError(msg)
+
 
     def auto_poly_baseline(self, mask=[], edge=(0, 0), order=0,
                            threshold=3, chan_avg_limit=1, plot=False,
@@ -1426,6 +1872,11 @@ class scantable(Scantable):
         fl.set_scan(workscan)
 
         rows = range(workscan.nrow())
+        # Save parameters of baseline fits & masklists as a class attribute.
+        # NOTICE: It does not reflect changes in scantable!
+        if len(rows) > 0:
+            self.blpars=[]
+            self.masklists=[]
         asaplog.push("Processing:")
         for r in rows:
             msg = " Scan[%d] Beam[%d] IF[%d] Pol[%d] Cycle[%d]" % \
@@ -1440,18 +1891,43 @@ class scantable(Scantable):
                                         "be less than the number of IFs"
                     curedge = edge[workscan.getif(r)]
 
+            # take into account flagtra info (CAS-1434)
+            flagtra = workscan._getmask(r)
+            actualmask = mask[:]
+            if len(actualmask) == 0:
+                actualmask = list(flagtra[:])
+            else:
+                if len(actualmask) != len(flagtra):
+                    raise RuntimeError, "Mask and flagtra have different length"
+                else:
+                    for i in range(0, len(actualmask)):
+                        actualmask[i] = actualmask[i] and flagtra[i]
+
             # setup line finder
-            fl.find_lines(r, mask, curedge)
-            f.set_data(workscan._getabcissa(r),  workscan._getspectrum(r),
-                        mask_and(workscan._getmask(r), fl.get_mask()))
+            fl.find_lines(r, actualmask, curedge)
+            outmask=fl.get_mask()
+            f.set_scan(workscan, fl.get_mask())
+            f.x = workscan._getabcissa(r)
+            f.y = workscan._getspectrum(r)
+            f.data = None
             f.fit()
-            x = f.get_parameters()
+
+            # Show mask list
+            masklist=workscan.get_masklist(fl.get_mask(),row=r)
+            msg = "mask range: "+str(masklist)
+            asaplog.push(msg, False)
+
             if plot:
                 f.plot(residual=True)
                 x = raw_input("Accept fit ( [y]/n ): ")
                 if x.upper() == 'N':
+                    self.blpars.append(None)
+                    self.masklists.append(None)
                     continue
+
             workscan._setspectrum(f.fitter.getresidual(), r)
+            self.blpars.append(f.get_parameters())
+            self.masklists.append(masklist)
         if plot:
             f._p.unmap()
             f._p = None
@@ -1475,6 +1951,7 @@ class scantable(Scantable):
         varlist = vars()
         self._math._rotate_linpolphase(self, angle)
         self._add_history("rotate_linpolphase", varlist)
+        print_log()
         return
 
     @print_log_dec
@@ -1491,6 +1968,7 @@ class scantable(Scantable):
         varlist = vars()
         self._math._rotate_xyphase(self, angle)
         self._add_history("rotate_xyphase", varlist)
+        print_log()
         return
 
     @print_log_dec
@@ -1502,6 +1980,7 @@ class scantable(Scantable):
         varlist = vars()
         self._math._swap_linears(self)
         self._add_history("swap_linears", varlist)
+        print_log()
         return
 
     @print_log_dec
@@ -1512,6 +1991,7 @@ class scantable(Scantable):
         varlist = vars()
         self._math._invert_phase(self)
         self._add_history("invert_phase", varlist)
+        print_log()
         return
 
     @print_log_dec
@@ -1529,6 +2009,7 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._unaryop(self, offset, "ADD", False))
         s._add_history("add", varlist)
+        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1539,7 +2020,7 @@ class scantable(Scantable):
         """
         Return a scan where all spectra are scaled by the give 'factor'
         Parameters:
-            factor:      the scaling factor
+            factor:      the scaling factor (float or 1D float list)
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1549,8 +2030,18 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        s = scantable(self._math._unaryop(self, factor, "MUL", tsys))
+        s = None
+        import numpy
+        if isinstance(factor, list) or isinstance(factor, numpy.ndarray):
+            if isinstance(factor[0], list) or isinstance(factor[0], numpy.ndarray):
+                from asapmath import _array2dOp
+                s = _array2dOp( self.copy(), factor, "MUL", tsys )
+            else:
+                s = scantable( self._math._arrayop( self.copy(), factor, "MUL", tsys ) )
+        else:
+            s = scantable(self._math._unaryop(self.copy(), factor, "MUL", tsys))
         s._add_history("scale", varlist)
+        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1593,10 +2084,10 @@ class scantable(Scantable):
         self._add_history("set_sourcetype", varlist)
 
     @print_log_dec
-    def auto_quotient(self, preserve=True, mode='paired'):
+    def auto_quotient(self, preserve=True, mode='paired', verify=False):
         """
         This function allows to build quotients automatically.
-        It assumes the observation to have the same numer of
+        It assumes the observation to have the same number of
         "ons" and "offs"
         Parameters:
             preserve:       you can preserve (default) the continuum or
@@ -1633,6 +2124,7 @@ class scantable(Scantable):
         elif mode.lower() == "time":
             s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient", varlist)
+        print_log()
         return s
 
     @print_log_dec
@@ -1655,6 +2147,7 @@ class scantable(Scantable):
         from asapmath  import quotient
         q = quotient(on, off, preserve)
         q._add_history("mx_quotient", varlist)
+        print_log()
         return q
 
     @print_log_dec
@@ -1673,6 +2166,7 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._freqswitch(self))
         s._add_history("freq_switch", varlist)
+        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1687,6 +2181,7 @@ class scantable(Scantable):
         varlist = vars()
         self._recalcazel()
         self._add_history("recalc_azel", varlist)
+        print_log()
         return
 
     @print_log_dec
@@ -1764,7 +2259,9 @@ class scantable(Scantable):
         from asap.asapfit import asapfit
         fit = asapfit(self._getfit(row))
         if rcParams['verbose']:
-            print fit
+            #print fit
+            asaplog.push( '%s' %(fit) )
+            print_log()
             return
         else:
             return fit.as_dict()
@@ -1861,7 +2358,7 @@ class scantable(Scantable):
         nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
 
-    def _fill(self, names, unit, average):
+    def _fill(self, names, unit, average, getpt, antenna):
         import os
         from asap._asap import stfiller
         first = True
@@ -1873,7 +2370,8 @@ class scantable(Scantable):
                 msg = "File '%s' does not exists" % (name)
                 if rcParams['verbose']:
                     asaplog.push(msg)
-                    print asaplog.pop().strip()
+                    #print asaplog.pop().strip()
+                    print_log( 'ERROR' )
                     return
                 raise IOError(msg)
             fullnames.append(name)
@@ -1888,7 +2386,7 @@ class scantable(Scantable):
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
             print_log()
-            r._open(name, -1, -1)
+            r._open(name, antenna, -1, -1, getpt)
             r._read()
             if average:
                 tbl = self._math._average((tbl, ), (), 'NONE', 'SCAN')
@@ -1900,7 +2398,7 @@ class scantable(Scantable):
             first = False
         if unit is not None:
             self.set_fluxunit(unit)
-        self.set_freqframe(rcParams['scantable.freqframe'])
+        #self.set_freqframe(rcParams['scantable.freqframe'])
 
     def __getitem__(self, key):
         if key < 0:
