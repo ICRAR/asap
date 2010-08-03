@@ -154,13 +154,12 @@ scantable.parallactify     : False
 
 def rc_params():
     'Return the default params updated from the values in the rc file'
-    from asap.logging import asaplog, print_log
     fname = _asap_fname()
 
     if fname is None or not os.path.exists(fname):
-        message = 'could not find rc file; returning defaults'
         ret =  dict([ (key, tup[0]) for key, tup in defaultParams.items()])
         #print message
+        #message = 'could not find rc file; returning defaults'
         return ret
 
     cnt = 0
@@ -171,17 +170,17 @@ def rc_params():
         if line.startswith('#'): continue
         tup = line.split(':',1)
         if len(tup) !=2:
-            #print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
-            asaplog.push('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
-            print_log('WARN')
+            print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            #asaplog.push('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
+            #print_log('WARN')
             continue
 
         key, val = tup
         key = key.strip()
         if not defaultParams.has_key(key):
-            #print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
-            asaplog.push('Bad key "%s" on line %d in %s' % (key, cnt, fname))
-            print_log('WARN')
+            print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            #asaplog.push('Bad key "%s" on line %d in %s' % (key, cnt, fname))
+            #print_log('WARN')
             continue
 
         default, converter =  defaultParams[key]
@@ -191,9 +190,9 @@ def rc_params():
         val = val.strip()
         try: cval = converter(val)   # try to convert to proper type or raise
         except ValueError, msg:
-            #print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
-            asaplog.push('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, str(msg)))
-            print_log('WARN')
+            print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
+            #asaplog.push('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, str(msg)))
+            #print_log('WARN')
             continue
         else:
             # Alles Klar, update dict
