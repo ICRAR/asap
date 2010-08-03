@@ -6,8 +6,8 @@ Author: Malte Marquarding
 """
 __revision__ = "$Revision$"
 from asap._asap import linecatalog as lcbase
-from asap import rcParams
-from asap import asaplog
+from asap.parameters import rcParams
+from asap.logging import asaplog
 import os
 
 class linecatalog(lcbase):
@@ -129,8 +129,3 @@ class linecatalog(lcbase):
     def __getitem__(self, k):
         if k < 0: k = self.nrow()-k
         return self.get_row(k)
-
-
-
-
-

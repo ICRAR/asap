@@ -1,5 +1,5 @@
 from asap._asap import stfiller
-from asap import print_log, print_log_dec
+from asap.logging import print_log, print_log_dec
 
 class reader(stfiller):
     """

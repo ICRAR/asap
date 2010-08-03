@@ -1,5 +1,5 @@
 from asap._asap import selector as _selector
-from asap import unique, _to_list
+from asap.utils import unique, _to_list
 
 class selector(_selector):
     """
@@ -164,11 +164,11 @@ class selector(_selector):
         """
         Set a sequence of row numbers (0-based). Power users Only!
         NOTICE row numbers can be changed easily by sorting,
-        prior selection, etc. 
+        prior selection, etc.
         Parameters:
             rows:    a list of integers. Default [] is to unset the selection.
         """
-        vec = _to_list(rows, int) 
+        vec = _to_list(rows, int)
         if isinstance(vec,list):
             self._setrows(vec)
         else:
@@ -176,11 +176,11 @@ class selector(_selector):
 
     def set_types(self, types=[]):
         """
-        Set a sequence of source types. 
+        Set a sequence of source types.
         Parameters:
             types:    a list of integers. Default [] is to unset the selection.
         """
-        vec = _to_list(types, int) 
+        vec = _to_list(types, int)
         if isinstance(vec,list):
             self._settypes(vec)
         else:

@@ -1,9 +1,8 @@
 import _asap
-from asap import rcParams
-from asap import print_log, print_log_dec
-from asap import _n_bools
-from asap import mask_and
-from asap import asaplog
+from asap.parameters import rcParams
+from asap.logging import asaplog, print_log, print_log_dec
+from asap.utils import _n_bools, mask_and
+
 
 class fitter:
     """
@@ -696,7 +695,7 @@ class fitter:
         else:
             scan = self.data
         rows = xrange(scan.nrow())
-        # Save parameters of baseline fits as a class attribute. 
+        # Save parameters of baseline fits as a class attribute.
         # NOTICE: This does not reflect changes in scantable!
         if len(rows) > 0: self.blpars=[]
         asaplog.push("Fitting:")

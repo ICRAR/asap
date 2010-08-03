@@ -1,10 +1,11 @@
+__all__ = ["model", "skydip"]
 import os
 import math
-from asap import scantable
-from asap import merge
-from asap import fitter
-from asap import selector
-from asap import rcParams
+from asap.scantable import scantable
+from asap.asapmath import merge
+from asap.asapfitter import fitter
+from asap.selector import selector
+from asap.parameters import rcParams
 from asap._asap import atmosphere
 
 
@@ -44,7 +45,7 @@ class model(object):
                             default is 0.5
             elevation:     observatory elevation about sea level (in meters)
         """
-        self._atm = atmosphere(temperature, self._to_pascals(pressure), 
+        self._atm = atmosphere(temperature, self._to_pascals(pressure),
                                humidity)
         self.set_observatory_elevation(elevation)
 

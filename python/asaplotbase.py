@@ -4,15 +4,16 @@ ASAP plotting class based on matplotlib.
 
 import sys
 from re import match
-
 import matplotlib
 
 from matplotlib.figure import Figure, Text
 from matplotlib.font_manager import FontProperties as FP
 from numpy import sqrt
 from matplotlib import rc, rcParams
-from asap import rcParams as asaprcParams
 from matplotlib.ticker import OldScalarFormatter
+
+from asap.parameters import rcParams as asaprcParams
+from asap.logging import asaplog
 
 # API change in mpl >= 0.98
 try:
@@ -20,11 +21,9 @@ try:
 except ImportError:
     from matplotlib.transforms import blend_xy_sep_transform as blended_transform_factory
 
-from asap import asaplog
-
-if int(matplotlib.__version__.split(".")[1]) < 87:
+if int(matplotlib.__version__.split(".")[1]) < 99:
     #print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
-    asaplog.push( "matplotlib version < 0.87. This might cause errors. Please upgrade." )
+    asaplog.push( "matplotlib version < 0.99. This might cause errors. Please upgrade." )
     print_log( 'WARN' )
 
 class asaplotbase:
@@ -315,7 +314,7 @@ class asaplotbase:
         def region_draw(event):
             self.figmgr.toolbar.draw_rubberband(event, event.x, event.y,
                                                 self.rect['x'], self.rect['y'])
-            
+
         def region_disable(event):
             self.register('motion_notify', None)
             self.register('button_release', None)
@@ -654,7 +653,7 @@ class asaplotbase:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,
                                                 cols, i+1)
                         if asaprcParams['plotter.axesformatting'] != 'mpl':
-                            
+
                             self.subplots[i]['axes'].xaxis.set_major_formatter(OldScalarFormatter())
                     else:
                         self.subplots[i]['axes'] = self.figure.add_subplot(rows,

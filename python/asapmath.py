@@ -1,8 +1,7 @@
 from asap.scantable import scantable
-from asap import rcParams
-from asap import print_log, print_log_dec
-from asap import selector
-from asap import asaplog
+from asap.paramaters import rcParams
+from asap.logging import asaplog, print_log, print_log_dec
+from asap.selector import selector
 from asap import asaplotgui
 
 @print_log_dec
@@ -936,12 +935,12 @@ def merge(*args):
 def calibrate( scantab, scannos=[], calmode='none', verify=None ):
     """
     Calibrate data.
-    
+
     Parameters:
         scantab:       scantable
         scannos:       list of scan number
         calmode:       calibration mode
-        verify:        verify calibration     
+        verify:        verify calibration
     """
     antname = scantab.get_antennaname()
     if ( calmode == 'nod' ):
@@ -978,7 +977,7 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
         asaplog.push( 'No calibration.' )
         scal = scantab.copy()
 
-    return scal 
+    return scal
 
 def apexcal( scantab, scannos=[], calmode='none', verify=False ):
     """
@@ -989,7 +988,7 @@ def apexcal( scantab, scannos=[], calmode='none', verify=False ):
         scannos:       list of scan number
         calmode:       calibration mode
 
-        verify:        verify calibration     
+        verify:        verify calibration
     """
     from asap._asap import stmath
     stm = stmath()
@@ -1007,7 +1006,7 @@ def almacal( scantab, scannos=[], calmode='none', verify=False ):
         scannos:       list of scan number
         calmode:       calibration mode
 
-        verify:        verify calibration     
+        verify:        verify calibration
     """
     from asap._asap import stmath
     stm = stmath()
@@ -1019,9 +1018,9 @@ def splitant(filename, outprefix='',overwrite=False):
     """
     Split Measurement set by antenna name, save data as a scantables,
     and return a list of filename.
-    Notice this method can only be available from CASA. 
+    Notice this method can only be available from CASA.
     Prameter
-       filename:    the name of Measurement set to be read. 
+       filename:    the name of Measurement set to be read.
        outprefix:   the prefix of output scantable name.
                     the names of output scantable will be
                     outprefix.antenna1, outprefix.antenna2, ....
@@ -1029,7 +1028,7 @@ def splitant(filename, outprefix='',overwrite=False):
        overwrite    If the file should be overwritten if it exists.
                     The default False is to return with warning
                     without writing the output. USE WITH CARE.
-                    
+
     """
     # Import the table toolkit from CASA
     try:
@@ -1070,7 +1069,7 @@ def splitant(filename, outprefix='',overwrite=False):
         # check if input file is MS
         if not os.path.isdir(filename) \
                or not os.path.exists(filename+'/ANTENNA') \
-               or not os.path.exists(filename+'/table.f1'): 
+               or not os.path.exists(filename+'/table.f1'):
             s = "File '%s' is not a Measurement set." % (filename)
             if rcParams['verbose']:
                 print_log()
@@ -1118,7 +1117,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
     scan:    scantable operand
     value:   float list operand
     mode:    operation mode (ADD, SUB, MUL, DIV)
-    tsys:    if True, operate tsys as well 
+    tsys:    if True, operate tsys as well
     """
     nrow = scan.nrow()
     s = None
@@ -1133,7 +1132,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
     else:
         from asap._asap import stmath
         stm = stmath()
-        # insitu must be True 
+        # insitu must be True
         stm._setinsitu( True )
         s = scan.copy()
         sel = selector()
@@ -1149,6 +1148,3 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
         del sel
         del stm
     return s
-
-            
-            
