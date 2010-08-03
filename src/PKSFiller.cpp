@@ -330,8 +330,8 @@ void PKSFiller::fill( )
       // ad imaginary part of cross pol
       polno = 3;
       Vector<Float> im(imag(pksrec.xPol));
-      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1,
-               pksrec.beamNo-1, polno);
+      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1, polno,
+               pksrec.beamNo-1);
       setSpectrum(im, pksrec.flagged.column(0), tsysvec);
       commitRow();
     }
