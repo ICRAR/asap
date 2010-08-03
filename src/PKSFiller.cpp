@@ -307,8 +307,8 @@ void PKSFiller::fill( )
       } else {
         polno = i;
       }
-      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1,
-               pksrec.beamNo-1, polno);
+      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1, polno,
+               pksrec.beamNo-1);
       setSpectrum(pksrec.spectra.column(i), pksrec.flagged.column(i), tsysvec);
       commitRow();
     }
