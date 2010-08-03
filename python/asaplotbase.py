@@ -13,7 +13,7 @@ from matplotlib import rc, rcParams
 from matplotlib.ticker import OldScalarFormatter
 
 from asap.parameters import rcParams as asaprcParams
-from asap.logging import asaplog
+from asap.logging import asaplog, print_log
 
 # API change in mpl >= 0.98
 try:
