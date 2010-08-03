@@ -1,6 +1,7 @@
 __all__ = ["asaplog", "print_log", "print_log_dec"]
 
 from asap.env import is_casapy
+from asap.parameters import rcParams
 from asap._asap import LogSink, set_global_sink
 try:
     from functools import wraps as wraps_dec
