@@ -8,8 +8,9 @@ import sys
 # first import!
 from asap.env import *
 # second import!
-from asap.logging import *
 from asap.parameters import *
+# third import
+from asap.logging import *
 from asap.utils import *
 # explicitly import 'hidden' functions
 from asap.utils import _n_bools, _is_sequence_or_number, _to_list
@@ -39,7 +40,6 @@ if rcParams['useplotter']:
         asaplog.post( "Matplotlib not installed. No plotting available")
         print_log('WARN')
 
-from asapreader import reader
 from selector import selector
 from asapmath import *
 from scantable import scantable
