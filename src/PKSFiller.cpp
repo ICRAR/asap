@@ -322,8 +322,8 @@ void PKSFiller::fill( )
       /// @fixme this has to be a bitwise or of both pols
       /// pksrec.flagged.column(0) | pksrec.flagged.column(1);
 
-      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1,
-               pksrec.beamNo-1, polno);
+      setIndex(pksrec.scanNo-1, pksrec.cycleNo-1, pksrec.IFno-1, polno,
+               pksrec.beamNo-1);
       setSpectrum(r, pksrec.flagged.column(0), tsysvec);
       commitRow();
 
