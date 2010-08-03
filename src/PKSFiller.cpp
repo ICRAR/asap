@@ -73,7 +73,7 @@ bool PKSFiller::open( const std::string& filename)
   Vector<Bool> beams, ifs;
   Vector<uInt> nchans,npols;
 
-  String antenna("");
+  String antenna("0");
 
   reader_ = getPKSreader(inName, antenna, 0, 0, format, beams, ifs,
                          nchans, npols, haveXPol_, haveBase, haveSpectra);
@@ -187,7 +187,6 @@ bool PKSFiller::open( const std::string& filename)
   // set both "FRAME" and "BASEFRAME"
   table_->frequencies().setFrame(freqFrame, false);
   table_->frequencies().setFrame(freqFrame, true);
-  table_->focus().setParallactify(true);
 
   return true;
 }
