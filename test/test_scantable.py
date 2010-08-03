@@ -77,6 +77,24 @@ class TestScantable(object):
         self.st.set_selection(pols="XX")
         assert_equal(self.st.getpolnos(), (0,))
 
+
+    def stats(self, key, value, mask=False):
+        msk = None
+        if mask:
+            msk = self.st.create_mask([0,100], [3900,4096])
+        sval = self.st.stats(stat=key, mask=msk)
+        assert_almost_equal(sval[0], value)
+
+    def test_masked_stats(self):
+        stats = { 'min': 113.767166138,
+                  'max':128.21571350, 'sumsq':4180516.75,
+                  'sum':35216.87890625, 'mean':118.5753479,
+                  'var':15.75608253, 'stddev':3.9693932533,
+                  'avdev':3.395271778, 'rms':118.6415405,
+                  'median':117.5024261}
+        for k,v in stats.items():
+            yield self.stats, k, v, True
+
     def test_stats(self):
         stats = { 'min': 113.767166138,
                   'max':215.279830933, 'sumsq':128759200.0,
@@ -84,11 +102,8 @@ class TestScantable(object):
                   'var':513.95324707, 'stddev':22.6705360413,
                   'avdev':16.3966751099, 'rms':177.300170898,
                   'median':182.891845703}
-        for k,v in stats.iteritems():
-            sval = self.st.stats(stat=k)
-            assert_almost_equal(sval[0], v)
-        msk = self.st.create_mask([0,100], [3900,4096])
-        assert_almost_equal(self.st.stats("sum", msk)[0], 35216.87890625)
+        for k,v in stats.items():
+            yield self.stats, k, v
 
     def test_get_column_names(self):
         cnames = ['SCANNO', 'CYCLENO', 'BEAMNO', 'IFNO',
