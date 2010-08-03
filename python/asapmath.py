@@ -1,5 +1,5 @@
 from asap.scantable import scantable
-from asap.paramaters import rcParams
+from asap.parameters import rcParams
 from asap.logging import asaplog, print_log, print_log_dec
 from asap.selector import selector
 from asap import asaplotgui
