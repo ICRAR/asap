@@ -24,6 +24,11 @@ class _asaplog(object):
         """Post the messages to the logger. This will clear the buffered
         logs.
         """
+        if not self._enabled:
+            return
+        if not rcParams['verbose']:
+            return
+
         logs = self._log.strip()
         if len(logs) > 0:
            self.logger.post(logs, priority=level)
