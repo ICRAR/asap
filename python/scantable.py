@@ -157,18 +157,21 @@ class scantable(Scantable):
             name:        the name of the outputfile. For format "ASCII"
                          this is the root file name (data in 'name'.txt
                          and header in 'name'_header.txt)
+
             format:      an optional file format. Default is ASAP.
-                         Allowed are - 'ASAP' (save as ASAP [aips++] Table),
-                                       'SDFITS' (save as SDFITS file)
-                                       'ASCII' (saves as ascii text file)
-                                       'MS2' (saves as an aips++
-                                              MeasurementSet V2)
-                                       'FITS' (save as image FITS - not
-                                               readable by class)
-                                       'CLASS' (save as FITS readable by CLASS)
+                         Allowed are:
+
+                            * 'ASAP' (save as ASAP [aips++] Table),
+                            * 'SDFITS' (save as SDFITS file)
+                            * 'ASCII' (saves as ascii text file)
+                            * 'MS2' (saves as an casacore MeasurementSet V2)
+                            * 'FITS' (save as image FITS - not readable by class)
+                            * 'CLASS' (save as FITS readable by CLASS)
+
             overwrite:   If the file should be overwritten if it exists.
                          The default False is to return with warning
                          without writing the output. USE WITH CARE.
+
         Example::
 
             scan.save('myscan.asap')
@@ -273,7 +276,7 @@ class scantable(Scantable):
         return cp
 
     def get_scan(self, scanid=None):
-        """
+        """\
         Return a specific scan (by scanno) or collection of scans (by
         source name) in a new scantable.
 
@@ -401,8 +404,9 @@ class scantable(Scantable):
 
         Parameters:
 
-             spec:   the spectrum
-             rowno:    the row number to set the spectrum for
+             spec:   the new spectrum
+
+             rowno:  the row number to set the spectrum for
 
         """
         assert(len(spec) == self.nchan())
@@ -527,8 +531,10 @@ class scantable(Scantable):
 
             stat:    'min', 'max', 'min_abc', 'max_abc', 'sumsq', 'sum',
                      'mean', 'var', 'stddev', 'avdev', 'rms', 'median'
+
             mask:    an optional mask specifying where the statistic
                      should be determined.
+
             form:    format string to print statistic values
 
         Example::
@@ -620,6 +626,7 @@ class scantable(Scantable):
 
             rowno:   a row number in the scantable. Default is the
                      first row, i.e. rowno=0
+
             chan:    a channel in the scantable. Default is the first
                      channel, i.e. pos=0
 
@@ -748,6 +755,7 @@ class scantable(Scantable):
         Parameters:
 
             row:          row no of integration. Default -1 return all rows
+
             asdatetime:   return values as datetime objects rather than strings
 
         """
@@ -826,10 +834,11 @@ class scantable(Scantable):
         """
         Get a list of Positions on the sky (direction) for the observations.
         Return a string for each integration in the scantable.
+
         Parameters:
+
             row:    row no of integration. Default -1 return all rows
-        Example:
-            none
+
         """
         return self._get_column(self._getdirection, row)
 
@@ -1018,6 +1027,7 @@ class scantable(Scantable):
 
             mask:   an optional channel mask, created with create_mask. Default
                     (no mask) is all channels.
+
             unflag:    if True, unflag the data
 
         """
@@ -1043,6 +1053,7 @@ class scantable(Scantable):
 
             rows:   list of row numbers to be flagged. Default is no row
                     (must be explicitly specified to execute row-based flagging).
+
             unflag: if True, unflag the data.
 
         """
@@ -1065,10 +1076,12 @@ class scantable(Scantable):
         Parameters:
 
             uthres:      upper threshold.
+
             dthres:      lower threshold
 
             clipoutside: True for flagging data outside the range [dthres:uthres].
                          False for glagging data inside the range.
+
             unflag:      if True, unflag the data.
 
         """
@@ -1095,7 +1108,9 @@ class scantable(Scantable):
 
             start:    the start frequency (really a period within the
                       bandwidth)  or period to remove
+
             end:      the end frequency or period to remove
+
             unit:     the frequency unit (default "MHz") or "" for
                       explicit lag channels
 
@@ -1144,9 +1159,11 @@ class scantable(Scantable):
             [min, max], [min2, max2], ...
                 Pairs of start/end points (inclusive)specifying the regions
                 to be masked
+
             invert:     optional argument. If specified as True,
                         return an inverted mask, i.e. the regions
                         specified are EXCLUDED
+
             row:        create the mask using the specified row for
                         unit conversions, default is row=0
                         only necessary if frequency varies over rows.
@@ -1210,6 +1227,7 @@ class scantable(Scantable):
         Parameters:
 
             mask:       channel mask, created with create_mask.
+
             row:        calcutate the masklist using the specified row
                         for unit conversions, default is row=0
                         only necessary if frequency varies over rows.
@@ -1250,7 +1268,9 @@ class scantable(Scantable):
     def get_mask_indices(self, mask=None):
         """\
         Compute and Return lists of mask start indices and mask end indices.
-         Parameters:
+
+        Parameters:
+
             mask:       channel mask, created with create_mask.
 
         Returns:
@@ -1341,6 +1361,7 @@ class scantable(Scantable):
         Parameters:
 
             freqs:   list of rest frequency values or string idenitfiers
+
             unit:    unit for rest frequency (default 'Hz')
 
 
@@ -1518,8 +1539,10 @@ class scantable(Scantable):
 
             mask:     an optional mask (only used for 'var' and 'tsys'
                       weighting)
+
             scanav:   True averages each scan separately
                       False (default) averages all scans together,
+
             weight:   Weighting scheme.
                       'none'     (mean no weight)
                       'var'      (1/var(spec) weighted)
@@ -1528,6 +1551,7 @@ class scantable(Scantable):
                       'tintsys'  (Tint/Tsys**2)
                       'median'   ( median averaging)
                       The default is 'tint'
+
             align:    align the spectra in velocity before averaging. It takes
                       the time of the first spectrum as reference time.
 
@@ -1577,8 +1601,11 @@ class scantable(Scantable):
         Parameters:
 
             jyperk:      the Jy / K conversion factor
+
             eta:         the aperture efficiency
+
             d:           the geomtric diameter (metres)
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1613,6 +1640,7 @@ class scantable(Scantable):
             poly:        Polynomial coefficients (default None) to compute a
                          gain-elevation correction as a function of
                          elevation (in degrees).
+
             filename:    The name of an ascii file holding correction factors.
                          The first row of the ascii file must give the column
                          names and these MUST include columns
@@ -1631,9 +1659,11 @@ class scantable(Scantable):
                          0.4 60 0.85
                          0.5 80 0.8
                          0.6 90 0.75
+
             method:      Interpolation method when correcting from a table.
                          Values are  "nearest", "linear" (default), "cubic"
                          and "spline"
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1662,11 +1692,14 @@ class scantable(Scantable):
         set_freqframe.
 
         Parameters:
+
             reftime:     reference time to align at. By default, the time of
                          the first row of data is used.
+
             method:      Interpolation method for regridding the spectra.
                          Choose from "nearest", "linear", "cubic" (default)
                          and "spline"
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1689,6 +1722,7 @@ class scantable(Scantable):
         and Tsys are multiplied by the correction factor.
 
         Parameters:
+
             tau:         (list of) opacity from which the correction factor is
                          exp(tau*ZD)
                          where ZD is the zenith-distance.
@@ -1697,6 +1731,7 @@ class scantable(Scantable):
                          [opif0pol0, opif0pol1, opif1pol0 ...]
                          if tau is `None` the opacities are determined from a
                          model.
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1721,6 +1756,7 @@ class scantable(Scantable):
         Parameters:
 
             width:       The bin width (default=5) in pixels
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1745,9 +1781,11 @@ class scantable(Scantable):
         Parameters:
 
             width:       The bin width (default=5) in pixels
+
             method:      Interpolation method when correcting from a table.
                          Values are  "nearest", "linear", "cubic" (default)
                          and "spline"
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -1772,6 +1810,7 @@ class scantable(Scantable):
             mask:        An optional mask defining the region, where the
                          averaging will be applied. The output will have all
                          specified points masked.
+
             weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
                          weighted), or 'tsys' (1/Tsys**2 weighted)
 
@@ -1792,6 +1831,7 @@ class scantable(Scantable):
             mask:        An optional mask defining the region, where the
                          averaging will be applied. The output will have all
                          specified points masked.
+
             weight:      Weighting scheme. 'none' (default), 'var' (1/var(spec)
                          weighted), or 'tsys' (1/Tsys**2 weighted)
 
@@ -1809,6 +1849,7 @@ class scantable(Scantable):
         been 'parallactified' (total phase == 0.0)
 
         Parameters:
+
             pflag:  Bool indicating whether to turn this on (True) or
                     off (False)
 
@@ -1824,6 +1865,7 @@ class scantable(Scantable):
         Note that you will need cross-polarisation terms for most conversions.
 
         Parameters:
+
             poltype:    The new polarisation type. Valid types are:
                         "linear", "circular", "stokes" and "linpol"
 
@@ -1854,17 +1896,21 @@ class scantable(Scantable):
             kernel:     The type of smoothing kernel. Select from
                         'hanning' (default), 'gaussian', 'boxcar', 'rmedian'
                         or 'poly'
+
             width:      The width of the kernel in pixels. For hanning this is
                         ignored otherwise it defauls to 5 pixels.
                         For 'gaussian' it is the Full Width Half
                         Maximum. For 'boxcar' it is the full width.
                         For 'rmedian' and 'poly' it is the half width.
+
             order:      Optional parameter for 'poly' kernel (default is 2), to
                         specify the order of the polnomial. Ignored by all other
                         kernels.
+
             plot:       plot the original and the smoothed spectra.
                         In this each indivual fit has to be approved, by
                         typing 'y' or 'n'
+
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -1928,11 +1974,15 @@ class scantable(Scantable):
         Parameters:
 
             mask:       an optional mask
+
             order:      the order of the polynomial (default is 0)
+
             plot:       plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+
             uselin:     use linear polynomial fit
+
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
@@ -2241,6 +2291,7 @@ class scantable(Scantable):
         Parameters:
 
             offset:      the offset
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
@@ -2265,9 +2316,11 @@ class scantable(Scantable):
         Parameters:
 
             factor:      the scaling factor (float or 1D float list)
+
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
                          The default is taken from .asaprc (False)
+
             tsys:        if True (default) then apply the operation to Tsys
                          as well as the data
 
@@ -2301,8 +2354,10 @@ class scantable(Scantable):
         Parameters:
 
             match:          a Unix style pattern, regular expression or selector
+
             matchtype:      'pattern' (default) UNIX style pattern or
                             'regex' regular expression
+
             sourcetype:     the type of the source to use (source/reference)
 
         """
@@ -2344,6 +2399,7 @@ class scantable(Scantable):
                             remove it.  The equations used are
                             preserve: Output = Toff * (on/off) - Toff
                             remove:   Output = Toff * (on/off) - Ton
+
             mode:           the on/off detection mode
                             'paired' (default)
                             identifies 'off' scans by the
@@ -2385,11 +2441,15 @@ class scantable(Scantable):
         Parameters:
 
             mask:           an optional mask to be used when weight == 'stddev'
+
             weight:         How to average the off beams.  Default is 'median'.
+
             preserve:       you can preserve (default) the continuum or
-                            remove it.  The equations used are
-                            preserve: Output = Toff * (on/off) - Toff
-                            remove:   Output = Toff * (on/off) - Ton
+                            remove it.  The equations used are:
+
+                                preserve: Output = Toff * (on/off) - Toff
+
+                                remove:   Output = Toff * (on/off) - Ton
 
         """
         mask = mask or ()
