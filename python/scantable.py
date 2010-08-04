@@ -6,6 +6,7 @@ except ImportError:
 
 from asap.env import is_casapy
 from asap._asap import Scantable
+from asap._asap import filler
 from asap.parameters import rcParams
 from asap.logging import asaplog, print_log, print_log_dec
 from asap.selector import selector
@@ -52,7 +53,7 @@ class scantable(Scantable):
             average:     average all integrations withinb a scan on read.
                          The default (True) is taken from .asaprc.
             unit:         brightness unit; must be consistent with K or Jy.
-                         Over-rides the default selected by the reader
+                         Over-rides the default selected by the filler
                          (input rpfits/sdfits/ms) or replaces the value
                          in existing scantables
             getpt:       for MeasurementSet input data only:
@@ -61,17 +62,21 @@ class scantable(Scantable):
                          the MS data faster in some cases.
             antenna:     Antenna selection. integer (id) or string (name
                          or id).
-            parallactify: Indcicate that the data had been parallatified.
+            parallactify: Indicate that the data had been parallatified.
                           Default is taken form rc file.
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
         if getpt is None:
             getpt = True
+        if antenna is not None:
+            asaplog.push("Antenna selection currently unsupported."
+                         "Using '0'")
+            print_log('WARN')
         if antenna is None:
             antenna = ''
         elif type(antenna) == int:
-            antenna = '%s'%antenna
+            antenna = '%s' % antenna
         elif type(antenna) == list:
             tmpstr = ''
             for i in range( len(antenna) ):
@@ -913,7 +918,8 @@ class scantable(Scantable):
         """
         Flag the selected data in row-based manner.
         Parameters:
-            rows:   list of row numbers to be flagged. Default is no row (must be explicitly specified to execute row-based flagging).
+            rows:   list of row numbers to be flagged. Default is no row
+                    (must be explicitly specified to execute row-based flagging).
             unflag: if True, unflag the data.
         """
         varlist = vars()
@@ -1596,10 +1602,10 @@ class scantable(Scantable):
 
     def parallactify(self, pflag):
         """
-        Set a flag to inidcate whether this data should be treated as having
+        Set a flag to indicate whether this data should be treated as having
         been 'parallactified' (total phase == 0.0)
         Parameters:
-            pflag:  Bool inidcating whether to turn this on (True) or
+            pflag:  Bool indicating whether to turn this on (True) or
                     off (False)
         """
         varlist = vars()
@@ -2360,8 +2366,6 @@ class scantable(Scantable):
         return (sum(nchans)/len(nchans) == nchans[0])
 
     def _fill(self, names, unit, average, getpt, antenna):
-        import os
-        from asap._asap import stfiller
         first = True
         fullnames = []
         for name in names:
@@ -2371,7 +2375,6 @@ class scantable(Scantable):
                 msg = "File '%s' does not exists" % (name)
                 if rcParams['verbose']:
                     asaplog.push(msg)
-                    #print asaplog.pop().strip()
                     print_log( 'ERROR' )
                     return
                 raise IOError(msg)
@@ -2381,20 +2384,20 @@ class scantable(Scantable):
         stype = int(rcParams['scantable.storage'].lower() == 'disk')
         for name in fullnames:
             tbl = Scantable(stype)
-            r = stfiller(tbl)
+            r = filler(tbl)
             rx = rcParams['scantable.reference']
-            r._setreferenceexpr(rx)
+            r.setreferenceexpr(rx)
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
             print_log()
-            r._open(name, antenna, -1, -1, getpt)
-            r._read()
+            r.open(name)# antenna, -1, -1, getpt)
+            r.fill()
             if average:
                 tbl = self._math._average((tbl, ), (), 'NONE', 'SCAN')
             if not first:
                 tbl = self._math._merge([self, tbl])
             Scantable.__init__(self, tbl)
-            r._close()
+            r.close()
             del r, tbl
             first = False
         if unit is not None:
