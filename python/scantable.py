@@ -1195,20 +1195,23 @@ class scantable(Scantable):
         Example:
             # set the given restfrequency for the all currently selected IFs
             scan.set_restfreqs(freqs=1.4e9)
-            # set multiple restfrequencies to all the selected data
+            # set restfrequencies for the n IFs  (n > 1) in the order of the
+            # list, i.e
+            # IF0 -> 1.4e9, IF1 ->  1.41e9, IF3 -> 1.42e9
+            # len(list_of_restfreqs) == nIF
+            # for nIF == 1 the following will set multiple restfrequency for
+            # that IF
             scan.set_restfreqs(freqs=[1.4e9, 1.41e9, 1.42e9])
-            # If the number of IFs in the data is >= 2 the IF0 gets the first
-            # value IF1 the second... NOTE that freqs needs to be
-            # specified in list of list (e.g. [[],[],...] ).
-            scan.set_restfreqs(freqs=[[1.4e9],[1.67e9]])
-            #set the given restfrequency for the whole table (by name)
-            scan.set_restfreqs(freqs="OH1667")
+            # set multiple restfrequencies per IF. as a list of lists where
+            # the outer list has nIF elements, the inner s arbitrary
+            scan.set_restfreqs(freqs=[[1.4e9, 1.41e9], [1.67e9]])
+
 
         Note:
             To do more sophisticate Restfrequency setting, e.g. on a
             source and IF basis, use scantable.set_selection() before using
             this function.
-            # provide your scantable is called scan
+            # provided your scantable is called scan
             selection = selector()
             selection.set_name("ORION*")
             selection.set_ifs([1])
@@ -1220,36 +1223,47 @@ class scantable(Scantable):
         from asap import linecatalog
         # simple  value
         if isinstance(freqs, int) or isinstance(freqs, float):
-            # TT mod
-            #self._setrestfreqs(freqs, "",unit)
-            self._setrestfreqs([freqs], [""],unit)
+            self._setrestfreqs([freqs], [""], unit)
         # list of values
         elif isinstance(freqs, list) or isinstance(freqs, tuple):
             # list values are scalars
             if isinstance(freqs[-1], int) or isinstance(freqs[-1], float):
-                self._setrestfreqs(freqs, [""], unit)
-            # list values are tuples, (value, name)
+                if len(freqs) == 1:
+                    self._setrestfreqs(freqs, [""], unit)
+                else:
+                    # allow the 'old' mode of setting mulitple IFs
+                    sel = selector()
+                    savesel = self._getselection()
+                    iflist = self.getifnos()
+                    if len(freqs)>len(iflist):
+                        raise ValueError("number of elements in list of list "
+                                         "exeeds the current IF selections")
+                    iflist = self.getifnos()
+                    for i, fval in enumerate(freqs):
+                        sel.set_ifs(iflist[i])
+                        self._setselection(sel)
+                        self._setrestfreqs([fval], [""], unit)
+                    self._setselection(savesel)
+
+            # list values are dict, {'value'=, 'name'=)
             elif isinstance(freqs[-1], dict):
-                #sel = selector()
-                #savesel = self._getselection()
-                #iflist = self.getifnos()
-                #for i in xrange(len(freqs)):
-                #    sel.set_ifs(iflist[i])
-                #    self._setselection(sel)
-                #    self._setrestfreqs(freqs[i], "",unit)
-                #self._setselection(savesel)
-                self._setrestfreqs(freqs["value"],
-                                   freqs["name"], unit)
+                values = []
+                names = []
+                for d in freqs:
+                    values.append(d["value"])
+                    names.append(d["name"])
+                self._setrestfreqs(values, names, unit)
             elif isinstance(freqs[-1], list) or isinstance(freqs[-1], tuple):
                 sel = selector()
                 savesel = self._getselection()
                 iflist = self.getifnos()
                 if len(freqs)>len(iflist):
-                    raise ValueError("number of elements in list of list exeeds the current IF selections")
-                for i in xrange(len(freqs)):
+                    raise ValueError("number of elements in list of list exeeds"
+                                     " the current IF selections")
+                for i, fval in enumerate(freqs):
                     sel.set_ifs(iflist[i])
                     self._setselection(sel)
-                    self._setrestfreqs(freqs[i], [""], unit)
+                    self._setrestfreqs(fval, [""], unit)
                 self._setselection(savesel)
         # freqs are to be taken from a linecatalog
         elif isinstance(freqs, linecatalog):
@@ -1258,8 +1272,8 @@ class scantable(Scantable):
             for i in xrange(freqs.nrow()):
                 sel.set_ifs(iflist[i])
                 self._setselection(sel)
-                self._setrestfreqs(freqs.get_frequency(i),
-                                   freqs.get_name(i), "MHz")
+                self._setrestfreqs([freqs.get_frequency(i)],
+                                   [freqs.get_name(i)], "MHz")
                 # ensure that we are not iterating past nIF
                 if i == self.nif()-1: break
             self._setselection(savesel)
