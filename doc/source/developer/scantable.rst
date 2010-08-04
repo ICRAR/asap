@@ -8,17 +8,105 @@ Introduction
 The Scantable is the ASAP single-dish data container. It was designed
 based on the data abstraction of the PKSreader API.
 
+ASAP data handling works on objects called scantables. A scantable holds your
+data, and also provides functions to operate upon it.
+
+The building block of a scantable is an integration, which is a single row of
+a scantable. Each row contains just one spectrum for each beam, IF and
+polarisation. For example Parkes OH-multibeam data would normally contain
+13 beams, 1 IF and 2 polarisations, Parkes methanol-multibeam data would
+contain 7 beams, 2 IFs and 2 polarisations while the Mopra 8-GHz MOPS
+filterbank will produce one beam, many IFs, and 2-4 polarisations.
+
+All of the combinations of Beams/IFs an Polarisations are contained in separate
+rows. These rows are grouped in cycles (same time stamp).
+
+A collection of cycles for one source is termed a scan (and each scan has a
+unique numeric identifier, the SCANNO). A scantable is then a collection of
+one or more scans. If you have scan-averaged your data in time, i.e. you
+have averaged all cycles within a scan, then each scan would hold just
+one (averaged) integration.
+
 Schema
 ======
 
 The Scantable consist of a main (casacore) Table and several sub-tables which
-are referenced via _id_.
+are referenced via **ID**. The following descriptions use the following syntax
+
+    **COLUMN/KEYWORD NAME** - *DATA_TYPE(N)=DEFAULT_VALUE*
+
+where *DEFAULT_VALUE* is optional and *(N)* indicates a Vector of that type
 
 ----------
 Main Table
 ----------
 
 The main table consists of global data (keywords) and row-based data (columns)
+
+
+Keywords
+--------
+
+* **VERSION** - *uInt*
+
+    the version of the scantable for compatibility tests
+
+* **POLTYPE** - *String=linear*
+
+    the polarisation type, i.e. *stokes*, *linear* or *circular*
+
+* **DIRECTIONREF** - *String=J2000*
+
+    the reference frame of the direction (coordinate) [redundant?!]
+
+* **OBSMODE** - *String=""*
+
+    no idea...
+
+* **UTC** - *String*
+
+    most likely the starting time of the observation (file)
+
+* **AntennaName** - *String*
+
+    the name of the antenna
+
+* **AntennaPosition** - *Double(3)*
+
+    the WGS position of the antenna
+
+* **FluxUnit** - *String*
+
+    the unit of the channel values i.e. *Jy* or *K*
+
+* **Observer** - *String*
+
+    the name of the observer
+
+* **Obstype** -  *String*
+
+    probably telescope specific name/encoding
+
+* **Project** -  *String*
+
+    e.g. proposal project number, survey name
+
+* **Bandwidth** - *Double*
+
+    self-explanatory
+
+* **nIF, nBeam, nPol, nChan** - *Int*
+
+    the number of IF, Beam, Polarisation and Channel values in the scantable
+    This is currently **FIXED**
+
+* **FreqRefFrame** - *String*
+
+    redundant info - also in **FREQUENCIES** sub-table
+
+* **FreqRefVal** - *Double*
+
+    no idea...
 
 Columns
 -------
@@ -35,7 +123,7 @@ Columns
 
     the channel-based system temperature values
 
-* **FLAGROW** - *uInt*
+* **FLAGROW** - *uInt=-1*
 
     spectrum based flags
 
@@ -59,7 +147,7 @@ Columns
 
     the name of the source observered
 
-* **SRCTYPE** - *Int*
+* **SRCTYPE** - *Int=-1*
 
     the tyep of the source, i.e. indicating if it is an on source scan or
     off source. This will be used for calibration
@@ -80,12 +168,29 @@ Columns
     * POLNO: the index of the polarisation, e.g. XX=0, YY=1, Real(XY)=2,
              Imag(XY)=3
 
-* **REFBEAMNO** - *Int*
+* **REFBEAMNO** - *Int=-1*
 
     optional index of the reference beam in a multibeam obervation
 
-* **FREQ_ID, MOLECULE_ID, TCAL_ID, FOCUS_ID, WEATHER_ID, FIT_ID**
+* **FREQ_ID, MOLECULE_ID, TCAL_ID, FOCUS_ID, WEATHER_ID, FIT_ID** - *Int*
 
+    the reference indeces to the sub-tables
+
+* **FIELDNAME** - *string*
+
+    the name of the field the source belongs to
+
+* **OPACITY** - *Float*
+
+    maybe redundant - not used anywhere
+
+* **SRCPROPERMOTION, SRCVELOCITY, SRCDIRECTION**
+
+    see livedata docs - not used in ASAP
+
+* **SCANRATE**
+
+    see livedata docs - not used in ASAP
 
 ----------
 Sub-Tables
@@ -94,7 +199,42 @@ Sub-Tables
 FREQUENCY
 ---------
 
-blah blah
+""""""""
+Keywords
+""""""""
+
+* **BASEFRAME** - *String=TOPO*
+* **FRAME** - *String=TOPO*
+* **EQUINOX** - *String=J2000*
+* **UNIT** - *String=""*
+* **DOPPLER** - *String=RADIO*
+
+"""""""
+Columns
+"""""""
+
+* **REFPIX** - *Double*
+
+* **REFVAL** - *Double*
+
+* **INCREMENT** - *Double*
+
+MOLECULES
+---------
+
+""""""""
+Keywords
+""""""""
+
+* **UNIT** - *String=Hz*
+
+"""""""
+Columns
+"""""""
+
+* **RESTFREQUENCY** - *Double()*
+* **NAME** - *String()*
+* **FORMATTEDNAME** - *String()*
 
 
 ========================
@@ -103,3 +243,10 @@ Mapping to other formats
 
 MS
 ==
+
+MeasurementSets are specifically designed for synthesis data. As such one of the
+main dfferences between the Scantable and a MS is how spectra are stored.
+An MS usually stores those in an n_pol x n_channel complex matrix whereas the
+Scantable stores each polarisation seperately. In case of polarimetry data the
+(complex) cross-polarisation is serialised into real and imaginary parts, e.g. a
+total of four rows would descibe one polarisation.
