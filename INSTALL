@@ -1,7 +1,6 @@
 Requirements
 ============
 
-
 * scons >= 1.1
 * rpfits >= 2.19
 * cfitso >= 2
