@@ -179,7 +179,6 @@ class TestScantable(object):
         assert_almost_equal(q0.stats(stat='max')[0], 95.62171936)
         assert_almost_equal(q1.stats(stat='max')[0], 2.66563416)
 
-
     @with_setup(tempdir_setup, tempdir_teardown)
     def test_save(self):
         fname = os.path.join("test_temp", 'scantable_test.%s')
@@ -195,6 +194,7 @@ class TestScantable(object):
     def save(self, args):
         fname = args[0]
         self.st.save(fname, args[1], True)
+        # do some verification args[2] == True
         if args[-1]:
             s = scantable(fname)
             ds = self.st - s
@@ -202,5 +202,6 @@ class TestScantable(object):
             assert_equals(self.st.getscannos(), s.getscannos())
             assert_equals(self.st.getifnos(), s.getifnos())
             assert_equals(self.st.getbeamnos(), s.getbeamnos())
+            # see if the residual spectra are ~ 0.0
             for spec in ds:
                 assert_almost_equals(sum(spec)/len(spec), 0.0, 5)
