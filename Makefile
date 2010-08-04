@@ -14,7 +14,8 @@ endif
 
 #PY := $(wildcard python/*.py)
 PY := $(wildcard python/*.py python/svninfo.txt)
-LIBS := /tmp/_asap.so
+#LIBS := /tmp/_asap.so
+LIBS := /home/nakazato/tmp/_asap.so
 BINS := bin/asap
 APPS := apps/asap2to3
 

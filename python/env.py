@@ -7,7 +7,7 @@ import platform
 
 def is_casapy():
     try:
-        import casalogger
+        from taskinit import casalog
         return True
     except ImportError:
         return False
