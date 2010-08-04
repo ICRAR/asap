@@ -6,8 +6,7 @@
 ###        '-I$(CASAROOT)/code/include -I$(CASAROOT)/code/casa'
 ###    3. Replase library names in G2CARCH '-lcasa_*' with '-l*'.
 ###    4. Comment-IN the definition of 'CXXOPTS'. 
-#TARGET   := /tmp/_asap.so
-TARGET   := /home/nakazato/tmp/_asap.so
+TARGET   := /tmp/_asap.so
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(CASAPATH))
