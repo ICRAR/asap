@@ -21,8 +21,10 @@ def preserve_selection(func):
     @wraps_dec(func)
     def wrap(obj, *args, **kw):
         basesel = obj.get_selection()
-        val = func(obj, *args, **kw)
-        obj.set_selection(basesel)
+        try:
+            val = func(obj, *args, **kw)
+        finally:
+            obj.set_selection(basesel)
         return val
     return wrap
 
@@ -1474,7 +1476,7 @@ class scantable(Scantable):
         out = "-"*80
         for h in hist:
             if h.startswith("---"):
-                out += "\n"+h
+                out = "\n".join([out, h])
             else:
                 items = h.split("##")
                 date = items[0]
@@ -1485,7 +1487,7 @@ class scantable(Scantable):
                 for i in items:
                     s = i.split("=")
                     out += "\n   %s = %s" % (s[0], s[1])
-                out += "\n"+"-"*80
+                out = "\n".join([out, "-"*80])
         if filename is not None:
             if filename is "":
                 filename = 'scantable_history.txt'
@@ -2362,6 +2364,7 @@ class scantable(Scantable):
         self._add_history("set_sourcetype", varlist)
 
     @print_log_dec
+    @preserve_selection
     def auto_quotient(self, preserve=True, mode='paired', verify=False):
         """\
         This function allows to build quotients automatically.
@@ -2372,7 +2375,9 @@ class scantable(Scantable):
 
             preserve:       you can preserve (default) the continuum or
                             remove it.  The equations used are
+
                             preserve: Output = Toff * (on/off) - Toff
+
                             remove:   Output = Toff * (on/off) - Ton
 
             mode:           the on/off detection mode
@@ -2384,16 +2389,17 @@ class scantable(Scantable):
                             'time'
                             finds the closest off in time
 
+        .. todo:: verify argument is not implemented
+
         """
+        varlist = vars()
         modes = ["time", "paired"]
         if not mode in modes:
             msg = "please provide valid mode. Valid modes are %s" % (modes)
             raise ValueError(msg)
-        varlist = vars()
         s = None
         if mode.lower() == "paired":
-            basesel = self.get_selection()
-            sel = selector()+basesel
+            sel = self.get_selection()
             sel.set_query("SRCTYPE==1")
             self.set_selection(sel)
             offs = self.copy()
@@ -2401,7 +2407,6 @@ class scantable(Scantable):
             self.set_selection(sel)
             ons = self.copy()
             s = scantable(self._math._quotient(ons, offs, preserve))
-            self.set_selection(basesel)
         elif mode.lower() == "time":
             s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient", varlist)
