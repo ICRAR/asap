@@ -1,3 +1,6 @@
+"""This module provides functions to set up resource parameters (rc).
+These can be set in a file .asaprc or using functions.
+"""
 __all__ = ["rc", "list_rcparameters", "rcParams", "rcParamsDefault"]
 
 import os

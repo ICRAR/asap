@@ -1,3 +1,5 @@
+"""This module has various functions for environment specific setings.
+"""
 __all__ = ["is_casapy", "is_ipython", "setup_env", "get_revision"]
 
 import sys
@@ -6,6 +8,7 @@ import shutil
 import platform
 
 def is_casapy():
+    """Are we running inside casapy?"""
     try:
         from taskinit import casalog
         return True
@@ -13,9 +16,13 @@ def is_casapy():
         return False
 
 def is_ipython():
+    """Are we running inside IPython?"""
     return 'IPython' in sys.modules.keys()
 
 def setup_env():
+    """Set-up environment variables for casa and initialise ~/.asap on first
+    use.
+    """
     # Set up CASAPATH and first time use of asap i.e. ~/.asap/*
     plf = None
     if sys.platform == "linux2":
@@ -58,6 +65,7 @@ def setup_env():
                                userdir+"/ipy_user_conf.py")
 
 def get_revision():
+    """Get the revision of the software. Only useful within casapy."""
     if not is_casapy:
         return ' unknown '
     casapath=os.environ["CASAPATH"].split()

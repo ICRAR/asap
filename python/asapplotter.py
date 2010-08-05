@@ -13,9 +13,12 @@ class asapplotter:
     The ASAP plotter.
     By default the plotter is set up to plot polarisations
     'colour stacked' and scantables across panels.
-    Note:
+
+    .. note::
+
         Currenly it only plots 'spectra' not Tsys or
         other variables.
+
     """
     def __init__(self, visible=None , **kwargs):
         self._visible = rcParams['plotter.gui']
@@ -112,7 +115,6 @@ class asapplotter:
         self._plotter.release()
         self._plotter.tidy()
         self._plotter.show(hardrefresh=False)
-        print_log()
         return
 
     def gca(self):
@@ -351,6 +353,10 @@ class asapplotter:
         return
 
     def set_panelling(self, what=None):
+        """Set the 'panelling' mode i.e. which type of spectra should be
+        spread across different panels.
+        """
+
         mode = what
         if mode is None:
              mode = rcParams['plotter.panelling']
@@ -381,6 +387,9 @@ class asapplotter:
         return
 
     def set_stacking(self, what=None):
+        """Set the 'stacking' mode i.e. which type of spectra should be
+        overlayed.
+        """
         mode = what
         if mode is None:
              mode = rcParams['plotter.stacking']

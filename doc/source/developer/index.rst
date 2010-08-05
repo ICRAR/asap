@@ -6,3 +6,4 @@ Developer Documentation
    :maxdepth: 2
 
    scantable
+   todo

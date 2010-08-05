@@ -208,6 +208,8 @@ latex_documents = [
 # show both constructor and class doc strings
 autoclass_content = "both"
 
+todo_include_todos = True
+
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples

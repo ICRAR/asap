@@ -236,6 +236,7 @@ Columns
 * **NAME** - *String()*
 * **FORMATTEDNAME** - *String()*
 
+.. todo:: add all sub-table descriptions
 
 ========================
 Mapping to other formats

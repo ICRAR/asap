@@ -1,4 +1,6 @@
-__all__ = ["asaplog", "print_log", "print_log_dec"]
+"""This module presents a logging abstraction layer on top of casa.
+"""
+__all__ = ["asaplog", "print_log", "print_log_dec", "AsapLogger"]
 
 from asap.env import is_casapy
 from asap.parameters import rcParams
@@ -9,8 +11,15 @@ except ImportError:
     from asap.compatibility import wraps as wraps_dec
 
 
-class _asaplog(object):
-    """Wrapper object to allow for both casapy and asap logging"""
+class AsapLogger(object):
+    """Wrapper object to allow for both casapy and asap logging.
+
+    Inside casapy this will connect to `taskinit.casalog`. Otherwise it will
+    create its own casa log sink.
+
+    .. note:: Do instantiate a new one - use the :obj:`asaplog` instead.
+    
+    """
     def __init__(self):
         self._enabled = False
         self._log = ""
@@ -24,6 +33,11 @@ class _asaplog(object):
     def post(self, level):
         """Post the messages to the logger. This will clear the buffered
         logs.
+
+        Parameters:
+
+            level:  The log level (severity). One of INFO, WARN, ERROR.
+
         """
         if not self._enabled:
             return
@@ -40,7 +54,15 @@ class _asaplog(object):
         self._log = ""
 
     def push(self, msg, newline=True):
-        """Push logs into the buffer. post needs to be called to send them."""
+        """Push logs into the buffer. post needs to be called to send them.
+
+        Parameters:
+
+            msg:        the log message (string)
+
+            newline:    should we terminate with a newline (default yes)
+
+        """
         from asap import rcParams
         if self._enabled:
             if rcParams["verbose"]:
@@ -57,9 +79,20 @@ class _asaplog(object):
         """Disable (or enable) logging"""
         self._enabled = flag
 
-asaplog = _asaplog()
+asaplog = AsapLogger()
+"""Default asap logger"""
 
 def print_log_dec(f, level='INFO'):
+    """Decorator which posts log at completion of the wrapped method.
+    Example::
+
+        @print_log_dec
+        def test(self):
+            do_stuff()
+            asaplog.push('testing...', False)
+            do_more_stuff()
+            asaplog.push('finished')
+    """
     @wraps_dec(f)
     def wrap_it(*args, **kw):
         val = f(*args, **kw)
@@ -68,5 +101,5 @@ def print_log_dec(f, level='INFO'):
     return wrap_it
 
 def print_log(level='INFO'):
-    """Alias for asaplog.post."""
+    """Alias for asaplog.post(level)"""
     asaplog.post(level)
