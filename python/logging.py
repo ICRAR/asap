@@ -1,7 +1,8 @@
 """This module presents a logging abstraction layer on top of casa.
 """
-__all__ = ["asaplog", "print_log", "print_log_dec", "AsapLogger"]
+__all__ = ["asaplog", "print_log_dec", "AsapLogger"]
 
+import inspect
 from asap.env import is_casapy
 from asap.parameters import rcParams
 from asap._asap import LogSink, set_global_sink
@@ -30,7 +31,7 @@ class AsapLogger(object):
             self.logger = LogSink()
             set_global_sink(self.logger)
 
-    def post(self, level, origin=""):
+    def post(self, level='INFO', origin=""):
         """Post the messages to the logger. This will clear the buffered
         logs.
 
@@ -42,6 +43,8 @@ class AsapLogger(object):
         if not self._enabled:
             return
 
+        if not origin:
+            origin = inspect.getframeinfo(inspect.currentframe().f_back)[2]
         logs = self._log.strip()
         if len(logs) > 0:
             self.logger.post(logs, priority=level, origin=origin)
@@ -107,9 +110,7 @@ def print_log_dec(f):
             else:
                 raise
         finally:
-            print_log(level, f.func_name)
+            asaplog.post(level, f.func_name)
+            #asaplog.post(level, ".".join([f.__module__,f.func_name]))
     return wrap_it
 
-def print_log(level='INFO', origin=""):
-    """Alias for asaplog.post(level)"""
-    asaplog.post(level, origin)

@@ -1,7 +1,7 @@
 from asap.parameters import rcParams
 from asap.selector import selector
 from asap.scantable import scantable
-from asap.logging import asaplog, print_log, print_log_dec
+from asap.logging import asaplog, print_log_dec
 import matplotlib.axes
 from matplotlib.font_manager import FontProperties
 from matplotlib.text import Text
@@ -833,7 +833,7 @@ class asapplotter:
             msg ="Scan to be plotted contains more than %d selections.\n" \
                   "Selecting first %d selections..." % (maxn, maxn)
             asaplog.push(msg)
-            print_log('WARN')
+            asaplog.post('WARN')
             n = min(n,maxpanel)
             nstack = min(nstack,maxstack)
         if n > 1:

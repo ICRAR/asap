@@ -38,8 +38,8 @@ if rcParams['useplotter']:
         xyplotter = pylab
         plotter = asapplotter(gui)
     except ImportError:
-        asaplog.post( "Matplotlib not installed. No plotting available")
-        print_log('WARN')
+        asaplog.push( "Matplotlib not installed. No plotting available")
+        asaplog.post('WARN')
 
 from selector import selector
 from asapmath import *

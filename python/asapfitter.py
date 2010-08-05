@@ -1,6 +1,6 @@
 import _asap
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log, print_log_dec
+from asap.logging import asaplog, print_log_dec
 from asap.utils import _n_bools, mask_and
 
 
@@ -8,7 +8,6 @@ class fitter:
     """
     The fitting class for ASAP.
     """
-
     def __init__(self):
         """
         Create a fitter object. No state is set.

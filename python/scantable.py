@@ -10,7 +10,7 @@ from asap.env import is_casapy
 from asap._asap import Scantable
 from asap._asap import filler
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log, print_log_dec
+from asap.logging import asaplog, print_log_dec
 from asap.selector import selector
 from asap.linecatalog import linecatalog
 from asap.coordinate import coordinate
@@ -87,7 +87,7 @@ class scantable(Scantable):
         if antenna is not None:
             asaplog.push("Antenna selection currently unsupported."
                          "Using '0'")
-            print_log('WARN')
+            asaplog.post('WARN')
         if antenna is None:
             antenna = ''
         elif type(antenna) == int:
@@ -659,7 +659,7 @@ class scantable(Scantable):
         asaplog.push(" %s" % (label))
         asaplog.push(sep)
         asaplog.push(out)
-        print_log()
+        asaplog.post()
         return outvec
 
     def _get_column(self, callback, row=-1):
@@ -2522,6 +2522,8 @@ class scantable(Scantable):
             r.close()
             del r, tbl
             first = False
+            #flush log
+        asaplog.post()
         if unit is not None:
             self.set_fluxunit(unit)
         if not is_casapy():

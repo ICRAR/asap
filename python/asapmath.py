@@ -1,6 +1,6 @@
 from asap.scantable import scantable
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log, print_log_dec
+from asap.logging import asaplog, print_log_dec
 from asap.selector import selector
 from asap import asaplotgui
 
@@ -306,9 +306,9 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
                 ress.set_selection()
         del sel
         # plot
-        print_log()
+        asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
-        print_log('WARN')
+        asaplog.post('WARN')
         p=asaplotgui.asaplotgui()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
@@ -335,9 +335,9 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
                     b=True
                 btics.append(b)
         else:
-            print_log()
+            asaplog.post()
             asaplog.push('Only first 6 [if,pol] pairs are plotted.')
-            print_log('WARN')
+            asaplog.post('WARN')
             nr=6
             for i in range(2*nr):
                 b=False
@@ -524,9 +524,9 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
                 resspec.set_selection()
         del sel
         # plot
-        print_log()
+        asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
-        print_log('WARN')
+        asaplog.post('WARN')
         p=asaplotgui.asaplotgui()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
@@ -553,9 +553,9 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
                     b=True
                 btics.append(b)
         else:
-            print_log()
+            asaplog.post()
             asaplog.push('Only first 6 [if,pol] pairs are plotted.')
-            print_log('WARN')
+            asaplog.post('WARN')
             nr=6
             for i in range(2*nr):
                 b=False
@@ -735,18 +735,18 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
                 resspec.set_selection()
         del sel
         # plot
-        print_log()
+        asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
-        print_log('WARN')
+        asaplog.post('WARN')
         p=asaplotgui.asaplotgui()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)/2*len(polnos)
         titles=[]
         btics=[]
         if nr>3:
-            print_log()
+            asaplog.post()
             asaplog.push('Only first 3 [if,pol] pairs are plotted.')
-            print_log('WARN')
+            asaplog.post('WARN')
             nr=3
         p.set_panels(rows=nr,cols=3,nplots=3*nr,ganged=False)
         for i in range(3*nr):

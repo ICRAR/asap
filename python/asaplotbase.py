@@ -13,7 +13,7 @@ from matplotlib import rc, rcParams
 from matplotlib.ticker import OldScalarFormatter
 
 from asap.parameters import rcParams as asaprcParams
-from asap.logging import asaplog, print_log
+from asap.logging import asaplog
 
 # API change in mpl >= 0.98
 try:
@@ -24,7 +24,7 @@ except ImportError:
 if int(matplotlib.__version__.split(".")[1]) < 99:
     #print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
     asaplog.push( "matplotlib version < 0.99. This might cause errors. Please upgrade." )
-    print_log( 'WARN' )
+    asaplog.post( 'WARN' )
 
 class asaplotbase:
     """
@@ -455,16 +455,16 @@ class asaplotbase:
                     print 'Written file %s' % (fname)
             except IOError, msg:
                 #print 'Failed to save %s: Error msg was\n\n%s' % (fname, err)
-                print_log()
+                asaplog.post()
                 asaplog.push('Failed to save %s: Error msg was\n\n%s' % (fname, str(msg)))
-                print_log( 'ERROR' )
+                asaplog.post( 'ERROR' )
                 return
         else:
             #print "Invalid image type. Valid types are:"
             #print "'ps', 'eps', 'png'"
             asaplog.push( "Invalid image type. Valid types are:" )
             asaplog.push( "'ps', 'eps', 'png'" )
-            print_log('WARN')
+            asaplog.post('WARN')
 
 
     def set_axes(self, what=None, *args, **kwargs):

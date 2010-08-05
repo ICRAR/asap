@@ -176,7 +176,7 @@ def rc_params():
         if len(tup) !=2:
             print ('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
             #asaplog.push('Illegal line #%d\n\t%s\n\tin file "%s"' % (cnt, line, fname))
-            #print_log('WARN')
+            #asaplog.post('WARN')
             continue
 
         key, val = tup
@@ -184,7 +184,7 @@ def rc_params():
         if not defaultParams.has_key(key):
             print ('Bad key "%s" on line %d in %s' % (key, cnt, fname))
             #asaplog.push('Bad key "%s" on line %d in %s' % (key, cnt, fname))
-            #print_log('WARN')
+            #asaplog.post('WARN')
             continue
 
         default, converter =  defaultParams[key]
@@ -196,7 +196,7 @@ def rc_params():
         except ValueError, msg:
             print ('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, msg))
             #asaplog.push('Bad val "%s" on line #%d\n\t"%s"\n\tin file "%s"\n\t%s' % (val, cnt, line, fname, str(msg)))
-            #print_log('WARN')
+            #asaplog.post('WARN')
             continue
         else:
             # Alles Klar, update dict
