@@ -67,6 +67,9 @@ def list_files(path=".",suffix="rpf"):
     return filter(lambda x: x.endswith(suffix),files)
 
 def page(message):
+    """Run the input message through a pager. This is only done if
+    ``rcParams["verbose"]`` is set.
+    """
     verbose = False
     try:
         from asap.parameters import rcParams

@@ -84,7 +84,8 @@ def list_rcparameters():
 
     print """
 # general
-# print verbose output
+# only valid in asap standard mode not in scripts or casapy
+# It will disable exceptions and just print the messages
 verbose                    : True
 
 # preload a default plotter
