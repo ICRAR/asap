@@ -1,6 +1,7 @@
 """This module has various functions for environment specific setings.
 """
-__all__ = ["is_casapy", "is_ipython", "setup_env", "get_revision"]
+__all__ = ["is_casapy", "is_ipython", "setup_env", "get_revision",
+           "is_asap_cli"]
 
 import sys
 import os
@@ -18,6 +19,10 @@ def is_casapy():
 def is_ipython():
     """Are we running inside IPython?"""
     return 'IPython' in sys.modules.keys()
+
+def is_asap_cli():
+    """Are we running inside asap ipython (but not casapy)"""
+    return is_ipython() and not is_casapy()
 
 def setup_env():
     """Set-up environment variables for casa and initialise ~/.asap on first

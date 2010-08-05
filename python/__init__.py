@@ -15,12 +15,13 @@ from asap.utils import *
 # explicitly import 'hidden' functions
 from asap.utils import _n_bools, _is_sequence_or_number, _to_list
 
-
 if is_ipython():
     from ipysupport import *
 
-# use rc parameter to enable/disable logging
-asaplog.enable(rcParams['verbose'])
+# Only use rcParams['verbose'] in standard asap cli mode
+# not in scripts or casapy
+if not is_asap_cli():
+    rcParams['verbose'] = False
 
 setup_env()
 

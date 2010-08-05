@@ -14,7 +14,7 @@ from asap.logging import asaplog, print_log, print_log_dec
 from asap.selector import selector
 from asap.linecatalog import linecatalog
 from asap.coordinate import coordinate
-from asap.utils import _n_bools, mask_not, mask_and, mask_or
+from asap.utils import _n_bools, mask_not, mask_and, mask_or, page
 
 
 def preserve_selection(func):
@@ -100,9 +100,7 @@ class scantable(Scantable):
                 elif type(antenna[i]) == str:
                     tmpstr=tmpstr+antenna[i]+','
                 else:
-                    asaplog.push('Bad antenna selection.')
-                    print_log('ERROR')
-                    return
+                    raise TypeError('Bad antenna selection.')
             antenna = tmpstr.rstrip(',')
         parallactify = parallactify or rcParams['scantable.parallactify']
         varlist = vars()
@@ -116,10 +114,6 @@ class scantable(Scantable):
                 filename = os.path.expanduser(filename)
                 if not os.path.exists(filename):
                     s = "File '%s' not found." % (filename)
-                    if rcParams['verbose']:
-                        asaplog.push(s)
-                        print_log('ERROR')
-                        return
                     raise IOError(s)
                 if is_scantable(filename):
                     ondisk = rcParams['scantable.storage'] == 'disk'
@@ -132,13 +126,7 @@ class scantable(Scantable):
                          and not os.path.exists(filename+'/table.f1'):
                     msg = "The given file '%s'is not a valid " \
                           "asap table." % (filename)
-                    if rcParams['verbose']:
-                        #print msg
-                        asaplog.push( msg )
-                        print_log( 'ERROR' )
-                        return
-                    else:
-                        raise IOError(msg)
+                    raise IOError(msg)
                 else:
                     self._fill([filename], unit, average, getpt, antenna)
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
@@ -190,13 +178,7 @@ class scantable(Scantable):
         if path.isfile(name) or path.isdir(name):
             if not overwrite:
                 msg = "File %s exists." % name
-                if rcParams['verbose']:
-                    #print msg
-                    asaplog.push( msg )
-                    print_log( 'ERROR' )
-                    return
-                else:
-                    raise IOError(msg)
+                raise IOError(msg)
         format2 = format.upper()
         if format2 == 'ASAP':
             self._save(name)
@@ -235,35 +217,14 @@ class scantable(Scantable):
         from asap import _to_list
         from asap import unique
         if not _is_valid(scanid):
-            if rcParams['verbose']:
-                asaplog.push( 'Please specify a scanno to drop from the scantable' )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise RuntimeError("No scan given")
-        try:
-            scanid = _to_list(scanid)
-            allscans = unique([ self.getscan(i) for i in range(self.nrow())])
-            for sid in scanid: allscans.remove(sid)
-            if len(allscans) == 0:
-                raise ValueError("Can't remove all scans")
-        except ValueError:
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push( "Couldn't find any match." )
-                print_log( 'ERROR' )
-                return
-            else: raise
-        try:
-            sel = selector(scans=allscans)
-            return self._select_copy(sel)
-        except RuntimeError:
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push( "Couldn't find any match." )
-                print_log( 'ERROR' )
-            else:
-                raise
+            raise RuntimeError( 'Please specify a scanno to drop from the scantable' )
+        scanid = _to_list(scanid)
+        allscans = unique([ self.getscan(i) for i in range(self.nrow())])
+        for sid in scanid: allscans.remove(sid)
+        if len(allscans) == 0:
+            raise ValueError("Can't remove all scans")
+        sel = selector(scans=allscans)
+        return self._select_copy(sel)
 
     def _select_copy(self, selection):
         orig = self.get_selection()
@@ -298,16 +259,8 @@ class scantable(Scantable):
 
         """
         if scanid is None:
-            if rcParams['verbose']:
-                #print "Please specify a scan no or name to " \
-                #      "retrieve from the scantable"
-                asaplog.push( 'Please specify a scan no or name to retrieve'
-                             ' from the scantable' )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise RuntimeError("No scan given")
-
+            raise RuntimeError( 'Please specify a scan no or name to '
+                                'retrieve from the scantable' )
         try:
             bsel = self.get_selection()
             sel = selector()
@@ -322,19 +275,9 @@ class scantable(Scantable):
                 return self._select_copy(sel)
             else:
                 msg = "Illegal scanid type, use 'int' or 'list' if ints."
-                if rcParams['verbose']:
-                    #print msg
-                    asaplog.push( msg )
-                    print_log( 'ERROR' )
-                else:
-                    raise TypeError(msg)
+                raise TypeError(msg)
         except RuntimeError:
-            if rcParams['verbose']:
-                #print "Couldn't find any match."
-                print_log()
-                asaplog.push( "Couldn't find any match." )
-                print_log( 'ERROR' )
-            else: raise
+            raise
 
     def __str__(self):
         return Scantable._summary(self, True)
@@ -361,20 +304,8 @@ class scantable(Scantable):
                 data.close()
             else:
                 msg = "Illegal file name '%s'." % (filename)
-                if rcParams['verbose']:
-                    #print msg
-                    asaplog.push( msg )
-                    print_log( 'ERROR' )
-                else:
-                    raise IOError(msg)
-        if rcParams['verbose']:
-            try:
-                from IPython.genutils import page as pager
-            except ImportError:
-                from pydoc import pager
-            pager(info)
-        else:
-            return info
+                raise IOError(msg)
+        return page(info)
 
     def get_spectrum(self, rowno):
         """Return the spectrum for the current row in the scantable as a list.
@@ -517,7 +448,7 @@ class scantable(Scantable):
         else:
             return workscan
 
-    #def stats(self, stat='stddev', mask=None):
+    @print_log_dec
     def stats(self, stat='stddev', mask=None, form='3.3f'):
         """\
         Determine the specified statistic of the current beam/if/pol
@@ -590,28 +521,25 @@ class scantable(Scantable):
             out += ('= %'+form) % (statvals[i]) +'   '+refstr+'\n'
             out +=  sep+"\n"
 
-        if rcParams['verbose']:
-            import os
-            if os.environ.has_key( 'USER' ):
-                usr=os.environ['USER']
-            else:
-                import commands
-                usr=commands.getoutput( 'whoami' )
-            tmpfile='/tmp/tmp_'+usr+'_casapy_asap_scantable_stats'
-            f=open(tmpfile,'w')
-            print >> f, sep
-            print >> f, ' %s %s' % (label, statunit)
-            print >> f, sep
-            print >> f, out
-            f.close()
-            f=open(tmpfile,'r')
-            x=f.readlines()
-            f.close()
-            blanc=''
-            asaplog.push(blanc.join(x), False)
-            #for xx in x:
-            #    asaplog.push( xx, False )
-            print_log()
+
+        import os
+        if os.environ.has_key( 'USER' ):
+            usr = os.environ['USER']
+        else:
+            import commands
+            usr = commands.getoutput( 'whoami' )
+        tmpfile = '/tmp/tmp_'+usr+'_casapy_asap_scantable_stats'
+        f = open(tmpfile,'w')
+        print >> f, sep
+        print >> f, ' %s %s' % (label, statunit)
+        print >> f, sep
+        print >> f, out
+        f.close()
+        f = open(tmpfile,'r')
+        x = f.readlines()
+        f.close()
+        asaplog.push(''.join(x), False)
+
         return statvals
 
     def chan2data(self, rowno=0, chan=0):
@@ -726,12 +654,12 @@ class scantable(Scantable):
             outvec.append(callback(i))
             out += '= %3.3f\n' % (outvec[i])
             out +=  sep+'\n'
-        if rcParams['verbose']:
-            asaplog.push(sep)
-            asaplog.push(" %s" % (label))
-            asaplog.push(sep)
-            asaplog.push(out)
-            print_log()
+
+        asaplog.push(sep)
+        asaplog.push(" %s" % (label))
+        asaplog.push(sep)
+        asaplog.push(out)
+        print_log()
         return outvec
 
     def _get_column(self, callback, row=-1):
@@ -944,13 +872,9 @@ class scantable(Scantable):
             self._add_history("set_freqframe", varlist)
         else:
             msg  = "Please specify a valid freq type. Valid types are:\n", valid
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
 
+    @print_log_dec
     def set_dirframe(self, frame=""):
         """\
         Set the frame type of the Direction on the sky.
@@ -966,16 +890,7 @@ class scantable(Scantable):
 
         """
         varlist = vars()
-        try:
-            Scantable.set_dirframe(self, frame)
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-            else:
-                raise
+        Scantable.set_dirframe(self, frame)
         self._add_history("set_dirframe", varlist)
 
     def get_unit(self):
@@ -1012,6 +927,7 @@ class scantable(Scantable):
         lbl = self._getabcissalabel(rowno)
         return abc, lbl
 
+    @print_log_dec
     def flag(self, mask=None, unflag=False):
         """\
         Flag the selected data using an optional channel mask.
@@ -1026,18 +942,10 @@ class scantable(Scantable):
         """
         varlist = vars()
         mask = mask or []
-        try:
-            self._flag(mask, unflag)
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-                return
-            else: raise
+        self._flag(mask, unflag)
         self._add_history("flag", varlist)
 
+    @print_log_dec
     def flag_row(self, rows=[], unflag=False):
         """\
         Flag the selected data in row-based manner.
@@ -1051,17 +959,10 @@ class scantable(Scantable):
 
         """
         varlist = vars()
-        try:
-            self._flag_row(rows, unflag)
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push( str(msg) )
-                print_log('ERROR')
-                return
-            else: raise
+        self._flag_row(rows, unflag)
         self._add_history("flag_row", varlist)
 
+    @print_log_dec
     def clip(self, uthres=None, dthres=None, clipoutside=True, unflag=False):
         """\
         Flag the selected data outside a specified range (in channel-base)
@@ -1079,15 +980,7 @@ class scantable(Scantable):
 
         """
         varlist = vars()
-        try:
-            self._clip(uthres, dthres, clipoutside, unflag)
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push(str(msg))
-                print_log('ERROR')
-                return
-            else: raise
+        self._clip(uthres, dthres, clipoutside, unflag)
         self._add_history("clip", varlist)
 
     @print_log_dec
@@ -1119,20 +1012,11 @@ class scantable(Scantable):
         base = { "GHz": 1000000000., "MHz": 1000000., "kHz": 1000., "Hz": 1.}
         if not (unit == "" or base.has_key(unit)):
             raise ValueError("%s is not a valid unit." % unit)
-        try:
-            if unit == "":
-                s = scantable(self._math._lag_flag(self, start, end, "lags"))
-            else:
-                s = scantable(self._math._lag_flag(self, start*base[unit],
-                                                   end*base[unit], "frequency"))
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-                return
-            else: raise
+        if unit == "":
+            s = scantable(self._math._lag_flag(self, start, end, "lags"))
+        else:
+            s = scantable(self._math._lag_flag(self, start*base[unit],
+                                               end*base[unit], "frequency"))
         s._add_history("lag_flag", varlist)
         if insitu:
             self._assign(s)
@@ -1181,13 +1065,13 @@ class scantable(Scantable):
         row = kwargs.get("row", 0)
         data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
-        if rcParams['verbose']:
-            if u == "": u = "channel"
-            msg = "The current mask window unit is %s" % u
-            i = self._check_ifs()
-            if not i:
-                msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
-            asaplog.push(msg)
+        if u == "":
+            u = "channel"
+        msg = "The current mask window unit is %s" % u
+        i = self._check_ifs()
+        if not i:
+            msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
+        asaplog.push(msg)
         n = self.nchan()
         msk = _n_bools(n, False)
         # test if args is a 'list' or a 'normal *args - UGLY!!!
@@ -1239,13 +1123,13 @@ class scantable(Scantable):
             raise TypeError(msg)
         data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
-        if rcParams['verbose']:
-            if u == "": u = "channel"
-            msg = "The current mask window unit is %s" % u
-            i = self._check_ifs()
-            if not i:
-                msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
-            asaplog.push(msg)
+        if u == "":
+            u = "channel"
+        msg = "The current mask window unit is %s" % u
+        i = self._check_ifs()
+        if not i:
+            msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
+        asaplog.push(msg)
         masklist=[]
         ist, ien = None, None
         ist, ien=self.get_mask_indices(mask)
@@ -1463,6 +1347,7 @@ class scantable(Scantable):
         """
         Scantable.shift_refpix(self, delta)
 
+    @print_log_dec
     def history(self, filename=None):
         """\
         Print the history. Optionally to a file.
@@ -1499,21 +1384,8 @@ class scantable(Scantable):
                 data.close()
             else:
                 msg = "Illegal file name '%s'." % (filename)
-                if rcParams['verbose']:
-                    #print msg
-                    asaplog.push( msg )
-                    print_log( 'ERROR' )
-                else:
-                    raise IOError(msg)
-        if rcParams['verbose']:
-            try:
-                from IPython.genutils import page as pager
-            except ImportError:
-                from pydoc import pager
-            pager(out)
-        else:
-            return out
-        return
+                raise IOError(msg)
+        return page(out)
     #
     # Maths business
     #
@@ -1557,24 +1429,16 @@ class scantable(Scantable):
         mask = mask or ()
         scanav = (scanav and 'SCAN') or 'NONE'
         scan = (self, )
-        try:
-            if align:
-                scan = (self.freq_align(insitu=False), )
-            s = None
-            if weight.upper() == 'MEDIAN':
-                s = scantable(self._math._averagechannel(scan[0], 'MEDIAN',
-                                                         scanav))
-            else:
-                s = scantable(self._math._average(scan, mask, weight.upper(),
-                              scanav))
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-                return
-            else: raise
+
+        if align:
+            scan = (self.freq_align(insitu=False), )
+        s = None
+        if weight.upper() == 'MEDIAN':
+            s = scantable(self._math._averagechannel(scan[0], 'MEDIAN',
+                                                     scanav))
+        else:
+            s = scantable(self._math._average(scan, mask, weight.upper(),
+                          scanav))
         s._add_history("average_time", varlist)
         return s
 
@@ -1853,17 +1717,7 @@ class scantable(Scantable):
 
         """
         varlist = vars()
-        try:
-            s = scantable(self._math._convertpol(self, poltype))
-        except RuntimeError, msg:
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise
+        s = scantable(self._math._convertpol(self, poltype))
         s._add_history("convert_pol", varlist)
         return s
 
@@ -2031,14 +1885,7 @@ class scantable(Scantable):
                 return workscan
         except RuntimeError:
             msg = "The fit failed, possibly because it didn't converge."
-            if rcParams['verbose']:
-                #print msg
-                print_log()
-                asaplog.push( str(msg) )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise RuntimeError(msg)
+            raise RuntimeError(msg)
 
 
     def auto_poly_baseline(self, mask=[], edge=(0, 0), order=0,
@@ -2549,12 +2396,8 @@ class scantable(Scantable):
             return
         from asap.asapfit import asapfit
         fit = asapfit(self._getfit(row))
-        if rcParams['verbose']:
-            #print fit
-            asaplog.push( '%s' %(fit) )
-            return
-        else:
-            return fit.as_dict()
+        asaplog.push( '%s' %(fit) )
+        return fit.as_dict()
 
     def flag_nans(self):
         """\
@@ -2648,6 +2491,7 @@ class scantable(Scantable):
         nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
 
+    @print_log_dec
     def _fill(self, names, unit, average, getpt, antenna):
         first = True
         fullnames = []
@@ -2656,10 +2500,6 @@ class scantable(Scantable):
             name = os.path.expanduser(name)
             if not os.path.exists(name):
                 msg = "File '%s' does not exists" % (name)
-                if rcParams['verbose']:
-                    asaplog.push(msg)
-                    print_log( 'ERROR' )
-                    return
                 raise IOError(msg)
             fullnames.append(name)
         if average:
@@ -2672,7 +2512,6 @@ class scantable(Scantable):
             r.setreferenceexpr(rx)
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
-            print_log()
             r.open(name)# antenna, -1, -1, getpt)
             r.fill()
             if average:

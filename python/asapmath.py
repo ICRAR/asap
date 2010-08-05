@@ -66,13 +66,7 @@ def average_time(*args, **kwargs):
     for s in lst:
         if not isinstance(s,scantable):
             msg = "Please give a list of scantables"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push(msg)
-                print_log('ERROR')
-                return
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
     if scanav: scanav = "SCAN"
     else: scanav = "NONE"
     alignedlst = []
@@ -95,9 +89,10 @@ def average_time(*args, **kwargs):
         #s = scantable(stm._average(alignedlst, mask, weight.upper(), scanav))
         s = scantable(stm._new_average(alignedlst, compel, mask, weight.upper(), scanav))
     s._add_history("average_time",varlist)
-    print_log()
+
     return s
 
+@print_log_dec
 def quotient(source, reference, preserve=True):
     """
     Return the quotient of a 'source' (signal) scan and a 'reference' scan.
@@ -118,7 +113,6 @@ def quotient(source, reference, preserve=True):
     stm._setinsitu(False)
     s = scantable(stm._quotient(source, reference, preserve))
     s._add_history("quotient",varlist)
-    print_log()
     return s
 
 @print_log_dec
@@ -137,7 +131,6 @@ def dototalpower(calon, caloff, tcalval=0.0):
     stm._setinsitu(False)
     s = scantable(stm._dototalpower(calon, caloff, tcalval))
     s._add_history("dototalpower",varlist)
-    print_log()
     return s
 
 @print_log_dec
@@ -158,7 +151,6 @@ def dosigref(sig, ref, smooth, tsysval=0.0, tauval=0.0):
     stm._setinsitu(False)
     s = scantable(stm._dosigref(sig, ref, smooth, tsysval, tauval))
     s._add_history("dosigref",varlist)
-    print_log()
     return s
 
 @print_log_dec
@@ -189,13 +181,7 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
 ##    s = scantab.get_scan('*_ps*')
 ##     if s is None:
 ##         msg = "The input data appear to contain no position-switch mode data."
-##         if rcParams['verbose']:
-##             #print msg
-##             asaplog.push(msg)
-##             print_log('ERROR')
-##             return
-##         else:
-##             raise TypeError(msg)
+##         raise TypeError(msg)
     s = scantab.copy()
     from asap._asap import srctype
     sel = selector()
@@ -204,25 +190,13 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
         scantab.set_selection( sel )
     except Exception, e:
         msg = "The input data appear to contain no position-switch mode data."
-        if rcParams['verbose']:
-            #print msg
-            asaplog.push(msg)
-            print_log('ERROR')
-            return
-        else:
-            raise TypeError(msg)
+        raise TypeError(msg)
     s.set_selection()
     sel.reset()
     ssub = s.get_scan(scannos)
     if ssub is None:
         msg = "No data was found with given scan numbers!"
-        if rcParams['verbose']:
-            #print msg
-            asaplog.push(msg)
-            print_log('ERROR')
-            return
-        else:
-            raise TypeError(msg)
+        raise TypeError(msg)
     #ssubon = ssub.get_scan('*calon')
     #ssuboff = ssub.get_scan('*[^calon]')
     sel.set_types( [srctype.poncal,srctype.poffcal] )
@@ -237,13 +211,7 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
     sel.reset()
     if ssubon.nrow() != ssuboff.nrow():
         msg = "mismatch in numbers of CAL on/off scans. Cannot calibrate. Check the scan numbers."
-        if rcParams['verbose']:
-            #print msg
-            asaplog.push(msg)
-            print_log('ERROR')
-            return
-        else:
-            raise TypeError(msg)
+        raise TypeError(msg)
     cals = dototalpower(ssubon, ssuboff, tcalval)
     #sig = cals.get_scan('*ps')
     #ref = cals.get_scan('*psr')
@@ -259,34 +227,18 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
     sel.reset()
     if sig.nscan() != ref.nscan():
         msg = "mismatch in numbers of on/off scans. Cannot calibrate. Check the scan numbers."
-        if rcParams['verbose']:
-            #print msg
-            asaplog.push(msg)
-            print_log('ERROR')
-            return
-        else:
-            raise TypeError(msg)
+        raise TypeError(msg)
 
     #for user supplied Tsys
     if tsysval>0.0:
         if tauval<=0.0:
             msg = "Need to supply a valid tau to use the supplied Tsys"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push(msg)
-                print_log('ERROR')
-                return
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
         else:
             sig.recalc_azel()
             ref.recalc_azel()
             #msg = "Use of user specified Tsys is not fully implemented yet."
-            #if rcParams['verbose']:
-            #    print msg
-            #    return
-            #else:
-            #    raise TypeError(msg)
+            #raise TypeError(msg)
             # use get_elevation to get elevation and
             # calculate a scaling factor using the formula
             # -> tsys use to dosigref
@@ -441,7 +393,6 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
         del p
     ###
     ress._add_history("calps", varlist)
-    print_log()
     return ress
 
 @print_log_dec
@@ -468,13 +419,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
 ##     s = scantab.get_scan('*_nod*')
 ##     if s is None:
 ##         msg = "The input data appear to contain no Nod observing mode data."
-##         if rcParams['verbose']:
-##             #print msg
-##             asaplog.push(msg)
-##             print_log('ERROR')
-##             return
-##         else:
-##             raise TypeError(msg)
+##         raise TypeError(msg)
     s = scantab.copy()
     sel = selector()
     sel.set_types( srctype.nod )
@@ -482,13 +427,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
         s.set_selection( sel )
     except Exception, e:
         msg = "The input data appear to contain no Nod observing mode data."
-        if rcParams['verbose']:
-            #print msg
-            asaplog.push(msg)
-            print_log('ERROR')
-            return
-        else:
-            raise TypeError(msg)
+        raise TypeError(msg)
     sel.reset()
     del sel
     del s
@@ -510,11 +449,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
     else:
         #if len(scannos)>2:
         #    msg = "calnod can only process a pair of nod scans at time."
-        #    if rcParams['verbose']:
-        #        print msg
-        #        return
-        #    else:
-        #        raise TypeError(msg)
+        #    raise TypeError(msg)
         #
         #if len(scannos)==2:
         #    scan1no = scannos[0]
@@ -524,13 +459,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
     if tsysval>0.0:
         if tauval<=0.0:
             msg = "Need to supply a valid tau to use the supplied Tsys"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push(msg)
-                print_log('ERROR')
-                return
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
         else:
             scantab.recalc_azel()
     resspec = scantable(stm._donod(scantab, pairScans, smooth, tsysval,tauval,tcalval))
@@ -682,7 +611,6 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
         del p
     ###
     resspec._add_history("calnod",varlist)
-    print_log()
     return resspec
 
 @print_log_dec
@@ -715,11 +643,7 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
 #    check = scantab.get_scan('*_fs*')
 #    if check is None:
 #        msg = "The input data appear to contain no Nod observing mode data."
-#        if rcParams['verbose']:
-#            print msg
-#            return
-#        else:
-#            raise TypeError(msg)
+#        raise TypeError(msg)
     s = scantab.get_scan(scannos)
     del scantab
 
@@ -890,7 +814,6 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
         del p
     ###
     resspec._add_history("calfs",varlist)
-    print_log()
     return resspec
 
 @print_log_dec
@@ -920,18 +843,12 @@ def merge(*args):
     for s in lst:
         if not isinstance(s,scantable):
             msg = "Please give a list of scantables"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push(msg)
-                print_log('ERROR')
-                return
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
     s = scantable(stm._merge(lst))
     s._add_history("merge", varlist)
-    print_log()
     return s
 
+@print_log_dec
 def calibrate( scantab, scannos=[], calmode='none', verify=None ):
     """
     Calibrate data.
@@ -945,15 +862,12 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
     antname = scantab.get_antennaname()
     if ( calmode == 'nod' ):
         asaplog.push( 'Calibrating nod data.' )
-        print_log()
         scal = calnod( scantab, scannos=scannos, verify=verify )
     elif ( calmode == 'quotient' ):
         asaplog.push( 'Calibrating using quotient.' )
-        print_log()
         scal = scantab.auto_quotient( verify=verify )
     elif ( calmode == 'ps' ):
         asaplog.push( 'Calibrating %s position-switched data.' % antname )
-        print_log()
         if ( antname.find( 'APEX' ) != -1 ):
             scal = apexcal( scantab, scannos, calmode, verify )
         elif ( antname.find( 'ALMA' ) != -1 or antname.find( 'OSF' ) != -1 ):
@@ -962,7 +876,6 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
             scal = calps( scantab, scannos=scannos, verify=verify )
     elif ( calmode == 'fs' or calmode == 'fsotf' ):
         asaplog.push( 'Calibrating %s frequency-switched data.' % antname )
-        print_log()
         if ( antname.find( 'APEX' ) != -1 ):
             scal = apexcal( scantab, scannos, calmode, verify )
         elif ( antname.find( 'ALMA' ) != -1 or antname.find( 'OSF' ) != -1 ):
@@ -971,7 +884,6 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
             scal = calfs( scantab, scannos=scannos, verify=verify )
     elif ( calmode == 'otf' ):
         asaplog.push( 'Calibrating %s On-The-Fly data.' % antname )
-        print_log()
         scal = almacal( scantab, scannos, calmode, verify )
     else:
         asaplog.push( 'No calibration.' )
@@ -1014,6 +926,7 @@ def almacal( scantab, scannos=[], calmode='none', verify=False ):
     scal = scantable( stm.almacal( ssub, calmode ) )
     return scal
 
+@print_log_dec
 def splitant(filename, outprefix='',overwrite=False):
     """
     Split Measurement set by antenna name, save data as a scantables,
@@ -1031,28 +944,11 @@ def splitant(filename, outprefix='',overwrite=False):
 
     """
     # Import the table toolkit from CASA
-    try:
-       import casac
-    except ImportError:
-       if rcParams['verbose']:
-           #print "failed to load casa"
-           print_log()
-           asaplog.push("failed to load casa")
-           print_log('ERROR')
-       else: raise
-       return False
-    try:
-       tbtool = casac.homefinder.find_home_by_name('tableHome')
-       tb = tbtool.create()
-       tb2 = tbtool.create()
-    except:
-       if rcParams['verbose']:
-           #print "failed to load a table tool:\n", e
-           print_log()
-           asaplog.push("failed to load table tool")
-           print_log('ERROR')
-       else: raise
-       return False
+
+    import casac
+    tbtool = casac.homefinder.find_home_by_name('tableHome')
+    tb = tbtool.create()
+    tb2 = tbtool.create()
     # Check the input filename
     if isinstance(filename, str):
         import os.path
@@ -1060,30 +956,15 @@ def splitant(filename, outprefix='',overwrite=False):
         filename = os.path.expanduser(filename)
         if not os.path.exists(filename):
             s = "File '%s' not found." % (filename)
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push(s)
-                print_log('ERROR')
-                return
             raise IOError(s)
         # check if input file is MS
         if not os.path.isdir(filename) \
                or not os.path.exists(filename+'/ANTENNA') \
                or not os.path.exists(filename+'/table.f1'):
             s = "File '%s' is not a Measurement set." % (filename)
-            if rcParams['verbose']:
-                print_log()
-                asaplog.push(s)
-                print_log('ERROR')
-                return
             raise IOError(s)
     else:
         s = "The filename should be string. "
-        if rcParams['verbose']:
-            print_log()
-            asaplog.push(s)
-            print_log('ERROR')
-            return
         raise TypeError(s)
     # Check out put file name
     outname=''
@@ -1109,6 +990,7 @@ def splitant(filename, outprefix='',overwrite=False):
     del tb, tb2
     return outfiles
 
+@print_log_dec
 def _array2dOp( scan, value, mode="ADD", tsys=False ):
     """
     This function is workaround on the basic operation of scantable
@@ -1127,8 +1009,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
         s = scantable( stm._arrayop( scan.copy(), value[0], mode, tsys ) )
         del stm
     elif len( value ) != nrow:
-        asaplog.push( 'len(value) must be 1 or conform to scan.nrow()' )
-        print_log( 'ERROR' )
+        raise ValueError( 'len(value) must be 1 or conform to scan.nrow()' )
     else:
         from asap._asap import stmath
         stm = stmath()

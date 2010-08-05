@@ -101,11 +101,6 @@ class asapplotter:
         self._plotter.clear()
         if not self._data and not scan:
             msg = "Input is not a scantable"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
             raise TypeError(msg)
         if scan: self.set_data(scan,refresh=False)
         self._plot(self._data)
@@ -276,6 +271,7 @@ class asapplotter:
         self._plotter.axes.set_autoscale_on(True)
     # end matplotlib.axes fowarding functions
 
+    @print_log_dec
     def set_data(self, scan, refresh=True):
         """
         Set a scantable to plot.
@@ -298,17 +294,11 @@ class asapplotter:
                     self._reset()
                     msg = "A new scantable is set to the plotter. The masks and data selections are reset."
                     asaplog.push( msg )
-                    print_log( 'INFO' )
             else:
                 self._data = scan
                 self._reset()
         else:
             msg = "Input is not a scantable"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
             raise TypeError(msg)
 
         # ranges become invalid when unit changes
@@ -319,7 +309,7 @@ class asapplotter:
             self._datamask = None
         if refresh: self.plot()
 
-
+    @print_log_dec
     def set_mode(self, stacking=None, panelling=None, refresh=True):
         """
         Set the plots look and feel, i.e. what you want to see on the plot.
@@ -342,13 +332,7 @@ class asapplotter:
         msg = "Invalid mode"
         if not self.set_panelling(panelling) or \
                not self.set_stacking(stacking):
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise TypeError(msg)
+            raise TypeError(msg)
         if refresh and self._data: self.plot(self._data)
         return
 
@@ -744,7 +728,7 @@ class asapplotter:
         self._plotter.save(filename,orientation,dpi)
         return
 
-
+    @print_log_dec
     def set_mask(self, mask=None, selection=None, refresh=True):
         """
         Set a plotting mask for a specific polarization.
@@ -762,13 +746,7 @@ class asapplotter:
         """
         if not self._data:
             msg = "Can only set mask after a first call to plot()"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise RuntimeError(msg)
+            raise RuntimeError(msg)
         if len(mask):
             if isinstance(mask, list) or isinstance(mask, tuple):
                 self._usermask = array(mask)
@@ -1170,6 +1148,7 @@ class asapplotter:
 
     # plot total power data
     # plotting in time is not yet implemented..
+    @print_log_dec
     def plottp(self, scan=None, outfile=None):
         if self._plotter.is_dead:
             if hasattr(self._plotter.figmgr,'casabar'):
@@ -1181,11 +1160,6 @@ class asapplotter:
         from asap import scantable
         if not self._data and not scan:
             msg = "Input is not a scantable"
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
             raise TypeError(msg)
         if isinstance(scan, scantable):
             if self._data is not None:
@@ -1215,7 +1189,6 @@ class asapplotter:
         self._plotter.release()
         self._plotter.tidy()
         self._plotter.show(hardrefresh=False)
-        print_log()
         return
 
     def _plottp(self,scan):
@@ -1276,6 +1249,7 @@ class asapplotter:
 
 
     # printing header information
+    @print_log_dec
     def print_header(self, plot=True, fontsize=9, logger=False, selstr='', extrastr=''):
         """
         print data (scantable) header on the plot and/or logger.
@@ -1287,8 +1261,10 @@ class asapplotter:
             selstr:    additional selection string (not verified)
             extrastr:  additional string to print (not verified)
         """
-        if not plot and not logger: return
-        if not self._data: raise RuntimeError("No scantable has been set yet.")
+        if not plot and not logger:
+            return
+        if not self._data:
+            raise RuntimeError("No scantable has been set yet.")
         # Now header will be printed on plot and/or logger.
         # Get header information and format it.
         ssum=self._data.__str__()
@@ -1321,5 +1297,4 @@ class asapplotter:
             asaplog.push("----------------\n  Plot Summary\n----------------")
             asaplog.push(extrastr)
             asaplog.push(ssum[ssum.find('Beams:'):])
-            print_log()
         del ssum

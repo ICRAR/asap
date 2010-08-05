@@ -18,10 +18,10 @@ class AsapLogger(object):
     create its own casa log sink.
 
     .. note:: Do instantiate a new one - use the :obj:`asaplog` instead.
-    
+
     """
     def __init__(self):
-        self._enabled = False
+        self._enabled = True
         self._log = ""
         if is_casapy():
             from taskinit import casalog
@@ -30,7 +30,7 @@ class AsapLogger(object):
             self.logger = LogSink()
             set_global_sink(self.logger)
 
-    def post(self, level):
+    def post(self, level, origin=""):
         """Post the messages to the logger. This will clear the buffered
         logs.
 
@@ -41,12 +41,10 @@ class AsapLogger(object):
         """
         if not self._enabled:
             return
-        if not rcParams['verbose']:
-            return
 
         logs = self._log.strip()
         if len(logs) > 0:
-           self.logger.post(logs, priority=level)
+            self.logger.post(logs, priority=level, origin=origin)
         if isinstance(self.logger, LogSink):
             logs = self.logger.pop().strip()
             if len(logs) > 0:
@@ -63,13 +61,11 @@ class AsapLogger(object):
             newline:    should we terminate with a newline (default yes)
 
         """
-        from asap import rcParams
         if self._enabled:
-            if rcParams["verbose"]:
-                sep = ""
-                self._log = sep.join([self._log, msg])
-                if newline:
-                    self._log += "\n"
+            sep = ""
+            self._log = sep.join([self._log, msg])
+            if newline:
+                self._log += "\n"
 
     def enable(self, flag=True):
         """Enable (or disable) logging."""
@@ -79,11 +75,15 @@ class AsapLogger(object):
         """Disable (or enable) logging"""
         self._enabled = flag
 
+    def is_enabled(self):
+        return self._enabled
+
 asaplog = AsapLogger()
 """Default asap logger"""
 
-def print_log_dec(f, level='INFO'):
+def print_log_dec(f):
     """Decorator which posts log at completion of the wrapped method.
+
     Example::
 
         @print_log_dec
@@ -95,11 +95,21 @@ def print_log_dec(f, level='INFO'):
     """
     @wraps_dec(f)
     def wrap_it(*args, **kw):
-        val = f(*args, **kw)
-        print_log(level)
-        return val
+        level = "INFO"
+        try:
+            val = f(*args, **kw)
+            return val
+        except Exception, ex:
+            level = "ERROR"
+            asaplog.push(str(ex))
+            if rcParams['verbose']:
+                pass
+            else:
+                raise
+        finally:
+            print_log(level, f.func_name)
     return wrap_it
 
-def print_log(level='INFO'):
+def print_log(level='INFO', origin=""):
     """Alias for asaplog.post(level)"""
-    asaplog.post(level)
+    asaplog.post(level, origin)

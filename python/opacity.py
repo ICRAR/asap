@@ -5,7 +5,6 @@ from asap.scantable import scantable
 from asap.asapmath import merge
 from asap.asapfitter import fitter
 from asap.selector import selector
-from asap.parameters import rcParams
 from asap._asap import atmosphere
 
 
@@ -151,8 +150,6 @@ def skydip(data, averagepol=True, tsky=300., plot=False,
                     be read from the data in the future.
         plot:       Plot each fit (airmass vs. Tsys). Default is 'False'
     """
-    rcsave = rcParams['verbose']
-    rcParams['verbose'] = False
     if plot:
         from matplotlib import pylab
     scan = _import_data(data)
@@ -221,7 +218,6 @@ def skydip(data, averagepol=True, tsky=300., plot=False,
         sel.reset()
 
     scan.set_selection(basesel)
-    rcParams['verbose'] = rcsave
     if plot:
         pylab.close()
     return opacities

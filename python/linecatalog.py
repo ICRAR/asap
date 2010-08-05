@@ -6,7 +6,6 @@ Author: Malte Marquarding
 """
 __revision__ = "$Revision$"
 from asap._asap import linecatalog as lcbase
-from asap.parameters import rcParams
 from asap.logging import asaplog
 import os
 
@@ -29,13 +28,7 @@ class linecatalog(lcbase):
             lcbase.__init__(self, fpath)
         else:
             msg = "File '%s' not found" % fpath
-            if rcParams['verbose']:
-                #print msg
-                asaplog.push( msg )
-                print_log( 'ERROR' )
-                return
-            else:
-                raise IOError(msg)
+            raise IOError(msg)
 
     def __repr__(self):
         return lcbase.summary(self, -1)
@@ -98,13 +91,7 @@ class linecatalog(lcbase):
         if os.path.isfile(name) or os.path.isdir(name):
             if not overwrite:
                 msg = "File %s exists." % name
-                if rcParams['verbose']:
-                    #print msg
-                    asaplog.push( msg )
-                    print_log( 'ERROR' )
-                    return
-                else:
-                    raise IOError(msg)
+                raise IOError(msg)
         lcbase.save(self, name)
 
     def reset(self):

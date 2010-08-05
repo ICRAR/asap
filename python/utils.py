@@ -65,3 +65,20 @@ def list_files(path=".",suffix="rpf"):
         return None
     files = [os.path.expanduser(os.path.expandvars(path+"/"+f)) for f in os.listdir(path)]
     return filter(lambda x: x.endswith(suffix),files)
+
+def page(message):
+    verbose = False
+    try:
+        from asap.parameters import rcParams
+        verbose = rcParams['verbose']
+    except:
+        pass
+    if verbose:
+        try:
+            from IPython.genutils import page as pager
+        except ImportError:
+            from pydoc import pager
+        pager(message)
+        return None
+    else:
+        return message
