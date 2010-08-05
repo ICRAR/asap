@@ -31,3 +31,10 @@ Module :mod:`asap.logging`
    :members:
 ..   :undoc-members:
 
+
+Module :mod:`asap.linecatalog`
+==============================
+
+.. automodule:: asap.linecatalog
+   :members:
+..   :undoc-members:
