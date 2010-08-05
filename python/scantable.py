@@ -144,7 +144,6 @@ class scantable(Scantable):
                 self._fill(filename, unit, average, getpt, antenna)
         self.parallactify(parallactify)
         self._add_history("scantable", varlist)
-        print_log()
 
     @print_log_dec
     def save(self, name=None, format=None, overwrite=False):
@@ -203,7 +202,6 @@ class scantable(Scantable):
             from asap._asap import stwriter as stw
             writer = stw(format2)
             writer.write(self, name)
-        print_log()
         return
 
     def copy(self):
@@ -236,7 +234,6 @@ class scantable(Scantable):
         from asap import unique
         if not _is_valid(scanid):
             if rcParams['verbose']:
-                #print "Please specify a scanno to drop from the scantable"
                 asaplog.push( 'Please specify a scanno to drop from the scantable' )
                 print_log( 'ERROR' )
                 return
@@ -250,7 +247,6 @@ class scantable(Scantable):
                 raise ValueError("Can't remove all scans")
         except ValueError:
             if rcParams['verbose']:
-                #print "Couldn't find any match."
                 print_log()
                 asaplog.push( "Couldn't find any match." )
                 print_log( 'ERROR' )
@@ -261,7 +257,6 @@ class scantable(Scantable):
             return self._select_copy(sel)
         except RuntimeError:
             if rcParams['verbose']:
-                #print "Couldn't find any match."
                 print_log()
                 asaplog.push( "Couldn't find any match." )
                 print_log( 'ERROR' )
@@ -886,7 +881,6 @@ class scantable(Scantable):
         """
         self._setInstrument(instr)
         self._add_history("set_instument", vars())
-        print_log()
 
     @print_log_dec
     def set_feedtype(self, feedtype):
@@ -900,7 +894,6 @@ class scantable(Scantable):
         """
         self._setfeedtype(feedtype)
         self._add_history("set_feedtype", vars())
-        print_log()
 
     @print_log_dec
     def set_doppler(self, doppler='RADIO'):
@@ -917,7 +910,6 @@ class scantable(Scantable):
         inf[2] = doppler
         self._setcoordinfo(inf)
         self._add_history("set_doppler", vars())
-        print_log()
 
     @print_log_dec
     def set_freqframe(self, frame=None):
@@ -956,7 +948,6 @@ class scantable(Scantable):
                 print_log( 'ERROR' )
             else:
                 raise TypeError(msg)
-        print_log()
 
     def set_dirframe(self, frame=""):
         """\
@@ -999,6 +990,7 @@ class scantable(Scantable):
         if unit == '': unit = 'channel'
         return unit
 
+    @print_log_dec
     def get_abcissa(self, rowno=0):
         """\
         Get the abcissa in the current coordinate setup for the currently
@@ -1016,7 +1008,6 @@ class scantable(Scantable):
         """
         abc = self._getabcissa(rowno)
         lbl = self._getabcissalabel(rowno)
-        print_log()
         return abc, lbl
 
     def flag(self, mask=None, unflag=False):
@@ -1141,7 +1132,6 @@ class scantable(Scantable):
                 return
             else: raise
         s._add_history("lag_flag", varlist)
-        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1217,7 +1207,6 @@ class scantable(Scantable):
         if kwargs.has_key('invert'):
             if kwargs.get('invert'):
                 msk = mask_not(msk)
-        print_log()
         return msk
 
     def get_masklist(self, mask=None, row=0):
@@ -1585,7 +1574,6 @@ class scantable(Scantable):
                 return
             else: raise
         s._add_history("average_time", varlist)
-        print_log()
         return s
 
     @print_log_dec
@@ -1619,7 +1607,6 @@ class scantable(Scantable):
         eta = eta or -1.0
         s = scantable(self._math._convertflux(self, d, eta, jyperk))
         s._add_history("convert_flux", varlist)
-        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1678,7 +1665,6 @@ class scantable(Scantable):
         filename = expandvars(filename)
         s = scantable(self._math._gainel(self, poly, filename, method))
         s._add_history("gain_el", varlist)
-        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1711,7 +1697,6 @@ class scantable(Scantable):
         reftime = reftime or ""
         s = scantable(self._math._freq_align(self, reftime, method))
         s._add_history("freq_align", varlist)
-        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1744,7 +1729,6 @@ class scantable(Scantable):
             tau = [tau]
         s = scantable(self._math._opacity(self, tau))
         s._add_history("opacity", varlist)
-        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1767,7 +1751,6 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._bin(self, width))
         s._add_history("bin", varlist)
-        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -1796,7 +1779,6 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._resample(self, method, width))
         s._add_history("resample", varlist)
-        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -1819,7 +1801,6 @@ class scantable(Scantable):
         mask = mask or ()
         s = scantable(self._math._averagepol(self, mask, weight.upper()))
         s._add_history("average_pol", varlist)
-        print_log()
         return s
 
     @print_log_dec
@@ -1840,7 +1821,6 @@ class scantable(Scantable):
         mask = mask or ()
         s = scantable(self._math._averagebeams(self, mask, weight.upper()))
         s._add_history("average_beam", varlist)
-        print_log()
         return s
 
     def parallactify(self, pflag):
@@ -1883,7 +1863,6 @@ class scantable(Scantable):
             else:
                 raise
         s._add_history("convert_pol", varlist)
-        print_log()
         return s
 
     @print_log_dec
@@ -1961,7 +1940,6 @@ class scantable(Scantable):
             self._p = None
             del orgscan
 
-        print_log()
         if insitu: self._assign(s)
         else: return s
 
@@ -2045,9 +2023,10 @@ class scantable(Scantable):
                 f._p.unmap()
                 f._p = None
             workscan._add_history("poly_baseline", varlist)
-            print_log()
-            if insitu: self._assign(workscan)
-            else: return workscan
+            if insitu:
+                self._assign(workscan)
+            else:
+                return workscan
         except RuntimeError:
             msg = "The fit failed, possibly because it didn't converge."
             if rcParams['verbose']:
@@ -2236,7 +2215,6 @@ class scantable(Scantable):
         varlist = vars()
         self._math._rotate_linpolphase(self, angle)
         self._add_history("rotate_linpolphase", varlist)
-        print_log()
         return
 
     @print_log_dec
@@ -2258,7 +2236,6 @@ class scantable(Scantable):
         varlist = vars()
         self._math._rotate_xyphase(self, angle)
         self._add_history("rotate_xyphase", varlist)
-        print_log()
         return
 
     @print_log_dec
@@ -2270,7 +2247,6 @@ class scantable(Scantable):
         varlist = vars()
         self._math._swap_linears(self)
         self._add_history("swap_linears", varlist)
-        print_log()
         return
 
     @print_log_dec
@@ -2339,7 +2315,6 @@ class scantable(Scantable):
         else:
             s = scantable(self._math._unaryop(self.copy(), factor, "MUL", tsys))
         s._add_history("scale", varlist)
-        print_log()
         if insitu:
             self._assign(s)
         else:
@@ -2430,7 +2405,6 @@ class scantable(Scantable):
         elif mode.lower() == "time":
             s = scantable(self._math._auto_quotient(self, mode, preserve))
         s._add_history("auto_quotient", varlist)
-        print_log()
         return s
 
     @print_log_dec
@@ -2460,7 +2434,6 @@ class scantable(Scantable):
         from asapmath  import quotient
         q = quotient(on, off, preserve)
         q._add_history("mx_quotient", varlist)
-        print_log()
         return q
 
     @print_log_dec
@@ -2480,9 +2453,10 @@ class scantable(Scantable):
         varlist = vars()
         s = scantable(self._math._freqswitch(self))
         s._add_history("freq_switch", varlist)
-        print_log()
-        if insitu: self._assign(s)
-        else: return s
+        if insitu:
+            self._assign(s)
+        else:
+            return s
 
     @print_log_dec
     def recalc_azel(self):
@@ -2490,7 +2464,6 @@ class scantable(Scantable):
         varlist = vars()
         self._recalcazel()
         self._add_history("recalc_azel", varlist)
-        print_log()
         return
 
     @print_log_dec
@@ -2557,6 +2530,7 @@ class scantable(Scantable):
         s._add_history("operator /", varlist)
         return s
 
+    @print_log_dec
     def get_fit(self, row=0):
         """\
         Print or return the stored fits for a row in the scantable
@@ -2573,7 +2547,6 @@ class scantable(Scantable):
         if rcParams['verbose']:
             #print fit
             asaplog.push( '%s' %(fit) )
-            print_log()
             return
         else:
             return fit.as_dict()
