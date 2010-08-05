@@ -1,7 +1,7 @@
 from asap.parameters import rcParams
 from asap.selector import selector
 from asap.scantable import scantable
-from asap.logging import asaplog, print_log_dec
+from asap.logging import asaplog, asaplog_post_dec
 import matplotlib.axes
 from matplotlib.font_manager import FontProperties
 from matplotlib.text import Text
@@ -80,7 +80,7 @@ class asapplotter:
             return CustomToolbarTkAgg(self)
         else: return None
 
-    @print_log_dec
+    @asaplog_post_dec
     def plot(self, scan=None):
         """
         Plot a scantable.
@@ -271,7 +271,7 @@ class asapplotter:
         self._plotter.axes.set_autoscale_on(True)
     # end matplotlib.axes fowarding functions
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_data(self, scan, refresh=True):
         """
         Set a scantable to plot.
@@ -309,7 +309,7 @@ class asapplotter:
             self._datamask = None
         if refresh: self.plot()
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_mode(self, stacking=None, panelling=None, refresh=True):
         """
         Set the plots look and feel, i.e. what you want to see on the plot.
@@ -728,7 +728,7 @@ class asapplotter:
         self._plotter.save(filename,orientation,dpi)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_mask(self, mask=None, selection=None, refresh=True):
         """
         Set a plotting mask for a specific polarization.
@@ -1148,7 +1148,7 @@ class asapplotter:
 
     # plot total power data
     # plotting in time is not yet implemented..
-    @print_log_dec
+    @asaplog_post_dec
     def plottp(self, scan=None, outfile=None):
         if self._plotter.is_dead:
             if hasattr(self._plotter.figmgr,'casabar'):
@@ -1249,7 +1249,7 @@ class asapplotter:
 
 
     # printing header information
-    @print_log_dec
+    @asaplog_post_dec
     def print_header(self, plot=True, fontsize=9, logger=False, selstr='', extrastr=''):
         """
         print data (scantable) header on the plot and/or logger.

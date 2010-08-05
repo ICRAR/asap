@@ -1,6 +1,6 @@
 import _asap
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log_dec
+from asap.logging import asaplog, asaplog_post_dec
 from asap.utils import _n_bools, mask_and
 
 
@@ -47,7 +47,7 @@ class fitter:
             self.mask = mask
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_scan(self, thescan=None, mask=None):
         """
         Set the 'data' (a scantable) of the fitter.
@@ -67,7 +67,7 @@ class fitter:
             self.mask = mask
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_function(self, **kwargs):
         """
         Set the function to be fit.
@@ -114,7 +114,7 @@ class fitter:
         self.fitted = False
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def fit(self, row=0, estimate=False):
         """
         Execute the actual fitting process. All the state has to be set.
@@ -193,7 +193,7 @@ class fitter:
             else:
                 self.data._addfit(fit,self._fittedrow)
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_parameters(self,*args,**kwargs):
         """
         Set the parameters to be fitted.
@@ -234,7 +234,7 @@ class fitter:
             self.fitter.setfixedparameters(fixed)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_gauss_parameters(self, peak, centre, fwhm,
                              peakfixed=0, centrefixed=0,
                              fwhmfixed=0,
@@ -263,7 +263,7 @@ class fitter:
             msg = "Please select a valid  component."
             raise ValueError(msg)
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_lorentz_parameters(self, peak, centre, fwhm,
                              peakfixed=0, centrefixed=0,
                              fwhmfixed=0,
@@ -321,7 +321,7 @@ class fitter:
         else:
             return sum(areas)
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_errors(self, component=None):
         """
         Return the errors in the parameters.
@@ -342,7 +342,7 @@ class fitter:
         return cerrs
 
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_parameters(self, component=None, errors=False):
         """
         Return the fit paramters.
@@ -413,7 +413,7 @@ class fitter:
         return out
 
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_estimate(self):
         """
         Return the parameter estimates (for non-linear functions).
@@ -423,7 +423,7 @@ class fitter:
         asaplog.push(self._format_pars(pars,fixed,None))
         return pars
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_residual(self):
         """
         Return the residual of the fit.
@@ -433,7 +433,7 @@ class fitter:
             raise RuntimeError(msg)
         return self.fitter.getresidual()
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_chi2(self):
         """
         Return chi^2.
@@ -445,7 +445,7 @@ class fitter:
         asaplog.push( 'Chi^2 = %3.3f' % (ch2) )
         return ch2
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_fit(self):
         """
         Return the fitted ordinate values.
@@ -455,7 +455,7 @@ class fitter:
             raise RuntimeError(msg)
         return self.fitter.getfit()
 
-    @print_log_dec
+    @asaplog_post_dec
     def commit(self):
         """
         Return a new scan where the fits have been commited (subtracted)
@@ -471,7 +471,7 @@ class fitter:
         scan._setspectrum(self.fitter.getresidual())
         return scan
 
-    @print_log_dec
+    @asaplog_post_dec
     def plot(self, residual=False, components=None, plotparms=False,
              filename=None):
         """
@@ -571,7 +571,7 @@ class fitter:
         if (not rcParams['plotter.gui']):
             self._p.save(filename)
 
-    @print_log_dec
+    @asaplog_post_dec
     def auto_fit(self, insitu=None, plot=False):
         """
         Return a scan where the function is applied to all rows for

@@ -10,7 +10,7 @@ from asap.env import is_casapy
 from asap._asap import Scantable
 from asap._asap import filler
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log_dec
+from asap.logging import asaplog, asaplog_post_dec
 from asap.selector import selector
 from asap.linecatalog import linecatalog
 from asap.coordinate import coordinate
@@ -46,7 +46,7 @@ class scantable(Scantable):
         The ASAP container for scans (single-dish data).
     """
 
-    @print_log_dec
+    @asaplog_post_dec
     def __init__(self, filename, average=None, unit=None, getpt=None,
                  antenna=None, parallactify=None):
         """\
@@ -135,7 +135,7 @@ class scantable(Scantable):
         self.parallactify(parallactify)
         self._add_history("scantable", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def save(self, name=None, format=None, overwrite=False):
         """\
         Store the scantable on disk. This can be an asap (aips++) Table,
@@ -448,7 +448,7 @@ class scantable(Scantable):
         else:
             return workscan
 
-    @print_log_dec
+    @asaplog_post_dec
     def stats(self, stat='stddev', mask=None, form='3.3f'):
         """\
         Determine the specified statistic of the current beam/if/pol
@@ -779,7 +779,7 @@ class scantable(Scantable):
         """
         return self._get_column(self._getdirectionvec, row)
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_unit(self, unit='channel'):
         """\
         Set the unit for all following operations on this scantable
@@ -798,7 +798,7 @@ class scantable(Scantable):
         self._setcoordinfo(inf)
         self._add_history("set_unit", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_instrument(self, instr):
         """\
         Set the instrument for subsequent processing.
@@ -812,7 +812,7 @@ class scantable(Scantable):
         self._setInstrument(instr)
         self._add_history("set_instument", vars())
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_feedtype(self, feedtype):
         """\
         Overwrite the feed type, which might not be set correctly.
@@ -825,7 +825,7 @@ class scantable(Scantable):
         self._setfeedtype(feedtype)
         self._add_history("set_feedtype", vars())
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_doppler(self, doppler='RADIO'):
         """\
         Set the doppler for all following operations on this scantable.
@@ -841,7 +841,7 @@ class scantable(Scantable):
         self._setcoordinfo(inf)
         self._add_history("set_doppler", vars())
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_freqframe(self, frame=None):
         """\
         Set the frame type of the Spectral Axis.
@@ -874,7 +874,7 @@ class scantable(Scantable):
             msg  = "Please specify a valid freq type. Valid types are:\n", valid
             raise TypeError(msg)
 
-    @print_log_dec
+    @asaplog_post_dec
     def set_dirframe(self, frame=""):
         """\
         Set the frame type of the Direction on the sky.
@@ -907,7 +907,7 @@ class scantable(Scantable):
         if unit == '': unit = 'channel'
         return unit
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_abcissa(self, rowno=0):
         """\
         Get the abcissa in the current coordinate setup for the currently
@@ -927,7 +927,7 @@ class scantable(Scantable):
         lbl = self._getabcissalabel(rowno)
         return abc, lbl
 
-    @print_log_dec
+    @asaplog_post_dec
     def flag(self, mask=None, unflag=False):
         """\
         Flag the selected data using an optional channel mask.
@@ -945,7 +945,7 @@ class scantable(Scantable):
         self._flag(mask, unflag)
         self._add_history("flag", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def flag_row(self, rows=[], unflag=False):
         """\
         Flag the selected data in row-based manner.
@@ -962,7 +962,7 @@ class scantable(Scantable):
         self._flag_row(rows, unflag)
         self._add_history("flag_row", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def clip(self, uthres=None, dthres=None, clipoutside=True, unflag=False):
         """\
         Flag the selected data outside a specified range (in channel-base)
@@ -983,7 +983,7 @@ class scantable(Scantable):
         self._clip(uthres, dthres, clipoutside, unflag)
         self._add_history("clip", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def lag_flag(self, start, end, unit="MHz", insitu=None):
         """\
         Flag the data in 'lag' space by providing a frequency to remove.
@@ -1023,7 +1023,7 @@ class scantable(Scantable):
         else:
             return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def create_mask(self, *args, **kwargs):
         """\
         Compute and return a mask based on [min, max] windows.
@@ -1347,7 +1347,7 @@ class scantable(Scantable):
         """
         Scantable.shift_refpix(self, delta)
 
-    @print_log_dec
+    @asaplog_post_dec
     def history(self, filename=None):
         """\
         Print the history. Optionally to a file.
@@ -1389,7 +1389,7 @@ class scantable(Scantable):
     #
     # Maths business
     #
-    @print_log_dec
+    @asaplog_post_dec
     def average_time(self, mask=None, scanav=False, weight='tint', align=False):
         """\
         Return the (time) weighted average of a scan.
@@ -1442,7 +1442,7 @@ class scantable(Scantable):
         s._add_history("average_time", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def convert_flux(self, jyperk=None, eta=None, d=None, insitu=None):
         """\
         Return a scan where all spectra are converted to either
@@ -1476,7 +1476,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def gain_el(self, poly=None, filename="", method="linear", insitu=None):
         """\
         Return a scan after applying a gain-elevation correction.
@@ -1536,7 +1536,7 @@ class scantable(Scantable):
         else:
             return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def freq_align(self, reftime=None, method='cubic', insitu=None):
         """\
         Return a scan where all rows have been aligned in frequency/velocity.
@@ -1566,7 +1566,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def opacity(self, tau=None, insitu=None):
         """\
         Apply an opacity correction. The data
@@ -1598,7 +1598,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def bin(self, width=5, insitu=None):
         """\
         Return a scan where all spectra have been binned up.
@@ -1622,7 +1622,7 @@ class scantable(Scantable):
         else:
             return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def resample(self, width=5, method='cubic', insitu=None):
         """\
         Return a scan where all spectra have been binned up.
@@ -1648,7 +1648,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def average_pol(self, mask=None, weight='none'):
         """\
         Average the Polarisations together.
@@ -1669,7 +1669,7 @@ class scantable(Scantable):
         s._add_history("average_pol", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def average_beam(self, mask=None, weight='none'):
         """\
         Average the Beams together.
@@ -1704,7 +1704,7 @@ class scantable(Scantable):
         self._parallactify(pflag)
         self._add_history("parallactify", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     def convert_pol(self, poltype=None):
         """\
         Convert the data to a different polarisation type.
@@ -1721,7 +1721,7 @@ class scantable(Scantable):
         s._add_history("convert_pol", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def smooth(self, kernel="hanning", width=5.0, order=2, plot=False, insitu=None):
         """\
         Smooth the spectrum by the specified kernel (conserving flux).
@@ -1799,7 +1799,7 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def poly_baseline(self, mask=None, order=0, plot=False, uselin=False,
                       insitu=None):
         """\
@@ -2045,7 +2045,7 @@ class scantable(Scantable):
         else:
             return workscan
 
-    @print_log_dec
+    @asaplog_post_dec
     def rotate_linpolphase(self, angle):
         """\
         Rotate the phase of the complex polarization O=Q+iU correlation.
@@ -2066,7 +2066,7 @@ class scantable(Scantable):
         self._add_history("rotate_linpolphase", varlist)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def rotate_xyphase(self, angle):
         """\
         Rotate the phase of the XY correlation.  This is always done in situ
@@ -2087,7 +2087,7 @@ class scantable(Scantable):
         self._add_history("rotate_xyphase", varlist)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def swap_linears(self):
         """\
         Swap the linear polarisations XX and YY, or better the first two
@@ -2098,7 +2098,7 @@ class scantable(Scantable):
         self._add_history("swap_linears", varlist)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def invert_phase(self):
         """\
         Invert the phase of the complex polarisation
@@ -2108,7 +2108,7 @@ class scantable(Scantable):
         self._add_history("invert_phase", varlist)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def add(self, offset, insitu=None):
         """\
         Return a scan where all spectra have the offset added
@@ -2132,7 +2132,7 @@ class scantable(Scantable):
         else:
             return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def scale(self, factor, tsys=True, insitu=None):
         """\
 
@@ -2210,7 +2210,7 @@ class scantable(Scantable):
         self.set_selection(basesel)
         self._add_history("set_sourcetype", varlist)
 
-    @print_log_dec
+    @asaplog_post_dec
     @preserve_selection
     def auto_quotient(self, preserve=True, mode='paired', verify=False):
         """\
@@ -2259,7 +2259,7 @@ class scantable(Scantable):
         s._add_history("auto_quotient", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def mx_quotient(self, mask = None, weight='median', preserve=True):
         """\
         Form a quotient using "off" beams when observing in "MX" mode.
@@ -2288,7 +2288,7 @@ class scantable(Scantable):
         q._add_history("mx_quotient", varlist)
         return q
 
-    @print_log_dec
+    @asaplog_post_dec
     def freq_switch(self, insitu=None):
         """\
         Apply frequency switching to the data.
@@ -2310,7 +2310,7 @@ class scantable(Scantable):
         else:
             return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def recalc_azel(self):
         """Recalculate the azimuth and elevation for each position."""
         varlist = vars()
@@ -2318,7 +2318,7 @@ class scantable(Scantable):
         self._add_history("recalc_azel", varlist)
         return
 
-    @print_log_dec
+    @asaplog_post_dec
     def __add__(self, other):
         varlist = vars()
         s = None
@@ -2331,7 +2331,7 @@ class scantable(Scantable):
         s._add_history("operator +", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def __sub__(self, other):
         """
         implicit on all axes and on Tsys
@@ -2347,7 +2347,7 @@ class scantable(Scantable):
         s._add_history("operator -", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def __mul__(self, other):
         """
         implicit on all axes and on Tsys
@@ -2364,7 +2364,7 @@ class scantable(Scantable):
         return s
 
 
-    @print_log_dec
+    @asaplog_post_dec
     def __div__(self, other):
         """
         implicit on all axes and on Tsys
@@ -2382,7 +2382,7 @@ class scantable(Scantable):
         s._add_history("operator /", varlist)
         return s
 
-    @print_log_dec
+    @asaplog_post_dec
     def get_fit(self, row=0):
         """\
         Print or return the stored fits for a row in the scantable
@@ -2491,7 +2491,7 @@ class scantable(Scantable):
         nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
 
-    @print_log_dec
+    @asaplog_post_dec
     def _fill(self, names, unit, average, getpt, antenna):
         first = True
         fullnames = []

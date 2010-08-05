@@ -1,6 +1,6 @@
 """This module presents a logging abstraction layer on top of casa.
 """
-__all__ = ["asaplog", "print_log_dec", "AsapLogger"]
+__all__ = ["asaplog", "asaplog_post_dec", "AsapLogger"]
 
 import inspect
 from asap.env import is_casapy
@@ -84,12 +84,12 @@ class AsapLogger(object):
 asaplog = AsapLogger()
 """Default asap logger"""
 
-def print_log_dec(f):
+def asaplog_post_dec(f):
     """Decorator which posts log at completion of the wrapped method.
 
     Example::
 
-        @print_log_dec
+        @asaplog_post_dec
         def test(self):
             do_stuff()
             asaplog.push('testing...', False)

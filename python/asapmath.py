@@ -1,10 +1,10 @@
 from asap.scantable import scantable
 from asap.parameters import rcParams
-from asap.logging import asaplog, print_log_dec
+from asap.logging import asaplog, asaplog_post_dec
 from asap.selector import selector
 from asap import asaplotgui
 
-@print_log_dec
+@asaplog_post_dec
 def average_time(*args, **kwargs):
     """
     Return the (time) average of a scan or list of scans. [in channels only]
@@ -92,7 +92,7 @@ def average_time(*args, **kwargs):
 
     return s
 
-@print_log_dec
+@asaplog_post_dec
 def quotient(source, reference, preserve=True):
     """
     Return the quotient of a 'source' (signal) scan and a 'reference' scan.
@@ -115,7 +115,7 @@ def quotient(source, reference, preserve=True):
     s._add_history("quotient",varlist)
     return s
 
-@print_log_dec
+@asaplog_post_dec
 def dototalpower(calon, caloff, tcalval=0.0):
     """
     Do calibration for CAL on,off signals.
@@ -133,7 +133,7 @@ def dototalpower(calon, caloff, tcalval=0.0):
     s._add_history("dototalpower",varlist)
     return s
 
-@print_log_dec
+@asaplog_post_dec
 def dosigref(sig, ref, smooth, tsysval=0.0, tauval=0.0):
     """
     Calculate a quotient (sig-ref/ref * Tsys)
@@ -153,7 +153,7 @@ def dosigref(sig, ref, smooth, tsysval=0.0, tauval=0.0):
     s._add_history("dosigref",varlist)
     return s
 
-@print_log_dec
+@asaplog_post_dec
 def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, verify=False):
     """
     Calibrate GBT position switched data
@@ -395,7 +395,7 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
     ress._add_history("calps", varlist)
     return ress
 
-@print_log_dec
+@asaplog_post_dec
 def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, verify=False):
     """
     Do full (but a pair of scans at time) processing of GBT Nod data
@@ -613,7 +613,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
     resspec._add_history("calnod",varlist)
     return resspec
 
-@print_log_dec
+@asaplog_post_dec
 def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, verify=False):
     """
     Calibrate GBT frequency switched data.
@@ -816,7 +816,7 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
     resspec._add_history("calfs",varlist)
     return resspec
 
-@print_log_dec
+@asaplog_post_dec
 def merge(*args):
     """
     Merge a list of scanatables, or comma-sperated scantables into one
@@ -848,7 +848,7 @@ def merge(*args):
     s._add_history("merge", varlist)
     return s
 
-@print_log_dec
+@asaplog_post_dec
 def calibrate( scantab, scannos=[], calmode='none', verify=None ):
     """
     Calibrate data.
@@ -926,7 +926,7 @@ def almacal( scantab, scannos=[], calmode='none', verify=False ):
     scal = scantable( stm.almacal( ssub, calmode ) )
     return scal
 
-@print_log_dec
+@asaplog_post_dec
 def splitant(filename, outprefix='',overwrite=False):
     """
     Split Measurement set by antenna name, save data as a scantables,
@@ -990,7 +990,7 @@ def splitant(filename, outprefix='',overwrite=False):
     del tb, tb2
     return outfiles
 
-@print_log_dec
+@asaplog_post_dec
 def _array2dOp( scan, value, mode="ADD", tsys=False ):
     """
     This function is workaround on the basic operation of scantable
