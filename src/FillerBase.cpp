@@ -170,6 +170,7 @@ void FillerBase::commitRow()
 {
   table_->table().addRow();
   row_.put(table_->table().nrow()-1);
+  row_ = TableRow( table_->table() ) ;
 }
 
 };
