@@ -416,7 +416,7 @@ class asaplotbase:
             dstr = datetime.now().strftime('%Y%m%d_%H%M%S')
             fname = 'asap'+dstr+'.png'
 
-        d = ['png','.ps','eps']
+        d = ['png','.ps','eps', 'svg']
 
         from os.path import expandvars
         fname = expandvars(fname)
@@ -463,7 +463,7 @@ class asaplotbase:
             #print "Invalid image type. Valid types are:"
             #print "'ps', 'eps', 'png'"
             asaplog.push( "Invalid image type. Valid types are:" )
-            asaplog.push( "'ps', 'eps', 'png'" )
+            asaplog.push( "'ps', 'eps', 'png', 'svg'" )
             asaplog.post('WARN')
 
 
