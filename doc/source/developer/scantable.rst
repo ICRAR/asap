@@ -236,6 +236,58 @@ Columns
 * **NAME** - *String()*
 * **FORMATTEDNAME** - *String()*
 
+FOCUS
+-----
+
+""""""""
+Keywords
+""""""""
+
+* **PARALLACTIFY** - *Bool=False*
+
+    indicates whether the observation was parallactified i.e. observed in such
+    a way that the sum of the phases is zero.
+
+"""""""
+Columns
+"""""""
+
+* **PARANGLE** - *Float*
+
+    the parallacticle angle of the observation
+
+* **ROTATION** - *Float*
+
+    feed rotation
+
+* **AXIS** - *Float*
+
+    ? ask Mark Calabretta
+
+* **TAN** - *Float*
+
+    ? ask Mark Calabretta
+
+* **HAND** - *Float*
+
+    the sign of the polarisation i.e. 1 for XY and '-1' for YX
+
+* **USERANGLE** - *Float*
+
+    A user definable phase correction term
+
+* **MOUNT** - *Float*
+
+    ? ask Jim Caswell
+
+* **XYOFFSET** - *Float*
+
+    ? ask Jim Caswell
+
+* **XYPHASEOFFSET** - *Float*
+
+    ? ask Jim Caswell
+
 .. todo:: add all sub-table descriptions
 
 ========================
@@ -247,7 +299,8 @@ MS
 
 MeasurementSets are specifically designed for synthesis data. As such one of the
 main dfferences between the Scantable and a MS is how spectra are stored.
-An MS usually stores those in an n_pol x n_channel complex matrix whereas the
-Scantable stores each polarisation seperately. In case of polarimetry data the
-(complex) cross-polarisation is serialised into real and imaginary parts, e.g. a
-total of four rows would descibe one polarisation.
+An MS  stores those in an n_pol x n_channel complex matrix (DATA column) and/or
+a n_pol x n_channel float matrix (FLOAT_DATA column) whereas the Scantable
+stores each polarisation seperately. In case of polarimetry data the (complex)
+cross-polarisation is serialised into real and imaginary parts, e.g. a total of
+four rows would describe one polarisation.
