@@ -4,6 +4,23 @@ import distutils.sysconfig
 import platform
 import SCons
 
+# try to autodetect numpy
+def get_numpy_incdir():
+    try:
+        # try to find an egg
+        from pkg_resources import require
+        tmp = require("numpy")
+        import numpy
+        return numpy.__path__[0]+"/core/include"
+    except Exception:
+        # now try standard package
+        try:
+            import numpy
+            return numpy.__path__[0]+"/core/include"
+        except ImportError:
+            pass
+    return ""
+
 moduledir = distutils.sysconfig.get_python_lib()
 
 if sys.platform.startswith('linux') and platform.architecture()[0] == '64bit':
@@ -57,6 +74,8 @@ opts.AddVariables(
 		("rpfitslibdir", "The rpfits library location", None),
                 ("pyraproot", "The root directory where libpyrap is installed",
                  None),
+                ("numpyincdir", "numpy header file directory",
+                 get_numpy_incdir()),
                 ("pyraplib", "The name of the pyrap library", "pyrap"),
                 ("pyraplibdir", "The directory where libpyrap is installed",
                  None),
@@ -127,12 +146,19 @@ if not env.GetOption('clean'):
         Exit(1)
 
     conf.env.AddCustomPackage('pyrap')
-    if  conf.env.get("enable_pyrap") and conf.CheckLib(conf.env["pyraplib"], 
-                                                       language='c++', 
-                                                       autoadd=0): 
+    if conf.CheckLib(conf.env["pyraplib"], language='c++', autoadd=0): 
         conf.env.Append(CPPFLAGS=['-DHAVE_PYRAP'])
         conf.env.PrependUnique(LIBS=env['pyraplib'])
-    
+    else:
+        conf.env.AppendUnique(CPPPATH=[conf.env["numpyincdir"]])
+        # numpy 1.0 uses config.h; numpy >= 1.1 uses numpyconfig.h
+        if conf.CheckHeader("numpy/config.h") or \
+               conf.CheckHeader("numpy/numpyconfig.h"):
+            conf.env.Append(CPPDEFINES=["-DAIPS_USENUMPY"])
+        else:
+            conf.env.Exit(1)
+        # compile in pyrap here...
+        conf.env["pyrapint"] = "#/external/libpyrap/pyrap-0.3.2"
     # test for cfitsio
     if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
