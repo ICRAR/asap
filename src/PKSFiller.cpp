@@ -274,7 +274,6 @@ void PKSFiller::fill( )
       srctype = pksrec.srcType ;
     }
     setTime(pksrec.mjd, pksrec.interval);
-    cout << srctype << endl;
     setSource(srcname, srctype, pksrec.fieldName,
               pksrec.srcDir, pksrec.srcPM, pksrec.srcVel);
 
