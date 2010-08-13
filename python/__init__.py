@@ -51,6 +51,7 @@ from interactivemask import interactivemask
 from asapfitter import fitter
 from opacity import skydip
 from opacity import model as opacity_model
+from _asap import srctype
 
 __date__ = '$Date$'.split()[1]
 __version__  = 'trunk'

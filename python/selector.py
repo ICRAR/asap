@@ -1,4 +1,5 @@
-from asap._asap import selector as _selector
+import re
+from asap._asap import selector as _selector, srctype
 from asap.utils import unique, _to_list
 
 class selector(_selector):
@@ -147,8 +148,20 @@ class selector(_selector):
         Select by Column query. Power users only!
         Example:
             # select all off scans with integration times over 60 seconds.
-            selection.set_query("SRCTYPE == 1 AND INTERVAL > 60.0")
+            selection.set_query("SRCTYPE == PSOFF AND INTERVAL > 60.0")
         """
+        rx = re.compile("((SRCTYPE *[!=][=] *)([a-zA-Z.]+))", re.I)
+        for r in rx.findall(query):
+            sval = None
+            stype = r[-1].lower()
+            if stype.find('srctype.') == -1:
+                stype = ".".join(["srctype", stype])
+            try:
+                sval = eval(stype)
+                sval = "%s%d" % (r[1], sval)
+            except:
+                continue
+            query = query.replace(r[0], sval)
         taql = "SELECT FROM $1 WHERE " + query
         self._settaql(taql)
 
