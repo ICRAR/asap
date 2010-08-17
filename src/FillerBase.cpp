@@ -37,9 +37,12 @@ void FillerBase::setSpectrum(const Vector<Float>& spectrum,
   RecordFieldPtr< Array<uChar> > flagCol(row_.record(), "FLAGTRA");
   RecordFieldPtr< Array<Float> > tsysCol(row_.record(), "TSYS");
 
-  *specCol = spectrum;
-  *flagCol = flags;
-  *tsysCol = tsys;
+  //*specCol = spectrum;
+  //*flagCol = flags;
+  //*tsysCol = tsys;
+  specCol.define(spectrum);
+  flagCol.define(flags);
+  tsysCol.define(tsys);
 }
 
 void FillerBase::setFlagrow(uInt flag)
@@ -170,7 +173,6 @@ void FillerBase::commitRow()
 {
   table_->table().addRow();
   row_.put(table_->table().nrow()-1);
-  row_ = TableRow( table_->table() ) ;
 }
 
 };
