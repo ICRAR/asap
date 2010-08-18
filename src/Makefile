@@ -8,6 +8,11 @@
 ###    4. Comment-IN the definition of 'CXXOPTS'. 
 TARGET   := /tmp/_asap.so
 
+ifndef ASAPROOT
+	ASAPROOT := $(abspath ..)
+endif
+ATNFD := external-alma
+
 # the casa environment AIPSPATH has to be defined
 CASAROOT  := $(word 1, $(CASAPATH))
 CASAARCH  := $(word 2, $(CASAPATH))
@@ -26,8 +31,7 @@ RPFITSLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=R
 
 CASAINC   := -I$(CASAROOT)/code/include -I$(COREINCD) -I$(CASAROOT)/$(CASAARCH)/include
 CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
-#USELIB := lib64
-USELIB := lib
+USELIB := lib64
 
 # the compiler
 ifndef CXX
@@ -97,7 +101,7 @@ endif
 
 
 # DO NOT MODIFY AFTER THIS
-INCDIRS   := -I. $(CASAINC)  $(CFITSIOINC) $(BOOSTINC) $(PYTHONINC)
+INCDIRS   := -I. $(CASAINC)  $(CFITSIOINC) $(BOOSTINC) $(PYTHONINC) -I$(ASAPROOT)/$(ATNFD)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \

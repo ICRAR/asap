@@ -11,6 +11,7 @@ PYDIR := $(PREFIX)/python/2.5
 ifndef ASAPROOT
    ASAPROOT := $(shell pwd)
 endif
+ATNFD := external-alma
 
 #PY := $(wildcard python/*.py)
 PY := $(wildcard python/*.py python/svninfo.txt)
@@ -26,6 +27,7 @@ all: module #doc
 
 module:
 	@if ( test -f getsvnrev.sh ) ; then /bin/bash getsvnrev.sh ; fi
+	@cd $(ASAPROOT)/$(ATNFD); make
 	@cd $(ASAPROOT)/src; make
 	@cd $(ASAPROOT)/apps; make
 
@@ -48,6 +50,7 @@ install:
 clean:
 	@cd $(ASAPROOT)/src; make clean
 	@cd $(ASAPROOT)/doc; make clean
+	@cd $(ASAPROOT)/$(ATNFD); make realclean
 
 datadist:
 	@echo "Generating ASAP data archive from aips++ installation..."
