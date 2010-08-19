@@ -130,7 +130,7 @@ HEADERS := $(ATNFDIR)/pks/pks_maths.h \
 
 .PHONY : all clean objects realclean install
 
-all : $(TARGETLIB) install
+all : $(TARGETLIB)
 
 objects : $(OBJECTS)
 

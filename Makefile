@@ -45,6 +45,7 @@ install:
 	@for file in $(APPS) ; do cp -f $$file $(PREFIX)/bin ; done
 	@if ( test ! -d $(PREFIX)/share/asap ) ; then mkdir -p $(PREFIX)/share/asap ; fi
 	@cp -f share/ipythonrc-asap $(PREFIX)/share/asap/
+	@cd $(ASAPROOT)/$(ATNFD); make install
 	@echo "Successfully installed asap module to" $(PYDIR)
 
 clean:

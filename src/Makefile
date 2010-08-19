@@ -41,7 +41,7 @@ endif
 # compiler flags
 CXXFLAGS := -fPIC -O3 -g
 CXXFLAGS += -ansi -Wno-long-long -Wall
-#CXXOPTS := -DAIPS_64B
+CXXOPTS := -DAIPS_64B
 
 # darwin specific flags
 ifeq "$(CASAARCH)" "darwin"
@@ -62,9 +62,8 @@ RPFITSLIB := -lrpfits
 G2CROOT := /usr
 G2CLIB := -lgfortran
 
-# This assumes all casa libs are static only (*.a)
-# if not than there might by symbol resolution errors.
-CASAPPLIB := -L$(CASALIB) -latnf $(CORELIB) \
+# links to external libraries
+CASAPPLIB := -L$(ASAPROOT)/$(ATNFD) -latnf $(CORELIB) \
              -L$(WCSLIBLIBD) $(WCSLIBLIB) \
              -L$(RPFITSLIBD) $(RPFITSLIB) $(CFITSIOLIB) $(G2CLIB) -lstdc++
 
@@ -78,14 +77,6 @@ endif
 # python
 PYTHONINC := $(addprefix -I,$(PYTHONINCD))
 PYTHONLIB := -L$(PYTHONLIBD) $(PYTHONLIB)
-
-# use python universal build
-#ifeq "$(CASAARCH)" "darwin"
-#   PYVERSION := 2.5
-#   PYTHONROOT := /Library/Frameworks/Python.framework/Versions/$(PYVERSION)
-#   PYTHONINC := -I$(PYTHONROOT)/include/python$(PYVERSION)
-#   PYTHONLIB := -L$(PYTHONROOT)/lib -framework Python
-#endif
 
 # the linker
 LD        := $(CXX)
