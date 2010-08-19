@@ -24,7 +24,7 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS := -fPIC -O2 -g -fno-omit-frame-pointer 
+CXXFLAGS := -fPIC -O2 -g -fno-omit-frame-pointer -pipe
 CXXFLAGS += -Wall -Wextra -Wcast-align -Wno-comment
 # passing flags to codes for casacore
 CXXOPTS := -DCASA_USECASAPATH -DCASACORE_NEEDS_RETHROW -DAIPS_STDLIB \
@@ -37,7 +37,6 @@ ifeq "$(CASAARCH)" "darwin"
 	CXXFLAGS += -mmacosx-version-min=10.5 -dynamic -mtune=nocona \
 		-mfpmath=sse -ftree-vectorize -ffast-math -fasm-blocks
 	CXXOPTS += -DAIPS_DARWIN
-	CXXOPTS += -DMACOSXBUILT
 else # so far CASAARCH is either darwin, linux_gnu, or linux_64b (Aug.2010)
 	CXXFLAGS += -ansi
 	CXXOPTS += -DAIPS_LINUX
@@ -60,11 +59,9 @@ RPFITSLIB := -lrpfits
 # the linker
 LD        := $(CXX)
 
-#LDFLAGS   := -shared -Wl$(TARGETLIB) -s -Xlinker -rpath -Xlinker $(BOOSTROOT)/lib:$(PYTHONROOT)/lib:$(CASALIB)
-LDFLAGS   := -pipe -Wl,--no-undefined -shared -Wl,-soname,$(TARGETLIB) -s -Xlinker -rpath -Xlinker $(CASALIB)
+LDFLAGS   := -Wl,--no-undefined -shared -Wl,-soname,$(TARGETLIB) -s -Xlinker -rpath -Xlinker $(CASALIB)
 ifeq "$(CASAARCH)" "darwin"
-   LDFLAGS   := -dynamiclib -Wl,-undefined -Wl,error -install_name $(CASALIB)/$(TARGETLIB) -s -Xlinker -rpath -Xlinker $(CASALIB)
-   #LDFLAGS += -headerpad_max_install_names -compatibility_version 3.1.0
+   LDFLAGS   := -dynamiclib -Wl,-undefined -Wl,error -install_name $(CASALIB)/$(TARGETLIB) -Xlinker -rpath -Xlinker $(CASALIB)
 endif
 
 # resoleve dependencies on external package
