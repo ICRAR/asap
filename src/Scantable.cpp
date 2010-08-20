@@ -100,6 +100,7 @@ Scantable::Scantable(Table::TableType ttype) :
   table_.rwKeywordSet().defineTable("HISTORY", historyTable_.table());
   fitTable_ = STFit(*this);
   table_.rwKeywordSet().defineTable("FIT", fitTable_.table());
+  table_.tableInfo().setType( "Scantable" ) ;
   originalTable_ = table_;
   attach();
 }
@@ -119,6 +120,7 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   } else {
     table_ = tab;
   }
+  table_.tableInfo().setType( "Scantable" ) ;
 
   attachSubtables();
   originalTable_ = table_;
@@ -164,6 +166,7 @@ Scantable::Scantable( const Scantable& other, bool clear )
       table_ = Table(newname, Table::Update);
       table_.markForDelete();
   }
+  table_.tableInfo().setType( "Scantable" ) ;
   /// @todo reindex SCANNO, recompute nbeam, nif, npol
   if ( clear ) copySubtables(other);
   attachSubtables();
