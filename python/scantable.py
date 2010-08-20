@@ -36,11 +36,44 @@ def is_scantable(filename):
         filename: the name of the file/directory to test
 
     """
-    return (os.path.isdir(filename)
-            and not os.path.exists(filename+'/table.f1')
-            and os.path.exists(filename+'/table.info'))
+    if ( os.path.isdir(filename)
+         and os.path.exists(filename+'/table.info')
+         and os.path.exists(filename+'/table.dat') ):
+        f=open(filename+'/table.info')
+        l=f.readline()
+        f.close()
+        #if ( l.find('Scantable') != -1 ):
+        if ( l.find('Measurement Set') == -1 ):
+            return True
+        else:
+            return False
+    else:
+        return False
+##     return (os.path.isdir(filename)
+##             and not os.path.exists(filename+'/table.f1')
+##             and os.path.exists(filename+'/table.info'))
 
+def is_ms(filename):
+    """Is the given file a MeasurementSet?
 
+    Parameters:
+
+        filename: the name of the file/directory to test
+
+    """
+    if ( os.path.isdir(filename)
+         and os.path.exists(filename+'/table.info')
+         and os.path.exists(filename+'/table.dat') ):
+        f=open(filename+'/table.info')
+        l=f.readline()
+        f.close()
+        if ( l.find('Measurement Set') != -1 ):
+            return True
+        else:
+            return False
+    else:
+        return False
+    
 class scantable(Scantable):
     """\
         The ASAP container for scans (single-dish data).
@@ -86,7 +119,7 @@ class scantable(Scantable):
             getpt = True
         if antenna is not None:
             asaplog.push("Antenna selection currently unsupported."
-                         "Using '0'")
+                         "Using ''")
             asaplog.post('WARN')
         if antenna is None:
             antenna = ''
@@ -122,13 +155,14 @@ class scantable(Scantable):
                         self.set_fluxunit(unit)
                     # do not reset to the default freqframe
                     #self.set_freqframe(rcParams['scantable.freqframe'])
-                elif os.path.isdir(filename) \
-                         and not os.path.exists(filename+'/table.f1'):
+                #elif os.path.isdir(filename) \
+                #         and not os.path.exists(filename+'/table.f1'):
+                elif is_ms(filename):
+                    self._fill([filename], unit, average, getpt, antenna)
+                else:
                     msg = "The given file '%s'is not a valid " \
                           "asap table." % (filename)
                     raise IOError(msg)
-                else:
-                    self._fill([filename], unit, average, getpt, antenna)
             elif (isinstance(filename, list) or isinstance(filename, tuple)) \
                   and isinstance(filename[-1], str):
                 self._fill(filename, unit, average, getpt, antenna)
