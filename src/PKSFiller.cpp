@@ -73,7 +73,7 @@ bool PKSFiller::open( const std::string& filename)
   Vector<Bool> beams, ifs;
   Vector<uInt> nchans,npols;
 
-  String antenna("0");
+  String antenna("");
 
   reader_ = getPKSreader(inName, antenna, 0, 0, format, beams, ifs,
                          nchans, npols, haveXPol_, haveBase, haveSpectra);
