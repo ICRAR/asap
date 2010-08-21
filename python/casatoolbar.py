@@ -151,7 +151,7 @@ class CustomToolbarCommon:
         if event.button ==1:
             self.notewin.load_textwindow(event)
         elif event.button == 3 and self._note_picked(event):
-            self.notewin.show_modmenu(event)
+            self.notewin.load_modmenu(event)
         return
 
     def _note_picked(self,event):
@@ -227,6 +227,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.bSpec.config(relief='sunken')
         self.bNote.config(relief='raised')
         self.mode='spec'
+        self.notewin.close_widgets()
         self.__disconnect_event()
         #self.canvas.mpl_connect('button_press_event',self._select_spectrum)
         self._p.register('button_press',self._select_spectrum)
@@ -239,6 +240,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.bStat.config(relief='sunken')
         self.bNote.config(relief='raised')
         self.mode='stat'
+        self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._single_mask)
 

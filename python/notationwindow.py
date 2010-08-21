@@ -6,29 +6,39 @@ from asap.logging import asaplog, asaplog_post_dec
 ##    Notation box window           ##
 ######################################
 class NotationWindowCommon:
+    """
+    A base class to define the functions that the backend-based
+    GUI notation class must implement to print/modify/delete notes on a canvas.
+
+    The following methods *must* be implemented in the backend-based
+    parent class:
+        _get_note : get text in text box
+        _get_anchval : get anchor value selected
+    """
     def __init__(self,master=None):
         #self.parent = master
         self.canvas = master
         self.event = None
         self.note = None
-        self.ancval = None
         self.anchors = ["figure","axes","data"]
         self.seltext = {}
         self.numnote = 0
 
     @asaplog_post_dec
     def print_text(self):
-        anchor = self.anchors[self.ancval.get()]
+        """
+        """
+        anchor = self.anchors[self._get_anchval()]
         notestr = self._get_note().rstrip("\n")
         if len(notestr.strip()) == 0:
-            self._clear_textbox()
+            #self._clear_textbox()
             #print "Empty string!"
             return
 
         myaxes = None
         calcpos = True
-        xpos=None
-        ypos=None
+        xpos = None
+        ypos = None
         if self.seltext:
             # You are modifying a text
             mycanvas = self.canvas
@@ -39,9 +49,9 @@ class NotationWindowCommon:
             if not calcpos:
                 # printing text in the same coord.
                 # you don't have to recalc position
-                (xpos, ypos) = self.seltext['textobj'].get_position()
-                transform = self.seltext['textobj'].get_transform()
                 parent = self.seltext['parent']
+                transform = self.seltext['textobj'].get_transform()
+                (xpos, ypos) = self.seltext['textobj'].get_position()
             elif anchor == "figure":
                 # converting from "axes"/"data" -> "figure"
                 (x, y) = self.seltext['textobj']._get_xy_display()
@@ -78,7 +88,8 @@ class NotationWindowCommon:
         picker = True
         # alignment of the text: ha (horizontal), va (vertical)
         ha = 'left'
-        va = 'center'
+        #va = 'center'
+        va = 'top'
         if not calcpos:
             # you aready know parent, tansform, xpos and ypos
             pass
@@ -109,13 +120,14 @@ class NotationWindowCommon:
 
         self.numnote += 1
 
-        self._clear_textbox()
-        msg = "A note added to figure: str = '"+notestr+"'"
-        msg += "   at ["+str(xpos)+", "+str(ypos)+"] in "+anchor+"-coordinate"
-        msg += "\nTotal number of notes are "+str(self.numnote)
+        #self._clear_textbox()
+        msg = "Added note: '"+notestr+"'"
+        msg += " @["+str(xpos)+", "+str(ypos)+"] ("+anchor+"-coord)"
+        msg += "\ntotal number of notes are "+str(self.numnote)
         asaplog.push( msg )
 
     def _get_axes_from_pos(self,pos,canvas):
+        """helper function to get axes of a position in a plot (fig-coord)"""
         if len(pos) != 2:
             raise ValueError, "pixel position should have 2 elements"
         for axes in canvas.figure.axes:
@@ -129,6 +141,10 @@ class NotationWindowCommon:
         return None
         
     def _convert_pix2dat(self,pos,axes):
+        """
+        helper function to convert a position in figure-coord (0-1) to
+        data-coordinate of the axes        
+        """
         # convert a relative position from lower-left of the canvas
         # to a data in axes
         if len(pos) != 2:
@@ -151,7 +167,8 @@ class NotationWindowCommon:
         return (xdat, ydat)
 
     @asaplog_post_dec
-    def _selected_text(self,event):
+    def _get_selected_text(self,event):
+        """helper function to return a dictionary of the nearest note to the event."""
         (w,h) = event.canvas.get_width_height()
         dist2 = w*w+h*h
         selected = {}
@@ -159,12 +176,12 @@ class NotationWindowCommon:
             if textobj.contains(event)[0]:
                 d2 = self._get_text_dist2(event,textobj)
                 if dist2 >= d2:
-                    dist2=d2
-                    selected={'anchor': 'figure', \
-                             'parent': event.canvas.figure, 'textobj': textobj}
+                    dist2 = d2
+                    selected = {'anchor': 'figure', \
+                                'parent': event.canvas.figure, 'textobj': textobj}
                     msg = "Fig loop: a text, '"+textobj.get_text()+"', at "
                     msg += str(textobj.get_position())+" detected"
-                    asaplog.push(msg)
+                    print msg
         for ax in self.canvas.figure.axes:
             for textobj in ax.texts:
                 if textobj.contains(event)[0]:
@@ -172,25 +189,40 @@ class NotationWindowCommon:
                     if dist2 >= d2:
                         anchor='axes'
                         if ax.transData == textobj.get_transform():
-                            anchor='data'                    
-                        selected={'anchor': anchor, 'parent': ax, 'textobj': textobj}
+                            anchor = 'data'                    
+                        selected = {'anchor': anchor, \
+                                    'parent': ax, 'textobj': textobj}
                         msg = "Ax loop: a text, '"+textobj.get_text()+"', at "
                         msg += str(textobj.get_position())+" detected"
-                        asaplog.push(msg)
+                        print msg 
+
+        if selected:
+            msg = "Selected (modify/delete): '"+textobj.get_text()
+            msg += "' @"+str(textobj.get_position())
+            msg += " ("+selected['anchor']+"-coord)"
+            asaplog.push(msg)
 
         return selected
 
     def _get_text_dist2(self,event,textobj):
+        """
+        helper function to calculate square of distance between
+        a event position and a text object. 
+        """
         (x,y) = textobj._get_xy_display()
         return (x-event.x)**2+(y-event.y)**2
 
     def delete_note(self):
+        """
+        Remove selected note.
+        """
         #print "You selected 'OK'"
         self._remove_seltext()
         self.canvas.draw()
 
     @asaplog_post_dec
     def _remove_seltext(self):
+        """helper function to remove the selected note"""
         if len(self.seltext) < 3:
             raise ValueError, "Don't under stand selected text obj."
             return
@@ -201,16 +233,21 @@ class NotationWindowCommon:
         self.numnote -= 1
 
         textobj = self.seltext['textobj']
-        msg = "A note deleted from figure: str = '"+textobj.get_text()+"'"
-        msg += "   at "+str(textobj.get_position())\
-               +" in "+self.seltext['anchor']+"-coordinate"
-        msg += "\nTotal number of notes are "+str(self.numnote)
+        msg = "Deleted note: '"+textobj.get_text()+"'"
+        msg += "@"+str(textobj.get_position())\
+               +" ("+self.seltext['anchor']+"-coord)"
+        msg += "\ntotal number of notes are "+str(self.numnote)
         asaplog.push( msg )
 
         self.seltext = {}
 
+    @asaplog_post_dec
     def cancel_delete(self):
-        #print "You selected 'CANCEL'"
+        """
+        Cancel deleting the selected note.
+        Fired when 'Cancel' button selected on confirmation dialog
+        """
+        asaplog.push( "Cancel deleting: '"+self.seltext['textobj'].get_text()+"'" )
         self.seltext = {}
 
 
@@ -223,12 +260,17 @@ if matplotlib.get_backend() == 'TkAgg':
     import tkMessageBox
 
 class NotationWindowTkAgg(NotationWindowCommon):
+    """
+    Backend based 
+    """
     def __init__(self,master=None):
         self.parent = master._tkcanvas
         NotationWindowCommon.__init__(self,master=master)
-        self.textwin=self._create_textwindow(master=None)
-        self.menu=self._create_modmenu(master=self.parent)
-        
+        self.anchval = None
+        self.textwin = self._create_textwindow(master=None)
+        self.menu = self._create_modmenu(master=self.parent)
+
+    ### Notation window widget
     def _create_textwindow(self,master=None):
         twin = Tk.Toplevel(padx=3,pady=3)
         twin.title("Annotation")
@@ -254,18 +296,18 @@ class NotationWindowTkAgg(NotationWindowCommon):
     def _AnchorRadio(self,parent=None):
         radio = Tk.LabelFrame(master=parent,text="anchor",
                             labelanchor="nw",padx=5,pady=3)
-        self.ancval = Tk.IntVar(master=radio,value=0)
+        self.anchval = Tk.IntVar(master=radio,value=0)
         self.rFig = self._NewRadioButton(radio,"figure",state=Tk.NORMAL,
-                                         variable=self.ancval,value=0,
+                                         variable=self.anchval,value=0,
                                          side=Tk.LEFT)
         self.rAxis = self._NewRadioButton(radio,"panel",state=Tk.DISABLED,
-                                          variable=self.ancval,value=1,
+                                          variable=self.anchval,value=1,
                                           side=Tk.LEFT)
         self.rData = self._NewRadioButton(radio,"data",state=Tk.DISABLED,
-                                          variable=self.ancval,value=2,
+                                          variable=self.anchval,value=2,
                                           side=Tk.LEFT)
         # set initial selection "figure"
-        self.ancval.set(0)
+        self.anchval.set(0)
         return radio
 
     def _NewRadioButton(self,parent,text,state=Tk.NORMAL,variable=None,value=None,side=Tk.LEFT):
@@ -296,6 +338,9 @@ class NotationWindowTkAgg(NotationWindowCommon):
         else:
             self.rFig.select()
 
+    def _get_anchval(self):
+        return self.anchval.get()
+
     def _get_note(self):
         return self.textbox.get("1.0",Tk.END)
 
@@ -322,23 +367,40 @@ class NotationWindowTkAgg(NotationWindowCommon):
         return b
 
     def _cancel_text(self):
-        self._finish_textwindow()
+        self.close_textwindow()
 
     def _print_text(self):
         self.print_text()
-        self._finish_textwindow()
+        self.close_textwindow()
 
     def load_textwindow(self,event):
+        """
+        Load text window at a event position to add a note on a plot.
+        Parameter:
+            event:   an even object to specify the position to load
+                     text window. 
+        """
+        self.close_modmenu()
         if event.canvas._tkcanvas != self.parent:
             raise RuntimeError, "Got invalid event!"
         
         self.event = event
         is_ax = (event.inaxes != None)
         (xpix, ypix) = self._disppix2screen(event.x, event.y)
-        offset=5
+        offset = 5
         self.show_textwindow(xpix+offset,ypix+offset,enableaxes=is_ax)
         
     def show_textwindow(self,xpix,ypix,basetext=None,enableaxes=False):
+        """
+        Load text window at a position of screen to add a note on a plot.
+        Parameters:
+            xpix, ypix:   a pixel position from Upper-left corner
+                          of the screen.
+            basetext:     None (default) or any string.
+                          A string to be printed on text box when loaded. 
+            enable axes:  False (default) or True.
+                          If True, 'panel' & 'data' radio button is enabled. 
+        """
         if not self.textwin: return
         self._reset_radio()
         if enableaxes: 
@@ -351,31 +413,50 @@ class NotationWindowTkAgg(NotationWindowCommon):
             (w,h) = self.textwin.minsize()
         self.textwin.geometry("%sx%s+%s+%s"%(w,h,xpix,ypix))
 
-    def _finish_textwindow(self):
+    def close_textwindow(self):
+        """Close text window."""
+        self.seltext = {}
         self._reset_radio()
         self._clear_textbox()
         self.textwin.withdraw()
 
+
+    ### Modify/Delete menu widget
     def _create_modmenu(self,master=None):
         if master:
-            self.parent=master
+            self.parent = master
         if not self.parent:
             return False
         menu = Tk.Menu(master=self.parent,tearoff=False)
-        menu.add_command(label="Modify",command=self.modify)
-        menu.add_command(label="Delete",command=self.delnote_dialog)
+        menu.add_command(label="Modify",command=self._modify_note)
+        menu.add_command(label="Delete",command=self._delnote_dialog)
         return menu
 
-    def show_modmenu(self,event):
-        self.seltext = self._selected_text(event)
+    def load_modmenu(self,event):
+        """
+        Load cascade menu at a event position to modify or delete
+        selected text.
+        Parameter:
+            event:  an even object to specify the position to load
+                    text window. 
+        """
+        self.close_textwindow()
+        self.seltext = self._get_selected_text(event)
         if len(self.seltext) == 3:
-            tkcanvas=event.canvas._tkcanvas
+            tkcanvas = event.canvas._tkcanvas
             xpos = tkcanvas.winfo_rootx() + int(event.x)
             ypos = tkcanvas.winfo_rooty() \
                    + tkcanvas.winfo_height() - int(event.y)
             self.menu.post(xpos,ypos)
 
-    def modify(self):
+    def close_modmenu(self):
+        """Close cascade menu."""
+        self.seltext = {}
+        self.menu.unpost()
+
+    ### load text window for modification 
+    def _modify_note(self):
+        """helper function to load text window to modify selected note"""
         #print "Modify selected!!"
         textobj = self.seltext['textobj']
         (xtx, ytx) = textobj._get_xy_display()
@@ -392,7 +473,14 @@ class NotationWindowTkAgg(NotationWindowCommon):
         self._select_radio(self.seltext['anchor'])
         self._set_note(textobj.get_text())
 
-    def delnote_dialog(self):
+    ### close all widgets
+    def close_widgets(self):
+        """Close note window and menu"""
+        self.close_textwindow()
+        self.close_modmenu()
+
+    ### dialog to confirm deleting note 
+    def _delnote_dialog(self):
         remind = "Delete text?\n '"+self.seltext['textobj'].get_text()+"'"
         answer = tkMessageBox.askokcancel(parent=self.parent,title="Delete?",
                                           message=remind,
@@ -402,7 +490,7 @@ class NotationWindowTkAgg(NotationWindowCommon):
         else:
             self.cancel_delete()
 
-
+    ### helper functions
     def _disppix2screen(self,xpixd,ypixd):
         # calculate a pixel position form Upper-left of the SCREEN
         # from a pixel from Lower-left of the CANVAS (e.g., event.x/y)
