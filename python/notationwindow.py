@@ -27,6 +27,8 @@ class NotationWindowCommon:
     @asaplog_post_dec
     def print_text(self):
         """
+        Print a note on a canvas specified with the Notation window.
+        Called when 'print' button selected on the window.
         """
         anchor = self.anchors[self._get_anchval()]
         notestr = self._get_note().rstrip("\n")
@@ -245,7 +247,7 @@ class NotationWindowCommon:
     def cancel_delete(self):
         """
         Cancel deleting the selected note.
-        Fired when 'Cancel' button selected on confirmation dialog
+        Called when 'cancel' button selected on confirmation dialog.
         """
         asaplog.push( "Cancel deleting: '"+self.seltext['textobj'].get_text()+"'" )
         self.seltext = {}
@@ -261,7 +263,17 @@ if matplotlib.get_backend() == 'TkAgg':
 
 class NotationWindowTkAgg(NotationWindowCommon):
     """
-    Backend based 
+    Backend based class to create widgets to add, modify, or delete
+    note on the plot.
+
+    Note:
+    Press LEFT-mouse button on the plot to ADD a note on the canvas.
+    A notation window will be loaded for specifying note string and
+    anchor. The note will be anchored on a position in whether figure-
+    (0-1 relative in a figure), panel- (0-1 relative in a plot axes),
+    or data-coordinate (data value in a plot axes).
+    Press RIGHT-mouse button on a note to MODIFY/DELETE it. A cascade
+    menu will be displayed and you can select an operation.
     """
     def __init__(self,master=None):
         self.parent = master._tkcanvas
@@ -272,8 +284,9 @@ class NotationWindowTkAgg(NotationWindowCommon):
 
     ### Notation window widget
     def _create_textwindow(self,master=None):
+        """Create notation window widget and iconfy it"""
         twin = Tk.Toplevel(padx=3,pady=3)
-        twin.title("Annotation")
+        twin.title("Notation")
         twin.resizable(width=True,height=True)
         self.textbox = self._NotationBox(parent=twin)
         self.radio = self._AnchorRadio(parent=twin)
@@ -317,18 +330,21 @@ class NotationWindowTkAgg(NotationWindowCommon):
         return rb
 
     def _enable_radio(self):
+        """Enable 'panel' and 'data' radio button"""
         self.rAxis.config(state=Tk.NORMAL)
         self.rData.config(state=Tk.NORMAL)
         #self.rFig.config(state=Tk.NORMAL)
         self.rFig.select()
 
     def _reset_radio(self):
+        """Disable 'panel' and 'data' radio button"""
         self.rAxis.config(state=Tk.DISABLED)
         self.rData.config(state=Tk.DISABLED)
         self.rFig.config(state=Tk.NORMAL)
         self.rFig.select()
 
     def _select_radio(self,selection):
+        """Select a specified radio button"""
         if not selection in self.anchors:
             return
         if selection == "data":
@@ -339,15 +355,19 @@ class NotationWindowTkAgg(NotationWindowCommon):
             self.rFig.select()
 
     def _get_anchval(self):
+        """Returns a integer of a selected radio button"""
         return self.anchval.get()
 
     def _get_note(self):
+        """Returns a note string specified in the text box"""
         return self.textbox.get("1.0",Tk.END)
 
     def _clear_textbox(self):
+        """Clear the text box"""
         self.textbox.delete("1.0",Tk.END)
 
     def _set_note(self,note=None):
+        """Set a note string to the text box"""
         self._clear_textbox()
         if len(note) >0:
             self.textbox.insert("1.0",note)
@@ -367,9 +387,17 @@ class NotationWindowTkAgg(NotationWindowCommon):
         return b
 
     def _cancel_text(self):
+        """
+        Cancel adding/modifying a note and close notaion window.
+        called when 'cancel' is selected.
+        """
         self.close_textwindow()
 
     def _print_text(self):
+        """
+        Add/Modify a note. Called when 'print' is selected on the
+        notation window.
+        """
         self.print_text()
         self.close_textwindow()
 
@@ -423,6 +451,7 @@ class NotationWindowTkAgg(NotationWindowCommon):
 
     ### Modify/Delete menu widget
     def _create_modmenu(self,master=None):
+        """Create modify/delete menu widget"""
         if master:
             self.parent = master
         if not self.parent:
@@ -481,6 +510,7 @@ class NotationWindowTkAgg(NotationWindowCommon):
 
     ### dialog to confirm deleting note 
     def _delnote_dialog(self):
+        """Load dialog to confirm deletion of the text"""
         remind = "Delete text?\n '"+self.seltext['textobj'].get_text()+"'"
         answer = tkMessageBox.askokcancel(parent=self.parent,title="Delete?",
                                           message=remind,
@@ -492,8 +522,14 @@ class NotationWindowTkAgg(NotationWindowCommon):
 
     ### helper functions
     def _disppix2screen(self,xpixd,ypixd):
-        # calculate a pixel position form Upper-left of the SCREEN
-        # from a pixel from Lower-left of the CANVAS (e.g., event.x/y)
+        """
+        helper function to calculate a pixel position form Upper-left
+        corner of the SCREEN from a pixel position (xpixd, ypixd)
+        from Lower-left of the CANVAS (which, e.g., event.x/y returns)
+
+        Returns:
+            (x, y):  pixel position from Upper-left corner of the SCREEN.
+        """
         xpixs = self.parent.winfo_rootx() + xpixd
         ypixs = self.parent.winfo_rooty() + self.parent.winfo_height() \
                - ypixd
