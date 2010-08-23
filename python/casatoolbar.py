@@ -245,7 +245,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self._p.register('button_press',self._single_mask)
 
     def modify_note(self):
-        if not self.figmgr.toolbar.mode == '' or not self.button: return
+        if not self.figmgr.toolbar.mode == '': return
         self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note': return
         self.bSpec.config(relief='raised')
