@@ -312,7 +312,8 @@ class NotationWindowTkAgg(NotationWindowCommon):
     def _NotationBox(self,parent=None):
         textbox = Tk.Text(master=parent,background='white',
                           height=2,width=20,cursor="xterm",
-                          padx=2,pady=2,undo=True,maxundo=10)
+                          padx=2,pady=2,undo=True,maxundo=10,
+                          relief='sunken',borderwidth=3)
         return textbox
 
     def _AnchorRadio(self,parent=None):
@@ -448,8 +449,8 @@ class NotationWindowTkAgg(NotationWindowCommon):
             self.textwin.minsize(width=self.textwin.winfo_width(),
                                  height=self.textwin.winfo_height())
             (w,h) = self.textwin.minsize()
-        self.textwin.lift()
         self.textwin.geometry("%sx%s+%s+%s"%(w,h,xpix,ypix))
+        self.textwin.lift()
 
     def close_textwindow(self):
         """Close text window."""
