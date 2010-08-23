@@ -136,11 +136,18 @@ class NotationWindowCommon:
             ##check if pos is in the axes
             #if axes.contains_point(pos): ### seems not working
             #    return axes
-            axbox = axes.get_position().get_points()
+            try:
+                axbox = axes.get_position().get_points()
+            except AttributeError: ### WORKAROUND for old matplotlib
+                axbox = self._oldpos2new(axes.get_position())
             if (axbox[0][0] <= pos[0] <= axbox[1][0]) and \
                (axbox[0][1] <= pos[1] <= axbox[1][1]):
                 return axes
         return None
+
+    ### WORKAROUND for old matplotlib
+    def _oldpos2new(self,oldpos=None):
+        return [[oldpos[0],oldpos[1]],[oldpos[0]+oldpos[2],oldpos[1]+oldpos[3]]]
         
     def _convert_pix2dat(self,pos,axes):
         """
@@ -153,19 +160,20 @@ class NotationWindowCommon:
             raise ValueError, "pixel position should have 2 elements"
         # left-/bottom-pixel, and pixel width & height of the axes
         bbox = axes.get_position()
-        lbpos = bbox.get_points()[0]
-        wax = bbox.width
-        hax = bbox.height
+        try: 
+            axpos = bbox.get_points()
+        except AttributeError: ### WORKAROUND for old matplotlib
+            axpos = self._oldpos2new(bbox)
         # check pos value
-        if (pos[0] < lbpos[0]) or (pos[1] < lbpos[1]) \
-               or (pos[0] > (lbpos[0]+wax)) or (pos[1] > (lbpos[1]+hax)):
+        if (pos[0] < axpos[0][0]) or (pos[1] < axpos[0][1]) \
+               or (pos[0] > axpos[1][0]) or (pos[1] > axpos[1][1]):
             raise ValueError, "The position is out of the axes"
         xlims = axes.get_xlim()
         ylims = axes.get_ylim()
         wdat = xlims[1] - xlims[0]
         hdat = ylims[1] - ylims[0]
-        xdat = xlims[0] + wdat*(pos[0] - lbpos[0])/wax
-        ydat = ylims[0] + hdat*(pos[1] - lbpos[1])/hax
+        xdat = xlims[0] + wdat*(pos[0] - axpos[0][0])/(axpos[1][0] - axpos[0][0])
+        ydat = ylims[0] + hdat*(pos[1] - axpos[0][1])/(axpos[1][1] - axpos[0][1])
         return (xdat, ydat)
 
     @asaplog_post_dec
@@ -297,6 +305,7 @@ class NotationWindowTkAgg(NotationWindowCommon):
         self.radio.pack(side=Tk.BOTTOM)
         #twin.deiconify()
         #twin.minsize(width=twin.winfo_width(),height=twin.winfo_height())
+        twin.lift()
         twin.withdraw()
         return twin
 
@@ -439,6 +448,7 @@ class NotationWindowTkAgg(NotationWindowCommon):
             self.textwin.minsize(width=self.textwin.winfo_width(),
                                  height=self.textwin.winfo_height())
             (w,h) = self.textwin.minsize()
+        self.textwin.lift()
         self.textwin.geometry("%sx%s+%s+%s"%(w,h,xpix,ypix))
 
     def close_textwindow(self):

@@ -199,7 +199,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
                                    text='statistics',
                                    command=self.stat_cal)
         self.bNote=self._NewButton(master=self,
-                                   text=' note ',
+                                   text='notation',
                                    command=self.modify_note)
         self.bQuit=self._NewButton(master=self,
                                    text='Quit',
