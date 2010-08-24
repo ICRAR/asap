@@ -159,6 +159,8 @@ class scantable(Scantable):
                 #         and not os.path.exists(filename+'/table.f1'):
                 elif is_ms(filename):
                     self._fill([filename], unit, average, getpt, antenna)
+                elif os.path.isfile(filename):
+                    self._fill([filename], unit, average, getpt, antenna)
                 else:
                     msg = "The given file '%s'is not a valid " \
                           "asap table." % (filename)
