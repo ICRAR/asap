@@ -9,13 +9,26 @@ ATNFDIR := $(EXTDIR)/atnf
 CASAROOT  := $(word 1, $(CASAPATH))
 CASAARCH  := $(word 2, $(CASAPATH))
 
+CXXFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CXXFLAGS eval_vars) && echo $$CXXFLAGS)
+CXXOPTS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COPTFLAGS eval_vars) && echo $$COPTFLAGS)
+LDFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=LD_FLAGS eval_vars) && echo $$LD_FLAGS)
 COREINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COREINCD eval_vars) && echo $$COREINCD)
-CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
-USELIB := lib64
+CORELIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CORELIB eval_vars) && echo $$CORELIB)
+WCSLIBLIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=WCSLIBLIB eval_vars) && echo $$WCSLIBLIB)
+CFITSIOLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CFITSIOLIBD eval_vars) && echo $$CFITSIOLIBD)
+CFITSIOINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CFITSIOINCD eval_vars) && echo $$CFITSIOINCD)
+RPFITSLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=RPFITSLIBD eval_vars) && echo $$RPFITSLIBD)
 
-TARGETLIB   := libatnf.so
-ifeq "$(CASAARCH)" "darwin"
+CASAINC   := -I$(CASAROOT)/code/include -I$(COREINCD) -I$(CASAROOT)/$(CASAARCH)/include
+CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
+
+CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
+#USELIB := lib64
+
+ifeq ("",$(findstring "darwin", "$(CASAARCH)"))
 	TARGETLIB   := libatnf.dylib
+else
+        TARGETLIB   := libatnf.so
 endif
 
 # the compiler
@@ -24,52 +37,27 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS := -fPIC -O2 -g -fno-omit-frame-pointer -pipe
-CXXFLAGS += -Wall -Wextra -Wcast-align -Wno-comment
-# passing flags to codes for casacore
-CXXOPTS := -DCASA_USECASAPATH -DCASACORE_NEEDS_RETHROW -DAIPS_STDLIB \
-	-DAIPS_AUTO_STL -D_GNU_SOURCE 
-# for little endian cpu (casacore + atnf flag)
-CXXOPTS += -DAIPS_LITTLE_ENDIAN
-# for 64-bit platforms
-CXXOPTS += -DAIPS_64B
-ifeq "$(CASAARCH)" "darwin"
-	CXXFLAGS += -mmacosx-version-min=10.5 -dynamic -mtune=nocona \
-		-mfpmath=sse -ftree-vectorize -ffast-math -fasm-blocks
-	CXXOPTS += -DAIPS_DARWIN
-else # so far CASAARCH is either darwin, linux_gnu, or linux_64b (Aug.2010)
-	CXXFLAGS += -ansi
-	CXXOPTS += -DAIPS_LINUX
-# platform dependent casacore flags
-	CXXOPTS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE 
-endif
+CXXFLAGS += -fPIC
 
 # casacore library dependencies
 CORELIBS := -lcasa_casa -lcasa_measures -lcasa_scimath -lcasa_ms -lcasa_tables
 
 # cfitsio
-CFITSIOROOT := /usr
-CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
 CFITSIOLIB := -lcfitsio
 
 #rpfits
-RPFITSROOT := /usr
 RPFITSLIB := -lrpfits
 
 # the linker
 LD        := $(CXX)
 
-LDFLAGS   := -Wl,--no-undefined -shared -Wl,-soname,$(TARGETLIB) -s -Xlinker -rpath -Xlinker $(CASALIB)
-ifeq "$(CASAARCH)" "darwin"
-   LDFLAGS   := -dynamiclib -Wl,-undefined -Wl,error -install_name $(CASALIB)/$(TARGETLIB) -Xlinker -rpath -Xlinker $(CASALIB)
-endif
+LDFLAGS   += -shared
+ifeq ("", $(findstring "darwin", "$(CASAARCH)"))
+	   LDFLAGS += -headerpad_max_install_names -install_name $(CASAROOT)/$(CASAARCH)/lib/$(TARGETLIB)
+endif 
 
-# resoleve dependencies on external package
-# pks: -lcasa_casa, atnf/pks/pks_math.h
-# PKSIO: -lcfitsio, -lrpfits, atnf/pks/pks_maths.h, atnf/PKSIO/****.h
-#     -lcasa_casa, -lcasa_measures, -lcasa_scimath, -lcasa_ms, -lcasa_tables
-INCDIRS   := -I$(COREINCD) $(CFITSIOINC) -I$(EXTDIR)
-LIBS      := $(CFITSIOLIB) $(RPFITSLIB) -L$(CASALIB) $(CORELIBS)
+INCDIRS   := -I$(COREINCD) -I$(CFITSIOINCD) -I$(EXTDIR)
+LIBS      := -L$(CFITSIOLIBD) $(CFITSIOLIB) -L$(RPFITSLIBD) $(RPFITSLIB) -L$(CASALIB) $(CORELIBS) -lgfortran
 
 OBJECTS := $(ATNFDIR)/pks/pks_maths.o \
 	$(ATNFDIR)/PKSIO/ASTEDataset.o \
@@ -93,7 +81,7 @@ OBJECTS := $(ATNFDIR)/pks/pks_maths.o \
 	$(ATNFDIR)/PKSIO/PKSSDwriter.o \
 	$(ATNFDIR)/PKSIO/SDFITSreader.o \
 	$(ATNFDIR)/PKSIO/SDFITSwriter.o #\
-#	$(ATNFDIR)/PKSIO/PKSmsg.cc
+#	$(ATNFDIR)/PKSIO/PKSmsg.o
 
 HEADERS := $(ATNFDIR)/pks/pks_maths.h \
 	$(ATNFDIR)/PKSIO/ASTEDataset.h \

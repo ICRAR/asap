@@ -17,6 +17,10 @@ ATNFD := external-alma
 CASAROOT  := $(word 1, $(CASAPATH))
 CASAARCH  := $(word 2, $(CASAPATH))
 
+CXXFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CXXFLAGS eval_vars) && echo $$CXXFLAGS)
+CXXOPTS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COPTFLAGS eval_vars) && echo $$COPTFLAGS)
+LDFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=LD_FLAGS eval_vars) && echo $$LD_FLAGS)
+
 COREINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COREINCD eval_vars) && echo $$COREINCD)
 CORELIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CORELIB eval_vars) && echo $$CORELIB)
 WCSLIBLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=WCSLIBLIBD eval_vars) && echo $$WCSLIBLIBD)
@@ -25,13 +29,13 @@ PYTHONROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=P
 PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
 PYTHONINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONINCD eval_vars) && echo $$PYTHONINCD)
 PYTHONLIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIB eval_vars) && echo $$PYTHONLIB)
-#PYTHONVER := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONVER eval_vars) && echo $$PYTHONVER)
 BOOSTROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=BOOSTROOT eval_vars) && echo $$BOOSTROOT)
 RPFITSLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=RPFITSLIBD eval_vars) && echo $$RPFITSLIBD)
+CFITSIOLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CFITSIOLIBD eval_vars) && echo $$CFITSIOLIBD)
+CFITSIOINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CFITSIOINCD eval_vars) && echo $$CFITSIOINCD)
 
 CASAINC   := -I$(CASAROOT)/code/include -I$(COREINCD) -I$(CASAROOT)/$(CASAARCH)/include
 CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
-USELIB := lib64
 
 # the compiler
 ifndef CXX
@@ -39,24 +43,11 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS := -fPIC -O3 -g
-CXXFLAGS += -ansi -Wno-long-long -Wall
-CXXOPTS := -DAIPS_64B
+CXXFLAGS += -fPIC
 
-# darwin specific flags
-ifeq "$(CASAARCH)" "darwin"
-   #CXXFLAGS +=-DAIPS_DARWIN -arch i386 #For 10.6
-   CXXFLAGS +=-DAIPS_DARWIN
-   #CXXFLAGS += -Wno-long-double
-endif
-
-# cfitsio
-CFITSIOROOT := /usr
-CFITSIOINC := -I$(CFITSIOROOT)/include/cfitsio
 CFITSIOLIB := -lcfitsio
 
 #rpfits
-RPFITSROOT := /usr
 RPFITSLIB := -lrpfits
 
 G2CROOT := /usr
@@ -68,31 +59,23 @@ CASAPPLIB := -L$(ASAPROOT)/$(ATNFD) -latnf $(CORELIB) \
              -L$(RPFITSLIBD) $(RPFITSLIB) $(CFITSIOLIB) $(G2CLIB) -lstdc++
 
 # darwin specific CASA flags
-ifeq "$(CASAARCH)" "darwin"
+ifneq (,$(findstring $(CASAARCH)", "darwin"))
    CASAPPLIB += -framework vecLib
 else
    CASAPPLIB += -llapack -lblas
 endif
 
-# python
-PYTHONINC := $(addprefix -I,$(PYTHONINCD))
-PYTHONLIB := -L$(PYTHONLIBD) $(PYTHONLIB)
-
-# the linker
 LD        := $(CXX)
 
 # has to be build with same g++ version as casa
 BOOSTLIB  := -L$(BOOSTROOT)/lib -lboost_python
 BOOSTINC  := -I$(BOOSTROOT)/include/boost -I$(BOOSTROOT)/include
 
-LDFLAGS   := -shared -Wl$(TARGET) -s -Xlinker -rpath -Xlinker $(BOOSTROOT)/lib:$(PYTHONROOT)/lib:$(CASALIB)
-ifeq "$(CASAARCH)" "darwin"
-   LDFLAGS   := -bundle
-endif
+LDFLAGS   += -shared
 
 
 # DO NOT MODIFY AFTER THIS
-INCDIRS   := -I. $(CASAINC)  $(CFITSIOINC) $(BOOSTINC) $(PYTHONINC) -I$(ASAPROOT)/$(ATNFD)
+INCDIRS   := -I. $(CASAINC)  -I$(CFITSIOINCD) $(BOOSTINC) -I$(PYTHONINCD) -I$(ASAPROOT)/$(ATNFD)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
