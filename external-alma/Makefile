@@ -25,7 +25,7 @@ CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
 CASALIB   := $(CASAROOT)/$(CASAARCH)/lib
 #USELIB := lib64
 
-ifeq ("",$(findstring "darwin", "$(CASAARCH)"))
+ifneq (,$(findstring "darwin", "$(CASAARCH)"))
 	TARGETLIB   := libatnf.dylib
 else
         TARGETLIB   := libatnf.so
@@ -52,7 +52,7 @@ RPFITSLIB := -lrpfits
 LD        := $(CXX)
 
 LDFLAGS   += -shared
-ifeq ("", $(findstring "darwin", "$(CASAARCH)"))
+ifneq (, $(findstring "darwin", "$(CASAARCH)"))
 	   LDFLAGS += -headerpad_max_install_names -install_name $(CASAROOT)/$(CASAARCH)/lib/$(TARGETLIB)
 endif 
 
