@@ -10,6 +10,7 @@
 EXTDIR := $(shell pwd)
 PYRAPROOT := $(EXTDIR)/pyrap-0.3.2/ 
 PYRAPDIR := $(EXTDIR)/pyrap-0.3.2/pyrap/Converters
+TESTDIR := $(PYRAPDIR)/test
 
 # the casa environment AIPSPATH has to be defined
 CASAROOT := $(word 1, $(CASAPATH))
@@ -21,6 +22,7 @@ else
 endif
 
 TARGET := libpyrap.so
+TESTMOD := $(TESTDIR)/_tConvert.so
 INSTDIR := $(CASAROOT)/$(CASAARCH)/lib
 
 # CASACORE 
@@ -86,6 +88,9 @@ HEADERS := $(PYRAPDIR)/PycArrayComCC.h \
 	   $(PYRAPDIR)/PycValueHolder.h #\
 #	   $(PYRAPDIR)/PycArrayNA.h
 
+TESTSRC := $(TESTDIR)/tConvert.cc
+TESTOBJ := $(TESTDIR)/tConvert.o
+
 all: $(TARGET)
 
 .cc.o:
@@ -97,7 +102,12 @@ $(TARGET): $(OBJECTS)
 $(OBJECTS): $(HEADERS)
 
 clean:
-	@rm -rf $(OBJECTS) $(TARGET)
+	rm -rf $(OBJECTS) $(TARGET)
+	rm -rf $(TESTDIR)/$(TESTMOD) $(TESTDIR)/$(TESTOBJ)
 
 install:
-	@cp -f $(TARGET) $(INSTDIR)
+	cp -f $(TARGET) $(INSTDIR)
+
+test:
+	$(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $(TESTOBJ) $(TESTSRC)
+	$(LD) $(LDFLAGS) -o $(TESTMOD) $(TESTOBJ) $(LIBS) -L$(INSTDIR) -lpyrap
