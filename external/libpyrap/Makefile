@@ -15,11 +15,6 @@ TESTDIR := $(PYRAPDIR)/test
 # the casa environment AIPSPATH has to be defined
 CASAROOT := $(word 1, $(CASAPATH))
 CASAARCH := $(word 2, $(CASAPATH))
-ifeq "$(CASAARCH)" "darwin"
-   CASADIST := /opt/casa
-else
-   CASADIST := /usr/lib/casapy
-endif
 
 TARGET := libpyrap.so
 TESTMOD := $(TESTDIR)/_tConvert.so
@@ -37,15 +32,14 @@ BOOSTINCD := $(BOOSTROOT)/include
 BOOSTLIBD := $(BOOSTROOT)/lib
 BOOSTLIB := -L$(BOOSTLIBD) -lboost_python
 
-# numpy (use numpy in CASA)
-NUMPYROOT := $(CASADIST)/lib/python2.5/site-packages/numpy
-NUMPYINCD := $(NUMPYROOT)/core/include
-NUMPYLIBD := $(NUMPYROOT)/core/
-NUMPYLIB := #-L$(NUMPYLIBD) -lmultiarray 
-
 # python
 PYTHONROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONROOT eval_vars) && echo $$PYTHONROOT)
 PYTHONINCD := $(PYTHONROOT)/include/python2.5
+
+# numpy (use numpy in CASA)
+PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
+NUMPYROOT := $(PYTHONLIBD)/python2.5/site-packages/numpy
+NUMPYINCD := $(NUMPYROOT)/core/include
 
 # the compiler
 ifndef CXX
@@ -61,7 +55,7 @@ CXXFLAGS += -ansi -Wno-long-long -Wall
 CXXOPTS := -DAIPS_64B -DAIPS_USENUMPY
 
 # links to external libraries
-LIBS := $(CORELIB) $(BOOSTLIB) $(NUMPYLIB)
+LIBS := $(CORELIB) $(BOOSTLIB)
 
 # include directories
 INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) -I$(NUMPYINCD) \
@@ -102,8 +96,9 @@ $(TARGET): $(OBJECTS)
 $(OBJECTS): $(HEADERS)
 
 clean:
-	rm -rf $(OBJECTS) $(TARGET)
-	rm -rf $(TESTDIR)/$(TESTMOD) $(TESTDIR)/$(TESTOBJ)
+	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(TESTDIR)/$(TESTMOD) $(TESTDIR)/$(TESTOBJ)
+	rm -f $(INSTDIR)/$(TARGET)
 
 install:
 	cp -f $(TARGET) $(INSTDIR)
