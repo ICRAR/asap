@@ -1985,7 +1985,7 @@ class scantable(Scantable):
 
             if batch:
                 for r in rows:
-                    workscan._poly_baseline(mask, order, r)
+                    workscan._poly_baseline_batch(mask, order, r)
             elif plot:
                 f = fitter()
                 f.set_function(lpoly=order)

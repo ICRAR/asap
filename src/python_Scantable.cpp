@@ -139,6 +139,7 @@ void python_Scantable() {
 	 (boost::python::arg("nmin")=-1, 
 	  boost::python::arg("nmax")=-1) )
     .def("_poly_baseline", &ScantableWrapper::polyBaseline)
+    .def("_poly_baseline_batch", &ScantableWrapper::polyBaselineBatch)
     .def("_getflagtrafast", &ScantableWrapper::getFlagtraFast,
 	 (boost::python::arg("whichrow")=0) )
   ;

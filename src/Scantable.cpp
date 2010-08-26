@@ -1738,6 +1738,9 @@ void Scantable::doPolyBaseline(const std::vector<bool>& mask, int order, int row
   }
   std::vector<float> spec = getSpectrum(rowno);
   std::vector<bool> fmask = getMask(rowno);
+  if (fmask.size() != mask.size()) {
+    throw(AipsError("different mask sizes"));
+  }
   for (int i = 0; i < fmask.size(); i++) {
     fmask[i] = fmask[i] && mask[i];
   }
@@ -1746,7 +1749,7 @@ void Scantable::doPolyBaseline(const std::vector<bool>& mask, int order, int row
   fitter.lfit();
 }
 
-void Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno)
+void Scantable::polyBaselineBatch(const std::vector<bool>& mask, int order, int rowno)
 {
   Fitter fitter = Fitter();
   doPolyBaseline(mask, order, rowno, fitter);
@@ -1777,12 +1780,13 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno
     perrs[i] = errs[i];
   }
 
+  std::vector<bool> fmask = getMask(rowno);
   if (fmask_size != fmask.size()) {
     throw(AipsError("wrong fmask size"));
   }
   int *pfmask = reinterpret_cast<int*>(fmask_ptr);
   for (int i = 0; i < fmask_size; i++) {
-    pfmask[i] = (fmask[i] ? 1 : 0);
+    pfmask[i] = ((fmask[i] && mask[i]) ? 1 : 0);
   }
 }
 

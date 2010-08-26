@@ -252,8 +252,8 @@ public:
   void polyBaseline(const std::vector<bool>& mask, int order, int rowno, int pars_ptr, int pars_size, int errs_ptr, int errs_size, int fmask_ptr, int fmask_size)
   { table_->polyBaseline(mask, order, rowno, pars_ptr, pars_size, errs_ptr, errs_size, fmask_ptr, fmask_size); }
 
-  void polyBaseline(const std::vector<bool>& mask, int order, int rowno)
-  { table_->polyBaseline(mask, order, rowno); }
+  void polyBaselineBatch(const std::vector<bool>& mask, int order, int rowno)
+  { table_->polyBaselineBatch(mask, order, rowno); }
 
   bool getFlagtraFast(int whichrow=0) const
     { return table_->getFlagtraFast(whichrow); }

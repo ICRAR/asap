@@ -488,7 +488,7 @@ public:
 
   bool getFlagtraFast(int whichrow);
 
-  void polyBaseline(const std::vector<bool>& mask, int order, int rowno);
+  void polyBaselineBatch(const std::vector<bool>& mask, int order, int rowno);
   void polyBaseline(const std::vector<bool>& mask, int order, int rowno, int pars_ptr, int pars_size, int errs_ptr, int errs_size, int fmask_ptr, int fmask_size);
 
 
