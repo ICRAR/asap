@@ -147,7 +147,7 @@ if not env.GetOption('clean'):
 
     conf.env.AddCustomPackage('pyrap')
     if conf.CheckLib(conf.env["pyraplib"], language='c++', autoadd=0): 
-        conf.env.Append(CPPFLAGS=['-DHAVE_PYRAP'])
+        conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
         conf.env.PrependUnique(LIBS=env['pyraplib'])
     else:
         conf.env.AppendUnique(CPPPATH=[conf.env["numpyincdir"]])
@@ -157,6 +157,7 @@ if not env.GetOption('clean'):
             conf.env.Append(CPPDEFINES=["-DAIPS_USENUMPY"])
         else:
             conf.env.Exit(1)
+        conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
         # compile in pyrap here...
         conf.env["pyrapint"] = "#/external/libpyrap/pyrap-0.3.2"
     # test for cfitsio
