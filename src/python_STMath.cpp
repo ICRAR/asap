@@ -58,6 +58,7 @@ namespace asap {
         .def("_donod", &STMathWrapper::donod)
         .def("_dofs", &STMathWrapper::dofs)
         .def("_stats", &STMathWrapper::statistic)
+        .def("_statsrow", &STMathWrapper::statisticRow)
         .def("_minmaxchan", &STMathWrapper::minMaxChan)
         .def("_freqswitch", &STMathWrapper::freqSwitch)
         .def("_bin", &STMathWrapper::bin)
