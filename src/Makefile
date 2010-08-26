@@ -44,7 +44,7 @@ endif
 
 # compiler flags
 CXXFLAGS += -fPIC
-#CXXOPTS += -DHAVE_LIBPYRAP
+CXXOPTS += -DHAVE_LIBPYRAP
 
 CFITSIOLIB := -lcfitsio
 
