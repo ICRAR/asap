@@ -40,6 +40,8 @@ PYTHONINCD := $(PYTHONROOT)/include/python2.5
 PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
 NUMPYROOT := $(PYTHONLIBD)/python2.5/site-packages/numpy
 NUMPYINCD := $(NUMPYROOT)/core/include
+NUMPYLIBD := $(NUMPYROOT)/core
+NUMPYLIB := $(NUMPYLIBD)/multiarray.so
 
 # the compiler
 ifndef CXX
@@ -55,7 +57,7 @@ CXXFLAGS += -ansi -Wno-long-long -Wall
 CXXOPTS := -DAIPS_64B -DAIPS_USENUMPY
 
 # links to external libraries
-LIBS := $(CORELIB) $(BOOSTLIB)
+LIBS := $(CORELIB) $(BOOSTLIB) $(NUMPYLIB)
 
 # include directories
 INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) -I$(NUMPYINCD) \
