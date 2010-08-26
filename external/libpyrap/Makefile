@@ -16,8 +16,13 @@ TESTDIR := $(PYRAPDIR)/test
 CASAROOT := $(word 1, $(CASAPATH))
 CASAARCH := $(word 2, $(CASAPATH))
 
-TARGET := libpyrap.so
-TESTMOD := $(TESTDIR)/_tConvert.so
+ifeq ($(shell uname), Darwin)
+   TARGET := libpyrap.dylib
+   TESTMOD := $(TESTDIR)/_tConvert.so
+else
+   TARGET := libpyrap.so
+   TESTMOD := $(TESTDIR)/_tConvert.so
+endif
 INSTDIR := $(CASAROOT)/$(CASAARCH)/lib
 
 # CASACORE 
@@ -35,13 +40,12 @@ BOOSTLIB := -L$(BOOSTLIBD) -lboost_python
 # python
 PYTHONROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONROOT eval_vars) && echo $$PYTHONROOT)
 PYTHONINCD := $(PYTHONROOT)/include/python2.5
+PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
+PYTHONLIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIB eval_vars) && echo $$PYTHONLIB)
 
 # numpy (use numpy in CASA)
-PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
 NUMPYROOT := $(PYTHONLIBD)/python2.5/site-packages/numpy
 NUMPYINCD := $(NUMPYROOT)/core/include
-NUMPYLIBD := $(NUMPYROOT)/core
-NUMPYLIB := $(NUMPYLIBD)/multiarray.so
 
 # the compiler
 ifndef CXX
@@ -52,12 +56,15 @@ endif
 LD := $(CXX)
 
 # compiler flags
-CXXFLAGS := -fPIC -O3 -g
-CXXFLAGS += -ansi -Wno-long-long -Wall
-CXXOPTS := -DAIPS_64B -DAIPS_USENUMPY
+#CXXFLAGS := -fPIC -O3 -g
+#CXXFLAGS += -ansi -Wno-long-long -Wall
+CXXFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CXXFLAGS eval_vars) && echo $$CXXFLAGS)
+CXXFLAGS += -fPIC -O3
+CXXOPTS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COPTFLAGS eval_vars) && echo $$COPTFLAGS)
+CXXOPTS += -DAIPS_USENUMPY
 
 # links to external libraries
-LIBS := $(CORELIB) $(BOOSTLIB) $(NUMPYLIB)
+LIBS := $(CORELIB) $(BOOSTLIB) $(PYTHONLIB)
 
 # include directories
 INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) -I$(NUMPYINCD) \
@@ -107,4 +114,4 @@ install:
 
 test:
 	$(CXX) $(CXXOPTS) -c $(CXXFLAGS) $(INCDIRS) -o $(TESTOBJ) $(TESTSRC)
-	$(LD) $(LDFLAGS) -o $(TESTMOD) $(TESTOBJ) $(LIBS) -L$(INSTDIR) -lpyrap
+	$(LD) $(LDFLAGS) -o $(TESTMOD) $(TESTOBJ) $(LIBS) -L$(EXTDIR) -lpyrap
