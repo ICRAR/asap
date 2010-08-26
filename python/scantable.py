@@ -2548,7 +2548,8 @@ class scantable(Scantable):
             r.setreferenceexpr(rx)
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
-            r.open(name)# antenna, -1, -1, getpt)
+            opts = {'ms': {'antenna' : antenna, 'getpt': getpt} }
+            r.open(name, opts)# antenna, -1, -1, getpt)
             r.fill()
             if average:
                 tbl = self._math._average((tbl, ), (), 'NONE', 'SCAN')
