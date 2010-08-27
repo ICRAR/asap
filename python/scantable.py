@@ -2042,7 +2042,6 @@ class scantable(Scantable):
                     asaplog.push(str(fmtd))
             
             workscan._add_history("poly_baseline", varlist)
-            print_log()
             
             if insitu:
                 self._assign(workscan)
@@ -2052,9 +2051,7 @@ class scantable(Scantable):
         except RuntimeError:
             msg = "The fit failed, possibly because it didn't converge."
             if rcParams["verbose"]:
-                print_log()
                 asaplog.push(str(msg))
-                print_log("ERROR")
                 return
             else:
                 raise RuntimeError(msg)
