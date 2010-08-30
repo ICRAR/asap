@@ -213,11 +213,12 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.bPrev=self._NewButton(master=self,
                                    text='- page',
                                    command=self.prev_page)
-        self.bPrev.config(padx=5)
         self.bNext=self._NewButton(master=self,
                                    text='+ page',
                                    command=self.next_page)
-        self.bNext.config(padx=5)
+        if os.uname()[0] != 'Darwin':
+            self.bPrev.config(padx=5)
+            self.bNext.config(padx=5)
         self.bQuit=self._NewButton(master=self,
                                    text='Quit',
                                    command=self.quit,
