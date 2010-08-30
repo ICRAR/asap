@@ -18,7 +18,7 @@ CASAARCH := $(word 2, $(CASAPATH))
 
 ifeq ($(shell uname), Darwin)
    TARGET := libpyrap.dylib
-   TESTMOD := $(TESTDIR)/_tConvert.so
+   TESTMOD := $(TESTDIR)/_tConvert.dylib
 else
    TARGET := libpyrap.so
    TESTMOD := $(TESTDIR)/_tConvert.so
