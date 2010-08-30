@@ -51,9 +51,8 @@ class asapplotter:
         self._fp = FontProperties()
         self._panellayout = self.set_panellayout(refresh=False)
         self._offset = None
-        ###-S
-        #self._rowcount = 0
-        ###-E
+        self._rowcount = 0
+        self._panelcnt = 0
 
     def _translate(self, instr):
         keys = "s b i p t r".split()
@@ -96,9 +95,7 @@ class asapplotter:
             NO checking is done that the abcissas of the scantable
             are consistent e.g. all 'channel' or all 'velocity' etc.
         """
-        ###-S
-        #self._rowcount = 0
-        ###-E
+        self._rowcount = self._panelcnt = 0
         if self._plotter.is_dead:
             if hasattr(self._plotter.figmgr,'casabar'):
                 del self._plotter.figmgr.casabar
@@ -344,6 +341,8 @@ class asapplotter:
             raise TypeError(msg)
         if self._panelling == 'r':
             self._stacking = '_r'
+        elif self._stacking == 'r':
+            self._panelling = '_r'
         if refresh and self._data: self.plot(self._data)
         return
 
@@ -359,7 +358,7 @@ class asapplotter:
         if md:
             self._panelling = md
             self._title = None
-            if self._panelling == 'r':
+            if md == 'r':
                 self._stacking = '_r'
             return True
         return False
@@ -394,6 +393,8 @@ class asapplotter:
         if md:
             self._stacking = md
             self._lmap = None
+            if md == 'r':
+                self._panelling = '_r'
             return True
         return False
 
@@ -840,34 +841,17 @@ class asapplotter:
         n0,nstack0 = self._get_selected_n(scan)
         if isinstance(n0, int): n = n0
         else: n = len(n0)
-        ###-S
-        #nptot = n
-        ###-E
         if isinstance(nstack0, int): nstack = nstack0
         else: nstack = len(nstack0)
+        nptot = n
         maxpanel, maxstack = 16,16
-        ###-S
-        if n > maxpanel or nstack > maxstack:
-        #if nstack > maxstack:
-        ###-E
-            ###-S
-            maxn = 0
-            if nstack > maxstack: maxn = maxstack
-            if n > maxpanel: maxn = maxpanel
-            msg ="Scan to be plotted contains more than %d selections.\n" \
-                  "Selecting first %d selections..." % (maxn, maxn)
-            #msg ="Scan to be overlayed contains more than %d selections.\n" \
-            #      "Selecting first %d selections..." % (maxstack, maxstack)
-            ###-E
+        if nstack > maxstack:
+            msg ="Scan to be overlayed contains more than %d selections.\n" \
+                  "Selecting first %d selections..." % (maxstack, maxstack)
             asaplog.push(msg)
             asaplog.post('WARN')
-            ###-S
-            n = min(n,maxpanel)
-            ###-E
             nstack = min(nstack,maxstack)
-        ###-S
-        #n = min(n,maxpanel)
-        ###-E
+        n = min(n,maxpanel)
             
         if n > 1:
             ganged = rcParams['plotter.ganged']
@@ -884,10 +868,8 @@ class asapplotter:
         else:
 #            self._plotter.set_panels()
             self._plotter.set_panels(layout=self._panellayout)
-        ###-S
-        r = 0
-        #r = self._rowcount
-        ###-E
+        #r = 0
+        r = self._rowcount
         nr = scan.nrow()
         a0,b0 = -1,-1
         allxlim = []
@@ -911,6 +893,7 @@ class asapplotter:
                 self._plotter.set_axes('xlabel', xlab)
                 self._plotter.set_axes('ylabel', ylab)
                 lbl = self._get_label(scan, r, self._panelling, self._title)
+                #if self._panelling == 'r': lbl = ''
                 if isinstance(lbl, list) or isinstance(lbl, tuple):
                     if 0 <= panelcount < len(lbl):
                         lbl = lbl[panelcount]
@@ -919,7 +902,7 @@ class asapplotter:
                         lbl = self._get_label(scan, r, self._panelling, None)
                 self._plotter.set_axes('title',lbl)
                 newpanel = True
-                stackcount =0
+                stackcount = 0
                 panelcount += 1
             if (b > b0 or newpanel) and stackcount < nstack:
                 y = []
@@ -987,9 +970,17 @@ class asapplotter:
                 break
             r+=1 # next row
         ###-S
-        #self._rowcount = r+1
-        #if self._rowcount > 0: enable prev button
-        #if self._rowcount >= nr: disable next button
+        self._rowcount = r+1
+        self._panelcnt += panelcount
+        if self._plotter.figmgr.casabar:
+            if self._panelcnt >= nptot-1:
+                self._plotter.figmgr.casabar.disable_next()
+            else:
+                self._plotter.figmgr.casabar.enable_next()
+            #if self._panelcnt - panelcount > 0:
+            #    self._plotter.figmgr.casabar.enable_prev()
+            #else:
+            #    self._plotter.figmgr.casabar.disable_prev()
         ###-E
         #reset the selector to the scantable's original
         scan.set_selection(savesel)
@@ -1072,7 +1063,8 @@ class asapplotter:
              'p': poleval,
              't': str(scan.get_time(row)),
              'r': "row "+str(row),
-             '_r': str(scan.get_time(row))+",\nIF"+str(scan.getif(row))+", "+poleval+", Beam"+str(scan.getbeam(row)) }
+             #'_r': str(scan.get_time(row))+",\nIF"+str(scan.getif(row))+", "+poleval+", Beam"+str(scan.getbeam(row)) }
+             '_r': "" }
         return userlabel or d[mode]
 
     def plotazel(self, scan=None, outfile=None):
