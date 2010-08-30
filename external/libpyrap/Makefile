@@ -18,7 +18,7 @@ CASAARCH := $(word 2, $(CASAPATH))
 
 ifeq ($(shell uname), Darwin)
    TARGET := libpyrap.dylib
-   TESTMOD := $(TESTDIR)/_tConvert.dylib
+   TESTMOD := $(TESTDIR)/_tConvert.so
 else
    TARGET := libpyrap.so
    TESTMOD := $(TESTDIR)/_tConvert.so
@@ -39,13 +39,13 @@ BOOSTLIB := -L$(BOOSTLIBD) -lboost_python
 
 # python
 PYTHONROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONROOT eval_vars) && echo $$PYTHONROOT)
-PYTHONINCD := $(PYTHONROOT)/include/python2.5
+PYTHONINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONINCD eval_vars) && echo $$PYTHONINCD)
 PYTHONLIBD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIBD eval_vars) && echo $$PYTHONLIBD)
 PYTHONLIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=PYTHONLIB eval_vars) && echo $$PYTHONLIB)
 
 # numpy (use numpy in CASA)
-NUMPYROOT := $(PYTHONLIBD)/python2.5/site-packages/numpy
-NUMPYINCD := $(NUMPYROOT)/core/include
+#NUMPYROOT := $(PYTHONLIBD)/python2.5/site-packages/numpy
+#NUMPYINCD := $(NUMPYROOT)/core/include
 
 # the compiler
 ifndef CXX
@@ -67,11 +67,12 @@ CXXOPTS += -DAIPS_USENUMPY
 LIBS := $(CORELIB) $(BOOSTLIB) $(PYTHONLIB)
 
 # include directories
-INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) -I$(NUMPYINCD) \
-           -I$(PYRAPROOT) -I$(PYTHONINCD)
+INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) \
+           -I$(PYRAPROOT) $(addprefix -I, $(PYTHONINCD))
 
 # link option
-LDFLAGS := -shared 
+LDFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=LD_FLAGS eval_vars) && echo $$LD_FLAGS)
+LDFLAGS += -shared 
 
 OBJECTS := $(PYRAPDIR)/PycArray.o \
            $(PYRAPDIR)/PycArrayNP.o \

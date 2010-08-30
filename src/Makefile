@@ -43,8 +43,13 @@ ifndef CXX
 endif
 
 # compiler flags
-CXXFLAGS += -fPIC
-CXXOPTS += -DHAVE_LIBPYRAP
+CXXFLAGS += -fPIC -DHAVE_LIBPYRAP
+
+PYRAPD := $(ASAPROOT)/external/libpyrap
+PYRAPLIBD := $(PYRAPD)
+PYRAPINCD := $(PYRAPD)/pyrap-0.3.2
+PYRAPLIB := -L$(PYRAPLIBD) -lpyrap
+
 
 CFITSIOLIB := -lcfitsio
 
@@ -54,14 +59,8 @@ RPFITSLIB := -lrpfits
 G2CROOT := /usr
 G2CLIB := -lgfortran
 
-# pyrap
-PYRAPD := $(ASAPROOT)/external/libpyrap
-PYRAPLIBD := $(PYRAPD)
-PYRAPINCD := $(PYRAPD)/pyrap-0.3.2
-PYRAPLIB := -L$(PYRAPLIBD) -lpyrap
-
 # links to external libraries
-CASAPPLIB := -L$(ASAPROOT)/$(ATNFD) -latnf $(CORELIB) $(PYRAPLIB) \
+CASAPPLIB := -L$(ASAPROOT)/$(ATNFD) -latnf $(CORELIB) $(PYRAPLIB)\
              -L$(WCSLIBLIBD) $(WCSLIBLIB) \
              -L$(RPFITSLIBD) $(RPFITSLIB) $(CFITSIOLIB) $(G2CLIB) -lstdc++
 
@@ -82,7 +81,7 @@ LDFLAGS   += -shared
 
 
 # DO NOT MODIFY AFTER THIS
-INCDIRS   := -I. $(CASAINC)  -I$(CFITSIOINCD) $(BOOSTINC) -I$(PYTHONINCD) -I$(ASAPROOT)/$(ATNFD) -I$(PYRAPINCD)
+INCDIRS   := -I. $(CASAINC)  -I$(CFITSIOINCD) $(BOOSTINC) $(addprefix -I, $(PYTHONINCD)) -I$(ASAPROOT)/$(ATNFD) -I$(PYRAPINCD)
 LIBS      := $(PYTHONLIB)  $(BOOSTLIB) $(CASAPPLIB)
 
 CCOBJECTS := MathUtils.o \
