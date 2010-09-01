@@ -26,10 +26,9 @@ endif
 INSTDIR := $(CASAROOT)/$(CASAARCH)/lib
 
 # CASACORE 
-#COREINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COREINCD eval_vars) && echo $$COREINCD)
-COREINCD := $(CASAROOT)/$(CASAARCH)/include/casacore
+COREINCD := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=COREINCD eval_vars) && echo $$COREINCD)
 CORELIBD := $(CASAROOT)/$(CASAARCH)/lib
-CORELIB := -L$(CORELIBD) -lcasa_casa
+CORELIB := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=CORELIB eval_vars) && echo $$CORELIB)
 
 # boost 
 BOOSTROOT := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=BOOSTROOT eval_vars) && echo $$BOOSTROOT)
@@ -73,6 +72,9 @@ INCDIRS := -I$(COREINCD) -I$(BOOSTINCD) \
 # link option
 LDFLAGS := $(shell $(shell make -s -f $(CASAROOT)/$(CASAARCH)/makedefs VARS=LD_FLAGS eval_vars) && echo $$LD_FLAGS)
 LDFLAGS += -shared 
+ifeq ($(shell uname), Darwin)
+   LDFLAGS += -headerpad_max_install_names -install_name $(CASAROOT)/$(CASAARCH)/lib/$(TARGET)
+endif
 
 OBJECTS := $(PYRAPDIR)/PycArray.o \
            $(PYRAPDIR)/PycArrayNP.o \
