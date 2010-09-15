@@ -7,7 +7,7 @@ class selector(_selector):
     A selection object to be applied to scantables to restrict the
     scantables to specific rows.
     """
-    fields = ["pols", "ifs", "beams", "scans", "cycles", "name", "query"]
+    fields = ["pols", "ifs", "beams", "scans", "cycles", "name", "query", "types"]
 
     def __init__(self, *args, **kw):
         if len(args) == 1:
