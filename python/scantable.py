@@ -336,7 +336,7 @@ class scantable(Scantable):
 
         Parameters:
 
-            filename:    the name of a file to write the putput to
+            filename:    the name of a file to write the output to
                          Default - no file output
 
         """
@@ -376,7 +376,7 @@ class scantable(Scantable):
         return self._getmask(rowno)
 
     def set_spectrum(self, spec, rowno):
-        """Return the spectrum for the current row in the scantable as a list.
+        """Set the spectrum for the current row in the scantable.
 
         Parameters:
 
@@ -737,7 +737,8 @@ class scantable(Scantable):
     def get_time(self, row=-1, asdatetime=False):
         """\
         Get a list of time stamps for the observations.
-        Return a datetime object for each integration time stamp in the scantable.
+        Return a datetime object or a string (default) for each
+        integration time stamp in the scantable.
 
         Parameters:
 
@@ -1036,7 +1037,7 @@ class scantable(Scantable):
             dthres:      lower threshold
 
             clipoutside: True for flagging data outside the range [dthres:uthres].
-                         False for glagging data inside the range.
+                         False for flagging data inside the range.
 
             unflag:      if True, unflag the data.
 
@@ -1282,7 +1283,7 @@ class scantable(Scantable):
     def set_restfreqs(self, freqs=None, unit='Hz'):
         """\
         Set or replace the restfrequency specified and
-        If the 'freqs' argument holds a scalar,
+        if the 'freqs' argument holds a scalar,
         then that rest frequency will be applied to all the selected
         data.  If the 'freqs' argument holds
         a vector, then it MUST be of equal or smaller length than
@@ -1416,7 +1417,7 @@ class scantable(Scantable):
 
         Parameters:
 
-            filename:    The name  of the file to save the history to.
+            filename:    The name of the file to save the history to.
 
         """
         hist = list(self._gethistory())
@@ -1432,6 +1433,8 @@ class scantable(Scantable):
                 out += "\n"+date+"\n"
                 out += "Function: %s\n  Parameters:" % (func)
                 for i in items:
+                    if i == '':
+                        continue
                     s = i.split("=")
                     out += "\n   %s = %s" % (s[0], s[1])
                 out = "\n".join([out, "-"*80])
@@ -1520,7 +1523,7 @@ class scantable(Scantable):
 
             eta:         the aperture efficiency
 
-            d:           the geomtric diameter (metres)
+            d:           the geometric diameter (metres)
 
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
@@ -2073,7 +2076,8 @@ class scantable(Scantable):
                            threshold=3, chan_avg_limit=1, plot=False,
                            insitu=None, rows=None):
         """\
-        Return a scan which has been baselined (all rows) by a polynomial.
+        Return a scan which has been baselined (all rows by default)
+        by a polynomial.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
@@ -2318,7 +2322,7 @@ class scantable(Scantable):
     def scale(self, factor, tsys=True, insitu=None):
         """\
 
-        Return a scan where all spectra are scaled by the give 'factor'
+        Return a scan where all spectra are scaled by the given 'factor'
 
         Parameters:
 
