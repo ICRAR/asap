@@ -542,7 +542,6 @@ int Scantable::nbeam( int scanno ) const
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
-    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("IFNO") == Int(rec.asuInt("IFNO"))
@@ -563,7 +562,6 @@ int Scantable::nif( int scanno ) const
   } else {
     // take the first POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
-    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
@@ -585,7 +583,6 @@ int Scantable::npol( int scanno ) const
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
-    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
@@ -613,7 +610,6 @@ int Scantable::ncycle( int scanno ) const
     return n;
   } else {
     Table t = table_(table_.col("SCANNO") == scanno);
-    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
@@ -1753,45 +1749,21 @@ void Scantable::doPolyBaseline(const std::vector<bool>& mask, int order, int row
   fitter.lfit();
 }
 
-void Scantable::polyBaselineBatch(const std::vector<bool>& mask, int order, int rowno)
+void Scantable::polyBaselineBatch(const std::vector<bool>& mask, int order)
 {
   Fitter fitter = Fitter();
-  doPolyBaseline(mask, order, rowno, fitter);
-  setSpectrum(fitter.getResidual(), rowno);
+  for (uInt rowno=0; rowno < nrow(); ++rowno) {
+    doPolyBaseline(mask, order, rowno, fitter);
+    setSpectrum(fitter.getResidual(), rowno);
+  }
 }
 
-void Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno, long pars_ptr, long pars_size, long errs_ptr, long errs_size, long fmask_ptr, long fmask_size)
+STFitEntry Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno)
 {
   Fitter fitter = Fitter();
   doPolyBaseline(mask, order, rowno, fitter);
   setSpectrum(fitter.getResidual(), rowno);
-
-  std::vector<float> pars = fitter.getParameters();
-  if (pars_size != pars.size()) {
-    throw(AipsError("wrong pars size"));
-  }
-  float *ppars = reinterpret_cast<float*>(pars_ptr);
-  for (int i = 0; i < pars_size; i++) {
-    ppars[i] = pars[i];
-  }
-
-  std::vector<float> errs = fitter.getErrors();
-  if (errs_size != errs.size()) {
-    throw(AipsError("wrong errors size"));
-  }
-  float *perrs = reinterpret_cast<float*>(errs_ptr);
-  for (int i = 0; i < errs_size; i++) {
-    perrs[i] = errs[i];
-  }
-
-  std::vector<bool> fmask = getMask(rowno);
-  if (fmask_size != fmask.size()) {
-    throw(AipsError("wrong fmask size"));
-  }
-  int *pfmask = reinterpret_cast<int*>(fmask_ptr);
-  for (int i = 0; i < fmask_size; i++) {
-    pfmask[i] = ((fmask[i] && mask[i]) ? 1 : 0);
-  }
+  return fitter.getFitEntry();
 }
 
 }

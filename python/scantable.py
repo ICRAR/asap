@@ -336,7 +336,7 @@ class scantable(Scantable):
 
         Parameters:
 
-            filename:    the name of a file to write the output to
+            filename:    the name of a file to write the putput to
                          Default - no file output
 
         """
@@ -376,7 +376,7 @@ class scantable(Scantable):
         return self._getmask(rowno)
 
     def set_spectrum(self, spec, rowno):
-        """Set the spectrum for the current row in the scantable.
+        """Return the spectrum for the current row in the scantable as a list.
 
         Parameters:
 
@@ -737,8 +737,7 @@ class scantable(Scantable):
     def get_time(self, row=-1, asdatetime=False):
         """\
         Get a list of time stamps for the observations.
-        Return a datetime object or a string (default) for each
-        integration time stamp in the scantable.
+        Return a datetime object for each integration time stamp in the scantable.
 
         Parameters:
 
@@ -1158,7 +1157,7 @@ class scantable(Scantable):
                 msk = mask_not(msk)
         return msk
 
-    def get_masklist(self, mask=None, row=0):
+    def get_masklist(self, mask=None, row=0, silent=False):
         """\
         Compute and return a list of mask windows, [min, max].
 
@@ -1192,7 +1191,8 @@ class scantable(Scantable):
         i = self._check_ifs()
         if not i:
             msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
-        asaplog.push(msg)
+        if not silent:
+            asaplog.push(msg)
         masklist=[]
         ist, ien = None, None
         ist, ien=self.get_mask_indices(mask)
@@ -1283,7 +1283,7 @@ class scantable(Scantable):
     def set_restfreqs(self, freqs=None, unit='Hz'):
         """\
         Set or replace the restfrequency specified and
-        if the 'freqs' argument holds a scalar,
+        If the 'freqs' argument holds a scalar,
         then that rest frequency will be applied to all the selected
         data.  If the 'freqs' argument holds
         a vector, then it MUST be of equal or smaller length than
@@ -1433,8 +1433,6 @@ class scantable(Scantable):
                 out += "\n"+date+"\n"
                 out += "Function: %s\n  Parameters:" % (func)
                 for i in items:
-                    if i == '':
-                        continue
                     s = i.split("=")
                     out += "\n   %s = %s" % (s[0], s[1])
                 out = "\n".join([out, "-"*80])
@@ -1936,7 +1934,7 @@ class scantable(Scantable):
                         continue
                 workscan._setspectrum(f.fitter.getresidual(), r)
                 self.blpars.append(f.get_parameters())
-                self.masklists.append(workscan.get_masklist(f.mask, row=r))
+                self.masklists.append(workscan.get_masklist(f.mask, row=r, silent=True))
                 self.actualmask.append(f.mask)
 
             if plot:
@@ -1951,7 +1949,7 @@ class scantable(Scantable):
             msg = "The fit failed, possibly because it didn't converge."
             raise RuntimeError(msg)
 
-
+    @asaplog_post_dec
     def poly_baseline(self, mask=None, order=0, plot=False, batch=False, insitu=None, rows=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
@@ -1967,20 +1965,22 @@ class scantable(Scantable):
             insitu:     if False a new scantable is returned.
                         Otherwise, the scaling is done in-situ
                         The default is taken from .asaprc (False)
-            rows:       row numbers of spectra to be processed.
+            rows:       row numbers of spectra to be baselined.
                         (default is None: for all rows)
         Example:
             # return a scan baselined by a third order polynomial,
             # not using a mask
             bscan = scan.poly_baseline(order=3)
         """
+        
+        varlist = vars()
+        
         if insitu is None: insitu = rcParams["insitu"]
         if insitu:
             workscan = self
         else:
             workscan = self.copy()
 
-        varlist = vars()
         nchan = workscan.nchan()
         
         if mask is None:
@@ -1993,13 +1993,12 @@ class scantable(Scantable):
                 rows = [ rows ]
             
             if len(rows) > 0:
-                self.blpars = []
-                self.masklists = []
-                self.actualmask = []
+                workscan.blpars = []
+                workscan.masklists = []
+                workscan.actualmask = []
 
             if batch:
-                for r in rows:
-                    workscan._poly_baseline_batch(mask, order, r)
+                workscan._poly_baseline_batch(mask, order)
             elif plot:
                 f = fitter()
                 f.set_function(lpoly=order)
@@ -2018,42 +2017,27 @@ class scantable(Scantable):
                         self.actualmask.append(None)
                         continue
                     workscan._setspectrum(f.fitter.getresidual(), r)
-                    self.blpars.append(f.get_parameters())
-                    self.masklists.append(workscan.get_masklist(f.mask, row=r))
-                    self.actualmask.append(f.mask)
+                    workscan.blpars.append(f.get_parameters())
+                    workscan.masklists.append(workscan.get_masklist(f.mask, row=r))
+                    workscan.actualmask.append(f.mask)
                     
                 f._p.unmap()
                 f._p = None
             else:
-                import array
                 for r in rows:
-                    pars = array.array("f", [0.0 for i in range(order+1)])
-                    pars_adr = pars.buffer_info()[0]
-                    pars_len = pars.buffer_info()[1]
+                    fitparams = workscan._poly_baseline(mask, order, r)
+                    params = fitparams.getparameters()
+                    fmtd = ", ".join(["p%d = %3.6f" % (i, v) for i, v in enumerate(params)])
+                    errors = fitparams.geterrors()
+                    fmask = mask_and(mask, workscan._getmask(r))
+
+                    workscan.blpars.append({"params":params,
+                                            "fixed": fitparams.getfixedparameters(),
+                                            "formatted":fmtd, "errors":errors})
+                    workscan.masklists.append(workscan.get_masklist(fmask, r, silent=True))
+                    workscan.actualmask.append(fmask)
                     
-                    errs = array.array("f", [0.0 for i in range(order+1)])
-                    errs_adr = errs.buffer_info()[0]
-                    errs_len = errs.buffer_info()[1]
-                    
-                    fmsk = array.array("i", [1 for i in range(nchan)])
-                    fmsk_adr = fmsk.buffer_info()[0]
-                    fmsk_len = fmsk.buffer_info()[1]
-                    
-                    workscan._poly_baseline(mask, order, r, pars_adr, pars_len, errs_adr, errs_len, fmsk_adr, fmsk_len)
-                    
-                    params = pars.tolist()
-                    fmtd = ""
-                    for i in xrange(len(params)): fmtd += "  p%d= %3.6f," % (i, params[i])
-                    fmtd = fmtd[:-1]  # remove trailing ","
-                    errors = errs.tolist()
-                    fmask = fmsk.tolist()
-                    for i in xrange(len(fmask)): fmask[i] = (fmask[i] > 0)    # transform (1/0) -> (True/False)
-                    
-                    self.blpars.append({"params":params, "fixed":[], "formatted":fmtd, "errors":errors})
-                    self.masklists.append(workscan.get_masklist(fmask, r))
-                    self.actualmask.append(fmask)
-                    
-                    asaplog.push(str(fmtd))
+                    asaplog.push(fmtd)
             
             workscan._add_history("poly_baseline", varlist)
             
@@ -2076,8 +2060,7 @@ class scantable(Scantable):
                            threshold=3, chan_avg_limit=1, plot=False,
                            insitu=None, rows=None):
         """\
-        Return a scan which has been baselined (all rows by default)
-        by a polynomial.
+        Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
@@ -2205,7 +2188,7 @@ class scantable(Scantable):
             f.fit()
 
             # Show mask list
-            masklist=workscan.get_masklist(f.mask, row=r)
+            masklist=workscan.get_masklist(f.mask, row=r, silent=True)
             msg = "mask range: "+str(masklist)
             asaplog.push(msg, False)
 
@@ -2322,7 +2305,7 @@ class scantable(Scantable):
     def scale(self, factor, tsys=True, insitu=None):
         """\
 
-        Return a scan where all spectra are scaled by the given 'factor'
+        Return a scan where all spectra are scaled by the give 'factor'
 
         Parameters:
 
