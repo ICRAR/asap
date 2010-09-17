@@ -542,6 +542,7 @@ int Scantable::nbeam( int scanno ) const
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
+    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("IFNO") == Int(rec.asuInt("IFNO"))
@@ -562,6 +563,7 @@ int Scantable::nif( int scanno ) const
   } else {
     // take the first POLNO,BEAMNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
+    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
@@ -583,6 +585,7 @@ int Scantable::npol( int scanno ) const
   } else {
     // take the first POLNO,IFNO,CYCLENO as nbeam shouldn't vary with these
     Table t = table_(table_.col("SCANNO") == scanno);
+    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
@@ -610,6 +613,7 @@ int Scantable::ncycle( int scanno ) const
     return n;
   } else {
     Table t = table_(table_.col("SCANNO") == scanno);
+    if ( t.nrow() == 0 ) return 0 ;
     ROTableRow row(t);
     const TableRecord& rec = row.get(0);
     Table subt = t( t.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
