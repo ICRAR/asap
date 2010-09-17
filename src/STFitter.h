@@ -39,6 +39,8 @@
 #include <scimath/Functionals/Function.h>
 #include <scimath/Functionals/CompoundFunction.h>
 
+#include "STFitEntry.h"
+
 namespace asap {
 
 class Fitter {
@@ -68,12 +70,18 @@ public:
   bool computeEstimate();
 
   std::vector<float> evaluate(int whichComp) const;
+
+  STFitEntry getFitEntry() const;
+
 private:
   void clear();
   casa::Vector<casa::Float> x_;
   casa::Vector<casa::Float> y_;
   casa::Vector<casa::Bool> m_;
   casa::PtrBlock<casa::Function<casa::Float>* > funcs_;
+  std::vector<std::string> funcnames_;
+  std::vector<int> funccomponents_;
+  
   //Bool estimateSet_;
   casa::Float chisquared_;
   casa::Vector<casa::Float> parameters_;
