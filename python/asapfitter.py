@@ -86,13 +86,15 @@ class fitter:
         n=0
         if kwargs.has_key('poly'):
             self.fitfunc = 'poly'
+            self.fitfuncs = ['poly']
             n = kwargs.get('poly')
-            self.components = [n]
+            self.components = [n+1]
             self.uselinear = False
         elif kwargs.has_key('lpoly'):
             self.fitfunc = 'poly'
+            self.fitfuncs = ['lpoly']
             n = kwargs.get('lpoly')
-            self.components = [n]
+            self.components = [n+1]
             self.uselinear = True
         elif kwargs.has_key('gauss'):
             n = kwargs.get('gauss')
