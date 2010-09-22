@@ -376,7 +376,7 @@ class scantable(Scantable):
         return self._getmask(rowno)
 
     def set_spectrum(self, spec, rowno):
-        """Return the spectrum for the current row in the scantable as a list.
+        """Set the spectrum for the current row in the scantable.
 
         Parameters:
 
@@ -737,7 +737,8 @@ class scantable(Scantable):
     def get_time(self, row=-1, asdatetime=False):
         """\
         Get a list of time stamps for the observations.
-        Return a datetime object for each integration time stamp in the scantable.
+        Return a datetime object or a string (default) for each
+        integration time stamp in the scantable.
 
         Parameters:
 
@@ -1283,7 +1284,7 @@ class scantable(Scantable):
     def set_restfreqs(self, freqs=None, unit='Hz'):
         """\
         Set or replace the restfrequency specified and
-        If the 'freqs' argument holds a scalar,
+        if the 'freqs' argument holds a scalar,
         then that rest frequency will be applied to all the selected
         data.  If the 'freqs' argument holds
         a vector, then it MUST be of equal or smaller length than
@@ -1433,6 +1434,8 @@ class scantable(Scantable):
                 out += "\n"+date+"\n"
                 out += "Function: %s\n  Parameters:" % (func)
                 for i in items:
+                    if i == '':
+                        continue
                     s = i.split("=")
                     out += "\n   %s = %s" % (s[0], s[1])
                 out = "\n".join([out, "-"*80])
@@ -2305,7 +2308,7 @@ class scantable(Scantable):
     def scale(self, factor, tsys=True, insitu=None):
         """\
 
-        Return a scan where all spectra are scaled by the give 'factor'
+        Return a scan where all spectra are scaled by the given 'factor'
 
         Parameters:
 
