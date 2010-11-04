@@ -904,7 +904,8 @@ class asapplotter:
                 newpanel = True
                 stackcount = 0
                 panelcount += 1
-            if (b > b0 or newpanel) and stackcount < nstack:
+            #if (b > b0 or newpanel) and stackcount < nstack:
+            if stackcount < nstack and (newpanel or (a == a0 and b > b0)):
                 y = []
                 if len(polmodes):
                     y = scan._getspectrum(r, polmodes[scan.getpol(r)])
@@ -994,7 +995,7 @@ class asapplotter:
     def _get_sortstring(self, lorders):
         d0 = {'s': 'SCANNO', 'b': 'BEAMNO', 'i':'IFNO',
               'p': 'POLNO', 'c': 'CYCLENO', 't' : 'TIME', 'r':None, '_r':None }
-        if not (type(lorders) == list) or not (type(lorders) == tuple):
+        if not (type(lorders) == list) and not (type(lorders) == tuple):
             return None
         if len(lorders) > 0:
             lsorts = []
