@@ -102,7 +102,7 @@ class asapplotter:
             self._plotter = self._newplotter()
             self._plotter.figmgr.casabar=self._newcasabar()
         self._plotter.hold()
-        self._plotter.clear()
+        #self._plotter.clear()
         if not self._data and not scan:
             msg = "Input is not a scantable"
             raise TypeError(msg)
