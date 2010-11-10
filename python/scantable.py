@@ -1,6 +1,7 @@
 """This module defines the scantable class."""
 
 import os
+import numpy
 try:
     from functools import wraps as wraps_dec
 except ImportError:
@@ -734,7 +735,7 @@ class scantable(Scantable):
                 return callback(row, *args)
 
 
-    def get_time(self, row=-1, asdatetime=False, prec=0):
+    def get_time(self, row=-1, asdatetime=False, prec=-1):
         """\
         Get a list of time stamps for the observations.
         Return a datetime object or a string (default) for each
@@ -746,18 +747,27 @@ class scantable(Scantable):
 
             asdatetime:   return values as datetime objects rather than strings
 
-            prec:         number of digits shown. Note this number is equals to
-                          the digits of MVTime, i.e., 0<prec<3: dates with hh::
-                          only, <5: with hh:mm:, <7 or 0: with hh:mm:ss,
+            prec:         number of digits shown. Default -1 to automatic calculation.
+                          Note this number is equals to the digits of MVTime,
+                          i.e., 0<prec<3: dates with hh:: only,
+                          <5: with hh:mm:, <7 or 0: with hh:mm:ss,
                           and 6> : with hh:mm:ss.tt... (prec-6 t's added)
 
         """
-        #from time import strptime
         from datetime import datetime
+        if prec < 0:
+            # automagically set necessary precision +1
+            prec = 7 - numpy.floor(numpy.log10(min(self.get_inttime())))
+            prec = max(6, int(prec))
+        else:
+            prec = max(0, prec)
+        if asdatetime:
+            #precision can be 1 millisecond at max
+            prec = min(12, prec)
+
         times = self._get_column(self._gettime, row, prec)
         if not asdatetime:
             return times
-        #format = "%Y/%m/%d/%H:%M:%S"
         format = "%Y/%m/%d/%H:%M:%S.%f"
         if prec < 7:
             nsub = 1 + (((6-prec)/2) % 3)
@@ -765,10 +775,8 @@ class scantable(Scantable):
             for i in range(nsub):
                 format = format.replace(substr[i],"")
         if isinstance(times, list):
-            #return [datetime(*strptime(i, format)[:6]) for i in times]
             return [datetime.strptime(i, format) for i in times]
         else:
-            #return datetime(*strptime(times, format)[:6])
             return datetime.strptime(times, format)
 
 
