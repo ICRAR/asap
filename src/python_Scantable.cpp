@@ -98,8 +98,11 @@ void python_Scantable() {
          (boost::python::arg("whichrow")=0) )
     .def("_getparangle", &ScantableWrapper::getParAngle,
          (boost::python::arg("whichrow")=0) )
+    //.def("_gettime", &ScantableWrapper::getTime,
+    //     (boost::python::arg("whichrow")=0) )
     .def("_gettime", &ScantableWrapper::getTime,
-         (boost::python::arg("whichrow")=0) )
+         (boost::python::arg("whichrow")=0,
+          boost::python::arg("prec")=0) )
     .def("_getinttime", &ScantableWrapper::getIntTime,
          (boost::python::arg("whichrow")=0) )
     .def("_getdirection", &ScantableWrapper::getDirectionString,
