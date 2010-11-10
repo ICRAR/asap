@@ -757,7 +757,7 @@ class scantable(Scantable):
         from datetime import datetime
         if prec < 0:
             # automagically set necessary precision +1
-            prec = 7 - numpy.floor(numpy.log10(min(self.get_inttime())))
+            prec = 7 - numpy.floor(numpy.log10(numpy.min(self.get_inttime(row))))
             prec = max(6, int(prec))
         else:
             prec = max(0, prec)
