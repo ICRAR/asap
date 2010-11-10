@@ -831,7 +831,8 @@ class asapplotter:
             sel.set_order(order)
         scan.set_selection(sel)
         d = {'b': scan.getbeam, 's': scan.getscan,
-             'i': scan.getif, 'p': scan.getpol, 't': scan._gettime,
+             #'i': scan.getif, 'p': scan.getpol, 't': scan._gettime,
+             'i': scan.getif, 'p': scan.getpol, 't': scan.get_time,
              'r': int, '_r': int}
 
         polmodes = dict(zip(self._selection.get_pols(),
