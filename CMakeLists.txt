@@ -89,33 +89,59 @@ set( CMAKE_CXX_FLAGS ${DEFAULT_CXX_FLAGS} )
 #
 # casacore
 #
-set( CASACORE_INCLUDE_DIR ${casaroot}/${arch}/include/casacore )
-
-set( CASACORE_LIBS casa
-                   components
-                   coordinates
-                   fits
-                   images
-                   lattices
-                   measures
-                   mirlib
-                   ms
-                   msfits
-                   scimath
-                   scimath_f
-                   tables )
-set( _casacore_libs "" )
-foreach( _a ${CASACORE_LIBS} )
-   set( _libname libcasa_${_a}.${SO} )
-   unset( _casacore_lib CACHE )
-   find_library( _casacore_lib ${_libname}
-                 PATHS ${CMAKE_INSTALL_PREFIX} PATH_SUFFIXES lib )
-   if( NOT _casacore_lib-NOTFOUND )
-      list( APPEND _casacore_libs casa_${_a} )
+if( NOT USE_LIBCASACORE )
+   # use casacore libraries 
+   set( _includename aipsdef.h )
+   find_path( CASACORE_INCPATH ${_includename} 
+              HINTS ${casaroot}/${arch}/include/
+              PATH_SUFFIXES casacore/casa ) 
+   if( CASACORE_INCPATH STREQUAL CASACORE_INCPATH-NOTFOUND )
+     message( FATAL_ERROR "${_includename} could not be found. Please check!" )
+   else()
+      string( REGEX REPLACE /[^/]+/?$ "" CASACORE_INCLUDE_DIR ${CASACORE_INCPATH} )  
    endif()
-endforeach()
-set( CASACORE_LIBRARIES ${_casacore_libs} )
+   set( CASACORE_LIBS casa
+                      components
+                      coordinates
+                      fits
+                      images
+                      lattices
+                      measures
+                      mirlib
+                      ms
+                      msfits
+                      scimath
+                      scimath_f
+                      tables )
+   set( _casacore_libs "" )
+   foreach( _a ${CASACORE_LIBS} )
+      set( _libname libcasa_${_a}.${SO} )
+      unset( _casacore_lib CACHE )
+      find_library( _casacore_lib ${_libname}
+                    PATHS ${CMAKE_INSTALL_PREFIX} PATH_SUFFIXES lib )
+      if( NOT _casacore_lib-NOTFOUND )
+         list( APPEND _casacore_libs casa_${_a} )
+      endif()
+   endforeach()
+   set( CASACORE_LIBRARIES ${_casacore_libs} )
+else()
+   # use libcasacore
+   set( _libname libcasacore.${SO} )
+   find_library( CASACORE_LIBRARIES ${_libname} )
+   if( CASACORE_LIBRARIES STREQUAL CASACORE_LIBRARIES-NOTFOUND )
+      message( FATAL_ERROR "${_libname} could not be found. Please check!" )
+   endif()
+   set( _includename aipsdef.h )
+   find_path( CASACORE_INCPATH ${_includename} 
+              PATH_SUFFIXES casacore/casa ) 
+   if( CASACORE_INCPATH STREQUAL CASACORE_INCPATH-NOTFOUND )
+     message( FATAL_ERROR "${_includename} could not be found. Please check!" )
+   else()
+      string( REGEX REPLACE /[^/]+/?$ "" CASACORE_INCLUDE_DIR ${CASACORE_INCPATH} )
+   endif()
+endif()
 message( STATUS "CASACORE_LIBRARIES = " ${CASACORE_LIBRARIES} )
+message( STATUS "CASACORE_INCLUDE_DIR = " ${CASACORE_INCLUDE_DIR} )
 
 #
 # Python
