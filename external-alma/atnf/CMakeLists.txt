@@ -2,9 +2,6 @@
 # CMakeLists.txt for libatnf.so
 ###
 
-# library name is libatnf.so
-set( ATNFLIB atnf )
-
 # root for libatnf
 set( ATNFROOT ${ASAP_SOURCE_DIR}/external-alma/ )
 set( ATNFDIR ${ATNFROOT}/atnf )
@@ -12,8 +9,9 @@ set( PKS pks )
 set( PKSIO PKSIO )
 
 # include path
-include_directories( ${ATNFROOT} )
-#include_directories( ${ATNFDIR}/${PKSIO} )
+include_directories( ${ATNFROOT} 
+                     ${CFITSIO_INCLUDE_DIR} 
+                     ${RPFITS_INCLUDE_DIR} )
 
 # link path
 link_directories( ${ATNFROOT} )
@@ -24,6 +22,7 @@ set( ATNF_SRCS
      ${ATNFDIR}/${PKSIO}/ASTEDataset.cc
      ${ATNFDIR}/${PKSIO}/ASTEFXDataset.cc
      ${ATNFDIR}/${PKSIO}/ASTEReader.cc
+     ${ATNFDIR}/${PKSIO}/ASTEFXReader.cc
      ${ATNFDIR}/${PKSIO}/FITSreader.cc
      ${ATNFDIR}/${PKSIO}/GBTFITSreader.cc 
      ${ATNFDIR}/${PKSIO}/MBFITSreader.cc
@@ -42,7 +41,10 @@ set( ATNF_SRCS
      ${ATNFDIR}/${PKSIO}/SDFITSreader.cc
      ${ATNFDIR}/${PKSIO}/SDFITSwriter.cc )
 add_library( ${ATNFLIB} SHARED ${ATNF_SRCS} )
-target_link_libraries( ${ATNFLIB} ${CASACORE_LIBRARIES} )
+target_link_libraries( ${ATNFLIB} 
+                       ${CASACORE_LIBRARIES} 
+                       ${CFITSIO_LIBRARIES} 
+                       ${RPFITS_LIBRARIES} )
 
 # install directory
 install( TARGETS ${ATNFLIB}

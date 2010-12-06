@@ -2,9 +2,6 @@
 # CMakeLists.txt for asap2to3
 ###
 
-# executable name is asap2to3
-set( ASAP2TO3 asap2to3 )
-
 # source code
 set( EXEC_SRC asap2to3.cpp )
 
