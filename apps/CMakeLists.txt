@@ -12,5 +12,5 @@ add_executable( ${ASAP2TO3} ${EXEC_SRC} )
 target_link_libraries( ${ASAP2TO3} ${CASACORE_LIBRARIES} )
 
 # install
-install( PROGRAMS ${ASAP2TO3} 
-         DESTINATION ${EXEC_INSTALL_DIR} )
+install( TARGETS ${ASAP2TO3}
+         RUNTIME DESTINATION ${EXEC_INSTALL_DIR} )
