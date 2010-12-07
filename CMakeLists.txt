@@ -5,6 +5,22 @@
 # minimum requirement for cmake version
 cmake_minimum_required( VERSION 2.8 )
 
+# Define compiler paths on OSX 10.5. This must be done before invoking project()
+if( APPLE )
+    if( EXISTS            /opt/casa/core2-apple-darwin8/3rd-party/bin/gfortran )
+    set( SO dylib )
+        set( CMAKE_Fortran_COMPILER /opt/casa/core2-apple-darwin8/3rd-party/bin/gfortran )
+	set( CMAKE_CXX_COMPILER     /opt/casa/core2-apple-darwin8/3rd-party/bin/g++ )
+    elseif( EXISTS        /opt/local/bin/gfortran )
+        set( CMAKE_Fortran_COMPILER /opt/local/bin/gfortran )
+    elseif( EXISTS        /opt/local/bin/gfortran-mp-4.4 )
+        set( CMAKE_Fortran_COMPILER /opt/local/bin/gfortran-mp-4.4 )
+	if( EXISTS /opt/local/bin/g++-mp-4.4 )
+	    set( CMAKE_CXX_COMPILER /opt/local/bin/g++-mp-4.4 )
+	endif()
+    endif()
+endif()
+
 # project name is ASAP
 project( ASAP )
 
@@ -32,12 +48,13 @@ if( OPENMP_FOUND )
 endif()
 
 # environment dependent settings
+message( STATUS "CMAKE_SYSTEM = " ${CMAKE_SYSTEM} )
 if( APPLE )
    set( SO dylib )
    if( NOT arch )
       set( arch darwin )
    endif()
-   if( CMAKE_SYSTEM MATHCES ^Darwin-10 )
+   if( CMAKE_SYSTEM MATCHES ^Darwin-10 )
       if( NOT archflag )
          if( EXISTS /opt/casa/darwin10-64b )
             set( archflag x86_64 )
@@ -91,20 +108,24 @@ message( STATUS "CMAKE_INSTALL_PREFIX = " ${CMAKE_INSTALL_PREFIX} )
 # set flags for cpp compiler
 set( CMAKE_CXX_FLAGS ${DEFAULT_CXX_FLAGS} )
 
+# DL
+set( DL_LIBRARIES ${CMAKE_DL_LIBS} CACHE STRING "dl libraries" FORCE )
+if( DL_LIBRARIES STREQUAL "dl" )
+  set( DL_LIBRARIES "-ldl" CACHE STRING "dl libraries" FORCE )
+endif()
+message( STATUS "DL_LIBRARIES = " ${DL_LIBRARIES} )
 
 #
 # casacore
 #
 if( NOT USE_LIBCASACORE )
    # use casacore libraries 
-   set( _includename aipsdef.h )
-   find_path( CASACORE_INCPATH ${_includename} 
+   set( _includename casa/aipsdef.h )
+   find_path( CASACORE_INCLUDE_DIR ${_includename} 
               HINTS ${casaroot}/${arch}/include/
-              PATH_SUFFIXES casacore/casa ) 
-   if( CASACORE_INCPATH STREQUAL CASACORE_INCPATH-NOTFOUND )
+              PATH_SUFFIXES casacore ) 
+   if( CASACORE_INCLUDE_DIR STREQUAL CASACORE_INCLUDE_DIR-NOTFOUND )
      message( FATAL_ERROR "${_includename} could not be found. Please check!" )
-   else()
-      string( REGEX REPLACE /[^/]+/?$ "" CASACORE_INCLUDE_DIR ${CASACORE_INCPATH} )  
    endif()
    set( CASACORE_LIBS casa
                       components
@@ -126,7 +147,8 @@ if( NOT USE_LIBCASACORE )
       find_library( _casacore_lib ${_libname}
                     PATHS ${CMAKE_INSTALL_PREFIX} PATH_SUFFIXES lib )
       if( NOT _casacore_lib-NOTFOUND )
-         list( APPEND _casacore_libs casa_${_a} )
+         #list( APPEND _casacore_libs casa_${_a} )
+         list( APPEND _casacore_libs ${_casacore_lib} )
       endif()
    endforeach()
    set( CASACORE_LIBRARIES ${_casacore_libs} )
@@ -137,13 +159,11 @@ else()
    if( CASACORE_LIBRARIES STREQUAL CASACORE_LIBRARIES-NOTFOUND )
       message( FATAL_ERROR "${_libname} could not be found. Please check!" )
    endif()
-   set( _includename aipsdef.h )
-   find_path( CASACORE_INCPATH ${_includename} 
-              PATH_SUFFIXES casacore/casa ) 
-   if( CASACORE_INCPATH STREQUAL CASACORE_INCPATH-NOTFOUND )
+   set( _includename casa/aipsdef.h )
+   find_path( CASACORE_INCLUDE_DIR ${_includename} 
+              PATH_SUFFIXES casacore ) 
+   if( CASACORE_INCLUDE_DIR STREQUAL CASACORE_INCLUDE_DIR-NOTFOUND )
      message( FATAL_ERROR "${_includename} could not be found. Please check!" )
-   else()
-      string( REGEX REPLACE /[^/]+/?$ "" CASACORE_INCLUDE_DIR ${CASACORE_INCPATH} )
    endif()
 endif()
 message( STATUS "CASACORE_LIBRARIES = " ${CASACORE_LIBRARIES} )
@@ -278,12 +298,28 @@ message( STATUS "CFITSIO_LIBRARIES = " ${CFITSIO_LIBRARIES} )
 # wcslib
 #
 set( _wcslib libwcs.${SO} )
+set( _wcs_version 4.3 )
 find_library( WCSLIB ${_wcslib} 
               HINTS /usr/lib64 /usr/lib ${casaroot}/${arch}/lib )
 if( WCSLIB STREQUAL WCSLIB-NOTFOUND )
-   message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
+   message( STATUS "${_wcslib} could not be found." )
+   unset( _wcslib CACHE )
+   unset( WCSLIB CACHE ) 
+   set( _wcslib libwcs.${_wcs_version}.${SO} )
+   message( STATUS "Try to find ${_wcslib}..." )
+   find_library( WCSLIB ${_wcslib} 
+                 HINTS /usr/lib64 /usr/lib ${casaroot}/${arch}/lib )
+   if( WCSLIB STREQUAL WCSLIB-NOTFOUND )
+      message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
+   endif()
 endif()
 message( STATUS "WCSLIB = " ${WCSLIB} )
+find_path( WCSLIB_INCLUDE_DIR wcslib/wcs.h
+           HINTS /usr/include ${casaroot}/${arch}/include )
+if( WCSLIB_INCLUDE_DIR STREQUAL WCSLIB_INCLUDE_DIR-NOTFOUND )
+   message( FATAL_ERROR "wcs.h could not be found. Please check!" )
+endif()
+message( STATUS "WCSLIB_INCLUDE_DIR = " ${WCSLIB_INCLUDE_DIR} )
 
 
 #
@@ -352,13 +388,15 @@ message( STATUS "RPFITS_LIBRARIES = " ${RPFITS_LIBRARIES} )
 message( STATUS "Boost_INCLUDE_DIR = " ${Boost_INCLUDE_DIR} )
 include_directories( ${CASACORE_INCLUDE_DIR} 
                      ${Boost_INCLUDE_DIR} 
-                     ${PYTHON_INCLUDE_DIR} )
+                     ${PYTHON_INCLUDE_DIR} 
+                     ${WCSLIB_INCLUDE_DIR} )
+message( STATUS "WCSLIB = " ${WCSLIB} )
 
 #
 # link path
 #
-set( CASACORE_LIBRARY_DIR ${casaroot}/${arch}/lib )
-link_directories( ${CASACORE_LIBRARY_DIR} )
+#set( CASACORE_LIBRARY_DIR ${casaroot}/${arch}/lib )
+#link_directories( ${CASACORE_LIBRARY_DIR} )
 
 
 #
@@ -373,7 +411,7 @@ set( SHARED_INSTALL_DIR share/asap )
 #
 # libraries and executables
 #
-set( ASAPLIB _asap )
+set( ASAPLIB asap )
 set( PYRAPLIB pyrap )
 set( ATNFLIB atnf )
 set( ASAP2TO3 asap2to3 )

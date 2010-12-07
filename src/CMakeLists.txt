@@ -78,13 +78,14 @@ add_library( ${ASAPLIB} SHARED ${ASAP_SRCS} ${ASAP_PYSRCS} )
 # library name must be _asap.so
 set_target_properties( ${ASAPLIB}
                        PROPERTIES
-                       PREFIX "" )
+                       PREFIX _
+                       SUFFIX .so )
 
 target_link_libraries( ${ASAPLIB} 
-                       ${Boost_LIBRARIES}
+                       #${Boost_LIBRARIES}
                        ${PYRAPLIB} 
                        ${ATNFLIB} 
-                       ${CASACORE_LIBRARIES} 
+                       #${CASACORE_LIBRARIES} 
                        ${WCSLIB} )
 
 # install directory
