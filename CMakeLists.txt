@@ -423,8 +423,9 @@ message( STATUS "Boost_INCLUDE_DIR = " ${Boost_INCLUDE_DIR} )
 include_directories( ${CASACORE_INCLUDE_DIR} 
                      ${Boost_INCLUDE_DIR} 
                      ${PYTHON_INCLUDE_DIR} 
-                     ${WCSLIB_INCLUDE_DIR} )
-message( STATUS "WCSLIB = " ${WCSLIB} )
+                     ${WCSLIB_INCLUDE_DIR} 
+                     ${CFITSIO_INCLUDE_DIRS} 
+                     ${RPFITS_INCLUDE_DIR} )
 
 #
 # link path

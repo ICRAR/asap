@@ -9,9 +9,7 @@ set( PKS pks )
 set( PKSIO PKSIO )
 
 # include path
-include_directories( ${ATNFROOT} 
-                     ${CFITSIO_INCLUDE_DIR} 
-                     ${RPFITS_INCLUDE_DIR} )
+include_directories( ${ATNFROOT} )
 
 # link path
 link_directories( ${ATNFROOT} )

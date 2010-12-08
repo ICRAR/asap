@@ -8,8 +8,7 @@ set( PYRAPDIR ${PYRAPROOT}/pyrap )
 set( MODULE Converters )
 
 # include path
-include_directories( ${PYRAPROOT} 
-                     ${Boost_INCLUDE_DIR} )
+include_directories( ${PYRAPROOT} )
 
 # link path
 link_directories( ${PYRAPROOT} )
