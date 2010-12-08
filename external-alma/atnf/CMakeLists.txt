@@ -44,7 +44,10 @@ add_library( ${ATNFLIB} SHARED ${ATNF_SRCS} )
 target_link_libraries( ${ATNFLIB} 
                        ${CASACORE_LIBRARIES} 
                        ${CFITSIO_LIBRARIES} 
-                       ${RPFITS_LIBRARIES} )
+                       ${RPFITS_LIBRARIES} 
+                       ${DL_LIBRARIES} 
+                       ${BLAS_LIBRARIES} 
+                       ${LAPACK_LIBRARIES} )
 
 # install directory
 install( TARGETS ${ATNFLIB}

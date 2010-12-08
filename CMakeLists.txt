@@ -47,6 +47,22 @@ if( OPENMP_FOUND )
    set( DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
 endif()
 
+set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
+  -DCASA_USECASAPATH
+  -DCASACORE_NEEDS_RETHROW
+  -DAIPS_STDLIB
+  -DAIPS_AUTO_STL
+  -D_GNU_SOURCE )
+
+if( CMAKE_SYSTEM_NAME STREQUAL Linux )
+  set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
+    -D_FILE_OFFSET_BITS=64
+    -D_LARGEFILE_SOURCE 
+    )
+endif()
+
+add_definitions( ${CASACORE_DEFINITIONS} )
+
 # environment dependent settings
 message( STATUS "CMAKE_SYSTEM = " ${CMAKE_SYSTEM} )
 if( APPLE )
@@ -108,12 +124,30 @@ message( STATUS "CMAKE_INSTALL_PREFIX = " ${CMAKE_INSTALL_PREFIX} )
 # set flags for cpp compiler
 set( CMAKE_CXX_FLAGS ${DEFAULT_CXX_FLAGS} )
 
+
+#
 # DL
+#
 set( DL_LIBRARIES ${CMAKE_DL_LIBS} CACHE STRING "dl libraries" FORCE )
 if( DL_LIBRARIES STREQUAL "dl" )
   set( DL_LIBRARIES "-ldl" CACHE STRING "dl libraries" FORCE )
 endif()
 message( STATUS "DL_LIBRARIES = " ${DL_LIBRARIES} )
+
+
+#
+# BLAS
+#
+find_library( BLAS_LIBRARIES libblas.${SO} )
+message( STATUS "BLAS_LIBRARIES = " ${BLAS_LIBRARIES} )
+
+
+#
+# LAPACK
+#
+find_library( LAPACK_LIBRARIES liblapack.${SO} )
+message( STATUS "LAPACK_LIBRARIES = " ${LAPACK_LIBRARIES} ) 
+
 
 #
 # casacore

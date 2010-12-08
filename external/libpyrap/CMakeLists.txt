@@ -30,7 +30,10 @@ add_library( ${PYRAPLIB} SHARED ${PYRAP_SRCS} )
 target_link_libraries( ${PYRAPLIB} 
                        ${Boost_LIBRARIES} 
                        ${PYTHON_LIBRARIES} 
-                       ${CASACORE_LIBRARIES} )
+                       ${CASACORE_LIBRARIES} 
+                       ${DL_LIBRARIES} 
+                       ${BLAS_LIBRARIES} 
+                       ${LAPACK_LIBRARIES} )
 
 # install directory
 install( TARGETS ${PYRAPLIB}
