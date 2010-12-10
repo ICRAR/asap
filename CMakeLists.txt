@@ -282,7 +282,7 @@ set( PYTHON_LIBNAME ${PYTHON_LIBNAME} CACHE STRING "Python major and minor versi
 # Define pyroot to two directory levels above Python.h.
 string( REGEX REPLACE "/[^/]+/[^/]+/?$" "" pyroot ${PYTHON_Python.h} )
 
-message( STATUS "PYTHON_INCLUDE_DIR = " ${PYTHON_INCLUDE_DIR} )
+message( STATUS "PYTHON_INCLUDE_DIRS = " ${PYTHON_INCLUDE_DIRS} )
 message( STATUS "PYTHON_LINRARIES = " ${PYTHON_LIBRARIES} )
 message( STATUS "PYTHONV = " ${PYTHONV} )
 
@@ -412,26 +412,19 @@ casa_find( RPFITS
 if( NOT RPFITS_FOUND )
    message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
 endif()
-message( STATUS "RPFITS_INCLUDE_DIR = " ${RPFITS_INCLUDE_DIR} )
+message( STATUS "RPFITS_INCLUDE_DIRS = " ${RPFITS_INCLUDE_DIRS} )
 message( STATUS "RPFITS_LIBRARIES = " ${RPFITS_LIBRARIES} )
 
 
 #
 # common include path
 #
-message( STATUS "Boost_INCLUDE_DIR = " ${Boost_INCLUDE_DIR} )
 include_directories( ${CASACORE_INCLUDE_DIR} 
                      ${Boost_INCLUDE_DIR} 
-                     ${PYTHON_INCLUDE_DIR} 
+                     ${PYTHON_INCLUDE_DIRS} 
                      ${WCSLIB_INCLUDE_DIR} 
                      ${CFITSIO_INCLUDE_DIRS} 
-                     ${RPFITS_INCLUDE_DIR} )
-
-#
-# link path
-#
-#set( CASACORE_LIBRARY_DIR ${casaroot}/${arch}/lib )
-#link_directories( ${CASACORE_LIBRARY_DIR} )
+                     ${RPFITS_INCLUDE_DIRS} )
 
 
 #
