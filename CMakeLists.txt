@@ -158,6 +158,8 @@ message( STATUS "LAPACK_LIBRARIES = " ${LAPACK_LIBRARIES} )
 #
 # casacore
 #
+unset( CASACORE_INCLUDE_DIR CACHE )
+unset( CASACORE_LIBRARIES CACHE )
 if( NOT USE_LIBCASACORE )
    # use casacore libraries 
    set( _includename casa/aipsdef.h )
@@ -210,7 +212,7 @@ else()
 endif()
 message( STATUS "CASACORE_LIBRARIES = " ${CASACORE_LIBRARIES} )
 message( STATUS "CASACORE_INCLUDE_DIR = " ${CASACORE_INCLUDE_DIR} )
-
+unset( USE_LIBCASACORE CACHE )
 
 #
 # Python
