@@ -139,6 +139,9 @@ message( STATUS "DL_LIBRARIES = " ${DL_LIBRARIES} )
 # BLAS
 #
 find_library( BLAS_LIBRARIES libblas.${SO} )
+if ( BLAS_LIBRARIES MATCHES "NOTFOUND$" )
+   message( FATAL_ERROR "blas could not be found. Please check!" )
+endif()
 message( STATUS "BLAS_LIBRARIES = " ${BLAS_LIBRARIES} )
 
 
@@ -146,6 +149,9 @@ message( STATUS "BLAS_LIBRARIES = " ${BLAS_LIBRARIES} )
 # LAPACK
 #
 find_library( LAPACK_LIBRARIES liblapack.${SO} )
+if ( LAPACK_LIBRARIES MATCHES "NOTFOUND$" )
+   message( FATAL_ERROR "lapack could not be found. Please check!" )
+endif()
 message( STATUS "LAPACK_LIBRARIES = " ${LAPACK_LIBRARIES} ) 
 
 
@@ -158,7 +164,7 @@ if( NOT USE_LIBCASACORE )
    find_path( CASACORE_INCLUDE_DIR ${_includename} 
               HINTS ${casaroot}/${arch}/include/
               PATH_SUFFIXES casacore ) 
-   if( CASACORE_INCLUDE_DIR STREQUAL CASACORE_INCLUDE_DIR-NOTFOUND )
+   if( CASACORE_INCLUDE_DIR MATCHES "NOTFOUND$" )
      message( FATAL_ERROR "${_includename} could not be found. Please check!" )
    endif()
    set( CASACORE_LIBS casa
@@ -180,7 +186,9 @@ if( NOT USE_LIBCASACORE )
       unset( _casacore_lib CACHE )
       find_library( _casacore_lib ${_libname}
                     PATHS ${CMAKE_INSTALL_PREFIX} PATH_SUFFIXES lib )
-      if( NOT _casacore_lib-NOTFOUND )
+      if( _casacore_lib MATCHES "NOTFOUND$" )
+         message( FATAL_ERROR "${_libname} could not be found. Please check!" )
+      else()
          #list( APPEND _casacore_libs casa_${_a} )
          list( APPEND _casacore_libs ${_casacore_lib} )
       endif()
@@ -190,13 +198,13 @@ else()
    # use libcasacore
    set( _libname libcasacore.${SO} )
    find_library( CASACORE_LIBRARIES ${_libname} )
-   if( CASACORE_LIBRARIES STREQUAL CASACORE_LIBRARIES-NOTFOUND )
+   if( CASACORE_LIBRARIES MATCHES "NOTFOUND$" )
       message( FATAL_ERROR "${_libname} could not be found. Please check!" )
    endif()
    set( _includename casa/aipsdef.h )
    find_path( CASACORE_INCLUDE_DIR ${_includename} 
               PATH_SUFFIXES casacore ) 
-   if( CASACORE_INCLUDE_DIR STREQUAL CASACORE_INCLUDE_DIR-NOTFOUND )
+   if( CASACORE_INCLUDE_DIR MATCHES "NOTFOUND$" )
      message( FATAL_ERROR "${_includename} could not be found. Please check!" )
    endif()
 endif()
@@ -321,9 +329,9 @@ casa_find( CFITSIO
            LIBS cfitsio
            CPP_VERSION CFITSIO_VERSION
            RUN_VERSION "(ffvers(&v), v)" )
-if( NOT CFITSIO_FOUND )
-   message( FATAL_ERROR "CFITSIO could not be found. Please check!" )
-endif()
+#if( NOT CFITSIO_FOUND )
+#   message( FATAL_ERROR "CFITSIO could not be found. Please check!" )
+#endif()
 message( STATUS "CFITSIO_INCLUDE_DIRS = " ${CFITSIO_INCLUDE_DIRS} )
 message( STATUS "CFITSIO_LIBRARIES = " ${CFITSIO_LIBRARIES} )
 
@@ -335,7 +343,7 @@ set( _wcslib libwcs.${SO} )
 set( _wcs_version 4.3 )
 find_library( WCSLIB ${_wcslib} 
               HINTS /usr/lib64 /usr/lib ${casaroot}/${arch}/lib )
-if( WCSLIB STREQUAL WCSLIB-NOTFOUND )
+if( WCSLIB MATCHES "NOTFOUND$" )
    message( STATUS "${_wcslib} could not be found." )
    unset( _wcslib CACHE )
    unset( WCSLIB CACHE ) 
@@ -343,14 +351,14 @@ if( WCSLIB STREQUAL WCSLIB-NOTFOUND )
    message( STATUS "Try to find ${_wcslib}..." )
    find_library( WCSLIB ${_wcslib} 
                  HINTS /usr/lib64 /usr/lib ${casaroot}/${arch}/lib )
-   if( WCSLIB STREQUAL WCSLIB-NOTFOUND )
+   if( WCSLIB MATCHES "NOTFOUND$" )
       message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
    endif()
 endif()
 message( STATUS "WCSLIB = " ${WCSLIB} )
 find_path( WCSLIB_INCLUDE_DIR wcslib/wcs.h
            HINTS /usr/include ${casaroot}/${arch}/include )
-if( WCSLIB_INCLUDE_DIR STREQUAL WCSLIB_INCLUDE_DIR-NOTFOUND )
+if( WCSLIB_INCLUDE_DIR MATCHES "NOTFOUND$" )
    message( FATAL_ERROR "wcs.h could not be found. Please check!" )
 endif()
 message( STATUS "WCSLIB_INCLUDE_DIR = " ${WCSLIB_INCLUDE_DIR} )
@@ -409,9 +417,9 @@ casa_find( RPFITS
   RUN_VERSION names_.rpfitsversion
   DEPENDS FORTRAN 
 )
-if( NOT RPFITS_FOUND )
-   message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
-endif()
+#if( NOT RPFITS_FOUND )
+#   message( FATAL_ERROR "rpfits could not be found. Please check!" )
+#endif()
 message( STATUS "RPFITS_INCLUDE_DIRS = " ${RPFITS_INCLUDE_DIRS} )
 message( STATUS "RPFITS_LIBRARIES = " ${RPFITS_LIBRARIES} )
 
