@@ -454,6 +454,10 @@ set( PYRAPLIB pyrap )
 set( ATNFLIB atnf )
 set( ASAP2TO3 asap2to3 )
 
+#
+# always install by default
+#
+add_custom_target( inst ALL ${CMAKE_BUILD_TOOL} install/fast )
 
 #
 # subdirectories

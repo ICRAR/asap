@@ -46,6 +46,7 @@ target_link_libraries( ${ATNFLIB}
                        ${DL_LIBRARIES} 
                        ${BLAS_LIBRARIES} 
                        ${LAPACK_LIBRARIES} )
+add_dependencies( inst ${ATNFLIB} )
 
 # install directory
 install( TARGETS ${ATNFLIB}
