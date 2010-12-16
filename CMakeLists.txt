@@ -199,12 +199,11 @@ if( STANDALONE )
    # find numpy
    string( REGEX MATCH [0-9].[0-9] PYTHONV ${PYTHON_INCLUDE_DIRS} )
    string( REPLACE "." "" PV ${PYTHONV} )
-   set( PYTHON_PREFIX ${PYTHON_INCLUDE_DIRS}/../.. )
    find_path( NUMPY_INCLUDE_DIR numpy/npy_interrupt.h 
               PATHS 
-                 ${PYTHON_PREFIX}/lib/python${PYTHONV}/site-packages/numpy/core 
-                 ${PYTHON_PREFIX}/Library/Frameworks/Python.framework/Versions/${PYTHONV} 
-                 ${PYTHON_PREFIX}/Library/Frameworks/Python.framework/Versions/${PYTHONV}/lib/python${PYTHONV}/site-packages/numpy/core 
+                 ${pyroot}/lib/python${PYTHONV}/site-packages/numpy/core 
+                 ${pyroot}/Library/Frameworks/Python.framework/Versions/${PYTHONV} 
+                 ${pyroot}/Library/Frameworks/Python.framework/Versions/${PYTHONV}/lib/python${PYTHONV}/site-packages/numpy/core 
               PATH_SUFFIXES include )
    if( NUMPY_INCLUDE_DIR MATCHES "NOTFOUND$" )
       message( FATAL_ERROR "numpy/npy_interrupt.h could not be found. Please check!" )
@@ -353,6 +352,18 @@ if( STANDALONE )
               PATH_SUFFIXES cfitsio )
    if( CFITSIO_INCLUDE_DIRS MATCHES "NOTFOUND$" )
       message( FATAL_ERROR "fitsio.h could not be found. Please check!" )
+   endif()
+   string( REGEX REPLACE "/[^/]+/?$" "" CFITSIO_ROOT ${CFITSIO_INCLUDE_DIRS} )
+   message( STATUS "CFITSIO_ROOT=" ${CFITSIO_ROOT} )
+   find_library( CFITSIO_LIBRARIES libcfitsio.${SO}
+                 PATHS ${CFITSIO_ROOT}
+                 PATH_SUFFIXES lib64 lib
+                 NO_DEFAULT_PATH )
+   if( CFITSIO_LIBRARIES MATCHES "NOTFOUND$" )
+      find_library( CFITSIO_LIBRARIES libcfitsio.a 
+                    PATHS ${CFITSIO_ROOT}
+                    PATH_SUFFIXES lib64 lib
+                    NO_DEFAULT_PATH )
    endif()
    find_library( CFITSIO_LIBRARIES libcfitsio.${SO} 
                  PATHS /usr/local /usr
