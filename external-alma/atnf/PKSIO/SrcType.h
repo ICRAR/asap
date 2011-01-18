@@ -64,6 +64,8 @@ class SrcType {
               FHIHOT   = 37,
               FHIWARM  = 38,
               FHICOLD  = 39,
+              SIG      = 90,
+              REF      = 91,
               NOTYPE   = 99 } ;
 } ; 
 
