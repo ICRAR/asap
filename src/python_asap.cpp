@@ -69,12 +69,14 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_Scantable();
   asap::python::python_STFiller();
   asap::python::python_Filler();
+  asap::python::python_MSFiller();
   asap::python::python_STSelector();
   asap::python::python_STMath();
   asap::python::python_Fitter();
   asap::python::python_STLineFinder();
   asap::python::python_STFitEntry();
   asap::python::python_STWriter();
+  asap::python::python_MSWriter();
   asap::python::python_LineCatalog();
   asap::python::python_Logger();
   asap::python::python_LogSink();
