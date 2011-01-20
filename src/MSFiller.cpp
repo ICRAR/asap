@@ -272,6 +272,7 @@ void MSFiller::fill()
           Double sysVel = 0.0 ;
           if ( !sysVels.empty() ) {
             //os_ << "sysVels.shape() = " << sysVels.shape() << LogIO::POST ;
+            // NB: assume all SYSVEL values are the same
             Double sysVel = sysVels( IPosition(1,0) ) ;
           }
           //os_ << "sysVel = " << sysVel << LogIO::POST ;

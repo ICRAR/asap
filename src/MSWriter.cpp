@@ -17,6 +17,7 @@
 #include <casa/OS/SymLink.h>
 #include <casa/BasicSL/String.h>
 
+#include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableDesc.h>
 #include <tables/Tables/SetupNewTab.h>
 #include <tables/Tables/TableIter.h>
@@ -26,10 +27,12 @@
 #include <ms/MeasurementSets/MSColumns.h>
 #include <ms/MeasurementSets/MSPolIndex.h>
 #include <ms/MeasurementSets/MSDataDescIndex.h>
+#include <ms/MeasurementSets/MSSourceIndex.h>
 
 #include "MSWriter.h"
 #include "STHeader.h"
 #include "STFrequencies.h" 
+#include "STMolecules.h"
 
 using namespace casa ;
 
@@ -96,6 +99,12 @@ bool MSWriter::write(const string& filename, const Record& rec)
   // ANTENNA
   fillAntenna() ;
 
+  // PROCESSOR
+  fillProcessor() ;
+
+  // SOURCE
+  fillSource() ;
+
   // MAIN
   // Iterate over several ids
   Vector<uInt> processedFreqId( 0 ) ;
@@ -108,8 +117,14 @@ bool MSWriter::write(const string& filename, const Record& rec)
   TableIterator iter0( table_->table(), "FIELDNAME" ) ;
   while( !iter0.pastEnd() ) {
     Table t0( iter0.table() ) ;
-    ROScalarColumn<String> fieldNameCol( t0, "FIELDNAME" ) ;
-    String fieldName = fieldNameCol(0) ;
+    ROScalarColumn<String> sharedStrCol( t0, "FIELDNAME" ) ;
+    String fieldName = sharedStrCol( 0 ) ;
+    sharedStrCol.attach( t0, "SRCNAME" ) ;
+    String srcName = sharedStrCol( 0 ) ;
+    ROScalarColumn<Double> timeCol( t0, "TIME" ) ;
+    Double minTime = min( timeCol.getColumn() ) ;
+    ROArrayColumn<Double> scanRateCol( t0, "SCANRATE" ) ;
+    Vector<Double> scanRate = scanRateCol.getColumn()[0] ;
     String::size_type pos = fieldName.find( "__" ) ;
     Int fieldId = -1 ;
     if ( pos != String::npos ) {
@@ -132,7 +147,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
     while( !iter1.pastEnd() ) {
       Table t1( iter1.table() ) ;
       ROScalarColumn<uInt> beamNoCol( t1, "BEAMNO" ) ;
-      uInt beamNo = beamNoCol(0) ;
+      uInt beamNo = beamNoCol( 0 ) ;
       os_ << "beamNo = " << beamNo << LogIO::POST ;
       // 
       // ITERATION: SCANNO
@@ -143,7 +158,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
       while( !iter2.pastEnd() ) {
         Table t2( iter2.table() ) ;
         ROScalarColumn<uInt> scanNoCol( t2, "SCANNO" ) ;
-        uInt scanNo = scanNoCol(0) ;
+        uInt scanNo = scanNoCol( 0 ) ;
         os_ << "scanNo = " << scanNo << LogIO::POST ;
         // 
         // ITERATION: CYCLENO
@@ -162,10 +177,10 @@ bool MSWriter::write(const string& filename, const Record& rec)
           while( !iter4.pastEnd() ) {
             Table t4( iter4.table() ) ;
             ROScalarColumn<uInt> ifNoCol( t4, "IFNO" ) ;
-            uInt ifNo = ifNoCol(0) ;
+            uInt ifNo = ifNoCol( 0 ) ;
             os_ << "ifNo = " << ifNo << LogIO::POST ;
             ROScalarColumn<uInt> freqIdCol( t4, "FREQ_ID" ) ;
-            uInt freqId = freqIdCol(0) ;
+            uInt freqId = freqIdCol( 0 ) ;
             os_ << "freqId = " << freqId << LogIO::POST ;
             // 
             // ITERATION: TIME
@@ -195,16 +210,16 @@ bool MSWriter::write(const string& filename, const Record& rec)
               // TIME and TIME_CENTROID
               ROScalarMeasColumn<MEpoch> timeCol( t5, "TIME" ) ;
               ScalarMeasColumn<MEpoch> msTimeCol( *mstable_, "TIME" ) ;
-              msTimeCol.put( prevnr, timeCol(0) ) ;
+              msTimeCol.put( prevnr, timeCol( 0 ) ) ;
               msTimeCol.attach( *mstable_, "TIME_CENTROID" ) ;
-              msTimeCol.put( prevnr, timeCol(0) ) ;
+              msTimeCol.put( prevnr, timeCol( 0 ) ) ;
               
               // INTERVAL and EXPOSURE
               ROScalarColumn<Double> intervalCol( t5, "INTERVAL" ) ;
               ScalarColumn<Double> msIntervalCol( *mstable_, "INTERVAL" ) ;
-              msIntervalCol.put( prevnr, intervalCol(0) ) ;
+              msIntervalCol.put( prevnr, intervalCol( 0 ) ) ;
               msIntervalCol.attach( *mstable_, "EXPOSURE" ) ;
-              msIntervalCol.put( prevnr, intervalCol(0) ) ;
+              msIntervalCol.put( prevnr, intervalCol( 0 ) ) ;
               
               // add DATA_DESCRIPTION row
               Int ddid = addDataDescription( polid, ifNo ) ;
@@ -267,6 +282,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
     ScalarColumn<Int> fieldIdCol( *mstable_, "FIELD_ID" ) ;
     fieldIdCol.putColumnCells( rows1, fieldIds ) ;
 
+    // add FIELD row
+    addField( fieldId, fieldName, srcName, minTime, scanRate ) ;
+
     added0 += added1 ;
     os_ << "added0 = " << added0 << " current0 = " << current0 << LogIO::POST ;
     iter0.next() ;
@@ -287,6 +305,11 @@ bool MSWriter::write(const string& filename, const Record& rec)
   // ARRAY_ID is tentatively set to 0
   sharedIntArr = 0 ;
   sharedIntCol.attach( *mstable_, "ARRAY_ID" ) ;
+  sharedIntCol.putColumn( sharedIntArr ) ;
+
+  // PROCESSOR_ID is tentatively set to 0
+  sharedIntArr = 0 ;
+  sharedIntCol.attach( *mstable_, "PROCESSOR_ID" ) ;
   sharedIntCol.putColumn( sharedIntArr ) ;
 
   return True ;
@@ -391,6 +414,9 @@ void MSWriter::setupMS()
   mstable_->rwKeywordSet().defineTable( MeasurementSet::keywordName( MeasurementSet::PROCESSOR ), Table( processorTab ) ) ;
 
   TableDesc sourceDesc = MSSource::requiredTableDesc() ;
+  MSSource::addColumnToDesc( sourceDesc, MSSourceEnums::TRANSITION, 1 ) ;
+  MSSource::addColumnToDesc( sourceDesc, MSSourceEnums::REST_FREQUENCY, 1 ) ;
+  MSSource::addColumnToDesc( sourceDesc, MSSourceEnums::SYSVEL, 1 ) ;
   SetupNewTable sourceTab( mstable_->sourceTableName(), sourceDesc, Table::New ) ;
   mstable_->rwKeywordSet().defineTable( MeasurementSet::keywordName( MeasurementSet::SOURCE ), Table( sourceTab ) ) ;
 
@@ -479,6 +505,160 @@ void MSWriter::fillAntenna()
   msAntCols.position().put( 0, header_.antennaposition ) ;
 }
 
+void MSWriter::fillProcessor() 
+{
+  os_ << "set up PROCESSOR subtable" << LogIO::POST ;
+  
+  // only add empty 1 row
+  MSProcessor msProc = mstable_->processor() ;
+  msProc.addRow( 1, True ) ;
+}
+
+void MSWriter::fillSource()
+{
+  os_ << "set up SOURCE subtable" << LogIO::POST ;
+  
+
+  // access to MS SOURCE subtable
+  MSSource msSrc = mstable_->source() ;
+
+  // access to MOLECULE subtable
+  STMolecules stm = table_->molecules() ;
+
+  Int srcId = 0 ;
+  Vector<Double> restFreq ;
+  Vector<String> molName ;
+  Vector<String> fMolName ;
+  // 
+  // ITERATION: SRCNAME
+  //
+  Int added0 = 0 ;
+  Int current0 = msSrc.nrow() ;
+  TableIterator iter0( table_->table(), "SRCNAME" ) ;
+  while( !iter0.pastEnd() ) {
+    Table t0( iter0.table() ) ;
+
+    // get necessary information
+    ROScalarColumn<String> srcNameCol( t0, "SRCNAME" ) ;
+    String srcName = srcNameCol( 0 ) ;
+    ROArrayColumn<Double> sharedDArrRCol( t0, "SRCPROPERMOTION" ) ;
+    Vector<Double> srcPM = sharedDArrRCol( 0 ) ;
+    sharedDArrRCol.attach( t0, "SRCDIRECTION" ) ;
+    Vector<Double> srcDir = sharedDArrRCol( 0 ) ;
+    ROScalarColumn<Double> srcVelCol( t0, "SRCVELOCITY" ) ;
+    Double srcVel = srcVelCol( 0 ) ;
+
+    //
+    // ITERATION: MOLECULE_ID
+    //
+    Int added1 = 0 ;
+    Int current1 = msSrc.nrow() ;
+    TableIterator iter1( t0, "MOLECULE_ID" ) ;
+    while( !iter1.pastEnd() ) {
+      Table t1( iter1.table() ) ;
+
+      // get necessary information
+      ROScalarColumn<uInt> molIdCol( t1, "MOLECULE_ID" ) ;
+      uInt molId = molIdCol( 0 ) ;
+      stm.getEntry( restFreq, molName, fMolName, molId ) ;
+
+      //
+      // ITERATION: IFNO
+      //
+      Int added2 = 0 ;
+      Int current2 = msSrc.nrow() ;
+      TableIterator iter2( t1, "IFNO" ) ;
+      while( !iter2.pastEnd() ) {
+        Table t2( iter2.table() ) ;
+        uInt prevnr = msSrc.nrow() ;
+
+        // get necessary information
+        ROScalarColumn<uInt> ifNoCol( t2, "IFNO" ) ;
+        uInt ifno = ifNoCol( 0 ) ; // IFNO = SPECTRAL_WINDOW_ID
+        MEpoch midTimeMeas ;
+        Double interval ;
+        getValidTimeRange( midTimeMeas, interval, t2 ) ;
+
+        // add row
+        msSrc.addRow( 1, True ) ;
+
+        // fill SPECTRAL_WINDOW_ID
+        ScalarColumn<Int> sSpwIdCol( msSrc, "SPECTRAL_WINDOW_ID" ) ;
+        sSpwIdCol.put( prevnr, ifno ) ;
+
+        // fill TIME, INTERVAL
+        ScalarMeasColumn<MEpoch> sTimeMeasCol( msSrc, "TIME" ) ;
+        sTimeMeasCol.put( prevnr, midTimeMeas ) ;
+        ScalarColumn<Double> sIntervalCol( msSrc, "INTERVAL" ) ;
+        sIntervalCol.put( prevnr, interval ) ;
+
+        added2++ ;
+        iter2.next() ;
+      }
+
+      // fill NUM_LINES, REST_FREQUENCY, TRANSITION, SYSVEL
+      RefRows rows2( current2, current2+added2-1 ) ;
+      uInt numFreq = restFreq.size() ;
+      Vector<Int> numLines( added2, numFreq ) ;
+      ScalarColumn<Int> numLinesCol( msSrc, "NUM_LINES" ) ;
+      numLinesCol.putColumnCells( rows2, numLines ) ;
+      if ( numFreq != 0 ) {
+        Array<Double> rf( IPosition( 2, numFreq, added2 ) ) ;
+        Array<String> trans( IPosition( 2, numFreq, added2 ) ) ;
+        Array<Double> srcVelArr( IPosition( 2, numFreq, added2 ), srcVel ) ;
+        for ( uInt ifreq = 0 ; ifreq < numFreq ; ifreq++ ) {
+          Slicer slice( Slice(ifreq),Slice(0,added2,1) ) ;
+          rf( slice ) = restFreq[ifreq] ;
+          String transStr = fMolName[ifreq] ;
+          if ( transStr.size() == 0 ) {
+            transStr = molName[ifreq] ;
+          }
+          trans( slice ) = transStr ; 
+        }
+        ArrayColumn<Double> sharedDArrCol( msSrc, "REST_FREQUENCY" ) ;
+        sharedDArrCol.putColumnCells( rows2, rf ) ;
+        sharedDArrCol.attach( msSrc, "SYSVEL" ) ;
+        sharedDArrCol.putColumnCells( rows2, srcVelArr ) ;
+        ArrayColumn<String> transCol( msSrc, "TRANSITION" ) ;
+        transCol.putColumnCells( rows2, trans ) ;
+      }
+
+      added1 += added2 ;
+      iter1.next() ;
+    }
+
+    // fill NAME, SOURCE_ID
+    RefRows rows1( current1, current1+added1-1 ) ;
+    Vector<String> nameArr( added1, srcName ) ;
+    Vector<Int> srcIdArr( added1, srcId ) ;
+    ScalarColumn<String> sNameCol( msSrc, "NAME" ) ;
+    ScalarColumn<Int> srcIdCol( msSrc, "SOURCE_ID" ) ;
+    sNameCol.putColumnCells( rows1, nameArr ) ;
+    srcIdCol.putColumnCells( rows1, srcIdArr ) ;
+
+    // fill DIRECTION, PROPER_MOTION
+    Array<Double> srcPMArr( IPosition( 2, 2, added1 ) ) ;
+    Array<Double> srcDirArr( IPosition( 2, 2, added1 ) ) ;
+    for ( uInt i = 0 ; i < 2 ; i++ ) {
+      Slicer slice( Slice(i),Slice(0,added1,1) ) ;
+      srcPMArr( slice ) = srcPM[i] ;
+      srcDirArr( slice ) = srcDir[i] ;
+    }
+    ArrayColumn<Double> sharedDArrCol( msSrc, "DIRECTION" ) ;
+    sharedDArrCol.putColumnCells( rows1, srcDirArr ) ;
+    sharedDArrCol.attach( msSrc, "PROPER_MOTION" ) ;
+    sharedDArrCol.putColumnCells( rows1, srcPMArr ) ;
+
+    // fill TIME, INTERVAL
+
+    // increment srcId if SRCNAME changed
+    srcId++ ;
+
+    added0 += added1 ;
+    iter0.next() ;
+  }
+}
+
 void MSWriter::addFeed( Int id ) 
 {
   os_ << "set up FEED subtable" << LogIO::POST ;
@@ -546,9 +726,51 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   msSpwCols.chanFreq().put( spwid, sharedDoubleArr ) ;
 }
 
+void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Vector<Double> rate ) 
+{
+  os_ << "set up FIELD subtable" << LogIO::POST ;
+ 
+  MSField msField = mstable_->field() ;
+  while( (Int)msField.nrow() <= fid ) {
+    msField.addRow( 1, True ) ;
+  }
+  MSFieldColumns msFieldCols( msField ) ;
+
+  // Access to SOURCE table
+  MSSource msSrc = mstable_->source() ;
+
+  // fill target row
+  msFieldCols.name().put( fid, fieldname ) ;
+  msFieldCols.time().put( fid, t ) ;
+  Int numPoly = 0 ;
+  if ( anyNE( rate, 0.0 ) ) 
+    numPoly = 1 ;
+  msFieldCols.numPoly().put( fid, numPoly ) ;
+  MSSourceIndex msSrcIdx( msSrc ) ;
+  Int srcId = -1 ;
+  Vector<Int> srcIdArr = msSrcIdx.matchSourceName( srcname ) ;
+  if ( srcIdArr.size() != 0 ) {
+    srcId = srcIdArr[0] ;
+    MSSource msSrcSel = msSrc( msSrc.col("SOURCE_ID") == srcId ) ;
+    ROMSSourceColumns msSrcCols( msSrcSel ) ;
+    Vector<Double> srcDir = msSrcCols.direction()( 0 ) ;
+    Array<Double> srcDirA( IPosition( 2, 2, 1+numPoly ) ) ;
+    os_ << "srcDirA = " << srcDirA << LogIO::POST ;
+    os_ << "sliced srcDirA = " << srcDirA( Slicer( Slice(0,2,1), Slice(0) ) ) << LogIO::POST ;
+    srcDirA( Slicer( Slice(0,2,1), Slice(0) ) ) = srcDir.reform( IPosition(2,2,1) ) ;
+    os_ << "srcDirA = " << srcDirA << LogIO::POST ;
+    if ( numPoly != 0 ) 
+      srcDirA( Slicer( Slice(0,2,1), Slice(1) ) ) = rate ;
+    msFieldCols.phaseDir().put( fid, srcDirA ) ;
+    msFieldCols.referenceDir().put( fid, srcDirA ) ;
+    msFieldCols.delayDir().put( fid, srcDirA ) ;
+  }
+  msFieldCols.sourceId().put( fid, srcId ) ;
+}
+
 Int MSWriter::addPolarization( Vector<Int> polnos ) 
 {
-  os_ << "set up SPECTRAL_WINDOW subtable" << LogIO::POST ;
+  os_ << "set up POLARIZATION subtable" << LogIO::POST ;
 
   os_ << "polnos = " << polnos << LogIO::POST ;
   MSPolarization msPol = mstable_->polarization() ;
@@ -583,16 +805,16 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
       corrProd = 0 ;
     }
     else if ( npol == 2 ) {
-      corrProd.column(0) = 0 ;
-      corrProd.column(1) = 1 ;
+      corrProd.column( 0 ) = 0 ;
+      corrProd.column( 1 ) = 1 ;
     }
     else {
-      corrProd.column(0) = 0 ;
-      corrProd.column(3) = 1 ;
-      corrProd(0,1) = 0 ;
-      corrProd(1,1) = 1 ;
-      corrProd(0,2) = 1 ;
-      corrProd(1,2) = 0 ;
+      corrProd.column( 0 ) = 0 ;
+      corrProd.column( 3 ) = 1 ;
+      corrProd( 0,1 ) = 0 ;
+      corrProd( 1,1 ) = 1 ;
+      corrProd( 0,2 ) = 1 ;
+      corrProd( 1,2 ) = 0 ;
     }
     msPolCols.corrProduct().put( nrow, corrProd ) ;
     
@@ -603,6 +825,33 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
 
   return polid ;
 } 
+
+Int MSWriter::addDataDescription( Int polid, Int spwid ) 
+{
+  os_ << "set up SPECTRAL_WINDOW subtable" << LogIO::POST ;
+
+  MSDataDescription msDataDesc = mstable_->dataDescription() ;
+  uInt nrow = msDataDesc.nrow() ;
+
+  MSDataDescIndex msDataDescIdx( msDataDesc ) ;
+ 
+  Vector<Int> ddids = msDataDescIdx.matchSpwIdAndPolznId( spwid, polid ) ;
+  os_ << "ddids = " << ddids << LogIO::POST ;
+
+  Int ddid = -1 ;
+  if ( ddids.size() == 0 ) {
+    msDataDesc.addRow( 1, True ) ;
+    MSDataDescColumns msDataDescCols( msDataDesc ) ;
+    msDataDescCols.polarizationId().put( nrow, polid ) ;
+    msDataDescCols.spectralWindowId().put( nrow, spwid ) ;
+    ddid = (Int)nrow ;
+  }
+  else {
+    ddid = ddids[0] ;
+  }
+
+  return ddid ;
+}
 
 Vector<Int> MSWriter::toCorrType( Vector<Int> polnos ) 
 {
@@ -693,30 +942,21 @@ Vector<Int> MSWriter::toCorrType( Vector<Int> polnos )
   return corrType ;
 }
 
-Int MSWriter::addDataDescription( Int polid, Int spwid ) 
+void MSWriter::getValidTimeRange( MEpoch &me, Double &interval, Table &tab ) 
 {
-  os_ << "set up SPECTRAL_WINDOW subtable" << LogIO::POST ;
-
-  MSDataDescription msDataDesc = mstable_->dataDescription() ;
-  uInt nrow = msDataDesc.nrow() ;
-
-  MSDataDescIndex msDataDescIdx( msDataDesc ) ;
- 
-  Vector<Int> ddids = msDataDescIdx.matchSpwIdAndPolznId( spwid, polid ) ;
-  os_ << "ddids = " << ddids << LogIO::POST ;
-
-  Int ddid = -1 ;
-  if ( ddids.size() == 0 ) {
-    msDataDesc.addRow( 1, True ) ;
-    MSDataDescColumns msDataDescCols( msDataDesc ) ;
-    msDataDescCols.polarizationId().put( nrow, polid ) ;
-    msDataDescCols.spectralWindowId().put( nrow, spwid ) ;
-    ddid = (Int)nrow ;
-  }
-  else {
-    ddid = ddids[0] ;
-  }
-
-  return ddid ;
+  ROScalarMeasColumn<MEpoch> timeMeasCol( tab, "TIME" ) ;
+  ROScalarColumn<Double> timeCol( tab, "TIME" ) ;
+  String refStr = timeMeasCol( 0 ).getRefString() ;
+  Vector<Double> timeArr = timeCol.getColumn() ;
+  MEpoch::Types meType ;
+  MEpoch::getType( meType, refStr ) ;
+  Unit tUnit = timeMeasCol.measDesc().getUnits()( 0 ) ;
+  Double minTime ; 
+  Double maxTime ;
+  minMax( minTime, maxTime, timeArr ) ;
+  Double midTime = 0.5 * ( minTime + maxTime ) ;
+  me = MEpoch( Quantity( midTime, tUnit ), meType ) ;
+  interval = Quantity( maxTime-minTime, tUnit ).getValue( "s" ) ;
 }
+
 }
