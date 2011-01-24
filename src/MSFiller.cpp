@@ -190,11 +190,6 @@ void MSFiller::fill()
 
   // MAIN 
   // Iterate over several ids
-  //
-  // ITERATION: OBSERVATION_ID
-  //
-  TableIterator iter0( tablesel_, "OBSERVATION_ID" ) ;
-  Int totalrow = 0 ;
   Int oldnr = table_->nrow() ;
   map<Int, uInt> ifmap ; // (IFNO, FREQ_ID) pair
   ROMSAntennaColumns antCols( mstable_.antenna() ) ;
@@ -204,6 +199,12 @@ void MSFiller::fill()
   String stationName = antCols.station()(antenna_) ;
   ROMSPointingColumns pointCols( potabsel ) ;
   String telescopeName ;
+  //
+  // ITERATION: OBSERVATION_ID
+  //
+  Int added0 = 0 ;
+  Int current0 = table_->nrow() ;
+  TableIterator iter0( tablesel_, "OBSERVATION_ID" ) ;
   while( !iter0.pastEnd() ) {
     MeasurementSet t0( iter0.table() ) ;
     ROScalarColumn<Int> mObsIdCol( t0, "OBSERVATION_ID" ) ;
@@ -217,10 +218,12 @@ void MSFiller::fill()
       sdh.utc = startTime.getValue( "s" ) ;
     }
     telescopeName = obsCols.telescopeName()(obsId) ;
+    Int nbeam = 0 ;
     //
     // ITERATION: FEED1
     //
-    Int nbeam = 0 ;
+    Int added1 = 0 ;
+    Int current1 = table_->nrow() ;
     TableIterator iter1( t0, "FEED1" ) ;
     while( !iter1.pastEnd() ) {
       MeasurementSet t1( iter1.table() ) ;
@@ -230,6 +233,8 @@ void MSFiller::fill()
       // 
       // ITERATION: FIELD_ID 
       //
+      Int added2 = 0 ;
+      Int current2 = table_->nrow() ;
       TableIterator iter2( t1, "FIELD_ID" ) ;
       while( !iter2.pastEnd() ) {
         MeasurementSet t2( iter2.table() ) ;
@@ -242,6 +247,8 @@ void MSFiller::fill()
         // 
         // ITERATION: DATA_DESC_ID
         //
+        Int added3 = 0 ;
+        Int current3 = table_->nrow() ;
         TableIterator iter3( t2, "DATA_DESC_ID" ) ;
         while( !iter3.pastEnd() ) {
           MeasurementSet t3( iter3.table() ) ;
@@ -361,6 +368,8 @@ void MSFiller::fill()
           //
           // ITERATION: SCAN_NUMBER
           //
+          Int added4 = 0 ;
+          Int current4 = table_->nrow() ;
           TableIterator iter4( t3, "SCAN_NUMBER" ) ;
           while( !iter4.pastEnd() ) {
             MeasurementSet t4( iter4.table() ) ;
@@ -370,6 +379,8 @@ void MSFiller::fill()
             // 
             // ITERATION: STATE_ID
             //
+            Int added5 = 0 ;
+            Int current5 = table_->nrow() ;
             TableIterator iter5( t4, "STATE_ID" ) ; 
             while( !iter5.pastEnd() ) {
               MeasurementSet t5( iter5.table().sort( "TIME" ) ) ;
@@ -483,12 +494,6 @@ void MSFiller::fill()
               //os_ << "addednr = " << addednr << LogIO::POST ;
               RefRows rows( prevnr, prevnr+addednr-1 ) ;
 
-              // SCANNO
-              ScalarColumn<uInt> scannoCol( table_->table(), "SCANNO" ) ;
-              Vector<uInt> scanno( addednr, scanNum ) ;
-              scannoCol.putColumnCells( rows, scanno ) ;
-              //fillId( (uInt)scanNum, "SCANNO", rows ) ;
-
               // CYCLENO
               ScalarColumn<uInt> cyclenoCol( table_->table(), "CYCLENO" ) ;
               Vector<uInt> cycleno( nrow ) ;
@@ -500,18 +505,6 @@ void MSFiller::fill()
                 cyclenoCol.putColumnCells( prows, cycleno ) ;
               }
               cycle += nrow ;
-
-              // BEAMNO
-              ScalarColumn<uInt> beamnoCol( table_->table(), "BEAMNO" ) ;
-              Vector<uInt> beamno( addednr, feedId ) ;
-              beamnoCol.putColumnCells( rows, beamno ) ;
-              //fillId( (uInt)feedId, "BEAMNO", rows ) ;
-
-              // IFNO
-              ScalarColumn<uInt> ifnoCol( table_->table(), "IFNO" ) ;
-              Vector<uInt> ifno( addednr, spwId ) ;
-              ifnoCol.putColumnCells( rows, ifno ) ;
-              //fillId( (uInt)spwId, "IFNO", rows ) ;
 
               // POLNO
               ScalarColumn<uInt> polNoCol( table_->table(), "POLNO" ) ;
@@ -533,25 +526,6 @@ void MSFiller::fill()
                   pidx++ ;
                 }
               }
-
-              // FREQ_ID
-              ScalarColumn<uInt> freqIdCol( table_->table(), "FREQ_ID" ) ;
-              Vector<uInt> freqIds( addednr, ifmap[spwId] ) ;
-              freqIdCol.putColumnCells( rows, freqIds ) ;
-              //fillId( ifmap[spwId], "FREQ_ID", rows ) ;
-
-              // MOLECULE_ID
-              ScalarColumn<uInt> moleculeIdCol( table_->table(), "MOLECULE_ID" ) ;
-              Vector<uInt> moleculeId( addednr, molId ) ;
-              moleculeIdCol.putColumnCells( rows, moleculeId ) ;
-              
-              // REFBEAMNO
-              // set 0 at the moment
-              ScalarColumn<Int> refBeamCol( table_->table(), "REFBEAMNO" ) ;
-              Vector<Int> refBeam( addednr, 0 ) ;
-              refBeamCol.putColumnCells( rows, refBeam ) ;
-              //fillId( 0, "REFBEAMNO", rows ) ;
-              
 
               // FLAGROW
               ScalarColumn<uInt> flagRowCol( table_->table(), "FLAGROW" ) ;
@@ -586,22 +560,11 @@ void MSFiller::fill()
                 intervalCol.putColumnCells( prows, integ ) ;
               }
 
-
-              // SRCNAME
-              ScalarColumn<String> srcNameCol( table_->table(), "SRCNAME" ) ;
-              Vector<String> vSrcName( addednr, srcName ) ;
-              srcNameCol.putColumnCells( rows, vSrcName ) ;
-
               // SRCTYPE
               ScalarColumn<Int> srcTypeCol( table_->table(), "SRCTYPE" ) ;
               Vector<Int> srcType( addednr, getSrcType( stateId ) ) ;
               srcTypeCol.putColumnCells( rows, srcType ) ;
 
-              // FIELDNAME
-              ScalarColumn<String> fieldNameCol( table_->table(), "FIELDNAME" ) ;
-              Vector<String> vFieldName( addednr, fieldName ) ;
-              fieldNameCol.putColumnCells( rows, vFieldName ) ;
-              
               // TSYS
               ArrayColumn<Float> tsysCol( table_->table(), "TSYS" ) ;
               Vector<Double> sysCalTime ;
@@ -639,7 +602,6 @@ void MSFiller::fill()
                 Array<Float> tsys( IPosition( 2, 1, addednr ), 1.0 ) ;
                 tsysCol.putColumnCells( rows, tsys ) ;
               }
-
 
               // DIRECTION, AZIMUTH, ELEVATION, SCANRATE
               ArrayColumn<Double> dirCol( table_->table(), "DIRECTION" ) ;
@@ -745,13 +707,6 @@ void MSFiller::fill()
                 }
               }
 
-              // OPACITY
-              // not used?
-              ScalarColumn<Float> opacityCol( table_->table(), "OPACITY" ) ;
-              Vector<Float> opacity( addednr, 0.0 ) ;
-              opacityCol.putColumnCells( rows, opacity ) ;
-
-
               // TCAL_ID
               ScalarColumn<uInt> tcalIdCol( table_->table(), "TCAL_ID" ) ;
               if ( isSysCal_ ) {
@@ -770,20 +725,6 @@ void MSFiller::fill()
                 Vector<uInt> tcalid( addednr, 0 ) ;
                 tcalIdCol.putColumnCells( rows, tcalid ) ;
               }
-
-              // FIT_ID
-              // nothing to do
-              ScalarColumn<Int> fitIdCol( table_->table(), "FIT_ID" ) ;
-              Vector<Int> fitId( addednr, -1 ) ;
-              fitIdCol.putColumnCells( rows, fitId ) ;
-
-
-              // FOCUS_ID
-              // tentative
-              ScalarColumn<uInt> focusIdCol( table_->table(), "FOCUS_ID" ) ;
-              Vector<uInt> focusId( addednr, 0 ) ;
-              focusIdCol.putColumnCells( rows, focusId ) ;
-
 
               // WEATHER_ID
               uInt widprev = 0 ;
@@ -806,39 +747,116 @@ void MSFiller::fill()
                 weatherIdCol.putColumnCells( prows, vWid ) ;                
               }
               
-              // SRCVELOCITY, SRCPROPERMOTION and SRCDIRECTION
-              // no reference conversion for direction at the moment (assume J2000)
-              // no reference conversion for velocity at the moment (assume LSRK)
-              ArrayColumn<Double> srcPMCol( table_->table(), "SRCPROPERMOTION" ) ;
-              ArrayColumn<Double> srcDirCol( table_->table(), "SRCDIRECTION" ) ;
-              ScalarColumn<Double> srcVelCol( table_->table(), "SRCVELOCITY" ) ;
-              for ( int i = 0 ; i < addednr ; i++ ) {
-                int idx = i + prevnr ;
-                srcPMCol.put( idx, srcPM ) ;   // [rad/s]
-                srcDirCol.put( idx, srcDir ) ; // [rad]
-                srcVelCol.put( idx, sysVel ) ; // [m/s]
-              }
-
-
               //os_ << "field: " << fieldId << " scan: " << scanNum << " obs: " << obsId << " state: " << stateId << " ddid: " << ddId << endl ;
               //os_ << "t.nrow() = " << t5.nrow() << endl ;
-              totalrow += t5.nrow() ;
-              //os_ << "totalrow = " << totalrow << LogIO::POST ;
+              added5 += addednr ;
               iter5.next() ;
             }
+
+            // SCANNO
+            RefRows rows5( current5, current5+added5-1 ) ;
+            Vector<uInt> scanno( added5, scanNum ) ;
+            ScalarColumn<uInt> scannoCol( table_->table(), "SCANNO" ) ;
+            scannoCol.putColumnCells( rows5, scanno ) ;
+
+            added4 += added5 ;
             iter4.next() ;
           }
+
+          // IFNO
+          RefRows rows4( current4, current4+added4-1 ) ;
+          Vector<uInt> shareduIArr( added4, spwId ) ;
+          ScalarColumn<uInt> shareduIArrCol( table_->table(), "IFNO" ) ;
+          shareduIArrCol.putColumnCells( rows4, shareduIArr ) ;
+
+          // FREQ_ID
+          shareduIArr = ifmap[spwId] ;
+          shareduIArrCol.attach( table_->table(), "FREQ_ID" ) ;
+          shareduIArrCol.putColumnCells( rows4, shareduIArr ) ;
+
+          // MOLECULE_ID
+          shareduIArr = molId ;
+          shareduIArrCol.attach( table_->table(), "MOLECULE_ID" ) ;
+          shareduIArrCol.putColumnCells( rows4, shareduIArr ) ;
+
+          // SRCNAME
+          ScalarColumn<String> srcNameCol( table_->table(), "SRCNAME" ) ;
+          Vector<String> vSrcName( added4, srcName ) ;
+          srcNameCol.putColumnCells( rows4, vSrcName ) ;
+
+          // SRCVELOCITY, SRCPROPERMOTION and SRCDIRECTION
+          // no reference conversion for direction at the moment (assume J2000)
+          // no reference conversion for velocity at the moment (assume LSRK)
+          Matrix<Double> sharedDArr( 2, added4 ) ;
+          for ( uInt icol = 0 ; icol < added4 ; icol++ ) {
+            sharedDArr.column(icol) = srcPM ;
+          }
+          ArrayColumn<Double> sharedDArrCol( table_->table(), "SRCPROPERMOTION" ) ;
+          sharedDArrCol.putColumnCells( rows4, sharedDArr ) ;
+          for ( uInt icol = 0 ; icol < added4 ; icol++ ) {
+            sharedDArr.column(icol) = srcDir ;
+          }          
+          sharedDArrCol.attach( table_->table(), "SRCDIRECTION" ) ;
+          sharedDArrCol.putColumnCells( rows4, sharedDArr ) ;
+          ScalarColumn<Double> sysVelCol( table_->table(), "SRCVELOCITY" ) ;
+          Vector<Double> sysVelArr( added4, sysVel ) ;
+          sysVelCol.putColumnCells( rows4, sysVelArr ) ;
+
+          added3 += added4 ;
           iter3.next() ;
         }
+
+        // FIELDNAME
+        RefRows rows3( current3, current3+added3-1 ) ;
+        Vector<String> vFieldName( added3, fieldName ) ;
+        ScalarColumn<String> fieldNameCol( table_->table(), "FIELDNAME" ) ;
+        fieldNameCol.putColumnCells( rows3, vFieldName ) ;
+
+        added2 += added3 ;
         iter2.next() ;
       }
+
+      // BEAMNO
+      RefRows rows2( current2, current2+added2-1 ) ; 
+      Vector<uInt> beamno( added2, feedId ) ;
+      ScalarColumn<uInt> beamnoCol( table_->table(), "BEAMNO" ) ;
+      beamnoCol.putColumnCells( rows2, beamno ) ;
+
+      // FOCUS_ID
+      // tentative
+      beamnoCol.attach( table_->table(), "FOCUS_ID" ) ;
+      beamno = 0 ;
+      beamnoCol.putColumnCells( rows2, beamno ) ;
+
+      added1 += added2 ;
       iter1.next() ;
     }
     if ( sdh.nbeam < nbeam ) sdh.nbeam = nbeam ;
+
+    added0 += added1 ;
     iter0.next() ;
   }
 
-  // Keywords
+  // REFBEAMNO
+  // set 0 at the moment
+  ScalarColumn<Int> sharedICol( table_->table(), "REFBEAMNO" ) ;
+  Vector<Int> sharedI( added0, 0 ) ;
+  sharedICol.putColumn( sharedI ) ;
+
+  // OPACITY
+  // not used?
+  ScalarColumn<Float> opacityCol( table_->table(), "OPACITY" ) ;
+  Vector<Float> opacity( added0, 0.0 ) ;
+  opacityCol.putColumn( opacity ) ;
+  
+  // FIT_ID
+  // nothing to do
+  sharedICol.attach( table_->table(), "FIT_ID" ) ;
+  sharedI = -1 ;
+  sharedICol.putColumn( sharedI ) ;
+
+
+  // Table Keywords
   sdh.nif = ifmap.size() ;
   String antennaName = antCols.name()(antenna_) ;
   if ( antennaName == telescopeName ) {
