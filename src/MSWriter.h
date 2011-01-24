@@ -19,7 +19,9 @@
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/Arrays/Matrix.h>
 #include <casa/Logging/LogIO.h>
+#include <casa/Containers/Record.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/RefRows.h>
@@ -28,6 +30,8 @@
 #include <ms/MeasurementSets/MSColumns.h>
 
 #include <measures/Measures/MEpoch.h>
+
+#include <atnf/PKSIO/SrcType.h>
 
 #include "Scantable.h"
 #include "STHeader.h"
@@ -59,29 +63,39 @@ private:
   void fillAntenna() ;
   void fillProcessor() ;
   void fillSource() ;
+  void fillWeather() ;
+  void fillSysCal() ;
 
   // add rows to subtables
   void addFeed( casa::Int id ) ;
   void addSpectralWindow( casa::Int spwid, casa::Int freqid ) ;
   void addField( casa::Int fid, casa::String fieldname, casa::String srcname, casa::Double t, casa::Vector<casa::Double> scanrate ) ;
+  void addPointing( casa::String &name, casa::MEpoch &me, casa::Double &interval, casa::Matrix<casa::Double> &dir ) ;
   casa::Int addPolarization( casa::Vector<casa::Int> polnos ) ;
   casa::Int addDataDescription( casa::Int polid, casa::Int spwid ) ;
+  casa::Int addState( casa::Int type, casa::Int &subscan ) ;
 
   // utility
   casa::Vector<casa::Int> toCorrType( casa::Vector<casa::Int> polnos ) ;
   void getValidTimeRange( casa::MEpoch &me, casa::Double &interval, casa::Table &tab ) ;
+  void queryType( casa::Int type, casa::String &stype, casa::Bool &b ) ; 
 
   casa::CountedPtr<Scantable> table_ ;
   STHeader header_ ;
   casa::CountedPtr<casa::MeasurementSet> mstable_ ;
 
-  casa::Bool isFloatData_ ;
-  casa::Bool isData_ ;
+  casa::Bool useFloatData_ ;
+  casa::Bool useData_ ;
+  casa::Bool tcalSpec_ ;
+  casa::Bool tsysSpec_ ;
+
   casa::String polType_ ;
 
   casa::String filename_ ;
 
   casa::LogIO os_ ;
+
+  casa::Record tcalIdRec_ ;
   
   MSWriter();
   MSWriter(const MSWriter&);

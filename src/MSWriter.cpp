@@ -33,6 +33,7 @@
 #include "STHeader.h"
 #include "STFrequencies.h" 
 #include "STMolecules.h"
+#include "STTcal.h" 
 
 using namespace casa ;
 
@@ -105,6 +106,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
   // SOURCE
   fillSource() ;
 
+  // WEATHER
+  fillWeather() ;
+
   // MAIN
   // Iterate over several ids
   Vector<uInt> processedFreqId( 0 ) ;
@@ -161,27 +165,28 @@ bool MSWriter::write(const string& filename, const Record& rec)
         uInt scanNo = scanNoCol( 0 ) ;
         os_ << "scanNo = " << scanNo << LogIO::POST ;
         // 
-        // ITERATION: CYCLENO
+        // ITERATION: IFNO
         //
         Int added3 = 0 ;
         Int current3 = mstable_->nrow() ;
-        TableIterator iter3( t2, "CYCLENO" ) ;
+        TableIterator iter3( t2, "IFNO" ) ;
         while( !iter3.pastEnd() ) {
           Table t3( iter3.table() ) ;
+          ROScalarColumn<uInt> ifNoCol( t3, "IFNO" ) ;
+          uInt ifNo = ifNoCol( 0 ) ;
+          os_ << "ifNo = " << ifNo << LogIO::POST ;
+          ROScalarColumn<uInt> freqIdCol( t3, "FREQ_ID" ) ;
+          uInt freqId = freqIdCol( 0 ) ;
+          os_ << "freqId = " << freqId << LogIO::POST ;
+          Int subscan = 0 ;
           // 
-          // ITERATION: IFNO
+          // ITERATION: CYCLENO
           //
           Int added4 = 0 ;
           Int current4 = mstable_->nrow() ;
-          TableIterator iter4( t3, "IFNO" ) ;
+          TableIterator iter4( t3, "CYCLENO" ) ;
           while( !iter4.pastEnd() ) {
             Table t4( iter4.table() ) ;
-            ROScalarColumn<uInt> ifNoCol( t4, "IFNO" ) ;
-            uInt ifNo = ifNoCol( 0 ) ;
-            os_ << "ifNo = " << ifNo << LogIO::POST ;
-            ROScalarColumn<uInt> freqIdCol( t4, "FREQ_ID" ) ;
-            uInt freqId = freqIdCol( 0 ) ;
-            os_ << "freqId = " << freqId << LogIO::POST ;
             // 
             // ITERATION: TIME
             //
@@ -204,22 +209,99 @@ bool MSWriter::write(const string& filename, const Record& rec)
               // 
               // LOOP: POLNO
               //
-              for ( Int ipol = 0 ; ipol < nrow ; ipol++ ) {
+              ROArrayColumn<Float> specCol( t5, "SPECTRA" ) ;
+              ROArrayColumn<uChar> flagCol( t5, "FLAGTRA" ) ;
+              ROScalarColumn<uInt> flagRowCol( t5, "FLAGROW" ) ;
+              uInt nchan = specCol( 0 ).size() ;
+              IPosition newshape( 2,1,nchan ) ;
+              IPosition cellshape( 2, nrow, nchan ) ;
+              if ( useFloatData_ ) {
+                // FLOAT_DATA
+                Array<Float> dataArr( cellshape ) ;
+                Array<Bool> flagArr( cellshape ) ;
+                for ( Int ipol = 0 ; ipol < nrow ; ipol++ ) {
+                  Slicer slicer( Slice(ipol), Slice(0,nchan,1) ) ;
+                  dataArr( slicer ) = specCol( ipol ).reform( newshape ) ;
+                  Array<uChar> tmpUC = flagCol( ipol ).reform( newshape ) ;
+                  Array<Bool> tmpB( tmpUC.shape() ) ;
+                  //convertArray( flagArr( slicer ), flagCol( ipol ).reform( newshape ) ) ; 
+                  convertArray( tmpB, tmpUC ) ;
+                  flagArr( slicer ) = tmpB ;
+                }
+                ArrayColumn<Float> msDataCol( *mstable_, "FLOAT_DATA" ) ;
+                msDataCol.put( prevnr, dataArr ) ;
+                
+                // FLAG
+                ArrayColumn<Bool> msFlagCol( *mstable_, "FLAG" ) ;
+                msFlagCol.put( prevnr, flagArr ) ;
               }
+              else if ( useData_ ) {
+                // DATA
+                // assume nrow = 4
+                Array<Complex> dataArr( cellshape ) ;
+                Vector<Float> zeroIm( nchan, 0 ) ;
+                Array<Float> dummy( IPosition( 2, 2, nchan ) ) ;
+                Slicer slicer0( Slice(0), Slice(0,nchan,1) ) ;
+                Slicer slicer1( Slice(1), Slice(0,nchan,1) ) ;
+                Slicer slicer2( Slice(2), Slice(0,nchan,1) ) ;
+                Slicer slicer3( Slice(3), Slice(0,nchan,1) ) ;
+                dummy( slicer0 ) = specCol( 0 ).reform( newshape ) ;
+                dummy( slicer1 ) = zeroIm.reform( newshape ) ;
+                dataArr( slicer0 ) = RealToComplex( dummy ) ;
+                dummy( slicer0 ) = specCol( 1 ).reform( newshape ) ;
+                dataArr( slicer3 ) = RealToComplex( dummy ) ;
+                dummy( slicer0 ) = specCol( 2 ).reform( newshape ) ;
+                dummy( slicer1 ) = specCol( 3 ).reform( newshape ) ;
+                dataArr( slicer1 ) = RealToComplex( dummy ) ;
+                dataArr( slicer2 ) = conj( RealToComplex( dummy ) ) ;
+                ArrayColumn<Complex> msDataCol( *mstable_, "DATA" ) ;
+                msDataCol.put( prevnr, dataArr ) ;
+
+                // FLAG
+                Array<Bool> flagArr( cellshape ) ;
+                Array<uChar> tmpUC = flagCol( 0 ).reform( newshape ) ;
+                Array<Bool> tmpB( tmpUC.shape() ) ;
+                convertArray( tmpB, tmpUC ) ;
+                flagArr( slicer0 ) = tmpB ;
+                tmpUC = flagCol( 3 ).reform( newshape ) ;
+                convertArray( tmpB, tmpUC ) ;
+                flagArr( slicer3 ) = tmpB ;
+                Vector<uChar> bitOr = flagCol( 2 ) | flagCol( 3 ) ;
+                tmpUC = bitOr.reform( newshape ) ;
+                convertArray( tmpB, tmpUC ) ;
+                flagArr( slicer1 ) = tmpB ;
+                flagArr( slicer2 ) = tmpB ;
+                ArrayColumn<Bool> msFlagCol( *mstable_, "FLAG" ) ;
+                msFlagCol.put( prevnr, flagArr ) ;
+              }
+
+              // FLAG_ROW
+              ScalarColumn<Bool> msFlagRowCol( *mstable_, "FLAG_ROW" ) ;
+              msFlagRowCol.put( prevnr, anyNE( flagRowCol.getColumn(), (uInt)0 ) ) ;
               
               // TIME and TIME_CENTROID
               ROScalarMeasColumn<MEpoch> timeCol( t5, "TIME" ) ;
+              MEpoch mTime = timeCol( 0 ) ;
               ScalarMeasColumn<MEpoch> msTimeCol( *mstable_, "TIME" ) ;
-              msTimeCol.put( prevnr, timeCol( 0 ) ) ;
+              msTimeCol.put( prevnr, mTime ) ;
               msTimeCol.attach( *mstable_, "TIME_CENTROID" ) ;
-              msTimeCol.put( prevnr, timeCol( 0 ) ) ;
+              msTimeCol.put( prevnr, mTime ) ;
               
               // INTERVAL and EXPOSURE
               ROScalarColumn<Double> intervalCol( t5, "INTERVAL" ) ;
+              Double interval = intervalCol( 0 ) ;
               ScalarColumn<Double> msIntervalCol( *mstable_, "INTERVAL" ) ;
-              msIntervalCol.put( prevnr, intervalCol( 0 ) ) ;
+              msIntervalCol.put( prevnr, interval ) ;
               msIntervalCol.attach( *mstable_, "EXPOSURE" ) ;
-              msIntervalCol.put( prevnr, intervalCol( 0 ) ) ;
+              msIntervalCol.put( prevnr, interval ) ;
+
+              // WEIGHT and SIGMA
+              // always 1 at the moment
+              Vector<Float> wArr( nrow, 1.0 ) ;
+              ArrayColumn<Float> wArrCol( *mstable_, "WEIGHT" ) ;
+              wArrCol.put( prevnr, wArr ) ;
+              wArrCol.attach( *mstable_, "SIGMA" ) ;
+              wArrCol.put( prevnr, wArr ) ;
               
               // add DATA_DESCRIPTION row
               Int ddid = addDataDescription( polid, ifNo ) ;
@@ -227,23 +309,48 @@ bool MSWriter::write(const string& filename, const Record& rec)
               ScalarColumn<Int> ddIdCol( *mstable_, "DATA_DESC_ID" ) ;
               ddIdCol.put( prevnr, ddid ) ;
               
+              // for SYSCAL table
+              ROScalarColumn<uInt> tcalIdCol( t5, "TCAL_ID" ) ;
+              Vector<uInt> tcalIdArr = tcalIdCol.getColumn() ;
+              os_ << "tcalIdArr = " << tcalIdArr << LogIO::POST ;
+              String key = String::toString( tcalIdArr[0] ) ;
+              if ( !tcalIdRec_.isDefined( key ) ) {
+                tcalIdRec_.define( key, tcalIdArr ) ;
+              }
+              
+              // fill STATE_ID
+              ROScalarColumn<Int> srcTypeCol( t5, "SRCTYPE" ) ;
+              Int srcType = srcTypeCol( 0 ) ;
+              Int stateId = addState( srcType, subscan ) ;
+              ScalarColumn<Int> msStateIdCol( *mstable_, "STATE_ID" ) ;
+              msStateIdCol.put( prevnr, stateId ) ;
+
+              // for POINTING table
+              Matrix<Double> msDir( 2, 2 ) ;
+              ROArrayColumn<Double> dirCol( t5, "DIRECTION" ) ;
+              msDir.column( 0 ) = dirCol( 0 ) ;
+              dirCol.attach( t5, "SCANRATE" ) ;
+              msDir.column( 1 ) = dirCol( 0 ) ;
+              addPointing( fieldName, mTime, interval, msDir ) ;
+
               added5 += 1 ;
               os_ << "added5 = " << added5 << " current5 = " << current5 << LogIO::POST ;
               iter5.next() ;
-            }
-            
-            // add SPECTRAL_WINDOW row
-            if ( allNE( processedFreqId, freqId ) ) {
-              uInt vsize = processedFreqId.size() ;
-              processedFreqId.resize( vsize+1, True ) ;
-              processedFreqId[vsize] = freqId ;
-              addSpectralWindow( ifNo, freqId ) ;
             }
             
             added4 += added5 ;
             os_ << "added4 = " << added4 << " current4 = " << current4 << LogIO::POST ;
             iter4.next() ;
           }
+
+          // add SPECTRAL_WINDOW row
+          if ( allNE( processedFreqId, freqId ) ) {
+            uInt vsize = processedFreqId.size() ;
+            processedFreqId.resize( vsize+1, True ) ;
+            processedFreqId[vsize] = freqId ;
+            addSpectralWindow( ifNo, freqId ) ;
+          }
+          
           added3 += added4 ;
           os_ << "added3 = " << added3 << " current3 = " << current3 << LogIO::POST ;
           iter3.next() ;
@@ -312,6 +419,10 @@ bool MSWriter::write(const string& filename, const Record& rec)
   sharedIntCol.attach( *mstable_, "PROCESSOR_ID" ) ;
   sharedIntCol.putColumn( sharedIntArr ) ;
 
+
+  // SYSCAL
+  fillSysCal() ;
+
   return True ;
 }
   
@@ -325,12 +436,12 @@ void MSWriter::init()
 
   // FLOAT_DATA? or DATA?
   if ( header_.npol > 2 ) {
-    isFloatData_ = False ;
-    isData_ = True ;
+    useFloatData_ = False ;
+    useData_ = True ;
   }
   else {
-    isFloatData_ = True ;
-    isData_ = False ;
+    useFloatData_ = True ;
+    useData_ = False ;
   }
 
   // polarization type 
@@ -348,6 +459,31 @@ void MSWriter::init()
   else 
     polType_ = "notype" ;
 
+  // Are TCAL_SPECTRUM and TSYS_SPECTRUM necessary?
+  tcalSpec_ = False ;
+  tsysSpec_ = False ;
+  if ( header_.nchan != 1 ) {
+    // examine TCAL subtable
+    Table tcaltab = table_->tcal().table() ;
+    ROArrayColumn<Float> tcalCol( tcaltab, "TCAL" ) ;
+    for ( uInt irow = 0 ; irow < tcaltab.nrow() ; irow++ ) {
+      if ( tcalCol( irow ).size() != 1 )
+        tcalSpec_ = True ;
+    }
+    // examine spectral data
+    TableIterator iter0( table_->table(), "IFNO" ) ;
+    while( !iter0.pastEnd() ) {
+      Table t0( iter0.table() ) ;
+      ROArrayColumn<Float> sharedFloatArrCol( t0, "SPECTRA" ) ;
+      uInt len = sharedFloatArrCol( 0 ).size() ;
+      if ( len != 1 ) {
+        sharedFloatArrCol.attach( t0, "TSYS" ) ;
+        if ( sharedFloatArrCol( 0 ).size() != 1 ) 
+          tsysSpec_ = True ;
+      }
+      iter0.next() ;
+    }
+  }
 }
 
 void MSWriter::setupMS()
@@ -356,9 +492,10 @@ void MSWriter::setupMS()
   os_ << "MSWriter::setupMS()" << LogIO::POST ;
 
   TableDesc msDesc = MeasurementSet::requiredTableDesc() ;
-
-  // any additional columns?
-  // TODO: add FLOAT_DATA column if npol == 2 otherwise add DATA column
+  if ( useFloatData_ )
+    MeasurementSet::addColumnToDesc( msDesc, MSMainEnums::FLOAT_DATA, 2 ) ;
+  else if ( useData_ )
+    MeasurementSet::addColumnToDesc( msDesc, MSMainEnums::DATA, 2 ) ;
 
   SetupNewTable newtab( filename_, msDesc, Table::New ) ;
 
@@ -430,10 +567,21 @@ void MSWriter::setupMS()
 
   // TODO: add TCAL_SPECTRUM and TSYS_SPECTRUM if necessary
   TableDesc sysCalDesc = MSSysCal::requiredTableDesc() ;
+  MSSysCal::addColumnToDesc( sysCalDesc, MSSysCalEnums::TCAL, 2 ) ;
+  MSSysCal::addColumnToDesc( sysCalDesc, MSSysCalEnums::TSYS, 2 ) ;
+  if ( tcalSpec_ ) 
+    MSSysCal::addColumnToDesc( sysCalDesc, MSSysCalEnums::TCAL_SPECTRUM, 2 ) ;
+  if ( tsysSpec_ )
+    MSSysCal::addColumnToDesc( sysCalDesc, MSSysCalEnums::TSYS_SPECTRUM, 2 ) ;
   SetupNewTable sysCalTab( mstable_->sysCalTableName(), sysCalDesc, Table::New ) ;
   mstable_->rwKeywordSet().defineTable( MeasurementSet::keywordName( MeasurementSet::SYSCAL ), Table( sysCalTab ) ) ;
 
   TableDesc weatherDesc = MSWeather::requiredTableDesc() ;
+  MSWeather::addColumnToDesc( weatherDesc, MSWeatherEnums::TEMPERATURE ) ;
+  MSWeather::addColumnToDesc( weatherDesc, MSWeatherEnums::PRESSURE ) ;
+  MSWeather::addColumnToDesc( weatherDesc, MSWeatherEnums::REL_HUMIDITY ) ;
+  MSWeather::addColumnToDesc( weatherDesc, MSWeatherEnums::WIND_SPEED ) ;
+  MSWeather::addColumnToDesc( weatherDesc, MSWeatherEnums::WIND_DIRECTION ) ;
   SetupNewTable weatherTab( mstable_->weatherTableName(), weatherDesc, Table::New ) ;
   mstable_->rwKeywordSet().defineTable( MeasurementSet::keywordName( MeasurementSet::WEATHER ), Table( weatherTab ) ) ;
 
@@ -659,6 +807,218 @@ void MSWriter::fillSource()
   }
 }
 
+void MSWriter::fillWeather() 
+{
+  os_ << "set up WEATHER subtable" << LogIO::POST ;
+
+  // access to MS WEATHER subtable
+  MSWeather msw = mstable_->weather() ;
+
+  // access to WEATHER subtable
+  Table stw = table_->weather().table() ;
+  uInt nrow = stw.nrow() ;
+
+  if ( nrow == 0 ) 
+    return ;
+
+  msw.addRow( nrow, True ) ;
+  MSWeatherColumns mswCols( msw ) ;
+
+  // ANTENNA_ID is always 0
+  Vector<Int> antIdArr( nrow, 0 ) ;
+  mswCols.antennaId().putColumn( antIdArr ) ;
+
+  // fill weather status
+  ROScalarColumn<Float> sharedFloatCol( stw, "TEMPERATURE" ) ;
+  mswCols.temperature().putColumn( sharedFloatCol ) ;
+  sharedFloatCol.attach( stw, "PRESSURE" ) ;
+  mswCols.pressure().putColumn( sharedFloatCol ) ;
+  sharedFloatCol.attach( stw, "HUMIDITY" ) ;
+  mswCols.relHumidity().putColumn( sharedFloatCol ) ;
+  sharedFloatCol.attach( stw, "WINDSPEED" ) ;
+  mswCols.windSpeed().putColumn( sharedFloatCol ) ;
+  sharedFloatCol.attach( stw, "WINDAZ" ) ;
+  mswCols.windDirection().putColumn( sharedFloatCol ) ;
+
+  // fill TIME and INTERVAL
+  MEpoch me ;
+  Double interval ;
+  Vector<Double> intervalArr( nrow, 0.0 ) ;
+  TableIterator iter( table_->table(), "WEATHER_ID" ) ;
+  while( !iter.pastEnd() ) {
+    Table tab( iter.table() ) ;
+
+    ROScalarColumn<uInt> widCol( tab, "WEATHER_ID" ) ;
+    uInt wid = widCol( 0 ) ;
+
+    getValidTimeRange( me, interval, tab ) ;
+    mswCols.timeMeas().put( wid, me ) ;
+    intervalArr[wid] = interval ;
+
+    iter.next() ;
+  }
+  mswCols.interval().putColumn( intervalArr ) ;
+}
+
+void MSWriter::fillSysCal()
+{
+  os_ << "set up SYSCAL subtable" << LogIO::POST ;
+
+  tcalIdRec_.print( cout ) ;
+
+  // access to MS SYSCAL subtable
+  MSSysCal mssc = mstable_->sysCal() ;
+
+  // access to TCAL subtable
+  STTcal stt = table_->tcal() ;
+  uInt nrow = stt.table().nrow() ;
+
+  if ( nrow == 0 ) 
+    return ;
+
+  nrow = tcalIdRec_.nfields() ;
+
+  MEpoch me ;
+  Double interval ;
+  String timeStr ;
+  // 
+  // ITERATION: BEAMNO
+  //
+  Int added0 = 0 ;
+  Int current0 = mssc.nrow() ;
+  TableIterator iter0( table_->table(), "BEAMNO" ) ;
+  while( !iter0.pastEnd() ) {
+    Table t0( iter0.table() ) ;
+    ROScalarColumn<uInt> beamNoCol( t0, "BEAMNO" ) ;
+    uInt beamNo = beamNoCol( 0 ) ;
+    // 
+    // ITERATION: IFNO
+    //
+    Int added1 = 0 ;
+    Int current1 = mssc.nrow() ;
+    TableIterator iter1( t0, "IFNO" ) ;
+    while( !iter1.pastEnd() ) {
+      Table t1( iter1.table() ) ;
+      ROScalarColumn<uInt> ifNoCol( t1, "IFNO" ) ;
+      uInt ifNo = ifNoCol( 0 ) ;
+      uInt prevnr = mssc.nrow() ;
+
+      // 
+      // LOOP: TCAL_ID
+      //
+      Int added2 = 0 ;
+      Int current2 = mssc.nrow() ;
+      for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+        Vector<uInt> ids = tcalIdRec_.asArrayuInt( irow ) ;
+        uInt npol = ids.size() ;
+        Table tsel = t1( t1.col("TCAL_ID").in(ids) ) ;
+        os_ << "nrow = " << tsel.nrow() << "@TCAL_ID " << tcalIdRec_.asArrayuInt(irow) << " beamno " << beamNo << "ifno " << ifNo << LogIO::POST ;
+        if ( tsel.nrow() != 0 ) {
+          uInt idx = current2 + added2 ;
+
+          // TIME and INTERVAL
+          mssc.addRow( 1, True ) ;
+          getValidTimeRange( me, interval, t1 ) ;
+          os_ << "me = " << me.get("s").getValue() << " interval = " << interval << LogIO::POST ;
+          ScalarMeasColumn<MEpoch> timeMeasCol( mssc, "TIME" ) ;
+          timeMeasCol.put( idx, me ) ;
+          ScalarColumn<Double> intervalCol( mssc, "INTERVAL" ) ;
+          intervalCol.put( idx, interval ) ;
+
+          // TCAL and TSYS
+          Array<Float> tcal ;
+          Array<Float> tsys ;
+          Vector<Float> dummyC ;
+          stt.getEntry( timeStr, dummyC, ids[0] ) ;
+          os_ << "dummyC[0] = " << dummyC[0] << LogIO::POST ;
+          uInt nchanC = dummyC.size() ;
+          os_ << "nchanC = " << nchanC << LogIO::POST ;
+          tcal.resize( IPosition(2,npol,nchanC) ) ;
+          IPosition shapeC( 2, 1, nchanC ) ;
+          tcal( Slicer(Slice(0),Slice(0,nchanC,1)) ) = dummyC.reform( shapeC ) ;
+          Table tsel1 = tsel( tsel.col("TCAL_ID") == ids[0] ) ;
+          ROArrayColumn<Float> tsysCol( tsel1, "TSYS" ) ;
+          Vector<Float> dummyS = tsysCol( 0 ) ;
+          os_ << "dummyS[0] = " << dummyS[0] << LogIO::POST ;
+          uInt nchanS = dummyS.size() ;
+          os_ << "nchanS = " << nchanS << LogIO::POST ;
+          IPosition shapeS( 2, 1, nchanS ) ;
+          tsys.resize( IPosition(2,npol,nchanS) ) ;
+          tsys( Slicer(Slice(0),Slice(0,nchanS,1)) ) = dummyS.reform( shapeS ) ;
+          os_ << "tsys = " << tsys << LogIO::POST ;
+          for ( uInt iid = 1 ; iid < npol ; iid++ ) {
+            // get TCAL and TSYS
+            stt.getEntry( timeStr, dummyC, ids[iid] ) ;
+            tcal( Slicer(Slice(iid),Slice(0,nchanC,1)) ) = dummyC.reform( shapeC ) ;
+            tsel1 = tsel( tsel.col("TCAL_ID") == ids[iid] ) ;
+            tsysCol.attach( tsel1, "TSYS" ) ;
+            tsys( Slicer(Slice(iid),Slice(0,nchanS,1)) ) = tsysCol( 0 ).reform( shapeS ) ;
+          }
+          os_ << "tsys = " << tsys << LogIO::POST ;
+          ArrayColumn<Float> sharedFloatArrCol ;
+          if ( tcalSpec_ ) {
+            // put TCAL_SPECTRUM 
+            sharedFloatArrCol.attach( mssc, "TCAL_SPECTRUM" ) ;
+            sharedFloatArrCol.put( idx, tcal ) ; 
+            // set TCAL (mean of TCAL_SPECTRUM)
+            Vector<Float> tcalMean( npol ) ;
+            for ( uInt iid = 0 ; iid < npol ; iid++ ) {
+              tcalMean[iid] = mean( tcal(Slicer(Slice(iid),Slice(0,nchanC,1))) ) ;
+            }
+            tcal.assign( tcalMean.reform(IPosition(2,npol,1)) ) ;
+          }
+          os_ << "tcal = " << tcal << LogIO::POST ;
+          // put TCAL
+          sharedFloatArrCol.attach( mssc, "TCAL" ) ;
+          sharedFloatArrCol.put( idx, tcal ) ;
+          
+          if ( tsysSpec_ ) {
+            // put TSYS_SPECTRUM
+            sharedFloatArrCol.attach( mssc, "TSYS_SPECTRUM" ) ;
+            sharedFloatArrCol.put( idx, tsys ) ;
+            // set TSYS (mean of TSYS_SPECTRUM)
+            Vector<Float> tsysMean( npol ) ;
+            for ( uInt iid = 0 ; iid < npol ; iid++ ) {
+              tsysMean[iid] = mean( tsys(Slicer(Slice(iid),Slice(0,nchanS,1))) ) ;
+            }
+            tsys.assign( tsysMean.reform(IPosition(2,npol,1)) ) ;
+          }
+          os_ << "tsys = " << tsys << LogIO::POST ;
+          // put TSYS
+          sharedFloatArrCol.attach( mssc, "TSYS" ) ;
+          sharedFloatArrCol.put( idx, tsys ) ;
+
+          added2++ ;
+        }
+      }
+
+      // SPECTRAL_WINDOW_ID
+      RefRows rows2( current2, current2+added2-1 ) ;
+      ScalarColumn<Int> spwIdCol( mssc, "SPECTRAL_WINDOW_ID" ) ;
+      Vector<Int> ifNoArr( added2, ifNo ) ;
+      spwIdCol.putColumnCells( rows2, ifNoArr ) ;
+
+      added1 += added2 ;
+      iter1.next() ;
+    }
+    
+    // FEED_ID
+    RefRows rows1( current1, current1+added1-1 ) ;
+    Vector<Int> beamNoArr( added1, beamNo ) ;
+    ScalarColumn<Int> feedIdCol( mssc, "FEED_ID" ) ;
+    feedIdCol.putColumnCells( rows1, beamNoArr ) ;
+
+    added0 += added1 ;
+    iter0.next() ;
+  }
+
+  // ANTENNA_ID
+  Vector<Int> id( added0, 0 ) ;
+  ScalarColumn<Int> antennaIdCol( mssc, "ANTENNA_ID" ) ;
+  antennaIdCol.putColumn( id ) ;
+  
+}
+
 void MSWriter::addFeed( Int id ) 
 {
   os_ << "set up FEED subtable" << LogIO::POST ;
@@ -768,6 +1128,30 @@ void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Ve
   msFieldCols.sourceId().put( fid, srcId ) ;
 }
 
+void MSWriter::addPointing( String &name, MEpoch &me, Double &interval, Matrix<Double> &dir ) 
+{
+  os_ << "set up POINTING subtable" << LogIO::POST ;
+  
+  // access to POINTING subtable
+  MSPointing msp = mstable_->pointing() ;
+  uInt nrow = msp.nrow() ;
+
+  // add row
+  msp.addRow( 1, True ) ;
+
+  // fill row
+  MSPointingColumns mspCols( msp ) ;
+  mspCols.antennaId().put( nrow, 0 ) ;
+  mspCols.timeMeas().put( nrow, me ) ;
+  mspCols.interval().put( nrow, interval ) ;
+  mspCols.name().put( nrow, name ) ;
+  mspCols.numPoly().put( nrow, 1 ) ;
+  mspCols.timeOriginMeas().put( nrow, me ) ;
+  mspCols.direction().put( nrow, dir ) ;
+  mspCols.target().put( nrow, dir ) ;
+  mspCols.tracking().put( nrow, True ) ;
+}
+
 Int MSWriter::addPolarization( Vector<Int> polnos ) 
 {
   os_ << "set up POLARIZATION subtable" << LogIO::POST ;
@@ -828,7 +1212,7 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
 
 Int MSWriter::addDataDescription( Int polid, Int spwid ) 
 {
-  os_ << "set up SPECTRAL_WINDOW subtable" << LogIO::POST ;
+  os_ << "set up DATA_DESCRIPTION subtable" << LogIO::POST ;
 
   MSDataDescription msDataDesc = mstable_->dataDescription() ;
   uInt nrow = msDataDesc.nrow() ;
@@ -851,6 +1235,57 @@ Int MSWriter::addDataDescription( Int polid, Int spwid )
   }
 
   return ddid ;
+}
+
+Int MSWriter::addState( Int st, Int &subscan ) 
+{
+  os_ << "set up STATE subtable" << LogIO::POST ;
+
+  // access to STATE subtable
+  MSState msState = mstable_->state() ;
+  uInt nrow = msState.nrow() ;
+
+  String obsMode ;
+  Bool isSignal ;
+  queryType( st, obsMode, isSignal ) ;
+  os_ << "obsMode = " << obsMode << " isSignal = " << isSignal << LogIO::POST ;
+
+  MSState msStatSel = msState( msState.col("OBS_MODE")==obsMode 
+                               && msState.col("SIG")==isSignal 
+                               && msState.col("REF")!=isSignal 
+                               && msState.col("SUB_SCAN") == subscan ) ;
+  uInt nrowSel = msStatSel.nrow() ;
+
+  Int idx = -1 ;
+  if ( nrowSel == 0 ) {
+    msState.addRow( 1, True ) ;
+    ScalarColumn<String> obsModeCol( msState, "OBS_MODE" ) ;
+    obsModeCol.put( nrow, obsMode ) ;
+    ScalarColumn<Bool> sharedBCol( msState, "SIG" ) ;
+    sharedBCol.put( nrow, isSignal ) ;
+    sharedBCol.attach( msState, "REF" ) ;
+    sharedBCol.put( nrow, !isSignal ) ;
+    ScalarColumn<Int> subscanCol( msState, "SUB_SCAN" ) ;
+    subscanCol.put( nrow, subscan ) ;
+    idx = nrow ;
+  }
+  else {
+    ScalarColumn<String> obsModeCol( msState, "OBS_MODE" ) ;
+    ScalarColumn<Bool> sigCol( msState, "SIG" ) ;
+    ScalarColumn<Bool> refCol( msState, "REF" ) ;
+    ScalarColumn<Int> subscanCol( msState, "SUB_SCAN" ) ;
+    for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+      if ( obsModeCol(irow) == obsMode 
+           && sigCol(irow) == isSignal 
+           && refCol(irow) != isSignal
+           && subscanCol(irow) == subscan ) {
+        idx = irow ;
+        break ;
+      }
+    }
+  }
+  subscan++ ;
+  return idx ;
 }
 
 Vector<Int> MSWriter::toCorrType( Vector<Int> polnos ) 
@@ -959,4 +1394,125 @@ void MSWriter::getValidTimeRange( MEpoch &me, Double &interval, Table &tab )
   interval = Quantity( maxTime-minTime, tUnit ).getValue( "s" ) ;
 }
 
+void MSWriter::queryType( Int type, String &stype, Bool &b )
+{
+  switch ( type ) {
+  case SrcType::PSON:
+    stype = "POSITION_SWITCH.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::PSOFF:
+    stype = "POSITION_SWITCH.OBSERVE_TARGET.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::NOD:
+    stype = "NOD.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FSON:
+    stype = "FREQUENCY_SWITCH.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FSOFF:
+    stype = "FREQUENCY_SWITCH.OBSERVE_TARGET.ON_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::SKY:
+    stype = "UNSPECIFIED.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::HOT:
+    stype = "UNSPECIFIED.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::WARM:
+    stype = "UNSPECIFIED.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+   break ;
+  case SrcType::COLD:
+    stype = "UNSPECIFIED.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::PONCAL:
+    stype = "POSITION_SWITCH.CALIBRATE_TEMPERATURE.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::POFFCAL:
+    stype = "POSITION_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::NODCAL:
+    stype = "NOD.CALIBRATE_TEMPERATURE.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FONCAL:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FOFFCAL:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FSLO:
+    stype = "FREQUENCY_SWITCH.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FLOOFF:
+    stype = "FREQUENCY_SWITCH.OBSERVE_TARGET.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FLOSKY:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FLOHOT:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FLOWARM:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FLOCOLD:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FSHI:
+    stype = "FREQUENCY_SWITCH.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::FHIOFF:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FHISKY:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FHIHOT:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FHIWARM:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::FHICOLD:
+    stype = "FREQUENCY_SWITCH.CALIBRATE_TEMPERATURE.OFF_SOURCE" ;
+    b = False ;
+    break ;
+  case SrcType::SIG:
+    stype = "UNSPECIFIED.OBSERVE_TARGET.ON_SOURCE" ;
+    b = True ;
+    break ;
+  case SrcType::REF:
+    stype = "UNSPECIFIED.OBSERVE_TARGET.ON_SOURCE" ;
+    b = False ;
+    break ;
+  default:
+    stype = "UNSPECIFIED" ;
+    b = True ;
+    break ;
+  }
+}
 }
