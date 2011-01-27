@@ -173,7 +173,7 @@ class CustomToolbarCommon:
         self.plotter._plotter.release()
         self.plotter._plotter.tidy()
         self.plotter._plotter.show(hardrefresh=False)
-        pass
+
 
 #####################################
 ##    Backend dependent Classes    ##
@@ -201,9 +201,9 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
 
     def _add_custom_toolbar(self):
         Tk.Frame.__init__(self,master=self.figmgr.window)
-        self.bSpec=self._NewButton(master=self,
-                                   text='spec value',
-                                   command=self.spec_show)
+        #self.bSpec=self._NewButton(master=self,
+        #                           text='spec value',
+        #                           command=self.spec_show)
         self.bStat=self._NewButton(master=self,
                                    text='statistics',
                                    command=self.stat_cal)
@@ -241,20 +241,23 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         if not self.figmgr.toolbar.mode == '' or not self.button: return
         self.figmgr.toolbar.set_message('spec value: drag on a spec')
         if self.mode == 'spec': return
-        self.bStat.config(relief='raised')
-        self.bSpec.config(relief='sunken')
-        self.bNote.config(relief='raised')
+        #self.bStat.config(relief='raised')
+        #self.bSpec.config(relief='sunken')
+        #self.bNote.config(relief='raised')
         self.mode='spec'
         self.notewin.close_widgets()
         self.__disconnect_event()
-        #self.canvas.mpl_connect('button_press_event',self._select_spectrum)
         self._p.register('button_press',self._select_spectrum)
 
     def stat_cal(self):
         if not self.figmgr.toolbar.mode == '' or not self.button: return
         self.figmgr.toolbar.set_message('statistics: select a region')
-        if self.mode == 'stat': return
-        self.bSpec.config(relief='raised')
+        if self.mode == 'stat':
+            # go back to spec mode
+            self.bStat.config(relief='raised')
+            self.spec_show()
+            return
+        #self.bSpec.config(relief='raised')
         self.bStat.config(relief='sunken')
         self.bNote.config(relief='raised')
         self.mode='stat'
@@ -265,8 +268,12 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
     def modify_note(self):
         if not self.figmgr.toolbar.mode == '': return
         self.figmgr.toolbar.set_message('text: select a position/text')
-        if self.mode == 'note': return
-        self.bSpec.config(relief='raised')
+        if self.mode == 'note':
+            self.bNote.config(relief='raised')
+            self.mode='none'
+            self.spec_show()
+            return
+        #self.bSpec.config(relief='raised')
         self.bStat.config(relief='raised')
         self.bNote.config(relief='sunken')
         self.mode='note'
@@ -289,7 +296,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
 
     def enable_button(self):
         if self.button: return
-        self.bSpec.config(state=Tk.NORMAL)
+        #self.bSpec.config(state=Tk.NORMAL)
         self.bStat.config(state=Tk.NORMAL)
         self.button=True
         self.spec_show()
@@ -297,7 +304,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
     def disable_button(self):
         if not self.button: return
         self.bStat.config(relief='raised', state=Tk.DISABLED)
-        self.bSpec.config(relief='raised', state=Tk.DISABLED)
+        #self.bSpec.config(relief='raised', state=Tk.DISABLED)
         #self.bPrev.config(state=Tk.DISABLED)
         #self.bNext.config(state=Tk.DISABLED)
         self.button=False
