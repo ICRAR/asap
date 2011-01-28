@@ -51,8 +51,9 @@ class asapplotter:
         self._fp = FontProperties()
         self._panellayout = self.set_panellayout(refresh=False)
         self._offset = None
-        self._rowcount = 0
-        self._panelcnt = 0
+        self._startrow = 0
+        self._ipanel = -1
+        self._panelrows = []
 
     def _translate(self, instr):
         keys = "s b i p t r".split()
@@ -95,12 +96,16 @@ class asapplotter:
             NO checking is done that the abcissas of the scantable
             are consistent e.g. all 'channel' or all 'velocity' etc.
         """
-        self._rowcount = self._panelcnt = 0
+        self._startrow = 0
+        self._ipanel = -1
         if self._plotter.is_dead:
             if hasattr(self._plotter.figmgr,'casabar'):
                 del self._plotter.figmgr.casabar
             self._plotter = self._newplotter()
             self._plotter.figmgr.casabar=self._newcasabar()
+        if self._plotter.figmgr.casabar:
+            self._plotter.figmgr.casabar.set_pagenum(1)
+        self._panelrows = []
         self._plotter.hold()
         #self._plotter.clear()
         if not self._data and not scan:
@@ -360,6 +365,8 @@ class asapplotter:
             self._title = None
             if md == 'r':
                 self._stacking = '_r'
+            # you need to reset counters for multi page plotting
+            self._reset_counters()
             return True
         return False
 
@@ -395,8 +402,15 @@ class asapplotter:
             self._lmap = None
             if md == 'r':
                 self._panelling = '_r'
+            # you need to reset counters for multi page plotting
+            self._reset_counters()
             return True
         return False
+
+    def _reset_counters(self):
+        self._startrow = 0
+        self._ipanel = -1
+        self._panelrows = []
 
     def set_range(self,xstart=None,xend=None,ystart=None,yend=None,refresh=True, offset=None):
         """
@@ -852,7 +866,8 @@ class asapplotter:
             asaplog.push(msg)
             asaplog.post('WARN')
             nstack = min(nstack,maxstack)
-        n = min(n,maxpanel)
+        #n = min(n,maxpanel)
+        n = min(n-self._ipanel-1,maxpanel)
             
         if n > 1:
             ganged = rcParams['plotter.ganged']
@@ -870,13 +885,22 @@ class asapplotter:
 #            self._plotter.set_panels()
             self._plotter.set_panels(layout=self._panellayout)
         #r = 0
-        r = self._rowcount
+        r = self._startrow
         nr = scan.nrow()
         a0,b0 = -1,-1
         allxlim = []
         allylim = []
-        newpanel=True
+        #newpanel=True
+        newpanel=False
         panelcount,stackcount = 0,0
+        # If this is not the first page
+        if r > 0:
+            # panelling value of the prev page 
+            a0 = d[self._panelling](r-1)
+            # set the initial stackcount large not to plot
+            # the start row automatically
+            stackcount = nstack
+
         while r < nr:
             a = d[self._panelling](r)
             b = d[self._stacking](r)
@@ -905,6 +929,11 @@ class asapplotter:
                 newpanel = True
                 stackcount = 0
                 panelcount += 1
+                # save the start row to plot this panel for future revisit.
+                if self._panelling != 'r' and \
+                       len(self._panelrows) < self._ipanel+1+panelcount:
+                    self._panelrows += [r]
+                    
             #if (b > b0 or newpanel) and stackcount < nstack:
             if stackcount < nstack and (newpanel or (a == a0 and b > b0)):
                 y = []
@@ -953,6 +982,8 @@ class asapplotter:
                     ylim= self._minmaxy or []
                     allylim += ylim
                 stackcount += 1
+                a0=a
+                b0=b
                 # last in colour stack -> autoscale x
                 if stackcount == nstack and len(allxlim) > 0:
                     allxlim.sort()
@@ -961,29 +992,30 @@ class asapplotter:
                     allxlim =[]
 
             newpanel = False
-            a0=a
-            b0=b
+            #a0=a
+            #b0=b
             # ignore following rows
-            if (panelcount == n) and (stackcount == nstack):
+            if (panelcount == n and stackcount == nstack) or (r == nr-1):
                 # last panel -> autoscale y if ganged
                 if rcParams['plotter.ganged'] and len(allylim) > 0:
                     allylim.sort()
                     self._plotter.set_limits(ylim=[allylim[0],allylim[-1]])
                 break
             r+=1 # next row
-        ###-S
-        self._rowcount = r+1
-        self._panelcnt += panelcount
+
+        # save the current counter for multi-page plotting
+        self._startrow = r+1
+        self._ipanel += panelcount
         if self._plotter.figmgr.casabar:
-            if self._panelcnt >= nptot-1:
+            if self._ipanel >= nptot-1:
                 self._plotter.figmgr.casabar.disable_next()
             else:
                 self._plotter.figmgr.casabar.enable_next()
-            #if self._panelcnt - panelcount > 0:
-            #    self._plotter.figmgr.casabar.enable_prev()
-            #else:
-            #    self._plotter.figmgr.casabar.disable_prev()
-        ###-E
+            if self._ipanel + 1 - panelcount > 0:
+                self._plotter.figmgr.casabar.enable_prev()
+            else:
+                self._plotter.figmgr.casabar.disable_prev()
+
         #reset the selector to the scantable's original
         scan.set_selection(savesel)
 
