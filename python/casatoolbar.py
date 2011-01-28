@@ -179,8 +179,8 @@ class CustomToolbarCommon:
         if not next:
             self._set_prevpage_counter()
         #self.plotter._plotter.clear()
-        self.set_pagenum(self._get_pagenum())
         self.plotter._plot(self.plotter._data)
+        self.set_pagenum(self._get_pagenum())
         self.plotter._plotter.release()
         self.plotter._plotter.tidy()
         self.plotter._plotter.show(hardrefresh=False)
@@ -213,12 +213,13 @@ class CustomToolbarCommon:
 
     def _get_pagenum(self):
         maxpanel = 16
-        nextp = self.plotter._ipanel+1
+        # get the ID of last panel in the current page
+        idlastpanel = self.plotter._ipanel
         if self.plotter._rows and self.plotter._cols:
             ppp = self.plotter._rows*self.plotter._cols
         else:
             ppp = maxpanel
-        return int(nextp/ppp)+1
+        return int(idlastpanel/ppp)+1
 
 #####################################
 ##    Backend dependent Classes    ##
