@@ -104,7 +104,7 @@ class asapplotter:
             self._plotter = self._newplotter()
             self._plotter.figmgr.casabar=self._newcasabar()
         if self._plotter.figmgr.casabar:
-            self._plotter.figmgr.casabar.set_pagenum(1)
+            self._plotter.figmgr.casabar.set_pagecounter(1)
         self._panelrows = []
         self._plotter.hold()
         #self._plotter.clear()
