@@ -2680,8 +2680,9 @@ class scantable(Scantable):
         return lbl
 
     def _check_ifs(self):
-        nchans = [self.nchan(i) for i in range(self.nif(-1))]
-        nchans = filter(lambda t: t > 0, nchans)
+        #nchans = [self.nchan(i) for i in range(self.nif(-1))]
+        #nchans = filter(lambda t: t > 0, nchans)
+        nchans = [self.nchan(i) for i in self.getifnos()]
         return (sum(nchans)/len(nchans) == nchans[0])
 
     @asaplog_post_dec
