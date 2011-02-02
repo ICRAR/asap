@@ -66,6 +66,7 @@ class SrcType {
               FHICOLD  = 39,
               SIG      = 90,
               REF      = 91,
+              CAL      = 92,
               NOTYPE   = 99 } ;
 } ; 
 
