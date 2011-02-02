@@ -357,8 +357,10 @@ bool MSWriter::write(const string& filename, const Record& rec)
         }
         
         // SCAN_NUMBER
+        // MS: 1-based
+        // Scantable: 0-based
         RefRows rows3( current3, current3+added3-1 ) ;
-        Vector<Int> scanNum( added3, scanNo ) ;
+        Vector<Int> scanNum( added3, scanNo+1 ) ;
         ScalarColumn<Int> scanNumCol( *mstable_, "SCAN_NUMBER" ) ;
         scanNumCol.putColumnCells( rows3, scanNum ) ;
         

@@ -1266,6 +1266,12 @@ String Scantable::getAntennaName() const
 {
   String out;
   table_.keywordSet().get("AntennaName", out);
+  String::size_type pos1 = out.find("@") ;
+  String::size_type pos2 = out.find("//") ;
+  if ( pos2 != String::npos ) 
+    out = out.substr(pos2+2,pos1) ;
+  else if ( pos1 != String::npos )
+    out = out.substr(0,pos1) ;
   return out;
 }
 
