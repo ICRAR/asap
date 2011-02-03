@@ -64,7 +64,8 @@ private:
   void fillFocus() ;
   //void fillHistory() ;
   //void fillFit() ;
-  void fillTcal( boost::object_pool<casa::ROTableColumn> *pool ) ;
+  void fillTcal( boost::object_pool<casa::ROTableColumn> *poolr,
+                 boost::object_pool<casa::TableColumn> *poolw ) ;
 
   // get SRCTYPE from STATE_ID
   casa::Int getSrcType( casa::Int stateId, boost::object_pool<casa::ROTableColumn> *pool ) ;
