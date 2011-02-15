@@ -95,6 +95,9 @@ private:
 
   // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
   casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &srate, casa::String &ref, casa::MSPointing &tab, casa::Double t ) ;
+
+  // create key for TCAL table
+  casa::String keyTcal( casa::Int feedid, casa::Int spwid, casa::String stime ) ; 
   
   casa::CountedPtr<Scantable> table_ ;
   casa::MeasurementSet mstable_ ;
