@@ -3,21 +3,6 @@
 ###
 
 
-# install directory
-# set casaroot
-# the regular expression means '../'
-#  [^ ] Matches any character(s) not inside the brackets
-#  +    Matches preceding pattern one or more times
-#  ?    Matches preceding pattern zero or once only
-#  $    Mathces at end of a line
-string( REGEX REPLACE /[^/]+/?$ "" casaroot ${CMAKE_SOURCE_DIR} )
-message( STATUS "casaroot = " ${casaroot} )
-
-# modules
-set( CMAKE_MODULE_PATH ${casaroot}/code/install )
-include( config )
-include( CASA )
-
 # environment dependent settings
 if( APPLE )
    if( NOT arch )
@@ -56,9 +41,36 @@ elseif( CMAKE_SYSTEM_NAME STREQUAL Linux )
 endif()
 message( STATUS "arch = " ${arch} )
 
-# set root directory for installation
-set( CMAKE_INSTALL_PREFIX ${casaroot}/${arch} )
+# install directory
+#
+# The layout of the source+install directory trees
+# is rather hard-coded in much source code. However,
+# with care CASA can be built and installed elsewhere...
+#
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # the regular expression means '../'
+    #  [^ ] Matches any character(s) not inside the brackets
+    #  +    Matches preceding pattern one or more times
+    #  ?    Matches preceding pattern zero or once only
+    #  $    Mathces at end of a line
+    string( REGEX REPLACE /[^/]+/?$ "" casaroot ${CMAKE_SOURCE_DIR} )
+    set( CMAKE_INSTALL_PREFIX ${casaroot}/${arch} )
+ELSE()
+    set( casaroot ${CMAKE_INSTALL_PREFIX}/.. )
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
+message( STATUS "casaroot = " ${casaroot} )
+
+# modules
+IF ( EXISTS ${casaroot}/code/install )
+    set( CMAKE_MODULE_PATH ${casaroot}/code/install )
+ELSE()
+    set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../code/install )
+ENDIF()
+
+
+include( config )
+include( CASA )
 
 #
 # casacore
