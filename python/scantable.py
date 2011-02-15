@@ -481,12 +481,13 @@ class scantable(Scantable):
             workscan = self
         # Select a row
         sel=selector()
-        sel.set_scans([workscan.getscan(row)])
-        sel.set_cycles([workscan.getcycle(row)])
-        sel.set_beams([workscan.getbeam(row)])
-        sel.set_ifs([workscan.getif(row)])
-        sel.set_polarisations([workscan.getpol(row)])
-        sel.set_name(workscan._getsourcename(row))
+        sel.set_rows([row])
+        #sel.set_scans([workscan.getscan(row)])
+        #sel.set_cycles([workscan.getcycle(row)])
+        #sel.set_beams([workscan.getbeam(row)])
+        #sel.set_ifs([workscan.getif(row)])
+        #sel.set_polarisations([workscan.getpol(row)])
+        #sel.set_name(workscan._getsourcename(row))
         workscan.set_selection(sel)
         if not workscan.nrow() == 1:
             msg = "Cloud not identify single row. %d rows selected."%(workscan.nrow())
@@ -2608,11 +2609,12 @@ class scantable(Scantable):
         self.set_selection(basesel)
 
     def get_row_selector(self, rowno):
-        return selector(beams=self.getbeam(rowno),
-                        ifs=self.getif(rowno),
-                        pols=self.getpol(rowno),
-                        scans=self.getscan(rowno),
-                        cycles=self.getcycle(rowno))
+        #return selector(beams=self.getbeam(rowno),
+        #                ifs=self.getif(rowno),
+        #                pols=self.getpol(rowno),
+        #                scans=self.getscan(rowno),
+        #                cycles=self.getcycle(rowno))
+        return selector(rows=[rowno])
 
     def _add_history(self, funcname, parameters):
         if not rcParams['scantable.history']:
