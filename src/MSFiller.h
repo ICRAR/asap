@@ -24,6 +24,7 @@
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/Cube.h>
 #include <casa/Logging/LogIO.h>
 
 #include <casa/Containers/Record.h>
@@ -83,7 +84,8 @@ private:
   // get time stamp in SYSCAL table
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
   // and sorted by TIME
-  casa::Vector<casa::Double> getSysCalTime( casa::MSSysCal &tab, casa::MEpoch::ROScalarColumn &tcol ) ;
+  //casa::Vector<casa::Double> getSysCalTime( casa::MSSysCal &tab, casa::MEpoch::ROScalarColumn &tcol ) ;
+  void getSysCalTime( casa::MSSysCal &tab, casa::MEpoch::ROScalarColumn &tcal, casa::Vector<casa::Double> &scTime ) ;
 
   // get tsys by time stamp
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
@@ -115,6 +117,9 @@ private:
   casa::Bool isProcessor_ ;
   casa::Bool isSysCal_ ;
   casa::Bool isWeather_ ;
+
+  casa::String colTsys_ ;
+  casa::String colTcal_ ;
 
   casa::LogIO os_ ;
   

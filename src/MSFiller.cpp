@@ -76,7 +76,9 @@ MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
     isHistory_( False ),
     isProcessor_( False ),
     isSysCal_( False ),
-    isWeather_( False )
+    isWeather_( False ),
+    colTsys_( "TSYS_SPECTRUM" ),
+    colTcal_( "TCAL_SPECTRUM" )
 {
   os_ = LogIO() ;
   os_.origin( LogOrigin( "MSFiller", "MSFiller()", WHERE ) ) ;
@@ -188,6 +190,12 @@ void MSFiller::fill()
   MSSysCal caltab = mstable_.sysCal() ; 
   if ( caltab.nrow() == 0 ) 
     isSysCal_ = False ;
+  else {
+    if ( !caltab.tableDesc().isColumn( colTcal_ ) ) 
+      colTcal_ = "TCAL" ;
+    if ( !caltab.tableDesc().isColumn( colTsys_ ) ) 
+      colTsys_ = "TSYS" ;
+  }
   MSPointing pointtab = mstable_.pointing() ;
   if ( mstable_.weather().nrow() == 0 ) 
     isWeather_ = False ;
@@ -383,7 +391,7 @@ void MSFiller::fill()
           delete roArrICol ;
           //os_ << "npol = " << npol << LogIO::POST ;
           //os_ << "corrtype = " << corrtype << LogIO::POST ;
-          if ( sdh.npol < npol ) sdh.npol = npol ;
+          sdh.npol = max( sdh.npol, npol ) ;
           if ( sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
           // source information
           MSSource srctabSel( srctab( srctab.col("SOURCE_ID") == srcId && srctab.col("SPECTRAL_WINDOW_ID") == spwId ) ) ;
@@ -452,11 +460,11 @@ void MSFiller::fill()
           tpoolr->destroy( tcolr ) ;
           Bool even = False ;
           if ( (nchan/2)*2 == nchan ) even = True ;
-          if ( sdh.nchan < nchan ) sdh.nchan = nchan ;
+          sdh.nchan = max( sdh.nchan, nchan ) ;
           ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
           Double totbw = (*tmpQuantCol)( spwId ).getValue( "Hz" ) ;
           delete tmpQuantCol ;
-          if ( sdh.bandwidth < totbw ) sdh.bandwidth = totbw ;
+          sdh.bandwidth = max( sdh.bandwidth, totbw ) ;
           if ( sdh.freqref == "" ) 
             //sdh.freqref = MFrequency::showType( freqRef ) ;
             sdh.freqref = "LSRK" ;
@@ -561,21 +569,25 @@ void MSFiller::fill()
               time0 = gettimeofday_sec() ;
               os_ << "start fill SPECTRA and FLAG: " << time0 << LogIO::POST ;
               ROArrayColumn<Bool> mFlagCol( t5, "FLAG" ) ;
+              //Cube<Bool> mFlagArr = mFlagCol.getColumn() ;
               if ( isFloatData_ ) {
                 //os_ << "FLOAT_DATA exists" << LogIO::POST ;
                 ROArrayColumn<Float> mFloatDataCol( t5, "FLOAT_DATA" ) ;
+                //Cube<Float> mFloatDataArr = mFloatDataCol.getColumn() ;
                 addednr = nrow*npol ;
                 oldnr += addednr ;
                 stab.addRow( addednr ) ;
                 nloop = npol ;
                 for ( Int irow = 0 ; irow < nrow ; irow++ ) {
                   Matrix<Float> sp = mFloatDataCol( irow ) ;
+                  //Matrix<Float> sp = mFloatDataArr.xyPlane( irow ) ;
                   for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
                     spCol->put( prevnr+ipol*nrow+irow, sp.row(ipol) ) ;
                   }
                 }
                 for ( Int irow = 0 ; irow < nrow ; irow++ ) {
                   Matrix<Bool> flb = mFlagCol( irow ) ;
+                  //Matrix<Bool> flb = mFlagArr.xyPlane( irow ) ;
                   Matrix<uChar> fl( flb.shape() ) ;
                   convertArray( fl, flb ) ;
                   for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
@@ -591,6 +603,7 @@ void MSFiller::fill()
               else if ( isData_ ) {
                 //os_ << "DATA exists" << LogIO::POST ;
                 ROArrayColumn<Complex> mDataCol( t5, "DATA" ) ;
+                //Cube<Complex> mDataArr = mDataCol.getColumn() ;
                 addednr = nrow*npol ;
                 oldnr += addednr ;
                 stab.addRow( addednr ) ;
@@ -598,6 +611,7 @@ void MSFiller::fill()
                 for ( Int irow = 0 ; irow < nrow ; irow++ ) {
                   Bool crossOK = False ;
                   Matrix<Complex> sp = mDataCol( irow ) ;
+                  //Matrix<Complex> sp = mDataArr.xyPlane( irow ) ;
                   for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
                     if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::YX 
                          || corrtype[ipol] == Stokes::RL || corrtype[ipol] == Stokes::LR ) {
@@ -619,6 +633,7 @@ void MSFiller::fill()
                 for ( Int irow = 0 ; irow < nrow ; irow++ ) {
                   Bool crossOK = False ;
                   Matrix<Bool> flb = mFlagCol( irow ) ;
+                  //Matrix<Bool> flb = mFlagArr.xyPlane( irow ) ;
                   Matrix<uChar> fl( flb.shape() ) ;
                   convertArray( fl, flb ) ;
                   for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
@@ -666,9 +681,11 @@ void MSFiller::fill()
               // TSYS
               time0 = gettimeofday_sec() ;
               os_ << "start fill TSYS: " << time0 << LogIO::POST ;
-              Vector<Double> sysCalTime ;
+              Vector<Double> sysCalTime( nrow, -1.0 ) ;
+              //Vector<Double> sysCalTime ;
               if ( isSysCal_ ) {
-                sysCalTime = getSysCalTime( caltabsel, *mTimeCol ) ;
+                //sysCalTime = getSysCalTime( caltabsel, *mTimeCol ) ;
+                getSysCalTime( caltabsel, *mTimeCol, sysCalTime ) ;
                 tidx = prevnr ;
                 uInt calidx = 0 ;
                 for ( Int i = 0 ; i < nrow ; i++ ) {
@@ -1454,8 +1471,6 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr,
     os_ << "No SysCal rows" << LogIO::POST ;
     return ;
   } 
-  Bool isSp = sctab.tableDesc().isColumn( "TCAL_SPECTRUM" ) ;
-  //Table sctabsel =  sctab( sctab.col("ANTENNA_ID") == antenna_ ) ;
   Table sctabsel( sctab( sctab.col("ANTENNA_ID") == antenna_ ) ) ;
   if ( sctabsel.nrow() == 0 ) {
     os_ << "No SysCal rows" << LogIO::POST ;
@@ -1495,14 +1510,7 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr,
         uInt nrow = t2.nrow() ; // must be 1
         //os_ << "fillTcal::t2.nrow = " << nrow << LogIO::POST ;
         ROScalarQuantColumn<Double> scTimeCol( t2, "TIME" ) ;
-        IPosition newShape( 2, 1, nrow ) ;
-        if ( isSp ) {
-          scTcalCol.attach( t2, "TCAL_SPECTRUM" ) ;
-          newShape[0] = scTcalCol.shape(0)(1) ;
-        }
-        else {
-          scTcalCol.attach( t1, "TCAL" ) ;
-        }
+        scTcalCol.attach( t2, colTcal_ ) ;
         tab.addRow( nrow*npol ) ;
         newnr += nrow*npol ;
         String sTime = MVTime( scTimeCol(0) ).string( MVTime::YMD ) ;
@@ -1579,14 +1587,17 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
   return wid ;
 }
 
-Vector<Double> MSFiller::getSysCalTime( MSSysCal &tab, MEpoch::ROScalarColumn &tcol )
+//Vector<Double> MSFiller::getSysCalTime( MSSysCal &tab, MEpoch::ROScalarColumn &tcol )
+void MSFiller::getSysCalTime( MSSysCal &tab, MEpoch::ROScalarColumn &tcol, Vector<Double> &tstr )
 {
   double startSec = gettimeofday_sec() ;
   os_ << "start MSFiller::getSysCalTime() startSec=" << startSec << LogIO::POST ;
-  uInt nrow = tcol.table().nrow() ;
-  Vector<Double> tstr( nrow, -1.0 ) ;
+  //uInt nrow = tcol.table().nrow() ;
+  uInt nrow = tstr.nelements() ;
+  //Vector<Double> tstr( nrow, -1.0 ) ;
   if ( tab.nrow() == 0 ) 
-    return tstr ;
+    //return tstr ;
+    return ;
   uInt scnrow = tab.nrow() ;
   ROScalarMeasColumn<MEpoch> scTimeCol( tab, "TIME" ) ;
   ROScalarQuantColumn<Double> scIntervalCol( tab, "INTERVAL" ) ;
@@ -1614,7 +1625,8 @@ Vector<Double> MSFiller::getSysCalTime( MSSysCal &tab, MEpoch::ROScalarColumn &t
   }
   double endSec = gettimeofday_sec() ;
   os_ << "end MSFiller::getSysCalTime() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return tstr ;
+  //return tstr ;
+  return ;
 }
 
 uInt MSFiller::getTsys( uInt idx, Matrix<Float> &tsys, MSSysCal &tab, Double t )
@@ -1627,15 +1639,9 @@ uInt MSFiller::getTsys( uInt idx, Matrix<Float> &tsys, MSSysCal &tab, Double t )
     tsys.resize( IPosition(0) ) ;
     return 0 ;
   }
-  Bool isSp = tab.tableDesc().isColumn( "TSYS_SPECTRUM" ) ;
   ROScalarMeasColumn<MEpoch> scTimeCol( tab, "TIME" ) ;
   ROArrayColumn<Float> mTsysCol ;
-  if ( isSp ) {
-    mTsysCol.attach( tab, "TSYS_SPECTRUM" ) ;
-  }
-  else {
-    mTsysCol.attach( tab, "TSYS" ) ;
-  }
+  mTsysCol.attach( tab, colTsys_ ) ;
   for ( uInt i = idx ; i < nrow ; i++ ) {
     Double tref = scTimeCol( i ).get( "s" ).getValue() ;
     if ( t == tref ) {
