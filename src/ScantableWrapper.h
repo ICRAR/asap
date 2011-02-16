@@ -108,8 +108,12 @@ public:
   void flag(const std::vector<bool>& msk=std::vector<bool>())
     { table_->flag(msk); }
   **/
+  /**
   void flag(const std::vector<bool>& msk=std::vector<bool>(), bool unflag=false)
     { table_->flag(msk, unflag); }
+  **/
+  void flag(int whichrow=-1, const std::vector<bool>& msk=std::vector<bool>(), bool unflag=false)
+    { table_->flag(whichrow, msk, unflag); }
 
   void flagRow(const std::vector<casa::uInt>& rows=std::vector<casa::uInt>(), bool unflag=false)
     { table_->flagRow(rows, unflag); }

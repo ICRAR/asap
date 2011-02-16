@@ -229,7 +229,9 @@ public:
    * to be flagged
    */
   //void flag( const std::vector<bool>& msk = std::vector<bool>());
-  void flag( const std::vector<bool>& msk = std::vector<bool>(), bool unflag=false);
+  //void flag( const std::vector<bool>& msk = std::vector<bool>(), bool unflag=false);
+
+  void flag( int whichrow = -1, const std::vector<bool>& msk = std::vector<bool>(), bool unflag=false);
 
   /**
    * Flag the data in a row-based manner. (CAS-1433 Wataru Kawasaki)
@@ -606,8 +608,11 @@ private:
 						      const casa::Array<T2>&);
 
   void doPolyBaseline(const std::vector<bool>& mask, int order, int rowno, Fitter& fitter);
-};
 
+  void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
+
+
+};
 
 } // namespace
 

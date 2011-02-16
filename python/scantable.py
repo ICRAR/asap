@@ -1013,12 +1013,15 @@ class scantable(Scantable):
         return abc, lbl
 
     @asaplog_post_dec
-    def flag(self, mask=None, unflag=False):
+    def flag(self, row=-1, mask=None, unflag=False):
         """\
         Flag the selected data using an optional channel mask.
 
         Parameters:
 
+            row:    an optional row number in the scantable.
+                      Default -1 flags all rows
+                      
             mask:   an optional channel mask, created with create_mask. Default
                     (no mask) is all channels.
 
@@ -1027,7 +1030,7 @@ class scantable(Scantable):
         """
         varlist = vars()
         mask = mask or []
-        self._flag(mask, unflag)
+        self._flag(row, mask, unflag)
         self._add_history("flag", varlist)
 
     @asaplog_post_dec

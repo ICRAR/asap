@@ -777,52 +777,61 @@ void Scantable::srchChannelsToClip(uInt whichrow, const Float uthres, const Floa
     }
 }
 
-void Scantable::flag(const std::vector<bool>& msk, bool unflag)
-{
+
+void Scantable::flag( int whichrow, const std::vector<bool>& msk, bool unflag ) {
   std::vector<bool>::const_iterator it;
   uInt ntrue = 0;
+  if (whichrow >= int(table_.nrow()) ) {
+    throw(AipsError("Invalid row number"));
+  }
   for (it = msk.begin(); it != msk.end(); ++it) {
     if ( *it ) {
       ntrue++;
     }
   }
-  if ( selector_.empty()  && (msk.size() == 0 || msk.size() == ntrue) )
+  //if ( selector_.empty()  && (msk.size() == 0 || msk.size() == ntrue) )
+  if ( whichrow == -1 && !unflag && selector_.empty() && (msk.size() == 0 || msk.size() == ntrue) )
     throw(AipsError("Trying to flag whole scantable."));
-  if ( msk.size() == 0 ) {
-    uChar userflag = 1 << 7;
-    if ( unflag ) {
-      userflag = 0 << 7;
-    }
+  uChar userflag = 1 << 7;
+  if ( unflag ) {
+    userflag = 0 << 7;
+  }
+  if (whichrow > -1 ) {
+    applyChanFlag(uInt(whichrow), msk, userflag);
+  } else {
     for ( uInt i=0; i<table_.nrow(); ++i) {
-      Vector<uChar> flgs = flagsCol_(i);
-      flgs = userflag;
-      flagsCol_.put(i, flgs);
+      applyChanFlag(i, msk, userflag);
     }
+  }
+}
+
+void Scantable::applyChanFlag( uInt whichrow, const std::vector<bool>& msk, uChar flagval )
+{
+  if (whichrow >= table_.nrow() ) {
+    throw( casa::indexError<int>( whichrow, "asap::Scantable::applyChanFlag: Invalid row number" ) );
+  }
+  Vector<uChar> flgs = flagsCol_(whichrow);
+  if ( msk.size() == 0 ) {
+    flgs = flagval;
+    flagsCol_.put(whichrow, flgs);
     return;
   }
   if ( int(msk.size()) != nchan() ) {
     throw(AipsError("Mask has incorrect number of channels."));
   }
-  for ( uInt i=0; i<table_.nrow(); ++i) {
-    Vector<uChar> flgs = flagsCol_(i);
-    if ( flgs.nelements() != msk.size() ) {
-      throw(AipsError("Mask has incorrect number of channels."
-                      " Probably varying with IF. Please flag per IF"));
-    }
-    std::vector<bool>::const_iterator it;
-    uInt j = 0;
-    uChar userflag = 1 << 7;
-    if ( unflag ) {
-      userflag = 0 << 7;
-    }
-    for (it = msk.begin(); it != msk.end(); ++it) {
-      if ( *it ) {
-        flgs(j) = userflag;
-      }
-      ++j;
-    }
-    flagsCol_.put(i, flgs);
+  if ( flgs.nelements() != msk.size() ) {
+    throw(AipsError("Mask has incorrect number of channels."
+		    " Probably varying with IF. Please flag per IF"));
   }
+  std::vector<bool>::const_iterator it;
+  uInt j = 0;
+  for (it = msk.begin(); it != msk.end(); ++it) {
+    if ( *it ) {
+      flgs(j) = flagval;
+    }
+    ++j;
+  }
+  flagsCol_.put(whichrow, flgs);
 }
 
 void Scantable::flagRow(const std::vector<uInt>& rows, bool unflag)
