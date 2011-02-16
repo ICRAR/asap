@@ -84,7 +84,7 @@ class asapplotter:
             return CustomToolbarTkAgg(self)
             #from asap.casatoolbar import CustomFlagToolbarTkAgg
             #return CustomFlagToolbarTkAgg(self)
-        else: return None
+        return None
 
     @asaplog_post_dec
     def plot(self, scan=None):
@@ -948,16 +948,22 @@ class asapplotter:
                     y = scan._getspectrum(r, polmodes[scan.getpol(r)])
                 else:
                     y = scan._getspectrum(r)
-                m = scan._getmask(r)
-                from numpy import logical_not, logical_and
-                if self._maskselection and len(self._usermask) == len(m):
-                    if d[self._stacking](r) in self._maskselection[self._stacking]:
-                        m = logical_and(m, self._usermask)
+                # flag application
+                mr = scan._getflagrow(r)
                 from numpy import ma, array
+                if mr:
+                    y = ma.masked_array(y,mask=mr)
+                else:
+                    m = scan._getmask(r)
+                    from numpy import logical_not, logical_and
+                    if self._maskselection and len(self._usermask) == len(m):
+                        if d[self._stacking](r) in self._maskselection[self._stacking]:
+                            m = logical_and(m, self._usermask)
+                    y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
+
                 x = array(scan._getabcissa(r))
                 if self._offset:
                     x += self._offset
-                y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
                 if self._minmaxx is not None:
                     s,e = self._slice_indeces(x)
                     x = x[s:e]
@@ -977,7 +983,7 @@ class asapplotter:
                 self._plotter.set_line(label=llbl)
                 plotit = self._plotter.plot
                 if self._hist: plotit = self._plotter.hist
-                if len(x) > 0:
+                if len(x) > 0 and not mr:
                     plotit(x,y)
                     xlim= self._minmaxx or [min(x),max(x)]
                     allxlim += xlim
