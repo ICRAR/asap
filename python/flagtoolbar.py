@@ -374,12 +374,10 @@ class CustomFlagToolbarCommon:
 
     def _clear_selection_plot(self):
         ### clear up polygons which mark selected spectra and regions ###
-        if len(self._polygons) > 1:
-            self.plotter._plotter.hold()
+        if len(self._polygons) > 0:
             for shadow in self._polygons:
                 shadow.remove()
-            self.plotter._plotter.release()
-            self.plotter._plotter.show()
+            self.plotter._plotter.canvas.draw()
         self._polygons = []
 
     def _clearup_selections(self):
