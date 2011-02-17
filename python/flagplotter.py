@@ -26,6 +26,7 @@ class flagplotter(asapplotter):
     def __init__(self, visible=None, **kwargs):
         self._scan=None
         asapplotter.__init__(self,visible=visible, **kwargs)
+        self._plotter.window.title('Flag Plotter')
         self._panelling = 'r'
         self._stacking = 's'
 
