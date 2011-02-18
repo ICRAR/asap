@@ -258,7 +258,8 @@ class CustomFlagToolbarCommon:
         else: self.lastspan.remove()
 
         self.lastspan = self._thisregion['axes'].axvspan(self._thisregion['xs'],xnow,facecolor='0.7')
-        self.plotter._plotter.show(False)
+        #self.plotter._plotter.show(False)
+        self.plotter._plotter.canvas.draw()
         del xnow
 
     def _xspan_end(self,event):
@@ -281,7 +282,8 @@ class CustomFlagToolbarCommon:
         lregion = self._thisregion['worldx']
         pregion = self._thisregion['axes'].axvspan(lregion[0],lregion[1],
                                                    facecolor='0.7')
-        self.plotter._plotter.show(False)
+        #self.plotter._plotter.show(False)
+        self.plotter._plotter.canvas.draw()
         self._polygons.append(pregion)
         srow = self._getrownum(self._thisregion['axes'])
         irow = int(srow)
@@ -316,7 +318,8 @@ class CustomFlagToolbarCommon:
             self._selpanels.append(irow)
         shadow = Rectangle((0,0),1,1,facecolor='0.7',transform=selax.transAxes,visible=True)
         self._polygons.append(selax.add_patch(shadow))
-        self.plotter._plotter.show(False)
+        #self.plotter._plotter.show(False)
+        self.plotter._plotter.canvas.draw()
         print "row", irow, "added to the panel selections"
         print "selected rows =",self._selpanels
         ## check for region selection of the spectra and overwrite it.
@@ -369,7 +372,8 @@ class CustomFlagToolbarCommon:
                                    transform=ax.transAxes,visible=True)
                 self._polygons.append(ax.add_patch(shadow))
                 del ax,shadow
-        self.plotter._plotter.show(False)
+        #self.plotter._plotter.show(False)
+        self.plotter._plotter.canvas.draw()
         del regions,panels,strow,enrow
 
     def _clear_selection_plot(self):
