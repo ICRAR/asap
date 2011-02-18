@@ -14,11 +14,11 @@ class flagplotter(asapplotter):
     Only row based panneling is allowed.
 
     Example:
-       scan = asap.scantable(filename='your_filename',average=False)
+       scan = asa p.scantable(filename='your_filename',average=False)
        guiflagger = asap.flagplotter(visible=True)
        guiflagger.plot(scan)
        ### flag/Unflag data graphically.
-       scan.save(name='flagged_file.asap',format='ASAP')
+       guiflagger.save_data(name='flagged_file.asap',format='ASAP')
     
     NOTICE: 
        The flagged data is not saved until you explicitly run scantable.save
@@ -28,7 +28,7 @@ class flagplotter(asapplotter):
         asapplotter.__init__(self,visible=visible, **kwargs)
         self._plotter.window.title('Flag Plotter')
         self._panelling = 'r'
-        self._stacking = 's'
+        self.set_stacking('scan')
 
     def _newcasabar(self):
         backend=matplotlib.get_backend()
@@ -39,24 +39,57 @@ class flagplotter(asapplotter):
             return CustomFlagToolbarTkAgg(self)
         return None
 
-    def set_mode(self, stacking=None, panelling=None, refresh=True):
-        """ This function is not available for the class flagplotter """
-        self._invalid_func(name='set_mode')
-
-    def set_panelling(self, what=None):
-        """ This function is not available for the class flagplotter """
-        self._invalid_func(name='set_panelling')
-
-    def set_stacking(self, what=None):
-        """ This function is not available for the class flagplotter """
-        self._invalid_func(name='set_stacking')
-
     @asaplog_post_dec
     def _invalid_func(self, name):
         msg = "Invalid function 'flagplotter."+name+"'"
+        #raise AttributeError(msg)
         asaplog.push(msg)
         asaplog.post('ERROR')
 
+    def set_panelling(self,which='r'):
+        """ This function is not available for the class flagplotter """
+        if which.lower().startswith('r'):
+            return
+        msg = "Pannel setting is fixed to row mode in 'flagplotter'"
+        asaplog.push(msg)
+        asaplog.post('ERROR')
+        self._panelling = 'r'
+
+    def plotazel(self,*args,**kwargs):
+        """ This function is not available for the class flagplotter """
+        self._invalid_func(name='plotazel')
+    
+    def plotpointing(self,*args,**kwargs):
+        """ This function is not available for the class flagplotter """
+        self._invalid_func(name='plotpointing')
+        
+    def plottp(self,*args,**kwargs):
+        """ This function is not available for the class flagplotter """
+        self._invalid_func(name='plottp')
+
     def save_data(self, name=None, format=None, overwrite=False):
+        """
+        Store the plotted scantable on disk.
+        This function simply redirects call to scantable.save()
+        
+        Parameters:
+    
+            name:        the name of the outputfile. For format "ASCII"
+                         this is the root file name (data in 'name'.txt
+                         and header in 'name'_header.txt)
+    
+            format:      an optional file format. Default is ASAP.
+                         Allowed are:
+                            * 'ASAP' (save as ASAP [aips++] Table),
+                            * 'SDFITS' (save as SDFITS file)
+                            * 'ASCII' (saves as ascii text file)
+                            * 'MS2' (saves as an casacore MeasurementSet V2)
+                            * 'FITS' (save as image FITS - not readable by class)
+                            * 'CLASS' (save as FITS readable by CLASS)
+    
+            overwrite:   If the file should be overwritten if it exists.
+                         The default False is to return with warning
+                         without writing the output. USE WITH CARE.
+        """
         # simply calls scantable.save
         self._data.save(name,format,overwrite)
