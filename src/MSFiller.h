@@ -28,6 +28,7 @@
 #include <casa/Logging/LogIO.h>
 
 #include <casa/Containers/Record.h>
+#include <casa/Containers/Block.h>
 
 //#include <tables/Tables/TableColumn.h>
 
@@ -65,15 +66,13 @@ private:
   void fillFocus() ;
   //void fillHistory() ;
   //void fillFit() ;
-  void fillTcal( boost::object_pool<casa::ROTableColumn> *poolr,
-                 boost::object_pool<casa::TableColumn> *poolw ) ;
+  void fillTcal( boost::object_pool<casa::ROTableColumn> *poolr ) ;
 
   // get SRCTYPE from STATE_ID
   casa::Int getSrcType( casa::Int stateId, boost::object_pool<casa::ROTableColumn> *pool ) ;
-  //casa::Int getSrcType( casa::Int stateId ) ;
 
   // get POLNO from CORR_TYPE
-  casa::Vector<casa::uInt> getPolNo( casa::Int corrType ) ;
+  casa::Block<casa::uInt> getPolNo( casa::Int corrType ) ;
 
   // get poltype from CORR_TYPE 
   casa::String getPolType( casa::Int corrType ) ;
@@ -84,16 +83,15 @@ private:
   // get time stamp in SYSCAL table
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
   // and sorted by TIME
-  //casa::Vector<casa::Double> getSysCalTime( casa::MSSysCal &tab, casa::MEpoch::ROScalarColumn &tcol ) ;
-  void getSysCalTime( casa::MSSysCal &tab, casa::MEpoch::ROScalarColumn &tcal, casa::Vector<casa::Double> &scTime ) ;
+  void getSysCalTime( casa::Block<casa::MEpoch> &scTimeIn, casa::Vector<casa::Double> &scInterval, casa::Block<casa::MEpoch> &tcol, casa::Block<casa::Double> &scTimeOut, casa::Block<casa::Int> &tidx ) ;
 
   // get tsys by time stamp
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
   // and sorted by TIME
-  casa::uInt getTsys( casa::uInt idx, casa::Matrix<casa::Float> &tsys, casa::MSSysCal &tab, casa::Double t ) ;
+//   casa::uInt getTsys( casa::uInt idx, casa::Matrix<casa::Float> &tsys, casa::ROArrayColumn<casa::Float> &tsysCol, casa::Block<casa::MEpoch> &scTime, casa::Double t ) ;
 
   // get TCAL_ID 
-  casa::Vector<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::Double t ) ;
+  casa::Block<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::Double t ) ;
 
   // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
   casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &srate, casa::String &ref, casa::MSPointing &tab, casa::Double t ) ;
