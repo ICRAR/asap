@@ -117,90 +117,6 @@ class CustomFlagToolbarCommon:
         theplot.register('button_release',discon)
 
 
-    ### Calculate statistics of the selected area.
-    @asaplog_post_dec
-    def _statistics(self):
-        if not self._any_selection():
-            msg = "No selection to be calculated"
-            asaplog.push(msg)
-            asaplog.post('WARN')
-            return
-        print "Calculate statistics of selected region and spectra"
-        self._selected_stats(rows=self._selpanels,regions=self._selregions)
-        print "Statistics: "
-        print "- rows: ",self._selpanels
-        print "- regions:\n   ",self._selregions
-        self._clearup_selections()
-
-    @asaplog_post_dec
-    def _selected_stats(self,rows=None,regions=None):
-        scan = self.plotter._data
-        if not scan:
-            asaplog.post()
-            asaplog.push("Invalid scantable")
-            asaplog.post("ERROR")
-        mathobj = stmath( rcParams['insitu'] )
-        statval={}
-        statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
-        if isinstance(rows,list) and len(rows) > 0:
-            for irow in rows:
-                for stat in statstr:
-                    #statval[stat] = scan.stats(stat=stat,row=irow)[0]
-                    statval[stat] = mathobj._statsrow(scan,[],stat,irow)[0]
-                self._print_stats(scan,irow,statval,statstr=statstr)
-            del irow
-        if isinstance(regions,dict) and len(regions) > 0:
-            for srow, masklist in regions.iteritems():
-                if not isinstance(masklist,list) or len(masklist) ==0:
-                    msg = "Ignoring invalid region selection for row = "+srow
-                    asaplog.post()
-                    asaplog.push(msg)
-                    asaplog.post("WARN")
-                    continue
-                irow = int(srow)
-                mask = scan.create_mask(masklist,invert=False,row=irow)
-                for stat in statstr:
-                    #statval[stat] = scan.stats(stat=stat,row=irow,mask = mask)[0]
-                    statval[stat] = mathobj._statsrow(scan,mask,stat,irow)[0]
-                self._print_stats(scan,irow,statval,statstr=statstr,mask=masklist)
-                del irow, mask
-            del srow, masklist
-        del scan, statval, mathobj
-
-    @asaplog_post_dec
-    def _print_stats(self,scan,row,stats,statstr=None,mask=None):
-        if not isinstance(scan, scantable):
-            asaplog.post()
-            asaplog.push("Invalid scantable")
-            asaplog.post("ERROR")
-        if row < 0 or row > scan.nrow():
-            asaplog.post()
-            asaplog.push("Invalid row number")
-            asaplog.post("ERROR")
-        if not isinstance(stats,dict) or len(stats) == 0:
-            asaplog.post()
-            asaplog.push("Invalid statistic value")
-            asaplog.post("ERROR")
-        maskstr = "All"
-        if mask:
-            maskstr = str(mask)
-        ssep = "-"*70+"\n"
-        sout = ssep
-        sout += ("Row=%d  Scan=%d  IF=%d  Pol=%d  Time=%s  mask=%s" % \
-                 (row, scan.getscan(row), scan.getif(row), scan.getpol(row), scan.get_time(row),maskstr))
-        sout += "\n"
-        statvals = []
-        if not len(statstr):
-            statstr = stats.keys()
-        for key in statstr:
-            sout += key.ljust(10)
-            statvals.append(stats.pop(key))
-        sout += "\n"
-        sout += ("%f "*len(statstr) % tuple(statvals))
-        sout += "\n"+ssep
-        asaplog.push(sout)
-        del sout, ssep, maskstr, statvals, key, scan, row, stats, statstr, mask
-
     ### Notation
     def _mod_note(self,event):
         # Do not fire event when in zooming/panning mode
@@ -240,7 +156,7 @@ class CustomFlagToolbarCommon:
             asaplog.push(msg)
             asaplog.post('WARN')
             return
-        print "add the region to selections"
+        #print "add the region to selections"
         self._thisregion = {'axes': event.inaxes,'xs': event.xdata,
                             'worldx': [event.xdata,event.xdata]}
         self.plotter._plotter.register('button_press',None)
@@ -291,8 +207,9 @@ class CustomFlagToolbarCommon:
             self._selregions[srow] = []
         self._selregions[srow].append(lregion)
         del lregion, pregion, xdataend
-        print "selected region: ",self._thisregion['worldx'],\
-              "(@row ",self._getrownum(self._thisregion['axes']),")"
+        sout = "selected region: "+str(self._thisregion['worldx'])+\
+              "(@row "+str(self._getrownum(self._thisregion['axes']))+")"
+        asaplog.push(sout)
 
         # release event
         self.plotter._plotter.register('button_press',None)
@@ -320,8 +237,8 @@ class CustomFlagToolbarCommon:
         self._polygons.append(selax.add_patch(shadow))
         #self.plotter._plotter.show(False)
         self.plotter._plotter.canvas.draw()
-        print "row", irow, "added to the panel selections"
-        print "selected rows =",self._selpanels
+        asaplog.push("row "+str(irow)+" is selected")
+        #print "selected rows =",self._selpanels
         ## check for region selection of the spectra and overwrite it.
         ##!!!! currently disabled for consistency with flag tools !!!!
         #if self._selregions.has_key(srow):
@@ -407,9 +324,11 @@ class CustomFlagToolbarCommon:
             return
         self._flag_operation(rows=self._selpanels,
                              regions=self._selregions,unflag=False)
-        print "Flagged"
-        print "- rows: ",self._selpanels
-        print "- regions:\n   ",self._selregions
+        sout = "Flagged:\n"
+        sout += "  rows = "+str(self._selpanels)+"\n"
+        sout += "  regions: "+str(self._selregions)
+        asaplog.push(sout)
+        del sout
         self._clearup_selections()
         self._plot_page(pagemode="current")
 
@@ -423,9 +342,11 @@ class CustomFlagToolbarCommon:
             return
         self._flag_operation(rows=self._selpanels,
                              regions=self._selregions,unflag=True)
-        print "Unflagged:"
-        print "- rows: ",self._selpanels
-        print "- regions:\n   ",self._selregions
+        sout = "Unflagged:\n"
+        sout += "  rows = "+str(self._selpanels)+"\n"
+        sout += "  regions: "+str(self._selregions)
+        asaplog.push(sout)
+        del sout
         self._clearup_selections()
         self._plot_page(pagemode="current")
 
@@ -455,9 +376,88 @@ class CustomFlagToolbarCommon:
         del scan
 
     ### show statistics of selected spectra/regions
+    @asaplog_post_dec
     def stat_cal(self):
-        print "Calculate statics of selected regions/panels"
-        self._statistics()
+        if not self._any_selection():
+            msg = "No selection to be calculated"
+            asaplog.push(msg)
+            asaplog.post('WARN')
+            return
+        #print "Calculate statistics of selected region and spectra"
+        self._selected_stats(rows=self._selpanels,regions=self._selregions)
+        #print "Statistics: "
+        #print "- rows: ",self._selpanels
+        #print "- regions:\n   ",self._selregions
+        self._clearup_selections()
+
+    @asaplog_post_dec
+    def _selected_stats(self,rows=None,regions=None):
+        scan = self.plotter._data
+        if not scan:
+            asaplog.post()
+            asaplog.push("Invalid scantable")
+            asaplog.post("ERROR")
+        mathobj = stmath( rcParams['insitu'] )
+        statval={}
+        statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
+        if isinstance(rows,list) and len(rows) > 0:
+            for irow in rows:
+                for stat in statstr:
+                    #statval[stat] = scan.stats(stat=stat,row=irow)[0]
+                    statval[stat] = mathobj._statsrow(scan,[],stat,irow)[0]
+                self._print_stats(scan,irow,statval,statstr=statstr)
+            del irow
+        if isinstance(regions,dict) and len(regions) > 0:
+            for srow, masklist in regions.iteritems():
+                if not isinstance(masklist,list) or len(masklist) ==0:
+                    msg = "Ignoring invalid region selection for row = "+srow
+                    asaplog.post()
+                    asaplog.push(msg)
+                    asaplog.post("WARN")
+                    continue
+                irow = int(srow)
+                mask = scan.create_mask(masklist,invert=False,row=irow)
+                for stat in statstr:
+                    #statval[stat] = scan.stats(stat=stat,row=irow,mask = mask)[0]
+                    statval[stat] = mathobj._statsrow(scan,mask,stat,irow)[0]
+                self._print_stats(scan,irow,statval,statstr=statstr,mask=masklist)
+                del irow, mask
+            del srow, masklist
+        del scan, statval, mathobj
+
+    @asaplog_post_dec
+    def _print_stats(self,scan,row,stats,statstr=None,mask=None):
+        if not isinstance(scan, scantable):
+            asaplog.post()
+            asaplog.push("Invalid scantable")
+            asaplog.post("ERROR")
+        if row < 0 or row > scan.nrow():
+            asaplog.post()
+            asaplog.push("Invalid row number")
+            asaplog.post("ERROR")
+        if not isinstance(stats,dict) or len(stats) == 0:
+            asaplog.post()
+            asaplog.push("Invalid statistic value")
+            asaplog.post("ERROR")
+        maskstr = "All"
+        if mask:
+            maskstr = str(mask)
+        ssep = "-"*70+"\n"
+        sout = ssep
+        sout += ("Row=%d  Scan=%d  IF=%d  Pol=%d  Time=%s  mask=%s" % \
+                 (row, scan.getscan(row), scan.getif(row), scan.getpol(row), scan.get_time(row),maskstr))
+        sout += "\n"
+        statvals = []
+        if not len(statstr):
+            statstr = stats.keys()
+        for key in statstr:
+            sout += key.ljust(10)
+            statvals.append(stats.pop(key))
+        sout += "\n"
+        sout += ("%f "*len(statstr) % tuple(statvals))
+        sout += "\n"+ssep
+        asaplog.push(sout)
+        del sout, ssep, maskstr, statvals, key, scan, row, stats, statstr, mask
 
     ### Page chages
     ### go to the previous page
@@ -504,8 +504,8 @@ class CustomFlagToolbarCommon:
         pageop = pagemode[0].lower()
         if not (pageop in availpage):
             asaplog.post()
-            asaplot.push("Invalid page operation")
-            asaplot.post("ERROR")
+            asaplog.push("Invalid page operation")
+            asaplog.post("ERROR")
         if pageop == "n":
             # nothing necessary to plot the next page
             return
