@@ -83,7 +83,7 @@ private:
   // get time stamp in SYSCAL table
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
   // and sorted by TIME
-  void getSysCalTime( casa::Block<casa::MEpoch> &scTimeIn, casa::Vector<casa::Double> &scInterval, casa::Block<casa::MEpoch> &tcol, casa::Block<casa::Double> &scTimeOut, casa::Block<casa::Int> &tidx ) ;
+  void getSysCalTime( casa::Vector<casa::MEpoch> &scTimeIn, casa::Vector<casa::Double> &scInterval, casa::Block<casa::MEpoch> &tcol, casa::Block<casa::Double> &scTimeOut, casa::Block<casa::Int> &tidx ) ;
 
   // get tsys by time stamp
   // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
@@ -98,6 +98,9 @@ private:
 
   // create key for TCAL table
   casa::String keyTcal( casa::Int feedid, casa::Int spwid, casa::String stime ) ; 
+
+  // binary search
+  casa::uInt binarySearch( casa::Vector<casa::MEpoch> &timeList, casa::Double target ) ; 
   
   casa::CountedPtr<Scantable> table_ ;
   casa::MeasurementSet mstable_ ;

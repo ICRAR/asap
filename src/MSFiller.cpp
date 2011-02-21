@@ -568,7 +568,7 @@ void MSFiller::fill()
           // for TSYS and TCAL
           MSSysCal caltabsel( caltab( caltab.col("ANTENNA_ID") == antenna_ && caltab.col("FEED_ID") == feedId && caltab.col("SPECTRAL_WINDOW_ID") == spwId ).sort("TIME") ) ;
           ROScalarMeasColumn<MEpoch> scTimeCol( caltabsel, "TIME" ) ;
-          Block<MEpoch> scTime( caltabsel.nrow() ) ;
+          Vector<MEpoch> scTime( caltabsel.nrow() ) ;
           for ( uInt irow = 0 ; irow < caltabsel.nrow() ; irow++ ) 
             scTime[irow] = scTimeCol( irow ) ;
           ROScalarColumn<Double> *scIntervalCol = new ROScalarColumn<Double>( caltabsel, "INTERVAL" ) ;
@@ -1304,7 +1304,7 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
   return wid ;
 }
 
-void MSFiller::getSysCalTime( Block<MEpoch> &scTime, Vector<Double> &scInterval, Block<MEpoch> &tcol, Block<Double> &tstr, Block<Int> &tidx )
+void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval, Block<MEpoch> &tcol, Block<Double> &tstr, Block<Int> &tidx )
 {
   double startSec = gettimeofday_sec() ;
   os_ << "start MSFiller::getSysCalTime() startSec=" << startSec << LogIO::POST ;
@@ -1314,6 +1314,10 @@ void MSFiller::getSysCalTime( Block<MEpoch> &scTime, Vector<Double> &scInterval,
   uInt scnrow = scTime.nelements() ;
   uInt idx = 0 ;
   const Double half = 0.5e0 ;
+  // execute  binary search
+  idx = binarySearch( scTime, tcol[0].get( "s" ).getValue() ) ;
+  if ( idx != 0 )
+    idx -= 1 ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
     Double t = tcol[i].get( "s" ).getValue() ;
     os_ << "getSysCalTime()  irow = " << i << " idx = " << idx << LogIO::POST ;
@@ -1339,7 +1343,7 @@ void MSFiller::getSysCalTime( Block<MEpoch> &scTime, Vector<Double> &scInterval,
     }
   }
   double endSec = gettimeofday_sec() ;
-  os_ << "end MSFiller::getSysCalTime() endSec=" << endSec << " (" << endSec-startSec << "sec) scnrow = " << scnrow << "tcol.nelements() = " << tcol.nelements() << LogIO::POST ;
+  os_ << "end MSFiller::getSysCalTime() endSec=" << endSec << " (" << endSec-startSec << "sec) scnrow = " << scnrow << " tcol.nelements = " << tcol.nelements() << LogIO::POST ;
   return ;
 }
 
@@ -1409,6 +1413,38 @@ uInt MSFiller::getDirection( uInt idx, Vector<Double> &dir, Vector<Double> &srat
   ROScalarMeasColumn<MEpoch> tcol( tab, "TIME" ) ;
   ROArrayMeasColumn<MDirection> dmcol( tab, "DIRECTION" ) ;
   ROArrayColumn<Double> dcol( tab, "DIRECTION" ) ;
+  // binary search if idx == 0
+  if ( idx == 0 ) {
+    uInt nrowb = 75000 ;
+    if ( nrow > nblock ) {
+      uInt nblock = nrow / nrowb + 1 ;
+      for ( uInt iblock = 0 ; iblock < nblock ; iblock++ ) {
+        uInt high = min( nblock, nrow-iblock*nblock ) ;
+
+        if ( tcol( high-1 ).get( "s" ).getValue() < t ) {
+          idx = iblock * nblock ;
+          continue ;
+        }
+
+        Vector<MEpoch> tarr( high ) ;
+        for ( uInt irow = 0 ; irow < high ; irow++ ) {
+          tarr[irow] = tcol( iblock*nblock+irow ) ;
+        }
+
+        uInt bidx = binarySearch( tarr, t ) ;
+
+        idx = iblock * nblock + bidx ;
+        break ;
+      }
+    }
+    else {
+      Vector<MEpoch> tarr( nrow ) ;
+      for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+        tarr[irow] = tcol( irow ) ;
+      }
+      idx = binarySearch( tarr, t ) ;
+    }
+  }
   // ensure that tcol(idx) < t
   //os_ << "tcol(idx) = " << tcol(idx).get("s").getValue() << " t = " << t << " diff = " << tcol(idx).get("s").getValue()-t << endl ;
   while ( tcol(idx).get("s").getValue() > t && idx > 0 ) 
@@ -1483,6 +1519,29 @@ String MSFiller::keyTcal( Int feedid, Int spwid, String stime )
   String sfeed = "FEED" + String::toString( feedid ) ;
   String sspw = "SPW" + String::toString( spwid ) ;
   return sfeed+":"+sspw+":"+stime ;
+}
+
+uInt MSFiller::binarySearch( Vector<MEpoch> &timeList, Double target ) 
+{
+  Int low = 0 ;
+  Int high = timeList.nelements() ;
+  uInt idx = 0 ;
+
+  while ( low <= high ) {
+    idx = (Int)( 0.5 * ( low + high ) ) ;
+    Double t = timeList[idx].get( "s" ).getValue() ;
+    if ( t < target ) 
+      low = idx + 1 ;
+    else if ( t > target )
+      high = idx - 1 ;
+    else 
+      return idx ;
+  }
+
+  idx = max( 0, min( low, high ) ) ;
+
+  return idx ;
+  
 }
 
 } ;
