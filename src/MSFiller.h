@@ -85,13 +85,8 @@ private:
   // and sorted by TIME
   void getSysCalTime( casa::Vector<casa::MEpoch> &scTimeIn, casa::Vector<casa::Double> &scInterval, casa::Block<casa::MEpoch> &tcol, casa::Block<casa::Double> &scTimeOut, casa::Block<casa::Int> &tidx ) ;
 
-  // get tsys by time stamp
-  // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
-  // and sorted by TIME
-//   casa::uInt getTsys( casa::uInt idx, casa::Matrix<casa::Float> &tsys, casa::ROArrayColumn<casa::Float> &tsysCol, casa::Block<casa::MEpoch> &scTime, casa::Double t ) ;
-
   // get TCAL_ID 
-  casa::Block<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::Double t ) ;
+  casa::Block<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::MEpoch &t ) ;
 
   // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
   casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &srate, casa::String &ref, casa::MSPointing &tab, casa::Double t ) ;

@@ -9,7 +9,7 @@ except ImportError:
 
 from asap.env import is_casapy
 from asap._asap import Scantable
-from asap._asap import filler
+from asap._asap import filler, msfiller
 from asap.parameters import rcParams
 from asap.logging import asaplog, asaplog_post_dec
 from asap.selector import selector
@@ -231,6 +231,11 @@ class scantable(Scantable):
         format2 = format.upper()
         if format2 == 'ASAP':
             self._save(name)
+##         elif format2 == 'MS2':
+##             msopt = {'ms': {'overwrite': overwrite } }
+##             from asap._asap import mswriter
+##             writer = mswriter( self )
+##             writer.write( name, msopt ) 
         else:
             from asap._asap import stwriter as stw
             writer = stw(format2)
@@ -2686,8 +2691,8 @@ class scantable(Scantable):
 
     def _check_ifs(self):
         #nchans = [self.nchan(i) for i in range(self.nif(-1))]
-        #nchans = filter(lambda t: t > 0, nchans)
         nchans = [self.nchan(i) for i in self.getifnos()]
+        nchans = filter(lambda t: t > 0, nchans)
         return (sum(nchans)/len(nchans) == nchans[0])
 
     @asaplog_post_dec
@@ -2707,9 +2712,15 @@ class scantable(Scantable):
         stype = int(rcParams['scantable.storage'].lower() == 'disk')
         for name in fullnames:
             tbl = Scantable(stype)
-            r = filler(tbl)
-            rx = rcParams['scantable.reference']
-            r.setreferenceexpr(rx)
+            if is_ms( name ):
+                r = msfiller( tbl )
+            else:
+                r = filler( tbl )
+                rx = rcParams['scantable.reference']
+                r.setreferenceexpr(rx)
+            #r = filler(tbl)
+            #rx = rcParams['scantable.reference']
+            #r.setreferenceexpr(rx)
             msg = "Importing %s..." % (name)
             asaplog.push(msg, False)
             #opts = {'ms': {'antenna' : antenna, 'getpt': getpt} }

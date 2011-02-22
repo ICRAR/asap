@@ -227,8 +227,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                                  rec.asuInt("FOCUS_ID"));
           inst->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
                                    rec.asuInt("MOLECULE_ID"));
-          inst->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
-                              rec.asuInt("TCAL_ID"));
+//           inst->tcal().getEntry(pksrec.tcalTime, pksrec.tcal,
+//                               rec.asuInt("TCAL_ID"));
           inst->weather().getEntry(pksrec.temperature, pksrec.pressure,
                                  pksrec.humidity, pksrec.windSpeed,
                                  pksrec.windAz, rec.asuInt("WEATHER_ID"));
@@ -239,6 +239,34 @@ Int STWriter::write(const CountedPtr<Scantable> in,
           pksrec.tsys = tsysFromTable(itable);
           // dummy data
           uInt npol = pksrec.spectra.ncolumn();
+
+          // TCAL
+          inst->tcal().getEntry( pksrec.tcalTime, pksrec.tcal,
+                                 rec.asuInt("TCAL_ID") ) ;
+          if ( pksrec.tcal.nelements() == 1 ) {
+            ROScalarColumn<uInt> uintCol( itable, "TCAL_ID" ) ;
+            Vector<uInt> tcalids = uintCol.getColumn() ;
+            pksrec.tcal.resize( npol ) ;
+            Vector<Float> dummyA ;
+            String dummyS ;
+            for ( uInt ipol = 0 ; ipol < npol ; ipol++ ) {
+              inst->tcal().getEntry( dummyS, dummyA, tcalids[ipol] ) ;
+              pksrec.tcal[ipol] = dummyA[0] ;
+            }
+          }
+          else if ( pksrec.tcal.nelements() == nchan ) {
+            ROScalarColumn<uInt> uintCol( itable, "TCAL_ID" ) ;
+            Vector<uInt> tcalids = uintCol.getColumn() ;
+            pksrec.tcal.resize( npol ) ;
+            Vector<Float> dummyA ;
+            String dummyS ;
+            for ( uInt ipol = 0 ; ipol < npol ; ipol++ ) {
+              inst->tcal().getEntry( dummyS, dummyA, tcalids[ipol] ) ;
+              pksrec.tcal[ipol] = mean( dummyA ) ;
+            }
+          }
+          //LogIO os ;
+          //os << "npol = " << npol << " pksrec.tcal = " << pksrec.tcal << LogIO::POST ;
 
           pksrec.mjd       = rec.asDouble("TIME");
           pksrec.interval  = rec.asDouble("INTERVAL");
