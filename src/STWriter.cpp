@@ -206,7 +206,7 @@ Int STWriter::write(const CountedPtr<Scantable> in,
         TableIterator typeit( ctable, "SRCTYPE" ) ;
         while(!typeit.pastEnd() ) {
           Table ttable = typeit.table() ;
-          TableIterator ifit(ctable, "IFNO", TableIterator::Ascending, TableIterator::HeapSort);
+          TableIterator ifit(ttable, "IFNO", TableIterator::Ascending, TableIterator::HeapSort);
           MDirection::ScalarColumn dirCol(ctable, "DIRECTION");
           pksrec.direction = dirCol(0).getAngle("rad").getValue();
           pksrec.IFno = 1;
