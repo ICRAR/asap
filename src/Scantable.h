@@ -500,7 +500,7 @@ private:
   casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;
 
   /**
-   * Turns a time vale into a formatted string
+   * Turns a time value into a formatted string
    * @param x
    * @return
    */

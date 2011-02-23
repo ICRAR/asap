@@ -60,6 +60,7 @@
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
 
+#include <atnf/PKSIO/SrcType.h>
 #include "Scantable.h"
 #include "STPolLinear.h"
 #include "STPolCircular.h"
@@ -993,7 +994,8 @@ std::string Scantable::summary( bool verbose )
                   + getDirectionRefString()
                   + ")";
   oss << setw(5) << "Scan" << setw(15) << "Source"
-      << setw(10) << "Time" << setw(18) << "Integration" << endl;
+      << setw(10) << "Time" << setw(18) << "Integration" 
+      << setw(15) << "Source Type" << endl;
   oss << setw(5) << "" << setw(5) << "Beam" << setw(3) << "" << dirtype << endl;
   oss << setw(10) << "" << setw(3) << "IF" << setw(3) << ""
       << setw(8) << "Frame" << setw(16)
@@ -1019,7 +1021,8 @@ std::string Scantable::summary( bool verbose )
       ++cyciter;
     }
     oss << setw(3) << std::right << nint  << setw(3) << " x " << std::left
-        << setw(6) <<  formatSec(rec.asFloat("INTERVAL")) << endl;
+        << setw(11) <<  formatSec(rec.asFloat("INTERVAL")) << setw(1) << ""
+	<< setw(15) << SrcType::getName(rec.asInt("SRCTYPE")) << endl;
 
     TableIterator biter(subt, "BEAMNO");
     while (!biter.pastEnd()) {
