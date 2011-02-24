@@ -157,6 +157,8 @@ class scantable(Scantable):
                     Scantable.__init__(self, filename, ondisk)
                     if unit is not None:
                         self.set_fluxunit(unit)
+                    if average:
+                        self._assign( self.average_time( scanav=True ) )
                     # do not reset to the default freqframe
                     #self.set_freqframe(rcParams['scantable.freqframe'])
                 #elif os.path.isdir(filename) \
