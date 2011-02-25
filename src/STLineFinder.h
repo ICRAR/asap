@@ -164,6 +164,11 @@ struct STLineFinder : protected LFLineListOperations {
    // set the scan to work with (in_scan parameter)
    void setScan(const ScantableWrapper &in_scan) throw(casa::AipsError);
 
+   // set spectrum data to work with. this is a method to allow linefinder work 
+   // without setting scantable for the purpose of using linefinder inside some 
+   // method in scantable class. (Dec. 22, 2010 by W.Kawasaki)
+   void setData(const std::vector<float> &in_spectrum);
+
    // search for spectral lines in a row specified by whichRow 
    // in_mask and in_edge parameters control channel rejection
    //  if in_edge has zero length, all channels chosen by mask will be used
@@ -256,6 +261,10 @@ private:
    // true if median statistics is used as opposed to average of
    // the lowest 80% of deviations (default)
    casa::Bool itsUseMedian;
+
+   // true if spectra and mask data should be provided from 
+   // scantable (default = true)
+   bool useScantable;
 };
 
 //

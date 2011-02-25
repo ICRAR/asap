@@ -142,9 +142,18 @@ void python_Scantable() {
 	 (boost::python::arg("nmin")=-1, 
 	  boost::python::arg("nmax")=-1) )
     .def("_poly_baseline", &ScantableWrapper::polyBaseline)
-    .def("_poly_baseline_batch", &ScantableWrapper::polyBaselineBatch)
+    .def("_auto_poly_baseline", &ScantableWrapper::autoPolyBaseline)
+    .def("_cspline_baseline", &ScantableWrapper::cubicSplineBaseline)
+    .def("_auto_cspline_baseline", &ScantableWrapper::autoCubicSplineBaseline)
+    .def("get_rms", &ScantableWrapper::getRms)
+    .def("format_blparams_row", &ScantableWrapper::formatBaselineParams)
+    .def("format_piecewise_blparams_row", &ScantableWrapper::formatPiecewiseBaselineParams)
     .def("_getflagtrafast", &ScantableWrapper::getFlagtraFast,
 	 (boost::python::arg("whichrow")=0) )
+    //.def("_sspline_baseline", &ScantableWrapper::smoothingSplineBaseline,
+    // (boost::python::arg("thres")=3.0,
+    //  boost::python::arg("niter")=1) )
+    //.def("_test_cin", &ScantableWrapper::testCin)
   ;
 };
 

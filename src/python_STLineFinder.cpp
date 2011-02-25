@@ -41,6 +41,7 @@ namespace asap {
          .def( init <> () )
 	 .def("setoptions",&STLineFinder::setOptions)
          .def("setscan",&STLineFinder::setScan)
+         .def("setdata",&STLineFinder::setData)
          .def("findlines",&STLineFinder::findLines)
          .def("getmask",&STLineFinder::getMask)
          .def("getlineranges",&STLineFinder::getLineRanges)
