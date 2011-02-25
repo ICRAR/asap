@@ -1271,6 +1271,173 @@ class scantable(Scantable):
                 break
         return istart,iend
 
+    @asaplog_post_dec
+    def parse_maskexpr(self,maskstring):
+        """
+        Parse CASA type mask selection syntax (IF dependent).
+
+        Parameters:
+            maskstring : A string mask selection expression.
+                         A comma separated selections mean different IF -
+                         channel combinations. IFs and channel selections
+                         are partitioned by a colon, ':'.
+                     examples:
+                         '<2,4~6,9'  = IFs 0,1,4,5,6,9 (all channels)
+                         '3:3~45;60' = channels 3 to 45 and 60 in IF 3
+                         '0~1:2~6,8' = channels 2 to 6 in IFs 0,1, and
+                                       all channels in IF8
+        Returns:
+        A dictionary of selected (valid) IF and masklist pairs,
+        e.g. {'0': [[50,250],[350,462]], '2': [[100,400],[550,974]]}
+        """
+        if not isinstance(maskstring,str):
+            asaplog.post()
+            asaplog.push("Invalid mask expression")
+            asaplog.post("ERROR")
+        
+        valid_ifs = self.getifnos()
+        frequnit = self.get_unit()
+        seldict = {}
+        ## split each selection
+        sellist = maskstring.split(',')
+        for currselstr in sellist:
+            selset = currselstr.split(':')
+            # spw and mask string (may include ~, < or >)
+            spwmasklist = self._parse_selection(selset[0],typestr='integer',
+                                               offset=1,minval=min(valid_ifs),
+                                               maxval=max(valid_ifs))
+            for spwlist in spwmasklist:
+                selspws = []
+                for ispw in range(spwlist[0],spwlist[1]+1):
+                    # Put into the list only if ispw exists
+                    if valid_ifs.count(ispw):
+                        selspws.append(ispw)
+            del spwmasklist, spwlist
+
+            # parse frequency mask list
+            if len(selset) > 1:
+                freqmasklist = self._parse_selection(selset[1],typestr='float',
+                                                    offset=0.)
+            else:
+                # want to select the whole spectrum
+                freqmasklist = [None]
+
+            ## define a dictionary of spw - masklist combination
+            for ispw in selspws:
+                #print "working on", ispw
+                spwstr = str(ispw)
+                if len(selspws) == 0:
+                    # empty spw
+                    continue
+                else:
+                    ## want to get min and max of the spw and
+                    ## offset to set for '<' and '>'
+                    if frequnit == 'channel':
+                        minfreq = 0
+                        maxfreq = self.nchan(ifno=ispw)
+                        offset = 0.5
+                    else:
+                        ## This is ugly part. need improvement
+                        for ifrow in xrange(self.nrow()):
+                            if self.getif(ifrow) == ispw:
+                                #print "IF",ispw,"found in row =",ifrow
+                                break
+                        freqcoord = self.get_coordinate(ifrow)
+                        freqs = self._getabcissa(ifrow)
+                        minfreq = min(freqs)
+                        maxfreq = max(freqs)
+                        if len(freqs) == 1:
+                            offset = 0.5
+                        elif frequnit.find('Hz') > 0:
+                            offset = abs(freqcoord.to_frequency(1,unit=frequnit)
+                                      -freqcoord.to_frequency(0,unit=frequnit))*0.5
+                        elif frequnit.find('m/s') > 0:
+                            offset = abs(freqcoord.to_velocity(1,unit=frequnit)
+                                      -freqcoord.to_velocity(0,unit=frequnit))*0.5
+                        else:
+                            asaplog.post()
+                            asaplog.push("Invalid frequency unit")
+                            asaplog.post("ERROR")
+                        del freqs, freqcoord, ifrow
+                    for freq in freqmasklist:
+                        selmask = freq or [minfreq, maxfreq]
+                        if selmask[0] == None:
+                            ## selection was "<freq[1]".
+                            if selmask[1] < minfreq:
+                                ## avoid adding region selection
+                                selmask = None
+                            else:
+                                selmask = [minfreq,selmask[1]-offset]
+                        elif selmask[1] == None:
+                            ## selection was ">freq[0]"
+                            if selmask[0] > maxfreq:
+                                ## avoid adding region selection
+                                selmask = None
+                            else:
+                                selmask = [selmask[0]+offset,maxfreq]
+                        if selmask:
+                            if not seldict.has_key(spwstr):
+                                # new spw selection
+                                seldict[spwstr] = []
+                            seldict[spwstr] += [selmask]
+                    del minfreq,maxfreq,offset,freq,selmask
+                del spwstr
+            del freqmasklist
+        del valid_ifs
+        if len(seldict) == 0:
+            asaplog.post()
+            asaplog.push("No valid selection in the mask expression: "+maskstring)
+            asaplog.post("WARN")
+            return None
+        msg = "Selected masklist:\n"
+        for sif, lmask in seldict.iteritems():
+            msg += "   IF"+sif+" - "+str(lmask)+"\n"
+        asaplog.push(msg)
+        return seldict
+
+    def _parse_selection(self,selstr,typestr='float',offset=0.,minval=None,maxval=None):
+        """
+        Parameters:
+            selstr :    The Selection string, e.g., '<3;5~7;100~103;9'
+            typestr :   The type of the values in returned list
+                        ('integer' or 'float')
+            offset :    The offset value to subtract from or add to
+                        the boundary value if the selection string
+                        includes '<' or '>'
+            minval, maxval :  The minimum/maximum values to set if the
+                              selection string includes '<' or '>'.
+                              The list element is filled with None by default.
+        Returns:
+            A list of min/max pair of selections.
+        Example:
+            _parseSelection('<3;5~7;9',typestr='int',offset=1,minval=0)
+            returns [[0,2],[5,7],[9,9]]
+        """
+        selgroups = selstr.split(';')
+        sellists = []
+        if typestr.lower().startswith('int'):
+            formatfunc = int
+        else:
+            formatfunc = float
+        
+        for currsel in  selgroups:
+            if currsel.find('~') > 0:
+                minsel = formatfunc(currsel.split('~')[0].strip())
+                maxsel = formatfunc(currsel.split('~')[1].strip()) 
+            elif currsel.strip().startswith('<'):
+                minsel = minval
+                maxsel = formatfunc(currsel.split('<')[1].strip()) \
+                         - formatfunc(offset)
+            elif currsel.strip().startswith('>'):
+                minsel = formatfunc(currsel.split('>')[1].strip()) \
+                         + formatfunc(offset)
+                maxsel = maxval
+            else:
+                minsel = formatfunc(currsel)
+                maxsel = formatfunc(currsel)
+            sellists.append([minsel,maxsel])
+        return sellists
+
 #    def get_restfreqs(self):
 #        """
 #        Get the restfrequency(s) stored in this scantable.
