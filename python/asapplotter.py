@@ -877,7 +877,8 @@ class asapplotter:
             asaplog.post('WARN')
             nstack = min(nstack,maxstack)
         n = min(n-self._ipanel-1,maxpanel)
-        
+
+        ganged = False
         if n > 1:
             ganged = rcParams['plotter.ganged']
             if self._panelling == 'i':
