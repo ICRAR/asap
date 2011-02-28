@@ -19,9 +19,7 @@
 #include <tables/Tables/TableColumn.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
-#include <tables/Tables/RefRows.h>
 #include <tables/Tables/TableParse.h>
-#include <tables/Tables/RefRows.h>
 #include <tables/Tables/TableRow.h>
 
 #include <casa/Containers/RecordField.h>
@@ -53,17 +51,17 @@
 #include <ctime>
 #include <sys/time.h>
 
-double gettimeofday_sec()
+using namespace casa ;
+using namespace std ;
+
+namespace asap {
+double MSFiller::gettimeofday_sec()
 {
   struct timeval tv ;
   gettimeofday( &tv, NULL ) ;
   return tv.tv_sec + (double)tv.tv_usec*1.0e-6 ;
 }
 
-using namespace casa ;
-using namespace std ;
-
-namespace asap {
 MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
   : table_( stable ),
     tablename_( "" ),
@@ -714,10 +712,9 @@ void MSFiller::fill()
                 mTimeB[irow] = (*mTimeCol)( irow ) ;
               ROTableColumn *mIntervalCol = tpoolr->construct( t5, "INTERVAL" ) ;
               ROTableColumn *mFlagRowCol = tpoolr->construct( t5, "FLAG_ROW" ) ;
-              Block<Double> sysCalTime( nrow, -1.0 ) ;
               Block<Int> sysCalIdx( nrow, -1 ) ;
               if ( isSysCal_ ) {
-                getSysCalTime( scTime, scInterval, mTimeB, sysCalTime, sysCalIdx ) ;
+                getSysCalTime( scTime, scInterval, mTimeB, sysCalIdx ) ;
               }
               delete mTimeCol ;
               Matrix<Float> defaulttsys( npol, 1, 1.0 ) ;
@@ -1353,7 +1350,7 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
   return wid ;
 }
 
-void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval, Block<MEpoch> &tcol, Block<Double> &tstr, Block<Int> &tidx )
+void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval, Block<MEpoch> &tcol, Block<Int> &tidx )
 {
 //   double startSec = gettimeofday_sec() ;
 //   os_ << "start MSFiller::getSysCalTime() startSec=" << startSec << LogIO::POST ;
@@ -1361,7 +1358,7 @@ void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval
   if ( !isSysCal_ )
     return ;
 
-  uInt nrow = tstr.nelements() ;
+  uInt nrow = tidx.nelements() ;
   if ( scTime.nelements() == 0 ) 
     return ;
   uInt scnrow = scTime.nelements() ;
@@ -1373,25 +1370,29 @@ void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval
     idx -= 1 ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
     Double t = tcol[i].get( "s" ).getValue() ;
+    Double tsc = scTime[0].get( "s" ).getValue() ;
+    if ( t < tsc ) {
+      tidx[i] = 0 ;
+      continue ;
+    }
     for ( uInt j = idx ; j < scnrow-1 ; j++ ) {
       Double tsc1 = scTime[j].get( "s" ).getValue() ;
       Double dt1 = scInterval[j] ;
       Double tsc2 = scTime[j+1].get( "s" ).getValue() ;
       Double dt2 = scInterval[j+1] ;
       if ( t > tsc1-half*dt1 && t <= tsc2-half*dt2 ) {
-        tstr[i] = tsc1 ;
         tidx[i] = j ;
         idx = j ;
         break ;
       }
     }
-    if ( tstr[i] == -1.0 ) {
+    if ( tidx[i] == -1 ) {
       Double tsc = scTime[scnrow-1].get( "s" ).getValue() ;
       Double dt = scInterval[scnrow-1] ;
-      if ( t <= tsc+0.5*dt ) {
-        tstr[i] = tsc ;
-        tidx[i] = scnrow-1 ;
-      }
+//       if ( t <= tsc+0.5*dt ) {
+//         tidx[i] = scnrow-1 ;
+//       }
+      tidx[i] = scnrow-1 ;
     }
   }
 //   double endSec = gettimeofday_sec() ;
