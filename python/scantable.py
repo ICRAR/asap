@@ -1282,6 +1282,7 @@ class scantable(Scantable):
                          channel combinations. IFs and channel selections
                          are partitioned by a colon, ':'.
                      examples:
+                         ''          = all IFs (all channels)
                          '<2,4~6,9'  = IFs 0,1,4,5,6,9 (all channels)
                          '3:3~45;60' = channels 3 to 45 and 60 in IF 3
                          '0~1:2~6,8' = channels 2 to 6 in IFs 0,1, and
@@ -1298,6 +1299,8 @@ class scantable(Scantable):
         valid_ifs = self.getifnos()
         frequnit = self.get_unit()
         seldict = {}
+        if maskstring == "":
+            maskstring = str(valid_ifs)[1:-1]
         ## split each selection
         sellist = maskstring.split(',')
         for currselstr in sellist:
