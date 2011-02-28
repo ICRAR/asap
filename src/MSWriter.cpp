@@ -419,14 +419,14 @@ bool MSWriter::write(const string& filename, const Record& rec)
 //               tpoolr->destroy( tcol ) ;
               os_ << "tcalIdArr = " << tcalIdArr << LogIO::POST ;
               String key = String::toString( tcalIdArr[0] ) ;
-              if ( !tcalIdRec_.isDefined( key ) ) //{
+              if ( !tcalIdRec_.isDefined( key ) ) {
                 tcalIdRec_.define( key, tcalIdArr ) ;
-//                 tcalRowRec_.define( key, t5.rowNumbers() ) ;
-//               }
-//               else {
-//                 Vector<uInt> pastrows = tcalRowRec_.asArrayuInt( key ) ;
-//                 tcalRowRec_.define( concatenateArray( pastrows, t5.rowNumbers() ) ) ;
-//               }
+                tcalRowRec_.define( key, t5.rowNumbers() ) ;
+              }
+              else {
+                Vector<uInt> pastrows = tcalRowRec_.asArrayuInt( key ) ;
+                tcalRowRec_.define( key, concatenateArray( pastrows, t5.rowNumbers() ) ) ;
+              }
               
               // fill STATE_ID
               //ROScalarColumn<Int> srcTypeCol( t5, "SRCTYPE" ) ;
@@ -980,21 +980,19 @@ void MSWriter::fillSysCal()
   uInt nrow = stt.nrow() ;
 
   // access to MAIN table
-//   Table tab = table_->table() ;
-  Block<String> cols( 5 ) ;
+  Block<String> cols( 6 ) ;
   cols[0] = "TIME" ;
   cols[1] = "TCAL_ID" ;
   cols[2] = "TSYS" ;
   cols[3] = "BEAMNO" ;
   cols[4] = "IFNO" ;
+  cols[5] = "INTERVAL" ;
   Table tab = table_->table().project( cols ) ;
 
   if ( nrow == 0 ) 
     return ;
 
   nrow = tcalIdRec_.nfields() ;
-
-  os_ << "fillSysCal() nrow = " << nrow << LogIO::POST ;
 
   Double midTime ;
   Double interval ;
@@ -1023,41 +1021,41 @@ void MSWriter::fillSysCal()
   Table sortedstt = stt.sort( "ID" ) ;
   ROArrayColumn<Float> tcalCol( sortedstt, "TCAL" ) ;
   ROTableColumn idCol( sortedstt, "ID" ) ;
-  ROArrayColumn<Float> tsysCol ;
-  //Block<Bool> rowmask( tab.nrow(), True ) ;
-  //Table tab2 = tab( rowmask ) ;
+  ROArrayColumn<Float> tsysCol( tab, "TSYS" ) ;
+  ROTableColumn tcalidCol( tab, "TCAL_ID" ) ;
+  ROTableColumn timeCol( tab, "TIME" ) ;
+  ROTableColumn intervalCol( tab, "INTERVAL" ) ;
+  ROTableColumn beamnoCol( tab, "BEAMNO" ) ;
+  ROTableColumn ifnoCol( tab, "IFNO" ) ;
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
     double t1 = gettimeofday_sec() ;
     Vector<uInt> ids = tcalIdRec_.asArrayuInt( irow ) ;
     os_ << "ids = " << ids << LogIO::POST ;
     uInt npol = ids.size() ;
-    Table tsel = tab( tab.col("TCAL_ID").in(ids) ) ;
-    //Table tsel = tab( tab.col("TCAL_ID").in(ids) ).sort( "TCAL_ID" ) ;
-    //Table tsel = tab2( tab2.col("TCAL_ID").in(ids) ).sort( "TCAL_ID" ) ;
-    uInt nrowsel = tsel.nrow() ;
-    //Vector<uInt> selectedcols = tsel.rowNumbers() ;
-    Vector<uInt> selectedcols = tsel.rowNumbers( tab, True ) ;
-    os_ << "selectedcols = " << selectedcols << LogIO::POST ;
-    Block<Bool> rowmask( tab.nrow(), True ) ;
-    for ( uInt icol = 0 ; icol < selectedcols.nelements() ; icol++ )
-      rowmask[selectedcols[icol]] = False ;
-    //tab2 = tab( rowmask ) ;
-    tab = tab( rowmask ) ;
-    os_ << "tab.nrow() = " << tab.nrow() << LogIO::POST ;
-    tsel = tsel.sort( "TCAL_ID" ) ;
+    Vector<uInt> rows = tcalRowRec_.asArrayuInt( irow ) ;
+    os_ << "rows = " << rows << LogIO::POST ;
+    Vector<Double> atime( rows.nelements() ) ;
+    Vector<Double> ainterval( rows.nelements() ) ;
+    Vector<uInt> atcalid( rows.nelements() ) ;
+    for( uInt jrow = 0 ; jrow < rows.nelements() ; jrow++ ) {
+      atime[jrow] = (Double)timeCol.asdouble( rows[jrow] ) ;
+      ainterval[jrow] = (Double)intervalCol.asdouble( rows[jrow] ) ;
+      atcalid[jrow] = tcalidCol.asuInt( rows[jrow] ) ;
+    }
+    Vector<Float> dummy = tsysCol( rows[0] ) ;
+    Matrix<Float> tsys( npol,dummy.nelements() ) ;
+    tsys.row( 0 ) = dummy ;
+    for ( uInt jrow = 1 ; jrow < npol ; jrow++ )
+      tsys.row( jrow ) = tsysCol( rows[jrow] ) ;
 
     // FEED_ID
-    ROScalarColumn<uInt> uintCol( tsel, "BEAMNO" ) ;
-    *feedRF = uintCol( 0 ) ;
+    *feedRF = beamnoCol.asuInt( rows[0] ) ;
 
     // SPECTRAL_WINDOW_ID
-    uintCol.attach( tsel, "IFNO" ) ;
-    *spwRF = uintCol( 0 ) ;
+    *spwRF = ifnoCol.asuInt( rows[0] ) ;
 
     // TIME and INTERVAL
-    Table tsel1 = tsel( tsel.col("TCAL_ID") == ids[0] ) ;
-    os_ << "tsel.nrow = " << tsel.nrow() << " tsel1.nrow = " << tsel1.nrow() << LogIO::POST ;
-    getValidTimeRange( midTime, interval, tsel1 ) ;
+    getValidTimeRange( midTime, interval, atime, ainterval ) ;
     *timeRF = midTime ;
     *intervalRF = interval ;
 
@@ -1077,11 +1075,6 @@ void MSWriter::fillSysCal()
       tcal.resize( npol, dummyC.size() ) ;
       tcal.row( 0 ) = dummyC ;
     }
-    tsysCol.attach( tsel, "TSYS" ) ;
-    Vector<Float> dummyS = tsysCol( 0 ) ;
-    Matrix<Float> tsys( npol, dummyS.size() ) ;
-    tsys.row( 0 ) = dummyS ;
-    // get TSYS and TCAL
     if ( npol == 2 ) {
       if ( idCol.asuInt( ids[1] ) == ids[1] ) {
         os_ << "sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
@@ -1093,7 +1086,6 @@ void MSWriter::fillSysCal()
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 1 ) = tcalCol( 1 ) ;
       }
-      tsys.row( 1 ) = tsysCol( nrowsel-1 ) ;
     }
     else if ( npol == 3 ) {
       if ( idCol.asuInt( ids[2] ) == ids[2] )
@@ -1110,8 +1102,6 @@ void MSWriter::fillSysCal()
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 2 ) = tcalCol( 0 ) ;
       }
-      tsys.row( 1 ) = tsysCol( nrowsel/npol ) ;
-      tsys.row( 2 ) = tsysCol( nrowsel-1 ) ;
     }
     else if ( npol == 4 ) {
       if ( idCol.asuInt( ids[2] ) == ids[2] )
@@ -1135,9 +1125,6 @@ void MSWriter::fillSysCal()
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 3 ) = tcalCol( 0 ) ;
       }
-      tsys.row( 1 ) = tsysCol( nrowsel/3 ) ;
-      tsys.row( 2 ) = tsys.row( 1 ) ;
-      tsys.row( 3 ) = tsysCol( nrowsel-1 ) ;
     }
     if ( tcalSpec_ ) {
       // put TCAL_SPECTRUM 
@@ -1627,6 +1614,28 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Table &tab )
   Double minTime ; 
   Double maxTime ;
   minMax( minTime, maxTime, timeArr ) ;
+  Double midTime = 0.5 * ( minTime + maxTime ) * 86400.0 ;
+  // unit for TIME
+  // Scantable: "d"
+  // MS: "s"
+  me = midTime ;
+  interval = ( maxTime - minTime ) * 86400.0 ;
+
+  double endSec = gettimeofday_sec() ;
+  os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+}
+
+void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &atime, Vector<Double> &ainterval ) 
+{
+  double startSec = gettimeofday_sec() ;
+  os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
+
+  // sort table
+  //Table stab = tab.sort( "TIME" ) ;
+
+  Double minTime ; 
+  Double maxTime ;
+  minMax( minTime, maxTime, atime ) ;
   Double midTime = 0.5 * ( minTime + maxTime ) * 86400.0 ;
   // unit for TIME
   // Scantable: "d"

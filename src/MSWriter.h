@@ -78,6 +78,7 @@ private:
   // utility
   casa::Vector<casa::Int> toCorrType( casa::Vector<casa::Int> polnos ) ;
   void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Table &tab ) ;
+  void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Vector<casa::Double> &atime, casa::Vector<casa::Double> &ainterval ) ;
   //void queryType( casa::Int type, casa::String &stype, casa::Bool &b ) ; 
   void queryType( casa::Int type, casa::String &stype, casa::Bool &b, casa::Double &t, Double &l ) ; 
 
