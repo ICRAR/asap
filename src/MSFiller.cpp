@@ -848,9 +848,12 @@ void MSFiller::fill()
                   // POLNO
                   *polnoRF = polnos[ipol] ;
 
-                  *spRF = sp.row( ipol ) ;
-                  *ucarrRF = fl.row( ipol ) ;
-                  *tsysRF = tsys.row( ipol ) ;
+                  //*spRF = sp.row( ipol ) ;
+                  //*ucarrRF = fl.row( ipol ) ;
+                  //*tsysRF = tsys.row( ipol ) ;
+                  spRF.define( sp.row( ipol ) ) ;
+                  ucarrRF.define( fl.row( ipol ) ) ;
+                  tsysRF.define( tsys.row( ipol ) ) ;
                   *tcalidRF = tcalids[ipol] ;
 
                   // Commit row
@@ -1287,7 +1290,8 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
         Matrix<Float> subtcal = (*tmpTcalCol)( irow ) ;
         for ( uInt ipol = 0 ; ipol < npol ; ipol++ ) {
           *idRF = idx++ ;
-          *tcalRF = subtcal.row( ipol ) ;
+          //*tcalRF = subtcal.row( ipol ) ;
+          tcalRF.define( subtcal.row( ipol ) ) ;
 
           // commit row
           tab.addRow() ;
@@ -1318,7 +1322,7 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
 //   double startSec = gettimeofday_sec() ;
 //   os_ << "start MSFiller::getWeatherId() startSec=" << startSec << LogIO::POST ;
   uInt nrow = mwTime_.size() ;
-  if ( nrow == 0 ) 
+  if ( nrow < 2 ) 
     return 0 ;
   uInt wid = nrow ;
   for ( uInt i = idx ; i < nrow-1 ; i++ ) {
@@ -1361,6 +1365,10 @@ void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval
   uInt nrow = tidx.nelements() ;
   if ( scTime.nelements() == 0 ) 
     return ;
+  else if ( scTime.nelements() == 1 ) {
+    tidx[0] = 0 ;
+    return ;
+  }
   uInt scnrow = scTime.nelements() ;
   uInt idx = 0 ;
   const Double half = 0.5e0 ;

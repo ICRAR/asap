@@ -90,6 +90,9 @@ private:
   //casa::CountedPtr<casa::MeasurementSet> mstable_ ;
   casa::MeasurementSet *mstable_ ;
 
+  casa::Bool isTcal_ ;
+  casa::Bool isWeather_ ;
+
   casa::Bool useFloatData_ ;
   casa::Bool useData_ ;
   casa::Bool tcalSpec_ ;

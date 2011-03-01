@@ -57,6 +57,10 @@ double MSWriter::gettimeofday_sec()
 
 MSWriter::MSWriter(CountedPtr<Scantable> stable) 
   : table_(stable),
+    isTcal_(False),
+    isWeather_(False),
+    tcalSpec_(False),
+    tsysSpec_(False),
     ptTabName_("")
 {
   os_ = LogIO() ;
@@ -133,7 +137,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
   fillSource() ;
 
   // WEATHER
-  fillWeather() ;
+  if ( isWeather_ ) 
+    fillWeather() ;
 
   // MAIN
   // Iterate over several ids
@@ -303,7 +308,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
             cols[1] = "TIME" ;
             TableIterator iter5( t4, cols ) ;
             while( !iter5.pastEnd() ) {
-              Table t5 =  iter5.table()  ;
+              Table t5 =  iter5.table().sort("POLNO") ;
               //sharedCol.attach( t5, "CYCLENO" ) ;
               //uInt cycleNo = sharedCol.asuInt( 0 ) ;
               Int nrow = t5.nrow() ;
@@ -323,18 +328,18 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 // FLOAT_DATA
                 Matrix<Float> dataArr( cellshape ) ;
                 Matrix<Bool> flagArr( cellshape ) ;
-                Vector<uChar> tmpUC ;
                 Vector<Bool> tmpB ;
                 for ( Int ipol = 0 ; ipol < nrow ; ipol++ ) {
                   dataArr.row( ipol ) = specCol( ipol ) ;
-                  tmpUC = flagCol( ipol ) ;
-                  tmpB = flagArr.row( ipol ) ;
-                  convertArray( tmpB, tmpUC ) ;
+                  tmpB.reference( flagArr.row( ipol ) ) ;
+                  convertArray( tmpB, flagCol( ipol ) ) ;
                 }
-                *(*((RecordFieldPtr< Array<Float> > *)dataRF)) = dataArr ; 
+                //*(*((RecordFieldPtr< Array<Float> > *)dataRF)) = dataArr ; 
+                ((RecordFieldPtr< Array<Float> > *)dataRF)->define( dataArr ) ; 
                 
                 // FLAG
-                *flagRF = flagArr ;
+                //*flagRF = flagArr ;
+                flagRF.define( flagArr ) ;
               }
               else if ( useData_ ) {
                 // DATA
@@ -351,25 +356,24 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 dummy.row( 1 ) = specCol( 3 ) ;
                 dataArr.row( 1 ) = RealToComplex( dummy ) ;
                 dataArr.row( 2 ) = conj( dataArr.row( 1 ) ) ;
-                *(*((RecordFieldPtr< Array<Complex> > *)dataRF)) = dataArr ; 
+                //*(*((RecordFieldPtr< Array<Complex> > *)dataRF)) = dataArr ; 
+                ((RecordFieldPtr< Array<Complex> > *)dataRF)->define( dataArr ) ; 
                 
                 
                 // FLAG
                 Matrix<Bool> flagArr( cellshape ) ;
-                Matrix<uChar> tmpUC = flagCol( 0 ) ;
-                Matrix<Bool> tmpB = flagArr.row( 0 ) ;
-                convertArray( tmpB, tmpUC ) ;
-                tmpUC = flagCol( 3 ) ;
-                tmpB = flagArr.row( 3 ) ;
-                convertArray( tmpB, tmpUC ) ;
-                tmpUC = flagCol( 2 ) | flagCol( 3 ) ;
-                tmpB = flagArr.row( 1 ) ;
-                convertArray( tmpB, tmpUC ) ;
-                tmpB = flagArr.row( 2 ) ;
-                convertArray( tmpB, tmpUC ) ;
-                *flagRF = flagArr ;
+                Vector<Bool> tmpB ;
+                tmpB.reference( flagArr.row( 0 ) ) ;
+                convertArray( tmpB, flagCol( 0 ) ) ;
+                tmpB.reference( flagArr.row( 3 ) ) ;
+                convertArray( tmpB, flagCol( 3 ) ) ;
+                tmpB.reference( flagArr.row( 1 ) ) ;
+                convertArray( tmpB, ( flagCol( 2 ) | flagCol( 3 ) ) ) ;
+                flagArr.row( 2 ) = flagArr.row( 1 ) ;
+                //*flagRF = flagArr ;
+                flagRF.define( flagArr ) ;
               }
-              
+
               // FLAG_ROW
 //               tcol = tpoolr->construct( t5, "FLAGROW" ) ;
               sharedCol.attach( t5, "FLAGROW" ) ;
@@ -379,7 +383,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
 //                 flagRowArr[irow] = tcol->asuInt( irow ) ;
 //               tpoolr->destroy( tcol ) ;
               *flagrowRF = anyNE( flagRowArr, (uInt)0 ) ;
-              
+
               // TIME and TIME_CENTROID
 //               tcol = tpoolr->construct( t5, "TIME" ) ;
 //               Double mTimeV = (Double)(tcol->asdouble(0)) * 86400.0 ; // day->sec
@@ -388,7 +392,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
               Double mTimeV = (Double)sharedCol.asdouble( 0 ) * 86400.0 ; // day -> sec 
               *timeRF = mTimeV ;
               *timecRF = mTimeV ;
-              
+
               // INTERVAL and EXPOSURE
 //               tcol = tpoolr->construct( t5, "INTERVAL" ) ;
 //               Double interval = (Double)(tcol->asdouble( 0 )) ;
@@ -451,7 +455,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
               
               // FLAG_CATEGORY is tentatively set
               RecordFieldPtr< Array<Bool> > flagcatRF( trec, "FLAG_CATEGORY" ) ;
-              *flagcatRF = Cube<Bool>( nrow, nchan, 1, False ) ; 
+              //*flagcatRF = Cube<Bool>( nrow, nchan, 1, False ) ; 
+              flagcatRF.define( Cube<Bool>( nrow, nchan, 1, False ) ) ; 
               
               // add row
               mstable_->addRow( 1, True ) ;
@@ -493,7 +498,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
   delete dataRF ;
 
   // SYSCAL
-  fillSysCal() ;
+  if ( isTcal_ ) 
+    fillSysCal() ;
 
   // replace POINTING table with original one if exists
   if ( ptTabName_ != "" ) {
@@ -543,10 +549,36 @@ void MSWriter::init()
   else 
     polType_ = "notype" ;
 
+  // Check if some subtables are exists
+  if ( table_->tcal().table().nrow() != 0 ) {
+    ROTableColumn col( table_->tcal().table(), "TCAL" ) ;
+    if ( col.isDefined( 0 ) ) {
+      os_ << "nrow=" << table_->tcal().table().nrow() << ": TCAL table exists" << LogIO::POST ;
+      isTcal_ = True ;
+    }
+    else {
+      os_ << "no TCAL rows" << LogIO::POST ;
+    }
+  }
+  else {
+    os_ << "no TCAL rows" << LogIO::POST ;
+  }
+  if ( table_->weather().table().nrow() != 0 ) {
+    ROTableColumn col( table_->weather().table(), "TEMPERATURE" ) ;
+    if ( col.isDefined( 0 ) ) {
+      os_ << "nrow=" << table_->weather().table().nrow() << ": WEATHER table exists" << LogIO::POST ;
+      isWeather_ =True ;
+    }
+    else {
+      os_ << "no WEATHER rows" << LogIO::POST ;
+    }
+  }
+  else {
+    os_ << "no WEATHER rows" << LogIO::POST ;
+  }
+
   // Are TCAL_SPECTRUM and TSYS_SPECTRUM necessary?
-  tcalSpec_ = False ;
-  tsysSpec_ = False ;
-  if ( header_.nchan != 1 ) {
+  if ( isTcal_ && header_.nchan != 1 ) {
     // examine TCAL subtable
     Table tcaltab = table_->tcal().table() ;
     ROArrayColumn<Float> tcalCol( tcaltab, "TCAL" ) ;
@@ -858,7 +890,19 @@ void MSWriter::fillSource()
       *restfreqRF = restFreq ;
 
       // TRANSITION
-      *transitionRF = fMolName ;
+      //*transitionRF = fMolName ;
+      Vector<String> transition ;
+      if ( fMolName.size() != 0 ) {
+        transition = fMolName ;
+      }
+      else if ( molName.size() != 0 ) {
+        transition = molName ;
+      }
+      else {
+        transition.resize( numFreq ) ;
+        transition = "" ;
+      }
+      *transitionRF = transition ;
 
       // SYSVEL 
       Vector<Double> sysvelArr( numFreq, srcVel ) ;
@@ -1128,7 +1172,8 @@ void MSWriter::fillSysCal()
     }
     if ( tcalSpec_ ) {
       // put TCAL_SPECTRUM 
-      *tcalspRF = tcal ;
+      //*tcalspRF = tcal ;
+      tcalspRF.define( tcal ) ;
       // set TCAL (mean of TCAL_SPECTRUM)
       Matrix<Float> tcalMean( npol, 1 ) ;
       for ( uInt iid = 0 ; iid < npol ; iid++ ) {
@@ -1144,7 +1189,8 @@ void MSWriter::fillSysCal()
     
     if ( tsysSpec_ ) {
       // put TSYS_SPECTRUM
-      *tsysspRF = tsys ;
+      //*tsysspRF = tsys ;
+      tsysspRF.define( tsys ) ;
       // set TSYS (mean of TSYS_SPECTRUM)
       Matrix<Float> tsysMean( npol, 1 ) ;
       for ( uInt iid = 0 ; iid < npol ; iid++ ) {
@@ -1341,7 +1387,7 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
 
   // only 1 POLARIZATION row for 1 scantable
   if ( nrow > 0 )
-    return 1 ;
+    return 0 ;
   
   Vector<Int> corrType = toCorrType( polnos ) ;
   
