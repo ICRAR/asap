@@ -163,7 +163,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
   RecordFieldPtr< Array<Float> > sigmaRF( trec, "SIGMA" ) ;
   RecordFieldPtr<Int> ddidRF( trec, "DATA_DESC_ID" ) ;
   RecordFieldPtr<Int> stateidRF( trec, "STATE_ID" ) ;
-
+  RecordFieldPtr< Array<Bool> > flagcatRF( trec, "FLAG_CATEGORY" ) ;
 
   // OBSERVATION_ID is always 0
   RecordFieldPtr<Int> intRF( trec, "OBSERVATION_ID" ) ;
@@ -454,7 +454,6 @@ bool MSWriter::write(const string& filename, const Record& rec)
               }
               
               // FLAG_CATEGORY is tentatively set
-              RecordFieldPtr< Array<Bool> > flagcatRF( trec, "FLAG_CATEGORY" ) ;
               //*flagcatRF = Cube<Bool>( nrow, nchan, 1, False ) ; 
               flagcatRF.define( Cube<Bool>( nrow, nchan, 1, False ) ) ; 
               
@@ -1225,11 +1224,36 @@ void MSWriter::addFeed( Int id )
   MSFeed msFeed = mstable_->feed() ;
   msFeed.addRow( 1, True ) ;
   Int nrow = msFeed.nrow() ;
+  Int numReceptors = 2 ;
+  Vector<String> polType( numReceptors ) ;
+  Matrix<Double> beamOffset( 2, numReceptors ) ;
+  beamOffset = 0.0 ;
+  Vector<Double> receptorAngle( numReceptors, 0.0 ) ;
+  if ( polType_ == "linear" ) {
+    polType[0] = "X" ;
+    polType[1] = "Y" ;
+  }
+  else if ( polType_ == "circular" ) {
+    polType[0] = "R" ;
+    polType[1] = "L" ;
+  }
+  else {
+    polType[0] = "X" ;
+    polType[1] = "Y" ;
+  }
+  Matrix<Complex> polResponse( numReceptors, numReceptors, 0.0 ) ;
+  for ( Int i = 0 ; i < numReceptors ; i++ )
+    polResponse( i, i ) = 0.0 ;
 
   MSFeedColumns msFeedCols( mstable_->feed() ) ;
 
   msFeedCols.feedId().put( nrow-1, id ) ;
   msFeedCols.antennaId().put( nrow-1, 0 ) ;
+  msFeedCols.numReceptors().put( nrow-1, numReceptors ) ;
+  msFeedCols.polarizationType().put( nrow-1, polType ) ;
+  msFeedCols.beamOffset().put( nrow-1, beamOffset ) ;
+  msFeedCols.receptorAngle().put( nrow-1, receptorAngle ) ;
+  msFeedCols.polResponse().put( nrow-1, polResponse ) ;
 
   double endSec = gettimeofday_sec() ;
   os_ << "end MSWriter::addFeed() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
@@ -1687,7 +1711,7 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &
   // Scantable: "d"
   // MS: "s"
   me = midTime ;
-  interval = ( maxTime - minTime ) * 86400.0 ;
+  interval = ( maxTime - minTime ) * 86400.0 + mean( ainterval ) ;
 
   double endSec = gettimeofday_sec() ;
   os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
