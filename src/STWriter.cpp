@@ -162,8 +162,13 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
   // Create the output file and write static data.
   Int status;
+//   status = writer_->create(String(filename), hdr.observer, hdr.project,
+//                            hdr.antennaname, hdr.antennaposition,
+//                            hdr.obstype, hdr.fluxunit,
+//                            hdr.equinox, hdr.freqref,
+//                            nChan, nPol, havexpol, False);
   status = writer_->create(String(filename), hdr.observer, hdr.project,
-                           hdr.antennaname, hdr.antennaposition,
+                           inst->getAntennaName(), hdr.antennaposition,
                            hdr.obstype, hdr.fluxunit,
                            hdr.equinox, hdr.freqref,
                            nChan, nPol, havexpol, False);
