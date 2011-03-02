@@ -958,7 +958,7 @@ void MSFiller::fill()
   //}
 
   // for GBT
-  if ( antennaName.matches( "GBT" ) ) {
+  if ( antennaName.contains( "GBT" ) ) {
     String goTabName = datapath.absoluteName() + "/GBT_GO" ;
     stab.rwKeywordSet().define( "GBT_GO", goTabName ) ;
   }
