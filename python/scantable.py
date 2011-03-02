@@ -233,11 +233,11 @@ class scantable(Scantable):
         format2 = format.upper()
         if format2 == 'ASAP':
             self._save(name)
-##         elif format2 == 'MS2':
-##             msopt = {'ms': {'overwrite': overwrite } }
-##             from asap._asap import mswriter
-##             writer = mswriter( self )
-##             writer.write( name, msopt ) 
+        elif format2 == 'MS2':
+            msopt = {'ms': {'overwrite': overwrite } }
+            from asap._asap import mswriter
+            writer = mswriter( self )
+            writer.write( name, msopt ) 
         else:
             from asap._asap import stwriter as stw
             writer = stw(format2)
