@@ -502,6 +502,24 @@ bool MSWriter::write(const string& filename, const Record& rec)
   if ( isTcal_ ) 
     fillSysCal() ;
 
+  // ASDM tables 
+  const TableRecord &stKeys = table_->table().keywordSet() ;
+  TableRecord &msKeys = mstable_->rwKeywordSet() ;
+  uInt nfields = stKeys.nfields() ;
+  for ( uInt ifield = 0 ; ifield < nfields ; ifield++ ) {
+    String kname = stKeys.name( ifield ) ;
+    if ( kname.find( "ASDM" ) != String::npos ) {
+      String asdmpath = stKeys.asString( ifield ) ;
+      os_ << "found ASDM table: " << asdmpath << LogIO::POST ;
+      if ( Table::isReadable( asdmpath ) ) {
+        Table newAsdmTab( asdmpath, Table::Old ) ;
+        newAsdmTab.copy( filename_+"/"+kname, Table::New ) ;
+        os_ << "add subtable: " << kname << LogIO::POST ;
+        msKeys.defineTable( kname, Table( filename_+"/"+kname, Table::Old ) ) ;
+      }
+    }
+  }
+
   // replace POINTING table with original one if exists
   if ( ptTabName_ != "" ) {
     delete mstable_ ;

@@ -119,7 +119,6 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
   }
 
   os_ << "Parsing MS options" << endl ;
-  rec.print(cout) ;
   os_ << "   getPt = " << getPt_ << endl ;
   os_ << "   antenna = " << antenna_ << endl ;
   os_ << "   antennaStr = " << antennaStr_ << LogIO::POST ;
@@ -949,16 +948,35 @@ void MSFiller::fill()
   table_->setHeader( sdh ) ;
 
   // save path to POINTING table
-  //Path datapath(mstable_.tableName()) ;
+  // 2011/3/2 TN
+  // So far, path to original POINTING table is always stored 
+  // since sd tasks and regressions don't support getpt control
+  //if ( !getPt_ ) {
   Path datapath( tablename_ ) ;
   String pTabName = datapath.absoluteName() + "/POINTING" ;
   stab.rwKeywordSet().define( "POINTING", pTabName ) ;
+  //}
 
   // for GBT
-  if ( antennaName == "GBT" ) {
+  if ( antennaName.matches( "GBT" ) ) {
     String goTabName = datapath.absoluteName() + "/GBT_GO" ;
     stab.rwKeywordSet().define( "GBT_GO", goTabName ) ;
   }
+
+  // for MS created from ASDM
+  //mstable_.keywordSet().print(cout) ;
+  const TableRecord &msKeys = mstable_.keywordSet() ;
+  uInt nfields = msKeys.nfields() ;
+  for ( uInt ifield = 0 ; ifield < nfields ; ifield++ ) {
+    String name = msKeys.name( ifield ) ;
+    //os_ << "name = " << name << LogIO::POST ;
+    if ( name.find( "ASDM" ) != String::npos ) {
+      String asdmpath = msKeys.asTable( ifield ).tableName() ;
+      os_ << "ASDM table: " << asdmpath << LogIO::POST ;
+      stab.rwKeywordSet().define( name, asdmpath ) ;
+    }
+  }
+
 //   double endSec = gettimeofday_sec() ;
 //   os_ << "end MSFiller::fill() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
@@ -1415,8 +1433,8 @@ void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval
       }
     }
     if ( tidx[i] == -1 ) {
-      Double tsc = scTime[scnrow-1].get( "s" ).getValue() ;
-      Double dt = scInterval[scnrow-1] ;
+//       Double tsc = scTime[scnrow-1].get( "s" ).getValue() ;
+//       Double dt = scInterval[scnrow-1] ;
 //       if ( t <= tsc+0.5*dt ) {
 //         tidx[i] = scnrow-1 ;
 //       }
