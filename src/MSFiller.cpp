@@ -118,11 +118,6 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
     }
   }
 
-  os_ << "Parsing MS options" << endl ;
-  os_ << "   getPt = " << getPt_ << endl ;
-  os_ << "   antenna = " << antenna_ << endl ;
-  os_ << "   antennaStr = " << antennaStr_ << LogIO::POST ;
-
   MeasurementSet *tmpMS = new MeasurementSet( filename, Table::Old ) ;
   //mstable_ = (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
   //                     && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ;
@@ -132,8 +127,13 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
     Vector<Int> id = msAntIdx.matchAntennaName( antennaStr_ ) ;
     if ( id.size() > 0 )
       antenna_ = id[0] ;
-    os_ << "searched antenna_ = " << antenna_ << LogIO::POST ; 
   }
+
+  os_ << "Parsing MS options" << endl ;
+  os_ << "   getPt = " << getPt_ << endl ;
+  os_ << "   antenna = " << antenna_ << endl ;
+  os_ << "   antennaStr = " << antennaStr_ << LogIO::POST ;
+
   mstable_ = MeasurementSet( (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
                                        && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ) ;
 //   stringstream ss ;
@@ -349,7 +349,7 @@ void MSFiller::fill()
     }
     if ( telescopeName == "" ) {
       tcolr = tpoolr->construct( obstab, "TELESCOPE_NAME" ) ;
-      sdh.observer = tcolr->asString( obsId ) ;
+      telescopeName = tcolr->asString( obsId ) ;
       tpoolr->destroy( tcolr ) ;
     }
     Int nbeam = 0 ;
@@ -1179,7 +1179,7 @@ void MSFiller::fillWeather()
   Table mWeatherSel( mWeather( mWeather.col("ANTENNA_ID") == antenna_ ).sort("TIME") ) ;
   //os_ << "mWeatherSel.nrow() = " << mWeatherSel.nrow() << LogIO::POST ;
   if ( mWeatherSel.nrow() == 0 ) {
-    os_ << "No rows with ANTENNA_ID = " << antenna_ << ", Try -1..." << LogIO::POST ; 
+    os_ << "No rows with ANTENNA_ID = " << antenna_ << " in WEATHER table, Try -1..." << LogIO::POST ; 
     mWeatherSel = Table( MSWeather( mWeather( mWeather.col("ANTENNA_ID") == -1 ) ) ) ;
     if ( mWeatherSel.nrow() == 0 ) {
       os_ << "No rows in WEATHER table" << LogIO::POST ;
@@ -1272,7 +1272,7 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
 
   if ( !isSysCal_ ) {
     // add dummy row
-    os_ << "No SysCal rows" << LogIO::POST ;
+    os_ << "No SYSCAL rows" << LogIO::POST ;
     table_->tcal().table().addRow(1,True) ;
     Vector<Float> defaultTcal( 1, 1.0 ) ;
     ArrayColumn<Float> tcalCol( table_->tcal().table(), "TCAL" ) ;
@@ -1282,12 +1282,12 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
 
   Table sctab = mstable_.sysCal() ;
   if ( sctab.nrow() == 0 ) {
-    os_ << "No SysCal rows" << LogIO::POST ;
+    os_ << "No SYSCAL rows" << LogIO::POST ;
     return ;
   } 
   Table sctabsel( sctab( sctab.col("ANTENNA_ID") == antenna_ ) ) ;
   if ( sctabsel.nrow() == 0 ) {
-    os_ << "No SysCal rows" << LogIO::POST ;
+    os_ << "No SYSCAL rows" << LogIO::POST ;
     return ;
   } 
   ROArrayColumn<Float> *tmpTcalCol = new ROArrayColumn<Float>( sctabsel, "TCAL" ) ;
