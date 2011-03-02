@@ -405,8 +405,10 @@ bool MSWriter::write(const string& filename, const Record& rec)
               // WEIGHT and SIGMA
               // always 1 at the moment
               Vector<Float> wArr( nrow, 1.0 ) ;
-              *weightRF = wArr ;
-              *sigmaRF = wArr ;
+//               *weightRF = wArr ;
+//               *sigmaRF = wArr ;
+              weightRF.define( wArr ) ;
+              sigmaRF.define( wArr ) ;
               
               // add DATA_DESCRIPTION row
               Int ddid = addDataDescription( polid, ifNo ) ;

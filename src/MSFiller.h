@@ -104,6 +104,7 @@ private:
   casa::MeasurementSet mstable_ ;
   casa::String tablename_ ;
   casa::Int antenna_ ;
+  casa::String antennaStr_ ;
   casa::Bool getPt_ ;
 
   casa::Bool isFloatData_ ;

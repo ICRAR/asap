@@ -43,6 +43,8 @@
 #include <measures/TableMeasures/ScalarQuantColumn.h>
 #include <measures/TableMeasures/ArrayQuantColumn.h>
 
+#include <ms/MeasurementSets/MSAntennaIndex.h>
+
 #include <atnf/PKSIO/SrcType.h>
 
 #include "MSFiller.h"
@@ -66,6 +68,7 @@ MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
   : table_( stable ),
     tablename_( "" ),
     antenna_( -1 ),
+    antennaStr_(""),
     getPt_( False ),
     isFloatData_( False ),
     isData_( False ),
@@ -106,7 +109,8 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
         antenna_ = msrec.asInt( "antenna" ) ;
       }
       else {
-        antenna_ = atoi( msrec.asString( "antenna" ).c_str() ) ;
+        //antenna_ = atoi( msrec.asString( "antenna" ).c_str() ) ;
+        antennaStr_ = msrec.asString( "antenna" ) ;
       }
     }
     else {
@@ -115,13 +119,22 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
   }
 
   os_ << "Parsing MS options" << endl ;
+  rec.print(cout) ;
   os_ << "   getPt = " << getPt_ << endl ;
-  os_ << "   antenna = " << antenna_ << LogIO::POST ;
+  os_ << "   antenna = " << antenna_ << endl ;
+  os_ << "   antennaStr = " << antennaStr_ << LogIO::POST ;
 
   MeasurementSet *tmpMS = new MeasurementSet( filename, Table::Old ) ;
   //mstable_ = (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
   //                     && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ;
   tablename_ = tmpMS->tableName() ;
+  if ( antenna_ == -1 && antennaStr_.size() > 0 ) {
+    MSAntennaIndex msAntIdx( tmpMS->antenna() ) ;
+    Vector<Int> id = msAntIdx.matchAntennaName( antennaStr_ ) ;
+    if ( id.size() > 0 )
+      antenna_ = id[0] ;
+    os_ << "searched antenna_ = " << antenna_ << LogIO::POST ; 
+  }
   mstable_ = MeasurementSet( (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
                                        && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ) ;
 //   stringstream ss ;
@@ -273,8 +286,8 @@ void MSFiller::fill()
     sdh.antennaposition[i] = antpos[i].getValue( "m" ) ;
   String telescopeName = "" ;
 
-  //double time1 = gettimeofday_sec() ;
-  //os_ << "end fill init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//   double time1 = gettimeofday_sec() ;
+//   os_ << "end fill init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
 
   // row based 
   Table &stab = table_->table() ; 
@@ -313,8 +326,8 @@ void MSFiller::fill()
   //
   TableIterator iter0( mstable_, "OBSERVATION_ID" ) ;
   while( !iter0.pastEnd() ) {
-    //time0 = gettimeofday_sec() ;
-    //os_ << "start 0th iteration: " << time0 << LogIO::POST ;
+//     time0 = gettimeofday_sec() ;
+//     os_ << "start 0th iteration: " << time0 << LogIO::POST ;
     Table t0 = iter0.table() ;
     tcolr = tpoolr->construct( t0, "OBSERVATION_ID" ) ;
     Int obsId = tcolr->asInt( 0 ) ;
@@ -341,15 +354,15 @@ void MSFiller::fill()
       tpoolr->destroy( tcolr ) ;
     }
     Int nbeam = 0 ;
-    //time1 = gettimeofday_sec() ;
-    //os_ << "end 0th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//     time1 = gettimeofday_sec() ;
+//     os_ << "end 0th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
     //
     // ITERATION: FEED1
     //
     TableIterator iter1( t0, "FEED1" ) ;
     while( !iter1.pastEnd() ) {
-      //time0 = gettimeofday_sec() ;
-      //os_ << "start 1st iteration: " << time0 << LogIO::POST ;
+//       time0 = gettimeofday_sec() ;
+//       os_ << "start 1st iteration: " << time0 << LogIO::POST ;
       Table t1 = iter1.table() ;
       // assume FEED1 == FEED2
       tcolr = tpoolr->construct( t1, "FEED1" ) ;
@@ -365,15 +378,15 @@ void MSFiller::fill()
       uintRF.attachToRecord( trec, "FOCUS_ID" ) ;
       *uintRF = 0 ;
 
-      //time1 = gettimeofday_sec() ;
-      //os_ << "end 1st iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//       time1 = gettimeofday_sec() ;
+//       os_ << "end 1st iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
       // 
       // ITERATION: FIELD_ID 
       //
       TableIterator iter2( t1, "FIELD_ID" ) ;
       while( !iter2.pastEnd() ) {
-        //time0 = gettimeofday_sec() ;
-        //os_ << "start 2nd iteration: " << time0 << LogIO::POST ;
+//         time0 = gettimeofday_sec() ;
+//         os_ << "start 2nd iteration: " << time0 << LogIO::POST ;
         Table t2 = iter2.table() ;
         tcolr = tpoolr->construct( t2, "FIELD_ID" ) ;
         Int fieldId = tcolr->asInt( 0 ) ;
@@ -398,15 +411,15 @@ void MSFiller::fill()
         *strRF = fieldName ;
 
 
-        //time1 = gettimeofday_sec() ;
-        //os_ << "end 2nd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//         time1 = gettimeofday_sec() ;
+//         os_ << "end 2nd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
         // 
         // ITERATION: DATA_DESC_ID
         //
         TableIterator iter3( t2, "DATA_DESC_ID" ) ;
         while( !iter3.pastEnd() ) {
-          //time0 = gettimeofday_sec() ;
-          //os_ << "start 3rd iteration: " << time0 << LogIO::POST ;
+//           time0 = gettimeofday_sec() ;
+//           os_ << "start 3rd iteration: " << time0 << LogIO::POST ;
           Table t3 = iter3.table() ;
           tcolr = tpoolr->construct( t3, "DATA_DESC_ID" ) ;
           Int ddId = tcolr->asInt( 0 ) ;
@@ -431,8 +444,8 @@ void MSFiller::fill()
           ROArrayColumn<Int> *roArrICol = new ROArrayColumn<Int>( poltab, "CORR_TYPE" ) ;
           Vector<Int> corrtype = (*roArrICol)( polId ) ;
           delete roArrICol ;
-          //os_ << "npol = " << npol << LogIO::POST ;
-          //os_ << "corrtype = " << corrtype << LogIO::POST ;
+//           os_ << "npol = " << npol << LogIO::POST ;
+//           os_ << "corrtype = " << corrtype << LogIO::POST ;
           sdh.npol = max( sdh.npol, npol ) ;
           if ( sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
           // source information
@@ -468,35 +481,20 @@ void MSFiller::fill()
           *darrRF = srcDir ;
 
           //os_ << "srcDir = " << srcDir << LogIO::POST ;
-          Array<Double> sysVels ;
-          Double sysVel = 0.0 ;
-          if ( srctabSel.tableDesc().isColumn( "SYSVEL" ) ) {
-            roArrDCol = new ROArrayColumn<Double>( srctabSel, "SYSVEL" ) ;
-            sysVels = (*roArrDCol)( 0 ) ;
-            delete roArrDCol ;
-          }
-          if ( !sysVels.empty() ) {
-            //os_ << "sysVels.shape() = " << sysVels.shape() << LogIO::POST ;
-            // NB: assume all SYSVEL values are the same
-            sysVel = sysVels( IPosition(1,0) ) ;
-          }
-
-          // SRCVELOCITY
-          RecordFieldPtr<Double> doubleRF( trec, "SRCVELOCITY" ) ;
-          *doubleRF = sysVel ;
-
-          //delete tmpArrCol ;
-          //os_ << "sysVel = " << sysVel << LogIO::POST ;
           ROScalarMeasColumn<MDirection> *tmpMeasCol = new ROScalarMeasColumn<MDirection>( srctabSel, "DIRECTION" ) ;
           MDirection md = (*tmpMeasCol)( 0 ) ;
           delete tmpMeasCol ;
+
           // for MOLECULES subtable
           tcolr = tpoolr->construct( srctabSel, "NUM_LINES" ) ;
           Int numLines = tcolr->asInt( 0 ) ;
           tpoolr->destroy( tcolr ) ;
-          //os_ << "numLines = " << numLines << LogIO::POST ;
+//           os_ << "numLines = " << numLines << LogIO::POST ;
+
           Vector<Double> restFreqs( numLines, 0.0 ) ;
           Vector<String> transitionName( numLines, "" ) ;
+          Vector<Double> sysVels ;
+          Double sysVel = 0.0 ;
           if ( numLines != 0 ) {
             if ( srctabSel.tableDesc().isColumn( "REST_FREQUENCY" ) ) {
               sharedQDArrCol = new ROArrayQuantColumn<Double>( srctabSel, "REST_FREQUENCY" ) ;
@@ -513,7 +511,24 @@ void MSFiller::fill()
                 transitionName = transitionCol( 0 ) ;
               //os_ << "transitionNameCol.nrow() = " << transitionCol.nrow() << LogIO::POST ;
             }
+            if ( srctabSel.tableDesc().isColumn( "SYSVEL" ) ) {
+              roArrDCol = new ROArrayColumn<Double>( srctabSel, "SYSVEL" ) ;
+              sysVels = (*roArrDCol)( 0 ) ;
+              delete roArrDCol ;
+            }
+            if ( !sysVels.empty() ) {
+              //os_ << "sysVels.shape() = " << sysVels.shape() << LogIO::POST ;
+              // NB: assume all SYSVEL values are the same
+              sysVel = sysVels( IPosition(1,0) ) ;
+            }
           }
+
+          // SRCVELOCITY
+          RecordFieldPtr<Double> doubleRF( trec, "SRCVELOCITY" ) ;
+          *doubleRF = sysVel ;
+
+//           os_ << "sysVel = " << sysVel << LogIO::POST ;
+
           uInt molId = table_->molecules().addEntry( restFreqs, transitionName, transitionName ) ;
 
           // MOLECULE_ID
@@ -611,15 +626,15 @@ void MSFiller::fill()
             delete scIntervalCol ;
             scTsysCol.attach( caltabsel, colTsys_ ) ;
           }
-          //time1 = gettimeofday_sec() ;
-          //os_ << "end 3rd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//           time1 = gettimeofday_sec() ;
+//           os_ << "end 3rd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
           //
           // ITERATION: SCAN_NUMBER
           //
           TableIterator iter4( t3, "SCAN_NUMBER" ) ;
           while( !iter4.pastEnd() ) {
-            //time0 = gettimeofday_sec() ;
-            //os_ << "start 4th iteration: " << time0 << LogIO::POST ;
+//             time0 = gettimeofday_sec() ;
+//             os_ << "start 4th iteration: " << time0 << LogIO::POST ;
             Table t4 = iter4.table() ;
             tcolr = tpoolr->construct( t4, "SCAN_NUMBER" ) ;
             Int scanNum = tcolr->asInt( 0 ) ;
@@ -629,8 +644,8 @@ void MSFiller::fill()
             uintRF.attachToRecord( trec, "SCANNO" ) ;
             *uintRF = scanNum - 1 ;
 
-            //time1 = gettimeofday_sec() ;
-            //os_ << "end 4th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//             time1 = gettimeofday_sec() ;
+//             os_ << "end 4th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
             // 
             // ITERATION: STATE_ID
             //
@@ -1241,6 +1256,9 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
     // add dummy row
     os_ << "No SysCal rows" << LogIO::POST ;
     table_->tcal().table().addRow(1,True) ;
+    Vector<Float> defaultTcal( 1, 1.0 ) ;
+    ArrayColumn<Float> tcalCol( table_->tcal().table(), "TCAL" ) ;
+    tcalCol.put( 0, defaultTcal ) ;
     return ;
   }
 
@@ -1343,6 +1361,8 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
     Double tEnd = mwTime_[i]+0.5*mwInterval_[i] ;
     //os_ << "tStart = " << tStart << " dtEnd = " << tEnd-tStart << " dwtime = " << wtime-tStart << LogIO::POST ;
     if ( wtime >= tStart && wtime <= tEnd )
+      wid = i-1 ;
+    else 
       wid = i ;
   }
 
