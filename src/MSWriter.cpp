@@ -1251,6 +1251,8 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
 
   // NUM_CHAN
   Int nchan = (Int)(refpix * 2) ;
+  if ( nchan == 0 )
+    nchan = 1 ;
   msSpwCols.numChan().put( spwid, nchan ) ;
 
   // TOTAL_BANDWIDTH
@@ -1376,17 +1378,19 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
   MSPolarization msPol = mstable_->polarization() ;
   uInt nrow = msPol.nrow() ;
 
-  // only 1 POLARIZATION row for 1 scantable
-  if ( nrow > 0 )
-    return 0 ;
+//   // only 1 POLARIZATION row for 1 scantable
+//   if ( nrow > 0 )
+//     return 0 ;
   
   Vector<Int> corrType = toCorrType( polnos ) ;
   
   ROArrayColumn<Int> corrtCol( msPol, "CORR_TYPE" ) ;
-  Matrix<Int> corrTypeArr = corrtCol.getColumn() ;
+  //Matrix<Int> corrTypeArr = corrtCol.getColumn() ;
   Int polid = -1 ;
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-    if ( allEQ( corrType, corrTypeArr.column( irow ) ) ) {
+    Vector<Int> corrTypeArr = corrtCol( irow ) ;
+    if ( corrType.nelements() == corrTypeArr.nelements() 
+         && allEQ( corrType, corrTypeArr ) ) {
       polid = irow ;
       break ;
     }

@@ -566,7 +566,8 @@ void MSFiller::fill()
           }
           Int refchan = nchan / 2 ;
           IPosition refip( 1, refchan ) ;
-          Double refpix = 0.5*(nchan-1) ;
+          //Double refpix = 0.5*(nchan-1) ;
+          Double refpix = 0.5*(nchan) ;
           Double refval = 0.0 ;
           sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_WIDTH" ) ;
           Double increment = (*sharedQDArrCol)( spwId )( refip ).getValue( "Hz" ) ;
