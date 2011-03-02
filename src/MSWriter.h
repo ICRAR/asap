@@ -81,6 +81,7 @@ private:
   void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Vector<casa::Double> &atime, casa::Vector<casa::Double> &ainterval ) ;
   //void queryType( casa::Int type, casa::String &stype, casa::Bool &b ) ; 
   void queryType( casa::Int type, casa::String &stype, casa::Bool &b, casa::Double &t, Double &l ) ; 
+  casa::Double getDishDiameter( casa::String antname ) ;
 
   // tool for HPC
   double gettimeofday_sec() ;

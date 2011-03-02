@@ -41,9 +41,6 @@
 #include <ctime>
 #include <sys/time.h>
 
-// Boost
-#include <boost/pool/object_pool.hpp>
-
 using namespace casa ;
 using namespace std ;
 
@@ -65,7 +62,7 @@ MSWriter::MSWriter(CountedPtr<Scantable> stable)
 {
   os_ = LogIO() ;
   os_.origin( LogOrigin( "MSWriter", "MSWriter()", WHERE ) ) ;
-  os_ << "MSWriter::MSWriter()" << LogIO::POST ;
+//   os_ << "MSWriter::MSWriter()" << LogIO::POST ;
 
   // initialize writer
   init() ;
@@ -74,7 +71,7 @@ MSWriter::MSWriter(CountedPtr<Scantable> stable)
 MSWriter::~MSWriter() 
 {
   os_.origin( LogOrigin( "MSWriter", "~MSWriter()", WHERE ) ) ;
-  os_ << "MSWriter::~MSWriter()" << LogIO::POST ;
+//   os_ << "MSWriter::~MSWriter()" << LogIO::POST ;
 
   if ( mstable_ != 0 ) 
     delete mstable_ ;
@@ -83,8 +80,8 @@ MSWriter::~MSWriter()
 bool MSWriter::write(const string& filename, const Record& rec) 
 {
   os_.origin( LogOrigin( "MSWriter", "write()", WHERE ) ) ;
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::write() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::write() startSec=" << startSec << LogIO::POST ;
 
   filename_ = filename ;
 
@@ -113,12 +110,6 @@ bool MSWriter::write(const string& filename, const Record& rec)
       return False ;
     }
   }
-
-  // TEST
-  // memory allocation by boost::object_pool
-//   boost::object_pool<ROTableColumn> *tpoolr = new boost::object_pool<ROTableColumn> ;
-//   ROTableColumn *tcol = 0 ;
-  //
 
   // set up MS
   setupMS() ;
@@ -196,35 +187,25 @@ bool MSWriter::write(const string& filename, const Record& rec)
     Table t0 = iter0.table() ;
     ROTableColumn sharedCol( t0, "FIELDNAME" ) ;
     String fieldName = sharedCol.asString( 0 ) ;
-//     tcol = tpoolr->construct( t0, "FIELDNAME" ) ;
-//     String fieldName = tcol->asString( 0 ) ;
-//     tpoolr->destroy( tcol ) ;
     sharedCol.attach( t0, "SRCNAME" ) ;
     String srcName = sharedCol.asString( 0 ) ;
-//     tcol = tpoolr->construct( t0, "SRCNAME" ) ;
-//     String srcName = tcol->asString( 0 ) ;
-//     tpoolr->destroy( tcol ) ;
     sharedCol.attach( t0, "TIME" ) ;
     Double minTime = (Double)sharedCol.asdouble( 0 ) * 86400.0 ; // day->sec
-//     tcol = tpoolr->construct( t0, "TIME" ) ;
-//     Double minTime = (Double)(tcol->asdouble( 0 )) * 86400.0 ; // day -> sec
-//     tpoolr->destroy( tcol ) ;
     ROArrayColumn<Double> scanRateCol( t0, "SCANRATE" ) ;
-    //Vector<Double> scanRate = scanRateCol.getColumn()[0] ;
     Vector<Double> scanRate = scanRateCol( 0 ) ;
     String::size_type pos = fieldName.find( "__" ) ;
     Int fieldId = -1 ;
     if ( pos != String::npos ) {
-      os_ << "fieldName.substr( pos+2 )=" << fieldName.substr( pos+2 ) << LogIO::POST ;
+//       os_ << "fieldName.substr( pos+2 )=" << fieldName.substr( pos+2 ) << LogIO::POST ;
       fieldId = String::toInt( fieldName.substr( pos+2 ) ) ;
       fieldName = fieldName.substr( 0, pos ) ;
     }
     else {
-      os_ << "use default field id" << LogIO::POST ;
+//       os_ << "use default field id" << LogIO::POST ;
       fieldId = defaultFieldId ;
       defaultFieldId++ ;
     }
-    os_ << "fieldId" << fieldId << ": " << fieldName << LogIO::POST ;
+//     os_ << "fieldId" << fieldId << ": " << fieldName << LogIO::POST ;
 
     // FIELD_ID
     intRF.attachToRecord( trec, "FIELD_ID" ) ;
@@ -236,12 +217,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
     TableIterator iter1( t0, "BEAMNO" ) ;
     while( !iter1.pastEnd() ) {
       Table t1 = iter1.table() ;
-//       tcol = tpoolr->construct( t1, "BEAMNO" ) ;
-//       uInt beamNo = tcol->asuInt( 0 ) ;
-//       tpoolr->destroy( tcol ) ;
       sharedCol.attach( t1, "BEAMNO" ) ;
       uInt beamNo = sharedCol.asuInt( 0 ) ;
-      os_ << "beamNo = " << beamNo << LogIO::POST ;
+//       os_ << "beamNo = " << beamNo << LogIO::POST ;
 
       // FEED1 and FEED2
       intRF.attachToRecord( trec, "FEED1" ) ;
@@ -255,12 +233,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
       TableIterator iter2( t1, "SCANNO" ) ;
       while( !iter2.pastEnd() ) {
         Table t2 = iter2.table() ;
-//         tcol = tpoolr->construct( t2, "SCANNO" ) ;
-//         uInt scanNo = tcol->asuInt( 0 ) ;
-//         tpoolr->destroy( tcol ) ;
         sharedCol.attach( t2, "SCANNO" ) ;
         uInt scanNo = sharedCol.asuInt( 0 ) ;
-        os_ << "scanNo = " << scanNo << LogIO::POST ;
+//         os_ << "scanNo = " << scanNo << LogIO::POST ;
 
         // SCAN_NUMBER
         // MS: 1-based
@@ -274,18 +249,12 @@ bool MSWriter::write(const string& filename, const Record& rec)
         TableIterator iter3( t2, "IFNO" ) ;
         while( !iter3.pastEnd() ) {
           Table t3 = iter3.table() ;
-//           tcol = tpoolr->construct( t3, "IFNO" ) ;
-//           uInt ifNo = tcol->asuInt( 0 ) ;
-//           tpoolr->destroy( tcol ) ;
           sharedCol.attach( t3, "IFNO" ) ;
           uInt ifNo = sharedCol.asuInt( 0 ) ;
-          os_ << "ifNo = " << ifNo << LogIO::POST ;
-//           tcol = tpoolr->construct( t3, "FREQ_ID" ) ;
-//           uInt freqId = tcol->asuInt( 0 ) ;
-//           tpoolr->destroy( tcol ) ;
+//           os_ << "ifNo = " << ifNo << LogIO::POST ;
           sharedCol.attach( t3, "FREQ_ID" ) ;
           uInt freqId = sharedCol.asuInt( 0 ) ;
-          os_ << "freqId = " << freqId << LogIO::POST ;
+//           os_ << "freqId = " << freqId << LogIO::POST ;
           Int subscan = 1 ; // 1-base
           // 
           // ITERATION: SRCTYPE
@@ -293,9 +262,6 @@ bool MSWriter::write(const string& filename, const Record& rec)
           TableIterator iter4( t3, "SRCTYPE" ) ;
           while( !iter4.pastEnd() ) {
             Table t4 = iter4.table() ;
-//             tcol = tpoolr->construct( t4, "SRCTYPE" ) ;
-//             uInt srcType = tcol->asInt( 0 ) ;
-//             tpoolr->destroy( tcol ) ;
             sharedCol.attach( t4, "SRCTYPE" ) ;
             Int srcType = sharedCol.asInt( 0 ) ;
             Int stateId = addState( srcType, subscan ) ;
@@ -312,12 +278,12 @@ bool MSWriter::write(const string& filename, const Record& rec)
               //sharedCol.attach( t5, "CYCLENO" ) ;
               //uInt cycleNo = sharedCol.asuInt( 0 ) ;
               Int nrow = t5.nrow() ;
-              os_ << "nrow = " << nrow << LogIO::POST ;
+//               os_ << "nrow = " << nrow << LogIO::POST ;
               
               Vector<Int> polnos( nrow ) ;
               indgen( polnos, 0 ) ;
               Int polid = addPolarization( polnos ) ;
-              os_ << "polid = " << polid << LogIO::POST ;
+//               os_ << "polid = " << polid << LogIO::POST ;
               
               // DATA/FLOAT_DATA
               ROArrayColumn<Float> specCol( t5, "SPECTRA" ) ;
@@ -334,11 +300,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
                   tmpB.reference( flagArr.row( ipol ) ) ;
                   convertArray( tmpB, flagCol( ipol ) ) ;
                 }
-                //*(*((RecordFieldPtr< Array<Float> > *)dataRF)) = dataArr ; 
                 ((RecordFieldPtr< Array<Float> > *)dataRF)->define( dataArr ) ; 
                 
                 // FLAG
-                //*flagRF = flagArr ;
                 flagRF.define( flagArr ) ;
               }
               else if ( useData_ ) {
@@ -356,7 +320,6 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 dummy.row( 1 ) = specCol( 3 ) ;
                 dataArr.row( 1 ) = RealToComplex( dummy ) ;
                 dataArr.row( 2 ) = conj( dataArr.row( 1 ) ) ;
-                //*(*((RecordFieldPtr< Array<Complex> > *)dataRF)) = dataArr ; 
                 ((RecordFieldPtr< Array<Complex> > *)dataRF)->define( dataArr ) ; 
                 
                 
@@ -370,33 +333,23 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 tmpB.reference( flagArr.row( 1 ) ) ;
                 convertArray( tmpB, ( flagCol( 2 ) | flagCol( 3 ) ) ) ;
                 flagArr.row( 2 ) = flagArr.row( 1 ) ;
-                //*flagRF = flagArr ;
                 flagRF.define( flagArr ) ;
               }
 
               // FLAG_ROW
-//               tcol = tpoolr->construct( t5, "FLAGROW" ) ;
               sharedCol.attach( t5, "FLAGROW" ) ;
               Vector<uInt> flagRowArr( nrow ) ;
               for ( Int irow = 0 ; irow < nrow ; irow++ ) 
                 flagRowArr[irow] = sharedCol.asuInt( irow ) ;
-//                 flagRowArr[irow] = tcol->asuInt( irow ) ;
-//               tpoolr->destroy( tcol ) ;
               *flagrowRF = anyNE( flagRowArr, (uInt)0 ) ;
 
               // TIME and TIME_CENTROID
-//               tcol = tpoolr->construct( t5, "TIME" ) ;
-//               Double mTimeV = (Double)(tcol->asdouble(0)) * 86400.0 ; // day->sec
-//               tpoolr->destroy( tcol ) ;
               sharedCol.attach( t5, "TIME" ) ;
               Double mTimeV = (Double)sharedCol.asdouble( 0 ) * 86400.0 ; // day -> sec 
               *timeRF = mTimeV ;
               *timecRF = mTimeV ;
 
               // INTERVAL and EXPOSURE
-//               tcol = tpoolr->construct( t5, "INTERVAL" ) ;
-//               Double interval = (Double)(tcol->asdouble( 0 )) ;
-//               tpoolr->destroy( tcol ) ;
               sharedCol.attach( t5, "INTERVAL" ) ;
               Double interval = (Double)sharedCol.asdouble( 0 ) ;
               *intervalRF = interval ;
@@ -405,25 +358,20 @@ bool MSWriter::write(const string& filename, const Record& rec)
               // WEIGHT and SIGMA
               // always 1 at the moment
               Vector<Float> wArr( nrow, 1.0 ) ;
-//               *weightRF = wArr ;
-//               *sigmaRF = wArr ;
               weightRF.define( wArr ) ;
               sigmaRF.define( wArr ) ;
               
               // add DATA_DESCRIPTION row
               Int ddid = addDataDescription( polid, ifNo ) ;
-              os_ << "ddid = " << ddid << LogIO::POST ;
+//               os_ << "ddid = " << ddid << LogIO::POST ;
               *ddidRF = ddid ;
               
               // for SYSCAL table
-//               tcol = tpoolr->construct( t5, "TCAL_ID" ) ;
               sharedCol.attach( t5, "TCAL_ID" ) ;
               Vector<uInt> tcalIdArr( nrow ) ;
               for ( Int irow = 0 ; irow < nrow ; irow++ )
                 tcalIdArr[irow] = sharedCol.asuInt( irow ) ;
-//                 tcalIdArr[irow] = tcol->asuInt( irow ) ;
-//               tpoolr->destroy( tcol ) ;
-              os_ << "tcalIdArr = " << tcalIdArr << LogIO::POST ;
+//               os_ << "tcalIdArr = " << tcalIdArr << LogIO::POST ;
               String key = String::toString( tcalIdArr[0] ) ;
               if ( !tcalIdRec_.isDefined( key ) ) {
                 tcalIdRec_.define( key, tcalIdArr ) ;
@@ -433,13 +381,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 Vector<uInt> pastrows = tcalRowRec_.asArrayuInt( key ) ;
                 tcalRowRec_.define( key, concatenateArray( pastrows, t5.rowNumbers() ) ) ;
               }
-              
-              // fill STATE_ID
-              //ROScalarColumn<Int> srcTypeCol( t5, "SRCTYPE" ) ;
-              //Int srcType = srcTypeCol( 0 ) ;
-              //Int stateId = addState( srcType, subscan ) ;
-              //*stateidRF = stateId ;
-              
+                            
               // for POINTING table
               if ( ptTabName_ == "" ) {
                 ROArrayColumn<Double> dirCol( t5, "DIRECTION" ) ;
@@ -456,7 +398,6 @@ bool MSWriter::write(const string& filename, const Record& rec)
               }
               
               // FLAG_CATEGORY is tentatively set
-              //*flagcatRF = Cube<Bool>( nrow, nchan, 1, False ) ; 
               flagcatRF.define( Cube<Bool>( nrow, nchan, 1, False ) ) ; 
               
               // add row
@@ -528,8 +469,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
     newPtTab.copy( filename_+"/POINTING", Table::New ) ;
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::write() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::write() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return True ;
 }
@@ -537,8 +478,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
 void MSWriter::init()
 {
 //   os_.origin( LogOrigin( "MSWriter", "init()", WHERE ) ) ;
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::init() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::init() startSec=" << startSec << LogIO::POST ;
   
   // access to scantable
   header_ = table_->getHeader() ;
@@ -572,28 +513,28 @@ void MSWriter::init()
   if ( table_->tcal().table().nrow() != 0 ) {
     ROTableColumn col( table_->tcal().table(), "TCAL" ) ;
     if ( col.isDefined( 0 ) ) {
-      os_ << "nrow=" << table_->tcal().table().nrow() << ": TCAL table exists" << LogIO::POST ;
+      os_ << "TCAL table exists: nrow=" << table_->tcal().table().nrow() << LogIO::POST ;
       isTcal_ = True ;
     }
     else {
-      os_ << "no TCAL rows" << LogIO::POST ;
+      os_ << "No TCAL rows" << LogIO::POST ;
     }
   }
   else {
-    os_ << "no TCAL rows" << LogIO::POST ;
+    os_ << "No TCAL rows" << LogIO::POST ;
   }
   if ( table_->weather().table().nrow() != 0 ) {
     ROTableColumn col( table_->weather().table(), "TEMPERATURE" ) ;
     if ( col.isDefined( 0 ) ) {
-      os_ << "nrow=" << table_->weather().table().nrow() << ": WEATHER table exists" << LogIO::POST ;
+      os_ << "WEATHER table exists: nrow=" << table_->weather().table().nrow() << LogIO::POST ;
       isWeather_ =True ;
     }
     else {
-      os_ << "no WEATHER rows" << LogIO::POST ;
+      os_ << "No WEATHER rows" << LogIO::POST ;
     }
   }
   else {
-    os_ << "no WEATHER rows" << LogIO::POST ;
+    os_ << "No WEATHER rows" << LogIO::POST ;
   }
 
   // Are TCAL_SPECTRUM and TSYS_SPECTRUM necessary?
@@ -629,15 +570,15 @@ void MSWriter::init()
     }
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::init() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::init() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::setupMS()
 {
 //   os_.origin( LogOrigin( "MSWriter", "setupMS()", WHERE ) ) ;
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::setupMS() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::setupMS() startSec=" << startSec << LogIO::POST ;
 
   TableDesc msDesc = MeasurementSet::requiredTableDesc() ;
   if ( useFloatData_ )
@@ -735,14 +676,14 @@ void MSWriter::setupMS()
 
   mstable_->initRefs() ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::setupMS() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::setupMS() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillObservation() 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillObservation() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillObservation() startSec=" << startSec << LogIO::POST ;
 
   // only 1 row
   mstable_->observation().addRow( 1, True ) ;
@@ -759,7 +700,7 @@ void MSWriter::fillObservation()
     pos = hAntennaName.find( "@" ) ;
     telescopeName = hAntennaName.substr( 0, pos ) ;
   }
-  os_ << "telescopeName = " << telescopeName << LogIO::POST ;
+//   os_ << "telescopeName = " << telescopeName << LogIO::POST ;
   msObsCols.telescopeName().put( 0, telescopeName ) ;
   msObsCols.project().put( 0, header_.project ) ;
   //ScalarMeasColumn<MEpoch> timeCol( table_->table().sort("TIME"), "TIME" ) ;
@@ -770,14 +711,14 @@ void MSWriter::fillObservation()
   trange[1] = timeCol( table_->nrow()-1 ) ;
   msObsCols.timeRangeMeas().put( 0, trange ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillObservation() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillObservation() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillAntenna() 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillAntenna() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillAntenna() startSec=" << startSec << LogIO::POST ;
 
   // only 1 row
   mstable_->antenna().addRow( 1, True ) ;
@@ -799,37 +740,43 @@ void MSWriter::fillAntenna()
     antennaName = hAntennaName ;
     stationName = hAntennaName ;
   }
-  os_ << "antennaName = " << antennaName << LogIO::POST ;
-  os_ << "stationName = " << stationName << LogIO::POST ;
+//   os_ << "antennaName = " << antennaName << LogIO::POST ;
+//   os_ << "stationName = " << stationName << LogIO::POST ;
   
   msAntCols.name().put( 0, antennaName ) ;
   msAntCols.station().put( 0, stationName ) ;
 
-  os_ << "antennaPosition = " << header_.antennaposition << LogIO::POST ;
+//   os_ << "antennaPosition = " << header_.antennaposition << LogIO::POST ;
   
   msAntCols.position().put( 0, header_.antennaposition ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillAntenna() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+  // MOUNT is set to "ALT-AZ"
+  msAntCols.mount().put( 0, "ALT-AZ" ) ;
+
+  Double diameter = getDishDiameter( antennaName ) ;
+  msAntCols.dishDiameterQuant().put( 0, Quantity( diameter, "m" ) ) ;
+
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillAntenna() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillProcessor() 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillProcessor() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillProcessor() startSec=" << startSec << LogIO::POST ;
   
   // only add empty 1 row
   MSProcessor msProc = mstable_->processor() ;
   msProc.addRow( 1, True ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillProcessor() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillProcessor() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillSource()
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillSource() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillSource() startSec=" << startSec << LogIO::POST ;
  
   // access to MS SOURCE subtable
   MSSource msSrc = mstable_->source() ;
@@ -966,14 +913,14 @@ void MSWriter::fillSource()
     iter0.next() ;
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillSource() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillSource() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillWeather() 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillWeather() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillWeather() startSec=" << startSec << LogIO::POST ;
 
   // access to MS WEATHER subtable
   MSWeather msw = mstable_->weather() ;
@@ -1024,14 +971,14 @@ void MSWriter::fillWeather()
   }
   mswCols.interval().putColumn( intervalArr ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillWeather() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillWeather() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillSysCal()
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::fillSysCal() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::fillSysCal() startSec=" << startSec << LogIO::POST ;
 
   //tcalIdRec_.print( cout ) ;
 
@@ -1091,12 +1038,12 @@ void MSWriter::fillSysCal()
   ROTableColumn beamnoCol( tab, "BEAMNO" ) ;
   ROTableColumn ifnoCol( tab, "IFNO" ) ;
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-    double t1 = gettimeofday_sec() ;
+//     double t1 = gettimeofday_sec() ;
     Vector<uInt> ids = tcalIdRec_.asArrayuInt( irow ) ;
-    os_ << "ids = " << ids << LogIO::POST ;
+//     os_ << "ids = " << ids << LogIO::POST ;
     uInt npol = ids.size() ;
     Vector<uInt> rows = tcalRowRec_.asArrayuInt( irow ) ;
-    os_ << "rows = " << rows << LogIO::POST ;
+//     os_ << "rows = " << rows << LogIO::POST ;
     Vector<Double> atime( rows.nelements() ) ;
     Vector<Double> ainterval( rows.nelements() ) ;
     Vector<uInt> atcalid( rows.nelements() ) ;
@@ -1126,13 +1073,13 @@ void MSWriter::fillSysCal()
     Matrix<Float> tcal ;
     Table t ;
     if ( idCol.asuInt( ids[0] ) == ids[0] ) {
-      os_ << "sorted at irow=" << irow << " ids[0]=" << ids[0] << LogIO::POST ;
+//       os_ << "sorted at irow=" << irow << " ids[0]=" << ids[0] << LogIO::POST ;
       Vector<Float> dummyC = tcalCol( ids[0] ) ;
       tcal.resize( npol, dummyC.size() ) ;
       tcal.row( 0 ) = dummyC ;
     }
     else {
-      os_ << "NOT sorted at irow=" << irow << " ids[0]=" << ids[0] << LogIO::POST ;
+//       os_ << "NOT sorted at irow=" << irow << " ids[0]=" << ids[0] << LogIO::POST ;
       t = stt( stt.col("ID") == ids[0] ) ;
       Vector<Float> dummyC = tcalCol( 0 ) ;
       tcal.resize( npol, dummyC.size() ) ;
@@ -1140,11 +1087,11 @@ void MSWriter::fillSysCal()
     }
     if ( npol == 2 ) {
       if ( idCol.asuInt( ids[1] ) == ids[1] ) {
-        os_ << "sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
+//         os_ << "sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
         tcal.row( 1 ) = tcalCol( ids[1] ) ;
       }
       else {
-        os_ << "NOT sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
+//         os_ << "NOT sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
         t = stt( stt.col("ID") == ids[1] ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 1 ) = tcalCol( 1 ) ;
@@ -1227,18 +1174,18 @@ void MSWriter::fillSysCal()
     mssc.addRow( 1, True ) ;
     row.put( mssc.nrow()-1 ) ;
 
-    double t2 = gettimeofday_sec() ;
-    os_ << irow << "th loop elapsed time = " << t2-t1 << "sec" << LogIO::POST ;
+//     double t2 = gettimeofday_sec() ;
+//     os_ << irow << "th loop elapsed time = " << t2-t1 << "sec" << LogIO::POST ;
   }
   
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::fillSysCal() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::fillSysCal() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addFeed( Int id ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addFeed() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addFeed() startSec=" << startSec << LogIO::POST ;
 
   // add row
   MSFeed msFeed = mstable_->feed() ;
@@ -1275,14 +1222,14 @@ void MSWriter::addFeed( Int id )
   msFeedCols.receptorAngle().put( nrow-1, receptorAngle ) ;
   msFeedCols.polResponse().put( nrow-1, polResponse ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addFeed() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addFeed() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addSpectralWindow( Int spwid, Int freqid ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addSpectralWindow() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addSpectralWindow() startSec=" << startSec << LogIO::POST ;
   
   // add row
   MSSpectralWindow msSpw = mstable_->spectralWindow() ;
@@ -1331,14 +1278,14 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   indgen( sharedDoubleArr, refFreq, inc ) ;
   msSpwCols.chanFreq().put( spwid, sharedDoubleArr ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addSpectralWindow() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addSpectralWindow() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Vector<Double> rate ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addField() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addField() startSec=" << startSec << LogIO::POST ;
  
   MSField msField = mstable_->field() ;
   while( (Int)msField.nrow() <= fid ) {
@@ -1365,10 +1312,10 @@ void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Ve
     ROMSSourceColumns msSrcCols( msSrcSel ) ;
     Vector<Double> srcDir = msSrcCols.direction()( 0 ) ;
     Matrix<Double> srcDirA( IPosition( 2, 2, 1+numPoly ) ) ;
-    os_ << "srcDirA = " << srcDirA << LogIO::POST ;
-    os_ << "sliced srcDirA = " << srcDirA.column( 0 ) << LogIO::POST ;
+//     os_ << "srcDirA = " << srcDirA << LogIO::POST ;
+//     os_ << "sliced srcDirA = " << srcDirA.column( 0 ) << LogIO::POST ;
     srcDirA.column( 0 ) = srcDir ;
-    os_ << "srcDirA = " << srcDirA << LogIO::POST ;
+//     os_ << "srcDirA = " << srcDirA << LogIO::POST ;
     if ( numPoly != 0 ) 
       srcDirA.column( 1 ) = rate ;
     msFieldCols.phaseDir().put( fid, srcDirA ) ;
@@ -1377,14 +1324,14 @@ void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Ve
   }
   msFieldCols.sourceId().put( fid, srcId ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addField() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addField() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<Double> &dir ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addPointing() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addPointing() startSec=" << startSec << LogIO::POST ;
   
   // access to POINTING subtable
   MSPointing msp = mstable_->pointing() ;
@@ -1416,16 +1363,16 @@ void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<D
   *dirRF = dir ;
   row.put( nrow ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addPointing() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addPointing() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 Int MSWriter::addPolarization( Vector<Int> polnos ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addPolarization() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addPolarization() startSec=" << startSec << LogIO::POST ;
 
-  os_ << "polnos = " << polnos << LogIO::POST ;
+//   os_ << "polnos = " << polnos << LogIO::POST ;
   MSPolarization msPol = mstable_->polarization() ;
   uInt nrow = msPol.nrow() ;
 
@@ -1479,16 +1426,16 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
     msPolCols.corrProduct().put( nrow, corrProd ) ;    
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addPolarization() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addPolarization() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return polid ;
 } 
 
 Int MSWriter::addDataDescription( Int polid, Int spwid ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addDataDescription() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addDataDescription() startSec=" << startSec << LogIO::POST ;
 
   MSDataDescription msDataDesc = mstable_->dataDescription() ;
   uInt nrow = msDataDesc.nrow() ;
@@ -1506,7 +1453,7 @@ Int MSWriter::addDataDescription( Int polid, Int spwid )
       break ;
     }
   }
-  os_ << "ddid = " << ddid << LogIO::POST ;
+//   os_ << "ddid = " << ddid << LogIO::POST ;
   
 
   if ( ddid == -1 ) {
@@ -1517,16 +1464,16 @@ Int MSWriter::addDataDescription( Int polid, Int spwid )
     ddid = (Int)nrow ;
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addDataDescription() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addDataDescription() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return ddid ;
 }
 
 Int MSWriter::addState( Int st, Int &subscan ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::addState() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::addState() startSec=" << startSec << LogIO::POST ;
 
   // access to STATE subtable
   MSState msState = mstable_->state() ;
@@ -1537,26 +1484,16 @@ Int MSWriter::addState( Int st, Int &subscan )
   Double tnoise ;
   Double tload ;
   queryType( st, obsMode, isSignal, tnoise, tload ) ;
-  os_ << "obsMode = " << obsMode << " isSignal = " << isSignal << LogIO::POST ;
+//   os_ << "obsMode = " << obsMode << " isSignal = " << isSignal << LogIO::POST ;
 
   Int idx = -1 ;
   ROScalarColumn<String> obsModeCol( msState, "OBS_MODE" ) ;
-  //ROScalarColumn<Bool> sigCol( msState, "SIG" ) ;
-  //ROScalarColumn<Bool> refCol( msState, "REF" ) ;
   ROScalarColumn<Int> subscanCol( msState, "SUB_SCAN" ) ;
-//   Vector<String> obsModeArr = obsModeCol.getColumn() ;
-//   Vector<Bool> sigArr = sigCol.getColumn() ;
-//   Vector<Bool> refArr = refCol.getColumn() ;
-//   Vector<Int> subscanArr = subscanCol.getColumn() ;
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
     if ( obsModeCol(irow) == obsMode 
          //&& sigCol(irow) == isSignal 
          //&& refCol(irow) != isSignal
          && subscanCol(irow) == subscan ) {
-//     if ( obsModeArr[irow] == obsMode 
-//          && sigArr[irow] == isSignal 
-//          && refArr[irow] != isSignal
-//          && subscanArr[irow] == subscan ) {
       idx = irow ;
       break ;
     }
@@ -1578,28 +1515,20 @@ Int MSWriter::addState( Int st, Int &subscan )
     RecordFieldPtr<Double> loadRF( rec, "LOAD" ) ;
     *loadRF = tload ;
     row.put( nrow ) ;
-//     ScalarColumn<String> obsModeCol( msState, "OBS_MODE" ) ;
-//     obsModeCol.put( nrow, obsMode ) ;
-//     ScalarColumn<Bool> sharedBCol( msState, "SIG" ) ;
-//     sharedBCol.put( nrow, isSignal ) ;
-//     sharedBCol.attach( msState, "REF" ) ;
-//     sharedBCol.put( nrow, !isSignal ) ;
-//     ScalarColumn<Int> subscanCol( msState, "SUB_SCAN" ) ;
-//     subscanCol.put( nrow, subscan ) ;
     idx = nrow ;
   }
   subscan++ ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::addState() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::addState() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return idx ;
 }
 
 Vector<Int> MSWriter::toCorrType( Vector<Int> polnos ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::toCorrType() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::toCorrType() startSec=" << startSec << LogIO::POST ;
 
   uInt npol = polnos.size() ;
   Vector<Int> corrType( npol, Stokes::Undefined ) ;
@@ -1685,16 +1614,16 @@ Vector<Int> MSWriter::toCorrType( Vector<Int> polnos )
       corrType[0] = Stokes::I ;
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::toCorrType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::toCorrType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return corrType ;
 }
 
 void MSWriter::getValidTimeRange( Double &me, Double &interval, Table &tab ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
 
   // sort table
   //Table stab = tab.sort( "TIME" ) ;
@@ -1711,14 +1640,14 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Table &tab )
   me = midTime ;
   interval = ( maxTime - minTime ) * 86400.0 ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &atime, Vector<Double> &ainterval ) 
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
 
   // sort table
   //Table stab = tab.sort( "TIME" ) ;
@@ -1733,15 +1662,15 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &
   me = midTime ;
   interval = ( maxTime - minTime ) * 86400.0 + mean( ainterval ) ;
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 //void MSWriter::queryType( Int type, String &stype, Bool &b )
 void MSWriter::queryType( Int type, String &stype, Bool &b, Double &t, Double &l )
 {
-  double startSec = gettimeofday_sec() ;
-  os_ << "start MSWriter::queryType() startSec=" << startSec << LogIO::POST ;
+//   double startSec = gettimeofday_sec() ;
+//   os_ << "start MSWriter::queryType() startSec=" << startSec << LogIO::POST ;
 
   switch ( type ) {
   case SrcType::PSON:
@@ -1920,7 +1849,43 @@ void MSWriter::queryType( Int type, String &stype, Bool &b, Double &t, Double &l
     break ;
   }
 
-  double endSec = gettimeofday_sec() ;
-  os_ << "end MSWriter::queryType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+//   double endSec = gettimeofday_sec() ;
+//   os_ << "end MSWriter::queryType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+}
+
+Double MSWriter::getDishDiameter( String antname )
+{
+  Double diameter = 0.0 ;
+  
+  antname.upcase() ;
+
+  if ( antname.matches( Regex( "DV[0-9]+$" ) ) 
+       || antname.matches( Regex( "DA[0-9]+$" ) )
+       || antname.matches( Regex( "PM[0-9]+$" ) ) )
+    diameter = 12.0 ;
+  else if ( antname.matches( Regex( "CM[0-9]+$" ) ) )
+    diameter = 7.0 ;
+  else if ( antname.contains( "GBT" ) ) 
+    diameter = 104.9 ;
+  else if ( antname.contains( "MOPRA" ) )
+    diameter = 22.0 ;
+  else if ( antname.contains( "PKS" ) || antname.contains( "PARKS" ) )
+    diameter = 64.0 ;
+  else if ( antname.contains( "TIDBINBILLA" ) ) 
+    diameter = 70.0 ;
+  else if ( antname.contains( "CEDUNA" ) )
+    diameter = 30.0 ;
+  else if ( antname.contains( "HOBART" ) ) 
+    diameter = 26.0 ;
+  else if ( antname.contains( "APEX" ) ) 
+    diameter = 12.0 ;
+  else if ( antname.contains( "ASTE" ) ) 
+    diameter = 10.0 ;
+  else if ( antname.contains( "NRO" ) ) 
+    diameter = 45.0 ;
+  else 
+    diameter = 1.0 ;
+
+  return diameter ;
 }
 }
