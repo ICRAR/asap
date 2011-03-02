@@ -1019,7 +1019,7 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
   else if ( obsMode.find( "." ) != String::npos ) {
     sep = "." ;
   }
-  
+
   // determine SRCTYPE
   Int srcType = SrcType::NOTYPE ;
   if ( sep == ":" ) {
@@ -1080,10 +1080,17 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
     // obsMode1=OBSERVE_TARGET
     //    obsMode2=ON_SOURCE: PON
     //    obsMode2=OFF_SOURCE: POFF
-    Int epos = obsMode.find_first_of( sep ) ;
-    Int nextpos = obsMode.find_first_of( sep, epos+1 ) ;
-    String obsMode1 = obsMode.substr( 0, epos ) ;
-    String obsMode2 = obsMode.substr( epos+1, nextpos-epos-1 ) ;
+    string substr[2] ; 
+    int numSubstr = split( obsMode, substr, 2, "," ) ;
+    //os_ << "numSubstr = " << numSubstr << LogIO::POST ;
+    //for ( int i = 0 ; i < numSubstr ; i++ )
+    //os_ << "substr[" << i << "] = " << substr[i] << LogIO::POST ;
+    String obsType( substr[0] ) ;
+    //os_ << "obsType = " << obsType << LogIO::POST ;
+    Int epos = obsType.find_first_of( sep ) ;
+    Int nextpos = obsType.find_first_of( sep, epos+1 ) ;
+    String obsMode1 = obsType.substr( 0, epos ) ;
+    String obsMode2 = obsType.substr( epos+1, nextpos-epos-1 ) ;
     if ( obsMode1.find( "CALIBRATE_" ) == 0 ) {
       if ( obsMode2 == "ON_SOURCE" ) srcType = SrcType::PONCAL ;
       if ( obsMode2 == "OFF_SOURCE" ) srcType = SrcType::POFFCAL ;
