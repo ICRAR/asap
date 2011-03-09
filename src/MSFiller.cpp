@@ -448,46 +448,67 @@ void MSFiller::fill()
           sdh.npol = max( sdh.npol, npol ) ;
           if ( sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
           // source information
-          //os_ << "srcId = " << srcId << ", spwId = " << spwId << LogIO::POST ;
+//           os_ << "srcId = " << srcId << ", spwId = " << spwId << LogIO::POST ;
           MSSource srctabSel = srctab( srctab.col("SOURCE_ID") == srcId && srctab.col("SPECTRAL_WINDOW_ID") == spwId ) ;
           if ( srctabSel.nrow() == 0 ) {
             srctabSel = srctab( srctab.col("SOURCE_ID") == srcId && srctab.col("SPECTRAL_WINDOW_ID") == -1 ) ;
           }
-          tcolr = tpoolr->construct( srctabSel, "NAME" ) ;
-          String srcName = tcolr->asString( 0 ) ;
-          tpoolr->destroy( tcolr ) ;
+          String srcName( "" ) ;
+          Vector<Double> srcPM( 2, 0.0 ) ;
+          Vector<Double> srcDir( 2, 0.0 ) ;
+          MDirection md ;
+          Int numLines = 0 ;
+          ROArrayColumn<Double> *roArrDCol = 0 ;
+          if ( srctabSel.nrow() > 0 ) {
+            // source name
+            tcolr = tpoolr->construct( srctabSel, "NAME" ) ;
+            srcName = tcolr->asString( 0 ) ;
+            tpoolr->destroy( tcolr ) ;
+
+            // source proper motion
+            roArrDCol = new ROArrayColumn<Double>( srctabSel, "PROPER_MOTION" ) ;
+            srcPM = (*roArrDCol)( 0 ) ;
+            delete roArrDCol ;
+            
+            // source direction
+            roArrDCol = new ROArrayColumn<Double>( srctabSel, "DIRECTION" ) ;
+            srcDir = (*roArrDCol)( 0 ) ;
+            delete roArrDCol ;
+
+            // source direction as MDirection object
+            ROScalarMeasColumn<MDirection> *tmpMeasCol = new ROScalarMeasColumn<MDirection>( srctabSel, "DIRECTION" ) ;
+            md = (*tmpMeasCol)( 0 ) ;
+            delete tmpMeasCol ;
+
+            // number of lines
+            tcolr = tpoolr->construct( srctabSel, "NUM_LINES" ) ;
+            Int numLines = tcolr->asInt( 0 ) ;
+            tpoolr->destroy( tcolr ) ;
+
+          }
+          else {
+            md = MDirection( Quantum<Double>(0.0,Unit("rad")), Quantum<Double>(0.0,Unit("rad")) ) ;
+          }
 
           // SRCNAME
           strRF.attachToRecord( trec, "SRCNAME" ) ;
           *strRF = srcName ;
 
-          //os_ << "srcName = " << srcName << LogIO::POST ;
-          ROArrayColumn<Double> *roArrDCol = new ROArrayColumn<Double>( srctabSel, "PROPER_MOTION" ) ;
-          Array<Double> srcPM = (*roArrDCol)( 0 ) ;
-          delete roArrDCol ;
+//           os_ << "srcName = " << srcName << LogIO::POST ;
 
           // SRCPROPERMOTION
           RecordFieldPtr< Array<Double> > darrRF( trec, "SRCPROPERMOTION" ) ;
           *darrRF = srcPM ;
 
           //os_ << "srcPM = " << srcPM << LogIO::POST ;
-          roArrDCol = new ROArrayColumn<Double>( srctabSel, "DIRECTION" ) ;
-          Array<Double> srcDir = (*roArrDCol)( 0 ) ;
-          delete roArrDCol ;
 
           // SRCDIRECTION
           darrRF.attachToRecord( trec, "SRCDIRECTION" ) ;
           *darrRF = srcDir ;
 
           //os_ << "srcDir = " << srcDir << LogIO::POST ;
-          ROScalarMeasColumn<MDirection> *tmpMeasCol = new ROScalarMeasColumn<MDirection>( srctabSel, "DIRECTION" ) ;
-          MDirection md = (*tmpMeasCol)( 0 ) ;
-          delete tmpMeasCol ;
 
           // for MOLECULES subtable
-          tcolr = tpoolr->construct( srctabSel, "NUM_LINES" ) ;
-          Int numLines = tcolr->asInt( 0 ) ;
-          tpoolr->destroy( tcolr ) ;
 //           os_ << "numLines = " << numLines << LogIO::POST ;
 
           Vector<Double> restFreqs( numLines, 0.0 ) ;
@@ -503,7 +524,7 @@ void MSFiller::fill()
                 restFreqs[i] = qRestFreqs( IPosition( 1, i ) ).getValue( "Hz" ) ;
               }
             }
-            //os_ << "restFreqs = " << restFreqs << LogIO::POST ;
+//             os_ << "restFreqs = " << restFreqs << LogIO::POST ;
             if ( srctabSel.tableDesc().isColumn( "TRANSITION" ) ) {
               ROArrayColumn<String> transitionCol( srctabSel, "TRANSITION" ) ;
               if ( transitionCol.isDefined( 0 ) )
@@ -572,7 +593,7 @@ void MSFiller::fill()
           sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_WIDTH" ) ;
           Double increment = (*sharedQDArrCol)( spwId )( refip ).getValue( "Hz" ) ;
           delete sharedQDArrCol ;
-          //os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
+//           os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
           sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_FREQ" ) ;
           Vector< Quantum<Double> > chanFreqs = (*sharedQDArrCol)( spwId ) ;
           delete sharedQDArrCol ;
@@ -651,8 +672,8 @@ void MSFiller::fill()
             //
             TableIterator iter5( t4, "STATE_ID" ) ; 
             while( !iter5.pastEnd() ) {
-              //time0 = gettimeofday_sec() ;
-              //os_ << "start 5th iteration: " << time0 << LogIO::POST ;
+//               time0 = gettimeofday_sec() ;
+//               os_ << "start 5th iteration: " << time0 << LogIO::POST ;
               Table t5 = iter5.table() ;
               tcolr = tpoolr->construct( t5, "STATE_ID" ) ;
               Int stateId = tcolr->asInt( 0 ) ;
@@ -663,8 +684,8 @@ void MSFiller::fill()
               if ( sdh.obstype == "" ) sdh.obstype = obstype ;
 
               Int nrow = t5.nrow() ;
-              //time1 = gettimeofday_sec() ;
-              //os_ << "end 5th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//               time1 = gettimeofday_sec() ;
+//               os_ << "end 5th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
 
               uInt cycle = 0 ;
 
@@ -881,8 +902,8 @@ void MSFiller::fill()
               tpoolr->destroy( mIntervalCol ) ;
               tpoolr->destroy( mFlagRowCol ) ;
 
-              //time1 = gettimeofday_sec() ;
-              //os_ << "end 5th iteration: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+//               time1 = gettimeofday_sec() ;
+//               os_ << "end 5th iteration: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
 
               iter5.next() ;
             }
