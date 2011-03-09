@@ -1729,11 +1729,10 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
 //   newspec[nChan-1] /= wsum ;
 //   //ofs << "newspec[" << nChan - 1 << "] = " << newspec[nChan-1] << endl ;
 
-//   specCol_.put( irow, newspec ) ;
-//   flagsCol_.put( irow, newflag ) ;
-
 //   // ofs.close() ;
 
+  specCol_.put( irow, newspec ) ;
+  flagsCol_.put( irow, newflag ) ;
 
   return ;
 }
