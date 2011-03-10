@@ -345,7 +345,7 @@ void MSFiller::fill()
     MEpoch me = (*tmpMeasCol)( obsId )( IPosition(1,0) ) ;
     delete tmpMeasCol ;
     if ( sdh.utc == 0.0 ) {
-      sdh.utc = me.get( "s" ).getValue() ;
+      sdh.utc = me.get( "d" ).getValue() ;
     }
     if ( telescopeName == "" ) {
       tcolr = tpoolr->construct( obstab, "TELESCOPE_NAME" ) ;
@@ -1112,6 +1112,8 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
     Int nextpos = obsType.find_first_of( sep, epos+1 ) ;
     String obsMode1 = obsType.substr( 0, epos ) ;
     String obsMode2 = obsType.substr( epos+1, nextpos-epos-1 ) ;
+    //os_ << "obsMode1 = " << obsMode1 << LogIO::POST ;
+    //os_ << "obsMode2 = " << obsMode2 << LogIO::POST ;
     if ( obsMode1.find( "CALIBRATE_" ) == 0 ) {
       if ( obsMode2 == "ON_SOURCE" ) srcType = SrcType::PONCAL ;
       if ( obsMode2 == "OFF_SOURCE" ) srcType = SrcType::POFFCAL ;
