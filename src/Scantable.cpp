@@ -1287,7 +1287,7 @@ String Scantable::getAntennaName() const
   String::size_type pos1 = out.find("@") ;
   String::size_type pos2 = out.find("//") ;
   if ( pos2 != String::npos ) 
-    out = out.substr(pos2+2,pos1) ;
+    out = out.substr(pos2+2,pos1-pos2-2) ;
   else if ( pos1 != String::npos )
     out = out.substr(0,pos1) ;
   return out;
