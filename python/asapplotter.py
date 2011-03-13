@@ -876,7 +876,8 @@ class asapplotter:
             asaplog.push(msg)
             asaplog.post('WARN')
             nstack = min(nstack,maxstack)
-        n = min(n-self._ipanel-1,maxpanel)
+        #n = min(n-self._ipanel-1,maxpanel)
+        n = n-self._ipanel-1
 
         ganged = False
         if n > 1:
@@ -888,6 +889,7 @@ class asapplotter:
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n,margin=self._margins,ganged=ganged)
             else:
+                n = min(n,maxpanel)
                 self._plotter.set_panels(rows=n,cols=0,nplots=n,margin=self._margins,ganged=ganged)
         else:
             self._plotter.set_panels(margin=self._margins)
