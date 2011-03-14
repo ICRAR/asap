@@ -1034,12 +1034,21 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
 
   // determine separator
   String sep = "" ;
-  if ( obsMode.find( ":" ) != String::npos ) {
+  String tmpStr = obsMode.substr( 0, obsMode.find_first_of( "," ) ) ;
+  os_ << "tmpStr = " << tmpStr << LogIO::POST ;
+  //if ( obsMode.find( ":" ) != String::npos ) {
+  if ( tmpStr.find( ":" ) != String::npos ) {
     sep = ":" ;
   }
-  else if ( obsMode.find( "." ) != String::npos ) {
+  //else if ( obsMode.find( "." ) != String::npos ) {
+  else if ( tmpStr.find( "." ) != String::npos ) {
     sep = "." ;
   }
+  //else if ( obsMode.find( "_" ) != String::npos ) {
+  else if ( tmpStr.find( "_" ) != String::npos ) {
+    sep = "_" ;
+  }
+  os_ << "separator = " << sep << LogIO::POST ;
 
   // determine SRCTYPE
   Int srcType = SrcType::NOTYPE ;
@@ -1093,7 +1102,7 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
   else if ( sep == "." ) {
     // sep == "."
     //
-    // ALMA & EVLA case (MS via ASDM)
+    // ALMA & EVLA case (MS via ASDM) before3.1
     //
     // obsMode1=CALIBRATE_*
     //    obsMode2=ON_SOURCE: PONCAL
@@ -1121,6 +1130,43 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
     else if ( obsMode1 == "OBSERVE_TARGET" ) {
       if ( obsMode2 == "ON_SOURCE" ) srcType = SrcType::PSON ;
       if ( obsMode2 == "OFF_SOURCE" ) srcType = SrcType::PSOFF ;
+    }
+  }
+  else if ( sep == "_" ) {
+    // sep == "_"
+    //
+    // ALMA & EVLA case (MS via ASDM) after 3.2
+    //
+    // obsMode1=CALIBRATE_*
+    //    obsMode2=ON_SOURCE: PONCAL
+    //    obsMode2=OFF_SOURCE: POFFCAL
+    // obsMode1=OBSERVE_TARGET
+    //    obsMode2=ON_SOURCE: PON
+    //    obsMode2=OFF_SOURCE: POFF
+    string substr[2] ; 
+    int numSubstr = split( obsMode, substr, 2, "," ) ;
+    os_ << "numSubstr = " << numSubstr << LogIO::POST ;
+    //for ( int i = 0 ; i < numSubstr ; i++ )
+    //os_ << "substr[" << i << "] = " << substr[i] << LogIO::POST ;
+    String obsType( substr[0] ) ;
+    //os_ << "obsType = " << obsType << LogIO::POST ;
+    string substr2[4] ;
+    int numSubstr2 = split( obsType, substr2, 4, sep ) ; 
+    //Int epos = obsType.find_first_of( sep ) ;
+    //Int nextpos = obsType.find_first_of( sep, epos+1 ) ;
+    //String obsMode1 = obsType.substr( 0, epos ) ;
+    //String obsMode2 = obsType.substr( epos+1, nextpos-epos-1 ) ;
+    String obsMode1( substr2[0] ) ;
+    String obsMode2( substr2[2] ) ;
+    //os_ << "obsMode1 = " << obsMode1 << LogIO::POST ;
+    //os_ << "obsMode2 = " << obsMode2 << LogIO::POST ;
+    if ( obsMode1.find( "CALIBRATE" ) == 0 ) {
+      if ( obsMode2 == "ON" ) srcType = SrcType::PONCAL ;
+      if ( obsMode2 == "OFF" ) srcType = SrcType::POFFCAL ;
+    }
+    else if ( obsMode1 == "OBSERVE" ) {
+      if ( obsMode2 == "ON" ) srcType = SrcType::PSON ;
+      if ( obsMode2 == "OFF" ) srcType = SrcType::PSOFF ;
     }
   }
   else {
