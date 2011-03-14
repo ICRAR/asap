@@ -1145,7 +1145,7 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
     //    obsMode2=OFF_SOURCE: POFF
     string substr[2] ; 
     int numSubstr = split( obsMode, substr, 2, "," ) ;
-    os_ << "numSubstr = " << numSubstr << LogIO::POST ;
+    //os_ << "numSubstr = " << numSubstr << LogIO::POST ;
     //for ( int i = 0 ; i < numSubstr ; i++ )
     //os_ << "substr[" << i << "] = " << substr[i] << LogIO::POST ;
     String obsType( substr[0] ) ;
