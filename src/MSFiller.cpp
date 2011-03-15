@@ -1035,7 +1035,7 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
   // determine separator
   String sep = "" ;
   String tmpStr = obsMode.substr( 0, obsMode.find_first_of( "," ) ) ;
-  os_ << "tmpStr = " << tmpStr << LogIO::POST ;
+  //os_ << "tmpStr = " << tmpStr << LogIO::POST ;
   //if ( obsMode.find( ":" ) != String::npos ) {
   if ( tmpStr.find( ":" ) != String::npos ) {
     sep = ":" ;
@@ -1048,7 +1048,7 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
   else if ( tmpStr.find( "_" ) != String::npos ) {
     sep = "_" ;
   }
-  os_ << "separator = " << sep << LogIO::POST ;
+  //os_ << "separator = " << sep << LogIO::POST ;
 
   // determine SRCTYPE
   Int srcType = SrcType::NOTYPE ;
