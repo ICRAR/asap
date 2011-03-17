@@ -54,6 +54,8 @@ class asapplotter:
         self._startrow = 0
         self._ipanel = -1
         self._panelrows = []
+        self._headstring = None
+        self._headsize = None
 
     def _translate(self, instr):
         keys = "s b i p t r".split()
@@ -841,6 +843,11 @@ class asapplotter:
         self._usermaskspectra = None
         self._offset = None
         self.set_selection(None, False)
+        self._reset_header()
+
+    def _reset_header(self):
+        self._headsize = None
+        self._headstring = None
 
     def _plot(self, scan):
         savesel = scan.get_selection()
@@ -1376,12 +1383,12 @@ class asapplotter:
 
     # printing header information
     @asaplog_post_dec
-    def print_header(self, plot=True, fontsize=9, logger=False, selstr='', extrastr=''):
+    def print_header(self, plot=True, fontsize=None, logger=False, selstr='', extrastr=''):
         """
         print data (scantable) header on the plot and/or logger.
         Parameters:
             plot:      whether or not print header info on the plot.
-            fontsize:  header font size (valid only plot=True)
+            fontsize:  header font size (valid only plot=True) default: 9
             logger:    whether or not print header info on the logger.
             selstr:    additional selection string (not verified)
             extrastr:  additional string to print (not verified)
@@ -1394,17 +1401,26 @@ class asapplotter:
         # Get header information and format it.
         ssum=self._data.__str__()
         # Print Observation header to the upper-left corner of plot
-        if plot:
+        if self._headstring:
+            headstr = self._headstring
+            if extrastr != '': headstr[0]=extrastr+'\n'+headstr[0]
+            if selstr != '': headstr[2] += selstr
+            fontsize = fontsize or self._headsize
+        else:
             headstr=[ssum[ssum.find('Observer:'):ssum.find('Flux Unit:')]]
             headstr.append(ssum[ssum.find('Beams:'):ssum.find('Observer:')]
-                         +ssum[ssum.find('Rest Freqs:'):ssum.find('Abcissa:')])
+                           +ssum[ssum.find('Rest Freqs:'):ssum.find('Abcissa:')])
             if extrastr != '': headstr[0]=extrastr+'\n'+headstr[0]
-            #headstr[1]='Data File:     '+(filestr or 'unknown')+'\n'+headstr[1]
             ssel='***Selections***\n'+(selstr+self._data.get_selection().__str__() or 'none')
             headstr.append(ssel)
-            nstcol=len(headstr)
+            del ssel
+        fontsize = fontsize or 9
+        self._headsize = fontsize
+        self._headstring = headstr
 
+        if plot:
             self._plotter.hold()
+            nstcol=len(headstr)
             for i in range(nstcol):
                 self._plotter.figure.text(0.03+float(i)/nstcol,0.98,
                              headstr[i],
@@ -1417,9 +1433,27 @@ class asapplotter:
                             horizontalalignment='right',
                             verticalalignment='bottom',fontsize=8)
             self._plotter.release()
-            del headstr, ssel
         if logger:
+            sextra = headstr[0][0:headstr[0].find('Observer:')].rstrip('\n')
+            selstr = "Selections:    "+(headstr[2].lstrip('***Selections***\n') or 'none')+"\n \n"
+                
             asaplog.push("----------------\n  Plot Summary\n----------------")
-            asaplog.push(extrastr)
-            asaplog.push(ssum[ssum.find('Beams:'):])
-        del ssum
+            asaplog.push(sextra)
+            asaplog.push(ssum[ssum.find('Beams:'):ssum.find('Selection:')]\
+                         + selstr + ssum[ssum.find('Scan Source'):])
+        del ssum, headstr
+
+#     def clear_header(self):
+#         if not self._headstring or len(self._plotter.figure.texts) == 0:
+#             asaplog.push("No header has been plotted. Exit without any operation")
+#             asaplog.post("WARN")
+#         else:
+#             self._plotter.hold()
+#             for textobj in self._plotter.figure.texts:
+#                 if textobj.get_text() in self._headstring:
+#                     try:
+#                         textobj.remove()
+#                     except NotImplementedError:
+#                         self._plotter.figure.texts.pop(self._plotter.figure.texts.index(textobj))
+#             self._plotter.release()
+#         self._reset_header()

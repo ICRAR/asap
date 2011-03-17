@@ -180,13 +180,16 @@ class CustomToolbarCommon:
 
     ### actual plotting of the new page
     def _new_page(self,goback=False):
+        top = None
         if self.plotter._startrow <= 0:
             msg = "The page counter is reset due to chages of plot settings. "
             msg += "Plotting from the first page."
             asaplog.push(msg)
             asaplog.post('WARN')
             goback = False
-            
+        else:
+            top = self.plotter._plotter.figure.subplotpars.top
+
         self.plotter._plotter.hold()
         if goback:
             self._set_prevpage_counter()
@@ -195,7 +198,13 @@ class CustomToolbarCommon:
         self.set_pagecounter(self._get_pagenum())
         self.plotter._plotter.release()
         self.plotter._plotter.tidy()
+        if self.plotter._headstring:
+            if top and top != self.plotter._margins[3]:
+                # work around for sdplot in CASA. complete checking in future?
+                self.plotter._plotter.figure.subplots_adjust(top=top)
+            self.plotter.print_header()
         self.plotter._plotter.show(hardrefresh=False)
+        del top
 
     ### calculate the panel ID and start row to plot the previous page
     def _set_prevpage_counter(self):
