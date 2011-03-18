@@ -181,14 +181,27 @@ class CustomToolbarCommon:
     ### actual plotting of the new page
     def _new_page(self,goback=False):
         top = None
+        header = self.plotter._headtext
+        reset = False
+        doheader = (isinstance(header['textobj'],list) and \
+                    len(header['textobj']) > 0)
         if self.plotter._startrow <= 0:
             msg = "The page counter is reset due to chages of plot settings. "
             msg += "Plotting from the first page."
             asaplog.push(msg)
             asaplog.post('WARN')
+            reset = True
             goback = False
-        else:
+            if doheader:
+                extrastr = selstr = ''
+                if header.has_key('extrastr'):
+                    extrastr = header['extrastr']
+                if header.has_key('selstr'):
+                    selstr = header['selstr']
+            self.plotter._reset_header()
+        if doheader:
             top = self.plotter._plotter.figure.subplotpars.top
+            fontsize = header['textobj'][0].get_fontproperties().get_size()
 
         self.plotter._plotter.hold()
         if goback:
@@ -196,13 +209,17 @@ class CustomToolbarCommon:
         #self.plotter._plotter.clear()
         self.plotter._plot(self.plotter._data)
         self.set_pagecounter(self._get_pagenum())
-        self.plotter._plotter.release()
-        self.plotter._plotter.tidy()
-        if self.plotter._headstring:
+        # Plot header information
+        if header['textobj']:
             if top and top != self.plotter._margins[3]:
                 # work around for sdplot in CASA. complete checking in future?
                 self.plotter._plotter.figure.subplots_adjust(top=top)
-            self.plotter.print_header()
+            if reset:
+                self.plotter.print_header(plot=True,fontsize=fontsize,selstr=selstr, extrastr=extrastr)
+            else:
+                self.plotter._header_plot(header['string'],fontsize=fontsize)
+        self.plotter._plotter.release()
+        self.plotter._plotter.tidy()
         self.plotter._plotter.show(hardrefresh=False)
         del top
 
