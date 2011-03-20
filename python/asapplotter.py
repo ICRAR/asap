@@ -101,6 +101,7 @@ class asapplotter:
         """
         self._startrow = 0
         self._ipanel = -1
+        self._reset_header()
         if self._plotter.is_dead:
             if hasattr(self._plotter.figmgr,'casabar'):
                 del self._plotter.figmgr.casabar
@@ -1384,6 +1385,8 @@ class asapplotter:
     def print_header(self, plot=True, fontsize=9, logger=False, selstr='', extrastr=''):
         """
         print data (scantable) header on the plot and/or logger.
+        To plot the header on the plot, this method should be called after
+        plotting spectra by the method, asapplotter.plot.
         Parameters:
             plot:      whether or not print header info on the plot.
             fontsize:  header font size (valid only plot=True)
@@ -1406,7 +1409,7 @@ class asapplotter:
             headstr[0]=extrastr+'\n'+headstr[0]
             self._headtext['extrastr'] = extrastr
         if selstr != '': self._headtext['selstr'] = selstr
-        ssel=(selstr+self._data.get_selection().__str__() or 'none')
+        ssel=(selstr+self._data.get_selection().__str__()+self._selection.__str__() or 'none')
         headstr.append('***Selections***\n'+ssel)
 
         if plot:
