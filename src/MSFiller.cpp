@@ -482,7 +482,7 @@ void MSFiller::fill()
 
             // number of lines
             tcolr = tpoolr->construct( srctabSel, "NUM_LINES" ) ;
-            Int numLines = tcolr->asInt( 0 ) ;
+            numLines = tcolr->asInt( 0 ) ;
             tpoolr->destroy( tcolr ) ;
 
           }
