@@ -1884,7 +1884,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
     //setSpectrum(fitter.getResidual(), whichrow);
     std::vector<int> pieceRanges;
     std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, pieceRanges, params, nPiece, thresClip, nIterClip);
+    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, pieceRanges, params, nPiece, thresClip, nIterClip, true);
     setSpectrum(res, whichrow);
     //
 
@@ -1953,7 +1953,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     //setSpectrum(fitter.getResidual(), whichrow);
     std::vector<int> pieceRanges;
     std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, pieceRanges, params, nPiece, thresClip, nIterClip);
+    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, pieceRanges, params, nPiece, thresClip, nIterClip, true);
     setSpectrum(res, whichrow);
     //
 
@@ -1965,7 +1965,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
   if (outTextFile) ofs.close();
 }
 
-std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& data, const std::vector<bool>& mask, std::vector<int>& sectionRanges, std::vector<float>& params, int nPiece, float thresClip, int nIterClip) {
+std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& data, const std::vector<bool>& mask, std::vector<int>& sectionRanges, std::vector<float>& params, int nPiece, float thresClip, int nIterClip, bool getResidual) {
   if (nPiece < 1) {
     throw(AipsError("wrong number of the sections for fitting"));
   }
@@ -2003,15 +2003,10 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
   sectionList1.push_back(x[x.size()-1]+1);
   sectionRanges.push_back(x[x.size()-1]);
 
-  std::vector<double> x1, x2, x3, z1, x1z1, x2z1, x3z1, r1;
+  std::vector<double> x1, z1, r1;
   for (int i = 0; i < nChan; ++i) {
     x1.push_back((double)i);
-    x2.push_back((double)(i*i));
-    x3.push_back((double)(i*i*i));
     z1.push_back((double)data[i]);
-    x1z1.push_back(((double)i)*(double)data[i]);
-    x2z1.push_back(((double)(i*i))*(double)data[i]);
-    x3z1.push_back(((double)(i*i*i))*(double)data[i]);
     r1.push_back(0.0);
   }
 
@@ -2035,29 +2030,35 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     for (int n = 0; n < nPiece; ++n) {
       for (int i = sectionList0[n]; i < sectionList1[n]; ++i) {
 	if (maskArray[i] == 0) continue;
+	double xp1 = x1[i];
+	double xp2 = xp1*xp1;
+	double xp3 = xp2*xp1;
+	double xp4 = xp3*xp1;
+	double xp5 = xp4*xp1;
+	double xp6 = xp5*xp1;
 	xMatrix[0][0] += 1.0;
-	xMatrix[0][1] += x1[i];
-	xMatrix[0][2] += x2[i];
-	xMatrix[0][3] += x3[i];
-	xMatrix[1][1] += x2[i];
-	xMatrix[1][2] += x3[i];
-	xMatrix[1][3] += x2[i]*x2[i];
-	xMatrix[2][2] += x2[i]*x2[i];
-	xMatrix[2][3] += x3[i]*x2[i];
-	xMatrix[3][3] += x3[i]*x3[i];
+	xMatrix[0][1] += xp1;
+	xMatrix[0][2] += xp2;
+	xMatrix[0][3] += xp3;
+	xMatrix[1][1] += xp2;
+	xMatrix[1][2] += xp3;
+	xMatrix[1][3] += xp4;
+	xMatrix[2][2] += xp4;
+	xMatrix[2][3] += xp5;
+	xMatrix[3][3] += xp6;
 	zMatrix[0] += z1[i];
-	zMatrix[1] += x1z1[i];
-	zMatrix[2] += x2z1[i];
-	zMatrix[3] += x3z1[i];
+	zMatrix[1] += xp1*z1[i];
+	zMatrix[2] += xp2*z1[i];
+	zMatrix[3] += xp3*z1[i];
 	for (int j = 0; j < n; ++j) {
-	  double q = 1.0 - x1[i]*sectionListR[j];
+	  double q = 1.0 - xp1*sectionListR[j];
 	  q = q*q*q;
 	  xMatrix[0][j+4] += q;
-	  xMatrix[1][j+4] += q*x1[i];
-	  xMatrix[2][j+4] += q*x2[i];
-	  xMatrix[3][j+4] += q*x3[i];
+	  xMatrix[1][j+4] += q*xp1;
+	  xMatrix[2][j+4] += q*xp2;
+	  xMatrix[3][j+4] += q*xp3;
 	  for (int k = 0; k < j; ++k) {
-	    double r = 1.0 - x1[i]*sectionListR[k];
+	    double r = 1.0 - xp1*sectionListR[k];
 	    r = r*r*r;
 	    xMatrix[k+4][j+4] += r*q;
 	  }
@@ -2108,6 +2109,7 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     //(a0,a1,a2,a3(,b3,c3,...)), namely, the ones for the leftmost piece and the ones of 
     //cubic terms for the other pieces (in case nPiece>1).
     std::vector<double> y;
+    y.clear();
     for (int i = 0; i < nDOF; ++i) {
       y.push_back(0.0);
       for (int j = 0; j < nDOF; ++j) {
@@ -2123,7 +2125,7 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
 
     for (int n = 0; n < nPiece; ++n) {
       for (int i = sectionList0[n]; i < sectionList1[n]; ++i) {
-	r1[i] = a0 + a1*x1[i] + a2*x2[i] + a3*x3[i];
+	r1[i] = a0 + a1*x1[i] + a2*x1[i]*x1[i] + a3*x1[i]*x1[i]*x1[i];
       }
       params.push_back(a0);
       params.push_back(a1);
@@ -2169,12 +2171,18 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     }
   }
 
-  std::vector<float> residual;
-  for (int i = 0; i < nChan; ++i) {
-    residual.push_back((float)(z1[i] - r1[i]));
+  std::vector<float> result;
+  if (getResidual) {
+    for (int i = 0; i < nChan; ++i) {
+      result.push_back((float)(z1[i] - r1[i]));
+    }
+  } else {
+    for (int i = 0; i < nChan; ++i) {
+      result.push_back((float)r1[i]);
+    }
   }
-  return residual;
 
+  return result;
 }
 
   void Scantable::sinusoidBaseline(const std::vector<bool>& mask, int nMinWavesInSW, int nMaxWavesInSW, float thresClip, int nIterClip, bool outLogger, const std::string& blfile) {
@@ -2206,7 +2214,7 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     //setSpectrum(fitter.getResidual(), whichrow);
     std::vector<int> pieceRanges;
     std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nMinWavesInSW, nMaxWavesInSW, params, thresClip, nIterClip);
+    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nMinWavesInSW, nMaxWavesInSW, params, thresClip, nIterClip, true);
     setSpectrum(res, whichrow);
     //
 
@@ -2275,7 +2283,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, int nMinWave
     //setSpectrum(fitter.getResidual(), whichrow);
     std::vector<int> pieceRanges;
     std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nMinWavesInSW, nMaxWavesInSW, params, thresClip, nIterClip);
+    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nMinWavesInSW, nMaxWavesInSW, params, thresClip, nIterClip, true);
     setSpectrum(res, whichrow);
     //
 
@@ -2287,12 +2295,18 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, int nMinWave
   if (outTextFile) ofs.close();
 }
 
-std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, int nMinWavesInSW, int nMaxWavesInSW, std::vector<float>& params, float thresClip, int nIterClip) {
-  if (nMaxWavesInSW < 1) {
-    throw(AipsError("maximum wave number must be a positive value"));
-  }
+std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, int nMinWavesInSW, int nMaxWavesInSW, std::vector<float>& params, float thresClip, int nIterClip, bool getResidual) {
   if (data.size() != mask.size()) {
     throw(AipsError("data and mask have different size"));
+  }
+  if ((nMinWavesInSW < 0) || (nMaxWavesInSW < 0)) {
+    throw(AipsError("wave number must be positive or zero (i.e. constant)"));
+  } else {
+    if (nMaxWavesInSW < nMinWavesInSW) {
+      int temp = nMaxWavesInSW;
+      nMaxWavesInSW = nMinWavesInSW;
+      nMinWavesInSW = temp;
+    }
   }
 
   int nChan = data.size();
@@ -2447,12 +2461,18 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
     }
   }
 
-  std::vector<float> residual;
-  for (int i = 0; i < nChan; ++i) {
-    residual.push_back((float)(z1[i] - r1[i]));
+  std::vector<float> result;
+  if (getResidual) {
+    for (int i = 0; i < nChan; ++i) {
+      result.push_back((float)(z1[i] - r1[i]));
+    }
+  } else {
+    for (int i = 0; i < nChan; ++i) {
+      result.push_back((float)r1[i]);
+    }
   }
-  return residual;
 
+  return result;
 }
 
 void Scantable::fitBaseline(const std::vector<bool>& mask, int whichrow, Fitter& fitter)

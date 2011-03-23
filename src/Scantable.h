@@ -672,14 +672,16 @@ private:
 					  std::vector<float>& params,
 					  int nPiece=2,
 					  float thresClip=3.0, 
-					  int nIterClip=1);
+					  int nIterClip=1,
+					  bool getResidual=false);
   std::vector<float> doSinusoidFitting(const std::vector<float>& data, 
 				       const std::vector<bool>& mask,
 				       int nMinWavesInSW,
 				       int nMaxWavesInSW,
 				       std::vector<float>& params,
 				       float thresClip=3.0, 
-				       int nIterClip=1);
+				       int nIterClip=1,
+				       bool getResidual=false);
   bool hasSameNchanOverIFs();
   std::string getMaskRangeList(const std::vector<bool>& mask, 
 				int whichrow, 
