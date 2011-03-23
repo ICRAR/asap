@@ -293,25 +293,25 @@ class CustomFlagToolbarCommon:
         self.plotter._plotter.canvas.draw()
         del regions,panels,strow,enrow
 
-    def _clear_selection_plot(self):
+    def _clear_selection_plot(self, refresh=True):
         ### clear up polygons which mark selected spectra and regions ###
         if len(self._polygons) > 0:
             for shadow in self._polygons:
                 shadow.remove()
-            self.plotter._plotter.canvas.draw()
+            if refresh: self.plotter._plotter.canvas.draw()
         self._polygons = []
 
-    def _clearup_selections(self):
+    def _clearup_selections(self, refresh=True):
         # clear-up selection and polygons
         self._selpanels = []
         self._selregions = {}
-        self._clear_selection_plot()
+        self._clear_selection_plot(refresh=refresh)
 
     ### clear up selections
     def cancel_select(self):
         self.figmgr.toolbar.set_message('selections canceled')
         # clear-up selection and polygons
-        self._clearup_selections()
+        self._clearup_selections(refresh=True)
 
     ### flag selected spectra/regions
     @asaplog_post_dec
@@ -322,6 +322,7 @@ class CustomFlagToolbarCommon:
             asaplog.push(msg)
             asaplog.post('WARN')
             return
+        self._pause_buttons(operation="start",msg="Flagging data...")
         self._flag_operation(rows=self._selpanels,
                              regions=self._selregions,unflag=False)
         sout = "Flagged:\n"
@@ -329,8 +330,9 @@ class CustomFlagToolbarCommon:
         sout += "  regions: "+str(self._selregions)
         asaplog.push(sout)
         del sout
-        self._clearup_selections()
+        self._clearup_selections(refresh=False)
         self._plot_page(pagemode="current")
+        self._pause_buttons(operation="end")
 
     ### unflag selected spectra/regions
     @asaplog_post_dec
@@ -340,6 +342,7 @@ class CustomFlagToolbarCommon:
             asaplog.push(msg)
             asaplog.post('WARN')
             return
+        self._pause_buttons(operation="start",msg="Unflagging data...")
         self._flag_operation(rows=self._selpanels,
                              regions=self._selregions,unflag=True)
         sout = "Unflagged:\n"
@@ -347,8 +350,9 @@ class CustomFlagToolbarCommon:
         sout += "  regions: "+str(self._selregions)
         asaplog.push(sout)
         del sout
-        self._clearup_selections()
+        self._clearup_selections(refresh=False)
         self._plot_page(pagemode="current")
+        self._pause_buttons(operation="end")
 
     ### actual flag operation
     @asaplog_post_dec
@@ -388,7 +392,7 @@ class CustomFlagToolbarCommon:
         #print "Statistics: "
         #print "- rows: ",self._selpanels
         #print "- regions:\n   ",self._selregions
-        self._clearup_selections()
+        self._clearup_selections(refresh=True)
 
     @asaplog_post_dec
     def _selected_stats(self,rows=None,regions=None):
@@ -462,17 +466,21 @@ class CustomFlagToolbarCommon:
     ### Page chages
     ### go to the previous page
     def prev_page(self):
-        self.figmgr.toolbar.set_message('plotting the previous page')
-        self._clear_selection_plot()
+        #self.figmgr.toolbar.set_message('plotting the previous page')
+        self._pause_buttons(operation="start",msg='plotting the previous page')
+        self._clear_selection_plot(refresh=False)
         self._plot_page(pagemode="prev")
         self._plot_selections()
+        self._pause_buttons(operation="end")
 
     ### go to the next page
     def next_page(self):
-        self.figmgr.toolbar.set_message('plotting the next page')
-        self._clear_selection_plot()
+        #self.figmgr.toolbar.set_message('plotting the next page')
+        self._pause_buttons(operation="start",msg='plotting the next page')
+        self._clear_selection_plot(refresh=False)
         self._plot_page(pagemode="next")
         self._plot_selections()
+        self._pause_buttons(operation="end")
 
     ### actual plotting of the new page
     def _plot_page(self,pagemode="next"):
@@ -561,6 +569,10 @@ class CustomFlagToolbarCommon:
         else:
             ppp = maxpanel
         return int(idlastpanel/ppp)+1
+
+    # pause buttons for slow operations. implemented at a backend dependent class
+    def _pause_buttons(self,operation="end",msg=""):
+        pass
 
 #####################################
 ##    Backend dependent Classes    ##
@@ -749,8 +761,10 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
     def disable_button(self):
         ## disable buttons which don't work for plottp
         if not self.button: return
-        self.bRegion.config(relief='raised', state=Tk.DISABLED)
-        self.bPanel.config(relief='raised', state=Tk.DISABLED)
+        self.bRegion.config(relief='raised')
+        self.bPanel.config(relief='raised')
+        self.bRegion.config(state=Tk.DISABLED)
+        self.bPanel.config(state=Tk.DISABLED)
         self.bClear.config(state=Tk.DISABLED)
         self.bFlag.config(state=Tk.DISABLED)
         self.bUnflag.config(state=Tk.DISABLED)
@@ -774,6 +788,19 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
     def disable_prev(self):
         self.bPrev.config(state=Tk.DISABLED)
 
+    # pause buttons for slow operations
+    def _pause_buttons(self,operation="end",msg=""):
+        buttons = ["bRegion","bPanel","bClear","bFlag","bUnflag","bStat",
+                   "bNote","bQuit"]
+        if operation == "start":
+            state=Tk.DISABLED
+        else:
+            state=Tk.NORMAL
+        for btn in buttons:
+            getattr(self,btn).config(state=state)
+        self.figmgr.toolbar.set_message(msg)
+            
+        
     def delete_bar(self):
         self.__disconnect_event()
         self.destroy()
