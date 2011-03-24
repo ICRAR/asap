@@ -157,7 +157,8 @@ class CustomFlagToolbarCommon:
             asaplog.post('WARN')
             return
         #print "add the region to selections"
-        self._thisregion = {'axes': event.inaxes,'xs': event.xdata,
+        #self._thisregion = {'axes': event.inaxes,'xs': event.xdata,
+        self._thisregion = {'axes': event.inaxes,'xs': event.x,
                             'worldx': [event.xdata,event.xdata]}
         self.plotter._plotter.register('button_press',None)
         self.plotter._plotter.register('motion_notify', self._xspan_draw)
@@ -165,19 +166,29 @@ class CustomFlagToolbarCommon:
 
     def _xspan_draw(self,event):
         if event.inaxes == self._thisregion['axes']:
-            xnow = event.xdata
+            #xnow = event.xdata
+            xnow = event.x
             self.xdataold = xnow
         else:
             xnow = self.xdataold
         try: self.lastspan
         except AttributeError: pass
-        else: self.lastspan.remove()
+        #else: self.lastspan.remove()
+        else: self._remove_span(self.lastspan)
 
-        self.lastspan = self._thisregion['axes'].axvspan(self._thisregion['xs'],xnow,facecolor='0.7')
+        #self.lastspan = self._thisregion['axes'].axvspan(self._thisregion['xs'],xnow,facecolor='0.7')
+        self.lastspan = self._draw_span(self._thisregion['axes'],self._thisregion['xs'],xnow,fill="#555555",stipple="gray50")
         #self.plotter._plotter.show(False)
-        self.plotter._plotter.canvas.draw()
+        #self.plotter._plotter.canvas.draw()
         del xnow
 
+    def _draw_span(self,axes,x0,x1,**kwargs):
+        pass
+
+    def _remove_span(self,span):
+        pass
+
+    @asaplog_post_dec
     def _xspan_end(self,event):
         if not self.figmgr.toolbar.mode == '':
             return
@@ -187,7 +198,8 @@ class CustomFlagToolbarCommon:
         try: self.lastspan
         except AttributeError: pass
         else:
-            self.lastspan.remove()
+            #self.lastspan.remove()
+            self._remove_span(self.lastspan)
             del self.lastspan
         if event.inaxes == self._thisregion['axes']:
             xdataend = event.xdata
@@ -808,3 +820,12 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
     def __disconnect_event(self):
         self._p.register('button_press',None)
         self._p.register('button_release',None)
+
+    def _draw_span(self,axes,x0,x1,**kwargs):
+        height = self._p.figure.bbox.height
+        y0 = height - axes.bbox.y0
+        y1 = height - axes.bbox.y1
+        return self._p.canvas._tkcanvas.create_rectangle(x0,y0,x1,y1,**kwargs)
+
+    def _remove_span(self,span):
+        self._p.canvas._tkcanvas.delete(span)
