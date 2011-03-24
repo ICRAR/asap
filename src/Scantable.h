@@ -543,7 +543,10 @@ public:
 			           float rms, 
 		   	           const std::string& masklist, 
 			           int whichrow, 
-			           bool verbose=false) const;
+			           bool verbose=false,
+				   int start=-1,
+				   int count=-1,
+				   bool resetparamid=false) const;
   std::string formatPiecewiseBaselineParams(const std::vector<int>& ranges, 
 					    const std::vector<float>& params, 
 					    const std::vector<bool>& fixed, 
@@ -668,7 +671,7 @@ private:
   void fitBaseline(const std::vector<bool>& mask, int whichrow, Fitter& fitter);
   std::vector<float> doCubicSplineFitting(const std::vector<float>& data, 
 					  const std::vector<bool>& mask,
-					  std::vector<int>& sectionRanges,
+					  std::vector<int>& idxEdge,
 					  std::vector<float>& params,
 					  int nPiece=2,
 					  float thresClip=3.0, 
@@ -694,7 +697,7 @@ private:
   std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask);
   //std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask, const std::vector<int>& edge, const int minEdgeSize, STLineFinder& lineFinder);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, Fitter& fitter);
-  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& pieceEdges, const std::vector<float>& params, const std::vector<bool>& fixed);
+  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const std::vector<bool>& fixed);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const std::vector<bool>& fixed);
 
   void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
