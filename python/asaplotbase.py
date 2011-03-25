@@ -743,8 +743,10 @@ class asaplotbase:
 
                     if len(lines):
                         fp = FP(size=rcParams['legend.fontsize'])
-                        fsz = fp.get_size_in_points() - len(lines)
-                        fp.set_size(max(fsz,6))
+                        #fsz = fp.get_size_in_points() - len(lines)
+                        fsz = fp.get_size_in_points() - max(len(lines),self.cols)
+                        #fp.set_size(max(fsz,6))
+                        fp.set_size(max(fsz,8))
                         sp['axes'].legend(tuple(lines), tuple(labels),
                                           self.loc, prop=fp)
                     #else:
