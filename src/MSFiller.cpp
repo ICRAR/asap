@@ -429,8 +429,6 @@ void MSFiller::fill()
           tcolr = tpoolr->construct( ddtab, "SPECTRAL_WINDOW_ID" ) ;
           Int spwId = tcolr->asInt( ddId ) ;
           tpoolr->destroy( tcolr ) ;
-          // TODO: This must be updated if writer will be replaced from STWriter to MSWriter
-          sdh.nif = max( sdh.nif, spwId ) ;
 
           // IFNO
           uintRF.attachToRecord( trec, "IFNO" ) ;
@@ -933,9 +931,7 @@ void MSFiller::fill()
 
 
   // Table Keywords
-  // TODO: This must be updated if writer will be replaced from STWriter to MSWriter
-//   sdh.nif = ifmap.size() ;
-  sdh.nif++ ;
+  sdh.nif = ifmap.size() ;
   if ( ( telescopeName == "" ) || ( antennaName == telescopeName ) ) {
     sdh.antennaname = antennaName ;
   }
