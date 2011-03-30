@@ -521,20 +521,22 @@ public:
 			       bool outLogger=false, 
 			       const std::string& blfile="");
   void sinusoidBaseline(const std::vector<bool>& mask,
-			int nMinWavesInSW,
-			int nMaxWavesInSW,
+			const std::vector<int>& nWaves,
+			float maxWaveLength,
 			float thresClip, 
 		        int nIterClip,
+			bool getResidual=true,
 		        bool outLogger=false,
 		        const std::string& blfile="");
   void autoSinusoidBaseline(const std::vector<bool>& mask,
-			    int nMinWavesInSW,
-			    int nMaxWavesInSW,
+			    const std::vector<int>& nWaves,
+			    float maxWaveLength,
 		            float thresClip, 
 		            int nIterClip,
 		            const std::vector<int>& edge, 
 		            float threshold=3.0, 
 		            int chanAvgLimit=1, 
+			    bool getResidual=true,
 		            bool outLogger=false, 
 		            const std::string& blfile="");
   float getRms(const std::vector<bool>& mask, int whichrow);
@@ -671,16 +673,16 @@ private:
   void fitBaseline(const std::vector<bool>& mask, int whichrow, Fitter& fitter);
   std::vector<float> doCubicSplineFitting(const std::vector<float>& data, 
 					  const std::vector<bool>& mask,
+					  int nPiece,
 					  std::vector<int>& idxEdge,
 					  std::vector<float>& params,
-					  int nPiece=2,
 					  float thresClip=3.0, 
 					  int nIterClip=1,
 					  bool getResidual=false);
   std::vector<float> doSinusoidFitting(const std::vector<float>& data, 
 				       const std::vector<bool>& mask,
-				       int nMinWavesInSW,
-				       int nMaxWavesInSW,
+				       const std::vector<int>& waveNumbers,
+				       float maxWaveLength, 
 				       std::vector<float>& params,
 				       float thresClip=3.0, 
 				       int nIterClip=1,
@@ -697,8 +699,8 @@ private:
   std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask);
   //std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask, const std::vector<int>& edge, const int minEdgeSize, STLineFinder& lineFinder);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, Fitter& fitter);
-  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const std::vector<bool>& fixed);
-  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const std::vector<bool>& fixed);
+  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params);
+  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params);
 
   void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
 

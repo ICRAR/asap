@@ -2069,34 +2069,48 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def sinusoid_baseline(self, insitu=None, mask=None, minnwave=None, maxnwave=None,
-                          clipthresh=None, clipniter=None, plot=None, outlog=None, blfile=None):
+    def sinusoid_baseline(self, insitu=None, mask=None, nwave=None, maxwavelength=None,
+                          clipthresh=None, clipniter=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
-        Return a scan which has been baselined (all rows) by cubic spline function (piecewise cubic polynomial).
+        Return a scan which has been baselined (all rows) by sinusoidal functions.
         Parameters:
-            insitu:     If False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       An optional mask
-            minnwave:   Minimum wave number in spectral window (default is 0)
-            maxnwave:   Maximum wave number in spectral window (default is 3)
-            clipthresh: Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:  maximum number of iteration of 'clipthresh'-sigma clipping (default is 1)
-            plot:   *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
-                        plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:        If False a new scantable is returned.
+                           Otherwise, the scaling is done in-situ
+                           The default is taken from .asaprc (False)
+            mask:          An optional mask
+            nwave:         the maximum wave number of sinusoids within
+                           maxwavelength * (spectral range).
+                           The default is 3 (i.e., sinusoids with wave 
+                           number of 0(=constant), 1, 2, and 3 are 
+                           used for fitting). Also it is possible to
+                           explicitly specify all the wave numbers to
+                           be used, by giving a list including them 
+                           (e.g. [0,1,2,15,16]).
+            maxwavelength: the longest sinusoidal wavelength. The
+                           default is 1.0 (unit: spectral range). 
+            clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
+            clipniter:     maximum number of iteration of 'clipthresh'-sigma clipping (default is 1)
+            plot:      *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
+                           plot the fit and the residual. In this each
+                           indivual fit has to be approved, by typing 'y'
+                           or 'n'
+            getresidual:   if False, returns best-fit values instead of
+                           residual. (default is True)
+            outlog:        Output the coefficients of the best-fit
+                           function to logger (default is False)
+            blfile:        Name of a text file in which the best-fit
+                           parameter values to be written
+                           (default is "": no file/logger output)
 
         Example:
             # return a scan baselined by a combination of sinusoidal curves having
-            # wave numbers in spectral window from 1 to 10, 
+            # wave numbers in spectral window up to 10, 
             # also with 3-sigma clipping, iteration up to 4 times
-            bscan = scan.sinusoid_baseline(maxnwave=10,clipthresh=3.0,clipniter=4)
+            bscan = scan.sinusoid_baseline(nwave=10,clipthresh=3.0,clipniter=4)
+
+        Note:
+            The best-fit parameter values output in logger and/or blfile are now
+            based on specunit of 'channel'. 
         """
         
         varlist = vars()
@@ -2109,20 +2123,26 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if minnwave is None: minnwave = 0
-        if maxnwave is None: maxnwave = 3
-        if clipthresh is None: clipthresh = 3.0
-        if clipniter is None: clipniter = 1
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if mask          is None: mask          = [True for i in xrange(nchan)]
+        if nwave         is None: nwave         = 3
+        if maxwavelength is None: maxwavelength = 1.0
+        if clipthresh    is None: clipthresh    = 3.0
+        if clipniter     is None: clipniter     = 1
+        if plot          is None: plot          = False
+        if getresidual   is None: getresidual   = True
+        if outlog        is None: outlog        = False
+        if blfile        is None: blfile        = ""
 
+        if isinstance(nwave, int):
+            in_nwave = nwave
+            nwave = []
+            for i in xrange(in_nwave+1): nwave.append(i)
+        
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
         try:
-            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
-            workscan._sinusoid_baseline(mask, minnwave, maxnwave, clipthresh, clipniter, outlog, blfile)
+            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
+            workscan._sinusoid_baseline(mask, nwave, maxwavelength, clipthresh, clipniter, getresidual, outlog, blfile)
             
             workscan._add_history("sinusoid_baseline", varlist)
             
@@ -2141,9 +2161,9 @@ class scantable(Scantable):
                 raise RuntimeError(str(e)+'\n'+msg)
 
 
-    def auto_sinusoid_baseline(self, insitu=None, mask=None, minnwave=None, maxnwave=None,
+    def auto_sinusoid_baseline(self, insitu=None, mask=None, nwave=None, maxwavelength=None,
                                clipthresh=None, clipniter=None, edge=None, threshold=None,
-                               chan_avg_limit=None, plot=None, outlog=None, blfile=None):
+                               chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline
         function (piecewise cubic polynomial).
@@ -2151,47 +2171,60 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
-            insitu:     if False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       an optional mask retreived from scantable
-            minnwave:   Minimum wave number in spectral window (default is 0)
-            maxnwave:   Maximum wave number in spectral window (default is 3)
-            clipthresh: Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:  maximum number of iteration of 'clipthresh'-sigma clipping (default is 1)
-            edge:       an optional number of channel to drop at
-                        the edge of spectrum. If only one value is
-                        specified, the same number will be dropped
-                        from both sides of the spectrum. Default
-                        is to keep all channels. Nested tuples
-                        represent individual edge selection for
-                        different IFs (a number of spectral channels
-                        can be different)
-            threshold:  the threshold used by line finder. It is
-                        better to keep it large as only strong lines
-                        affect the baseline solution.
-            chan_avg_limit:
-                        a maximum number of consequtive spectral
-                        channels to average during the search of
-                        weak and broad lines. The default is no
-                        averaging (and no search for weak lines).
-                        If such lines can affect the fitted baseline
-                        (e.g. a high order polynomial is fitted),
-                        increase this parameter (usually values up
-                        to 8 are reasonable). Most users of this
-                        method should find the default value sufficient.
-            plot:   *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
-                        plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:        if False a new scantable is returned.
+                           Otherwise, the scaling is done in-situ
+                           The default is taken from .asaprc (False)
+            mask:          an optional mask retreived from scantable
+            nwave:         the maximum wave number of sinusoids within
+                           maxwavelength * (spectral range).
+                           The default is 3 (i.e., sinusoids with wave 
+                           number of 0(=constant), 1, 2, and 3 are 
+                           used for fitting). Also it is possible to
+                           explicitly specify all the wave numbers to
+                           be used, by giving a list including them 
+                           (e.g. [0,1,2,15,16]).
+            maxwavelength: the longest sinusoidal wavelength. The
+                           default is 1.0 (unit: spectral range). 
+            clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
+            clipniter:     maximum number of iteration of 'clipthresh'-sigma clipping (default is 1)
+            edge:          an optional number of channel to drop at
+                           the edge of spectrum. If only one value is
+                           specified, the same number will be dropped
+                           from both sides of the spectrum. Default
+                           is to keep all channels. Nested tuples
+                           represent individual edge selection for
+                           different IFs (a number of spectral channels
+                           can be different)
+            threshold:     the threshold used by line finder. It is
+                           better to keep it large as only strong lines
+                           affect the baseline solution.
+            chan_avg_limit:a maximum number of consequtive spectral
+                           channels to average during the search of
+                           weak and broad lines. The default is no
+                           averaging (and no search for weak lines).
+                           If such lines can affect the fitted baseline
+                           (e.g. a high order polynomial is fitted),
+                           increase this parameter (usually values up
+                           to 8 are reasonable). Most users of this
+                           method should find the default value sufficient.
+            plot:      *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
+                           plot the fit and the residual. In this each
+                           indivual fit has to be approved, by typing 'y'
+                           or 'n'
+            getresidual:   if False, returns best-fit values instead of
+                           residual. (default is True)
+            outlog:        Output the coefficients of the best-fit
+                           function to logger (default is False)
+            blfile:        Name of a text file in which the best-fit
+                           parameter values to be written
+                           (default is "": no file/logger output)
 
         Example:
-            bscan = scan.auto_sinusoid_baseline(maxnwave=10, insitu=False)
+            bscan = scan.auto_sinusoid_baseline(nwave=10, insitu=False)
+        
+        Note:
+            The best-fit parameter values output in logger and/or blfile are now
+            based on specunit of 'channel'. 
         """
 
         varlist = vars()
@@ -2204,22 +2237,28 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if minnwave is None: minnwave = 0
-        if maxnwave is None: maxnwave = 3
-        if clipthresh is None: clipthresh = 3.0
-        if clipniter is None: clipniter = 1
-        if edge is None: edge = (0, 0)
-        if threshold is None: threshold = 3
+        if mask           is None: mask           = [True for i in xrange(nchan)]
+        if nwave          is None: nwave          = 3
+        if maxwavelength  is None: maxwavelength  = 1.0
+        if clipthresh     is None: clipthresh     = 3.0
+        if clipniter      is None: clipniter      = 1
+        if edge           is None: edge           = (0,0)
+        if threshold      is None: threshold      = 3
         if chan_avg_limit is None: chan_avg_limit = 1
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if plot           is None: plot           = False
+        if getresidual    is None: getresidual    = True
+        if outlog         is None: outlog         = False
+        if blfile         is None: blfile         = ""
 
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
         from asap.asaplinefind import linefinder
         from asap import _is_sequence_or_number as _is_valid
+
+        if isinstance(nwave, int):
+            in_nwave = nwave
+            nwave = []
+            for i in xrange(in_nwave+1): nwave.append(i)
 
         if not (isinstance(edge, list) or isinstance(edge, tuple)): edge = [ edge ]
         individualedge = False;
@@ -2243,13 +2282,13 @@ class scantable(Scantable):
                 curedge = edge + edge
 
         try:
-            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
+            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
             if individualedge:
                 curedge = []
                 for i in xrange(len(edge)):
                     curedge += edge[i]
                 
-            workscan._auto_sinusoid_baseline(mask, minnwave, maxnwave, clipthresh, clipniter, curedge, threshold, chan_avg_limit, outlog, blfile)
+            workscan._auto_sinusoid_baseline(mask, nwave, maxwavelength, clipthresh, clipniter, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
 
             workscan._add_history("auto_sinusoid_baseline", varlist)
             
@@ -2294,6 +2333,10 @@ class scantable(Scantable):
             # return a scan baselined by a cubic spline consisting of 2 pieces (i.e., 1 internal knot),
             # also with 3-sigma clipping, iteration up to 4 times
             bscan = scan.cspline_baseline(npiece=2,clipthresh=3.0,clipniter=4)
+        
+        Note:
+            The best-fit parameter values output in logger and/or blfile are now
+            based on specunit of 'channel'. 
         """
         
         varlist = vars()
@@ -2387,6 +2430,10 @@ class scantable(Scantable):
 
         Example:
             bscan = scan.auto_cspline_baseline(npiece=3, insitu=False)
+        
+        Note:
+            The best-fit parameter values output in logger and/or blfile are now
+            based on specunit of 'channel'. 
         """
 
         varlist = vars()

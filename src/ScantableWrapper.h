@@ -268,11 +268,11 @@ public:
   void autoCubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool outlog=false, const std::string& blfile="")
   { table_->autoCubicSplineBaseline(mask, npiece, clipthresh, clipniter, edge, threshold, chan_avg_limit, outlog, blfile); }
 
-  void sinusoidBaseline(const std::vector<bool>& mask, int minnwave, int maxnwave, float clipthresh, int clipniter, bool outlog=false, const std::string& blfile="")
-  { table_->sinusoidBaseline(mask, minnwave, maxnwave, clipthresh, clipniter, outlog, blfile); }
+  void sinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nwave, float maxwavelength, float clipthresh, int clipniter, bool getresidual=true, bool outlog=false, const std::string& blfile="")
+  { table_->sinusoidBaseline(mask, nwave, maxwavelength, clipthresh, clipniter, getresidual, outlog, blfile); }
 
-  void autoSinusoidBaseline(const std::vector<bool>& mask, int minnwave, int maxnwave, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool outlog=false, const std::string& blfile="")
-  { table_->autoSinusoidBaseline(mask, minnwave, maxnwave, clipthresh, clipniter, edge, threshold, chan_avg_limit, outlog, blfile); }
+  void autoSinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nwave, float maxwavelength, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
+  { table_->autoSinusoidBaseline(mask, nwave, maxwavelength, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
 
   float getRms(const std::vector<bool>& mask, int whichrow)
   { return table_->getRms(mask, whichrow); }

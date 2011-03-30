@@ -1202,7 +1202,7 @@ std::vector<double> STLineFinder::getLineRanges()
     // convert to required abscissa units
     vel = scan->getAbcissa(last_row_used);
   } else {
-    for (int i = 0; i < spectrum.nelements(); ++i)
+    for (uInt i = 0; i < spectrum.nelements(); ++i)
       vel.push_back((double)i);
   }
   std::vector<int> ranges=getLineRangesInChannels();
