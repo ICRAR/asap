@@ -940,20 +940,20 @@ void Scantable::setSelection( const STSelector& selection )
   }
   table_ = tab;
   attach();
-  tab.rwKeywordSet().define("nBeam",(Int)(getBeamNos().size())) ;
-  vector<uint> selectedIFs = getIFNos() ;
-  Int newnIF = selectedIFs.size() ;
-  tab.rwKeywordSet().define("nIF",newnIF) ;
-  if ( newnIF != 0 ) {
-    Int newnChan = 0 ;
-    for ( Int i = 0 ; i < newnIF ; i++ ) {
-      Int nChan = nchan( selectedIFs[i] ) ;
-      if ( newnChan > nChan )
-        newnChan = nChan ;
-    }
-    tab.rwKeywordSet().define("nChan",newnChan) ;
-  }
-  tab.rwKeywordSet().define("nPol",(Int)(getPolNos().size())) ;
+//   tab.rwKeywordSet().define("nBeam",(Int)(getBeamNos().size())) ;
+//   vector<uint> selectedIFs = getIFNos() ;
+//   Int newnIF = selectedIFs.size() ;
+//   tab.rwKeywordSet().define("nIF",newnIF) ;
+//   if ( newnIF != 0 ) {
+//     Int newnChan = 0 ;
+//     for ( Int i = 0 ; i < newnIF ; i++ ) {
+//       Int nChan = nchan( selectedIFs[i] ) ;
+//       if ( newnChan > nChan )
+//         newnChan = nChan ;
+//     }
+//     tab.rwKeywordSet().define("nChan",newnChan) ;
+//   }
+//   tab.rwKeywordSet().define("nPol",(Int)(getPolNos().size())) ;
   selector_ = selection;
 }
 
