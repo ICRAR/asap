@@ -1774,7 +1774,7 @@ bool Scantable::getFlagtraFast(uInt whichrow)
   return ((flag >> 7) == 1);
 }
 
-void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool outLogger, const std::string& blfile)
+void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1802,14 +1802,14 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool outL
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
     fitBaseline(chanMask, whichrow, fitter);
-    setSpectrum(fitter.getResidual(), whichrow);
+    setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool outLogger, const std::string& blfile)
+void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1863,7 +1863,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
     //-------------------------------------------------------
 
     fitBaseline(chanMask, whichrow, fitter);
-    setSpectrum(fitter.getResidual(), whichrow);
+    setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
   }
@@ -1871,7 +1871,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
   if (outTextFile) ofs.close();
 }
 
-void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool outLogger, const std::string& blfile)
+void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1899,10 +1899,10 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
     //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum(fitter.getResidual(), whichrow);
+    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<int> pieceEdges;
     std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, true);
+    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
     //
 
@@ -1912,7 +1912,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool outLogger, const std::string& blfile)
+void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1967,10 +1967,10 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
 
 
     //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum(fitter.getResidual(), whichrow);
+    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<int> pieceEdges;
     std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, true);
+    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
     //
 
@@ -1986,7 +1986,7 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     throw(AipsError("data and mask sizes are not identical"));
   }
   if (nPiece < 1) {
-    throw(AipsError("wrong number of the sections for fitting"));
+    throw(AipsError("number of the sections must be one or more"));
   }
 
   int nChan = data.size();
@@ -2228,9 +2228,8 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::vecto
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
     //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum(fitter.getResidual(), whichrow);
+    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<float> params;
-    //std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, thresClip, nIterClip, true);
     std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, maxWaveLength, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
     //
@@ -2296,7 +2295,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::v
 
 
     //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum(fitter.getResidual(), whichrow);
+    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<float> params;
     std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, maxWaveLength, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
@@ -2348,7 +2347,7 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
   int nDOF = nWaves.size() * 2 - (hasConstantTerm ? 1 : 0);  //number of parameters to solve.
 
   const double PI = 6.0 * asin(0.5); // PI (= 3.141592653...)
-  double baseXFactor = 2.0*PI/(double)maxWaveLength/(double)(nChan-1);  //the denominator (nChan-1) should be changed to (xdata[nChan-1]-xdata[0]) for accepting x-values given in velocity or frequency when this function is moved to fitter.
+  double baseXFactor = 2.0*PI/(double)maxWaveLength/(double)(nChan-1);  //the denominator (nChan-1) should be changed to (xdata[nChan-1]-xdata[0]) for accepting x-values given in velocity or frequency when this function is moved to fitter. (2011/03/30 WK)
 
   // xArray : contains elemental values for computing the least-square matrix. 
   //          xArray.size() is nDOF and xArray[*].size() is nChan. 
@@ -2648,10 +2647,6 @@ std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::strin
   ostringstream oss;
 
   if (verbose) {
-    for (int i = 0; i < 60; ++i) {
-      oss << "-";
-    }
-    oss << endl;
     oss <<  " Scan[" << getScan(whichrow)  << "]";
     oss <<  " Beam[" << getBeam(whichrow)  << "]";
     oss <<    " IF[" << getIF(whichrow)    << "]";
@@ -2672,6 +2667,10 @@ std::string Scantable::formatBaselineParamsFooter(float rms, bool verbose) const
   if (verbose) {
     oss << "Results of baseline fit" << endl;
     oss << "  rms = " << setprecision(6) << rms << endl;
+    for (int i = 0; i < 60; ++i) {
+      oss << "-";
+    }
+    oss << flush;
   }
 
   return String(oss);

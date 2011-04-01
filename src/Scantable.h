@@ -496,6 +496,7 @@ public:
 
   void polyBaseline(const std::vector<bool>& mask, 
 		    int order, 
+		    bool getResidual=true,
 		    bool outLogger=false, 
 		    const std::string& blfile="");
   void autoPolyBaseline(const std::vector<bool>& mask,
@@ -503,12 +504,14 @@ public:
 			const std::vector<int>& edge, 
 			float threshold=3.0, 
 			int chanAvgLimit=1, 
+			bool getResidual=true,
 			bool outLogger=false, 
 			const std::string& blfile="");
   void cubicSplineBaseline(const std::vector<bool>& mask,
 			   int nPiece,
 			   float thresClip, 
 			   int nIterClip,
+			   bool getResidual=true,
 			   bool outLogger=false,
 			   const std::string& blfile="");
   void autoCubicSplineBaseline(const std::vector<bool>& mask,
@@ -518,6 +521,7 @@ public:
 			       const std::vector<int>& edge, 
 			       float threshold=3.0, 
 			       int chanAvgLimit=1, 
+			       bool getResidual=true,
 			       bool outLogger=false, 
 			       const std::string& blfile="");
   void sinusoidBaseline(const std::vector<bool>& mask,
@@ -678,7 +682,7 @@ private:
 					  std::vector<float>& params,
 					  float thresClip=3.0, 
 					  int nIterClip=1,
-					  bool getResidual=false);
+					  bool getResidual=true);
   std::vector<float> doSinusoidFitting(const std::vector<float>& data, 
 				       const std::vector<bool>& mask,
 				       const std::vector<int>& waveNumbers,
@@ -686,7 +690,7 @@ private:
 				       std::vector<float>& params,
 				       float thresClip=3.0, 
 				       int nIterClip=1,
-				       bool getResidual=false);
+				       bool getResidual=true);
   bool hasSameNchanOverIFs();
   std::string getMaskRangeList(const std::vector<bool>& mask, 
 				int whichrow, 

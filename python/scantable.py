@@ -2072,7 +2072,7 @@ class scantable(Scantable):
     def sinusoid_baseline(self, insitu=None, mask=None, nwave=None, maxwavelength=None,
                           clipthresh=None, clipniter=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
-        Return a scan which has been baselined (all rows) by sinusoidal functions.
+        Return a scan which has been baselined (all rows) with sinusoidal functions.
         Parameters:
             insitu:        If False a new scantable is returned.
                            Otherwise, the scaling is done in-situ
@@ -2165,8 +2165,7 @@ class scantable(Scantable):
                                clipthresh=None, clipniter=None, edge=None, threshold=None,
                                chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
-        Return a scan which has been baselined (all rows) by cubic spline
-        function (piecewise cubic polynomial).
+        Return a scan which has been baselined (all rows) with sinusoidal functions.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
@@ -2308,7 +2307,8 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None, clipniter=None, plot=None, outlog=None, blfile=None):
+    def cspline_baseline(self, insitu=None, mask=None, npiece=None,
+                         clipthresh=None, clipniter=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline function (piecewise cubic polynomial).
         Parameters:
@@ -2323,6 +2323,8 @@ class scantable(Scantable):
                         plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+            getresidual:if False, returns best-fit values instead of
+                        residual. (default is True)
             outlog:     Output the coefficients of the best-fit
                         function to logger (default is False)
             blfile:     Name of a text file in which the best-fit
@@ -2349,19 +2351,20 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if npiece is None: npiece = 2
-        if clipthresh is None: clipthresh = 3.0
-        if clipniter is None: clipniter = 1
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if mask        is None: mask        = [True for i in xrange(nchan)]
+        if npiece      is None: npiece      = 2
+        if clipthresh  is None: clipthresh  = 3.0
+        if clipniter   is None: clipniter   = 1
+        if plot        is None: plot        = False
+        if getresidual is None: getresidual = True
+        if outlog      is None: outlog      = False
+        if blfile      is None: blfile      = ""
 
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
         try:
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
-            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, outlog, blfile)
+            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, getresidual, outlog, blfile)
             
             workscan._add_history("cspline_baseline", varlist)
             
@@ -2382,7 +2385,7 @@ class scantable(Scantable):
 
     def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None,
                               clipniter=None, edge=None, threshold=None,
-                              chan_avg_limit=None, plot=None, outlog=None, blfile=None):
+                              chan_avg_limit=None, getresidual=None, plot=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline
         function (piecewise cubic polynomial).
@@ -2422,6 +2425,8 @@ class scantable(Scantable):
                         plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+            getresidual:if False, returns best-fit values instead of
+                        residual. (default is True)
             outlog:     Output the coefficients of the best-fit
                         function to logger (default is False)
             blfile:     Name of a text file in which the best-fit
@@ -2446,16 +2451,17 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if npiece is None: npiece = 2
-        if clipthresh is None: clipthresh = 3.0
-        if clipniter is None: clipniter = 1
-        if edge is None: edge = (0, 0)
-        if threshold is None: threshold = 3
+        if mask           is None: mask           = [True for i in xrange(nchan)]
+        if npiece         is None: npiece         = 2
+        if clipthresh     is None: clipthresh     = 3.0
+        if clipniter      is None: clipniter      = 1
+        if edge           is None: edge           = (0, 0)
+        if threshold      is None: threshold      = 3
         if chan_avg_limit is None: chan_avg_limit = 1
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if plot           is None: plot           = False
+        if getresidual    is None: getresidual    = True
+        if outlog         is None: outlog         = False
+        if blfile         is None: blfile         = ""
 
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
@@ -2490,7 +2496,7 @@ class scantable(Scantable):
                 for i in xrange(len(edge)):
                     curedge += edge[i]
                 
-            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, curedge, threshold, chan_avg_limit, outlog, blfile)
+            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
 
             workscan._add_history("auto_cspline_baseline", varlist)
             
@@ -2510,7 +2516,7 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, outlog=None, blfile=None):
+    def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
@@ -2522,6 +2528,8 @@ class scantable(Scantable):
             plot:       plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+            getresidual:if False, returns best-fit values instead of
+                        residual. (default is True)
             outlog:     Output the coefficients of the best-fit
                         function to logger (default is False)
             blfile:     Name of a text file in which the best-fit
@@ -2544,11 +2552,12 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if order is None: order = 0
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if mask        is None: mask        = [True for i in xrange(nchan)]
+        if order       is None: order       = 0
+        if plot        is None: plot        = False
+        if getresidual is None: getresidual = True
+        if outlog      is None: outlog      = False
+        if blfile      is None: blfile      = ""
 
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
@@ -2578,7 +2587,7 @@ class scantable(Scantable):
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
                     #workscan._append_blinfo(blpars, masklist, f.mask)
-                    workscan._setspectrum(f.fitter.getresidual(), r)
+                    workscan._setspectrum((f.fitter.getresidual() if getresidual else f.fitter.getfit()), r)
                     
                     if outblfile:
                         rms = workscan.get_rms(f.mask, r)
@@ -2590,7 +2599,7 @@ class scantable(Scantable):
 
                 if outblfile: blf.close()
             else:
-                workscan._poly_baseline(mask, order, outlog, blfile)
+                workscan._poly_baseline(mask, order, getresidual, outlog, blfile)
             
             workscan._add_history("poly_baseline", varlist)
             
@@ -2610,7 +2619,7 @@ class scantable(Scantable):
 
 
     def auto_poly_baseline(self, insitu=None, mask=None, order=None, edge=None, threshold=None,
-                           chan_avg_limit=None, plot=None, outlog=None, blfile=None):
+                           chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
@@ -2646,6 +2655,8 @@ class scantable(Scantable):
             plot:       plot the fit and the residual. In this each
                         indivual fit has to be approved, by typing 'y'
                         or 'n'
+            getresidual:if False, returns best-fit values instead of
+                        residual. (default is True)
             outlog:     Output the coefficients of the best-fit
                         function to logger (default is False)
             blfile:     Name of a text file in which the best-fit
@@ -2666,14 +2677,15 @@ class scantable(Scantable):
 
         nchan = workscan.nchan()
         
-        if mask is None: mask = [True for i in xrange(nchan)]
-        if order is None: order = 0
-        if edge is None: edge = (0, 0)
-        if threshold is None: threshold = 3
+        if mask           is None: mask           = [True for i in xrange(nchan)]
+        if order          is None: order          = 0
+        if edge           is None: edge           = (0, 0)
+        if threshold      is None: threshold      = 3
         if chan_avg_limit is None: chan_avg_limit = 1
-        if plot is None: plot = False
-        if outlog is None: outlog = False
-        if blfile is None: blfile = ""
+        if plot           is None: plot           = False
+        if getresidual    is None: getresidual    = True
+        if outlog         is None: outlog         = False
+        if blfile         is None: blfile         = ""
 
         outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
         
@@ -2740,7 +2752,7 @@ class scantable(Scantable):
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
                     #workscan._append_blinfo(blpars, masklist, f.mask)
-                    workscan._setspectrum(f.fitter.getresidual(), r)
+                    workscan._setspectrum((f.fitter.getresidual() if getresidual else f.fitter.getfit()), r)
 
                     if outblfile:
                         rms = workscan.get_rms(f.mask, r)
@@ -2758,7 +2770,7 @@ class scantable(Scantable):
                     for i in xrange(len(edge)):
                         curedge += edge[i]
                 
-                workscan._auto_poly_baseline(mask, order, curedge, threshold, chan_avg_limit, outlog, blfile)
+                workscan._auto_poly_baseline(mask, order, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
 
             workscan._add_history("auto_poly_baseline", varlist)
             
