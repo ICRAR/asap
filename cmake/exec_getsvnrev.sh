@@ -5,6 +5,5 @@ if [ $# -ge 1 ]; then
     DIR=$1
 fi
 
-pushd ${DIR}
+cd ${DIR}
 ${DIR}/getsvnrev.sh
-pushd

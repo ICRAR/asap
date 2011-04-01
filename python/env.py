@@ -74,15 +74,17 @@ def get_revision():
     if not is_casapy:
         return ' unknown '
     casapath=os.environ["CASAPATH"].split()
-    if os.path.isdir(casapath[0]+'/'+casapath[1]+'/python/2.5/asap'):
+    versioninfo = sys.version_info
+    pyversion = '%s.%s'%(versioninfo[0],versioninfo[1])
+    if os.path.isdir(casapath[0]+'/'+casapath[1]+'/python/%s/asap'%(pyversion)):
         # for casa developer environment (linux or darwin)
-        revinfo=casapath[0]+'/'+casapath[1]+'/python/2.5/asap/svninfo.txt'
+        revinfo=casapath[0]+'/'+casapath[1]+'/python/%s/asap/svninfo.txt'%(pyversion)
     else:
         # for end-user environments
         if casapath[1]=='darwin':
             revinfo=casapath[0]+'/Resources/python/asap/svninfo.txt'
         else:
-            revinfo=casapath[0]+'/lib/python2.5/asap/svninfo.txt'
+            revinfo=casapath[0]+'/lib/python%s/asap/svninfo.txt'%(pyversion)
     if os.path.isfile(revinfo):
         f = file(revinfo)
         f.readline()
