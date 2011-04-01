@@ -54,9 +54,9 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     #  ?    Matches preceding pattern zero or once only
     #  $    Mathces at end of a line
     string( REGEX REPLACE /[^/]+/?$ "" casaroot ${CMAKE_SOURCE_DIR} )
-    set( CMAKE_INSTALL_PREFIX ${casaroot}/${arch} )
+    set( CMAKE_INSTALL_PREFIX ${casaroot}/${arch} CACHE PATH "casa architecture directory" FORCE )
 ELSE()
-    set( casaroot ${CMAKE_INSTALL_PREFIX}/.. )
+    set( casaroot ${CMAKE_INSTALL_PREFIX}/.. CACHE PATH "casa architecture directory" FORCE )
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 message( STATUS "casaroot = " ${casaroot} )
