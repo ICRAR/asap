@@ -36,7 +36,8 @@ set( PYTHON_MODULES
      ${PYTHONDIR}/scantable.py
      ${PYTHONDIR}/selector.py
      ${PYTHONDIR}/simplelinefinder.py
-     ${PYTHONDIR}/utils.py )
+     ${PYTHONDIR}/utils.py 
+     ${PYTHONDIR}/svninfo.txt )
 
 install( PROGRAMS ${PYTHON_MODULES} 
          DESTINATION ${PYTHON_INSTALL_DIR} )
