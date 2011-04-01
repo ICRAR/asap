@@ -514,6 +514,15 @@ set( EXEC_INSTALL_DIR bin )
 set( LIB_INSTALL_DIR lib )
 set( PYTHON_INSTALL_DIR python/${PYTHONV}/asap )
 set( SHARED_INSTALL_DIR share/asap )
+
+#
+# execute getsvnrev.sh to create/update svninfo.txt
+# run chmod to make sure the script has executable 
+#
+exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getsvnrev.sh )
+exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh )
+exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh ARGS ${ASAP_SOURCE_DIR})
+
 # Add the modules to be built.
 #
 # Choose to have correct RPATHs both in the build tree and
