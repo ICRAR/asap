@@ -20,9 +20,10 @@ HTTPS="https://svn.atnf.csiro.au/asap/branches/alma"
 for i in $INFOTOP; do
    echo $i
    if test ${i:0:4} = "http"; then
-      if test ${i:0:5} = "https"; then
-         echo ${i#${HTTPS}} > $OUT
-      fi
+      #if test ${i:0:5} = "https"; then
+      #   echo ${i#${HTTPS}} > $OUT
+      #fi
+      echo ${i} > $OUT
    else
       if test $SRCVER -gt $i; then
          echo $SRCVER >> $OUT
