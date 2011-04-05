@@ -66,6 +66,9 @@ private:
   void fillWeather() ;
   void fillSysCal() ;
 
+  // fill empty rows
+  void infillSpectralWindow() ;
+
   // add rows to subtables
   void addFeed( casa::Int id ) ;
   void addSpectralWindow( casa::Int spwid, casa::Int freqid ) ;

@@ -443,6 +443,9 @@ bool MSWriter::write(const string& filename, const Record& rec)
   if ( isTcal_ ) 
     fillSysCal() ;
 
+  // fill empty SPECTRAL_WINDOW rows
+  infillSpectralWindow() ;
+
   // ASDM tables 
   const TableRecord &stKeys = table_->table().keywordSet() ;
   TableRecord &msKeys = mstable_->rwKeywordSet() ;
@@ -1895,4 +1898,29 @@ Double MSWriter::getDishDiameter( String antname )
 
   return diameter ;
 }
+
+void MSWriter::infillSpectralWindow()
+{
+  MSSpectralWindow msSpw = mstable_->spectralWindow() ;
+  MSSpWindowColumns msSpwCols( msSpw ) ;
+  uInt nrow = msSpw.nrow() ;
+
+  ScalarColumn<Int> measFreqRefCol = msSpwCols.measFreqRef() ;
+  ArrayColumn<Double> chanFreqCol = msSpwCols.chanFreq() ;
+  ArrayColumn<Double> chanWidthCol = msSpwCols.chanWidth() ;
+  ArrayColumn<Double> effectiveBWCol = msSpwCols.effectiveBW() ;
+  ArrayColumn<Double> resolutionCol = msSpwCols.resolution() ;
+  Vector<Double> dummy( 1, 0.0 ) ;
+  for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+    if ( !(chanFreqCol.isDefined( irow )) ) {
+      measFreqRefCol.put( irow, 1 ) ;
+      chanFreqCol.put( irow, dummy ) ;
+      chanWidthCol.put( irow, dummy ) ;
+      effectiveBWCol.put( irow, dummy ) ;
+      resolutionCol.put( irow, dummy ) ;
+    }
+  }
+
+}
+
 }
