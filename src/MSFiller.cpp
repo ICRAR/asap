@@ -443,8 +443,6 @@ void MSFiller::fill()
           delete roArrICol ;
 //           os_ << "npol = " << npol << LogIO::POST ;
 //           os_ << "corrtype = " << corrtype << LogIO::POST ;
-          sdh.npol = max( sdh.npol, npol ) ;
-          if ( sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
           // source information
 //           os_ << "srcId = " << srcId << ", spwId = " << spwId << LogIO::POST ;
           MSSource srctabSel = srctab( srctab.col("SOURCE_ID") == srcId && srctab.col("SPECTRAL_WINDOW_ID") == spwId ) ;
@@ -560,6 +558,8 @@ void MSFiller::fill()
           tpoolr->destroy( tcolr ) ;
           tcolr = tpoolr->construct( spwtab, "NUM_CHAN" ) ;
           Int nchan = tcolr->asInt( spwId ) ;
+          Bool iswvr = False ;
+          if ( nchan == 4 ) iswvr = True ;
           tpoolr->destroy( tcolr ) ;
           Bool even = False ;
           if ( (nchan/2)*2 == nchan ) even = True ;
@@ -644,6 +644,10 @@ void MSFiller::fill()
             delete scIntervalCol ;
             scTsysCol.attach( caltabsel, colTsys_ ) ;
           }
+
+          sdh.npol = max( sdh.npol, npol ) ;
+          if ( !iswvr && sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
+
 //           time1 = gettimeofday_sec() ;
 //           os_ << "end 3rd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
           //

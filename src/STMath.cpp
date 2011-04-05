@@ -2529,8 +2529,8 @@ CountedPtr< Scantable >
   TableVector<uInt> vec(tout, "POLNO");
   vec = 0;
   pols->table_.rwKeywordSet().define("nPol", Int(1));
-  //pols->table_.rwKeywordSet().define("POLTYPE", String("stokes"));
-  pols->table_.rwKeywordSet().define("POLTYPE", in->getPolType());
+  pols->table_.rwKeywordSet().define("POLTYPE", String("stokes"));
+  //pols->table_.rwKeywordSet().define("POLTYPE", in->getPolType());
   std::vector<CountedPtr<Scantable> > vpols;
   vpols.push_back(pols);
   CountedPtr< Scantable > out = average(vpols, mask, weight, "SCAN");

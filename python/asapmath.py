@@ -862,6 +862,7 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
         calmode:       calibration mode
         verify:        verify calibration
     """
+    import re
     antname = scantab.get_antennaname()
     if ( calmode == 'nod' ):
         asaplog.push( 'Calibrating nod data.' )
@@ -873,7 +874,11 @@ def calibrate( scantab, scannos=[], calmode='none', verify=None ):
         asaplog.push( 'Calibrating %s position-switched data.' % antname )
         if ( antname.find( 'APEX' ) != -1 ):
             scal = apexcal( scantab, scannos, calmode, verify )
-        elif ( antname.find( 'ALMA' ) != -1 or antname.find( 'OSF' ) != -1 ):
+        elif ( antname.find( 'ALMA' ) != -1 or antname.find( 'OSF' ) != -1
+               or re.match('DV[0-9][0-9]$',antname) is not None
+               or re.match('PM[0-9][0-9]$',antname) is not None
+               or re.match('CM[0-9][0-9]$',antname) is not None
+               or re.match('DA[0-9][0-9]$',antname) is not None ):
             scal = almacal( scantab, scannos, calmode, verify )
         else:
             scal = calps( scantab, scannos=scannos, verify=verify )
