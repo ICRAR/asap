@@ -1400,7 +1400,7 @@ class asapplotter:
             raise RuntimeError("No scantable has been set yet.")
         # Now header will be printed on plot and/or logger.
         # Get header information and format it.
-        ssum=self._data.__str__()
+        ssum=self._data._list_header()
         # Print Observation header to the upper-left corner of plot
         headstr=[ssum[ssum.find('Observer:'):ssum.find('Flux Unit:')]]
         headstr.append(ssum[ssum.find('Beams:'):ssum.find('Observer:')]
@@ -1408,7 +1408,9 @@ class asapplotter:
         if extrastr != '':
             headstr[0]=extrastr+'\n'+headstr[0]
             self._headtext['extrastr'] = extrastr
-        if selstr != '': self._headtext['selstr'] = selstr
+        if selstr != '':
+            selstr += '\n'
+            self._headtext['selstr'] = selstr
         ssel=(selstr+self._data.get_selection().__str__()+self._selection.__str__() or 'none')
         headstr.append('***Selections***\n'+ssel)
 
@@ -1426,7 +1428,8 @@ class asapplotter:
             asaplog.push("----------------\n  Plot Summary\n----------------")
             asaplog.push(extrastr)
             asaplog.push(ssum[ssum.find('Beams:'):ssum.find('Selection:')]\
-                         + selstr + ssum[ssum.find('Scan Source'):])
+                         #+ selstr + ssum[ssum.find('Scan Source'):])
+                         + selstr)
         self._headtext['string'] = headstr
         del ssel, ssum, headstr
 
