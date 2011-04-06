@@ -1,6 +1,7 @@
 from asap.parameters import rcParams
 from asap.utils import _n_bools, mask_and, mask_or
 from asap.scantable import scantable
+from asap.logging import asaplog, asaplog_post_dec
 
 class interactivemask:
 	"""
@@ -29,8 +30,10 @@ class interactivemask:
 		"""
 		# Return if GUI is not active
 		if not rcParams['plotter.gui']:
-			print 'GUI plotter is disabled.\n'
-			print 'Exit interactive mode.'
+			msg = 'GUI plotter is disabled.\n'
+			msg += 'Exit interactive mode.'
+			asaplog.push(msg)
+			asaplog.post("ERROR")
 			return
 		# Verify input parameters
 		if scan is None and plotter is None:
@@ -69,12 +72,12 @@ class interactivemask:
 		Set initial channel mask.
 
 		Parameters:
-		    masklist:  [[min, max], [min2, max2], ...]
-		               A list of pairs of start/end points (inclusive)
-                               specifying the regions to be masked
-		    invert:    optional argument. If specified as True,
-		               return an inverted mask, i.e. the regions
-			       specified are excluded
+			masklist:  [[min, max], [min2, max2], ...]
+					   A list of pairs of start/end points (inclusive)
+							   specifying the regions to be masked
+			invert:	optional argument. If specified as True,
+					   return an inverted mask, i.e. the regions
+				   specified are excluded
 		You can reset the mask selection by running this method with
 		the default parameters.
 		"""
@@ -87,7 +90,7 @@ class interactivemask:
 		# Create base mask
 		if ( len(masklist) > 0 ):
 			self.mask=self.scan.create_mask(masklist,invert=invert)
-                elif invert==True:
+		elif invert==True:
 			self.mask=_n_bools(self.scan.nchan(),False)
 		else:
 			self.mask=_n_bools(self.scan.nchan(),True)
@@ -98,8 +101,8 @@ class interactivemask:
 		Inherit an event from the parent function.
 
 		Parameters:
-		    event: 'button_press_event' object to be inherited to
-		           start interactive region selection .
+			event: 'button_press_event' object to be inherited to
+				   start interactive region selection .
 		"""
 		from matplotlib.backend_bases import MouseEvent
 		if isinstance(event,MouseEvent) and event.name=='button_press_event':
@@ -111,10 +114,10 @@ class interactivemask:
 	def set_callback(self,callback):
 		"""
 		Set callback function to run when finish_selection() is executed.
-		    callback: The post processing function to run after
-		              the mask selections are completed.
-			      This will be overwritten if callback is defined in
-			      finish_selection(callback=func)
+			callback: The post processing function to run after
+					  the mask selections are completed.
+				  This will be overwritten if callback is defined in
+				  finish_selection(callback=func)
 		"""
 		self.callback=callback
 
@@ -127,39 +130,53 @@ class interactivemask:
 		when GUI plotter is active.
 
 		Parameters:
-		    once:     If specified as True, you can modify masks only
-		              once. Else if False, you can modify them repeatedly.
-		    showmask: If specified as True, the masked regions are plotted
-		              on the plotter.
-			      Note this parameter is valid only when once=True.
-			      Otherwise, maskes are forced to be plotted for reference.
+			once:	 If specified as True, you can modify masks only
+					  once. Else if False, you can modify them repeatedly.
+			showmask: If specified as True, the masked regions are plotted
+					  on the plotter.
+				  Note this parameter is valid only when once=True.
+				  Otherwise, maskes are forced to be plotted for reference.
 		"""
 		# Return if GUI is not active
 		if not rcParams['plotter.gui']:
-			print 'GUI plotter is disabled.\n'
-			print 'Exit interactive mode.'
+			msg = 'GUI plotter is disabled.\n'
+			msg += 'Exit interactive mode.'
+			asaplog.push(msg)
+			asaplog.post("ERROR")
 			return
 
 		self.once = once
 		if self.once:
 			self.showmask=showmask
 		else:
-			if not showmask: print 'Warning: showmask spcification is ignored. Mask regions are plotted anyway.'
+			if not showmask:
+				asaplog.post()
+				asaplog.push('showmask spcification is ignored. Mask regions are plotted anyway.')
+				asaplog.post("WARN")
 			self.showmask=True
 
 		#if not self.p._plotter or self.p._plotter.is_dead:
 		if not self.p or self.p._plotter.is_dead:
-			print 'A new ASAP plotter will be loaded'
+			asaplog.push('A new ASAP plotter will be loaded')
+			asaplog.post()
 			from asap.asapplotter import asapplotter
 			self.p=asapplotter()
 			self.newplot=True
 
-                # Plot selected spectra if needed
+		# Plot selected spectra if needed
 		if self.scan != self.p._data:
+			if len(self.scan.getifnos()) > 16:
+				asaplog.post()
+				asaplog.push("Number of panels > 16. Plotting the first 16...")
+				asaplog.post("WARN")
 			# Need replot
+			self.p._plotter.legend(1)
 			self.p.plot(self.scan)
 			# disable casa toolbar
-			if self.p._plotter.figmgr.casabar:  self.p._plotter.figmgr.casabar.disable_button()
+			if self.p._plotter.figmgr.casabar:
+				self.p._plotter.figmgr.casabar.disable_button()
+				self.p._plotter.figmgr.casabar.disable_prev()
+				self.p._plotter.figmgr.casabar.disable_next()
 			for panel in self.p._plotter.subplots:
 				xmin, xmax = panel['axes'].get_xlim()
 				marg = 0.05*abs(xmax-xmin)
@@ -194,11 +211,11 @@ class interactivemask:
 		if event.inaxes == None: return
 		# Select mask/unmask region with mask
 		self.rect = {'button': event.button, 'axes': event.inaxes,
-			     'x': event.x, 'y': event.y,
-			     'world': [event.xdata, event.ydata,
-				       event.xdata, event.ydata],
-			     'pixel': [event.x, event.y,
-				       event.x, event.y]}
+				 'x': event.x, 'y': event.y,
+				 'world': [event.xdata, event.ydata,
+					   event.xdata, event.ydata],
+				 'pixel': [event.x, event.y,
+					   event.x, event.y]}
 		self.p._plotter.register('motion_notify', self._region_draw)
 		self.p._plotter.register('button_release', self._region_end)
 
@@ -260,7 +277,8 @@ class interactivemask:
 		elif self.rect['button'] == 3:
 			invmask=True
 			mflg='UNmask'
-		print mflg+': ',newlist
+		asaplog.push(mflg+': '+str(newlist))
+		asaplog.post()
 		newmask=self.scan.create_mask(newlist,invert=invmask)
 		# Logic operation to update mask
 		if invmask:
@@ -273,8 +291,8 @@ class interactivemask:
 
 	# Plot masked regions
 	def _plot_mask(self):
-                msks = []
-                msks = self.scan.get_masklist(self.mask,row=0)
+		msks = []
+		msks = self.scan.get_masklist(self.mask,row=0)
 		# Get projection masks for multi-IF
 		ifs=self.scan.getifnos()
 		projs = []
@@ -286,7 +304,7 @@ class interactivemask:
 					if self.scan.getif(row) == ifno:
 						projs.append(self.scan.get_masklist(self.mask,row=row))
 						break
-                if len(self._polygons)>0:
+		if len(self._polygons)>0:
 			# Remove old polygons
 			for polygon in self._polygons: polygon.remove()
 			self._polygons=[]
@@ -309,10 +327,10 @@ class interactivemask:
 		necessary.
 
 		Parameters:
-		    callback: The post processing function to run after
-		              the mask selections are completed.
-			      Specifying the callback function here will overwrite
-			      the one set by set_callback(func)
+			callback: The post processing function to run after
+					  the mask selections are completed.
+				  Specifying the callback function here will overwrite
+				  the one set by set_callback(func)
 
 		Note this function is automatically called at the end of
 		select_mask() if once=True.
@@ -335,7 +353,7 @@ class interactivemask:
 		"""
 		Erase masks plots from the plotter.
 		"""
-                if len(self._polygons)>0:
+		if len(self._polygons)>0:
 			# Remove old polygons
 			for polygon in self._polygons: polygon.remove()
 			self.p._plotter.show()
@@ -346,6 +364,6 @@ class interactivemask:
 		"""
 		Get the interactively selected channel mask.
 		Returns:
-		    A list of channel mask.
+			A list of channel mask.
 		"""
 		return self.mask
