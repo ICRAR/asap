@@ -957,14 +957,14 @@ void Scantable::setSelection( const STSelector& selection )
   selector_ = selection;
 }
 
-std::string Scantable::summary( bool verbose )
+
+std::string Scantable::headerSummary( bool verbose )
 {
   // Format header info
+//   STHeader sdh;
+//   sdh = getHeader();
+//   sdh.print();
   ostringstream oss;
-  oss << endl;
-  oss << asap::SEPERATOR << endl;
-  oss << " Scan Table Summary" << endl;
-  oss << asap::SEPERATOR << endl;
   oss.flags(std::ios_base::left);
   oss << setw(15) << "Beams:" << setw(4) << nbeam() << endl
       << setw(15) << "IFs:" << setw(4) << nif() << endl
@@ -1007,11 +1007,27 @@ std::string Scantable::summary( bool verbose )
 
   oss << setw(15) << "Abcissa:" << getAbcissaLabel(0) << endl;
   oss << selector_.print() << endl;
+  /// @todo implement verbose mode
+  return String(oss);
+}
+
+std::string Scantable::summary( bool verbose )
+{
+  ostringstream oss;
   oss << endl;
+  oss << asap::SEPERATOR << endl;
+  oss << " Scan Table Summary" << endl;
+  oss << asap::SEPERATOR << endl;
+
+  // Format header info
+  oss << headerSummary(verbose);
+  oss << endl;
+
   // main table
   String dirtype = "Position ("
                   + getDirectionRefString()
                   + ")";
+  oss.flags(std::ios_base::left);
   oss << setw(5) << "Scan" << setw(15) << "Source"
       << setw(10) << "Time" << setw(18) << "Integration" 
       << setw(15) << "Source Type" << endl;

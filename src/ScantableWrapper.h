@@ -217,6 +217,10 @@ public:
     return table_->summary(verbose);
   }
 
+  std::string listHeader(bool verbose=false) const {
+    return table_->headerSummary(verbose);
+  }
+
   std::vector<std::string> getHistory()const
     { return table_->getHistory(); }
 
