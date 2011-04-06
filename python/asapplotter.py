@@ -1416,7 +1416,7 @@ class asapplotter:
             self._plotter.hold()
             self._header_plot(headstr,fontsize=fontsize)
             import time
-            self._plotter.figure.text(0.99,0.0,
+            self._plotter.figure.text(0.99,0.01,
                             time.strftime("%a %d %b %Y  %H:%M:%S %Z"),
                             horizontalalignment='right',
                             verticalalignment='bottom',fontsize=8)
