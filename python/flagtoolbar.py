@@ -18,7 +18,7 @@ class CustomFlagToolbarCommon:
         self._polygons = []
         self._thisregion = None
         self.xdataold=None
-        
+
     ### select the nearest spectrum in pick radius
     ###    and display spectral value on the toolbar.
     def _select_spectrum(self,event):
@@ -33,16 +33,16 @@ class CustomFlagToolbarCommon:
         if event.button != 1:
             return
 
-        xclick=event.xdata
-        yclick=event.ydata
-        dist2=1000.
-        pickline=None
+        xclick = event.xdata
+        yclick = event.ydata
+        dist2 = 1000.
+        pickline = None
         # If the pannel has picable objects
-        pflag=False
+        pflag = False
         for lin in event.inaxes.lines:
             if not lin.pickable():
                 continue
-            pflag=True
+            pflag = True
             flag,pind = lin.contains(event)
             if not flag:
                 continue
@@ -60,7 +60,7 @@ class CustomFlagToolbarCommon:
             return
         # Pickable but too far from mouse position
         elif pickline is None:
-            picked='No line selected.'
+            picked = 'No line selected.'
             self.figmgr.toolbar.set_message(picked)
             return
         del pind, inds, xlin, ylin
@@ -74,10 +74,10 @@ class CustomFlagToolbarCommon:
         # Get picked spectrum
         xdata = pickline.get_xdata()
         ydata = pickline.get_ydata()
-        titl=pickline.get_label()
-        titp=event.inaxes.title.get_text()
-        panel0=event.inaxes
-        picked="Selected: '"+titl+"' in panel '"+titp+"'."
+        titl = pickline.get_label()
+        titp = event.inaxes.title.get_text()
+        panel0 = event.inaxes
+        picked = "Selected: '"+titl+"' in panel '"+titp+"'."
         thetoolbar.set_message(picked)
         # Generate a navigation window
         #naviwin=Navigationwindow(titp,titl)
@@ -85,18 +85,18 @@ class CustomFlagToolbarCommon:
         # Show spectrum data at mouse position
         def spec_data(event):
             # Getting spectrum data of neiboring point
-            xclick=event.xdata
+            xclick = event.xdata
             if event.inaxes != panel0:
                 return
-            ipoint=len(xdata)-1
+            ipoint = len(xdata)-1
             for i in range(len(xdata)-1):
-                xl=xclick-xdata[i]
-                xr=xclick-xdata[i+1]
+                xl = xclick-xdata[i]
+                xr = xclick-xdata[i+1]
                 if xl*xr <= 0.:
                     ipoint = i
                     break
             # Output spectral value on the navigation window
-            posi='[ %s, %s ]:  x = %.2f   value = %.2f'\
+            posi = '[ %s, %s ]:  x = %.2f   value = %.2f'\
                   %(titl,titp,xdata[ipoint],ydata[ipoint])
             #naviwin.posi.set(posi)
             thetoolbar.set_message(posi)
@@ -122,7 +122,7 @@ class CustomFlagToolbarCommon:
         # Do not fire event when in zooming/panning mode
         if not self.figmgr.toolbar.mode == '':
             return
-        if event.button ==1:
+        if event.button == 1:
             self.notewin.load_textwindow(event)
         elif event.button == 3 and self._note_picked(event):
             self.notewin.load_modmenu(event)
@@ -194,7 +194,7 @@ class CustomFlagToolbarCommon:
             return
         if event.button != 1:
             return
-        
+
         try: self.lastspan
         except AttributeError: pass
         else:
@@ -416,7 +416,7 @@ class CustomFlagToolbarCommon:
             asaplog.push("Invalid scantable")
             asaplog.post("ERROR")
         mathobj = stmath( rcParams['insitu'] )
-        statval={}
+        statval = {}
         statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
         if isinstance(rows,list) and len(rows) > 0:
             for irow in rows:
@@ -505,7 +505,7 @@ class CustomFlagToolbarCommon:
             asaplog.push(msg)
             asaplog.post('WARN')
             goback = False
-            
+
         self.plotter._plotter.hold()
         self.plotter._plotter.legend(1)
         #if goback:
@@ -537,7 +537,7 @@ class CustomFlagToolbarCommon:
         lastpanel = self.plotter._ipanel
         # the number of current subplots
         currpnum = len(self.plotter._plotter.subplots)
-        
+
         # the nuber of previous subplots
         start_ipanel = None
         if pageop == "c":
@@ -572,7 +572,7 @@ class CustomFlagToolbarCommon:
 
     def show_pagenum(self,pagenum,formatstr):
         # passed to backend dependent class
-        pass        
+        pass
 
     def _get_pagenum(self):
         maxpanel = 16
@@ -615,40 +615,40 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
 
     def _add_custom_toolbar(self):
         Tk.Frame.__init__(self,master=self.figmgr.window)
-        #self.bSpec=self._NewButton(master=self,
-        #                           text='spec value',
-        #                           command=self.spec_show)
+        #self.bSpec = self._NewButton(master=self,
+        #                             text='spec value',
+        #                             command=self.spec_show)
 
-        self.bRegion=self._NewButton(master=self,
-                                   text='region',
-                                   command=self.select_region)
-        self.bPanel=self._NewButton(master=self,
-                                   text='panel',
-                                   command=self.select_panel)
-        self.bClear=self._NewButton(master=self,
-                                   text='clear',
-                                   command=self.cancel_select)
-        self.bFlag=self._NewButton(master=self,
-                                   text='flag',
-                                   command=self.flag)
-        self.bUnflag=self._NewButton(master=self,
-                                   text='unflag',
-                                   command=self.unflag)
+        self.bRegion = self._NewButton(master=self,
+                                       text='region',
+                                       command=self.select_region)
+        self.bPanel = self._NewButton(master=self,
+                                      text='panel',
+                                      command=self.select_panel)
+        self.bClear = self._NewButton(master=self,
+                                      text='clear',
+                                      command=self.cancel_select)
+        self.bFlag = self._NewButton(master=self,
+                                     text='flag',
+                                     command=self.flag)
+        self.bUnflag = self._NewButton(master=self,
+                                       text='unflag',
+                                       command=self.unflag)
         
-        self.bStat=self._NewButton(master=self,
-                                   text='statistics',
-                                   command=self.stat_cal)
+        self.bStat = self._NewButton(master=self,
+                                     text='statistics',
+                                     command=self.stat_cal)
 
-        self.bNote=self._NewButton(master=self,
-                                   text='notation',
-                                   command=self.modify_note)
+        self.bNote = self._NewButton(master=self,
+                                     text='notation',
+                                     command=self.modify_note)
 
-        self.bQuit=self._NewButton(master=self,
-                                   text='Quit',
-                                   #file="stock_close.ppm",
-                                   command=self.quit,
-                                   side=Tk.RIGHT)
-        
+        self.bQuit = self._NewButton(master=self,
+                                     text='Quit',
+                                     #file="stock_close.ppm",
+                                     command=self.quit,
+                                     side=Tk.RIGHT)
+
         # page change oparations
         frPage = Tk.Frame(master=self,borderwidth=2,relief=Tk.GROOVE)
         frPage.pack(ipadx=2,padx=10,side=Tk.RIGHT)
@@ -660,7 +660,7 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
                                    textvariable=self.pagecount,
                                    padx=5,bg='white')
         self.lPagecount.pack(side=Tk.LEFT,padx=3)
-        
+
         self.bNext=self._NewButton(master=frPage,
                                    text=' + ',
                                    #file="hand.ppm",
@@ -684,7 +684,7 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         if file:
             file = os.path.join(matplotlib.rcParams['datapath'], 'images', file)
             img = Tk.PhotoImage(master=master, file=file)
-            
+
         if os.uname()[0] == 'Darwin':
             b = Tk.Button(master=master, text=text, image=img,
                           command=command)
@@ -703,7 +703,7 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         if not self.figmgr.toolbar.mode == '' or not self.button: return
         self.figmgr.toolbar.set_message('spec value: drag on a spec')
         if self.mode == 'spec': return
-        self.mode='spec'
+        self.mode = 'spec'
         self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._select_spectrum)
@@ -713,13 +713,13 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note':
             self.bNote.config(relief='raised')
-            self.mode='none'
+            self.mode = 'none'
             self.spec_show()
             return
         self.bNote.config(relief='sunken')
         self.bRegion.config(relief='raised')
         self.bPanel.config(relief='raised')
-        self.mode='note'
+        self.mode = 'note'
         self.__disconnect_event()
         self._p.register('button_press',self._mod_note)
 
@@ -728,13 +728,13 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         self.figmgr.toolbar.set_message('select rectangle regions')
         if self.mode == 'region':
             self.bRegion.config(relief='raised')
-            self.mode='none'
+            self.mode = 'none'
             self.spec_show()
             return
         self.bNote.config(relief='raised')
         self.bRegion.config(relief='sunken')
         self.bPanel.config(relief='raised')
-        self.mode='region'
+        self.mode = 'region'
         self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._add_region)
@@ -744,13 +744,13 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         self.figmgr.toolbar.set_message('select panels')
         if self.mode == 'panel':
             self.bPanel.config(relief='raised')
-            self.mode='none'
+            self.mode = 'none'
             self.spec_show()
             return
         self.bNote.config(relief='raised')
         self.bRegion.config(relief='raised')
         self.bPanel.config(relief='sunken')
-        self.mode='panel'
+        self.mode = 'panel'
         self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._add_panel)
@@ -769,7 +769,7 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         self.bFlag.config(state=Tk.NORMAL)
         self.bUnflag.config(state=Tk.NORMAL)
         self.bStat.config(state=Tk.NORMAL)
-        self.button=True
+        self.button = True
         self.spec_show()
 
     def disable_button(self):
@@ -785,8 +785,8 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         self.bStat.config(state=Tk.DISABLED)
         self.bNext.config(state=Tk.DISABLED)
         self.bPrev.config(state=Tk.DISABLED)
-        self.button=False
-        self.mode=''
+        self.button = False
+        self.mode = ''
         self.notewin.close_widgets()
         self.__disconnect_event()
 
@@ -813,8 +813,7 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
         for btn in buttons:
             getattr(self,btn).config(state=state)
         self.figmgr.toolbar.set_message(msg)
-            
-        
+
     def delete_bar(self):
         self.__disconnect_event()
         self.destroy()

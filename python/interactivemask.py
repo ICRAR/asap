@@ -40,31 +40,31 @@ class interactivemask:
             msg = "Either scantable or plotter should be defined."
             raise TypeError(msg)
 
-        self.scan=None
-        self.p=None
-        self.newplot=False
+        self.scan = None
+        self.p = None
+        self.newplot = False
         if scan and isinstance(scan, scantable):
-            self.scan=scan
+            self.scan = scan
         from asap.asapplotter import asapplotter
         if plotter and isinstance(plotter,asapplotter):
             self.p = plotter
             if self.scan is None and isinstance(self.p._data,scantable):
-                self.scan=self.p._data
+                self.scan = self.p._data
         if self.scan is None:
             msg = "Invalid scantable."
             raise TypeError(msg)
 
-        self.mask=_n_bools(self.scan.nchan(),True)
-        self.callback=None
-        self.event=None
-        self.once=False
-        self.showmask=True
-        self.rect={}
-        self.xold=None
-        self.yold=None
-        self.xdataold=None
-        self.ydataold=None
-        self._polygons=[]
+        self.mask = _n_bools(self.scan.nchan(),True)
+        self.callback = None
+        self.event = None
+        self.once = False
+        self.showmask = True
+        self.rect = {}
+        self.xold = None
+        self.yold = None
+        self.xdataold = None
+        self.ydataold = None
+        self._polygons = []
 
 
     def set_basemask(self,masklist=[],invert=False):
@@ -89,11 +89,11 @@ class interactivemask:
 
         # Create base mask
         if ( len(masklist) > 0 ):
-            self.mask=self.scan.create_mask(masklist,invert=invert)
-        elif invert==True:
-            self.mask=_n_bools(self.scan.nchan(),False)
+            self.mask = self.scan.create_mask(masklist,invert=invert)
+        elif invert == True:
+            self.mask = _n_bools(self.scan.nchan(),False)
         else:
-            self.mask=_n_bools(self.scan.nchan(),True)
+            self.mask = _n_bools(self.scan.nchan(),True)
 
 
     def set_startevent(self,event):
@@ -105,10 +105,10 @@ class interactivemask:
                    start interactive region selection .
         """
         from matplotlib.backend_bases import MouseEvent
-        if isinstance(event,MouseEvent) and event.name=='button_press_event':
-            self.event=event
+        if isinstance(event,MouseEvent) and event.name == 'button_press_event':
+            self.event = event
         else:
-            msg="Invalid event."
+            msg = "Invalid event."
             raise TypeError(msg)
 
     def set_callback(self,callback):
@@ -119,7 +119,7 @@ class interactivemask:
                   This will be overwritten if callback is defined in
                   finish_selection(callback=func)
         """
-        self.callback=callback
+        self.callback = callback
 
     def select_mask(self,once=False,showmask=True):
         """
@@ -147,21 +147,21 @@ class interactivemask:
 
         self.once = once
         if self.once:
-            self.showmask=showmask
+            self.showmask = showmask
         else:
             if not showmask:
                 asaplog.post()
                 asaplog.push('showmask spcification is ignored. Mask regions are plotted anyway.')
                 asaplog.post("WARN")
-            self.showmask=True
+            self.showmask = True
 
         #if not self.p._plotter or self.p._plotter.is_dead:
         if not self.p or self.p._plotter.is_dead:
             asaplog.push('A new ASAP plotter will be loaded')
             asaplog.post()
             from asap.asapplotter import asapplotter
-            self.p=asapplotter()
-            self.newplot=True
+            self.p = asapplotter()
+            self.newplot = True
 
         # Plot selected spectra if needed
         if self.scan != self.p._data:
@@ -205,7 +205,7 @@ class interactivemask:
     def _region_start(self,event):
         # Do not fire event when in zooming/panning mode
         mode = self.p._plotter.figmgr.toolbar.mode
-        if not mode =='':
+        if not mode == '':
             return
         # Return if selected point is out of panel
         if event.inaxes == None: return
@@ -222,15 +222,15 @@ class interactivemask:
     def _region_draw(self,event):
         sameaxes=(event.inaxes == self.rect['axes'])
         if sameaxes:
-            xnow=event.x
-            ynow=event.y
-            self.xold=xnow
-            self.yold=ynow
-            self.xdataold=event.xdata
-            self.ydataold=event.ydata
+            xnow = event.x
+            ynow = event.y
+            self.xold = xnow
+            self.yold = ynow
+            self.xdataold = event.xdata
+            self.ydataold = event.ydata
         else:
-            xnow=self.xold
-            ynow=self.yold
+            xnow = self.xold
+            ynow = self.yold
 
         self.p._plotter.figmgr.toolbar.draw_rubberband(event, xnow, ynow, self.rect['x'], self.rect['y'])
 
@@ -242,49 +242,49 @@ class interactivemask:
         self.p._plotter.figmgr.toolbar.release(event)
 
         if event.inaxes == self.rect['axes']:
-            xend=event.x
-            yend=event.y
-            xdataend=event.xdata
-            ydataend=event.ydata
+            xend = event.x
+            yend = event.y
+            xdataend = event.xdata
+            ydataend = event.ydata
         else:
-            xend=self.xold
-            yend=self.yold
-            xdataend=self.xdataold
-            ydataend=self.ydataold
+            xend = self.xold
+            yend = self.yold
+            xdataend = self.xdataold
+            ydataend = self.ydataold
 
         self.rect['world'][2:4] = [xdataend, ydataend]
         self.rect['pixel'][2:4] = [xend, yend]
         self._update_mask()
         # Clear up region selection
-        self.rect={}
-        self.xold=None
-        self.yold=None
-        self.xdataold=None
-        self.ydataold=None
+        self.rect = {}
+        self.xold = None
+        self.yold = None
+        self.xdataold = None
+        self.ydataold = None
         if self.once: self.finish_selection(callback=self.callback)
 
     def _update_mask(self):
         # Min and Max for new mask
-        xstart=self.rect['world'][0]
-        xend=self.rect['world'][2]
+        xstart = self.rect['world'][0]
+        xend = self.rect['world'][2]
         if xstart <= xend: newlist=[xstart,xend]
-        else: newlist=[xend,xstart]
+        else: newlist = [xend,xstart]
         # Mask or unmask
-        invmask=None
+        invmask = None
         if self.rect['button'] == 1:
-            invmask=False
-            mflg='Mask'
+            invmask = False
+            mflg = 'Mask'
         elif self.rect['button'] == 3:
-            invmask=True
-            mflg='UNmask'
+            invmask = True
+            mflg = 'UNmask'
         asaplog.push(mflg+': '+str(newlist))
         asaplog.post()
-        newmask=self.scan.create_mask(newlist,invert=invmask)
+        newmask = self.scan.create_mask(newlist,invert=invmask)
         # Logic operation to update mask
         if invmask:
-            self.mask=mask_and(self.mask,newmask)
+            self.mask = mask_and(self.mask,newmask)
         else:
-            self.mask=mask_or(self.mask,newmask)
+            self.mask = mask_or(self.mask,newmask)
         # Plot masked regions
         #if self.showmask or not self.once: self._plot_mask()
         if self.showmask: self._plot_mask()
@@ -294,10 +294,10 @@ class interactivemask:
         msks = []
         msks = self.scan.get_masklist(self.mask,row=0)
         # Get projection masks for multi-IF
-        ifs=self.scan.getifnos()
+        ifs = self.scan.getifnos()
         projs = []
         if len(ifs) > 1:
-            row0if=self.scan.getif(0)
+            row0if = self.scan.getif(0)
             for ifno in ifs:
                 if ifno == row0if: continue
                 for row in xrange(self.scan.nrow()):
@@ -307,11 +307,11 @@ class interactivemask:
         if len(self._polygons)>0:
             # Remove old polygons
             for polygon in self._polygons: polygon.remove()
-            self._polygons=[]
+            self._polygons = []
         # Plot new polygons
         if len(msks) > 0:
-            npanel=len(self.p._plotter.subplots)
-            j=-1
+            npanel = len(self.p._plotter.subplots)
+            j = -1
             for iloop in range(len(msks)*npanel):
                 i = iloop % len(msks)
                 if  i == 0 : j += 1
@@ -345,19 +345,19 @@ class interactivemask:
             self.p._plotter.unmap()
             self.p._plotter = None
             del self.p
-            self.p=None
-            self._polygons=[]
+            self.p = None
+            self._polygons = []
 
 
     def clear_polygon(self):
         """
         Erase masks plots from the plotter.
         """
-        if len(self._polygons)>0:
+        if len(self._polygons) > 0:
             # Remove old polygons
             for polygon in self._polygons: polygon.remove()
             self.p._plotter.show()
-            self._polygons=[]
+            self._polygons = []
 
 
     def get_mask(self):

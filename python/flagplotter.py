@@ -24,7 +24,7 @@ class flagplotter(asapplotter):
        The flagged data is not saved until you explicitly run scantable.save
     """
     def __init__(self, visible=None, **kwargs):
-        self._scan=None
+        self._scan = None
         asapplotter.__init__(self,visible=visible, **kwargs)
         self._plotter.window.title('Flag Plotter')
         self._panelling = 'r'
@@ -32,7 +32,7 @@ class flagplotter(asapplotter):
         self._ismodified = False
 
     def _newcasabar(self):
-        backend=matplotlib.get_backend()
+        backend = matplotlib.get_backend()
         if self._visible and backend == "TkAgg":
             #from asap.casatoolbar import CustomToolbarTkAgg
             #return CustomToolbarTkAgg(self)
@@ -63,7 +63,7 @@ class flagplotter(asapplotter):
     def plotpointing(self,*args,**kwargs):
         """ This function is not available for the class flagplotter """
         self._invalid_func(name='plotpointing')
-        
+
     def plottp(self,*args,**kwargs):
         """ This function is not available for the class flagplotter """
         self._invalid_func(name='plottp')
