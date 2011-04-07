@@ -342,6 +342,7 @@ class CustomFlagToolbarCommon:
         sout += "  regions: "+str(self._selregions)
         asaplog.push(sout)
         del sout
+        self.plotter._ismodified = True
         self._clearup_selections(refresh=False)
         self._plot_page(pagemode="current")
         self._pause_buttons(operation="end")
@@ -362,6 +363,7 @@ class CustomFlagToolbarCommon:
         sout += "  regions: "+str(self._selregions)
         asaplog.push(sout)
         del sout
+        self.plotter._ismodified = True
         self._clearup_selections(refresh=False)
         self._plot_page(pagemode="current")
         self._pause_buttons(operation="end")

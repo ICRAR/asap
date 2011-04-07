@@ -29,6 +29,7 @@ class flagplotter(asapplotter):
         self._plotter.window.title('Flag Plotter')
         self._panelling = 'r'
         self.set_stacking('scan')
+        self._ismodified = False
 
     def _newcasabar(self):
         backend=matplotlib.get_backend()
@@ -93,3 +94,25 @@ class flagplotter(asapplotter):
         """
         # simply calls scantable.save
         self._data.save(name,format,overwrite)
+
+    def set_data(self, scan, refresh=True):
+        if self._is_new_scan(scan):
+            self._ismodified = False
+        asapplotter.set_data(self, scan, refresh)
+    set_data.__doc__ = asapplotter.set_data.__doc__
+
+    @asaplog_post_dec
+    def plot(self, scan=None):
+        if self._is_new_scan(scan):
+            self._ismodified = False
+        asapplotter.plot(self,scan)
+    plot.__doc__ = asapplotter.plot.__doc__
+
+    def _is_new_scan(self,scan):
+        if isinstance(scan, scantable):
+            if self._data is not None:
+                if scan != self._data:
+                    return True
+            else:
+                return True
+        return False
