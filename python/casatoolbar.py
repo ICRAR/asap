@@ -7,7 +7,7 @@ from asap.logging import asaplog, asaplog_post_dec
 ######################################
 class CustomToolbarCommon:
     def __init__(self,parent):
-        self.plotter=parent
+        self.plotter = parent
         #self.figmgr=self.plotter._plotter.figmgr
 
     ### select the nearest spectrum in pick radius
@@ -24,16 +24,16 @@ class CustomToolbarCommon:
         if event.button != 1:
             return
 
-        xclick=event.xdata
-        yclick=event.ydata
-        dist2=1000.
-        pickline=None
+        xclick = event.xdata
+        yclick = event.ydata
+        dist2 = 1000.
+        pickline = None
         # If the pannel has picable objects
-        pflag=False
+        pflag = False
         for lin in event.inaxes.lines:
             if not lin.pickable():
                 continue
-            pflag=True
+            pflag = True
             flag,pind = lin.contains(event)
             if not flag:
                 continue
@@ -51,7 +51,7 @@ class CustomToolbarCommon:
             return
         # Pickable but too far from mouse position
         elif pickline is None:
-            picked='No line selected.'
+            picked = 'No line selected.'
             self.figmgr.toolbar.set_message(picked)
             return
         del pind, inds, xlin, ylin
@@ -65,10 +65,10 @@ class CustomToolbarCommon:
         # Get picked spectrum
         xdata = pickline.get_xdata()
         ydata = pickline.get_ydata()
-        titl=pickline.get_label()
-        titp=event.inaxes.title.get_text()
-        panel0=event.inaxes
-        picked="Selected: '"+titl+"' in panel '"+titp+"'."
+        titl = pickline.get_label()
+        titp = event.inaxes.title.get_text()
+        panel0 = event.inaxes
+        picked = "Selected: '"+titl+"' in panel '"+titp+"'."
         thetoolbar.set_message(picked)
         # Generate a navigation window
         #naviwin=Navigationwindow(titp,titl)
@@ -76,19 +76,19 @@ class CustomToolbarCommon:
         # Show spectrum data at mouse position
         def spec_data(event):
             # Getting spectrum data of neiboring point
-            xclick=event.xdata
+            xclick = event.xdata
             if event.inaxes != panel0:
                 return
-            ipoint=len(xdata)-1
+            ipoint = len(xdata)-1
             for i in range(len(xdata)-1):
-                xl=xclick-xdata[i]
-                xr=xclick-xdata[i+1]
+                xl = xclick - xdata[i]
+                xr = xclick - xdata[i+1]
                 if xl*xr <= 0.:
                     ipoint = i
                     break
             # Output spectral value on the navigation window
-            posi='[ %s, %s ]:  x = %.2f   value = %.2f'\
-                  %(titl,titp,xdata[ipoint],ydata[ipoint])
+            posi = '[ %s, %s ]:  x = %.2f   value = %.2f'\
+                   %(titl,titp,xdata[ipoint],ydata[ipoint])
             #naviwin.posi.set(posi)
             thetoolbar.set_message(posi)
         #------------------------------------------------------#
@@ -97,8 +97,8 @@ class CustomToolbarCommon:
             #naviwin.window.destroy()
             theplot.register('motion_notify',None)
             # Re-activate the default motion_notify_event
-            thetoolbar._idDrag=thecanvas.mpl_connect('motion_notify_event',
-                                                     thetoolbar.mouse_move)
+            thetoolbar._idDrag = thecanvas.mpl_connect('motion_notify_event',
+                                                       thetoolbar.mouse_move)
             theplot.register('button_release',None)
             return
         #------------------------------------------------------#
@@ -116,7 +116,7 @@ class CustomToolbarCommon:
         # When selected point is out of panels
         if event.inaxes == None:
             return
-        if event.button ==1:
+        if event.button == 1:
             baseinv=True
         elif event.button == 3:
             baseinv=False
@@ -125,17 +125,13 @@ class CustomToolbarCommon:
 
         def _calc_stats():
             msk=mymask.get_mask()
-            mymask.scan.stats(stat='max',mask=msk)
-            mymask.scan.stats(stat='min',mask=msk)
-            mymask.scan.stats(stat='sum',mask=msk)
-            mymask.scan.stats(stat='mean',mask=msk)
-            mymask.scan.stats(stat='median',mask=msk)
-            mymask.scan.stats(stat='rms',mask=msk)
-            mymask.scan.stats(stat='stddev',mask=msk)
+            statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
+            for stat in statstr:
+                mymask.scan.stats(stat=stat,mask=msk)
 
         # Interactive mask definition
         from asap.interactivemask import interactivemask
-        mymask=interactivemask(plotter=self.plotter,scan=self.plotter._data)
+        mymask = interactivemask(plotter=self.plotter,scan=self.plotter._data)
         # Create initial mask
         mymask.set_basemask(invert=baseinv)
         # Inherit event
@@ -149,7 +145,7 @@ class CustomToolbarCommon:
         # Do not fire event when in zooming/panning mode
         if not self.figmgr.toolbar.mode == '':
             return
-        if event.button ==1:
+        if event.button == 1:
             self.notewin.load_textwindow(event)
         elif event.button == 3 and self._note_picked(event):
             self.notewin.load_modmenu(event)
@@ -171,12 +167,16 @@ class CustomToolbarCommon:
     ### go to the previous page
     def prev_page(self):
         self.figmgr.toolbar.set_message('plotting the previous page')
+        #self._pause_buttons(operation="start",msg='plotting the previous page')
         self._new_page(goback=True)
+        #self._pause_buttons(operation="end")
 
     ### go to the next page
     def next_page(self):
         self.figmgr.toolbar.set_message('plotting the next page')
+        #self._pause_buttons(operation="start",msg='plotting the next page')
         self._new_page(goback=False)
+        #self._pause_buttons(operation="end")
 
     ### actual plotting of the new page
     def _new_page(self,goback=False):
@@ -239,7 +239,7 @@ class CustomToolbarCommon:
         else:
             # no user specification
             prevpnum = maxpanel
-            
+
         start_ipanel = max(lastpanel-currpnum-prevpnum+1, 0)
         # set the pannel ID of the last panel of prev-prev page
         self.plotter._ipanel = start_ipanel-1
@@ -272,6 +272,11 @@ class CustomToolbarCommon:
             ppp = maxpanel
         return int(idlastpanel/ppp)+1
 
+    # pause buttons for slow operations. implemented at a backend dependent class
+    def _pause_buttons(self,operation="end",msg=""):
+        pass
+
+
 #####################################
 ##    Backend dependent Classes    ##
 #####################################
@@ -294,25 +299,25 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.button = True
         self.pagecount = None
         CustomToolbarCommon.__init__(self,parent)
-        self.notewin=NotationWindowTkAgg(master=self.canvas)
+        self.notewin = NotationWindowTkAgg(master=self.canvas)
         self._add_custom_toolbar()
 
     def _add_custom_toolbar(self):
         Tk.Frame.__init__(self,master=self.figmgr.window)
-        #self.bSpec=self._NewButton(master=self,
-        #                           text='spec value',
-        #                           command=self.spec_show)
-        self.bNote=self._NewButton(master=self,
-                                   text='notation',
-                                   command=self.modify_note)
+        #self.bSpec = self._NewButton(master=self,
+        #                             text='spec value',
+        #                             command=self.spec_show)
+        self.bNote = self._NewButton(master=self,
+                                     text='notation',
+                                     command=self.modify_note)
 
-        self.bStat=self._NewButton(master=self,
-                                   text='statistics',
-                                   command=self.stat_cal)
-        self.bQuit=self._NewButton(master=self,
-                                   text='Quit',
-                                   command=self.quit,
-                                   side=Tk.RIGHT)
+        self.bStat = self._NewButton(master=self,
+                                     text='statistics',
+                                     command=self.stat_cal)
+        self.bQuit = self._NewButton(master=self,
+                                     text='Quit',
+                                     command=self.quit,
+                                     side=Tk.RIGHT)
 
         # page change oparations
         frPage = Tk.Frame(master=self,borderwidth=2,relief=Tk.GROOVE)
@@ -325,12 +330,12 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
                                    padx=5,bg='white')
         self.lPagecount.pack(side=Tk.LEFT,padx=3)
         
-        self.bNext=self._NewButton(master=frPage,
-                                   text=' + ',
-                                   command=self.next_page)
-        self.bPrev=self._NewButton(master=frPage,
-                                   text=' - ',
-                                   command=self.prev_page)
+        self.bNext = self._NewButton(master=frPage,
+                                     text=' + ',
+                                     command=self.next_page)
+        self.bPrev = self._NewButton(master=frPage,
+                                     text=' - ',
+                                     command=self.prev_page)
 
         if os.uname()[0] != 'Darwin':
             self.bPrev.config(padx=5)
@@ -361,7 +366,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         #self.bStat.config(relief='raised')
         #self.bSpec.config(relief='sunken')
         #self.bNote.config(relief='raised')
-        self.mode='spec'
+        self.mode = 'spec'
         self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._select_spectrum)
@@ -377,7 +382,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         #self.bSpec.config(relief='raised')
         self.bStat.config(relief='sunken')
         self.bNote.config(relief='raised')
-        self.mode='stat'
+        self.mode = 'stat'
         self.notewin.close_widgets()
         self.__disconnect_event()
         self._p.register('button_press',self._single_mask)
@@ -387,13 +392,13 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note':
             self.bNote.config(relief='raised')
-            self.mode='none'
+            self.mode = 'none'
             self.spec_show()
             return
         #self.bSpec.config(relief='raised')
         self.bStat.config(relief='raised')
         self.bNote.config(relief='sunken')
-        self.mode='note'
+        self.mode = 'note'
         self.__disconnect_event()
         self._p.register('button_press',self._mod_note)
 
@@ -407,7 +412,7 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         if self.button: return
         #self.bSpec.config(state=Tk.NORMAL)
         self.bStat.config(state=Tk.NORMAL)
-        self.button=True
+        self.button = True
         self.spec_show()
 
     def disable_button(self):
@@ -416,8 +421,8 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self.bStat.config(relief='raised', state=Tk.DISABLED)
         #self.bNext.config(state=Tk.DISABLED)
         #self.bPrev.config(state=Tk.DISABLED)
-        self.button=False
-        self.mode=''
+        self.button = False
+        self.mode = ''
         self.__disconnect_event()
 
     def enable_next(self):
@@ -431,6 +436,17 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
 
     def disable_prev(self):
         self.bPrev.config(state=Tk.DISABLED)
+
+    # pause buttons for slow operations
+    def _pause_buttons(self,operation="end",msg=""):
+        buttons = ["bStat","bNote","bQuit"]
+        if operation == "start":
+            state = Tk.DISABLED
+        else:
+            state = Tk.NORMAL
+        for btn in buttons:
+            getattr(self,btn).config(state=state)
+        self.figmgr.toolbar.set_message(msg)
 
     def delete_bar(self):
         self.__disconnect_event()
