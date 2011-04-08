@@ -29,7 +29,6 @@
 //# $Id:
 //#---------------------------------------------------------------------------
 
-#include <iostream>
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Slice.h>
@@ -161,9 +160,6 @@ void mathutil::hanning(Vector<Float>& out, Vector<Bool>& outmask,
   // loop from 1..n-2
   out.resize(in.nelements());
   out[0] = in[0];out[out.nelements()-1] = in[in.nelements()-1];
-  //--s
-  cout << "out[0]=" << out[0] << ";" << endl;
-  //--e
   outmask.resize(mask.nelements());
   outmask[0] = mask[0]; outmask[outmask.nelements()-1] = mask[mask.nelements()-1];
   uInt m;Vector<Float>* w;
@@ -172,21 +168,9 @@ void mathutil::hanning(Vector<Float>& out, Vector<Bool>& outmask,
     w = &(weights[m]);
     if (weighted[m]) {
       out[i] = (*w)[0]*in[i-1] + (*w)[1]*in[i] + (*w)[2]*in[i+1];
-      //outmask[i] = True;
     } else { // mask it
       out[i] = in[i];//use arbitrary value
-      //outmask[i] = False;
     }
-    //--s
-    if (i < 13) {
-      cout << "mask[" << i-1 << "-" << i+1 << "]=[" << mask[i-1] << ", " << mask[i] << ", " << mask[i+1] << "];  ";
-      cout << "m="   << m   << ";  ";
-      cout << "weights[" << m << "]="   << weights[m]   << ";  ";
-      cout << "in[" << i-1 << "-" << i+1 << "]=[" << in[i-1] << ", " << in[i] << ", " << in[i+1] << "] --> ";
-      cout << out[i]  << ";" << endl;
-      cout << "-------------------------------" << endl;
-    }
-    //--e
     outmask[i] = mask[i];
   }
 }
