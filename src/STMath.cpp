@@ -1425,17 +1425,8 @@ CountedPtr< Scantable > STMath::dofs( const CountedPtr< Scantable >& s,
   sel.reset() ;
   types.clear() ;
 
-#pragma omp parallel sections
-{
-  #pragma omp section
-  {
   calsig = dototalpower(sigwcal, sig, tcal=tcal);
-  }
-  #pragma omp section
-  {
   calref = dototalpower(refwcal, ref, tcal=tcal);
-  }
-}
 
   out1=dosigref(calsig,calref,smoothref,tsysv,tau); 
   out2=dosigref(calref,calsig,smoothref,tsysv,tau); 
