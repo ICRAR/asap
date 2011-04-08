@@ -206,16 +206,15 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       const TableRecord& rec = row.get(i);
       ROScalarColumn<Double> tmp(tin, "TIME");
       Double td;tmp.get(0,td);
-      Table basesubt = tin(tin.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
-                       && tin.col("IFNO") == Int(rec.asuInt("IFNO"))
-                       && tin.col("POLNO") == Int(rec.asuInt("POLNO")) );
+      Table basesubt = tin( tin.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
+                         && tin.col("IFNO") == Int(rec.asuInt("IFNO"))
+                         && tin.col("POLNO") == Int(rec.asuInt("POLNO")) );
       Table subt;
       if ( avmode == "SOURCE") {
-        subt = basesubt( basesubt.col("SRCNAME") == rec.asString("SRCNAME") );
+        subt = basesubt( basesubt.col("SRCNAME") == rec.asString("SRCNAME"));
       } else if (avmode == "SCAN") {
-        //subt = basesubt( basesubt.col("SCANNO") == Int(rec.asuInt("SCANNO")) );
-        subt = basesubt( basesubt.col("SCANNO") == Int(rec.asuInt("SCANNO"))
-                         && basesubt.col("SRCNAME") == rec.asString("SRCNAME") );
+        subt = basesubt( basesubt.col("SRCNAME") == rec.asString("SRCNAME") 
+		      && basesubt.col("SCANNO") == Int(rec.asuInt("SCANNO")) );
       } else {
         subt = basesubt;
       }
@@ -265,6 +264,13 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
         // spectrum has to be added last to enable weighting by the other values
         acc.add(spec, !bflag, tsys, inter, time);
       }
+
+      // If there exists a channel at which all the input spectra are masked, 
+      // spec has 'nan' values for that channel and it may affect the following 
+      // processes. To avoid this, replacing 'nan' values in spec with 
+      // weighted-mean of all spectra in the following line. 
+      // (done for CAS-2776, 2011/04/07 by Wataru Kawasaki)
+      acc.replaceNaN();
     }
     const Vector<Bool>& msk = acc.getMask();
     if ( allEQ(msk, False) ) {
@@ -277,6 +283,12 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     if (acc.state()) {
       Vector<uChar> flg(msk.shape());
       convertArray(flg, !msk);
+      for (uInt k = 0; k < flg.nelements(); ++k) {
+	uChar userFlag = 1 << 7;
+	if (msk[k]==True) userFlag = 0 << 7;
+	flg(k) = userFlag;
+      }
+
       flagColOut.put(i, flg);
       specColOut.put(i, acc.getSpectrum());
       tsysColOut.put(i, acc.getTsys());
@@ -626,7 +638,7 @@ CountedPtr< Scantable > STMath::arrayOperateRow( const CountedPtr< Scantable >& 
 
   // check if vector size is equal to nrow
   Vector<Float> fact( val ) ;
-  if ( fact.nelements() != in->nrow() ) {
+  if (fact.nelements() != uInt(in->nrow())) {
     throw( AipsError("Vector size must be 1 or be same as number of row.") ) ;
   }
 
@@ -687,8 +699,8 @@ CountedPtr< Scantable > STMath::array2dOperate( const CountedPtr< Scantable >& i
 
   // some checks 
   vector<uInt> nchans;
-  for ( uInt i = 0 ; i < in->nrow() ; i++ ) {
-    nchans.push_back( (in->getSpectrum( i )).size() ) ;
+  for (Int i = 0 ; i < in->nrow() ; i++) {
+    nchans.push_back((in->getSpectrum(i)).size());
   }
   //Vector<uInt> mchans( nchans ) ;
   vector< Vector<Float> > facts ;
@@ -2247,7 +2259,7 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
 
   Table outtab = out->table();
 
-  const uInt ntau = uInt(tau.size());
+  const Int ntau = uInt(tau.size());
   std::vector<float>::const_iterator tauit = tau.begin();
   AlwaysAssert((ntau == 1 || ntau == in->nif() || ntau == in->nif() * in->npol()),
                AipsError);
@@ -2291,30 +2303,43 @@ CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
                                              float width, int order)
 {
   CountedPtr< Scantable > out = getScantable(in, false);
-  Table& table = out->table();
-  ArrayColumn<Float> specCol(table, "SPECTRA");
-  ArrayColumn<uChar> flagCol(table, "FLAGTRA");
-  Vector<Float> spec;
-  Vector<uChar> flag;
-  for ( uInt i=0; i<table.nrow(); ++i) {
-    specCol.get(i, spec);
-    flagCol.get(i, flag);
-    Vector<Bool> mask(flag.nelements());
-    convertArray(mask, flag);
-    Vector<Float> specout;
-    Vector<Bool> maskout;
-    if ( kernel == "hanning" ) {
-      mathutil::hanning(specout, maskout, spec , !mask);
-      convertArray(flag, !maskout);
-    } else if (  kernel == "rmedian" ) {
-      mathutil::runningMedian(specout, maskout, spec , mask, width);
-      convertArray(flag, maskout);
-    } else if ( kernel == "poly" ) {
-      mathutil::polyfit(specout, maskout, spec, !mask, width, order);
-      convertArray(flag, !maskout);
+  Table table = out->table();
+
+  TableIterator iter(table, "IFNO");
+  while (!iter.pastEnd()) {
+    Table tab = iter.table();
+    ArrayColumn<Float> specCol(tab, "SPECTRA");
+    ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+    Vector<Float> spec;
+    Vector<uChar> flag;
+    for (uInt i = 0; i < tab.nrow(); ++i) {
+      specCol.get(i, spec);
+      flagCol.get(i, flag);
+      Vector<Bool> mask(flag.nelements());
+      convertArray(mask, flag);
+      Vector<Float> specout;
+      Vector<Bool> maskout;
+      if (kernel == "hanning") {
+	mathutil::hanning(specout, maskout, spec, !mask);
+	convertArray(flag, !maskout);
+      } else if (kernel == "rmedian") {
+	mathutil::runningMedian(specout, maskout, spec , mask, width);
+	convertArray(flag, maskout);
+      } else if (kernel == "poly") {
+	mathutil::polyfit(specout, maskout, spec, !mask, width, order);
+	convertArray(flag, !maskout);
+      }
+
+      for (uInt j = 0; j < flag.nelements(); ++j) {
+	uChar userFlag = 1 << 7;
+	if (maskout[j]==True) userFlag = 0 << 7;
+	flag(j) = userFlag;
+      }
+
+      flagCol.put(i, flag);
+      specCol.put(i, specout);
     }
-    flagCol.put(i, flag);
-    specCol.put(i, specout);
+  ++iter;
   }
   return out;
 }
@@ -2821,7 +2846,7 @@ CountedPtr< Scantable >
         Float interp = 0.0;
         if (fstart-1 > 0 ) {
           interp = spec[fstart-1];
-          if (fend+1 < spec.nelements()) {
+          if (fend+1 < Int(spec.nelements())) {
             interp = (interp+spec[fend+1])/2.0;
           }
         } else {

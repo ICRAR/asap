@@ -12,6 +12,7 @@
 #ifndef ASAPROWACCUMULATOR_H
 #define ASAPROWACCUMULATOR_H
 
+#include <math.h>
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/MaskedArray.h>
@@ -47,8 +48,8 @@ public:
   void add(const casa::Vector<casa::Float>& v,
            const casa::Vector<casa::Bool>& m,
            const casa::Vector<casa::Float>& tsys,
-           casa::Double interval,
-           casa::Double time);
+           const casa::Double interval,
+           const casa::Double time);
   /**
     * Also set a user mask which get combined with the individual masks
     * from the spectra
@@ -83,20 +84,38 @@ public:
   /**
     * Reset the acummulator to the state at construction.
     */
-  void reset();
+  void reset(const casa::uInt size=0, const casa::uInt tsysSize=0);
+  void initialize(const casa::uInt size, const casa::uInt tsysSize);
   /**
     * check the initialization state 
     */ 
   casa::Bool state() const;
+  /**
+    * replace NaN values with (normal) values at the same channels in the given spetrum.
+    * (CAS-2776; 2011/04/07 by Wataru Kawasaki)
+    */
+  void replaceNaN();
 
 private:
-  void addSpectrum( const casa::Vector<casa::Float>& v,
-                    const casa::Vector<casa::Bool>& m,
-                    casa::Float weight);
-
-  casa::Float addTsys(const casa::Vector<casa::Float>& v);
-  casa::Float addInterval(casa::Double inter);
-  void addTime(casa::Double t);
+  void addSpectrum(const casa::Vector<casa::Float>& v,
+		   const casa::Vector<casa::Bool>& m,
+		   const casa::Vector<casa::Float>& tsys,
+		   const casa::Double interval,
+		   const casa::Double time);
+  void doAddSpectrum(const casa::Vector<casa::Float>& v,
+		     const casa::Vector<casa::Bool>& m,
+		     const casa::Vector<casa::Float>& tsys,
+		     const casa::Double interval,
+		     const casa::Double time,
+		     const casa::Bool ignoreMask);
+  casa::Float getTotalWeight(const casa::MaskedArray<casa::Float>& data,
+			     const casa::Vector<casa::Float>& tsys,
+			     const casa::Double interval,
+			     const casa::Double time,
+			     const casa::Bool ignoreMask);
+  casa::Float addTsys(const casa::Vector<casa::Float>& v, casa::Bool ignoreMask);
+  casa::Float addInterval(casa::Double inter, casa::Bool ignoreMask);
+  void addTime(casa::Double t, casa::Bool ignoreMask);
 
   WeightType weightType_;
   casa::Bool initialized_;
@@ -105,11 +124,16 @@ private:
   casa::MaskedArray<casa::Float> weightSum_;
   casa::MaskedArray<casa::uInt> n_;
 
+  //these three are used for normalise() (CAS-2776; 2011/04/07 by WK)
+  casa::MaskedArray<casa::Float> spectrumNoMask_;
+  casa::MaskedArray<casa::Float> weightSumNoMask_;
+  casa::MaskedArray<casa::uInt> nNoMask_;
+
   casa::Vector<casa::Bool> userMask_;
 
-  casa::Vector<casa::Float> tsysSum_;
-  casa::Double timeSum_;
-  casa::Double intervalSum_;
+  casa::Vector<casa::Float> tsysSum_, tsysSumNoMask_;
+  casa::Double timeSum_, timeSumNoMask_;
+  casa::Double intervalSum_, intervalSumNoMask_;
 };
 
 }
