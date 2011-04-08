@@ -303,6 +303,7 @@ class asapplotter:
         if isinstance(scan, scantable):
             if self._data is not None:
                 if scan != self._data:
+                    del self._data
                     self._data = scan
                     # reset
                     self._reset()
