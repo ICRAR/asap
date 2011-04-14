@@ -305,8 +305,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     }
     acc.reset();
   }
+
   if (rowstodelete.nelements() > 0) {
-    //cout << rowstodelete << endl;
     os << rowstodelete << LogIO::POST ;
     tout.removeRow(rowstodelete);
     if (tout.nrow() == 0) {
