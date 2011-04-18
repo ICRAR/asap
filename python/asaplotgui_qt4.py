@@ -8,10 +8,9 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg, \
 	FigureManagerQTAgg
 # Force use of the newfangled toolbar.
 import matplotlib
-matplotlib.use("Qt4Agg")
+#matplotlib.use("Qt4Agg")
 matplotlib.rcParams['toolbar'] = 'toolbar2'
 
-#class asaplotgui(asaplotbase):
 class asaplotgui(asaplotbase):
     """
     ASAP plotting class based on matplotlib.
@@ -50,6 +49,7 @@ class asaplotgui(asaplotbase):
 	matplotlib.rcParams["interactive"] = True
 	self.buffering = buffering
 
+        self.unmap()
 	#self.canvas.show()
 
     def map(self):
@@ -77,7 +77,7 @@ class asaplotgui(asaplotbase):
                 asaplotbase.show(self)
             self.window.activateWindow()
 	    self.canvas.show()
-	    #self.window.show()
+	    self.window.show()
 
     def terminate(self):
 	"""

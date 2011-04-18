@@ -23,3 +23,12 @@ class asaplot(asaplotbase):
         asaplotbase.__init__(self,**v)
         self.canvas = FigureCanvasAgg(self.figure)
         self.figmgr = FigureManagerBase(self.canvas,1)
+
+    def map(self):
+        """ This method is not available in non-GUI plotting class"""
+        pass
+
+    def unmap(self):
+        """ This method is not available in non-GUI plotting class"""
+        pass
+
