@@ -87,6 +87,13 @@ class asapplotter:
             #return CustomFlagToolbarTkAgg(self)
         return None
 
+    def casabar_exists(self):
+        if not hasattr(self._plotter.figmgr,'casabar'):
+            return False
+        elif self._plotter.figmgr.casabar:
+            return True
+        return False
+
     @asaplog_post_dec
     def plot(self, scan=None):
         """
@@ -103,11 +110,11 @@ class asapplotter:
         self._ipanel = -1
         self._reset_header()
         if self._plotter.is_dead:
-            if hasattr(self._plotter.figmgr,'casabar'):
+            if self.casabar_exists():
                 del self._plotter.figmgr.casabar
             self._plotter = self._newplotter()
             self._plotter.figmgr.casabar=self._newcasabar()
-        if self._plotter.figmgr.casabar:
+        if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
         self._panelrows = []
         self._plotter.hold()
@@ -120,7 +127,7 @@ class asapplotter:
         self._plot(self._data)
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
-        if self._plotter.figmgr.casabar: self._plotter.figmgr.casabar.enable_button()
+        if self.casabar_exists(): self._plotter.figmgr.casabar.enable_button()
         self._plotter.release()
         self._plotter.tidy()
         self._plotter.show(hardrefresh=False)
@@ -1033,7 +1040,7 @@ class asapplotter:
         # save the current counter for multi-page plotting
         self._startrow = r+1
         self._ipanel += panelcount
-        if self._plotter.figmgr.casabar:
+        if self.casabar_exists():
             if self._ipanel >= nptot-1:
                 self._plotter.figmgr.casabar.disable_next()
             else:
@@ -1284,7 +1291,7 @@ class asapplotter:
     @asaplog_post_dec
     def plottp(self, scan=None, outfile=None):
         if self._plotter.is_dead:
-            if hasattr(self._plotter.figmgr,'casabar'):
+            if self.casabar_exists():
                 del self._plotter.figmgr.casabar
             self._plotter = self._newplotter()
             self._plotter.figmgr.casabar=self._newcasabar()
@@ -1315,7 +1322,7 @@ class asapplotter:
         lef, bot, rig, top, wsp, hsp = self._margins
         self._plotter.figure.subplots_adjust(
             left=lef,bottom=bot,right=rig,top=top,wspace=wsp,hspace=hsp)
-        if self._plotter.figmgr.casabar: self._plotter.figmgr.casabar.disable_button()
+        if self.casabar_exists(): self._plotter.figmgr.casabar.disable_button()
         self._plottp(self._data)
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
