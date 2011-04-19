@@ -76,7 +76,8 @@ class asaplotgui(asaplotbase):
             if hardrefresh:
                 asaplotbase.show(self)
             self.window.activateWindow()
-	    self.canvas.show()
+            self.canvas.draw()
+	    #self.canvas.show()
 	    self.window.show()
 
     def terminate(self):
