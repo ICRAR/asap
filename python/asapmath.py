@@ -2,7 +2,8 @@ from asap.scantable import scantable
 from asap.parameters import rcParams
 from asap.logging import asaplog, asaplog_post_dec
 from asap.selector import selector
-from asap import asaplotgui
+#from asap import asaplotgui
+from asap.asapplotter import new_asaplot
 
 @asaplog_post_dec
 def average_time(*args, **kwargs):
@@ -310,7 +311,8 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
         asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
-        p=asaplotgui.asaplotgui()
+        #p=asaplotgui.asaplotgui()
+        p=new_asaplot()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
         titles=[]
@@ -387,10 +389,10 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
             p.set_axes('title',titles[i],fontsize='medium')
         x=raw_input('Accept calibration ([y]/n): ' )
         if x.upper() == 'N':
-            p.unmap()
+            p.quit()
             del p
             return scabtab
-        p.unmap()
+        p.quit()
         del p
     ###
     ress._add_history("calps", varlist)
@@ -529,7 +531,8 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
         asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
-        p=asaplotgui.asaplotgui()
+        #p=asaplotgui.asaplotgui()
+        p=new_asaplot()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
         titles=[]
@@ -606,10 +609,10 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
             p.set_axes('title',titles[i],fontsize='medium')
         x=raw_input('Accept calibration ([y]/n): ' )
         if x.upper() == 'N':
-            p.unmap()
+            p.quit()
             del p
             return scabtab
-        p.unmap()
+        p.quit()
         del p
     ###
     resspec._add_history("calnod",varlist)
@@ -741,7 +744,8 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
         asaplog.post()
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
-        p=asaplotgui.asaplotgui()
+        #p=asaplotgui.asaplotgui()
+        p=new_asaplot()
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)/2*len(polnos)
         titles=[]
@@ -810,10 +814,10 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
             p.set_axes('title',titles[i],fontsize='medium')
         x=raw_input('Accept calibration ([y]/n): ' )
         if x.upper() == 'N':
-            p.unmap()
+            p.quit()
             del p
             return scabtab
-        p.unmap()
+        p.quit()
         del p
     ###
     resspec._add_history("calfs",varlist)

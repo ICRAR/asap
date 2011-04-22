@@ -8,6 +8,26 @@ from matplotlib.text import Text
 
 import re
 
+def new_asaplot(visible=None,**kwargs):
+    """
+    Returns a new asaplot instance based on the backend settings.
+    """
+    if visible == None:
+        visible = rcParams['plotter.gui']
+
+    backend=matplotlib.get_backend()
+    if not visible:
+        from asap.asaplot import asaplot
+    elif backend == 'TkAgg':
+        from asap.asaplotgui import asaplotgui as asaplot
+    elif backend == 'Qt4Agg':
+        from asap.asaplotgui_qt4 import asaplotgui as asaplot
+    elif backend == 'GTkAgg':
+        from asap.asaplotgui_gtk import asaplotgui as asaplot
+    else:
+        from asap.asaplot import asaplot
+    return asaplot(**kwargs)
+
 class asapplotter:
     """
     The ASAP plotter.
@@ -65,18 +85,7 @@ class asapplotter:
         return None
 
     def _newplotter(self, **kwargs):
-        backend=matplotlib.get_backend()
-        if not self._visible:
-            from asap.asaplot import asaplot
-        elif backend == 'TkAgg':
-            from asap.asaplotgui import asaplotgui as asaplot
-        elif backend == 'Qt4Agg':
-            from asap.asaplotgui_qt4 import asaplotgui as asaplot
-        elif backend == 'GTkAgg':
-            from asap.asaplotgui_gtk import asaplotgui as asaplot
-        else:
-            from asap.asaplot import asaplot
-        return asaplot(**kwargs)
+        return new_asaplot(self._visible,**kwargs)
 
     def _newcasabar(self):
         backend=matplotlib.get_backend()

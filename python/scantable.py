@@ -2029,39 +2029,36 @@ class scantable(Scantable):
         s._add_history("smooth", varlist)
 
         if plot:
-            if rcParams['plotter.gui']:
-                from asap.asaplotgui import asaplotgui as asaplot
-            else:
-                from asap.asaplot import asaplot
-            self._p=asaplot()
-            self._p.set_panels()
+            from asap.asapplotter import new_asaplot
+            theplot = new_asaplot(rcParams['plotter.gui'])
+            theplot.set_panels()
             ylab=s._get_ordinate_label()
-            #self._p.palette(0,["#777777","red"])
+            #theplot.palette(0,["#777777","red"])
             for r in xrange(s.nrow()):
                 xsm=s._getabcissa(r)
                 ysm=s._getspectrum(r)
                 xorg=orgscan._getabcissa(r)
                 yorg=orgscan._getspectrum(r)
-                self._p.clear()
-                self._p.hold()
-                self._p.set_axes('ylabel',ylab)
-                self._p.set_axes('xlabel',s._getabcissalabel(r))
-                self._p.set_axes('title',s._getsourcename(r))
-                self._p.set_line(label='Original',color="#777777")
-                self._p.plot(xorg,yorg)
-                self._p.set_line(label='Smoothed',color="red")
-                self._p.plot(xsm,ysm)
+                theplot.clear()
+                theplot.hold()
+                theplot.set_axes('ylabel',ylab)
+                theplot.set_axes('xlabel',s._getabcissalabel(r))
+                theplot.set_axes('title',s._getsourcename(r))
+                theplot.set_line(label='Original',color="#777777")
+                theplot.plot(xorg,yorg)
+                theplot.set_line(label='Smoothed',color="red")
+                theplot.plot(xsm,ysm)
                 ### Ugly part for legend
                 for i in [0,1]:
-                    self._p.subplots[0]['lines'].append([self._p.subplots[0]['axes'].lines[i]])
-                self._p.release()
+                    theplot.subplots[0]['lines'].append([theplot.subplots[0]['axes'].lines[i]])
+                theplot.release()
                 ### Ugly part for legend
-                self._p.subplots[0]['lines']=[]
+                theplot.subplots[0]['lines']=[]
                 res = raw_input("Accept smoothing ([y]/n): ")
                 if res.upper() == 'N':
                     s._setspectrum(yorg, r)
-            self._p.unmap()
-            self._p = None
+            theplot.quit()
+            del theplot
             del orgscan
 
         if insitu: self._assign(s)

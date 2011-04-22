@@ -537,11 +537,13 @@ class fitter:
         if not self.fitted:
             return
         if not self._p or self._p.is_dead:
-            if rcParams['plotter.gui']:
-                from asap.asaplotgui import asaplotgui as asaplot
-            else:
-                from asap.asaplot import asaplot
-            self._p = asaplot()
+            #if rcParams['plotter.gui']:
+            #    from asap.asaplotgui import asaplotgui as asaplot
+            #else:
+            #    from asap.asaplot import asaplot
+            #self._p = asaplot()
+            from asap.asapplotter import new_asaplot
+            self._p = new_asaplot(rcParams['plotter.gui'])
         self._p.hold()
         self._p.clear()
         self._p.set_panels()
