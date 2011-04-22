@@ -67,7 +67,8 @@ class asaplotgui(asaplotbase):
 	Destroy the ASAPlot graphics window.
 	"""
         self.is_dead = True
-	self.window.close()
+        try: self.window.close()
+        except RuntimeError: pass # the window may already be closed by user
 
     def show(self, hardrefresh=True):
 	"""

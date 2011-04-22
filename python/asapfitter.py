@@ -666,6 +666,7 @@ class fitter:
             scan._setspectrum(self.fitter.getresidual(), r)
             self.blpars.append(fpar)
         if plot:
-            self._p.unmap()
+            self._p.quit()
+            del self._p
             self._p = None
         return scan
