@@ -6,6 +6,7 @@ from asap.asaplotbase import *
 import PyQt4 as qt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg, \
 	FigureManagerQTAgg
+from matplotlib import _pylab_helpers
 # Force use of the newfangled toolbar.
 import matplotlib
 #matplotlib.use("Qt4Agg")
@@ -33,12 +34,17 @@ class asaplotgui(asaplotbase):
         self.figmgr = FigureManagerQTAgg(self.canvas, 1)
         self.window = self.figmgr.window
         self.window.setWindowTitle('ASAP Plotter - Qt4')
+        # register this plot to matplotlib
+        _pylab_helpers.Gcf.set_active(self.figmgr)
 
         #############
         ### DO WE HAVE TO DO SOMETHING FOR WINDOW CLOSE CALL?
         #############
         def dest_callback():
-            self.is_dead = True
+            try:
+                self.is_dead = True
+            except NameError:
+                pass
 
         qt.QtCore.QObject.connect(self.window, qt.QtCore.SIGNAL('destroyed()'),dest_callback)
 
