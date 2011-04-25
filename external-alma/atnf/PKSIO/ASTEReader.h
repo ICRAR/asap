@@ -80,6 +80,12 @@ class ASTEReader : public NROReader
   // Read data header
   virtual int read() ;
 
+  // get number of IF
+  virtual Int getNumIF() ;
+
+  // get number of Beams
+  virtual Int getNumBeam() ;
+
  protected:
   // Get Antenna Position in ITRF coordinate
   virtual vector<double> getAntennaPosition() ;

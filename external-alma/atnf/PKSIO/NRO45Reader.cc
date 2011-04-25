@@ -123,3 +123,27 @@ vector<double> NRO45Reader::getAntennaPosition()
   return pos ;
 }
 
+Int NRO45Reader::getNumIF() 
+{
+  Int nif = 1 ;
+  if ( (dataset_->getRX()[0]).find("MULT2-") == string::npos ) {
+    vector<Bool> v ;
+    vector<int> arry = dataset_->getARRY() ;
+    for ( uInt i = 0 ; i < arry.size() ; i++ ) {
+      if ( arry[i] != 0 ) {
+        v.push_back( True ) ;
+      }
+    }
+    nif = v.size() ;
+  }
+  return nif ;
+}
+
+Int NRO45Reader::getNumBeam()
+{
+  Int nbeam = 25 ;
+  if ( (dataset_->getRX()[0]).find("MULT2-") == string::npos ) {
+    nbeam = 1 ;
+  }
+  return nbeam ;
+}

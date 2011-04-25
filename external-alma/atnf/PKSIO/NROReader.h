@@ -170,8 +170,14 @@ class NROReader
   // Get IF settings
   virtual vector<Bool> getIFs() ;
 
+  // Get Number of IFs
+  virtual Int getNumIF() = 0 ;
+
   // Get Beam settings
   virtual vector<Bool> getBeams() ;
+
+  // Get Number of Beams
+  virtual Int getNumBeam() = 0 ;
 
  protected:
   // convert time in character representation to MJD representation

@@ -456,6 +456,7 @@ int NROReader::getHeaderInfo( Int &nchan,
   }
   //freqref = vref ;
   freqref = "LSRK" ;
+  //freqref = "REST" ;
   //cout << "freqref = " << freqref << endl ;
   NRODataRecord *record = dataset_->getRecord( 0 ) ;
   reffreq = record->FREQ0 ;
@@ -482,12 +483,14 @@ int NROReader::getHeaderInfo( Int &nchan,
   poltype = poltp ;
   //cout << "poltype = " << poltype << endl ;
 
-  vector<Bool> ifs = getIFs() ;
-  nif = ifs.size() ;
+  //vector<Bool> ifs = getIFs() ;
+  //nif = ifs.size() ;
+  nif = getNumIF() ;
   //cout << "nif = " << nif << endl ;
 
-  vector<Bool> beams = getBeams() ;
-  nbeam = beams.size() ;
+  //vector<Bool> beams = getBeams() ;
+  //nbeam = beams.size() ;
+  nbeam = getNumBeam() ;
   //cout << "nbeam = " << nbeam << endl ;
 
   return 0 ;

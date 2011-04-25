@@ -117,3 +117,21 @@ vector<double> ASTEReader::getAntennaPosition()
   return pos ;
 }
 
+Int ASTEReader::getNumIF() 
+{
+  vector<Bool> v ;
+  vector<int> arry = dataset_->getARRY() ;
+  for ( uInt i = 0 ; i < arry.size() ; i++ ) {
+    if ( arry[i] != 0 ) {
+      v.push_back( True ) ;
+    }
+  }
+  Int nif = v.size() ;
+  return nif ;
+}
+
+Int ASTEReader::getNumBeam()
+{
+  // ASTE doesn't have array receiver so far
+  return 1 ;
+}
