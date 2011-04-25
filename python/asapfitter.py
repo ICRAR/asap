@@ -29,7 +29,7 @@ class fitter:
     def set_data(self, xdat, ydat, mask=None):
         """
         Set the absissa and ordinate for the fit. Also set the mask
-        indicationg valid points.
+        indicating valid points.
         This can be used for data vectors retrieved from a scantable.
         For scantable fitting use 'fitter.set_scan(scan, mask)'.
         Parameters:
@@ -556,9 +556,12 @@ class fitter:
         if self.data:
             tlab = self.data._getsourcename(self._fittedrow)
             xlab = self.data._getabcissalabel(self._fittedrow)
-            m =  logical_and(self.mask,
-                             array(self.data._getmask(self._fittedrow),
-                                   copy=False))
+            if self.data._getflagrow(self._fittedrow):
+                m = [False]
+            else:
+                m =  logical_and(self.mask,
+                                 array(self.data._getmask(self._fittedrow),
+                                       copy=False))
 
             ylab = self.data._get_ordinate_label()
 
@@ -566,6 +569,11 @@ class fitter:
         nomask=True
         for i in range(len(m)):
             nomask = nomask and m[i]
+        if len(m) == 1:
+            m = m[0]
+            invm = (not m)
+        else:
+            invm = logical_not(m)
         label0='Masked Region'
         label1='Spectrum'
         if ( nomask ):
@@ -577,13 +585,13 @@ class fitter:
             self._p.plot( self.x, y )
         self._p.palette(0,colours)
         self._p.set_line(label=label0)
-        y = ma.masked_array(self.y,mask=logical_not(m))
+        y = ma.masked_array(self.y,mask=invm)
         self._p.plot(self.x, y)
         if residual:
             self._p.palette(7)
             self._p.set_line(label='Residual')
             y = ma.masked_array(self.get_residual(),
-                                  mask=logical_not(m))
+                                  mask=invm)
             self._p.plot(self.x, y)
         self._p.palette(2)
         if components is not None:
@@ -597,21 +605,19 @@ class fitter:
                 if 0 <= c < n:
                     lab = self.fitfuncs[c]+str(c)
                     self._p.set_line(label=lab)
-                    y = ma.masked_array(self.fitter.evaluate(c),
-                                          mask=logical_not(m))
+                    y = ma.masked_array(self.fitter.evaluate(c), mask=invm)
 
                     self._p.plot(self.x, y)
                 elif c == -1:
                     self._p.palette(2)
                     self._p.set_line(label="Total Fit")
                     y = ma.masked_array(self.fitter.getfit(),
-                                          mask=logical_not(m))
+                                          mask=invm)
                     self._p.plot(self.x, y)
         else:
             self._p.palette(2)
             self._p.set_line(label='Fit')
-            y = ma.masked_array(self.fitter.getfit(),
-                                  mask=logical_not(m))
+            y = ma.masked_array(self.fitter.getfit(),mask=invm)
             self._p.plot(self.x, y)
         xlim=[min(self.x),max(self.x)]
         self._p.axes.set_xlim(xlim)
