@@ -36,7 +36,7 @@ class flagplotter(asapplotter):
         if self._visible and backend == "TkAgg":
             #from asap.casatoolbar import CustomToolbarTkAgg
             #return CustomToolbarTkAgg(self)
-            from asap.flagtoolbar import CustomFlagToolbarTkAgg
+            from asap.customgui_tkagg import CustomFlagToolbarTkAgg
             return CustomFlagToolbarTkAgg(self)
         return None
 

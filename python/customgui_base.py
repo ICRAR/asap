@@ -1,10 +1,546 @@
 import os
 import matplotlib, numpy
+from asap.logging import asaplog, asaplog_post_dec
 from matplotlib.patches import Rectangle
 from asap.parameters import rcParams
-from asap.logging import asaplog, asaplog_post_dec
-from asap import scantable
 from asap._asap import stmath
+
+######################################
+##    Add CASA custom toolbar       ##
+######################################
+class CustomToolbarCommon:
+    def __init__(self,parent):
+        self.plotter = parent
+        #self.figmgr=self.plotter._plotter.figmgr
+
+    ### select the nearest spectrum in pick radius
+    ###    and display spectral value on the toolbar.
+    def _select_spectrum(self,event):
+        # Do not fire event when in zooming/panning mode
+        mode = self.figmgr.toolbar.mode
+        if not mode == '':
+            return
+            # When selected point is out of panels
+        if event.inaxes == None:
+            return
+        # If not left button
+        if event.button != 1:
+            return
+
+        xclick = event.xdata
+        yclick = event.ydata
+        dist2 = 1000.
+        pickline = None
+        # If the pannel has picable objects
+        pflag = False
+        for lin in event.inaxes.lines:
+            if not lin.pickable():
+                continue
+            pflag = True
+            flag,pind = lin.contains(event)
+            if not flag:
+                continue
+            # Get nearest point
+            inds = pind['ind']
+            xlin = lin.get_xdata()
+            ylin = lin.get_ydata()
+            for i in inds:
+                d2=(xlin[i]-xclick)**2+(ylin[i]-yclick)**2
+                if dist2 >= d2:
+                    dist2 = d2
+                    pickline = lin
+        # No pickcable line in the pannel
+        if not pflag:
+            return
+        # Pickable but too far from mouse position
+        elif pickline is None:
+            picked = 'No line selected.'
+            self.figmgr.toolbar.set_message(picked)
+            return
+        del pind, inds, xlin, ylin
+        # Spectra are Picked
+        theplot = self.plotter._plotter
+        thetoolbar = self.figmgr.toolbar
+        thecanvas = self.figmgr.canvas
+        # Disconnect the default motion notify event
+        # Notice! the other buttons are also diabled!!!
+        thecanvas.mpl_disconnect(thetoolbar._idDrag)
+        # Get picked spectrum
+        xdata = pickline.get_xdata()
+        ydata = pickline.get_ydata()
+        titl = pickline.get_label()
+        titp = event.inaxes.title.get_text()
+        panel0 = event.inaxes
+        picked = "Selected: '"+titl+"' in panel '"+titp+"'."
+        thetoolbar.set_message(picked)
+        # Generate a navigation window
+        #naviwin=Navigationwindow(titp,titl)
+        #------------------------------------------------------#
+        # Show spectrum data at mouse position
+        def spec_data(event):
+            # Getting spectrum data of neiboring point
+            xclick = event.xdata
+            if event.inaxes != panel0:
+                return
+            ipoint = len(xdata)-1
+            for i in range(len(xdata)-1):
+                xl = xclick - xdata[i]
+                xr = xclick - xdata[i+1]
+                if xl*xr <= 0.:
+                    ipoint = i
+                    break
+            # Output spectral value on the navigation window
+            posi = '[ %s, %s ]:  x = %.2f   value = %.2f'\
+                   %(titl,titp,xdata[ipoint],ydata[ipoint])
+            #naviwin.posi.set(posi)
+            thetoolbar.set_message(posi)
+        #------------------------------------------------------#
+        # Disconnect from mouse events
+        def discon(event):
+            #naviwin.window.destroy()
+            theplot.register('motion_notify',None)
+            # Re-activate the default motion_notify_event
+            thetoolbar._idDrag = thecanvas.mpl_connect('motion_notify_event',
+                                                       thetoolbar.mouse_move)
+            theplot.register('button_release',None)
+            return
+        #------------------------------------------------------#
+        # Show data value along with mouse movement
+        theplot.register('motion_notify',spec_data)
+        # Finish events when mouse button is released
+        theplot.register('button_release',discon)
+
+
+    ### Calculate statistics of the selected area.
+    def _single_mask(self,event):
+        # Do not fire event when in zooming/panning mode
+        if not self.figmgr.toolbar.mode == '':
+            return
+        # When selected point is out of panels
+        if event.inaxes == None:
+            return
+        if event.button == 1:
+            baseinv=True
+        elif event.button == 3:
+            baseinv=False
+        else:
+            return
+
+        def _calc_stats():
+            msk=mymask.get_mask()
+            statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
+            for stat in statstr:
+                mymask.scan.stats(stat=stat,mask=msk)
+
+        # Interactive mask definition
+        from asap.interactivemask import interactivemask
+        mymask = interactivemask(plotter=self.plotter,scan=self.plotter._data)
+        # Create initial mask
+        mymask.set_basemask(invert=baseinv)
+        # Inherit event
+        mymask.set_startevent(event)
+        # Set callback func
+        mymask.set_callback(_calc_stats)
+        # Selected mask
+        mymask.select_mask(once=True,showmask=False)
+
+    def _mod_note(self,event):
+        # Do not fire event when in zooming/panning mode
+        if not self.figmgr.toolbar.mode == '':
+            return
+        if event.button == 1:
+            self.notewin.load_textwindow(event)
+        elif event.button == 3 and self._note_picked(event):
+            self.notewin.load_modmenu(event)
+        return
+
+    def _note_picked(self,event):
+        # just briefly check if any texts are picked
+        for textobj in self.canvas.figure.texts:
+            if textobj.contains(event)[0]:
+                return True
+        for ax in self.canvas.figure.axes:
+            for textobj in ax.texts:
+                if textobj.contains(event)[0]:
+                    return True
+        #print "No text picked"
+        return False
+
+    ### Page chages
+    ### go to the previous page
+    def prev_page(self):
+        self.figmgr.toolbar.set_message('plotting the previous page')
+        #self._pause_buttons(operation="start",msg='plotting the previous page')
+        self._new_page(goback=True)
+        #self._pause_buttons(operation="end")
+
+    ### go to the next page
+    def next_page(self):
+        self.figmgr.toolbar.set_message('plotting the next page')
+        #self._pause_buttons(operation="start",msg='plotting the next page')
+        self._new_page(goback=False)
+        #self._pause_buttons(operation="end")
+
+    ### actual plotting of the new page
+    def _new_page(self,goback=False):
+        top = None
+        header = self.plotter._headtext
+        reset = False
+        doheader = (isinstance(header['textobj'],list) and \
+                    len(header['textobj']) > 0)
+        if self.plotter._startrow <= 0:
+            msg = "The page counter is reset due to chages of plot settings. "
+            msg += "Plotting from the first page."
+            asaplog.push(msg)
+            asaplog.post('WARN')
+            reset = True
+            goback = False
+            if doheader:
+                extrastr = selstr = ''
+                if header.has_key('extrastr'):
+                    extrastr = header['extrastr']
+                if header.has_key('selstr'):
+                    selstr = header['selstr']
+            self.plotter._reset_header()
+        if doheader:
+            top = self.plotter._plotter.figure.subplotpars.top
+            fontsize = header['textobj'][0].get_fontproperties().get_size()
+
+        self.plotter._plotter.hold()
+        if goback:
+            self._set_prevpage_counter()
+        #self.plotter._plotter.clear()
+        self.plotter._plot(self.plotter._data)
+        self.set_pagecounter(self._get_pagenum())
+        # Plot header information
+        if header['textobj']:
+            if top and top != self.plotter._margins[3]:
+                # work around for sdplot in CASA. complete checking in future?
+                self.plotter._plotter.figure.subplots_adjust(top=top)
+            if reset:
+                self.plotter.print_header(plot=True,fontsize=fontsize,selstr=selstr, extrastr=extrastr)
+            else:
+                self.plotter._header_plot(header['string'],fontsize=fontsize)
+        self.plotter._plotter.release()
+        self.plotter._plotter.tidy()
+        self.plotter._plotter.show(hardrefresh=False)
+        del top
+
+    ### calculate the panel ID and start row to plot the previous page
+    def _set_prevpage_counter(self):
+        # set row and panel counters to those of the 1st panel of previous page
+        maxpanel = 16
+        # the ID of the last panel in current plot
+        lastpanel = self.plotter._ipanel
+        # the number of current subplots
+        currpnum = len(self.plotter._plotter.subplots)
+        # the nuber of previous subplots
+        prevpnum = None
+        if self.plotter._rows and self.plotter._cols:
+            # when user set layout
+            prevpnum = self.plotter._rows*self.plotter._cols
+        else:
+            # no user specification
+            prevpnum = maxpanel
+
+        start_ipanel = max(lastpanel-currpnum-prevpnum+1, 0)
+        # set the pannel ID of the last panel of prev-prev page
+        self.plotter._ipanel = start_ipanel-1
+        if self.plotter._panelling == 'r':
+            self.plotter._startrow = start_ipanel
+        else:
+            # the start row number of the next panel
+            self.plotter._startrow = self.plotter._panelrows[start_ipanel]
+        del lastpanel,currpnum,prevpnum,start_ipanel
+
+    ### refresh the page counter
+    ### refresh the page counter
+    def set_pagecounter(self,page):
+        nwidth = int(numpy.ceil(numpy.log10(max(page,1))))+1
+        nwidth = max(nwidth,4)
+        formatstr = '%'+str(nwidth)+'d'
+        self.show_pagenum(page,formatstr)
+
+    def show_pagenum(self,pagenum,formatstr):
+        # passed to backend dependent class
+        pass        
+
+    def _get_pagenum(self):
+        maxpanel = 16
+        # get the ID of last panel in the current page
+        idlastpanel = self.plotter._ipanel
+        if self.plotter._rows and self.plotter._cols:
+            ppp = self.plotter._rows*self.plotter._cols
+        else:
+            ppp = maxpanel
+        return int(idlastpanel/ppp)+1
+
+    # pause buttons for slow operations. implemented at a backend dependent class
+    def _pause_buttons(self,operation="end",msg=""):
+        pass
+
+
+
+
+######################################
+##    Notation box window           ##
+######################################
+class NotationWindowCommon:
+    """
+    A base class to define the functions that the backend-based
+    GUI notation class must implement to print/modify/delete notes on a canvas.
+
+    The following methods *must* be implemented in the backend-based
+    parent class:
+        _get_note : get text in text box
+        _get_anchval : get anchor value selected
+    """
+    def __init__(self,master=None):
+        #self.parent = master
+        self.canvas = master
+        self.event = None
+        self.note = None
+        self.anchors = ["figure","axes","data"]
+        self.seltext = {}
+        self.numnote = 0
+
+    @asaplog_post_dec
+    def print_text(self):
+        """
+        Print a note on a canvas specified with the Notation window.
+        Called when 'print' button selected on the window.
+        """
+        anchor = self.anchors[self._get_anchval()]
+        notestr = self._get_note().rstrip("\n")
+        if len(notestr.strip()) == 0:
+            #self._clear_textbox()
+            #print "Empty string!"
+            return
+
+        myaxes = None
+        calcpos = True
+        xpos = None
+        ypos = None
+        if self.seltext:
+            # You are modifying a text
+            mycanvas = self.canvas
+            oldanch = self.seltext['anchor']
+            if oldanch != 'figure':
+                myaxes = self.seltext['parent']
+            calcpos = (anchor != oldanch)
+            if not calcpos:
+                # printing text in the same coord.
+                # you don't have to recalc position
+                parent = self.seltext['parent']
+                transform = self.seltext['textobj'].get_transform()
+                (xpos, ypos) = self.seltext['textobj'].get_position()
+            elif anchor == "figure":
+                # converting from "axes"/"data" -> "figure"
+                (x, y) = self.seltext['textobj']._get_xy_display()
+            elif oldanch == "data":
+                # converting from "data" -> "axes".
+                # need xdata & ydata in the axes
+                (x, y) = self.seltext['textobj'].get_position()
+            else:
+                # converting "figure"/"axes" -> "data"
+                # need to calculate xdata & ydata in the axes
+                pixpos = self.seltext['textobj']._get_xy_display()
+                (w,h) = mycanvas.get_width_height()
+                relpos = (pixpos[0]/float(w), pixpos[1]/float(h))
+                if not myaxes:
+                    myaxes = self._get_axes_from_pos(relpos,mycanvas)
+                    if not myaxes:
+                        raise RuntimeError, "Axes resolution failed!"
+                (x, y) = self._convert_pix2dat(relpos,myaxes)
+            self._remove_seltext()
+        elif self.event:
+            mycanvas = self.event.canvas
+            myaxes = self.event.inaxes
+            if myaxes and (anchor != "figure"):
+                x = self.event.xdata
+                y = self.event.ydata
+            else:
+                x = self.event.x
+                y = self.event.y
+        else:
+            raise RuntimeError, "No valid position to print data"
+            return
+
+        # now you know 
+        picker = True
+        # alignment of the text: ha (horizontal), va (vertical)
+        ha = 'left'
+        #va = 'center'
+        va = 'top'
+        if not calcpos:
+            # you aready know parent, tansform, xpos and ypos
+            pass
+        elif anchor == "figure":
+            # text instance will be appended to mycanvas.figure.texts
+            parent = mycanvas.figure
+            transform = parent.transFigure
+            (w,h) = mycanvas.get_width_height()
+            xpos = x/float(w)
+            ypos = y/float(h)            
+        elif myaxes:
+            ## text instance will be appended to myaxes.texts
+            parent = myaxes
+            if anchor == "axes":
+                transform = myaxes.transAxes
+                lims = myaxes.get_xlim()
+                xpos = (x-lims[0])/(lims[1]-lims[0])
+                lims = myaxes.get_ylim()
+                ypos = (y-lims[0])/(lims[1]-lims[0])
+            else:
+                # anchored on "data"
+                transform = myaxes.transData
+                xpos = x
+                ypos = y
+        parent.text(xpos,ypos,notestr,transform=transform,
+                    ha=ha,va=va,picker=picker)
+        mycanvas.draw()
+
+        self.numnote += 1
+
+        #self._clear_textbox()
+        msg = "Added note: '"+notestr+"'"
+        msg += " @["+str(xpos)+", "+str(ypos)+"] ("+anchor+"-coord)"
+        msg += "\ntotal number of notes are "+str(self.numnote)
+        asaplog.push( msg )
+
+    def _get_axes_from_pos(self,pos,canvas):
+        """helper function to get axes of a position in a plot (fig-coord)"""
+        if len(pos) != 2:
+            raise ValueError, "pixel position should have 2 elements"
+        for axes in canvas.figure.axes:
+            ##check if pos is in the axes
+            #if axes.contains_point(pos): ### seems not working
+            #    return axes
+            try:
+                axbox = axes.get_position().get_points()
+            except AttributeError: ### WORKAROUND for old matplotlib
+                axbox = self._oldpos2new(axes.get_position())
+            if (axbox[0][0] <= pos[0] <= axbox[1][0]) and \
+               (axbox[0][1] <= pos[1] <= axbox[1][1]):
+                return axes
+        return None
+
+    ### WORKAROUND for old matplotlib
+    def _oldpos2new(self,oldpos=None):
+        return [[oldpos[0],oldpos[1]],[oldpos[0]+oldpos[2],oldpos[1]+oldpos[3]]]
+        
+    def _convert_pix2dat(self,pos,axes):
+        """
+        helper function to convert a position in figure-coord (0-1) to
+        data-coordinate of the axes        
+        """
+        # convert a relative position from lower-left of the canvas
+        # to a data in axes
+        if len(pos) != 2:
+            raise ValueError, "pixel position should have 2 elements"
+        # left-/bottom-pixel, and pixel width & height of the axes
+        bbox = axes.get_position()
+        try: 
+            axpos = bbox.get_points()
+        except AttributeError: ### WORKAROUND for old matplotlib
+            axpos = self._oldpos2new(bbox)
+        # check pos value
+        if (pos[0] < axpos[0][0]) or (pos[1] < axpos[0][1]) \
+               or (pos[0] > axpos[1][0]) or (pos[1] > axpos[1][1]):
+            raise ValueError, "The position is out of the axes"
+        xlims = axes.get_xlim()
+        ylims = axes.get_ylim()
+        wdat = xlims[1] - xlims[0]
+        hdat = ylims[1] - ylims[0]
+        xdat = xlims[0] + wdat*(pos[0] - axpos[0][0])/(axpos[1][0] - axpos[0][0])
+        ydat = ylims[0] + hdat*(pos[1] - axpos[0][1])/(axpos[1][1] - axpos[0][1])
+        return (xdat, ydat)
+
+    @asaplog_post_dec
+    def _get_selected_text(self,event):
+        """helper function to return a dictionary of the nearest note to the event."""
+        (w,h) = event.canvas.get_width_height()
+        dist2 = w*w+h*h
+        selected = {}
+        for textobj in self.canvas.figure.texts:
+            if textobj.contains(event)[0]:
+                d2 = self._get_text_dist2(event,textobj)
+                if dist2 >= d2:
+                    dist2 = d2
+                    selected = {'anchor': 'figure', \
+                                'parent': event.canvas.figure, 'textobj': textobj}
+                    msg = "Fig loop: a text, '"+textobj.get_text()+"', at "
+                    msg += str(textobj.get_position())+" detected"
+                    #print msg
+        for ax in self.canvas.figure.axes:
+            for textobj in ax.texts:
+                if textobj.contains(event)[0]:
+                    d2 = self._get_text_dist2(event,textobj)
+                    if dist2 >= d2:
+                        anchor='axes'
+                        if ax.transData == textobj.get_transform():
+                            anchor = 'data'                    
+                        selected = {'anchor': anchor, \
+                                    'parent': ax, 'textobj': textobj}
+                        msg = "Ax loop: a text, '"+textobj.get_text()+"', at "
+                        msg += str(textobj.get_position())+" detected"
+                        #print msg 
+
+        if selected:
+            msg = "Selected (modify/delete): '"+selected['textobj'].get_text()
+            msg += "' @"+str(selected['textobj'].get_position())
+            msg += " ("+selected['anchor']+"-coord)"
+            asaplog.push(msg)
+
+        return selected
+
+    def _get_text_dist2(self,event,textobj):
+        """
+        helper function to calculate square of distance between
+        a event position and a text object. 
+        """
+        (x,y) = textobj._get_xy_display()
+        return (x-event.x)**2+(y-event.y)**2
+
+    def delete_note(self):
+        """
+        Remove selected note.
+        """
+        #print "You selected 'OK'"
+        self._remove_seltext()
+        self.canvas.draw()
+
+    @asaplog_post_dec
+    def _remove_seltext(self):
+        """helper function to remove the selected note"""
+        if len(self.seltext) < 3:
+            raise ValueError, "Don't under stand selected text obj."
+            return
+        try:
+            self.seltext['textobj'].remove()
+        except NotImplementedError:
+                self.seltext['parent'].texts.pop(self.seltext['parent'].texts.index(self.seltext['textobj']))
+        self.numnote -= 1
+
+        textobj = self.seltext['textobj']
+        msg = "Deleted note: '"+textobj.get_text()+"'"
+        msg += "@"+str(textobj.get_position())\
+               +" ("+self.seltext['anchor']+"-coord)"
+        msg += "\ntotal number of notes are "+str(self.numnote)
+        asaplog.push( msg )
+
+        self.seltext = {}
+
+    @asaplog_post_dec
+    def cancel_delete(self):
+        """
+        Cancel deleting the selected note.
+        Called when 'cancel' button selected on confirmation dialog.
+        """
+        asaplog.push( "Cancel deleting: '"+self.seltext['textobj'].get_text()+"'" )
+        self.seltext = {}
+
+
 
 ###########################################
 ##    Add CASA custom Flag toolbar       ##
@@ -565,245 +1101,3 @@ class CustomFlagToolbarCommon:
     # pause buttons for slow operations. implemented at a backend dependent class
     def _pause_buttons(self,operation="end",msg=""):
         pass
-
-#####################################
-##    Backend dependent Classes    ##
-#####################################
-### TkAgg
-if matplotlib.get_backend() == 'TkAgg':
-    import Tkinter as Tk
-    from notationwindow import NotationWindowTkAgg
-
-class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
-    def __init__(self,parent):
-        from asap.asapplotter import asapplotter
-        if not isinstance(parent,asapplotter):
-            return False
-        if not parent._plotter:
-            return False
-        self._p = parent._plotter
-        self.figmgr = self._p.figmgr
-        self.canvas = self.figmgr.canvas
-        self.mode = ''
-        self.button = True
-        self.pagecount = None
-        CustomFlagToolbarCommon.__init__(self,parent)
-        self.notewin=NotationWindowTkAgg(master=self.canvas)
-        self._add_custom_toolbar()
-
-    def _add_custom_toolbar(self):
-        Tk.Frame.__init__(self,master=self.figmgr.window)
-        #self.bSpec = self._NewButton(master=self,
-        #                             text='spec value',
-        #                             command=self.spec_show)
-
-        self.bRegion = self._NewButton(master=self,
-                                       text='region',
-                                       command=self.select_region)
-        self.bPanel = self._NewButton(master=self,
-                                      text='panel',
-                                      command=self.select_panel)
-        self.bClear = self._NewButton(master=self,
-                                      text='clear',
-                                      command=self.cancel_select)
-        self.bFlag = self._NewButton(master=self,
-                                     text='flag',
-                                     command=self.flag)
-        self.bUnflag = self._NewButton(master=self,
-                                       text='unflag',
-                                       command=self.unflag)
-        
-        self.bStat = self._NewButton(master=self,
-                                     text='statistics',
-                                     command=self.stat_cal)
-
-        self.bNote = self._NewButton(master=self,
-                                     text='notation',
-                                     command=self.modify_note)
-
-        self.bQuit = self._NewButton(master=self,
-                                     text='Quit',
-                                     #file="stock_close.ppm",
-                                     command=self.quit,
-                                     side=Tk.RIGHT)
-
-        # page change oparations
-        frPage = Tk.Frame(master=self,borderwidth=2,relief=Tk.GROOVE)
-        frPage.pack(ipadx=2,padx=10,side=Tk.RIGHT)
-        self.lPagetitle = Tk.Label(master=frPage,text='Page:',padx=5)
-                                   #width=8,anchor=Tk.E,padx=5)
-        self.lPagetitle.pack(side=Tk.LEFT)
-        self.pagecount = Tk.StringVar(master=frPage)
-        self.lPagecount = Tk.Label(master=frPage,
-                                   textvariable=self.pagecount,
-                                   padx=5,bg='white')
-        self.lPagecount.pack(side=Tk.LEFT,padx=3)
-
-        self.bNext=self._NewButton(master=frPage,
-                                   text=' + ',
-                                   #file="hand.ppm",
-                                   command=self.next_page)
-        self.bPrev=self._NewButton(master=frPage,
-                                   text=' - ',
-                                   command=self.prev_page)
-
-        if os.uname()[0] != 'Darwin':
-            self.bPrev.config(padx=5)
-            self.bNext.config(padx=5)
-
-        self.pack(side=Tk.BOTTOM,fill=Tk.BOTH)
-        self.pagecount.set(' '*4)
-
-        self.disable_button()
-        return #self
-
-    def _NewButton(self, master, text, command, side=Tk.LEFT,file=None):
-        img = None
-        if file:
-            file = os.path.join(matplotlib.rcParams['datapath'], 'images', file)
-            img = Tk.PhotoImage(master=master, file=file)
-
-        if os.uname()[0] == 'Darwin':
-            b = Tk.Button(master=master, text=text, image=img,
-                          command=command)
-            if img: b.image = img
-        else:
-            b = Tk.Button(master=master, text=text, image=img, padx=2, pady=2,
-                          command=command)
-            if img: b.image = img
-        b.pack(side=side)
-        return b
-
-    def show_pagenum(self,pagenum,formatstr):
-        self.pagecount.set(formatstr % (pagenum))
-
-    def spec_show(self):
-        if not self.figmgr.toolbar.mode == '' or not self.button: return
-        self.figmgr.toolbar.set_message('spec value: drag on a spec')
-        if self.mode == 'spec': return
-        self.mode = 'spec'
-        self.notewin.close_widgets()
-        self.__disconnect_event()
-        self._p.register('button_press',self._select_spectrum)
-
-    def modify_note(self):
-        if not self.figmgr.toolbar.mode == '': return
-        self.figmgr.toolbar.set_message('text: select a position/text')
-        if self.mode == 'note':
-            self.bNote.config(relief='raised')
-            self.mode = 'none'
-            self.spec_show()
-            return
-        self.bNote.config(relief='sunken')
-        self.bRegion.config(relief='raised')
-        self.bPanel.config(relief='raised')
-        self.mode = 'note'
-        self.__disconnect_event()
-        self._p.register('button_press',self._mod_note)
-
-    def select_region(self):
-        if not self.figmgr.toolbar.mode == '' or not self.button: return
-        self.figmgr.toolbar.set_message('select rectangle regions')
-        if self.mode == 'region':
-            self.bRegion.config(relief='raised')
-            self.mode = 'none'
-            self.spec_show()
-            return
-        self.bNote.config(relief='raised')
-        self.bRegion.config(relief='sunken')
-        self.bPanel.config(relief='raised')
-        self.mode = 'region'
-        self.notewin.close_widgets()
-        self.__disconnect_event()
-        self._p.register('button_press',self._add_region)
-
-    def select_panel(self):
-        if not self.figmgr.toolbar.mode == '' or not self.button: return
-        self.figmgr.toolbar.set_message('select panels')
-        if self.mode == 'panel':
-            self.bPanel.config(relief='raised')
-            self.mode = 'none'
-            self.spec_show()
-            return
-        self.bNote.config(relief='raised')
-        self.bRegion.config(relief='raised')
-        self.bPanel.config(relief='sunken')
-        self.mode = 'panel'
-        self.notewin.close_widgets()
-        self.__disconnect_event()
-        self._p.register('button_press',self._add_panel)
-
-    def quit(self):
-        self.__disconnect_event()
-        self.disable_button()
-        self.figmgr.window.wm_withdraw()
-
-    def enable_button(self):
-        if self.button: return
-        self.bRegion.config(state=Tk.NORMAL)
-        self.bPanel.config(state=Tk.NORMAL)
-        self.bClear.config(state=Tk.NORMAL)
-        self.bFlag.config(state=Tk.NORMAL)
-        self.bUnflag.config(state=Tk.NORMAL)
-        self.bStat.config(state=Tk.NORMAL)
-        self.button = True
-        self.spec_show()
-
-    def disable_button(self):
-        ## disable buttons which don't work for plottp
-        if not self.button: return
-        self.bRegion.config(relief='raised')
-        self.bPanel.config(relief='raised')
-        self.bRegion.config(state=Tk.DISABLED)
-        self.bPanel.config(state=Tk.DISABLED)
-        self.bClear.config(state=Tk.DISABLED)
-        self.bFlag.config(state=Tk.DISABLED)
-        self.bUnflag.config(state=Tk.DISABLED)
-        self.bStat.config(state=Tk.DISABLED)
-        self.bNext.config(state=Tk.DISABLED)
-        self.bPrev.config(state=Tk.DISABLED)
-        self.button = False
-        self.mode = ''
-        self.notewin.close_widgets()
-        self.__disconnect_event()
-
-    def enable_next(self):
-        self.bNext.config(state=Tk.NORMAL)
-
-    def disable_next(self):
-        self.bNext.config(state=Tk.DISABLED)
-
-    def enable_prev(self):
-        self.bPrev.config(state=Tk.NORMAL)
-
-    def disable_prev(self):
-        self.bPrev.config(state=Tk.DISABLED)
-
-    # pause buttons for slow operations
-    def _pause_buttons(self,operation="end",msg=""):
-        buttons = ["bRegion","bPanel","bClear","bFlag","bUnflag","bStat",
-                   "bNote","bQuit"]
-        if operation == "start":
-            state=Tk.DISABLED
-        else:
-            state=Tk.NORMAL
-        for btn in buttons:
-            getattr(self,btn).config(state=state)
-        self.figmgr.toolbar.set_message(msg)
-
-    def delete_bar(self):
-        self.__disconnect_event()
-        self.destroy()
-
-    def __disconnect_event(self):
-        self._p.register('button_press',None)
-        self._p.register('button_release',None)
-
-    def _draw_span(self,axes,x0,x1,**kwargs):
-        height = self._p.figure.bbox.height
-        y0 = height - axes.bbox.y0
-        y1 = height - axes.bbox.y1
-        return self._p.canvas._tkcanvas.create_rectangle(x0,y0,x1,y1,**kwargs)
-
-    def _remove_span(self,span):
-        self._p.canvas._tkcanvas.delete(span)

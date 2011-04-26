@@ -90,7 +90,7 @@ class asapplotter:
     def _newcasabar(self):
         backend=matplotlib.get_backend()
         if self._visible and backend == "TkAgg":
-            from asap.casatoolbar import CustomToolbarTkAgg
+            from asap.customgui_tkagg import CustomToolbarTkAgg
             return CustomToolbarTkAgg(self)
             #from asap.casatoolbar import CustomFlagToolbarTkAgg
             #return CustomFlagToolbarTkAgg(self)
@@ -1252,6 +1252,7 @@ class asapplotter:
 
         PL.ion()
         PL.draw()
+        PL.gcf().show()
         if (self._outfile is not None):
            PL.savefig(self._outfile)
 
@@ -1292,6 +1293,7 @@ class asapplotter:
         PL.axis([xmax,xmin,ymin,ymax])
         #PL.ion()
         PL.draw()
+        PL.gcf().show()
         if (self._outfile is not None):
            PL.savefig(self._outfile)
 

@@ -18,19 +18,19 @@ set( PYTHON_MODULES
      ${PYTHONDIR}/asaplot.py
      ${PYTHONDIR}/asapmath.py
      ${PYTHONDIR}/asapplotter.py
-     ${PYTHONDIR}/casatoolbar.py
      ${PYTHONDIR}/compatibility.py
      ${PYTHONDIR}/coordinate.py
+     ${PYTHONDIR}/customgui_base.py
+     ${PYTHONDIR}/customgui_tkagg.py
+     ${PYTHONDIR}/customgui_qt4agg.py
      ${PYTHONDIR}/env.py
      ${PYTHONDIR}/flagplotter.py
-     ${PYTHONDIR}/flagtoolbar.py
      ${PYTHONDIR}/__init__.py
      ${PYTHONDIR}/interactivemask.py
      ${PYTHONDIR}/ipysupport.py
      ${PYTHONDIR}/lagflagger.py
      ${PYTHONDIR}/linecatalog.py
      ${PYTHONDIR}/logging.py
-     ${PYTHONDIR}/notationwindow.py
      ${PYTHONDIR}/opacity.py
      ${PYTHONDIR}/parameters.py
      ${PYTHONDIR}/scantable.py
