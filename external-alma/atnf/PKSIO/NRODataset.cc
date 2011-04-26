@@ -601,6 +601,13 @@ double NRODataset::getMJD( char *time )
   return t.modifiedJulianDay() ;
 }
 
+double NRODataset::getScanTime( int i ) 
+{
+  double startTime = getStartIntTime( i ) ;
+  double interval = getIPTIM() / 86400.0 ; // [sec]->[day]
+  return startTime+0.5*interval ;
+}
+
 vector<bool> NRODataset::getIFs()
 {
   vector<bool> v ;

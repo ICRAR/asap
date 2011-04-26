@@ -621,14 +621,14 @@ int NROFITSDataset::fillHeader( int sameEndian )
   // DEBUG
 //   for ( int i = 0 ; i < ARYNM ; i++ ) {
 //     if ( i == 0 ) {
-//       //cout << "RX      " ;
+//       cout << "RX      " ;
 //     }
 //     else if ( ( i % 5 ) == 0 ) {
-//       //cout << endl << "        " ;
+//       cout << endl << "        " ;
 //     }
-//     //cout << "\'" << RX[i] << "\' " ;
+//     cout << "\'" << RX[i] << "\' " ;
 //   }
-//   //cout << endl ;
+//   cout << endl ;
   //
   if ( readColumn( HPBW, "HPBW", sameEndian ) != 0 ) {
     os << LogIO::WARN << "Error while reading data HPBW." << LogIO::POST ;
@@ -2731,6 +2731,15 @@ double NROFITSDataset::getStartIntTime( int i )
   double v ;
   readTable( v, "MJDST", same_, i ) ;
   return v/86400.0 ;
+}
+
+double NROFITSDataset::getScanTime( int i ) 
+{
+  double startTime = getStartIntTime( i ) ;
+  double interval ;
+  readTable( interval, "INTEG", same_, i ) ;
+  interval /= 86400.0 ;
+  return startTime+0.5*interval ;
 }
 
 // double NROFITSDataset::toLSR( double v, double t, double x, double y ) 

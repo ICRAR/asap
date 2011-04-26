@@ -577,7 +577,8 @@ int NROReader::getScanInfo( int irow,
   //cout << "refbeamno = " << refbeamno << endl ;
 
   // scantime
-  scantime = Double( dataset_->getStartIntTime( irow ) ) ;
+  //scantime = Double( dataset_->getStartIntTime( irow ) ) ;
+  scantime = Double( dataset_->getScanTime( irow ) ) ;
   //cout << "scantime = " << scantime << endl ;
 
   // interval

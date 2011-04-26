@@ -193,6 +193,7 @@ class NRODataset
   virtual int getPolarizationNum() ;
   virtual vector<double> getStartIntTime() ;
   virtual double getStartIntTime( int i ) ;
+  virtual double getScanTime( int i ) ;
   virtual double getMJD( char *time ) ;
   virtual vector<bool> getIFs() ;
   virtual vector<double> getFrequencies( int i ) ;
