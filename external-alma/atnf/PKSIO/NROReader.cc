@@ -551,10 +551,16 @@ int NROReader::getScanInfo( int irow,
   //cout << "cycleno = " << cycleno << endl ;
 
   // beamno
-  string arryt = string( record->ARRYT ) ;
-  string sbeamno = arryt.substr( 1, arryt.size()-1 ) ;
-  uInt ibeamno = atoi( sbeamno.c_str() ) ; 
-  beamno = ibeamno - 1 ;
+  string rxname = dataset_->getRX()[0] ;
+  if ( rxname.find("MULT2") != string::npos ) {
+    string arryt = string( record->ARRYT ) ;
+    string sbeamno = arryt.substr( 1, arryt.size()-1 ) ;
+    uInt ibeamno = atoi( sbeamno.c_str() ) ; 
+    beamno = ibeamno - 1 ;
+  }
+  else {
+    beamno = 0 ;
+  }
   //cout << "beamno = " << beamno << endl ;
 
   // polno
