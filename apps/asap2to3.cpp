@@ -16,8 +16,11 @@ int main(int argc, const char* argv[]) {
   // Fill the input structure from the command line.
   inputs.readArguments (argc, argv);
   String fname =  inputs.getString("in");
+  if ( fname.lastchar() == '/' )
+    fname = fname.substr(0,fname.length()-1) ;
   Table origtab(fname);
   fname +=".asap3";
+  //cout << "fname=" << fname << endl ;
   origtab.deepCopy(fname, Table::New);
   Table tab(fname, Table::Update);
   tab.removeColumn("PARANGLE");
