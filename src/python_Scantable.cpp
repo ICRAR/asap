@@ -90,6 +90,7 @@ void python_Scantable() {
     .def("_getclipmask", &ScantableWrapper::getClipMask,
 	 (boost::python::arg("whichrow")=0) )
     .def("_gettsys", &ScantableWrapper::getTsys)
+    .def("_gettsysspectrum", &ScantableWrapper::getTsysSpectrum )
     .def("_getsourcename", &ScantableWrapper::getSourceName,
          (boost::python::arg("whichrow")=0) )
     .def("_getelevation", &ScantableWrapper::getElevation,

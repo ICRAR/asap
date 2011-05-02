@@ -83,6 +83,9 @@ public:
   float getTsys(int whichrow=0) const
     { return table_->getTsys(whichrow); }
 
+  std::vector<float> getTsysSpectrum(int whichrow=0) const
+    { return table_->getTsysSpectrum(whichrow); }
+
   //std::string getTime(int whichrow=0) const
   //  { return table_->getTime(whichrow); }
   std::string getTime(int whichrow=0, int prec = 0) const

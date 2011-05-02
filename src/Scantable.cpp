@@ -2858,6 +2858,13 @@ std::vector<int> Scantable::getMaskEdgeIndices(const std::vector<bool>& mask)
   return out;
 }
 
+vector<float> Scantable::getTsysSpectrum( int whichrow ) const
+{
+  Vector<Float> tsys( tsysCol_(whichrow) ) ;
+  vector<float> stlTsys ;
+  tsys.tovector( stlTsys ) ;
+  return stlTsys ;
+}
 
 /*
 STFitEntry Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno)
