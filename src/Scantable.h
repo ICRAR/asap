@@ -371,8 +371,8 @@ public:
   void appendToHistoryTable(const STHistory& otherhist)
     { historyTable_.append(otherhist); }
 
-  std::string headerSummary(bool verbose=false);
-  std::string summary(bool verbose=false);
+  std::string headerSummary();
+  std::string summary();
   //std::string getTime(int whichrow=-1, bool showdate=true) const;
   std::string getTime(int whichrow=-1, bool showdate=true, casa::uInt prec=0) const;
   double getIntTime(int whichrow) const { return integrCol_(whichrow); }

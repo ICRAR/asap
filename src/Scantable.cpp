@@ -136,7 +136,8 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
       os << LogIO::WARN
          << "Data will be loaded from " << outname << " instead of " 
          << name << LogIO::POST ;
-      system( exec.c_str() ) ;
+      int tmp = system( exec.c_str() ) ;
+      (void) tmp;
       tab = Table(outname, Table::Update ) ;
       //os << "tab.tableName()=" << tab.tableName() << LogIO::POST ;
     }
@@ -177,7 +178,8 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
 }
 */
 
-Scantable::Scantable( const Scantable& other, bool clear )
+Scantable::Scantable( const Scantable& other, bool clear ):
+  Logger()
 {
   // with or without data
   String newname = String(generateName());
@@ -985,7 +987,7 @@ void Scantable::setSelection( const STSelector& selection )
 }
 
 
-std::string Scantable::headerSummary( bool verbose )
+std::string Scantable::headerSummary()
 {
   // Format header info
 //   STHeader sdh;
@@ -1034,11 +1036,10 @@ std::string Scantable::headerSummary( bool verbose )
 
   oss << setw(15) << "Abcissa:" << getAbcissaLabel(0) << endl;
   oss << selector_.print() << endl;
-  /// @todo implement verbose mode
   return String(oss);
 }
 
-std::string Scantable::summary( bool verbose )
+std::string Scantable::summary()
 {
   ostringstream oss;
   oss << endl;
@@ -1047,7 +1048,7 @@ std::string Scantable::summary( bool verbose )
   oss << asap::SEPERATOR << endl;
 
   // Format header info
-  oss << headerSummary(verbose);
+  oss << headerSummary();
   oss << endl;
 
   // main table
@@ -1111,7 +1112,6 @@ std::string Scantable::summary( bool verbose )
     }
     ++iter;
   }
-  /// @todo implement verbose mode
   return String(oss);
 }
 
@@ -1281,6 +1281,7 @@ void asap::Scantable::setRestFrequencies( const std::string& name )
 
 void Scantable::setRestFrequencies( const vector<std::string>& name )
 {
+  (void) name; // suppress unused warning
   throw(AipsError("setRestFrequencies( const vector<std::string>& name ) NYI"));
   ///@todo implement
 }
@@ -2683,7 +2684,9 @@ float Scantable::getRms(const std::vector<bool>& mask, int whichrow) {
 }
 
 
-std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::string& masklist, bool verbose) const
+std::string Scantable::formatBaselineParamsHeader(int whichrow, 
+						  const std::string& masklist, 
+						  bool verbose) const
 {
   ostringstream oss;
 
@@ -2718,7 +2721,14 @@ std::string Scantable::formatBaselineParamsFooter(float rms, bool verbose) const
   return String(oss);
 }
 
-  std::string Scantable::formatBaselineParams(const std::vector<float>& params, const std::vector<bool>& fixed, float rms, const std::string& masklist, int whichrow, bool verbose, int start, int count, bool resetparamid) const
+  std::string Scantable::formatBaselineParams(const std::vector<float>& params, 
+					      const std::vector<bool>& fixed, 
+					      float rms, 
+					      const std::string& masklist, 
+					      int whichrow, 
+					      bool verbose, 
+					      int start, int count,
+					      bool resetparamid) const
 {
   int nParam = (int)(params.size());
 

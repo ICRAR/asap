@@ -31,8 +31,6 @@
 #ifndef PYTHON_ASAP_H
 #define PYTHON_ASAP_H
 
-class casa::AipsError;
-
 namespace asap {
   namespace python {
     void translate_ex(const casa::AipsError& e);

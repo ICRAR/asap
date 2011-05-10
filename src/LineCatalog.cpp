@@ -98,7 +98,7 @@ std::string LineCatalog::summary(int row) const
       oss << endl;
     }
   } else {
-      if ( row < table_.nrow() ) {
+    if ( row < int(table_.nrow()) ) {
         oss << std::right << setw(7) << row << setw(2) << "";
         oss << std::left << setw(20) << getName(row);
         oss << setw(12) << setprecision(8) << std::left << getFrequency(row);

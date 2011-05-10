@@ -51,8 +51,10 @@ STAttr::STAttr()
    initData();
 }
 
-STAttr::STAttr(const STAttr& other)
+STAttr::STAttr(const STAttr& other):
+  Logger()
 {
+  (void) other; //suppress unused warning
    initData();                     // state just private 'static' data
 }
 

@@ -317,10 +317,11 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 }
 
 CountedPtr< Scantable >
-  STMath::averageChannel( const CountedPtr < Scantable > & in,
+STMath::averageChannel( const CountedPtr < Scantable > & in,
                           const std::string & mode,
                           const std::string& avmode )
 {
+  (void) mode; // currently unused
   // check if OTF observation
   String obstype = in->getHeader().obstype ;
   Double tol = 0.0 ;
@@ -835,6 +836,7 @@ CountedPtr< Scantable > STMath::autoQuotient( const CountedPtr< Scantable >& in,
   /// @todo make other modes available
   /// modes should be "nearest", "pair"
   // make this operation non insitu
+  (void) mode; //currently unused
   const Table& tin = in->table();
   Table ons = tin(tin.col("SRCTYPE") == Int(SrcType::PSON));
   Table offs = tin(tin.col("SRCTYPE") == Int(SrcType::PSOFF));
@@ -1404,6 +1406,7 @@ CountedPtr< Scantable > STMath::dofs( const CountedPtr< Scantable >& s,
 {
 
 
+  (void) scans; //currently unused
   STSelector sel;
   CountedPtr< Scantable > ws = getScantable(s, false);
   CountedPtr< Scantable > sig, sigwcal, ref, refwcal;
@@ -2713,6 +2716,7 @@ CountedPtr< Scantable >
           Bool ok = fa.align(specOut, maskOut, abc, spec,
                              mask, timeCol(i), !first,
                              interp, False);
+	  (void) ok; // unused stop compiler nagging	  
           // back into scantable
           flagOut.resize(maskOut.nelements());
           convertArray(flagOut, maskOut);
@@ -4258,6 +4262,7 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
 
 CountedPtr<Scantable> STMath::almacalfs( const CountedPtr<Scantable>& s )
 {
+  (void) s; //currently unused
   CountedPtr<Scantable> out ;
 
   return out ;
@@ -4710,6 +4715,7 @@ vector<float> STMath::getCalibratedSpectra( CountedPtr<Scantable>& on,
                                             int index,
                                             string antname ) 
 {
+  (void) cold; //currently unused
   string reftime = on->getTime( index ) ;
   vector<int> ii( 1, on->getIF( index ) ) ;
   vector<int> ib( 1, on->getBeam( index ) ) ;
@@ -4804,6 +4810,7 @@ vector<float> STMath::getFSCalibratedSpectra( CountedPtr<Scantable>& sig,
                                               CountedPtr<Scantable>& cold,
                                               int index ) 
 {
+  (void) cold; //currently unused
   string reftime = sig->getTime( index ) ;
   vector<int> ii( 1, sig->getIF( index ) ) ;
   vector<int> ib( 1, sig->getBeam( index ) ) ;
@@ -4842,6 +4849,7 @@ vector<float> STMath::getFSCalibratedSpectra( CountedPtr<Scantable>& sig,
                                               vector< CountedPtr<Scantable> >& cold,
                                               int index ) 
 {
+  (void) cold; //currently unused
   string reftime = sig->getTime( index ) ;
   vector<int> ii( 1, sig->getIF( index ) ) ;
   vector<int> ib( 1, sig->getBeam( index ) ) ;

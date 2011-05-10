@@ -256,7 +256,8 @@ void PKSFiller::fill( )
     FILE *fp = fopen( filename_.c_str(), "r" ) ;
     fseek( fp, 640, SEEK_SET ) ;
     char buf[81] ;
-    fread( buf, 80, 1, fp ) ;
+    size_t tmp = fread( buf, 80, 1, fp ) ;
+    (void) tmp;
     buf[80] = '\0' ;
     if ( strstr( buf, "NRAO_GBT" ) != NULL ) {
       isGBTFITS = true ;

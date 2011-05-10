@@ -137,7 +137,7 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     //addLine(of, "Rest Freq.", 
     //        stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") ));
     addLine(of, "Rest Freq.", restfreqs[0]);
-    for ( unsigned int i=1; i<nf; ++i) {
+    for ( int i=1; i<nf; ++i) {
       addLine(of, " ", restfreqs[i]);
     }
     ostringstream osflagrow;

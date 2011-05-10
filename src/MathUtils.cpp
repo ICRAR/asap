@@ -132,6 +132,7 @@ Vector<String> mathutil::toVectorString(const std::vector<std::string>& in)
 void mathutil::hanning(Vector<Float>& out, Vector<Bool>& outmask,
                        const Vector<Float>& in, const Vector<Bool>& mask,
                        Bool relaxed, Bool ignoreOther) {
+  (void) ignoreOther; //suppress unused warning
   Vector< Vector<Float> > weights(8);
   Vector<Float> vals(3);
   vals = 0.0;weights[0] = vals;// FFF
@@ -180,14 +181,15 @@ void mathutil::runningMedian(Vector<Float>& out, Vector<Bool>& outflag,
                              const Vector<Float>& in, const Vector<Bool>& flag,
                              float width)
 {
-  Int hwidth = Int(width+0.5);
-  Int fwidth = hwidth*2+1;
+  uInt hwidth = Int(width+0.5);
+  uInt fwidth = hwidth*2+1;
   out.resize(in.nelements());
   outflag.resize(flag.nelements());
   MedianSlider ms(hwidth);
   Slice sl(0, fwidth-1);
   Float medval = ms.add(const_cast<Vector<Float>& >(in)(sl),
                   const_cast<Vector<Bool>& >(flag)(sl));
+  (void) medval;//suppress unused warning
   uInt n = in.nelements();
   for (uInt i=hwidth; i<(n-hwidth); ++i) {
     // add data value
@@ -207,8 +209,8 @@ void mathutil::polyfit(Vector<Float>& out, Vector<Bool>& outmask,
                        const Vector<Float>& in, const Vector<Bool>& mask,
                        float width, int order)
 {
-  Int hwidth = Int(width+0.5);
-  Int fwidth = hwidth*2+1;
+  uInt hwidth = Int(width+0.5);
+  uInt fwidth = hwidth*2+1;
   out.resize(in.nelements());
   outmask.resize(mask.nelements());
   LinearFit<Float> fitter;

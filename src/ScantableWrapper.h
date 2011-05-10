@@ -217,14 +217,14 @@ public:
   Scantable* getPtr() {return &(*table_);}
 
   std::string summary(bool verbose=false) const {
-    return table_->summary(verbose);
+    return table_->summary();
   }
 
   std::string listHeader(bool verbose=false) const {
-    return table_->headerSummary(verbose);
+    return table_->headerSummary();
   }
 
-  std::vector<std::string> getHistory()const
+  std::vector<std::string> getHistory() const
     { return table_->getHistory(); }
 
   void addHistory(const std::string& hist)

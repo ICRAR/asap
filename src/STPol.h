@@ -65,10 +65,10 @@ public:
 
   virtual casa::Vector<casa::Float> getLinear( casa::uInt index ) = 0;
 
-  virtual void rotatePhase( casa::Float phase ) {}
-  virtual void rotateLinPolPhase( casa::Float phase ) {}
+  virtual void rotatePhase( casa::Float ) {}
+  virtual void rotateLinPolPhase( casa::Float) {}
 
-  virtual void invertPhase( casa::Float phase ) {}
+  virtual void invertPhase( casa::Float ) {}
 
   casa::uInt nspec() const { return basespectra_.ncolumn(); }
 

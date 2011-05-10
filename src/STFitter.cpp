@@ -100,7 +100,8 @@ bool Fitter::computeEstimate() {
       break;
     }
   }
-  for (uInt j=m_.nelements()-1; j>=0;--j) {
+  // use Int to suppress compiler warning
+  for (Int j=m_.nelements()-1; j>=0;--j) {
     if (m_[j]) {
       mx = j;
       break;

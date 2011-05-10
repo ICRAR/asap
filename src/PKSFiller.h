@@ -23,7 +23,6 @@
 #include "FillerBase.h"
 #include "Scantable.h"
 
-class casa::Record;
 class PKSreader;
 
 namespace asap

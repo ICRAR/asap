@@ -306,9 +306,9 @@ int asap::STFiller::read( )
   Vector<Complex> xPol;
 **/
 
+#ifdef HAS_ALMA
   Double min = 0.0;
   Double max = nInDataRow;
-#ifdef HAS_ALMA
   ProgressMeter fillpm(min, max, "Data importing progress");
 #endif
   PKSrecord pksrec;
@@ -319,7 +319,8 @@ int asap::STFiller::read( )
     FILE *fp = fopen( filename_.c_str(), "r" ) ;
     fseek( fp, 640, SEEK_SET ) ;
     char buf[81] ;
-    fread( buf, 80, 1, fp ) ;
+    size_t tmpret = fread( buf, 80, 1, fp ) ;
+    (void) tmpret;
     buf[80] = '\0' ;
     if ( strstr( buf, "NRAO_GBT" ) != NULL ) {
       isGBTFITS = true ;
@@ -882,10 +883,12 @@ Bool STFiller::fileCheck()
   FILE *fp = fopen( filename_.c_str(), "r" ) ;
   char buf[9] ;
   char buf2[80] ;
-  fread( buf, 4, 1, fp ) ;
+  size_t tmpret;
+  tmpret = fread( buf, 4, 1, fp ) ;
   buf[4] = '\0' ;
   fseek( fp, 640, SEEK_SET ) ;
-  fread( buf2, 80, 1, fp ) ;
+  tmpret = fread( buf2, 80, 1, fp ) ;
+  (void) tmpret; //suppress unused warning
   if ( ( strncmp( buf, "RW", 2 ) == 0 ) || ( strstr( buf2, "NRO45M" ) != NULL ) ) {
     bval = true ;
   }

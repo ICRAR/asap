@@ -41,7 +41,6 @@
 #include "Scantable.h"
 
 class PKSwriter;
-class casa::Table;
 
 namespace asap {
 /**

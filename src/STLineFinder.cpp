@@ -93,7 +93,7 @@ public:
    // access to the statistics
    const casa::Float& getLinMean() const throw(AipsError);
    const casa::Float& getLinVariance() const throw(AipsError);
-   const casa::Float aboveMean() const throw(AipsError);
+   casa::Float aboveMean() const throw(AipsError);
    int getChannel() const throw();
 
    // actual number of channels in the box (max_box_nchan, if no channels
@@ -504,7 +504,7 @@ const casa::Float& RunningBox::getLinVariance() const throw(AipsError)
   return linvariance;
 }
 
-const casa::Float RunningBox::aboveMean() const throw(AipsError)
+casa::Float RunningBox::aboveMean() const throw(AipsError)
 {
   DebugAssert(cur_channel<edge.second, AipsError);
   if (need2recalculate) updateDerivativeStatistics();
