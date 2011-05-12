@@ -28,7 +28,7 @@ if sys.platform.startswith('linux') and platform.architecture()[0] == '64bit':
     if moduledir.startswith("/usr/lib/"):
         moduledir = moduledir.replace("lib", "lib64")
 
-EnsureSConsVersion(1,1,0)
+EnsureSConsVersion(1,0,0)
 
 opts = Variables("options.cfg")
 opts.AddVariables(
@@ -187,7 +187,7 @@ if not env.GetOption('clean'):
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
     env = conf.Finish()
 
-env["version"] = "3.0.0"
+env["version"] = "3.1.0"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
@@ -247,7 +247,7 @@ if len(env["makedist"]):
                 '', env.MessageAction)
     st0 = env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
     env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
-    env.QInstall("$stagedir", ["bin/install"])
+    env.QInstall("$stagedir", ["packaging/setup.py"])
     env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
     env.QInstall("$stagedir/asap/data", "share/ipy_user_conf.py")
     if rootdir is not None:
@@ -263,11 +263,12 @@ if len(env["makedist"]):
     arch = env.Archiver(os.path.join("dist",env["stagedir"]),
                         env["stagedir"])
     env.AddPostAction(arch, Delete("$stagedir"))
-if env["makedoc"].lower() != "none":
-    env.SConscript("doc/SConscript")
 
 if env["apps"]:
     env.SConscript("apps/SConscript")
 
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
+
+if env["makedoc"].lower() != "none":
+    env.SConscript("doc/SConscript")
