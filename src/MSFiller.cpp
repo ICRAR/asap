@@ -1050,6 +1050,9 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
   else if ( tmpStr.find( "." ) != String::npos ) {
     sep = "." ;
   }
+  else if ( tmpStr.find( "#" ) != String::npos ) {
+    sep = "#" ;
+  }
   //else if ( obsMode.find( "_" ) != String::npos ) {
   else if ( tmpStr.find( "_" ) != String::npos ) {
     sep = "_" ;
@@ -1105,8 +1108,8 @@ Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool 
         srcType = SrcType::CAL ;
     }
   }
-  else if ( sep == "." ) {
-    // sep == "."
+  else if ( sep == "." || sep == "#" ) {
+    // sep == "." or "#"
     //
     // ALMA & EVLA case (MS via ASDM) before3.1
     //
