@@ -21,7 +21,8 @@ try:
 except ImportError:
     from matplotlib.transforms import blend_xy_sep_transform as blended_transform_factory
 
-if int(matplotlib.__version__.split(".")[1]) < 99:
+mvers = matplotlib.__version__.split(".")
+if int(mvers[0]) == 0 and int(mvers[1]) < 99:
     #print "Warning: matplotlib version < 0.87. This might cause errors. Please upgrade."
     asaplog.push( "matplotlib version < 0.99. This might cause errors. Please upgrade." )
     asaplog.post( 'WARN' )
