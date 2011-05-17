@@ -36,7 +36,7 @@ class asaplotgui(asaplotbase):
         self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
         # Simply instantiating this is enough to get a working toolbar.
         self.figmgr = FigureManagerTkAgg(self.canvas, 1, self.window)
-        self.window.wm_title('ASAP Plotter - Tk')
+        self._set_window_title('ASAP Plotter - Tk')
 
 	self.events = {'button_press':None,
 		       'button_release':None,
@@ -83,3 +83,7 @@ class asaplotgui(asaplotbase):
         Hide the ASAPlot graphics window.
         """
         self.window.wm_withdraw()
+
+    def _set_window_title(self,title):
+        # Set title to main window title bar
+        self.window.wm_title(title)

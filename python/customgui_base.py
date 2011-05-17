@@ -3,6 +3,7 @@ import matplotlib, numpy
 from asap.logging import asaplog, asaplog_post_dec
 from matplotlib.patches import Rectangle
 from asap.parameters import rcParams
+from asap import scantable
 from asap._asap import stmath
 
 ######################################

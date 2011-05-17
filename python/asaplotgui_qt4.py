@@ -33,7 +33,7 @@ class asaplotgui(asaplotbase):
         # Simply instantiating this is enough to get a working toolbar.
         self.figmgr = FigureManagerQTAgg(self.canvas, 1)
         self.window = self.figmgr.window
-        self.window.setWindowTitle('ASAP Plotter - Qt4')
+        self._set_window_title('ASAP Plotter - Qt4')
         # register this plot to matplotlib
         _pylab_helpers.Gcf.set_active(self.figmgr)
 
@@ -99,3 +99,7 @@ class asaplotgui(asaplotbase):
 	Hide the ASAPlot graphics window.
 	"""
         self.window.hide()
+
+    def _set_window_title(self,title):
+        # Set title to main window title bar
+        self.window.setWindowTitle(title)
