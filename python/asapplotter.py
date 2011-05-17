@@ -89,11 +89,16 @@ class asapplotter:
 
     def _newcasabar(self):
         backend=matplotlib.get_backend()
-        if self._visible and backend == "TkAgg":
+        if not self._visible:
+            return None
+        elif backend == "TkAgg":
             from asap.customgui_tkagg import CustomToolbarTkAgg
             return CustomToolbarTkAgg(self)
             #from asap.casatoolbar import CustomFlagToolbarTkAgg
             #return CustomFlagToolbarTkAgg(self)
+        elif backend == "Qt4Agg":
+            from asap.customgui_qt4agg import CustomToolbarQT4Agg
+            return CustomToolbarQT4Agg(self)
         return None
 
     def casabar_exists(self):
