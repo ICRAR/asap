@@ -695,15 +695,18 @@ class CustomFlagToolbarCommon:
         self._thisregion = {'axes': event.inaxes,'xs': event.x,
                             'worldx': [event.xdata,event.xdata]}
         self.plotter._plotter.register('button_press',None)
+        self.xold = event.x
+        self.xdataold = event.xdata
         self.plotter._plotter.register('motion_notify', self._xspan_draw)
         self.plotter._plotter.register('button_press', self._xspan_end)
 
     def _xspan_draw(self,event):
         if event.inaxes == self._thisregion['axes']:
             xnow = event.x
-            self.xdataold = xnow
+            self.xold = xnow
+            self.xdataold = event.xdata
         else:
-            xnow = self.xdataold
+            xnow = self.xold
         try: self.lastspan
         except AttributeError: pass
         else: self._remove_span(self.lastspan)
@@ -746,7 +749,7 @@ class CustomFlagToolbarCommon:
         if not self._selregions.has_key(srow):
             self._selregions[srow] = []
         self._selregions[srow].append(lregion)
-        del lregion, pregion, xdataend
+        del lregion, pregion, xdataend, self.xold, self.xdataold
         sout = "selected region: "+str(self._thisregion['worldx'])+\
               "(@row "+str(self._getrownum(self._thisregion['axes']))+")"
         asaplog.push(sout)
