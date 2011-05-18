@@ -597,12 +597,12 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
 
     def modify_note(self):
         if not self.figmgr.toolbar.mode == '': return
-        self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note':
             self.bNote.config(relief='raised')
             self.mode = 'none'
             self.spec_show()
             return
+        self.figmgr.toolbar.set_message('text: select a position/text')
         self.bNote.config(relief='sunken')
         self.bRegion.config(relief='raised')
         self.bPanel.config(relief='raised')
@@ -612,12 +612,12 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
 
     def select_region(self):
         if not self.figmgr.toolbar.mode == '' or not self.button: return
-        self.figmgr.toolbar.set_message('select regions: click at start and end channels')
         if self.mode == 'region':
             self.bRegion.config(relief='raised')
             self.mode = 'none'
             self.spec_show()
             return
+        self.figmgr.toolbar.set_message('select regions: click at start and end channels')
         self.bNote.config(relief='raised')
         self.bRegion.config(relief='sunken')
         self.bPanel.config(relief='raised')
@@ -628,12 +628,12 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
 
     def select_panel(self):
         if not self.figmgr.toolbar.mode == '' or not self.button: return
-        self.figmgr.toolbar.set_message('select spectra: click on subplots')
         if self.mode == 'panel':
             self.bPanel.config(relief='raised')
             self.mode = 'none'
             self.spec_show()
             return
+        self.figmgr.toolbar.set_message('select spectra: click on subplots')
         self.bNote.config(relief='raised')
         self.bRegion.config(relief='raised')
         self.bPanel.config(relief='sunken')
