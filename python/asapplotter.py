@@ -46,7 +46,7 @@ class asapplotter:
             self._visible = visible
         self._plotter = self._newplotter(**kwargs)
         # additional tool bar
-        self._plotter.figmgr.casabar=self._newcasabar()
+        self._plotter.figmgr.casabar=self._new_custombar()
 
         self._panelling = None
         self._stacking = None
@@ -87,15 +87,13 @@ class asapplotter:
     def _newplotter(self, **kwargs):
         return new_asaplot(self._visible,**kwargs)
 
-    def _newcasabar(self):
+    def _new_custombar(self):
         backend=matplotlib.get_backend()
         if not self._visible:
             return None
         elif backend == "TkAgg":
             from asap.customgui_tkagg import CustomToolbarTkAgg
             return CustomToolbarTkAgg(self)
-            #from asap.casatoolbar import CustomFlagToolbarTkAgg
-            #return CustomFlagToolbarTkAgg(self)
         elif backend == "Qt4Agg":
             from asap.customgui_qt4agg import CustomToolbarQT4Agg
             return CustomToolbarQT4Agg(self)
@@ -127,7 +125,7 @@ class asapplotter:
             if self.casabar_exists():
                 del self._plotter.figmgr.casabar
             self._plotter = self._newplotter()
-            self._plotter.figmgr.casabar=self._newcasabar()
+            self._plotter.figmgr.casabar=self._new_custombar()
         if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
         self._panelrows = []
@@ -1310,7 +1308,7 @@ class asapplotter:
             if self.casabar_exists():
                 del self._plotter.figmgr.casabar
             self._plotter = self._newplotter()
-            self._plotter.figmgr.casabar=self._newcasabar()
+            self._plotter.figmgr.casabar=self._new_custombar()
         self._plotter.hold()
         self._plotter.clear()
         from asap import scantable

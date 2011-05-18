@@ -26,19 +26,26 @@ class flagplotter(asapplotter):
     def __init__(self, visible=None, **kwargs):
         self._scan = None
         asapplotter.__init__(self,visible=visible, **kwargs)
-        self._plotter.window.title('Flag Plotter')
+        self._plotter._set_window_title('Flag Plotter')
         self._panelling = 'r'
         self.set_stacking('scan')
         self._ismodified = False
 
-    def _newcasabar(self):
+    def _new_custombar(self):
         backend = matplotlib.get_backend()
-        if self._visible and backend == "TkAgg":
-            #from asap.casatoolbar import CustomToolbarTkAgg
-            #return CustomToolbarTkAgg(self)
+        # Flag plotter relys on supported GUI backends
+        if not self._visible:
+            asaplog.push("GUI backend is not available")
+            asaplog.post("ERROR")
+        elif backend == "TkAgg":
             from asap.customgui_tkagg import CustomFlagToolbarTkAgg
             return CustomFlagToolbarTkAgg(self)
-        return None
+        elif backend == "Qt4Agg":
+            from asap.customgui_qt4agg import CustomFlagToolbarQT4Agg
+            return CustomFlagToolbarQT4Agg(self)
+        else:
+            asaplog.push("Unsupported backend for interactive flagging. Use either TkAgg or PyQt4Agg")
+            asaplog.post("ERROR")
 
     @asaplog_post_dec
     def _invalid_func(self, name):
