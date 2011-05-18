@@ -183,6 +183,14 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
         self._p.register('button_press',None)
         self._p.register('button_release',None)
 
+    def _draw_span(self,axes,x0,x1,**kwargs):
+        height = self._p.figure.bbox.height
+        y0 = height - axes.bbox.y0
+        y1 = height - axes.bbox.y1
+        return self._p.canvas._tkcanvas.create_rectangle(x0,y0,x1,y1,**kwargs)
+
+    def _remove_span(self,span):
+        self._p.canvas._tkcanvas.delete(span)
 
 
 

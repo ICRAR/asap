@@ -5,6 +5,7 @@ from matplotlib.patches import Rectangle
 from asap.parameters import rcParams
 from asap import scantable
 from asap._asap import stmath
+from asap.utils import _n_bools, mask_not, mask_or
 
 ######################################
 ##    Add CASA custom toolbar       ##
@@ -112,39 +113,7 @@ class CustomToolbarCommon:
         theplot.register('button_release',discon)
 
 
-    ### Calculate statistics of the selected area.
-    def _single_mask(self,event):
-        # Do not fire event when in zooming/panning mode
-        if not self.figmgr.toolbar.mode == '':
-            return
-        # When selected point is out of panels
-        if event.inaxes == None:
-            return
-        if event.button == 1:
-            baseinv=True
-        elif event.button == 3:
-            baseinv=False
-        else:
-            return
-
-        def _calc_stats():
-            msk=mymask.get_mask()
-            statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
-            for stat in statstr:
-                mymask.scan.stats(stat=stat,mask=msk)
-
-        # Interactive mask definition
-        from asap.interactivemask import interactivemask
-        mymask = interactivemask(plotter=self.plotter,scan=self.plotter._data)
-        # Create initial mask
-        mymask.set_basemask(invert=baseinv)
-        # Inherit event
-        mymask.set_startevent(event)
-        # Set callback func
-        mymask.set_callback(_calc_stats)
-        # Selected mask
-        mymask.select_mask(once=True,showmask=False)
-
+    ### Notation
     def _mod_note(self,event):
         # Do not fire event when in zooming/panning mode
         if not self.figmgr.toolbar.mode == '':
@@ -166,6 +135,169 @@ class CustomToolbarCommon:
                     return True
         #print "No text picked"
         return False
+
+
+    ### Purely plotter based statistics calculation of a selected area.
+    ### No access to scantable
+    def _single_mask(self,event):
+        # Do not fire event when in zooming/panning mode
+        if not self.figmgr.toolbar.mode == '':
+            return
+        # When selected point is out of panels
+        if event.inaxes == None:
+            return
+        if event.button == 1:
+            exclude=False
+        elif event.button == 3:
+            exclude=True
+        else:
+            return
+
+        self._thisregion = {'axes': event.inaxes,'xs': event.x,
+                            'worldx': [event.xdata,event.xdata],
+                            'invert': exclude}
+        self.xold = event.x
+        self.xdataold = event.xdata
+
+        self.plotter._plotter.register('button_press',None)
+        self.plotter._plotter.register('motion_notify', self._xspan_draw)
+        self.plotter._plotter.register('button_press', self._xspan_end)
+
+    def _xspan_draw(self,event):
+        if event.inaxes == self._thisregion['axes']:
+            xnow = event.x
+            self.xold = xnow
+            self.xdataold = event.xdata
+        else:
+            xnow = self.xold
+        try: self.lastspan
+        except AttributeError: pass
+        else:
+            if self.lastspan: self._remove_span(self.lastspan)
+
+        self.lastspan = self._draw_span(self._thisregion['axes'],self._thisregion['xs'],xnow,fill="")
+        del xnow
+
+    def _draw_span(self,axes,x0,x1,**kwargs):
+        pass
+
+    def _remove_span(self,span):
+        pass
+
+    @asaplog_post_dec
+    def _xspan_end(self,event):
+        if not self.figmgr.toolbar.mode == '':
+            return
+        #if event.button != 1:
+        #    return
+
+        try: self.lastspan
+        except AttributeError: pass
+        else:
+            self._remove_span(self.lastspan)
+            del self.lastspan
+        if event.inaxes == self._thisregion['axes']:
+            xdataend = event.xdata
+        else:
+            xdataend = self.xdataold
+
+        self._thisregion['worldx'][1] = xdataend
+        # print statistics of spectra in subplot
+        self._subplot_stats(self._thisregion)
+        
+        # release event
+        self.plotter._plotter.register('button_press',None)
+        self.plotter._plotter.register('motion_notify',None)
+        # Clear up region selection
+        self._thisregion = None
+        self.xdataold = None
+        self.xold = None
+        # finally recover region selection event
+        self.plotter._plotter.register('button_press',self._single_mask)
+
+    def _subplot_stats(self,selection):
+        #from numpy import ma, ndarray
+        import numpy
+        statstr = ['max', 'min', 'median', 'mean', 'sum', 'std'] #'rms']
+        panelstr = selection['axes'].title.get_text()
+        ssep = "-"*70
+        asaplog.push(ssep)
+        asaplog.post()
+        for line in selection['axes'].lines:
+            label = panelstr + ", "+line.get_label()
+            x = line.get_xdata()
+            selmsk = self._create_flag_from_array(x,selection['worldx'],selection['invert'])
+            y = line.get_ydata()
+            if isinstance(y,numpy.ma.masked_array):
+                ydat = y.data
+                basemsk = y.mask
+            else:
+                ydat = y
+                basemsk = False
+            if not isinstance(basemsk, bool):
+                # should be ndarray
+                newmsk = mask_or(selmsk,basemsk)
+            elif basemsk:
+                # the whole original spectrum is flagged
+                newmsk = basemsk
+            else:
+                # no channel was flagged originally
+                newmsk = selmsk
+            mdata = numpy.ma.masked_array(ydat,mask=newmsk)
+            del x, y, ydat, basemsk, selmsk, newmsk
+            statval = {}
+            for stat in statstr:
+                statval[stat] = getattr(numpy,stat)(mdata)
+            self._print_stats(statval,statstr=statstr,label=label,\
+                              mask=selection['worldx'],\
+                              unmask=selection['invert'])
+            asaplog.push(ssep)
+            asaplog.post()
+            del mdata, statval
+        del ssep, panelstr
+
+    def _create_flag_from_array(self,x,masklist,invert):
+        # Return True for channels which should be EXCLUDED (flag)
+        if len(masklist) <= 1:
+            asaplog.push()
+            asaplog.post("masklist should be a list of 2 elements")
+            asaplog.push("ERROR")
+        n = len(x)
+        # Base mask: flag out all channels
+        mask = _n_bools(n, True)
+        minval = min(masklist[0:2])
+        maxval = max(masklist[0:2])
+        for i in range(n):
+            if minval <= x[i] <= maxval:
+                mask[i] = False
+        if invert:
+            mask = mask_not(mask)
+        return mask
+
+    @asaplog_post_dec
+    def _print_stats(self,stats,statstr=None,label="",mask=None,unmask=False):
+        if not isinstance(stats,dict) or len(stats) == 0:
+            asaplog.post()
+            asaplog.push("Invalid statistic value")
+            asaplog.post("ERROR")
+        maskstr = "Not available"
+        if mask:
+            masktype = "mask"
+            maskstr = str(mask)
+            if unmask: masktype = "unmask"
+
+        sout = label + ", " + masktype + " = " + maskstr + "\n"
+        statvals = []
+        if not len(statstr):
+            statstr = stats.keys()
+        for key in statstr:
+            sout += key.ljust(10)
+            statvals.append(stats.pop(key))
+        sout += "\n"
+        sout += ("%f "*len(statstr) % tuple(statvals))
+        asaplog.push(sout)
+        del sout, maskstr, masktype, statvals, key, stats, statstr, mask, label
+
 
     ### Page chages
     ### go to the previous page
@@ -254,7 +386,6 @@ class CustomToolbarCommon:
             self.plotter._startrow = self.plotter._panelrows[start_ipanel]
         del lastpanel,currpnum,prevpnum,start_ipanel
 
-    ### refresh the page counter
     ### refresh the page counter
     def set_pagecounter(self,page):
         nwidth = int(numpy.ceil(numpy.log10(max(page,1))))+1
@@ -709,7 +840,8 @@ class CustomFlagToolbarCommon:
             xnow = self.xold
         try: self.lastspan
         except AttributeError: pass
-        else: self._remove_span(self.lastspan)
+        else:
+            if self.lastspan: self._remove_span(self.lastspan)
 
         #self.lastspan = self._draw_span(self._thisregion['axes'],self._thisregion['xs'],xnow,fill="#555555",stipple="gray50")
         self.lastspan = self._draw_span(self._thisregion['axes'],self._thisregion['xs'],xnow,fill="")
@@ -736,7 +868,7 @@ class CustomFlagToolbarCommon:
         if event.inaxes == self._thisregion['axes']:
             xdataend = event.xdata
         else:
-            xdataend=self.xdataold
+            xdataend = self.xdataold
 
         self._thisregion['worldx'][1] = xdataend
         lregion = self._thisregion['worldx']
@@ -749,7 +881,7 @@ class CustomFlagToolbarCommon:
         if not self._selregions.has_key(srow):
             self._selregions[srow] = []
         self._selregions[srow].append(lregion)
-        del lregion, pregion, xdataend, self.xold, self.xdataold
+        del lregion, pregion, xdataend
         sout = "selected region: "+str(self._thisregion['worldx'])+\
               "(@row "+str(self._getrownum(self._thisregion['axes']))+")"
         asaplog.push(sout)
@@ -760,6 +892,7 @@ class CustomFlagToolbarCommon:
         # Clear up region selection
         self._thisregion = None
         self.xdataold = None
+        self.xold = None
         # finally recover region selection event
         self.plotter._plotter.register('button_press',self._add_region)
 

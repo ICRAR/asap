@@ -34,13 +34,13 @@ class CustomToolbarQT4Agg(CustomToolbarCommon,  qt.QtGui.QToolBar):
         self.bNote = self._NewButton(master=self,
                                      text='notation',
                                      command=self.modify_note,
-                                     balloon="Add note")
+                                     balloon="add note on plot")
         self.bNote.setCheckable(True)
 
         self.bStat = self._NewButton(master=self,
                                      text='statistics',
                                      command=self.stat_cal,
-                                     balloon="Calculate statistics")
+                                     balloon="calculate statistics")
         self.bStat.setCheckable(True)
 
         # page change oparations
@@ -59,11 +59,13 @@ class CustomToolbarQT4Agg(CustomToolbarCommon,  qt.QtGui.QToolBar):
         self.bNext = self._NewButton(master=frPage,
                                      text=' + ',
                                      command=self.next_page,
-                                     addit=False)
+                                     addit=False,
+                                     balloon="plot next page")
         loPage.addWidget(self.bNext)
         self.bPrev = self._NewButton(master=frPage,
                                      text=' - ',
-                                     command=self.prev_page,addit=False)
+                                     command=self.prev_page,addit=False,
+                                     balloon="plot previous page")
         loPage.addWidget(self.bPrev)
         frPage.setLayout(loPage)
         self.addWidget(frPage)
@@ -105,13 +107,14 @@ class CustomToolbarQT4Agg(CustomToolbarCommon,  qt.QtGui.QToolBar):
         if self.mode == 'stat':
             # go back to spec mode
             self.bStat.setChecked(False)
-            self.bStat.setToolTip("Calculate statistics")
+            self.bStat.setToolTip("calculate statistics")
             self.spec_show()
             return
         self.figmgr.toolbar.set_message('statistics: select a region')
         self.bStat.setChecked(True)
         self.bStat.setToolTip("Back to spec value mode")
         self.bNote.setChecked(False)
+        self.bNote.setToolTip("add note on plot")
         self.mode = 'stat'
         self.notewin.close_widgets()
         self.__disconnect_event()
@@ -125,11 +128,12 @@ class CustomToolbarQT4Agg(CustomToolbarCommon,  qt.QtGui.QToolBar):
         self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note':
             self.bNote.setChecked(False)
-            self.bNote.setToolTip("Add note")
+            self.bNote.setToolTip("add note on plot")
             self.mode = 'none'
             self.spec_show()
             return
         self.bStat.setChecked(False)
+        self.bStat.setToolTip("calculate statistics")
         self.bNote.setChecked(True)
         self.bNote.setToolTip("Back to spec value mode")
         self.mode = 'note'
@@ -186,6 +190,19 @@ class CustomToolbarQT4Agg(CustomToolbarCommon,  qt.QtGui.QToolBar):
         self._p.register('button_press',None)
         self._p.register('button_release',None)
 
+    def _draw_span(self,axes,x0,x1,**kwargs):
+        height = self._p.figure.bbox.height
+        y1 = height - axes.bbox.y1
+        h = axes.bbox.height
+        w = abs(x1 - x0)
+        rect = [ int(val) for val in min(x0,x1), y1, w, h ]
+        self._p.canvas.drawRectangle( rect )
+        # nothing is returned by drawRectangle
+        return None
+
+    def _remove_span(self,span):
+        # Nothing to do with remove. just refresh (call only for)
+        self.canvas.draw()
 
 
 
@@ -512,3 +529,346 @@ class NotationWindowQT4Agg(NotationWindowCommon):
 ###########################################
 ##    Add CASA custom Flag toolbar       ##
 ###########################################
+# class CustomFlagToolbarQT4Agg(CustomFlagToolbarCommon,  qt.QtGui.QToolBar):
+#     def __init__(self,parent):
+#         from asap.asapplotter import asapplotter
+#         if not isinstance(parent,asapplotter):
+#             return False
+#         if not parent._plotter:
+#             return False
+#         self._p = parent._plotter
+#         self.figmgr = self._p.figmgr
+#         self.canvas = self.figmgr.canvas
+#         self.mode = ''
+#         self.button = True
+#         self.pagecount = None
+#         CustomFlagToolbarCommon.__init__(self,parent)
+#         self.notewin=NotationWindowQT4Agg(master=self.canvas)
+#         self._add_custom_toolbar()
+
+#     def _add_custom_toolbar(self):
+#         qt.QtGui.QToolBar.__init__(self,parent=self.figmgr.window)
+#         self.figmgr.window.addToolBar(qt.QtCore.Qt.BottomToolBarArea,self)
+# #         Tk.Frame.__init__(self,master=self.figmgr.window)
+#         self.bRegion = self._NewButton(master=self,
+#                                        text='region',
+#                                        command=self.select_region,
+#                                        balloon="select channel regions")
+#         self.bRegion.setCheckable(True)
+        
+#         self.bPanel = self._NewButton(master=self,
+#                                       text='panel',
+#                                       command=self.select_panel,
+#                                       balloon="select subplots")
+#         self.bPanel.setCheckable(True)
+
+#         self.bClear = self._NewButton(master=self,
+#                                       text='clear',
+#                                       command=self.cancel_select,
+#                                       balloon="clear selections")
+
+#         self.bFlag = self._NewButton(master=self,
+#                                      text='flag',
+#                                      command=self.flag,
+#                                      balloon="flag selections")
+
+#         self.bUnflag = self._NewButton(master=self,
+#                                        text='unflag',
+#                                        command=self.unflag,
+#                                        balloon="unflag selections")
+
+#         self.bStat = self._NewButton(master=self,
+#                                      text='statistics',
+#                                      command=self.stat_cal,
+#                                      balloon="print statistics of selections")
+
+#         self.bNote = self._NewButton(master=self,
+#                                      text='notation',
+#                                      command=self.modify_note,
+#                                      balloon="add note on plot")
+#         self.bNote.setCheckable(True)
+
+#         # page change oparations
+#         frPage = qt.QtGui.QWidget(parent=self,flags=qt.QtCore.Qt.Tool)
+#         loPage = qt.QtGui.QHBoxLayout(self)
+#         loPage.addStretch(1)
+#         self.lPagetitle = qt.QtGui.QLabel('Page:',parent=frPage)
+#         self.lPagetitle.setMargin(5)
+#         loPage.addWidget(self.lPagetitle)
+#         self.pagecount = qt.QtGui.QLabel(parent=frPage)
+#         self.pagecount.setStyleSheet("background-color: white")
+#         self.pagecount.setMargin(3)
+#         self.pagecount.setText('   1')
+#         loPage.addWidget(self.pagecount)
+# #         frPage = Tk.Frame(master=self,borderwidth=2,relief=Tk.GROOVE)
+# #         frPage.pack(ipadx=2,padx=10,side=Tk.RIGHT)
+# #         self.lPagetitle = Tk.Label(master=frPage,text='Page:',padx=5)
+# #                                    #width=8,anchor=Tk.E,padx=5)
+# #         self.lPagetitle.pack(side=Tk.LEFT)
+# #         self.pagecount = Tk.StringVar(master=frPage)
+# #         self.lPagecount = Tk.Label(master=frPage,
+# #                                    textvariable=self.pagecount,
+# #                                    padx=5,bg='white')
+# #         self.lPagecount.pack(side=Tk.LEFT,padx=3)
+
+#         self.bNext = self._NewButton(master=frPage,
+#                                      text='+',
+#                                      command=self.next_page,
+#                                      addit=False,
+#                                      balloon="plot next page")
+#         loPage.addWidget(self.bNext)
+#         self.bPrev = self._NewButton(master=frPage,
+#                                      text='-',
+#                                      command=self.prev_page,
+#                                      addit=False,
+#                                      balloon="plot previous page")
+#         loPage.addWidget(self.bPrev)
+#         frPage.setLayout(loPage)
+#         self.addWidget(frPage)
+
+# #         self.bNext=self._NewButton(master=frPage,
+# #                                    text=' + ',
+# #                                    #imagename="hand.ppm",
+# #                                    command=self.next_page)
+# #         self.bPrev=self._NewButton(master=frPage,
+# #                                    text=' - ',
+# #                                    command=self.prev_page)
+
+#         self.bQuit = self._NewButton(master=self,
+#                                      text='Quit',
+#                                      #imagename="stock_close.ppm",
+#                                      command=self.quit,
+#                                      balloon="Close window")
+
+# #         if os.uname()[0] != 'Darwin':
+# #             self.bPrev.config(padx=5)
+# #             self.bNext.config(padx=5)
+
+#         self.pagecount.setText(' '*4)
+# #         self.pack(side=Tk.BOTTOM,fill=Tk.BOTH)
+# #         self.pagecount.set(' '*4)
+
+#         self.disable_button()
+#         return
+
+#     def _NewButton(self, master, text, command, balloon=None,addit=True,imagename=None):
+# #     def _NewButton(self, master, text, command, side=Tk.LEFT,imagename=None):
+#         img = None
+#         if imagename:
+#             imagename = os.path.join(matplotlib.rcParams['datapath'], 'images', imagename)
+# #             img = Tk.PhotoImage(master=master, file=imagename)
+
+#         b = qt.QtGui.QPushButton(text,parent=master)
+#         if balloon: b.setToolTip(balloon)
+#         if addit: master.addWidget(b)
+#         master.connect(b,qt.QtCore.SIGNAL('clicked()'),command)
+# #         if os.uname()[0] == 'Darwin':
+# #             b = Tk.Button(master=master, text=text, image=img,
+# #                           command=command)
+# #             if img: b.image = img
+# #         else:
+# #             b = Tk.Button(master=master, text=text, image=img, padx=2, pady=2,
+# #                           command=command)
+# #             if img: b.image = img
+# #         b.pack(side=side)
+#         return b
+
+#     def show_pagenum(self,pagenum,formatstr):
+#         self.pagecount.setText(formatstr % (pagenum))
+# #         self.pagecount.set(formatstr % (pagenum))
+
+#     def spec_show(self):
+#         if not self.figmgr.toolbar.mode == '' or not self.button: return
+#         self.figmgr.toolbar.set_message('spec value: drag on a spec')
+#         if self.mode == 'spec': return
+#         self.mode = 'spec'
+#         self.notewin.close_widgets()
+#         self.__disconnect_event()
+#         self._p.register('button_press',self._select_spectrum)
+
+#     def modify_note(self):
+#         if not self.figmgr.toolbar.mode == '':
+#             # Get back button status BEFORE clicked
+#             self.bNote.setChecked(not self.bNote.isChecked())
+#             return
+#         self.figmgr.toolbar.set_message('text: select a position/text')
+#         if self.mode == 'note':
+#             self.bNote.setChecked(False)
+#             self.bNote.setToolTip("add note on plot")
+# #             self.bNote.config(relief='raised')
+#             self.mode = 'none'
+#             self.spec_show()
+#             return
+#         self.bNote.setChecked(True)
+#         self.bNote.setToolTip("Back to spec value mode")
+#         self.bRegion.setChecked(False)
+#         self.bRegion.setToolTip("select channel regions")
+#         self.bPanel.setChecked(False)
+#         self.bPanel.setToolTip("select subplots")
+# #         self.bNote.config(relief='sunken')
+# #         self.bRegion.config(relief='raised')
+# #         self.bPanel.config(relief='raised')
+#         self.mode = 'note'
+#         self.__disconnect_event()
+#         self._p.register('button_press',self._mod_note)
+
+#     def select_region(self):
+#         if not self.figmgr.toolbar.mode == '' or not self.button:
+#             # Get back button status BEFORE clicked
+#             self.bRegion.setChecked(not self.bRegion.isChecked())
+#         self.figmgr.toolbar.set_message('select regions: click at start and end channels')
+#         if self.mode == 'region':
+#             self.bRegion.setChecked(False)
+#             self.bRegion.setToolTip("select channel regions")
+# #             self.bRegion.config(relief='raised')
+#             self.mode = 'none'
+#             self.spec_show()
+#             return
+#         self.bNote.setChecked(False)
+#         self.bNote.setToolTip("add note on plot")
+#         self.bRegion.setChecked(True)
+#         self.bRegion.setToolTip("Back to spec value mode")
+#         self.bPanel.setChecked(False)
+#         self.bPanel.setToolTip("select subplots")
+# #         self.bNote.config(relief='raised')
+# #         self.bRegion.config(relief='sunken')
+# #         self.bPanel.config(relief='raised')
+#         self.mode = 'region'
+#         self.notewin.close_widgets()
+#         self.__disconnect_event()
+#         self._p.register('button_press',self._add_region)
+
+#     def select_panel(self):
+#         if not self.figmgr.toolbar.mode == '' or not self.button:
+#             # Get back button status BEFORE clicked
+#             self.bPanel.setChecked(not self.bPanel.isChecked())
+#             return
+#         self.figmgr.toolbar.set_message('select spectra: click on subplots')
+#         if self.mode == 'panel':
+#             self.bPanel.setChecked(False)
+#             self.bPanel.setToolTip("select subplots")
+# #             self.bPanel.config(relief='raised')
+#             self.mode = 'none'
+#             self.spec_show()
+#             return
+#         self.bNote.setChecked(False)
+#         self.bNote.setToolTip("add note on plot")
+#         self.bRegion.setChecked(False)
+#         self.bRegion.setToolTip("select channel regions")
+#         self.bPanel.setChecked(True)
+#         self.bPanel.setToolTip("Back to spec value mode")
+# #         self.bNote.config(relief='raised')
+# #         self.bRegion.config(relief='raised')
+# #         self.bPanel.config(relief='sunken')
+#         self.mode = 'panel'
+#         self.notewin.close_widgets()
+#         self.__disconnect_event()
+#         self._p.register('button_press',self._add_panel)
+
+#     def quit(self):
+#         self.__disconnect_event()
+#         self.disable_button()
+#         self._p.unmap()
+# #         self.figmgr.window.wm_withdraw()
+
+#     def enable_button(self):
+#         if self.button: return
+#         self.bRegion.setEnabled(True)
+#         self.bPanel.setEnabled(True)
+#         self.bClear.setEnabled(True)
+#         self.bFlag.setEnabled(True)
+#         self.bUnflag.setEnabled(True)
+#         self.bStat.setEnabled(True)
+# #         self.bRegion.config(state=Tk.NORMAL)
+# #         self.bPanel.config(state=Tk.NORMAL)
+# #         self.bClear.config(state=Tk.NORMAL)
+# #         self.bFlag.config(state=Tk.NORMAL)
+# #         self.bUnflag.config(state=Tk.NORMAL)
+# #         self.bStat.config(state=Tk.NORMAL)
+#         self.button = True
+#         self.spec_show()
+
+#     def disable_button(self):
+#         ## disable buttons which don't work for plottp
+#         if not self.button: return
+#         self.bRegion.setChecked(False)
+#         self.bRegion.setToolTip("select channel regions")
+#         self.bPanel.setChecked(False)
+#         self.bPanel.setToolTip("select subplots")
+# #         self.bRegion.config(relief='raised')
+# #         self.bPanel.config(relief='raised')
+#         self.bRegion.setDisabled(True)
+#         self.bPanel.setDisabled(True)
+#         self.bClear.setDisabled(True)
+#         self.bFlag.setDisabled(True)
+#         self.bUnflag.setDisabled(True)
+#         self.bStat.setDisabled(True)
+#         self.bNext.setDisabled(True)
+#         self.bPrev.setDisabled(True)
+# #         self.bRegion.config(state=Tk.DISABLED)
+# #         self.bPanel.config(state=Tk.DISABLED)
+# #         self.bClear.config(state=Tk.DISABLED)
+# #         self.bFlag.config(state=Tk.DISABLED)
+# #         self.bUnflag.config(state=Tk.DISABLED)
+# #         self.bStat.config(state=Tk.DISABLED)
+# #         self.bNext.config(state=Tk.DISABLED)
+# #         self.bPrev.config(state=Tk.DISABLED)
+#         self.button = False
+#         self.mode = ''
+#         self.notewin.close_widgets()
+#         self.__disconnect_event()
+
+#     def enable_next(self):
+#         self.bNext.setEnabled(True)
+# #         self.bNext.config(state=Tk.NORMAL)
+
+#     def disable_next(self):
+#         self.bNext.setDisabled(True)
+# #         self.bNext.config(state=Tk.DISABLED)
+
+#     def enable_prev(self):
+#         self.bPrev.setEnabled(True)
+# #         self.bPrev.config(state=Tk.NORMAL)
+
+#     def disable_prev(self):
+#         self.bPrev.setDisabled(True)
+# #         self.bPrev.config(state=Tk.DISABLED)
+
+#     # pause buttons for slow operations
+#     def _pause_buttons(self,operation="end",msg=""):
+#         buttons = ["bRegion","bPanel","bClear","bFlag","bUnflag","bStat",
+#                    "bNote","bQuit"]
+#         if operation == "start":
+#             enable = False
+# #             state=Tk.DISABLED
+#         else:
+#             enable = True
+# #             state=Tk.NORMAL
+#         for btn in buttons:
+#             getattr(self,btn).setEnabled(enable)
+# #             getattr(self,btn).config(state=state)
+#         self.figmgr.toolbar.set_message(msg)
+
+#     def delete_bar(self):
+#         self.__disconnect_event()
+#         self.destroy()
+
+#     def __disconnect_event(self):
+#         self._p.register('button_press',None)
+#         self._p.register('button_release',None)
+
+#     def _draw_span(self,axes,x0,x1,**kwargs):
+#         height = self._p.figure.bbox.height
+#         y1 = height - axes.bbox.y1
+#         h = axes.bbox.height
+#         w = abs(x1 - x0)
+#         rect = [ int(val) for val in min(x0,x1), y1, w, h ]
+#         self._p.canvas.drawRectangle( rect )
+#         # nothing is returned by drawRectangle
+#         return None
+# #         return self._p.canvas._tkcanvas.create_rectangle(x0,y0,x1,y1,**kwargs)
+
+#     def _remove_span(self,span):
+#         # Nothing to do with remove
+#         pass
+# #         self._p.canvas._tkcanvas.delete(span)
