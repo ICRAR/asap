@@ -115,6 +115,23 @@ class flagplotter(asapplotter):
         asapplotter.plot(self,scan)
     plot.__doc__ = asapplotter.plot.__doc__
 
+    @asaplog_post_dec
+    def _plot(self, scan):
+        asapplotter._plot(self,scan)
+        # rescale x-range of subplots 5% margins
+        ganged = (self._plotter.axes._sharex != None)
+        if ganged:
+            np = 1
+        else:
+            np = len(self._plotter.subplots)
+        for ip in xrange(np):
+            ax = self._plotter.subplots[ip]['axes']
+            lim0 = ax.get_xlim()
+            offset = (lim0[1]-lim0[0])*0.05
+            ax.set_xlim(lim0[0]-offset,lim0[1]+offset)
+            del ax, lim0, offset
+    _plot.__doc__ = asapplotter._plot.__doc__
+
     def _is_new_scan(self,scan):
         if isinstance(scan, scantable):
             if self._data is not None:
