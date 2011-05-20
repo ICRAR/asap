@@ -12,19 +12,21 @@
 #ifndef ASAPSTMATH_H
 #define ASAPSTMATH_H
 
-#include <string>
 #include <map>
+#include <string>
 
 #include <casa/aips.h>
-#include <casa/Utilities/CountedPtr.h>
-#include <casa/BasicSL/String.h>
 #include <casa/Arrays/Vector.h>
+#include <casa/BasicSL/String.h>
+#include <casa/Utilities/CountedPtr.h>
+
+#include <scimath/Mathematics/FFTServer.h>
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
+#include "Logger.h"
 #include "Scantable.h"
 #include "STDefs.h"
 #include "STPol.h"
-#include "Logger.h"
 
 namespace asap {
 
@@ -345,6 +347,11 @@ public:
     lagFlag( const casa::CountedPtr<Scantable>& in, double start,
              double end, const std::string& mode="frequency");
 
+  std::vector<float>
+    fft( const casa::CountedPtr<Scantable>& in,
+	 const std::vector<int>& whichrow, 
+	 bool getRealImag=false );
+
   // test for average spectra with different channel/resolution
   casa::CountedPtr<Scantable>
     new_average( const std::vector<casa::CountedPtr<Scantable> >& in,
@@ -425,6 +432,13 @@ private:
                                         vector< casa::CountedPtr<Scantable> >& cold,
                                         int index ) ;
   double getMJD( string strtime ) ;
+  void doFFT( std::vector<float>& out, 
+	      casa::FFTServer< casa::Float, casa::Complex >& ffts, 
+	      bool getRealImag, 
+	      casa::Vector<casa::Float>& spec, 
+	      casa::Vector<casa::uChar>& flag ) ;
+  void doZeroOrderInterpolation( casa::Vector<casa::Float>& spec, 
+				 casa::Vector<casa::uChar>& flag) ;
 
   bool insitu_;
 };

@@ -1082,7 +1082,7 @@ class scantable(Scantable):
     def lag_flag(self, start, end, unit="MHz", insitu=None):
         """\
         Flag the data in 'lag' space by providing a frequency to remove.
-        Flagged data in the scantable gets interpolated over the region.
+        Flagged data in the scantable get interpolated over the region.
         No taper is applied.
 
         Parameters:
@@ -1117,6 +1117,72 @@ class scantable(Scantable):
             self._assign(s)
         else:
             return s
+
+    @asaplog_post_dec
+    def fft(self, getrealimag=False, rowno=[]):
+        """\
+        Apply FFT to the spectra.
+        Flagged data in the scantable get interpolated over the region.
+
+        Parameters:
+        
+            getrealimag:    If True, returns the real and imaginary part 
+                            values of the complex results.
+                            If False (the default), returns the amplitude
+                            (absolute value) normalised with Ndata/2 and
+                            phase (argument, in unit of radian).
+
+            rowno:          The row number(s) to be processed. int, list 
+                            and tuple are accepted. By default ([]), FFT 
+                            is applied to the whole data.
+
+        Returns:
+
+            A dictionary containing two keys, i.e., 'real' and 'imag' for
+            getrealimag = True, or 'ampl' and 'phase' for getrealimag = False,
+            respectively.
+            The value for each key is a list of lists containing the FFT
+            results from each spectrum.
+            
+        """
+        if getrealimag:
+            res = {"real":[], "imag":[]}  # return real and imaginary values
+        else:
+            res = {"ampl":[], "phase":[]} # return amplitude and phase(argument)
+        
+        if isinstance(rowno, int):
+            rowno = [rowno]
+        elif not (isinstance(rowno, list) or isinstance(rowno, tuple)):
+            raise TypeError("The row number(s) should be int, list or tuple.")
+        
+        nrow = len(rowno)
+        if nrow == 0: nrow = self.nrow()  # by default, calculate for all rows. 
+        
+        fspec = self._math._fft(self, rowno, getrealimag)
+        nspec = len(fspec)/nrow
+        
+        i = 0
+        while (i < nrow):
+            v1 = []
+            v2 = []
+            
+            j = 0
+            while (j < nspec):
+                k = i*nspec + j
+                v1.append(fspec[k])
+                v2.append(fspec[k+1])
+                j += 2
+            
+            if getrealimag:
+                res["real"].append(v1)
+                res["imag"].append(v2)
+            else:
+                res["ampl"].append(v1)
+                res["phase"].append(v2)
+            
+            i += 1
+
+        return res
 
     @asaplog_post_dec
     def create_mask(self, *args, **kwargs):

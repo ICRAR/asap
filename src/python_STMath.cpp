@@ -76,6 +76,7 @@ namespace asap {
         .def("_freq_align", &STMathWrapper::frequencyAlign)
         .def("_mx_extract", &STMathWrapper::mxExtract)
         .def("_lag_flag", &STMathWrapper::lagFlag)
+        .def("_fft", &STMathWrapper::fft)
 	// testing average spectra with different channel/resolution
         .def("_new_average", &STMathWrapper::new_average)
         // cwcal

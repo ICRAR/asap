@@ -10,52 +10,51 @@
 //
 //
 
+#include <sstream>
+
 #include <casa/iomanip.h>
-#include <casa/Exceptions/Error.h>
-#include <casa/Containers/Block.h>
-#include <casa/BasicSL/String.h>
 #include <casa/Arrays/MaskArrLogi.h>
 #include <casa/Arrays/MaskArrMath.h>
 #include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/Slice.h>
 #include <casa/Arrays/Slicer.h>
+#include <casa/BasicSL/String.h>
+#include <casa/Containers/Block.h>
 #include <casa/Containers/RecordField.h>
-#include <tables/Tables/TableRow.h>
-#include <tables/Tables/TableVector.h>
-#include <tables/Tables/TabVecMath.h>
-#include <tables/Tables/ExprNode.h>
-#include <tables/Tables/TableRecord.h>
-#include <tables/Tables/TableParse.h>
-#include <tables/Tables/ReadAsciiTable.h>
-#include <tables/Tables/TableIter.h>
-#include <tables/Tables/TableCopy.h>
-#include <scimath/Mathematics/FFTServer.h>
+#include <casa/Exceptions/Error.h>
+#include <casa/Logging/LogIO.h>
 
-#include <lattices/Lattices/LatticeUtilities.h>
-
-#include <coordinates/Coordinates/SpectralCoordinate.h>
 #include <coordinates/Coordinates/CoordinateSystem.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
 #include <coordinates/Coordinates/FrequencyAligner.h>
+#include <coordinates/Coordinates/SpectralCoordinate.h>
 
-#include <scimath/Mathematics/VectorKernel.h>
-#include <scimath/Mathematics/Convolver.h>
+#include <lattices/Lattices/LatticeUtilities.h>
+
 #include <scimath/Functionals/Polynomial.h>
+#include <scimath/Mathematics/Convolver.h>
+#include <scimath/Mathematics/VectorKernel.h>
+
+#include <tables/Tables/ExprNode.h>
+#include <tables/Tables/ReadAsciiTable.h>
+#include <tables/Tables/TableCopy.h>
+#include <tables/Tables/TableIter.h>
+#include <tables/Tables/TableParse.h>
+#include <tables/Tables/TableRecord.h>
+#include <tables/Tables/TableRow.h>
+#include <tables/Tables/TableVector.h>
+#include <tables/Tables/TabVecMath.h>
 
 #include <atnf/PKSIO/SrcType.h>
-
-#include <casa/Logging/LogIO.h>
-#include <sstream>
 
 #include "MathUtils.h"
 #include "RowAccumulator.h"
 #include "STAttr.h"
+#include "STMath.h"
 #include "STSelector.h"
 
-#include "STMath.h"
 using namespace casa;
-
 using namespace asap;
 
 // tolerance for direction comparison (rad)
@@ -2820,15 +2819,112 @@ CountedPtr< Scantable >
   return out;
 }
 
-CountedPtr< Scantable >
-  asap::STMath::lagFlag( const CountedPtr< Scantable > & in,
-                         double start, double end,
-                         const std::string& mode)
+std::vector<float>
+  asap::STMath::fft( const casa::CountedPtr< Scantable > & in, 
+		     const std::vector<int>& whichrow, 
+		     bool getRealImag )
 {
-  CountedPtr< Scantable > out = getScantable(in, false);
+  std::vector<float> res;
+  Table tab = in->table();
+  ArrayColumn<Float> specCol(tab, "SPECTRA");
+  ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+  FFTServer<Float,Complex> ffts;
+
+  if (whichrow.size() < 1) {          // for all rows (by default)
+    int nrow = int(tab.nrow());
+    for (int i = 0; i < nrow; ++i) {
+      Vector<Float> spec = specCol(i);
+      Vector<uChar> flag = flagCol(i);
+      doFFT(res, ffts, getRealImag, spec, flag);
+    }
+  } else {                           // for specified rows
+    for (uInt i = 0; i < whichrow.size(); ++i) {
+      Vector<Float> spec = specCol(whichrow[i]);
+      Vector<uChar> flag = flagCol(whichrow[i]);
+      doFFT(res, ffts, getRealImag, spec, flag);
+    }
+  }
+
+  return res;
+}
+
+void asap::STMath::doFFT( std::vector<float>& out, 
+			  FFTServer<Float,Complex>& ffts, 
+			  bool getRealImag,
+			  Vector<Float>& spec, 
+			  Vector<uChar>& flag )
+{
+  doZeroOrderInterpolation(spec, flag);
+
+  Vector<Complex> fftout;
+  ffts.fft0(fftout, spec);
+
+  float norm = float(2.0/double(spec.size()));
+  if (getRealImag) {
+    for (uInt j = 0; j < fftout.size(); ++j) {
+      out.push_back(real(fftout[j])*norm);
+      out.push_back(imag(fftout[j])*norm);
+    }
+  } else {
+    for (uInt j = 0; j < fftout.size(); ++j) {
+      out.push_back(abs(fftout[j])*norm);
+      out.push_back(arg(fftout[j]));
+    }
+  }
+
+}
+
+void asap::STMath::doZeroOrderInterpolation( Vector<Float>& spec, 
+					     Vector<uChar>& flag )
+{
+  int fstart = -1;
+  int fend = -1;
+  for (uInt i = 0; i < flag.nelements(); ++i) {
+    if (flag[i] > 0) {
+      fstart = i;
+      while (flag[i] > 0 && i < flag.nelements()) {
+        fend = i;
+        i++;
+      }
+    }
+
+    // execute interpolation as the following criteria:
+    // (1) for a masked region inside the spectrum, replace the spectral 
+    //     values with the mean of those at the two channels just outside 
+    //     the both edges of the masked region. 
+    // (2) for a masked region at the spectral edge, replace the values 
+    //     with the one at the nearest non-masked channel. 
+    //     (ZOH, but bilateral)
+    Float interp = 0.0;
+    if (fstart-1 > 0) {
+      interp = spec[fstart-1];
+      if (fend+1 < Int(spec.nelements())) {
+        interp = (interp + spec[fend+1]) / 2.0;
+      }
+    } else {
+      interp = spec[fend+1];
+    }
+    if (fstart > -1 && fend > -1) {
+      for (int j = fstart; j <= fend; ++j) {
+        spec[j] = interp;
+      }
+    }
+
+    fstart = -1;
+    fend = -1;
+  }
+}
+
+CountedPtr<Scantable>
+  asap::STMath::lagFlag( const CountedPtr<Scantable>& in,
+                         double start, double end,
+                         const std::string& mode )
+{
+  CountedPtr<Scantable> out = getScantable(in, false);
   Table& tout = out->table();
   TableIterator iter(tout, "FREQ_ID");
   FFTServer<Float,Complex> ffts;
+
   while ( !iter.pastEnd() ) {
     Table tab = iter.table();
     Double rp,rv,inc;
@@ -2838,38 +2934,15 @@ CountedPtr< Scantable >
     out->frequencies().getEntry(rp, rv, inc, freqid);
     ArrayColumn<Float> specCol(tab, "SPECTRA");
     ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+
     for (int i=0; i<int(tab.nrow()); ++i) {
       Vector<Float> spec = specCol(i);
       Vector<uChar> flag = flagCol(i);
-      int fstart = -1;
-      int fend = -1;
-      for (unsigned int k=0; k < flag.nelements(); ++k ) {
-        if (flag[k] > 0) {
-          fstart = k;
-          while (flag[k] > 0 && k < flag.nelements()) {
-            fend = k;
-            k++;
-          }
-        }
-        Float interp = 0.0;
-        if (fstart-1 > 0 ) {
-          interp = spec[fstart-1];
-          if (fend+1 < Int(spec.nelements())) {
-            interp = (interp+spec[fend+1])/2.0;
-          }
-        } else {
-          interp = spec[fend+1];
-        }
-        if (fstart > -1 && fend > -1) {
-          for (int j=fstart;j<=fend;++j) {
-            spec[j] = interp;
-          }
-        }
-        fstart =-1;
-        fend = -1;
-      }
+      doZeroOrderInterpolation(spec, flag);
+
       Vector<Complex> lags;
       ffts.fft0(lags, spec);
+
       Int lag0(start+0.5);
       Int lag1(end+0.5);
       if (mode == "frequency") {
@@ -2877,7 +2950,7 @@ CountedPtr< Scantable >
         lag1 = Int(spec.nelements()*abs(inc)/(end)+0.5);
       }
       Int lstart =  max(0, lag0);
-      Int lend =  min(Int(lags.nelements()-1), lag1);
+      Int lend   =  min(Int(lags.nelements()-1), lag1);
       if (lstart == lend) {
         lags[lstart] = Complex(0.0);
       } else {
@@ -2890,7 +2963,9 @@ CountedPtr< Scantable >
           lags[j] = Complex(0.0);
         }
       }
+
       ffts.fft0(spec, lags);
+
       specCol.put(i, spec);
     }
     ++iter;

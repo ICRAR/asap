@@ -212,6 +212,11 @@ public:
   { return ScantableWrapper(STMath::lagFlag(in.getCP(), start, end,
                                             mode)); }
 
+  std::vector<float> fft( const ScantableWrapper& in,
+			  const std::vector<int>& whichrow,
+			  const bool getRealImag=false )
+  { return STMath::fft(in.getCP(), whichrow, getRealImag); }
+
   // test for average spectra with different channel/resolution
   ScantableWrapper
     new_average( const std::vector<ScantableWrapper>& in,
