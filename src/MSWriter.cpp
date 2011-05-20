@@ -1682,177 +1682,223 @@ void MSWriter::queryType( Int type, String &stype, Bool &b, Double &t, Double &l
   // 2011/03/14 TN
   // OBS_MODE string of MS created by importasdm task is slightly 
   // (but critically) changed.
+  // 2011/05/20 TN
+  // OBS_MODE string of MS created by importasdm task is changed 
+  // again (separator is now "#" instead of "_"
+  String sep1="#" ;
+  String sep2="," ;
+  String target="OBSERVE_TARGET" ;
+  String atmcal="CALIBRATE_TEMPERATURE" ;
+  String onstr="ON_SOURCE" ;
+  String offstr="OFF_SOURCE" ;
+  String pswitch="POSITION_SWITCH" ;
+  String nod="NOD" ;
+  String fswitch="FREQUENCY_SWITCH" ;
+  String sigstr="SIG" ;
+  String refstr="REF" ;
+  String unspecified="UNSPECIFIED" ;
+  String ftlow="LOWER" ;
+  String fthigh="HIGHER" ;
   switch ( type ) {
   case SrcType::PSON:
-    stype = "OBSERVE_TARGET_ON_SOURCE,POSITION_SWITCH" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,POSITION_SWITCH" ;
+    stype = target+sep1+onstr+sep2+pswitch ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::PSOFF:
-    stype = "OBSERVE_TARGET_OFF_SOURCE,POSITION_SWITCH" ;
+    //stype = "OBSERVE_TARGET_OFF_SOURCE,POSITION_SWITCH" ;
+    stype = target+sep1+offstr+sep2+pswitch ;
     b = False ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::NOD:
-    stype = "OBSERVE_TARGET_ON_SOURCE,NOD" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,NOD" ;
+    stype = target+sep1+onstr+sep2+nod ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FSON:
-    stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_SIG" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_SIG" ;
+    stype = target+sep1+onstr+sep2+fswitch+sep1+sigstr ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FSOFF:
-    stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_REF" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_REF" ;
+    stype = target+sep1+onstr+sep2+fswitch+sep1+refstr ;
     b = False ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::SKY:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    stype = atmcal+sep1+offstr+sep2+unspecified ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::HOT:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    stype = atmcal+sep1+offstr+sep2+unspecified ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::WARM:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    stype = atmcal+sep1+offstr+sep2+unspecified ;
     t = 0.0 ;
     b = False ;
     l = 1.0 ;
     break ;
   case SrcType::COLD:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,UNSPECIFIED" ;
+    stype = atmcal+sep1+offstr+sep2+unspecified ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::PONCAL:
-    stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,POSITION_SWITCH" ;
+    //stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,POSITION_SWITCH" ;
+    stype = atmcal+sep1+onstr+sep2+pswitch ;
     b = True ;
     t = 1.0 ;
     l = 0.0 ;
     break ;
   case SrcType::POFFCAL:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,POSITION_SWITCH" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,POSITION_SWITCH" ;
+    stype = atmcal+sep1+offstr+sep2+pswitch ;
     b = False ;
     t = 1.0 ;
     l = 0.0 ;
     break ;
   case SrcType::NODCAL:
-    stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,NOD" ;
+    //stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,NOD" ;
+    stype = atmcal+sep1+onstr+sep2+nod ;
     b = True ;
     t = 1.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FONCAL:
-    stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,FREQUENCY_SWITCH_SIG" ;
+    //stype = "CALIBRATE_TEMPERATURE_ON_SOURCE,FREQUENCY_SWITCH_SIG" ;
+    stype = atmcal+sep1+onstr+sep2+fswitch+sep1+sigstr ;
     b = True ;
     t = 1.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FOFFCAL:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_REF" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_REF" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+refstr ;
     b = False ;
     t = 1.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FSLO:
-    stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = target+sep1+onstr+sep2+fswitch+sep1+ftlow ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FLOOFF:
-    stype = "OBSERVE_TARGET_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "OBSERVE_TARGET_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = target+sep1+offstr+sep2+fswitch+sep1+ftlow ;
     b = False ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FLOSKY:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+ftlow ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FLOHOT:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+ftlow ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FLOWARM:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+ftlow ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FLOCOLD:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_LOWER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+ftlow ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FSHI:
-    stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = target+sep1+onstr+sep2+fswitch+sep1+fthigh ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FHIOFF:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = target+sep1+offstr+sep2+fswitch+sep1+fthigh ;
     b = False ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::FHISKY:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+fthigh ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FHIHOT:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+fthigh ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FHIWARM:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+fthigh ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::FHICOLD:
-    stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    //stype = "CALIBRATE_TEMPERATURE_OFF_SOURCE,FREQUENCY_SWITCH_HIGHER" ;
+    stype = atmcal+sep1+offstr+sep2+fswitch+sep1+fthigh ;
     b = False ;
     t = 0.0 ;
     l = 1.0 ;
     break ;
   case SrcType::SIG:
-    stype = "OBSERVE_TARGET_ON_SOURCE,UNSPECIFIED" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,UNSPECIFIED" ;
+    stype = target+sep1+onstr+sep2+unspecified ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   case SrcType::REF:
-    stype = "OBSERVE_TARGET_ON_SOURCE,UNSPECIFIED" ;
+    //stype = "OBSERVE_TARGET_ON_SOURCE,UNSPECIFIED" ;
+    stype = target+sep1+offstr+sep2+unspecified ;
     b = False ;
     t = 0.0 ;
     l = 0.0 ;
     break ;
   default:
-    stype = "UNSPECIFIED" ;
+    //stype = "UNSPECIFIED" ;
+    stype = unspecified ;
     b = True ;
     t = 0.0 ;
     l = 0.0 ;
