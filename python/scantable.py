@@ -336,7 +336,7 @@ class scantable(Scantable):
             raise
 
     def __str__(self):
-        return Scantable._summary(self, True)
+        return Scantable._summary(self)
 
     def summary(self, filename=None):
         """\
@@ -348,7 +348,7 @@ class scantable(Scantable):
                          Default - no file output
 
         """
-        info = Scantable._summary(self, True)
+        info = Scantable._summary(self)
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'

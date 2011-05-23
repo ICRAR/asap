@@ -216,11 +216,11 @@ public:
   casa::CountedPtr<Scantable> getCP() const {return table_;}
   Scantable* getPtr() {return &(*table_);}
 
-  std::string summary(bool verbose=false) const {
+  std::string summary() const {
     return table_->summary();
   }
 
-  std::string listHeader(bool verbose=false) const {
+  std::string listHeader() const {
     return table_->headerSummary();
   }
 

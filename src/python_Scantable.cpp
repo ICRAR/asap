@@ -117,10 +117,8 @@ void python_Scantable() {
 	 (boost::python::arg("clipoutside")=true,
 	  boost::python::arg("unflag")=false) )
     .def("_save",  &ScantableWrapper::makePersistent)
-    .def("_summary",  &ScantableWrapper::summary,
-         (boost::python::arg("verbose")=true) )
-    .def("_list_header",  &ScantableWrapper::listHeader,
-         (boost::python::arg("verbose")=true) )
+    .def("_summary",  &ScantableWrapper::summary)
+    .def("_list_header",  &ScantableWrapper::listHeader)
     //.def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
     .def("_getrestfreqs",  &ScantableWrapper::getRestFrequency)
     .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
