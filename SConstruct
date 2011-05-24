@@ -21,12 +21,15 @@ def get_numpy_incdir():
             pass
     return ""
 
-moduledir = distutils.sysconfig.get_python_lib()
-
-if sys.platform.startswith('linux') and platform.architecture()[0] == '64bit':
-    # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
-    if moduledir.startswith("/usr/lib/"):
-        moduledir = moduledir.replace("lib", "lib64")
+def get_moduledir(prefix="/usr/local"):
+    moduledir = distutils.sysconfig.get_python_lib(1,0, prefix)
+    if sys.platform.startswith('linux') \
+            and platform.architecture()[0] == '64bit' \
+            and platform.dist()[0].lower() not in ['debian', 'ubuntu']:
+        # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
+    	if moduledir.startswith("/usr"):
+           moduledir = moduledir.replace("lib", "lib64")
+    return moduledir
 
 EnsureSConsVersion(1,0,0)
 
@@ -37,9 +40,9 @@ opts.AddVariables(
                 PathVariable("prefix",
 	        "The root installation path",
                            distutils.sysconfig.PREFIX),
-                PathVariable("moduledir",
-                            "The python module path (site-packages))",
-                            moduledir),
+                ("moduledir",
+                 "The python module path (site-packages))",
+                 None),
 		PathVariable("casacoreroot", "The location of casacore",
                              "/usr/local"),
 		("boostroot", "The root dir where boost is installed", None),
@@ -185,16 +188,21 @@ if not env.GetOption('clean'):
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_ALMA'])
+    if not conf.env.get("moduledir"):
+        mdir = get_moduledir(conf.env.get("prefix"))
+        if env["PLATFORM"] == "darwin":
+            mdir = distutils.sysconfig.get_python_lib(1,0)            
+        conf.env["moduledir"] =  mdir
     env = conf.Finish()
 
-env["version"] = "3.1.0"
+env["version"] = "3.1.x"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
 	env.Append(LINKFLAGS=['-Wl,-O1', '-s'])
     env.Append(CCFLAGS=["-O2"])
 else:
-    env.Append(CCFLAGS=["-g", "-Wall"])
+    env.Append(CCFLAGS=["-g", "-W", "-Wall"])
 
 # Export for SConscript files
 Export("env")
@@ -202,7 +210,7 @@ Export("env")
 # build externals
 env.SConscript("external-alma/SConscript")
 # build library
-so = env.SConscript("src/SConscript", build_dir="build", duplicate=0)
+so = env.SConscript("src/SConscript", variant_dir="build", duplicate=0)
 # test module import, to see if there are unresolved symbols
 def test_module(target,source,env):
     pth = str(target[0])
@@ -242,12 +250,13 @@ if rootdir is not None:
 
 # make binary distribution
 if len(env["makedist"]):
-    env["stagedir"] = "asap-%s-%s" % (env["version"], env["makedist"])
+    env["stagedir"] = "asap-%s" % (env["version"])
     env.Command('Staging distribution for archive in %s' % env["stagedir"],
                 '', env.MessageAction)
-    st0 = env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
+    env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
     env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
     env.QInstall("$stagedir", ["packaging/setup.py"])
+    env.QInstall("$stagedir/debian", env.SGlob("packaging/debian/*") )
     env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
     env.QInstall("$stagedir/asap/data", "share/ipy_user_conf.py")
     if rootdir is not None:
@@ -260,9 +269,10 @@ if len(env["makedist"]):
     else:
         env.Command("No data tables available. Use 'asap_update_data' after install",
                     '', env.MessageAction)
-    arch = env.Archiver(os.path.join("dist",env["stagedir"]),
+    arch = env.Archiver(os.path.join("dist",
+				     env["stagedir"]+"_"+env["makedist"]),
                         env["stagedir"])
-    env.AddPostAction(arch, Delete("$stagedir"))
+#    env.AddPostAction(arch, Delete("$stagedir"))
 
 if env["apps"]:
     env.SConscript("apps/SConscript")
