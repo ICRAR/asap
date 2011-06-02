@@ -1566,7 +1566,7 @@ Block<uInt> MSFiller::getTcalId( Int fid, Int spwid, MEpoch &t )
   //if ( table_->tcal().table().nrow() == 0 ) {
   if ( !isSysCal_ ) {
     os_ << "No TCAL rows" << LogIO::POST ;
-    Block<uInt> tcalids( 0 ) ;
+    Block<uInt> tcalids( 4, 0 ) ;
     return  tcalids ;
   }    
   //String sctime = MVTime( Quantum<Double>(t,"s") ).string(MVTime::YMD) ;
@@ -1574,7 +1574,7 @@ Block<uInt> MSFiller::getTcalId( Int fid, Int spwid, MEpoch &t )
   String key = keyTcal( fid, spwid, sctime ) ;
   if ( !tcalrec_.isDefined( key ) ) {
     os_ << "No TCAL rows" << LogIO::POST ;
-    Block<uInt> tcalids( 0 ) ;
+    Block<uInt> tcalids( 4, 0 ) ;
     return tcalids ;
   }
   Vector<uInt> ids = tcalrec_.asArrayuInt( key ) ;
