@@ -948,7 +948,7 @@ void MSFiller::fill()
   else {
     sdh.antennaname = telescopeName + "//" + antennaName ;
   }
-  if ( stationName != "" ) {
+  if ( stationName != "" && stationName != antennaName ) {
     sdh.antennaname += "@" + stationName ;
   }
   ROArrayColumn<Double> pdirCol( pointtab, "DIRECTION" ) ; 

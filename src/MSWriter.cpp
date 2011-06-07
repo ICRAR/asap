@@ -582,6 +582,8 @@ void MSWriter::setupMS()
 //   os_.origin( LogOrigin( "MSWriter", "setupMS()", WHERE ) ) ;
 //   double startSec = gettimeofday_sec() ;
 //   os_ << "start MSWriter::setupMS() startSec=" << startSec << LogIO::POST ;
+  
+  String dunit = table_->getHeader().fluxunit ;
 
   TableDesc msDesc = MeasurementSet::requiredTableDesc() ;
   if ( useFloatData_ )
@@ -592,6 +594,13 @@ void MSWriter::setupMS()
   SetupNewTable newtab( filename_, msDesc, Table::New ) ;
 
   mstable_ = new MeasurementSet( newtab ) ;
+
+  TableColumn col ;
+  if ( useFloatData_ )
+    col.attach( *mstable_, "FLOAT_DATA" ) ;
+  else if ( useData_ )
+    col.attach( *mstable_, "DATA" ) ;
+  col.rwKeywordSet().define( "UNIT", dunit ) ;
 
   // create subtables
   TableDesc antennaDesc = MSAntenna::requiredTableDesc() ;
