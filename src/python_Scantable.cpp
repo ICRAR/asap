@@ -153,6 +153,7 @@ void python_Scantable() {
     .def("format_piecewise_blparams_row", &ScantableWrapper::formatPiecewiseBaselineParams)
     .def("_getflagtrafast", &ScantableWrapper::getFlagtraFast,
 	 (boost::python::arg("whichrow")=0) )
+    .def("_fft", &ScantableWrapper::execFFT)
     //.def("_sspline_baseline", &ScantableWrapper::smoothingSplineBaseline)
     //.def("_test_cin", &ScantableWrapper::testCin)
   ;

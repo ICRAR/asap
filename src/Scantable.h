@@ -13,43 +13,45 @@
 #define ASAPSCANTABLE_H
 
 // STL
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <fstream>
 // AIPS++
 #include <casa/aips.h>
-#include <casa/Containers/Record.h>
 #include <casa/Arrays/MaskedArray.h>
+#include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/String.h>
+#include <casa/Containers/Record.h>
+#include <casa/Exceptions/Error.h>
+#include <casa/Quanta/Quantum.h>
 #include <casa/Utilities/CountedPtr.h>
-
-#include <tables/Tables/Table.h>
-#include <tables/Tables/ArrayColumn.h>
-#include <tables/Tables/ScalarColumn.h>
-
-#include <measures/TableMeasures/ScalarMeasColumn.h>
 
 #include <coordinates/Coordinates/SpectralCoordinate.h>
 
-#include <casa/Arrays/Vector.h>
-#include <casa/Quanta/Quantum.h>
+#include <measures/TableMeasures/ScalarMeasColumn.h>
 
-#include <casa/Exceptions/Error.h>
+#include <scimath/Mathematics/FFTServer.h>
+
+#include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/ScalarColumn.h>
+#include <tables/Tables/Table.h>
 
 #include "Logger.h"
-#include "STHeader.h"
-#include "STFrequencies.h"
-#include "STWeather.h"
-#include "STFocus.h"
-#include "STTcal.h"
-#include "STMolecules.h"
-#include "STSelector.h"
-#include "STHistory.h"
-#include "STPol.h"
+#include "MathUtils.h"
 #include "STFit.h"
 #include "STFitEntry.h"
 #include "STFitter.h"
+#include "STFocus.h"
+#include "STFrequencies.h"
+#include "STHeader.h"
+#include "STHistory.h"
+#include "STMolecules.h"
+#include "STPol.h"
+#include "STSelector.h"
+#include "STTcal.h"
+#include "STWeather.h"
 
 namespace asap {
 
@@ -527,16 +529,22 @@ public:
 			       bool outLogger=false, 
 			       const std::string& blfile="");
   void sinusoidBaseline(const std::vector<bool>& mask,
-			const std::vector<int>& nWaves,
-			float maxWaveLength,
+			const bool applyFFT, 
+			const std::string& fftMethod, 
+			const std::string& fftThresh, 
+			const std::vector<int>& addNWaves, 
+			const std::vector<int>& rejectNWaves, 
 			float thresClip, 
 		        int nIterClip,
 			bool getResidual=true,
 		        bool outLogger=false,
 		        const std::string& blfile="");
   void autoSinusoidBaseline(const std::vector<bool>& mask,
-			    const std::vector<int>& nWaves,
-			    float maxWaveLength,
+			    const bool applyFFT, 
+			    const std::string& fftMethod, 
+			    const std::string& fftThresh, 
+			    const std::vector<int>& addNWaves, 
+			    const std::vector<int>& rejectNWaves, 
 		            float thresClip, 
 		            int nIterClip,
 		            const std::vector<int>& edge, 
@@ -545,6 +553,10 @@ public:
 			    bool getResidual=true,
 		            bool outLogger=false, 
 		            const std::string& blfile="");
+  std::vector<float> execFFT(const int whichrow, 
+			     const std::vector<bool>& inMask,
+			     bool getRealImag=false,
+			     bool getAmplitudeOnly=false);
   float getRms(const std::vector<bool>& mask, int whichrow);
   std::string formatBaselineParams(const std::vector<float>& params, 
 			           const std::vector<bool>& fixed, 
@@ -688,11 +700,32 @@ private:
   std::vector<float> doSinusoidFitting(const std::vector<float>& data, 
 				       const std::vector<bool>& mask,
 				       const std::vector<int>& waveNumbers,
-				       float maxWaveLength, 
 				       std::vector<float>& params,
 				       float thresClip=3.0, 
 				       int nIterClip=1,
 				       bool getResidual=true);
+  void selectWaveNumbers(const int whichrow, 
+			 const std::vector<bool>& chanMask, 
+			 const bool applyFFT, 
+			 const std::string& fftMethod, 
+			 const std::string& fftThresh, 
+			 const std::vector<int>& addNWaves, 
+			 const std::vector<int>& rejectNWaves, 
+			 std::vector<int>& nWaves);
+  void parseThresholdExpression(const std::string& fftThresh,
+				std::string& fftThAttr,
+				float& fftThSigma,
+				int& fftThTop);
+  void doSelectWaveNumbers(const int whichrow,
+			   const std::vector<bool>& chanMask, 
+			   const std::string& fftMethod, 
+			   const float fftThSigma, 
+			   const int fftThTop, 
+			   const std::string& fftThAttr, 
+			   std::vector<int>& nWaves);
+  void addAuxWaveNumbers(const std::vector<int>& addNWaves, 
+			 const std::vector<int>& rejectNWaves, 
+			 std::vector<int>& nWaves);
   bool hasSameNchanOverIFs();
   std::string getMaskRangeList(const std::vector<bool>& mask, 
 				int whichrow, 
@@ -707,6 +740,7 @@ private:
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, Fitter& fitter);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params);
+  void showProgressOnTerminal(const int nProcessed, const int nTotal, const int nTotalThreshold=1000);
 
   void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
 

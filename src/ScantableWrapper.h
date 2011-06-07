@@ -275,11 +275,11 @@ public:
   void autoCubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
   { table_->autoCubicSplineBaseline(mask, npiece, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
 
-  void sinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nwave, float maxwavelength, float clipthresh, int clipniter, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->sinusoidBaseline(mask, nwave, maxwavelength, clipthresh, clipniter, getresidual, outlog, blfile); }
+  void sinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, bool getresidual=true, bool outlog=false, const std::string& blfile="")
+  { table_->sinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, getresidual, outlog, blfile); }
 
-  void autoSinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nwave, float maxwavelength, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->autoSinusoidBaseline(mask, nwave, maxwavelength, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
+  void autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
+  { table_->autoSinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
 
   float getRms(const std::vector<bool>& mask, int whichrow)
   { return table_->getRms(mask, whichrow); }
@@ -292,6 +292,9 @@ public:
 
   bool getFlagtraFast(int whichrow=0) const
   { return table_->getFlagtraFast(casa::uInt(whichrow)); }
+
+  std::vector<float> execFFT(int whichrow, const std::vector<bool>& mask, bool getRealImag=false, bool getAmplitudeOnly=false)
+  { return table_->execFFT(whichrow, mask, getRealImag, getAmplitudeOnly); }
 
 
 

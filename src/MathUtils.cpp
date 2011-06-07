@@ -247,3 +247,43 @@ void mathutil::polyfit(Vector<Float>& out, Vector<Bool>& outmask,
     outmask[n-1-i] = outmask[n-1-hwidth];
   }
 }
+
+void mathutil::doZeroOrderInterpolation(casa::Vector<casa::Float>& data, 
+					std::vector<bool>& mask) {
+  int fstart = -1;
+  int fend = -1;
+  for (uInt i = 0; i < mask.size(); ++i) {
+    if (!mask[i]) {
+      fstart = i;
+      while (!mask[i] && i < mask.size()) {
+        fend = i;
+        i++;
+      }
+    }
+
+    // execute interpolation as the following criteria:
+    // (1) for a masked region inside the spectrum, replace the spectral 
+    //     values with the mean of those at the two channels just outside 
+    //     the both edges of the masked region. 
+    // (2) for a masked region at the spectral edge, replace the values 
+    //     with the one at the nearest non-masked channel. 
+    //     (ZOH, but bilateral)
+    Float interp = 0.0;
+    if (fstart-1 > 0) {
+      interp = data[fstart-1];
+      if (fend+1 < Int(data.nelements())) {
+        interp = (interp + data[fend+1]) / 2.0;
+      }
+    } else {
+      interp = data[fend+1];
+    }
+    if (fstart > -1 && fend > -1) {
+      for (int j = fstart; j <= fend; ++j) {
+        data[j] = interp;
+      }
+    }
+
+    fstart = -1;
+    fend = -1;
+  }
+}

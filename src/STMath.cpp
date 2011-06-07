@@ -48,7 +48,6 @@
 
 #include <atnf/PKSIO/SrcType.h>
 
-#include "MathUtils.h"
 #include "RowAccumulator.h"
 #include "STAttr.h"
 #include "STMath.h"
@@ -2826,94 +2825,22 @@ std::vector<float>
 {
   std::vector<float> res;
   Table tab = in->table();
-  ArrayColumn<Float> specCol(tab, "SPECTRA");
-  ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
-  FFTServer<Float,Complex> ffts;
+  std::vector<bool> mask;
 
   if (whichrow.size() < 1) {          // for all rows (by default)
     int nrow = int(tab.nrow());
     for (int i = 0; i < nrow; ++i) {
-      Vector<Float> spec = specCol(i);
-      Vector<uChar> flag = flagCol(i);
-      doFFT(res, ffts, getRealImag, spec, flag);
+      res = in->execFFT(i, mask, getRealImag);
     }
   } else {                           // for specified rows
     for (uInt i = 0; i < whichrow.size(); ++i) {
-      Vector<Float> spec = specCol(whichrow[i]);
-      Vector<uChar> flag = flagCol(whichrow[i]);
-      doFFT(res, ffts, getRealImag, spec, flag);
+      res = in->execFFT(i, mask, getRealImag);
     }
   }
 
   return res;
 }
 
-void asap::STMath::doFFT( std::vector<float>& out, 
-			  FFTServer<Float,Complex>& ffts, 
-			  bool getRealImag,
-			  Vector<Float>& spec, 
-			  Vector<uChar>& flag )
-{
-  doZeroOrderInterpolation(spec, flag);
-
-  Vector<Complex> fftout;
-  ffts.fft0(fftout, spec);
-
-  float norm = float(2.0/double(spec.size()));
-  if (getRealImag) {
-    for (uInt j = 0; j < fftout.size(); ++j) {
-      out.push_back(real(fftout[j])*norm);
-      out.push_back(imag(fftout[j])*norm);
-    }
-  } else {
-    for (uInt j = 0; j < fftout.size(); ++j) {
-      out.push_back(abs(fftout[j])*norm);
-      out.push_back(arg(fftout[j]));
-    }
-  }
-
-}
-
-void asap::STMath::doZeroOrderInterpolation( Vector<Float>& spec, 
-					     Vector<uChar>& flag )
-{
-  int fstart = -1;
-  int fend = -1;
-  for (uInt i = 0; i < flag.nelements(); ++i) {
-    if (flag[i] > 0) {
-      fstart = i;
-      while (flag[i] > 0 && i < flag.nelements()) {
-        fend = i;
-        i++;
-      }
-    }
-
-    // execute interpolation as the following criteria:
-    // (1) for a masked region inside the spectrum, replace the spectral 
-    //     values with the mean of those at the two channels just outside 
-    //     the both edges of the masked region. 
-    // (2) for a masked region at the spectral edge, replace the values 
-    //     with the one at the nearest non-masked channel. 
-    //     (ZOH, but bilateral)
-    Float interp = 0.0;
-    if (fstart-1 > 0) {
-      interp = spec[fstart-1];
-      if (fend+1 < Int(spec.nelements())) {
-        interp = (interp + spec[fend+1]) / 2.0;
-      }
-    } else {
-      interp = spec[fend+1];
-    }
-    if (fstart > -1 && fend > -1) {
-      for (int j = fstart; j <= fend; ++j) {
-        spec[j] = interp;
-      }
-    }
-
-    fstart = -1;
-    fend = -1;
-  }
-}
 
 CountedPtr<Scantable>
   asap::STMath::lagFlag( const CountedPtr<Scantable>& in,
@@ -2938,7 +2865,11 @@ CountedPtr<Scantable>
     for (int i=0; i<int(tab.nrow()); ++i) {
       Vector<Float> spec = specCol(i);
       Vector<uChar> flag = flagCol(i);
-      doZeroOrderInterpolation(spec, flag);
+      std::vector<bool> mask;
+      for (uInt j = 0; j < flag.nelements(); ++j) {
+	mask.push_back(!(flag[j]>0));
+      }
+      mathutil::doZeroOrderInterpolation(spec, mask);
 
       Vector<Complex> lags;
       ffts.fft0(lags, spec);

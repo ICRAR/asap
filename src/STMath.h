@@ -20,7 +20,6 @@
 #include <casa/BasicSL/String.h>
 #include <casa/Utilities/CountedPtr.h>
 
-#include <scimath/Mathematics/FFTServer.h>
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
 #include "Logger.h"
@@ -432,13 +431,6 @@ private:
                                         vector< casa::CountedPtr<Scantable> >& cold,
                                         int index ) ;
   double getMJD( string strtime ) ;
-  void doFFT( std::vector<float>& out, 
-	      casa::FFTServer< casa::Float, casa::Complex >& ffts, 
-	      bool getRealImag, 
-	      casa::Vector<casa::Float>& spec, 
-	      casa::Vector<casa::uChar>& flag ) ;
-  void doZeroOrderInterpolation( casa::Vector<casa::Float>& spec, 
-				 casa::Vector<casa::uChar>& flag) ;
 
   bool insitu_;
 };

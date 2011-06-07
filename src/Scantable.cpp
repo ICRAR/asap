@@ -10,64 +10,64 @@
 //
 //
 #include <map>
-#include <fstream>
+
+#include <atnf/PKSIO/SrcType.h>
 
 #include <casa/aips.h>
-#include <casa/iostream.h>
 #include <casa/iomanip.h>
-#include <casa/OS/Path.h>
+#include <casa/iostream.h>
 #include <casa/OS/File.h>
+#include <casa/OS/Path.h>
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/ArrayLogical.h>
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/MaskArrMath.h>
-#include <casa/Arrays/ArrayLogical.h>
-#include <casa/Arrays/ArrayAccessor.h>
+#include <casa/Arrays/Slice.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/VectorSTLIterator.h>
-#include <casa/Arrays/Slice.h>
 #include <casa/BasicMath/Math.h>
 #include <casa/BasicSL/Constants.h>
-#include <casa/Quanta/MVAngle.h>
 #include <casa/Containers/RecordField.h>
-#include <casa/Utilities/GenSort.h>
 #include <casa/Logging/LogIO.h>
-
-#include <tables/Tables/TableParse.h>
-#include <tables/Tables/TableDesc.h>
-#include <tables/Tables/TableCopy.h>
-#include <tables/Tables/SetupNewTab.h>
-#include <tables/Tables/ScaColDesc.h>
-#include <tables/Tables/ArrColDesc.h>
-#include <tables/Tables/TableRow.h>
-#include <tables/Tables/TableVector.h>
-#include <tables/Tables/TableIter.h>
-
-#include <tables/Tables/ExprNode.h>
-#include <tables/Tables/TableRecord.h>
-#include <casa/Quanta/MVTime.h>
 #include <casa/Quanta/MVAngle.h>
-#include <measures/Measures/MeasRef.h>
-#include <measures/Measures/MeasTable.h>
+#include <casa/Quanta/MVTime.h>
+#include <casa/Utilities/GenSort.h>
+
+#include <coordinates/Coordinates/CoordinateUtil.h>
+
 // needed to avoid error in .tcc
 #include <measures/Measures/MCDirection.h>
 //
 #include <measures/Measures/MDirection.h>
-#include <measures/Measures/MFrequency.h>
 #include <measures/Measures/MEpoch.h>
+#include <measures/Measures/MFrequency.h>
+#include <measures/Measures/MeasRef.h>
+#include <measures/Measures/MeasTable.h>
+#include <measures/TableMeasures/ScalarMeasColumn.h>
+#include <measures/TableMeasures/TableMeasDesc.h>
 #include <measures/TableMeasures/TableMeasRefDesc.h>
 #include <measures/TableMeasures/TableMeasValueDesc.h>
-#include <measures/TableMeasures/TableMeasDesc.h>
-#include <measures/TableMeasures/ScalarMeasColumn.h>
-#include <coordinates/Coordinates/CoordinateUtil.h>
 
-#include <atnf/PKSIO/SrcType.h>
-#include "Scantable.h"
-#include "STPolLinear.h"
-#include "STPolCircular.h"
-#include "STPolStokes.h"
+#include <tables/Tables/ArrColDesc.h>
+#include <tables/Tables/ExprNode.h>
+#include <tables/Tables/ScaColDesc.h>
+#include <tables/Tables/SetupNewTab.h>
+#include <tables/Tables/TableCopy.h>
+#include <tables/Tables/TableDesc.h>
+#include <tables/Tables/TableIter.h>
+#include <tables/Tables/TableParse.h>
+#include <tables/Tables/TableRecord.h>
+#include <tables/Tables/TableRow.h>
+#include <tables/Tables/TableVector.h>
+
+#include "MathUtils.h"
 #include "STAttr.h"
 #include "STLineFinder.h"
-#include "MathUtils.h"
+#include "STPolCircular.h"
+#include "STPolLinear.h"
+#include "STPolStokes.h"
+#include "Scantable.h"
 
 using namespace casa;
 
@@ -1846,6 +1846,7 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getR
     fitBaseline(chanMask, whichrow, fitter);
     setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
@@ -1908,6 +1909,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
     setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
@@ -1949,6 +1951,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
@@ -2017,6 +2020,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
@@ -2242,7 +2246,130 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
   return result;
 }
 
-void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nWaves, float maxWaveLength, float thresClip, int nIterClip, bool getResidual, bool outLogger, const std::string& blfile)
+  void Scantable::selectWaveNumbers(const int whichrow, const std::vector<bool>& chanMask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, std::vector<int>& nWaves)
+{
+  nWaves.clear();
+
+  if (applyFFT) {
+    string fftThAttr;
+    float fftThSigma;
+    int fftThTop;
+    parseThresholdExpression(fftThresh, fftThAttr, fftThSigma, fftThTop);
+    doSelectWaveNumbers(whichrow, chanMask, fftMethod, fftThSigma, fftThTop, fftThAttr, nWaves);
+  }
+
+  addAuxWaveNumbers(addNWaves, rejectNWaves, nWaves);
+}
+
+void Scantable::parseThresholdExpression(const std::string& fftThresh, std::string& fftThAttr, float& fftThSigma, int& fftThTop)
+{
+  uInt idxSigma = fftThresh.find("sigma");
+  uInt idxTop   = fftThresh.find("top");
+
+  if (idxSigma == fftThresh.size() - 5) {
+    std::istringstream is(fftThresh.substr(0, fftThresh.size() - 5));
+    is >> fftThSigma;
+    fftThAttr = "sigma";
+  } else if (idxTop == 0) {
+    std::istringstream is(fftThresh.substr(3));
+    is >> fftThTop;
+    fftThAttr = "top";
+  } else {
+    bool isNumber = true;
+    for (uInt i = 0; i < fftThresh.size()-1; ++i) {
+      char ch = (fftThresh.substr(i, 1).c_str())[0];
+      if (!(isdigit(ch) || (fftThresh.substr(i, 1) == "."))) {
+	isNumber = false;
+	break;
+      }
+    }
+    if (isNumber) {
+      std::istringstream is(fftThresh);
+      is >> fftThSigma;
+      fftThAttr = "sigma";
+    } else {
+      throw(AipsError("fftthresh has a wrong value"));
+    }
+  }
+}
+
+void Scantable::doSelectWaveNumbers(const int whichrow, const std::vector<bool>& chanMask, const std::string& fftMethod, const float fftThSigma, const int fftThTop, const std::string& fftThAttr, std::vector<int>& nWaves)
+{
+  std::vector<float> fspec;
+  if (fftMethod == "fft") {
+    fspec = execFFT(whichrow, chanMask, false, true);
+  //} else if (fftMethod == "lsp") {
+  //  fspec = lombScarglePeriodogram(whichrow);
+  }
+
+  if (fftThAttr == "sigma") {
+    float mean  = 0.0;
+    float mean2 = 0.0;
+    for (uInt i = 0; i < fspec.size(); ++i) {
+      mean  += fspec[i];
+      mean2 += fspec[i]*fspec[i];
+    }
+    mean  /= float(fspec.size());
+    mean2 /= float(fspec.size());
+    float thres = mean + fftThSigma * float(sqrt(mean2 - mean*mean));
+
+    for (uInt i = 0; i < fspec.size(); ++i) {
+      if (fspec[i] >= thres) {
+	nWaves.push_back(i);
+      }
+    }
+
+  } else if (fftThAttr == "top") {
+    for (int i = 0; i < fftThTop; ++i) {
+      float max = 0.0;
+      int maxIdx = 0;
+      for (uInt j = 0; j < fspec.size(); ++j) {
+	if (fspec[j] > max) {
+	  max = fspec[j];
+	  maxIdx = j;
+	}
+      }
+      nWaves.push_back(maxIdx);
+      fspec[maxIdx] = 0.0;
+    }
+
+  }
+
+  if (nWaves.size() > 1) {
+    sort(nWaves.begin(), nWaves.end());
+  }
+}
+
+void Scantable::addAuxWaveNumbers(const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, std::vector<int>& nWaves)
+{
+  for (uInt i = 0; i < addNWaves.size(); ++i) {
+    bool found = false;
+    for (uInt j = 0; j < nWaves.size(); ++j) {
+      if (nWaves[j] == addNWaves[i]) {
+	found = true;
+	break;
+      }
+    }
+    if (!found) nWaves.push_back(addNWaves[i]);
+  }
+
+  for (uInt i = 0; i < rejectNWaves.size(); ++i) {
+    for (std::vector<int>::iterator j = nWaves.begin(); j != nWaves.end(); ) {
+      if (*j == rejectNWaves[i]) {
+	j = nWaves.erase(j);
+      } else {
+	++j;
+      }
+    }
+  }
+
+  if (nWaves.size() > 1) {
+    sort(nWaves.begin(), nWaves.end());
+    unique(nWaves.begin(), nWaves.end());
+  }
+}
+
+void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -2266,23 +2393,41 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::vecto
 
   int nRow = nrow();
   std::vector<bool> chanMask;
+  std::vector<int> nWaves;
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
+    selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
+
+    //FOR DEBUGGING------------
+    if (whichrow < 0) {// == nRow -1) {
+      cout << "+++ i=" << setw(3) << whichrow << ", IF=" << setw(2) << getIF(whichrow);
+      if (applyFFT) {
+	  cout << "[ ";
+	  for (uInt j = 0; j < nWaves.size(); ++j) {
+	    cout << nWaves[j] << ", ";
+	  }
+	  cout << " ]    " << endl;
+      }
+      cout << flush;
+    }
+    //-------------------------
+
     //fitBaseline(chanMask, whichrow, fitter);
     //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, maxWaveLength, params, thresClip, nIterClip, getResidual);
+    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::vector<int>& nWaves, float maxWaveLength, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -2306,6 +2451,8 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::v
 
   int nRow = nrow();
   std::vector<bool> chanMask;
+  std::vector<int> nWaves;
+
   int minEdgeSize = getIFNos().size()*2;
   STLineFinder lineFinder = STLineFinder();
   lineFinder.setOptions(threshold, 3, chanAvgLimit);
@@ -2335,21 +2482,23 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::v
     chanMask = lineFinder.getMask();
     //-------------------------------------------------------
 
+    selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
 
     //fitBaseline(chanMask, whichrow, fitter);
     //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, maxWaveLength, params, thresClip, nIterClip, getResidual);
+    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, thresClip, nIterClip, getResidual);
     setSpectrum(res, whichrow);
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params);
+    showProgressOnTerminal(whichrow, nRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, const std::vector<int>& waveNumbers, float maxWaveLength, std::vector<float>& params, float thresClip, int nIterClip, bool getResidual)
+std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, const std::vector<int>& waveNumbers, std::vector<float>& params, float thresClip, int nIterClip, bool getResidual)
 {
   if (data.size() != mask.size()) {
     throw(AipsError("data and mask sizes are not identical"));
@@ -2358,7 +2507,7 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
     throw(AipsError("data size is too short"));
   }
   if (waveNumbers.size() == 0) {
-    throw(AipsError("missing wave number info"));
+    throw(AipsError("no wave numbers given"));
   }
   std::vector<int> nWaves;  // sorted and uniqued array of wave numbers
   nWaves.reserve(waveNumbers.size());
@@ -2389,7 +2538,7 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
   int nDOF = nWaves.size() * 2 - (hasConstantTerm ? 1 : 0);  //number of parameters to solve.
 
   const double PI = 6.0 * asin(0.5); // PI (= 3.141592653...)
-  double baseXFactor = 2.0*PI/(double)maxWaveLength/(double)(nChan-1);  //the denominator (nChan-1) should be changed to (xdata[nChan-1]-xdata[0]) for accepting x-values given in velocity or frequency when this function is moved to fitter. (2011/03/30 WK)
+  double baseXFactor = 2.0*PI/(double)(nChan-1);  //the denominator (nChan-1) should be changed to (xdata[nChan-1]-xdata[0]) for accepting x-values given in velocity or frequency when this function is moved to fitter. (2011/03/30 WK)
 
   // xArray : contains elemental values for computing the least-square matrix. 
   //          xArray.size() is nDOF and xArray[*].size() is nChan. 
@@ -2570,16 +2719,16 @@ void Scantable::fitBaseline(const std::vector<bool>& mask, int whichrow, Fitter&
 
 std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vector<bool>& inMask)
 {
-  std::vector<bool> chanMask = getMask(whichrow);
-  uInt chanMaskSize = chanMask.size();
-  if (chanMaskSize != inMask.size()) {
-    throw(AipsError("different mask sizes"));
+  std::vector<bool> mask = getMask(whichrow);
+  uInt maskSize = mask.size();
+  if (maskSize != inMask.size()) {
+    throw(AipsError("mask sizes are not the same."));
   }
-  for (uInt i = 0; i < chanMaskSize; ++i) {
-    chanMask[i] = chanMask[i] && inMask[i];
+  for (uInt i = 0; i < maskSize; ++i) {
+    mask[i] = mask[i] && inMask[i];
   }
 
-  return chanMask;
+  return mask;
 }
 
 /*
@@ -2609,7 +2758,8 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vecto
 */
 
 /* for poly. the variations of outputFittingResult() should be merged into one eventually (2011/3/10 WK)  */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, Fitter& fitter) {
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, Fitter& fitter)
+{
   if (outLogger || outTextFile) {
     std::vector<float> params = fitter.getParameters();
     std::vector<bool>  fixed  = fitter.getFixedParameters();
@@ -2627,7 +2777,8 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 }
 
 /* for cspline. will be merged once cspline is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params) {
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params)
+{
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
     String masklist = getMaskRangeList(chanMask, whichrow, coordInfo, hasSameNchan);
@@ -2645,7 +2796,8 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 }
 
 /* for sinusoid. will be merged once sinusoid is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params) {
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params)
+{
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
     String masklist = getMaskRangeList(chanMask, whichrow, coordInfo, hasSameNchan);
@@ -2662,7 +2814,74 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
   }
 }
 
-float Scantable::getRms(const std::vector<bool>& mask, int whichrow) {
+void Scantable::showProgressOnTerminal(const int nProcessed, const int nTotal, const int nTotalThreshold)
+{
+  if (nTotal >= nTotalThreshold) {
+    int nInterval = int(floor(double(nTotal)/100.0));
+    if (nInterval == 0) nInterval++;
+
+    if (nProcessed == 0) {
+      printf("\x1b[31m\x1b[1m");             //set red color, highlighted
+      printf("[  0%%]");
+      printf("\x1b[39m\x1b[0m");             //default attributes
+      fflush(NULL);
+    } else if (nProcessed % nInterval == 0) {
+      printf("\r\x1b[1C");                   //go to the 2nd column
+      printf("\x1b[31m\x1b[1m");             //set red color, highlighted
+      printf("%3d", (int)(100.0*(double(nProcessed+1))/(double(nTotal))) );
+      printf("\x1b[39m\x1b[0m");             //default attributes
+      printf("\x1b[2C");                     //go to the end of line
+      fflush(NULL);
+    }
+    if (nProcessed == nTotal - 1) {
+      printf("\r\x1b[K");                    //clear
+      fflush(NULL);
+    }
+  }
+}
+
+std::vector<float> Scantable::execFFT(const int whichrow, const std::vector<bool>& inMask, bool getRealImag, bool getAmplitudeOnly)
+{
+  std::vector<bool>  mask = getMask(whichrow);
+
+  if (inMask.size() > 0) {
+    uInt maskSize = mask.size();
+    if (maskSize != inMask.size()) {
+      throw(AipsError("mask sizes are not the same."));
+    }
+    for (uInt i = 0; i < maskSize; ++i) {
+      mask[i] = mask[i] && inMask[i];
+    }
+  }
+
+  Vector<Float> spec = getSpectrum(whichrow);
+  mathutil::doZeroOrderInterpolation(spec, mask);
+
+  FFTServer<Float,Complex> ffts;
+  Vector<Complex> fftres;
+  ffts.fft0(fftres, spec);
+
+  std::vector<float> res;
+  float norm = float(2.0/double(spec.size()));
+
+  if (getRealImag) {
+    for (uInt i = 0; i < fftres.size(); ++i) {
+      res.push_back(real(fftres[i])*norm);
+      res.push_back(imag(fftres[i])*norm);
+    }
+  } else {
+    for (uInt i = 0; i < fftres.size(); ++i) {
+      res.push_back(abs(fftres[i])*norm);
+      if (!getAmplitudeOnly) res.push_back(arg(fftres[i]));
+    }
+  }
+
+  return res;
+}
+
+
+float Scantable::getRms(const std::vector<bool>& mask, int whichrow)
+{
   Vector<Float> spec;
   specCol_.get(whichrow, spec);
 
@@ -2684,9 +2903,7 @@ float Scantable::getRms(const std::vector<bool>& mask, int whichrow) {
 }
 
 
-std::string Scantable::formatBaselineParamsHeader(int whichrow, 
-						  const std::string& masklist, 
-						  bool verbose) const
+std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::string& masklist, bool verbose) const
 {
   ostringstream oss;
 
@@ -2721,14 +2938,14 @@ std::string Scantable::formatBaselineParamsFooter(float rms, bool verbose) const
   return String(oss);
 }
 
-  std::string Scantable::formatBaselineParams(const std::vector<float>& params, 
-					      const std::vector<bool>& fixed, 
-					      float rms, 
-					      const std::string& masklist, 
-					      int whichrow, 
-					      bool verbose, 
-					      int start, int count,
-					      bool resetparamid) const
+std::string Scantable::formatBaselineParams(const std::vector<float>& params, 
+					    const std::vector<bool>& fixed, 
+					    float rms, 
+					    const std::string& masklist, 
+					    int whichrow, 
+					    bool verbose, 
+					    int start, int count,
+					    bool resetparamid) const
 {
   int nParam = (int)(params.size());
 
@@ -2903,25 +3120,6 @@ vector<float> Scantable::getTsysSpectrum( int whichrow ) const
   return stlTsys ;
 }
 
-/*
-STFitEntry Scantable::polyBaseline(const std::vector<bool>& mask, int order, int rowno)
-{
-  Fitter fitter = Fitter();
-  fitter.setExpression("poly", order);
-
-  std::vector<bool> fmask = getMask(rowno);
-  if (fmask.size() != mask.size()) {
-    throw(AipsError("different mask sizes"));
-  }
-  for (int i = 0; i < fmask.size(); ++i) {
-    fmask[i] = fmask[i] && mask[i];
-  }
-
-  fitBaseline(fmask, rowno, fitter);
-  setSpectrum(fitter.getResidual(), rowno);
-  return fitter.getFitEntry();
-}
-*/
 
 }
 //namespace asap

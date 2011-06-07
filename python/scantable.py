@@ -75,7 +75,101 @@ def is_ms(filename):
             return False
     else:
         return False
+
+def normalise_edge_param(edge):
+    """\
+    Convert a given edge value to a one-dimensional array that can be
+    given to baseline-fitting/subtraction functions.
+    The length of the output value will be an even because values for
+    the both sides of spectra are to be contained for each IF. When
+    the length is 2, the values will be applied to all IFs. If the length
+    is larger than 2, it will be 2*ifnos(). 
+    Accepted format of edge include:
+            * an integer - will be used for both sides of spectra of all IFs.
+                  e.g. 10 is converted to [10,10]
+            * an empty list/tuple [] - converted to [0, 0] and used for all IFs. 
+            * a list/tuple containing an integer - same as the above case.
+                  e.g. [10] is converted to [10,10]
+            * a list/tuple containing two integers - will be used for all IFs. 
+                  e.g. [5,10] is output as it is. no need to convert.
+            * a list/tuple of lists/tuples containing TWO integers -
+                  each element of edge will be used for each IF.
+                  e.g. [[5,10],[15,20]] - [5,10] for IF[0] and [15,20] for IF[1].
+                  
+                  If an element contains the same integer values, the input 'edge'
+                  parameter can be given in a simpler shape in the following cases:
+                      ** when len(edge)!=2
+                          any elements containing the same values can be replaced
+                          to single integers.
+                          e.g. [[15,15]] can be simplified to [15] (or [15,15] or 15 also). 
+                          e.g. [[1,1],[2,2],[3,3]] can be simplified to [1,2,3]. 
+                      ** when len(edge)=2
+                          care is needed for this case: ONLY ONE of the
+                          elements can be a single integer,
+                          e.g. [[5,5],[10,10]] can be simplified to [5,[10,10]]
+                               or [[5,5],10], but can NOT be simplified to [5,10].
+                               when [5,10] given, it is interpreted as
+                               [[5,10],[5,10],[5,10],...] instead, as shown before. 
+    """
+    from asap import _is_sequence_or_number as _is_valid
+    if isinstance(edge, list) or isinstance(edge, tuple):
+        for edgepar in edge:
+            if not _is_valid(edgepar, int):
+                raise ValueError, "Each element of the 'edge' tuple has \
+                                   to be a pair of integers or an integer."
+            if isinstance(edgepar, list) or isinstance(edgepar, tuple):
+                if len(edgepar) != 2:
+                    raise ValueError, "Each element of the 'edge' tuple has \
+                                       to be a pair of integers or an integer."
+    else:
+        if not _is_valid(edge, int):
+            raise ValueError, "Parameter 'edge' has to be an integer or a \
+                               pair of integers specified as a tuple. \
+                               Nested tuples are allowed \
+                               to make individual selection for different IFs."
+        
+
+    if isinstance(edge, int):
+        edge = [ edge, edge ]                 # e.g. 3   => [3,3]
+    elif isinstance(edge, list) or isinstance(edge, tuple):
+        if len(edge) == 0:
+            edge = [0, 0]                     # e.g. []  => [0,0]
+        elif len(edge) == 1:
+            if isinstance(edge[0], int):
+                edge = [ edge[0], edge[0] ]   # e.g. [1] => [1,1]
+
+    commonedge = True
+    if len(edge) > 2: commonedge = False
+    else:
+        for edgepar in edge:
+            if isinstance(edgepar, list) or isinstance(edgepar, tuple):
+                commonedge = False
+                break
+
+    if commonedge:
+        if len(edge) > 1:
+            norm_edge = edge
+        else:
+            norm_edge = edge + edge
+    else:
+        norm_edge = []
+        for edgepar in edge:
+            if isinstance(edgepar, int):
+                norm_edge += [edgepar, edgepar]
+            else:
+                norm_edge += edgepar
+
+    return norm_edge
+
+def raise_fitting_failure_exception(e):
+    msg = "The fit failed, possibly because it didn't converge."
+    if rcParams["verbose"]:
+        asaplog.push(str(e))
+        asaplog.push(str(msg))
+    else:
+        raise RuntimeError(str(e)+'\n'+msg)
     
+
 class scantable(Scantable):
     """\
         The ASAP container for scans (single-dish data).
@@ -1119,12 +1213,23 @@ class scantable(Scantable):
             return s
 
     @asaplog_post_dec
-    def fft(self, getrealimag=False, rowno=[]):
+    def fft(self, rowno=[], mask=[], getrealimag=False):
         """\
         Apply FFT to the spectra.
         Flagged data in the scantable get interpolated over the region.
 
         Parameters:
+
+            rowno:          The row number(s) to be processed. int, list 
+                            and tuple are accepted. By default ([]), FFT 
+                            is applied to the whole data.
+
+            mask:           Auxiliary channel mask(s). Given as a boolean
+                            list, it is applied to all specified rows.
+                            A list of boolean lists can also be used to 
+                            apply different masks. In the latter case, the
+                            length of 'mask' must be the same as that of
+                            'rowno'. The default is []. 
         
             getrealimag:    If True, returns the real and imaginary part 
                             values of the complex results.
@@ -1132,56 +1237,65 @@ class scantable(Scantable):
                             (absolute value) normalised with Ndata/2 and
                             phase (argument, in unit of radian).
 
-            rowno:          The row number(s) to be processed. int, list 
-                            and tuple are accepted. By default ([]), FFT 
-                            is applied to the whole data.
-
         Returns:
 
-            A dictionary containing two keys, i.e., 'real' and 'imag' for
-            getrealimag = True, or 'ampl' and 'phase' for getrealimag = False,
+            A list of dictionaries containing the results for each spectrum.
+            Each dictionary contains two values, the real and the imaginary 
+            parts when getrealimag = True, or the amplitude(absolute value)
+            and the phase(argument) when getrealimag = False. The key for
+            these values are 'real' and 'imag', or 'ampl' and 'phase',
             respectively.
-            The value for each key is a list of lists containing the FFT
-            results from each spectrum.
-            
         """
-        if getrealimag:
-            res = {"real":[], "imag":[]}  # return real and imaginary values
-        else:
-            res = {"ampl":[], "phase":[]} # return amplitude and phase(argument)
-        
         if isinstance(rowno, int):
             rowno = [rowno]
         elif not (isinstance(rowno, list) or isinstance(rowno, tuple)):
-            raise TypeError("The row number(s) should be int, list or tuple.")
+            raise TypeError("The row number(s) must be int, list or tuple.")
+
+        if len(rowno) == 0: rowno = [i for i in xrange(self.nrow())]
+
+        if not (isinstance(mask, list) or isinstance(mask, tuple)):
+            raise TypeError("The mask must be a boolean list or a list of boolean list.")
+        if len(mask) == 0: mask = [True for i in xrange(self.nchan())]
+        if isinstance(mask[0], bool): mask = [mask]
+        elif not (isinstance(mask[0], list) or isinstance(mask[0], tuple)):
+            raise TypeError("The mask must be a boolean list or a list of boolean list.")
+
+        usecommonmask = (len(mask) == 1)
+        if not usecommonmask:
+            if len(mask) != len(rowno):
+                raise ValueError("When specifying masks for each spectrum, the numbers of them must be identical.")
+        for amask in mask:
+            if len(amask) != self.nchan():
+                raise ValueError("The spectra and the mask have different length.")
         
-        nrow = len(rowno)
-        if nrow == 0: nrow = self.nrow()  # by default, calculate for all rows. 
-        
-        fspec = self._math._fft(self, rowno, getrealimag)
-        nspec = len(fspec)/nrow
-        
-        i = 0
-        while (i < nrow):
-            v1 = []
-            v2 = []
+        res = []
+
+        imask = 0
+        for whichrow in rowno:
+            fspec = self._fft(whichrow, mask[imask], getrealimag)
+            nspec = len(fspec)
             
-            j = 0
-            while (j < nspec):
-                k = i*nspec + j
-                v1.append(fspec[k])
-                v2.append(fspec[k+1])
-                j += 2
+            i=0
+            v1=[]
+            v2=[]
+            reselem = {"real":[],"imag":[]} if getrealimag else {"ampl":[],"phase":[]}
+            
+            while (i < nspec):
+                v1.append(fspec[i])
+                v2.append(fspec[i+1])
+                i+=2
             
             if getrealimag:
-                res["real"].append(v1)
-                res["imag"].append(v2)
+                reselem["real"]  += v1
+                reselem["imag"]  += v2
             else:
-                res["ampl"].append(v1)
-                res["phase"].append(v2)
+                reselem["ampl"]  += v1
+                reselem["phase"] += v2
             
-            i += 1
-
+            res.append(reselem)
+            
+            if not usecommonmask: imask += 1
+        
         return res
 
     @asaplog_post_dec
@@ -2130,27 +2244,89 @@ class scantable(Scantable):
         if insitu: self._assign(s)
         else: return s
 
+    @asaplog_post_dec
+    def _parse_wn(self, wn):
+        if isinstance(wn, list) or isinstance(wn, tuple):
+            return wn
+        elif isinstance(wn, int):
+            return [ wn ]
+        elif isinstance(wn, str):
+            if '-' in wn:                            # case 'a-b' : return [a,a+1,...,b-1,b]
+                val = wn.split('-')
+                val = [int(val[0]), int(val[1])]
+                val.sort()
+                res = [i for i in xrange(val[0], val[1]+1)]
+            elif wn[:2] == '<=' or wn[:2] == '=<':   # cases '<=a','=<a' : return [0,1,...,a-1,a]
+                val = int(wn[2:])+1
+                res = [i for i in xrange(val)]
+            elif wn[-2:] == '>=' or wn[-2:] == '=>': # cases 'a>=','a=>' : return [0,1,...,a-1,a]
+                val = int(wn[:-2])+1
+                res = [i for i in xrange(val)]
+            elif wn[0] == '<':                       # case '<a' :         return [0,1,...,a-2,a-1]
+                val = int(wn[1:])
+                res = [i for i in xrange(val)]
+            elif wn[-1] == '>':                      # case 'a>' :         return [0,1,...,a-2,a-1]
+                val = int(wn[:-1])
+                res = [i for i in xrange(val)]
+            elif wn[:2] == '>=' or wn[:2] == '=>':   # cases '>=a','=>a' : return [a,a+1,...,a_nyq]
+                val = int(wn[2:])
+                res = [i for i in xrange(val, self.nchan()/2+1)]
+            elif wn[-2:] == '<=' or wn[-2:] == '=<': # cases 'a<=','a=<' : return [a,a+1,...,a_nyq]
+                val = int(wn[:-2])
+                res = [i for i in xrange(val, self.nchan()/2+1)]
+            elif wn[0] == '>':                       # case '>a' :         return [a+1,a+2,...,a_nyq]
+                val = int(wn[1:])+1
+                res = [i for i in xrange(val, self.nchan()/2+1)]
+            elif wn[-1] == '<':                      # case 'a<' :         return [a+1,a+2,...,a_nyq]
+                val = int(wn[:-1])+1
+                res = [i for i in xrange(val, self.nchan()/2+1)]
+
+            return res
+        else:
+            msg = 'wrong value given for addwn/rejwn'
+            raise RuntimeError(msg)
+
 
     @asaplog_post_dec
-    def sinusoid_baseline(self, insitu=None, mask=None, nwave=None, maxwavelength=None,
-                          clipthresh=None, clipniter=None, plot=None, getresidual=None, outlog=None, blfile=None):
+    def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
+                          addwn=None, rejwn=None, clipthresh=None, clipniter=None, plot=None,
+                          getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal functions.
         Parameters:
-            insitu:        If False a new scantable is returned.
+            insitu:        if False a new scantable is returned.
                            Otherwise, the scaling is done in-situ
                            The default is taken from .asaprc (False)
-            mask:          An optional mask
-            nwave:         the maximum wave number of sinusoids within
-                           maxwavelength * (spectral range).
-                           The default is 3 (i.e., sinusoids with wave 
-                           number of 0(=constant), 1, 2, and 3 are 
-                           used for fitting). Also it is possible to
-                           explicitly specify all the wave numbers to
-                           be used, by giving a list including them 
-                           (e.g. [0,1,2,15,16]).
-            maxwavelength: the longest sinusoidal wavelength. The
-                           default is 1.0 (unit: spectral range). 
+            mask:          an optional mask
+            applyfft:      if True use some method, such as FFT, to find
+                           strongest sinusoidal components in the wavenumber
+                           domain to be used for baseline fitting.
+                           default is True.
+            fftmethod:     method to find the strong sinusoidal components.
+                           now only 'fft' is available and it is the default.
+            fftthresh:     the threshold to select wave numbers to be used for
+                           fitting from the distribution of amplitudes in the
+                           wavenumber domain. 
+                           both float and string values accepted. 
+                           given a float value, the unit is set to sigma.
+                           for string values, allowed formats include:
+                               'xsigma' or 'x' (= x-sigma level. e.g., '3sigma'), or
+                               'topx' (= the x strongest ones, e.g. 'top5'). 
+                           default is 3.0 (unit: sigma). 
+            addwn:         the additional wave numbers to be used for fitting.
+                           list or integer value is accepted to specify every
+                           wave numbers. also string value can be used in case
+                           you need to specify wave numbers in a certain range, 
+                           e.g., 'a-b' (= a, a+1, a+2, ..., b-1, b),
+                                 '<a'  (= 0,1,...,a-2,a-1),
+                                 '>=a' (= a, a+1, ... up to the maximum wave
+                                        number corresponding to the Nyquist
+                                        frequency for the case of FFT).
+                           default is []. 
+            rejwn:         the wave numbers NOT to be used for fitting. 
+                           can be set just as addwn but has higher priority: 
+                           wave numbers which are specified both in addwn
+                           and rejwn will NOT be used. default is []. 
             clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:     maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
             plot:      *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
@@ -2163,51 +2339,44 @@ class scantable(Scantable):
                            function to logger (default is False)
             blfile:        Name of a text file in which the best-fit
                            parameter values to be written
-                           (default is "": no file/logger output)
+                           (default is '': no file/logger output)
 
         Example:
             # return a scan baselined by a combination of sinusoidal curves having
             # wave numbers in spectral window up to 10, 
             # also with 3-sigma clipping, iteration up to 4 times
-            bscan = scan.sinusoid_baseline(nwave=10,clipthresh=3.0,clipniter=4)
+            bscan = scan.sinusoid_baseline(addwn='<=10',clipthresh=3.0,clipniter=4)
 
         Note:
             The best-fit parameter values output in logger and/or blfile are now
             based on specunit of 'channel'. 
         """
         
-        varlist = vars()
-        
-        if insitu is None: insitu = rcParams["insitu"]
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask          is None: mask          = [True for i in xrange(nchan)]
-        if nwave         is None: nwave         = 3
-        if maxwavelength is None: maxwavelength = 1.0
-        if clipthresh    is None: clipthresh    = 3.0
-        if clipniter     is None: clipniter     = 0
-        if plot          is None: plot          = False
-        if getresidual   is None: getresidual   = True
-        if outlog        is None: outlog        = False
-        if blfile        is None: blfile        = ""
-
-        if isinstance(nwave, int):
-            in_nwave = nwave
-            nwave = []
-            for i in xrange(in_nwave+1): nwave.append(i)
-        
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
         try:
-            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
-            workscan._sinusoid_baseline(mask, nwave, maxwavelength, clipthresh, clipniter, getresidual, outlog, blfile)
+            varlist = vars()
+        
+            if insitu is None: insitu = rcParams['insitu']
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
             
-            workscan._add_history("sinusoid_baseline", varlist)
+            if mask          is None: mask          = [True for i in xrange(workscan.nchan())]
+            if applyfft      is None: applyfft      = True
+            if fftmethod     is None: fftmethod     = 'fft'
+            if fftthresh     is None: fftthresh     = 3.0
+            if addwn         is None: addwn         = []
+            if rejwn         is None: rejwn         = []
+            if clipthresh    is None: clipthresh    = 3.0
+            if clipniter     is None: clipniter     = 0
+            if plot          is None: plot          = False
+            if getresidual   is None: getresidual   = True
+            if outlog        is None: outlog        = False
+            if blfile        is None: blfile        = ''
+
+            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
+            workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, getresidual, outlog, blfile)
+            workscan._add_history('sinusoid_baseline', varlist)
             
             if insitu:
                 self._assign(workscan)
@@ -2215,17 +2384,12 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
+            raise_fitting_failure_exception(e)
 
 
-    def auto_sinusoid_baseline(self, insitu=None, mask=None, nwave=None, maxwavelength=None,
-                               clipthresh=None, clipniter=None, edge=None, threshold=None,
+    @asaplog_post_dec
+    def auto_sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
+                               addwn=None, rejwn=None, clipthresh=None, clipniter=None, edge=None, threshold=None,
                                chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal functions.
@@ -2237,16 +2401,35 @@ class scantable(Scantable):
                            Otherwise, the scaling is done in-situ
                            The default is taken from .asaprc (False)
             mask:          an optional mask retreived from scantable
-            nwave:         the maximum wave number of sinusoids within
-                           maxwavelength * (spectral range).
-                           The default is 3 (i.e., sinusoids with wave 
-                           number of 0(=constant), 1, 2, and 3 are 
-                           used for fitting). Also it is possible to
-                           explicitly specify all the wave numbers to
-                           be used, by giving a list including them 
-                           (e.g. [0,1,2,15,16]).
-            maxwavelength: the longest sinusoidal wavelength. The
-                           default is 1.0 (unit: spectral range). 
+            applyfft:      if True use some method, such as FFT, to find
+                           strongest sinusoidal components in the wavenumber
+                           domain to be used for baseline fitting.
+                           default is True.
+            fftmethod:     method to find the strong sinusoidal components.
+                           now only 'fft' is available and it is the default.
+            fftthresh:     the threshold to select wave numbers to be used for
+                           fitting from the distribution of amplitudes in the
+                           wavenumber domain. 
+                           both float and string values accepted. 
+                           given a float value, the unit is set to sigma.
+                           for string values, allowed formats include:
+                               'xsigma' or 'x' (= x-sigma level. e.g., '3sigma'), or
+                               'topx' (= the x strongest ones, e.g. 'top5'). 
+                           default is 3.0 (unit: sigma). 
+            addwn:         the additional wave numbers to be used for fitting.
+                           list or integer value is accepted to specify every
+                           wave numbers. also string value can be used in case
+                           you need to specify wave numbers in a certain range, 
+                           e.g., 'a-b' (= a, a+1, a+2, ..., b-1, b),
+                                 '<a'  (= 0,1,...,a-2,a-1),
+                                 '>=a' (= a, a+1, ... up to the maximum wave
+                                        number corresponding to the Nyquist
+                                        frequency for the case of FFT).
+                           default is []. 
+            rejwn:         the wave numbers NOT to be used for fitting. 
+                           can be set just as addwn but has higher priority: 
+                           wave numbers which are specified both in addwn
+                           and rejwn will NOT be used. default is []. 
             clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:     maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
             edge:          an optional number of channel to drop at
@@ -2282,76 +2465,40 @@ class scantable(Scantable):
                            (default is "": no file/logger output)
 
         Example:
-            bscan = scan.auto_sinusoid_baseline(nwave=10, insitu=False)
+            bscan = scan.auto_sinusoid_baseline(addwn='<=10', insitu=False)
         
         Note:
             The best-fit parameter values output in logger and/or blfile are now
             based on specunit of 'channel'. 
         """
 
-        varlist = vars()
-
-        if insitu is None: insitu = rcParams['insitu']
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask           is None: mask           = [True for i in xrange(nchan)]
-        if nwave          is None: nwave          = 3
-        if maxwavelength  is None: maxwavelength  = 1.0
-        if clipthresh     is None: clipthresh     = 3.0
-        if clipniter      is None: clipniter      = 0
-        if edge           is None: edge           = (0,0)
-        if threshold      is None: threshold      = 3
-        if chan_avg_limit is None: chan_avg_limit = 1
-        if plot           is None: plot           = False
-        if getresidual    is None: getresidual    = True
-        if outlog         is None: outlog         = False
-        if blfile         is None: blfile         = ""
-
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
-        from asap.asaplinefind import linefinder
-        from asap import _is_sequence_or_number as _is_valid
-
-        if isinstance(nwave, int):
-            in_nwave = nwave
-            nwave = []
-            for i in xrange(in_nwave+1): nwave.append(i)
-
-        if not (isinstance(edge, list) or isinstance(edge, tuple)): edge = [ edge ]
-        individualedge = False;
-        if len(edge) > 1: individualedge = isinstance(edge[0], list) or isinstance(edge[0], tuple)
-
-        if individualedge:
-            for edgepar in edge:
-                if not _is_valid(edgepar, int):
-                    raise ValueError, "Each element of the 'edge' tuple has \
-                                       to be a pair of integers or an integer."
-        else:
-            if not _is_valid(edge, int):
-                raise ValueError, "Parameter 'edge' has to be an integer or a \
-                                   pair of integers specified as a tuple. \
-                                   Nested tuples are allowed \
-                                   to make individual selection for different IFs."
-
-            if len(edge) > 1:
-                curedge = edge
-            else:
-                curedge = edge + edge
-
         try:
-            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
-            if individualedge:
-                curedge = []
-                for i in xrange(len(edge)):
-                    curedge += edge[i]
-                
-            workscan._auto_sinusoid_baseline(mask, nwave, maxwavelength, clipthresh, clipniter, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
+            varlist = vars()
 
+            if insitu is None: insitu = rcParams['insitu']
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
+            
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if applyfft       is None: applyfft       = True
+            if fftmethod      is None: fftmethod      = 'fft'
+            if fftthresh      is None: fftthresh      = 3.0
+            if addwn          is None: addwn          = []
+            if rejwn          is None: rejwn          = []
+            if clipthresh     is None: clipthresh     = 3.0
+            if clipniter      is None: clipniter      = 0
+            if edge           is None: edge           = (0,0)
+            if threshold      is None: threshold      = 3
+            if chan_avg_limit is None: chan_avg_limit = 1
+            if plot           is None: plot           = False
+            if getresidual    is None: getresidual    = True
+            if outlog         is None: outlog         = False
+            if blfile         is None: blfile         = ''
+
+            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
+            workscan._auto_sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, outlog, blfile)
             workscan._add_history("auto_sinusoid_baseline", varlist)
             
             if insitu:
@@ -2360,14 +2507,7 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
-
+            raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
     def cspline_baseline(self, insitu=None, mask=None, npiece=None,
@@ -2404,31 +2544,26 @@ class scantable(Scantable):
             based on specunit of 'channel'. 
         """
         
-        varlist = vars()
-        
-        if insitu is None: insitu = rcParams["insitu"]
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask        is None: mask        = [True for i in xrange(nchan)]
-        if npiece      is None: npiece      = 2
-        if clipthresh  is None: clipthresh  = 3.0
-        if clipniter   is None: clipniter   = 0
-        if plot        is None: plot        = False
-        if getresidual is None: getresidual = True
-        if outlog      is None: outlog      = False
-        if blfile      is None: blfile      = ""
-
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
         try:
+            varlist = vars()
+            
+            if insitu is None: insitu = rcParams['insitu']
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
+
+            if mask        is None: mask        = [True for i in xrange(workscan.nchan())]
+            if npiece      is None: npiece      = 2
+            if clipthresh  is None: clipthresh  = 3.0
+            if clipniter   is None: clipniter   = 0
+            if plot        is None: plot        = False
+            if getresidual is None: getresidual = True
+            if outlog      is None: outlog      = False
+            if blfile      is None: blfile      = ''
+
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
             workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, getresidual, outlog, blfile)
-            
             workscan._add_history("cspline_baseline", varlist)
             
             if insitu:
@@ -2437,15 +2572,9 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
+            raise_fitting_failure_exception(e)
 
-
+    @asaplog_post_dec
     def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None,
                               clipniter=None, edge=None, threshold=None,
                               chan_avg_limit=None, getresidual=None, plot=None, outlog=None, blfile=None):
@@ -2504,63 +2633,29 @@ class scantable(Scantable):
             based on specunit of 'channel'. 
         """
 
-        varlist = vars()
-
-        if insitu is None: insitu = rcParams['insitu']
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask           is None: mask           = [True for i in xrange(nchan)]
-        if npiece         is None: npiece         = 2
-        if clipthresh     is None: clipthresh     = 3.0
-        if clipniter      is None: clipniter      = 0
-        if edge           is None: edge           = (0, 0)
-        if threshold      is None: threshold      = 3
-        if chan_avg_limit is None: chan_avg_limit = 1
-        if plot           is None: plot           = False
-        if getresidual    is None: getresidual    = True
-        if outlog         is None: outlog         = False
-        if blfile         is None: blfile         = ""
-
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
-        from asap.asaplinefind import linefinder
-        from asap import _is_sequence_or_number as _is_valid
-
-        if not (isinstance(edge, list) or isinstance(edge, tuple)): edge = [ edge ]
-        individualedge = False;
-        if len(edge) > 1: individualedge = isinstance(edge[0], list) or isinstance(edge[0], tuple)
-
-        if individualedge:
-            for edgepar in edge:
-                if not _is_valid(edgepar, int):
-                    raise ValueError, "Each element of the 'edge' tuple has \
-                                       to be a pair of integers or an integer."
-        else:
-            if not _is_valid(edge, int):
-                raise ValueError, "Parameter 'edge' has to be an integer or a \
-                                   pair of integers specified as a tuple. \
-                                   Nested tuples are allowed \
-                                   to make individual selection for different IFs."
-
-            if len(edge) > 1:
-                curedge = edge
-            else:
-                curedge = edge + edge
-
         try:
-            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
-            if individualedge:
-                curedge = []
-                for i in xrange(len(edge)):
-                    curedge += edge[i]
-                
-            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
+            varlist = vars()
 
+            if insitu is None: insitu = rcParams['insitu']
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
+            
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if npiece         is None: npiece         = 2
+            if clipthresh     is None: clipthresh     = 3.0
+            if clipniter      is None: clipniter      = 0
+            if edge           is None: edge           = (0, 0)
+            if threshold      is None: threshold      = 3
+            if chan_avg_limit is None: chan_avg_limit = 1
+            if plot           is None: plot           = False
+            if getresidual    is None: getresidual    = True
+            if outlog         is None: outlog         = False
+            if blfile         is None: blfile         = ''
+
+            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method.
+            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, outlog, blfile)
             workscan._add_history("auto_cspline_baseline", varlist)
             
             if insitu:
@@ -2569,14 +2664,7 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
-
+            raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
     def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, getresidual=None, outlog=None, blfile=None):
@@ -2605,35 +2693,32 @@ class scantable(Scantable):
             bscan = scan.poly_baseline(order=3)
         """
         
-        varlist = vars()
-        
-        if insitu is None: insitu = rcParams["insitu"]
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask        is None: mask        = [True for i in xrange(nchan)]
-        if order       is None: order       = 0
-        if plot        is None: plot        = False
-        if getresidual is None: getresidual = True
-        if outlog      is None: outlog      = False
-        if blfile      is None: blfile      = ""
-
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
         try:
-            rows = xrange(workscan.nrow())
-            
-            #if len(rows) > 0: workscan._init_blinfo()
+            varlist = vars()
+        
+            if insitu is None: insitu = rcParams["insitu"]
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
+
+            if mask        is None: mask        = [True for i in xrange(workscan.nchan())]
+            if order       is None: order       = 0
+            if plot        is None: plot        = False
+            if getresidual is None: getresidual = True
+            if outlog      is None: outlog      = False
+            if blfile      is None: blfile      = ""
 
             if plot:
+                outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
                 if outblfile: blf = open(blfile, "a")
                 
                 f = fitter()
                 f.set_function(lpoly=order)
+                
+                rows = xrange(workscan.nrow())
+                #if len(rows) > 0: workscan._init_blinfo()
+                
                 for r in rows:
                     f.x = workscan._getabcissa(r)
                     f.y = workscan._getspectrum(r)
@@ -2672,15 +2757,9 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
+            raise_fitting_failure_exception(e)
 
-
+    @asaplog_post_dec
     def auto_poly_baseline(self, insitu=None, mask=None, order=None, edge=None, threshold=None,
                            chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
         """\
@@ -2730,75 +2809,45 @@ class scantable(Scantable):
             bscan = scan.auto_poly_baseline(order=7, insitu=False)
         """
 
-        varlist = vars()
-
-        if insitu is None: insitu = rcParams['insitu']
-        if insitu:
-            workscan = self
-        else:
-            workscan = self.copy()
-
-        nchan = workscan.nchan()
-        
-        if mask           is None: mask           = [True for i in xrange(nchan)]
-        if order          is None: order          = 0
-        if edge           is None: edge           = (0, 0)
-        if threshold      is None: threshold      = 3
-        if chan_avg_limit is None: chan_avg_limit = 1
-        if plot           is None: plot           = False
-        if getresidual    is None: getresidual    = True
-        if outlog         is None: outlog         = False
-        if blfile         is None: blfile         = ""
-
-        outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-        
-        from asap.asaplinefind import linefinder
-        from asap import _is_sequence_or_number as _is_valid
-
-        if not (isinstance(edge, list) or isinstance(edge, tuple)): edge = [ edge ]
-        individualedge = False;
-        if len(edge) > 1: individualedge = isinstance(edge[0], list) or isinstance(edge[0], tuple)
-
-        if individualedge:
-            for edgepar in edge:
-                if not _is_valid(edgepar, int):
-                    raise ValueError, "Each element of the 'edge' tuple has \
-                                       to be a pair of integers or an integer."
-        else:
-            if not _is_valid(edge, int):
-                raise ValueError, "Parameter 'edge' has to be an integer or a \
-                                   pair of integers specified as a tuple. \
-                                   Nested tuples are allowed \
-                                   to make individual selection for different IFs."
-
-            if len(edge) > 1:
-                curedge = edge
-            else:
-                curedge = edge + edge
-
         try:
-            rows = xrange(workscan.nrow())
-            
-            #if len(rows) > 0: workscan._init_blinfo()
+            varlist = vars()
+
+            if insitu is None: insitu = rcParams['insitu']
+            if insitu:
+                workscan = self
+            else:
+                workscan = self.copy()
+
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if order          is None: order          = 0
+            if edge           is None: edge           = (0, 0)
+            if threshold      is None: threshold      = 3
+            if chan_avg_limit is None: chan_avg_limit = 1
+            if plot           is None: plot           = False
+            if getresidual    is None: getresidual    = True
+            if outlog         is None: outlog         = False
+            if blfile         is None: blfile         = ''
+
+            edge = normalise_edge_param(edge)
 
             if plot:
+                outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
                 if outblfile: blf = open(blfile, "a")
                 
+                from asap.asaplinefind import linefinder
                 fl = linefinder()
                 fl.set_options(threshold=threshold,avg_limit=chan_avg_limit)
                 fl.set_scan(workscan)
+                
                 f = fitter()
                 f.set_function(lpoly=order)
 
+                rows = xrange(workscan.nrow())
+                #if len(rows) > 0: workscan._init_blinfo()
+                
                 for r in rows:
-                    if individualedge:
-                        if len(edge) <= workscan.getif(r):
-                            raise RuntimeError, "Number of edge elements appear to " \
-                                  "be less than the number of IFs"
-                        else:
-                            curedge = edge[workscan.getif(r)]
-
-                    fl.find_lines(r, mask_and(mask, workscan._getmask(r)), curedge)  # (CAS-1434)
+                    idx = 2*workscan.getif(r)
+                    fl.find_lines(r, mask_and(mask, workscan._getmask(r)), edge[idx:idx+2])  # (CAS-1434)
 
                     f.x = workscan._getabcissa(r)
                     f.y = workscan._getspectrum(r)
@@ -2826,14 +2875,8 @@ class scantable(Scantable):
                 f._p = None
 
                 if outblfile: blf.close()
-                
             else:
-                if individualedge:
-                    curedge = []
-                    for i in xrange(len(edge)):
-                        curedge += edge[i]
-                
-                workscan._auto_poly_baseline(mask, order, curedge, threshold, chan_avg_limit, getresidual, outlog, blfile)
+                workscan._auto_poly_baseline(mask, order, edge, threshold, chan_avg_limit, getresidual, outlog, blfile)
 
             workscan._add_history("auto_poly_baseline", varlist)
             
@@ -2843,102 +2886,7 @@ class scantable(Scantable):
                 return workscan
             
         except RuntimeError, e:
-            msg = "The fit failed, possibly because it didn't converge."
-            if rcParams["verbose"]:
-                asaplog.push(str(e))
-                asaplog.push(str(msg))
-                return
-            else:
-                raise RuntimeError(str(e)+'\n'+msg)
-
-
-    ### OBSOLETE ##################################################################
-    @asaplog_post_dec
-    def old_poly_baseline(self, mask=None, order=0, plot=False, uselin=False, insitu=None, rows=None):
-        """
-        Return a scan which has been baselined (all rows) by a polynomial.
-        
-        Parameters:
-
-            mask:       an optional mask
-
-            order:      the order of the polynomial (default is 0)
-
-            plot:       plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-
-            uselin:     use linear polynomial fit
-
-            insitu:     if False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-
-            rows:       row numbers of spectra to be processed.
-                        (default is None: for all rows)
-        
-        Example:
-            # return a scan baselined by a third order polynomial,
-            # not using a mask
-            bscan = scan.poly_baseline(order=3)
-
-        """
-        if insitu is None: insitu = rcParams['insitu']
-        if not insitu:
-            workscan = self.copy()
-        else:
-            workscan = self
-        varlist = vars()
-        if mask is None:
-            mask = [True for i in xrange(self.nchan())]
-
-        try:
-            f = fitter()
-            if uselin:
-                f.set_function(lpoly=order)
-            else:
-                f.set_function(poly=order)
-
-            if rows == None:
-                rows = xrange(workscan.nrow())
-            elif isinstance(rows, int):
-                rows = [ rows ]
-            
-            if len(rows) > 0:
-                self.blpars = []
-                self.masklists = []
-                self.actualmask = []
-            
-            for r in rows:
-                f.x = workscan._getabcissa(r)
-                f.y = workscan._getspectrum(r)
-                f.mask = mask_and(mask, workscan._getmask(r))    # (CAS-1434)
-                f.data = None
-                f.fit()
-                if plot:
-                    f.plot(residual=True)
-                    x = raw_input("Accept fit ( [y]/n ): ")
-                    if x.upper() == 'N':
-                        self.blpars.append(None)
-                        self.masklists.append(None)
-                        self.actualmask.append(None)
-                        continue
-                workscan._setspectrum(f.fitter.getresidual(), r)
-                self.blpars.append(f.get_parameters())
-                self.masklists.append(workscan.get_masklist(f.mask, row=r, silent=True))
-                self.actualmask.append(f.mask)
-
-            if plot:
-                f._p.unmap()
-                f._p = None
-            workscan._add_history("poly_baseline", varlist)
-            if insitu:
-                self._assign(workscan)
-            else:
-                return workscan
-        except RuntimeError:
-            msg = "The fit failed, possibly because it didn't converge."
-            raise RuntimeError(msg)
+            raise_fitting_failure_exception(e)
 
     def _init_blinfo(self):
         """\

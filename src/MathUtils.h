@@ -67,24 +67,24 @@ void hanning(casa::Vector<casa::Float>& out,
  * @param mask the input mask
  * @param hwidth half-width of the smoothing window
  */
- void runningMedian(casa::Vector<casa::Float>& out,
+void runningMedian(casa::Vector<casa::Float>& out,
                    casa::Vector<casa::Bool>& outflag,
                    const casa::Vector<casa::Float>& in,
                    const casa::Vector<casa::Bool>& flag,
                    float hwidth);
 
- void polyfit(casa::Vector<casa::Float>& out,
-                   casa::Vector<casa::Bool>& outmask,
-                   const casa::Vector<casa::Float>& in,
-                   const casa::Vector<casa::Bool>& mask,
-                   float hwidth, int order);
+void polyfit(casa::Vector<casa::Float>& out,
+             casa::Vector<casa::Bool>& outmask,
+             const casa::Vector<casa::Float>& in,
+             const casa::Vector<casa::Bool>& mask,
+             float hwidth, int order);
 
 // Generate specified statistic
 float statistics(const casa::String& which,
                  const casa::MaskedArray<casa::Float>& data);
 
 // Return a position of min or max value
- casa::IPosition minMaxPos(const casa::String& which,
+casa::IPosition minMaxPos(const casa::String& which,
                  const casa::MaskedArray<casa::Float>& data);
 
 // Replace masked value by zero
@@ -104,6 +104,9 @@ std::vector<std::string> tovectorstring(const casa::Vector<casa::String>& in);
  * @return
  */
 casa::Vector<casa::String> toVectorString(const std::vector<std::string>& in);
+
+void doZeroOrderInterpolation(casa::Vector<casa::Float>& data, 
+			      std::vector<bool>& mask);
 
 }
 
