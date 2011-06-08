@@ -1283,7 +1283,7 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   msSpwCols.netSideband().put( spwid, netSideband ) ;
 
   // RESOLUTION, CHAN_WIDTH, EFFECTIVE_BW
-  Vector<Double> sharedDoubleArr( nchan, inc ) ;
+  Vector<Double> sharedDoubleArr( nchan, abs(inc) ) ;
   msSpwCols.resolution().put( spwid, sharedDoubleArr ) ;
   msSpwCols.chanWidth().put( spwid, sharedDoubleArr ) ;
   msSpwCols.effectiveBW().put( spwid, sharedDoubleArr ) ;

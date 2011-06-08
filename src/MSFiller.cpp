@@ -600,6 +600,8 @@ void MSFiller::fill()
           sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_FREQ" ) ;
           Vector< Quantum<Double> > chanFreqs = (*sharedQDArrCol)( spwId ) ;
           delete sharedQDArrCol ;
+          if ( nchan > 1 && chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz") ) 
+            increment *= -1.0 ;
           if ( freqRef == MFrequency::LSRK ) {
             if ( even ) {
               IPosition refip0( 1, refchan-1 ) ;
