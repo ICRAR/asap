@@ -501,7 +501,8 @@ public:
   void polyBaseline(const std::vector<bool>& mask, 
 		    int order, 
 		    bool getResidual=true,
-		    bool outLogger=false, 
+		    const std::string& progressInfo="true,1000", 
+		    const bool outLogger=false, 
 		    const std::string& blfile="");
   void autoPolyBaseline(const std::vector<bool>& mask,
 			int order, 
@@ -509,14 +510,16 @@ public:
 			float threshold=3.0, 
 			int chanAvgLimit=1, 
 			bool getResidual=true,
-			bool outLogger=false, 
+			const std::string& progressInfo="true,1000", 
+			const bool outLogger=false, 
 			const std::string& blfile="");
   void cubicSplineBaseline(const std::vector<bool>& mask,
 			   int nPiece,
 			   float thresClip, 
 			   int nIterClip,
 			   bool getResidual=true,
-			   bool outLogger=false,
+			   const std::string& progressInfo="true,1000", 
+			   const bool outLogger=false,
 			   const std::string& blfile="");
   void autoCubicSplineBaseline(const std::vector<bool>& mask,
 			       int nPiece,
@@ -526,7 +529,8 @@ public:
 			       float threshold=3.0, 
 			       int chanAvgLimit=1, 
 			       bool getResidual=true,
-			       bool outLogger=false, 
+			       const std::string& progressInfo="true,1000", 
+			       const bool outLogger=false, 
 			       const std::string& blfile="");
   void sinusoidBaseline(const std::vector<bool>& mask,
 			const bool applyFFT, 
@@ -537,7 +541,8 @@ public:
 			float thresClip, 
 		        int nIterClip,
 			bool getResidual=true,
-		        bool outLogger=false,
+			const std::string& progressInfo="true,1000", 
+		        const bool outLogger=false,
 		        const std::string& blfile="");
   void autoSinusoidBaseline(const std::vector<bool>& mask,
 			    const bool applyFFT, 
@@ -551,7 +556,8 @@ public:
 		            float threshold=3.0, 
 		            int chanAvgLimit=1, 
 			    bool getResidual=true,
-		            bool outLogger=false, 
+			    const std::string& progressInfo="true,1000", 
+		            const bool outLogger=false, 
 		            const std::string& blfile="");
   std::vector<float> execFFT(const int whichrow, 
 			     const std::vector<bool>& inMask,
@@ -740,7 +746,8 @@ private:
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, Fitter& fitter);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params);
-  void showProgressOnTerminal(const int nProcessed, const int nTotal, const int nTotalThreshold=1000);
+  void parseProgressInfo(const std::string& progressInfo, bool& showProgress, int& minNRow);
+  void showProgressOnTerminal(const int nProcessed, const int nTotal, const bool showProgress=true, const int nTotalThreshold=1000);
 
   void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
 

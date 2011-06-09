@@ -168,7 +168,9 @@ def raise_fitting_failure_exception(e):
         asaplog.push(str(msg))
     else:
         raise RuntimeError(str(e)+'\n'+msg)
-    
+
+def pack_progress_params(showprogress, minnrow):
+    return str(showprogress).lower() + ',' + str(minnrow)
 
 class scantable(Scantable):
     """\
@@ -2290,7 +2292,7 @@ class scantable(Scantable):
     @asaplog_post_dec
     def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
                           addwn=None, rejwn=None, clipthresh=None, clipniter=None, plot=None,
-                          getresidual=None, outlog=None, blfile=None):
+                          getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal functions.
         Parameters:
@@ -2335,6 +2337,10 @@ class scantable(Scantable):
                            or 'n'
             getresidual:   if False, returns best-fit values instead of
                            residual. (default is True)
+            showprogress:  show progress status for large data.
+                           default is True.
+            minnrow:       minimum number of input spectra to show.
+                           default is 1000.
             outlog:        Output the coefficients of the best-fit
                            function to logger (default is False)
             blfile:        Name of a text file in which the best-fit
@@ -2371,11 +2377,13 @@ class scantable(Scantable):
             if clipniter     is None: clipniter     = 0
             if plot          is None: plot          = False
             if getresidual   is None: getresidual   = True
+            if showprogress  is None: showprogress  = True
+            if minnrow       is None: minnrow       = 1000
             if outlog        is None: outlog        = False
             if blfile        is None: blfile        = ''
 
             #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
-            workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, getresidual, outlog, blfile)
+            workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history('sinusoid_baseline', varlist)
             
             if insitu:
@@ -2390,79 +2398,84 @@ class scantable(Scantable):
     @asaplog_post_dec
     def auto_sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
                                addwn=None, rejwn=None, clipthresh=None, clipniter=None, edge=None, threshold=None,
-                               chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
+                               chan_avg_limit=None, plot=None, getresidual=None, showprogress=None, minnrow=None,
+                               outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal functions.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
         Parameters:
-            insitu:        if False a new scantable is returned.
-                           Otherwise, the scaling is done in-situ
-                           The default is taken from .asaprc (False)
-            mask:          an optional mask retreived from scantable
-            applyfft:      if True use some method, such as FFT, to find
-                           strongest sinusoidal components in the wavenumber
-                           domain to be used for baseline fitting.
-                           default is True.
-            fftmethod:     method to find the strong sinusoidal components.
-                           now only 'fft' is available and it is the default.
-            fftthresh:     the threshold to select wave numbers to be used for
-                           fitting from the distribution of amplitudes in the
-                           wavenumber domain. 
-                           both float and string values accepted. 
-                           given a float value, the unit is set to sigma.
-                           for string values, allowed formats include:
-                               'xsigma' or 'x' (= x-sigma level. e.g., '3sigma'), or
-                               'topx' (= the x strongest ones, e.g. 'top5'). 
-                           default is 3.0 (unit: sigma). 
-            addwn:         the additional wave numbers to be used for fitting.
-                           list or integer value is accepted to specify every
-                           wave numbers. also string value can be used in case
-                           you need to specify wave numbers in a certain range, 
-                           e.g., 'a-b' (= a, a+1, a+2, ..., b-1, b),
-                                 '<a'  (= 0,1,...,a-2,a-1),
-                                 '>=a' (= a, a+1, ... up to the maximum wave
-                                        number corresponding to the Nyquist
-                                        frequency for the case of FFT).
-                           default is []. 
-            rejwn:         the wave numbers NOT to be used for fitting. 
-                           can be set just as addwn but has higher priority: 
-                           wave numbers which are specified both in addwn
-                           and rejwn will NOT be used. default is []. 
-            clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:     maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
-            edge:          an optional number of channel to drop at
-                           the edge of spectrum. If only one value is
-                           specified, the same number will be dropped
-                           from both sides of the spectrum. Default
-                           is to keep all channels. Nested tuples
-                           represent individual edge selection for
-                           different IFs (a number of spectral channels
-                           can be different)
-            threshold:     the threshold used by line finder. It is
-                           better to keep it large as only strong lines
-                           affect the baseline solution.
-            chan_avg_limit:a maximum number of consequtive spectral
-                           channels to average during the search of
-                           weak and broad lines. The default is no
-                           averaging (and no search for weak lines).
-                           If such lines can affect the fitted baseline
-                           (e.g. a high order polynomial is fitted),
-                           increase this parameter (usually values up
-                           to 8 are reasonable). Most users of this
-                           method should find the default value sufficient.
-            plot:      *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
-                           plot the fit and the residual. In this each
-                           indivual fit has to be approved, by typing 'y'
-                           or 'n'
-            getresidual:   if False, returns best-fit values instead of
-                           residual. (default is True)
-            outlog:        Output the coefficients of the best-fit
-                           function to logger (default is False)
-            blfile:        Name of a text file in which the best-fit
-                           parameter values to be written
-                           (default is "": no file/logger output)
+            insitu:         if False a new scantable is returned.
+                            Otherwise, the scaling is done in-situ
+                            The default is taken from .asaprc (False)
+            mask:           an optional mask retreived from scantable
+            applyfft:       if True use some method, such as FFT, to find
+                            strongest sinusoidal components in the wavenumber
+                            domain to be used for baseline fitting.
+                            default is True.
+            fftmethod:      method to find the strong sinusoidal components.
+                            now only 'fft' is available and it is the default.
+            fftthresh:      the threshold to select wave numbers to be used for
+                            fitting from the distribution of amplitudes in the
+                            wavenumber domain. 
+                            both float and string values accepted. 
+                            given a float value, the unit is set to sigma.
+                            for string values, allowed formats include:
+                                'xsigma' or 'x' (= x-sigma level. e.g., '3sigma'), or
+                                'topx' (= the x strongest ones, e.g. 'top5'). 
+                            default is 3.0 (unit: sigma). 
+            addwn:          the additional wave numbers to be used for fitting.
+                            list or integer value is accepted to specify every
+                            wave numbers. also string value can be used in case
+                            you need to specify wave numbers in a certain range, 
+                            e.g., 'a-b' (= a, a+1, a+2, ..., b-1, b),
+                                  '<a'  (= 0,1,...,a-2,a-1),
+                                  '>=a' (= a, a+1, ... up to the maximum wave
+                                         number corresponding to the Nyquist
+                                         frequency for the case of FFT).
+                            default is []. 
+            rejwn:          the wave numbers NOT to be used for fitting. 
+                            can be set just as addwn but has higher priority: 
+                            wave numbers which are specified both in addwn
+                            and rejwn will NOT be used. default is []. 
+            clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
+            clipniter:      maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
+            edge:           an optional number of channel to drop at
+                            the edge of spectrum. If only one value is
+                            specified, the same number will be dropped
+                            from both sides of the spectrum. Default
+                            is to keep all channels. Nested tuples
+                            represent individual edge selection for
+                            different IFs (a number of spectral channels
+                            can be different)
+            threshold:      the threshold used by line finder. It is
+                            better to keep it large as only strong lines
+                            affect the baseline solution.
+            chan_avg_limit: a maximum number of consequtive spectral
+                            channels to average during the search of
+                            weak and broad lines. The default is no
+                            averaging (and no search for weak lines).
+                            If such lines can affect the fitted baseline
+                            (e.g. a high order polynomial is fitted),
+                            increase this parameter (usually values up
+                            to 8 are reasonable). Most users of this
+                            method should find the default value sufficient.
+            plot:       *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
+                            plot the fit and the residual. In this each
+                            indivual fit has to be approved, by typing 'y'
+                            or 'n'
+            getresidual:    if False, returns best-fit values instead of
+                            residual. (default is True)
+            showprogress:   show progress status for large data.
+                            default is True.
+            minnrow:        minimum number of input spectra to show.
+                            default is 1000.
+            outlog:         Output the coefficients of the best-fit
+                            function to logger (default is False)
+            blfile:         Name of a text file in which the best-fit
+                            parameter values to be written
+                            (default is "": no file/logger output)
 
         Example:
             bscan = scan.auto_sinusoid_baseline(addwn='<=10', insitu=False)
@@ -2494,11 +2507,13 @@ class scantable(Scantable):
             if chan_avg_limit is None: chan_avg_limit = 1
             if plot           is None: plot           = False
             if getresidual    is None: getresidual    = True
+            if showprogress   is None: showprogress   = True
+            if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
 
             #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
-            workscan._auto_sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, outlog, blfile)
+            workscan._auto_sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history("auto_sinusoid_baseline", varlist)
             
             if insitu:
@@ -2510,29 +2525,33 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def cspline_baseline(self, insitu=None, mask=None, npiece=None,
-                         clipthresh=None, clipniter=None, plot=None, getresidual=None, outlog=None, blfile=None):
+    def cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None, clipniter=None,
+                         plot=None, getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline function (piecewise cubic polynomial).
         Parameters:
-            insitu:     If False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       An optional mask
-            npiece:     Number of pieces. (default is 2)
-            clipthresh: Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:  maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
-            plot:   *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
-                        plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            getresidual:if False, returns best-fit values instead of
-                        residual. (default is True)
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:       If False a new scantable is returned.
+                          Otherwise, the scaling is done in-situ
+                          The default is taken from .asaprc (False)
+            mask:         An optional mask
+            npiece:       Number of pieces. (default is 2)
+            clipthresh:   Clipping threshold. (default is 3.0, unit: sigma)
+            clipniter:    maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
+            plot:     *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
+                          plot the fit and the residual. In this each
+                          indivual fit has to be approved, by typing 'y'
+                          or 'n'
+            getresidual:  if False, returns best-fit values instead of
+                          residual. (default is True)
+            showprogress: show progress status for large data.
+                          default is True.
+            minnrow:      minimum number of input spectra to show.
+                          default is 1000.
+            outlog:       Output the coefficients of the best-fit
+                          function to logger (default is False)
+            blfile:       Name of a text file in which the best-fit
+                          parameter values to be written
+                          (default is "": no file/logger output)
 
         Example:
             # return a scan baselined by a cubic spline consisting of 2 pieces (i.e., 1 internal knot),
@@ -2553,17 +2572,19 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask        is None: mask        = [True for i in xrange(workscan.nchan())]
-            if npiece      is None: npiece      = 2
-            if clipthresh  is None: clipthresh  = 3.0
-            if clipniter   is None: clipniter   = 0
-            if plot        is None: plot        = False
-            if getresidual is None: getresidual = True
-            if outlog      is None: outlog      = False
-            if blfile      is None: blfile      = ''
+            if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
+            if npiece       is None: npiece       = 2
+            if clipthresh   is None: clipthresh   = 3.0
+            if clipniter    is None: clipniter    = 0
+            if plot         is None: plot         = False
+            if getresidual  is None: getresidual  = True
+            if showprogress is None: showprogress = True
+            if minnrow      is None: minnrow      = 1000
+            if outlog       is None: outlog       = False
+            if blfile       is None: blfile       = ''
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
-            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, getresidual, outlog, blfile)
+            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history("cspline_baseline", varlist)
             
             if insitu:
@@ -2575,9 +2596,9 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None,
-                              clipniter=None, edge=None, threshold=None,
-                              chan_avg_limit=None, getresidual=None, plot=None, outlog=None, blfile=None):
+    def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None, clipniter=None,
+                              edge=None, threshold=None, chan_avg_limit=None, getresidual=None, plot=None,
+                              showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline
         function (piecewise cubic polynomial).
@@ -2585,45 +2606,48 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
-            insitu:     if False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       an optional mask retreived from scantable
-            npiece:     Number of pieces. (default is 2)
-            clipthresh: Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:  maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
-            edge:       an optional number of channel to drop at
-                        the edge of spectrum. If only one value is
-                        specified, the same number will be dropped
-                        from both sides of the spectrum. Default
-                        is to keep all channels. Nested tuples
-                        represent individual edge selection for
-                        different IFs (a number of spectral channels
-                        can be different)
-            threshold:  the threshold used by line finder. It is
-                        better to keep it large as only strong lines
-                        affect the baseline solution.
-            chan_avg_limit:
-                        a maximum number of consequtive spectral
-                        channels to average during the search of
-                        weak and broad lines. The default is no
-                        averaging (and no search for weak lines).
-                        If such lines can affect the fitted baseline
-                        (e.g. a high order polynomial is fitted),
-                        increase this parameter (usually values up
-                        to 8 are reasonable). Most users of this
-                        method should find the default value sufficient.
-            plot:   *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
-                        plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            getresidual:if False, returns best-fit values instead of
-                        residual. (default is True)
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:         if False a new scantable is returned.
+                            Otherwise, the scaling is done in-situ
+                            The default is taken from .asaprc (False)
+            mask:           an optional mask retreived from scantable
+            npiece:         Number of pieces. (default is 2)
+            clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
+            clipniter:      maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
+            edge:           an optional number of channel to drop at
+                            the edge of spectrum. If only one value is
+                            specified, the same number will be dropped
+                            from both sides of the spectrum. Default
+                            is to keep all channels. Nested tuples
+                            represent individual edge selection for
+                            different IFs (a number of spectral channels
+                            can be different)
+            threshold:      the threshold used by line finder. It is
+                            better to keep it large as only strong lines
+                            affect the baseline solution.
+            chan_avg_limit: a maximum number of consequtive spectral
+                            channels to average during the search of
+                            weak and broad lines. The default is no
+                            averaging (and no search for weak lines).
+                            If such lines can affect the fitted baseline
+                            (e.g. a high order polynomial is fitted),
+                            increase this parameter (usually values up
+                            to 8 are reasonable). Most users of this
+                            method should find the default value sufficient.
+            plot:       *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
+                            plot the fit and the residual. In this each
+                            indivual fit has to be approved, by typing 'y'
+                            or 'n'
+            getresidual:    if False, returns best-fit values instead of
+                            residual. (default is True)
+            showprogress:   show progress status for large data.
+                            default is True.
+            minnrow:        minimum number of input spectra to show.
+                            default is 1000.
+            outlog:         Output the coefficients of the best-fit
+                            function to logger (default is False)
+            blfile:         Name of a text file in which the best-fit
+                            parameter values to be written
+                            (default is "": no file/logger output)
 
         Example:
             bscan = scan.auto_cspline_baseline(npiece=3, insitu=False)
@@ -2651,11 +2675,13 @@ class scantable(Scantable):
             if chan_avg_limit is None: chan_avg_limit = 1
             if plot           is None: plot           = False
             if getresidual    is None: getresidual    = True
+            if showprogress   is None: showprogress   = True
+            if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method.
-            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, outlog, blfile)
+            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history("auto_cspline_baseline", varlist)
             
             if insitu:
@@ -2667,25 +2693,30 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, getresidual=None, outlog=None, blfile=None):
+    def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, getresidual=None,
+                      showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
-            insitu:     if False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       an optional mask
-            order:      the order of the polynomial (default is 0)
-            plot:       plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            getresidual:if False, returns best-fit values instead of
-                        residual. (default is True)
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:       if False a new scantable is returned.
+                          Otherwise, the scaling is done in-situ
+                          The default is taken from .asaprc (False)
+            mask:         an optional mask
+            order:        the order of the polynomial (default is 0)
+            plot:         plot the fit and the residual. In this each
+                          indivual fit has to be approved, by typing 'y'
+                          or 'n'
+            getresidual:  if False, returns best-fit values instead of
+                          residual. (default is True)
+            showprogress: show progress status for large data.
+                          default is True.
+            minnrow:      minimum number of input spectra to show.
+                          default is 1000.
+            outlog:       Output the coefficients of the best-fit
+                          function to logger (default is False)
+            blfile:       Name of a text file in which the best-fit
+                          parameter values to be written
+                          (default is "": no file/logger output)
 
         Example:
             # return a scan baselined by a third order polynomial,
@@ -2702,12 +2733,14 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask        is None: mask        = [True for i in xrange(workscan.nchan())]
-            if order       is None: order       = 0
-            if plot        is None: plot        = False
-            if getresidual is None: getresidual = True
-            if outlog      is None: outlog      = False
-            if blfile      is None: blfile      = ""
+            if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
+            if order        is None: order        = 0
+            if plot         is None: plot         = False
+            if getresidual  is None: getresidual  = True
+            if showprogress is None: showprogress = True
+            if minnrow      is None: minnrow      = 1000
+            if outlog       is None: outlog       = False
+            if blfile       is None: blfile       = ""
 
             if plot:
                 outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
@@ -2747,7 +2780,7 @@ class scantable(Scantable):
 
                 if outblfile: blf.close()
             else:
-                workscan._poly_baseline(mask, order, getresidual, outlog, blfile)
+                workscan._poly_baseline(mask, order, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             
             workscan._add_history("poly_baseline", varlist)
             
@@ -2760,50 +2793,53 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_poly_baseline(self, insitu=None, mask=None, order=None, edge=None, threshold=None,
-                           chan_avg_limit=None, plot=None, getresidual=None, outlog=None, blfile=None):
+    def auto_poly_baseline(self, insitu=None, mask=None, order=None, edge=None, threshold=None, chan_avg_limit=None,
+                           plot=None, getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
         Parameters:
-            insitu:     if False a new scantable is returned.
-                        Otherwise, the scaling is done in-situ
-                        The default is taken from .asaprc (False)
-            mask:       an optional mask retreived from scantable
-            order:      the order of the polynomial (default is 0)
-            edge:       an optional number of channel to drop at
-                        the edge of spectrum. If only one value is
-                        specified, the same number will be dropped
-                        from both sides of the spectrum. Default
-                        is to keep all channels. Nested tuples
-                        represent individual edge selection for
-                        different IFs (a number of spectral channels
-                        can be different)
-            threshold:  the threshold used by line finder. It is
-                        better to keep it large as only strong lines
-                        affect the baseline solution.
-            chan_avg_limit:
-                        a maximum number of consequtive spectral
-                        channels to average during the search of
-                        weak and broad lines. The default is no
-                        averaging (and no search for weak lines).
-                        If such lines can affect the fitted baseline
-                        (e.g. a high order polynomial is fitted),
-                        increase this parameter (usually values up
-                        to 8 are reasonable). Most users of this
-                        method should find the default value sufficient.
-            plot:       plot the fit and the residual. In this each
-                        indivual fit has to be approved, by typing 'y'
-                        or 'n'
-            getresidual:if False, returns best-fit values instead of
-                        residual. (default is True)
-            outlog:     Output the coefficients of the best-fit
-                        function to logger (default is False)
-            blfile:     Name of a text file in which the best-fit
-                        parameter values to be written
-                        (default is "": no file/logger output)
+            insitu:         if False a new scantable is returned.
+                            Otherwise, the scaling is done in-situ
+                            The default is taken from .asaprc (False)
+            mask:           an optional mask retreived from scantable
+            order:          the order of the polynomial (default is 0)
+            edge:           an optional number of channel to drop at
+                            the edge of spectrum. If only one value is
+                            specified, the same number will be dropped
+                            from both sides of the spectrum. Default
+                            is to keep all channels. Nested tuples
+                            represent individual edge selection for
+                            different IFs (a number of spectral channels
+                            can be different)
+            threshold:      the threshold used by line finder. It is
+                            better to keep it large as only strong lines
+                            affect the baseline solution.
+            chan_avg_limit: a maximum number of consequtive spectral
+                            channels to average during the search of
+                            weak and broad lines. The default is no
+                            averaging (and no search for weak lines).
+                            If such lines can affect the fitted baseline
+                            (e.g. a high order polynomial is fitted),
+                            increase this parameter (usually values up
+                            to 8 are reasonable). Most users of this
+                            method should find the default value sufficient.
+            plot:           plot the fit and the residual. In this each
+                            indivual fit has to be approved, by typing 'y'
+                            or 'n'
+            getresidual:    if False, returns best-fit values instead of
+                            residual. (default is True)
+            showprogress:   show progress status for large data.
+                            default is True.
+            minnrow:        minimum number of input spectra to show.
+                            default is 1000.
+            outlog:         Output the coefficients of the best-fit
+                            function to logger (default is False)
+            blfile:         Name of a text file in which the best-fit
+                            parameter values to be written
+                            (default is "": no file/logger output)
 
         Example:
             bscan = scan.auto_poly_baseline(order=7, insitu=False)
@@ -2825,6 +2861,8 @@ class scantable(Scantable):
             if chan_avg_limit is None: chan_avg_limit = 1
             if plot           is None: plot           = False
             if getresidual    is None: getresidual    = True
+            if showprogress   is None: showprogress   = True
+            if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
 
@@ -2876,7 +2914,7 @@ class scantable(Scantable):
 
                 if outblfile: blf.close()
             else:
-                workscan._auto_poly_baseline(mask, order, edge, threshold, chan_avg_limit, getresidual, outlog, blfile)
+                workscan._auto_poly_baseline(mask, order, edge, threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
 
             workscan._add_history("auto_poly_baseline", varlist)
             

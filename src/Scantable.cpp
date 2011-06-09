@@ -1816,7 +1816,7 @@ bool Scantable::getFlagtraFast(uInt whichrow)
   return ((flag >> 7) == 1);
 }
 
-void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1840,19 +1840,22 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getR
 
   int nRow = nrow();
   std::vector<bool> chanMask;
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
     fitBaseline(chanMask, whichrow, fitter);
     setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1879,6 +1882,10 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
   int minEdgeSize = getIFNos().size()*2;
   STLineFinder lineFinder = STLineFinder();
   lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
 
@@ -1909,13 +1916,13 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
     setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1939,6 +1946,9 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
 
   int nRow = nrow();
   std::vector<bool> chanMask;
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
@@ -1951,13 +1961,13 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -1984,6 +1994,10 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
   int minEdgeSize = getIFNos().size()*2;
   STLineFinder lineFinder = STLineFinder();
   lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
 
@@ -2020,7 +2034,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
@@ -2369,7 +2383,7 @@ void Scantable::addAuxWaveNumbers(const std::vector<int>& addNWaves, const std::
   }
 }
 
-void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -2394,6 +2408,10 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool apply
   int nRow = nrow();
   std::vector<bool> chanMask;
   std::vector<int> nWaves;
+
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
     chanMask = getCompositeChanMask(whichrow, mask);
@@ -2421,13 +2439,13 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool apply
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
 }
 
-void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, bool outLogger, const std::string& blfile)
+void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   ofstream ofs;
   String coordInfo = "";
@@ -2456,6 +2474,10 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool a
   int minEdgeSize = getIFNos().size()*2;
   STLineFinder lineFinder = STLineFinder();
   lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+  bool showProgress;
+  int minNRow;
+  parseProgressInfo(progressInfo, showProgress, minNRow);
 
   for (int whichrow = 0; whichrow < nRow; ++whichrow) {
 
@@ -2492,7 +2514,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool a
     //
 
     outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params);
-    showProgressOnTerminal(whichrow, nRow);
+    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
   }
 
   if (outTextFile) ofs.close();
@@ -2814,23 +2836,33 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
   }
 }
 
-void Scantable::showProgressOnTerminal(const int nProcessed, const int nTotal, const int nTotalThreshold)
+void Scantable::parseProgressInfo(const std::string& progressInfo, bool& showProgress, int& minNRow)
 {
-  if (nTotal >= nTotalThreshold) {
+  int idxDelimiter = progressInfo.find(",");
+  if (idxDelimiter < 0) {
+    throw(AipsError("wrong value in 'showprogress' parameter")) ;
+  }
+  showProgress = (progressInfo.substr(0, idxDelimiter) == "true");
+  std::istringstream is(progressInfo.substr(idxDelimiter+1));
+  is >> minNRow;
+}
+
+void Scantable::showProgressOnTerminal(const int nProcessed, const int nTotal, const bool showProgress, const int nTotalThreshold)
+{
+  if (showProgress && (nTotal >= nTotalThreshold)) {
     int nInterval = int(floor(double(nTotal)/100.0));
     if (nInterval == 0) nInterval++;
 
     if (nProcessed == 0) {
       printf("\x1b[31m\x1b[1m");             //set red color, highlighted
       printf("[  0%%]");
-      printf("\x1b[39m\x1b[0m");             //default attributes
+      printf("\x1b[39m\x1b[0m");             //set default attributes
       fflush(NULL);
     } else if (nProcessed % nInterval == 0) {
-      printf("\r\x1b[1C");                   //go to the 2nd column
+      printf("\r");                          //go to the head of line
       printf("\x1b[31m\x1b[1m");             //set red color, highlighted
-      printf("%3d", (int)(100.0*(double(nProcessed+1))/(double(nTotal))) );
-      printf("\x1b[39m\x1b[0m");             //default attributes
-      printf("\x1b[2C");                     //go to the end of line
+      printf("[%3d%%]", (int)(100.0*(double(nProcessed+1))/(double(nTotal))) );
+      printf("\x1b[39m\x1b[0m");             //set default attributes
       fflush(NULL);
     }
     if (nProcessed == nTotal - 1) {

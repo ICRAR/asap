@@ -263,23 +263,23 @@ public:
   void reshapeSpectrum( int nmin, int nmax )
   { table_->reshapeSpectrum( nmin, nmax ); }
 
-  void polyBaseline(const std::vector<bool>& mask, int order, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->polyBaseline(mask, order, getresidual, outlog, blfile); }
+  void polyBaseline(const std::vector<bool>& mask, int order, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->polyBaseline(mask, order, getresidual, showprogress, outlog, blfile); }
 
-  void autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->autoPolyBaseline(mask, order, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
+  void autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->autoPolyBaseline(mask, order, edge, threshold, chan_avg_limit, getresidual, showprogress, outlog, blfile); }
 
-  void cubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->cubicSplineBaseline(mask, npiece, clipthresh, clipniter, getresidual, outlog, blfile); }
+  void cubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->cubicSplineBaseline(mask, npiece, clipthresh, clipniter, getresidual, showprogress, outlog, blfile); }
 
-  void autoCubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->autoCubicSplineBaseline(mask, npiece, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
+  void autoCubicSplineBaseline(const std::vector<bool>& mask, int npiece, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->autoCubicSplineBaseline(mask, npiece, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, showprogress, outlog, blfile); }
 
-  void sinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->sinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, getresidual, outlog, blfile); }
+  void sinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->sinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, getresidual, showprogress, outlog, blfile); }
 
-  void autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, bool outlog=false, const std::string& blfile="")
-  { table_->autoSinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, outlog, blfile); }
+  void autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyfft, const std::string& fftmethod, const std::string& fftthresh, const std::vector<int>& addwn, const std::vector<int>& rejwn, float clipthresh, int clipniter, const std::vector<int>& edge, float threshold=5.0, int chan_avg_limit=1, bool getresidual=true, const std::string& showprogress="true,1000", const bool outlog=false, const std::string& blfile="")
+  { table_->autoSinusoidBaseline(mask, applyfft, fftmethod, fftthresh, addwn, rejwn, clipthresh, clipniter, edge, threshold, chan_avg_limit, getresidual, showprogress, outlog, blfile); }
 
   float getRms(const std::vector<bool>& mask, int whichrow)
   { return table_->getRms(mask, whichrow); }
