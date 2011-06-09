@@ -1262,9 +1262,10 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   stf.getEntry( refpix, refval, inc, (uInt)freqid ) ;
 
   // NUM_CHAN
-  Int nchan = (Int)(refpix * 2) + 1 ;
-  if ( nchan == 0 )
-    nchan = 1 ;
+  //Int nchan = (Int)(refpix * 2) + 1 ;
+  //if ( nchan == 0 )
+  //nchan = 1 ;
+  Int nchan = table_->nchan( spwid ) ;
   msSpwCols.numChan().put( spwid, nchan ) ;
 
   // TOTAL_BANDWIDTH
