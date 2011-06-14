@@ -1818,229 +1818,251 @@ bool Scantable::getFlagtraFast(uInt whichrow)
 
 void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
+    }
+
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
+
+    Fitter fitter = Fitter();
+    fitter.setExpression("poly", order);
+    //fitter.setIterClipping(thresClip, nIterClip);
+
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
+
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+      chanMask = getCompositeChanMask(whichrow, mask);
+      fitBaseline(chanMask, whichrow, fitter);
+      setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    }
+
+    if (outTextFile) ofs.close();
+
+  } catch (...) {
+    throw;
   }
-
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
-
-  Fitter fitter = Fitter();
-  fitter.setExpression("poly", order);
-  //fitter.setIterClipping(thresClip, nIterClip);
-
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
-
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-    chanMask = getCompositeChanMask(whichrow, mask);
-    fitBaseline(chanMask, whichrow, fitter);
-    setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
-  }
-
-  if (outTextFile) ofs.close();
 }
 
 void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
-  }
-
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
-
-  Fitter fitter = Fitter();
-  fitter.setExpression("poly", order);
-  //fitter.setIterClipping(thresClip, nIterClip);
-
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  int minEdgeSize = getIFNos().size()*2;
-  STLineFinder lineFinder = STLineFinder();
-  lineFinder.setOptions(threshold, 3, chanAvgLimit);
-
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
-
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-
-    //-------------------------------------------------------
-    //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
-    //-------------------------------------------------------
-    int edgeSize = edge.size();
-    std::vector<int> currentEdge;
-    if (edgeSize >= 2) {
-      int idx = 0;
-      if (edgeSize > 2) {
-	if (edgeSize < minEdgeSize) {
-	  throw(AipsError("Length of edge element info is less than that of IFs"));
-	}
-	idx = 2 * getIF(whichrow);
-      }
-      currentEdge.push_back(edge[idx]);
-      currentEdge.push_back(edge[idx+1]);
-    } else {
-      throw(AipsError("Wrong length of edge element"));
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
     }
-    lineFinder.setData(getSpectrum(whichrow));
-    lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
-    chanMask = lineFinder.getMask();
-    //-------------------------------------------------------
 
-    fitBaseline(chanMask, whichrow, fitter);
-    setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
 
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    Fitter fitter = Fitter();
+    fitter.setExpression("poly", order);
+    //fitter.setIterClipping(thresClip, nIterClip);
+
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    int minEdgeSize = getIFNos().size()*2;
+    STLineFinder lineFinder = STLineFinder();
+    lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
+
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+
+      //-------------------------------------------------------
+      //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
+      //-------------------------------------------------------
+      int edgeSize = edge.size();
+      std::vector<int> currentEdge;
+      if (edgeSize >= 2) {
+	int idx = 0;
+	if (edgeSize > 2) {
+	  if (edgeSize < minEdgeSize) {
+	    throw(AipsError("Length of edge element info is less than that of IFs"));
+	  }
+	  idx = 2 * getIF(whichrow);
+	}
+	currentEdge.push_back(edge[idx]);
+	currentEdge.push_back(edge[idx+1]);
+      } else {
+	throw(AipsError("Wrong length of edge element"));
+      }
+      lineFinder.setData(getSpectrum(whichrow));
+      lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
+      chanMask = lineFinder.getMask();
+      //-------------------------------------------------------
+
+      fitBaseline(chanMask, whichrow, fitter);
+      setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    }
+
+    if (outTextFile) ofs.close();
+
+  } catch (...) {
+    throw;
   }
-
-  if (outTextFile) ofs.close();
 }
 
 void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
+    }
+
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
+
+    //Fitter fitter = Fitter();
+    //fitter.setExpression("cspline", nPiece);
+    //fitter.setIterClipping(thresClip, nIterClip);
+
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
+
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+      chanMask = getCompositeChanMask(whichrow, mask);
+      //fitBaseline(chanMask, whichrow, fitter);
+      //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+      std::vector<int> pieceEdges;
+      std::vector<float> params;
+      int nClipped = 0;
+      std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
+      setSpectrum(res, whichrow);
+      //
+
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params, nClipped);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    }
+
+    if (outTextFile) ofs.close();
+
+  } catch (...) {
+    throw;
   }
-
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
-
-  //Fitter fitter = Fitter();
-  //fitter.setExpression("cspline", nPiece);
-  //fitter.setIterClipping(thresClip, nIterClip);
-
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
-
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-    chanMask = getCompositeChanMask(whichrow, mask);
-    //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-    std::vector<int> pieceEdges;
-    std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, getResidual);
-    setSpectrum(res, whichrow);
-    //
-
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
-  }
-
-  if (outTextFile) ofs.close();
 }
 
 void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
-  }
-
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
-
-  //Fitter fitter = Fitter();
-  //fitter.setExpression("cspline", nPiece);
-  //fitter.setIterClipping(thresClip, nIterClip);
-
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  int minEdgeSize = getIFNos().size()*2;
-  STLineFinder lineFinder = STLineFinder();
-  lineFinder.setOptions(threshold, 3, chanAvgLimit);
-
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
-
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-
-    //-------------------------------------------------------
-    //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
-    //-------------------------------------------------------
-    int edgeSize = edge.size();
-    std::vector<int> currentEdge;
-    if (edgeSize >= 2) {
-      int idx = 0;
-      if (edgeSize > 2) {
-	if (edgeSize < minEdgeSize) {
-	  throw(AipsError("Length of edge element info is less than that of IFs"));
-	}
-	idx = 2 * getIF(whichrow);
-      }
-      currentEdge.push_back(edge[idx]);
-      currentEdge.push_back(edge[idx+1]);
-    } else {
-      throw(AipsError("Wrong length of edge element"));
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
     }
-    lineFinder.setData(getSpectrum(whichrow));
-    lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
-    chanMask = lineFinder.getMask();
-    //-------------------------------------------------------
+
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
+
+    //Fitter fitter = Fitter();
+    //fitter.setExpression("cspline", nPiece);
+    //fitter.setIterClipping(thresClip, nIterClip);
+
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    int minEdgeSize = getIFNos().size()*2;
+    STLineFinder lineFinder = STLineFinder();
+    lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
+
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+
+      //-------------------------------------------------------
+      //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
+      //-------------------------------------------------------
+      int edgeSize = edge.size();
+      std::vector<int> currentEdge;
+      if (edgeSize >= 2) {
+	int idx = 0;
+	if (edgeSize > 2) {
+	  if (edgeSize < minEdgeSize) {
+	    throw(AipsError("Length of edge element info is less than that of IFs"));
+	  }
+	  idx = 2 * getIF(whichrow);
+	}
+	currentEdge.push_back(edge[idx]);
+	currentEdge.push_back(edge[idx+1]);
+      } else {
+	throw(AipsError("Wrong length of edge element"));
+      }
+      lineFinder.setData(getSpectrum(whichrow));
+      lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
+      chanMask = lineFinder.getMask();
+      //-------------------------------------------------------
 
 
-    //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-    std::vector<int> pieceEdges;
-    std::vector<float> params;
-    std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, thresClip, nIterClip, getResidual);
-    setSpectrum(res, whichrow);
-    //
+      //fitBaseline(chanMask, whichrow, fitter);
+      //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+      std::vector<int> pieceEdges;
+      std::vector<float> params;
+      int nClipped = 0;
+      std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
+      setSpectrum(res, whichrow);
+      //
 
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params, nClipped);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    }
+
+    if (outTextFile) ofs.close();
+
+  } catch (...) {
+    throw;
   }
-
-  if (outTextFile) ofs.close();
 }
 
-std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& data, const std::vector<bool>& mask, int nPiece, std::vector<int>& idxEdge, std::vector<float>& params, float thresClip, int nIterClip, bool getResidual)
+std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& data, const std::vector<bool>& mask, int nPiece, std::vector<int>& idxEdge, std::vector<float>& params, int& nClipped, float thresClip, int nIterClip, bool getResidual)
 {
   if (data.size() != mask.size()) {
     throw(AipsError("data and mask sizes are not identical"));
@@ -2060,6 +2082,9 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
   }
 
   int initNData = x.size();
+  if (initNData < nPiece) {
+    throw(AipsError("too few non-flagged channels"));
+  }
 
   int nElement = (int)(floor(floor((double)(initNData/nPiece))+0.5));
   std::vector<double> invEdge;
@@ -2106,6 +2131,7 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     }
 
     for (int n = 0; n < nPiece; ++n) {
+      int nUseDataInPiece = 0;
       for (int i = idxEdge[n]; i < idxEdge[n+1]; ++i) {
 
 	if (maskArray[i] == 0) continue;
@@ -2141,6 +2167,20 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
 	  zMatrix[j+4] += q*z1[i];
 	}
 
+	nUseDataInPiece++;
+      }
+
+      if (nUseDataInPiece < 1) {
+	std::vector<string> suffixOfPieceNumber(4);
+	suffixOfPieceNumber[0] = "th";
+	suffixOfPieceNumber[1] = "st";
+	suffixOfPieceNumber[2] = "nd";
+	suffixOfPieceNumber[3] = "rd";
+	int idxNoDataPiece = (n % 10 <= 3) ? n : 0;
+	ostringstream oss;
+	oss << "all channels clipped or masked in " << n << suffixOfPieceNumber[idxNoDataPiece];
+	oss << " piece of the spectrum. can't execute fitting anymore.";
+	throw(AipsError(String(oss)));
       }
     }
 
@@ -2245,6 +2285,8 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
       }
     }
   }
+
+  nClipped = initNData - nData;
 
   std::vector<float> result;
   if (getResidual) {
@@ -2385,142 +2427,154 @@ void Scantable::addAuxWaveNumbers(const std::vector<int>& addNWaves, const std::
 
 void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
-  }
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
+    }
 
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
 
-  //Fitter fitter = Fitter();
-  //fitter.setExpression("sinusoid", nWaves);
-  //fitter.setIterClipping(thresClip, nIterClip);
+    //Fitter fitter = Fitter();
+    //fitter.setExpression("sinusoid", nWaves);
+    //fitter.setIterClipping(thresClip, nIterClip);
 
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  std::vector<int> nWaves;
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    std::vector<int> nWaves;
 
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
 
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-    chanMask = getCompositeChanMask(whichrow, mask);
-    selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+      chanMask = getCompositeChanMask(whichrow, mask);
+      selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
 
-    //FOR DEBUGGING------------
-    if (whichrow < 0) {// == nRow -1) {
-      cout << "+++ i=" << setw(3) << whichrow << ", IF=" << setw(2) << getIF(whichrow);
-      if (applyFFT) {
+      //FOR DEBUGGING------------
+      if (whichrow < 0) {// == nRow -1) {
+	cout << "+++ i=" << setw(3) << whichrow << ", IF=" << setw(2) << getIF(whichrow);
+	if (applyFFT) {
 	  cout << "[ ";
 	  for (uInt j = 0; j < nWaves.size(); ++j) {
 	    cout << nWaves[j] << ", ";
 	  }
 	  cout << " ]    " << endl;
+	}
+	cout << flush;
       }
-      cout << flush;
+      //-------------------------
+
+      //fitBaseline(chanMask, whichrow, fitter);
+      //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+      std::vector<float> params;
+      int nClipped = 0;
+      std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, nClipped, thresClip, nIterClip, getResidual);
+      setSpectrum(res, whichrow);
+      //
+
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params, nClipped);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
-    //-------------------------
 
-    //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-    std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, thresClip, nIterClip, getResidual);
-    setSpectrum(res, whichrow);
-    //
+    if (outTextFile) ofs.close();
 
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+  } catch (...) {
+    throw;
   }
-
-  if (outTextFile) ofs.close();
 }
 
 void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
-  ofstream ofs;
-  String coordInfo = "";
-  bool hasSameNchan = true;
-  bool outTextFile = false;
+  try {
+    ofstream ofs;
+    String coordInfo = "";
+    bool hasSameNchan = true;
+    bool outTextFile = false;
 
-  if (blfile != "") {
-    ofs.open(blfile.c_str(), ios::out | ios::app);
-    if (ofs) outTextFile = true;
-  }
-
-  if (outLogger || outTextFile) {
-    coordInfo = getCoordInfo()[0];
-    if (coordInfo == "") coordInfo = "channel";
-    hasSameNchan = hasSameNchanOverIFs();
-  }
-
-  //Fitter fitter = Fitter();
-  //fitter.setExpression("sinusoid", nWaves);
-  //fitter.setIterClipping(thresClip, nIterClip);
-
-  int nRow = nrow();
-  std::vector<bool> chanMask;
-  std::vector<int> nWaves;
-
-  int minEdgeSize = getIFNos().size()*2;
-  STLineFinder lineFinder = STLineFinder();
-  lineFinder.setOptions(threshold, 3, chanAvgLimit);
-
-  bool showProgress;
-  int minNRow;
-  parseProgressInfo(progressInfo, showProgress, minNRow);
-
-  for (int whichrow = 0; whichrow < nRow; ++whichrow) {
-
-    //-------------------------------------------------------
-    //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
-    //-------------------------------------------------------
-    int edgeSize = edge.size();
-    std::vector<int> currentEdge;
-    if (edgeSize >= 2) {
-      int idx = 0;
-      if (edgeSize > 2) {
-	if (edgeSize < minEdgeSize) {
-	  throw(AipsError("Length of edge element info is less than that of IFs"));
-	}
-	idx = 2 * getIF(whichrow);
-      }
-      currentEdge.push_back(edge[idx]);
-      currentEdge.push_back(edge[idx+1]);
-    } else {
-      throw(AipsError("Wrong length of edge element"));
+    if (blfile != "") {
+      ofs.open(blfile.c_str(), ios::out | ios::app);
+      if (ofs) outTextFile = true;
     }
-    lineFinder.setData(getSpectrum(whichrow));
-    lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
-    chanMask = lineFinder.getMask();
-    //-------------------------------------------------------
 
-    selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
+    if (outLogger || outTextFile) {
+      coordInfo = getCoordInfo()[0];
+      if (coordInfo == "") coordInfo = "channel";
+      hasSameNchan = hasSameNchanOverIFs();
+    }
 
-    //fitBaseline(chanMask, whichrow, fitter);
-    //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-    std::vector<float> params;
-    std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, thresClip, nIterClip, getResidual);
-    setSpectrum(res, whichrow);
-    //
+    //Fitter fitter = Fitter();
+    //fitter.setExpression("sinusoid", nWaves);
+    //fitter.setIterClipping(thresClip, nIterClip);
 
-    outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params);
-    showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+    std::vector<int> nWaves;
+
+    int minEdgeSize = getIFNos().size()*2;
+    STLineFinder lineFinder = STLineFinder();
+    lineFinder.setOptions(threshold, 3, chanAvgLimit);
+
+    bool showProgress;
+    int minNRow;
+    parseProgressInfo(progressInfo, showProgress, minNRow);
+
+    for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+
+      //-------------------------------------------------------
+      //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
+      //-------------------------------------------------------
+      int edgeSize = edge.size();
+      std::vector<int> currentEdge;
+      if (edgeSize >= 2) {
+	int idx = 0;
+	if (edgeSize > 2) {
+	  if (edgeSize < minEdgeSize) {
+	    throw(AipsError("Length of edge element info is less than that of IFs"));
+	  }
+	  idx = 2 * getIF(whichrow);
+	}
+	currentEdge.push_back(edge[idx]);
+	currentEdge.push_back(edge[idx+1]);
+      } else {
+	throw(AipsError("Wrong length of edge element"));
+      }
+      lineFinder.setData(getSpectrum(whichrow));
+      lineFinder.findLines(getCompositeChanMask(whichrow, mask), currentEdge, whichrow);
+      chanMask = lineFinder.getMask();
+      //-------------------------------------------------------
+
+      selectWaveNumbers(whichrow, chanMask, applyFFT, fftMethod, fftThresh, addNWaves, rejectNWaves, nWaves);
+
+      //fitBaseline(chanMask, whichrow, fitter);
+      //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
+      std::vector<float> params;
+      int nClipped = 0;
+      std::vector<float> res = doSinusoidFitting(getSpectrum(whichrow), chanMask, nWaves, params, nClipped, thresClip, nIterClip, getResidual);
+      setSpectrum(res, whichrow);
+      //
+
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params, nClipped);
+      showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+    }
+
+    if (outTextFile) ofs.close();
+
+  } catch (...) {
+    throw;
   }
-
-  if (outTextFile) ofs.close();
 }
 
-std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, const std::vector<int>& waveNumbers, std::vector<float>& params, float thresClip, int nIterClip, bool getResidual)
+std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, const std::vector<bool>& mask, const std::vector<int>& waveNumbers, std::vector<float>& params, int& nClipped, float thresClip, int nIterClip, bool getResidual)
 {
   if (data.size() != mask.size()) {
     throw(AipsError("data and mask sizes are not identical"));
@@ -2616,6 +2670,7 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
       zMatrix[i] = 0.0;
     }
 
+    int nUseData = 0;
     for (int k = 0; k < nChan; ++k) {
       if (maskArray[k] == 0) continue;
 
@@ -2625,6 +2680,12 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
 	}
 	zMatrix[i] += z1[k] * xArray[i][k];
       }
+
+      nUseData++;
+    }
+
+    if (nUseData < 1) {
+	throw(AipsError("all channels clipped or masked. can't execute fitting anymore."));      
     }
 
     for (int i = 0; i < nDOF; ++i) {
@@ -2712,6 +2773,8 @@ std::vector<float> Scantable::doSinusoidFitting(const std::vector<float>& data, 
     }
   }
 
+  nClipped = initNData - nData;
+
   std::vector<float> result;
   if (getResidual) {
     for (int i = 0; i < nChan; ++i) {
@@ -2790,16 +2853,16 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatBaselineParams(params, fixed, rms, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, false) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatBaselineParams(params, fixed, rms, masklist, whichrow, true) << flush;
+      ofs << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, true) << flush;
     }
   }
 }
 
 /* for cspline. will be merged once cspline is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params)
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped)
 {
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
@@ -2809,16 +2872,16 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatPiecewiseBaselineParams(edge, params, fixed, rms, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, false) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, masklist, whichrow, true) << flush;
+      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, true) << flush;
     }
   }
 }
 
 /* for sinusoid. will be merged once sinusoid is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params)
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const int nClipped)
 {
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
@@ -2828,10 +2891,10 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatBaselineParams(params, fixed, rms, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, false) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatBaselineParams(params, fixed, rms, masklist, whichrow, true) << flush;
+      ofs << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, true) << flush;
     }
   }
 }
@@ -2853,22 +2916,19 @@ void Scantable::showProgressOnTerminal(const int nProcessed, const int nTotal, c
     int nInterval = int(floor(double(nTotal)/100.0));
     if (nInterval == 0) nInterval++;
 
-    if (nProcessed == 0) {
-      printf("\x1b[31m\x1b[1m");             //set red color, highlighted
-      printf("[  0%%]");
-      printf("\x1b[39m\x1b[0m");             //set default attributes
-      fflush(NULL);
-    } else if (nProcessed % nInterval == 0) {
+    if (nProcessed % nInterval == 0) {
       printf("\r");                          //go to the head of line
       printf("\x1b[31m\x1b[1m");             //set red color, highlighted
       printf("[%3d%%]", (int)(100.0*(double(nProcessed+1))/(double(nTotal))) );
       printf("\x1b[39m\x1b[0m");             //set default attributes
       fflush(NULL);
     }
+
     if (nProcessed == nTotal - 1) {
       printf("\r\x1b[K");                    //clear
       fflush(NULL);
     }
+
   }
 }
 
@@ -2953,13 +3013,16 @@ std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::strin
   return String(oss);
 }
 
-std::string Scantable::formatBaselineParamsFooter(float rms, bool verbose) const
+std::string Scantable::formatBaselineParamsFooter(float rms, int nClipped, bool verbose) const
 {
   ostringstream oss;
 
   if (verbose) {
     oss << "Results of baseline fit" << endl;
     oss << "  rms = " << setprecision(6) << rms << endl;
+    if (nClipped >= 0) {
+      oss << "  Number of clipped channels = " << nClipped << endl;
+    }
     for (int i = 0; i < 60; ++i) {
       oss << "-";
     }
@@ -2973,6 +3036,7 @@ std::string Scantable::formatBaselineParamsFooter(float rms, bool verbose) const
 std::string Scantable::formatBaselineParams(const std::vector<float>& params, 
 					    const std::vector<bool>& fixed, 
 					    float rms, 
+					    int nClipped,
 					    const std::string& masklist, 
 					    int whichrow, 
 					    bool verbose, 
@@ -3003,14 +3067,14 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
     }
 
     oss << endl;
-    oss << formatBaselineParamsFooter(rms, verbose);
+    oss << formatBaselineParamsFooter(rms, nClipped, verbose);
 
     return String(oss);
   }
 
 }
 
-std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ranges, const std::vector<float>& params, const std::vector<bool>& fixed, float rms, const std::string& masklist, int whichrow, bool verbose) const
+  std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ranges, const std::vector<float>& params, const std::vector<bool>& fixed, float rms, int nClipped, const std::string& masklist, int whichrow, bool verbose) const
 {
   int nOutParam = (int)(params.size());
   int nPiece = (int)(ranges.size()) - 1;
@@ -3018,7 +3082,7 @@ std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ran
   if (nOutParam < 1) {
     return("  Not fitted");
   } else if (nPiece < 0) {
-    return formatBaselineParams(params, fixed, rms, masklist, whichrow, verbose);
+    return formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, verbose);
   } else if (nPiece < 1) {
     return("  Bad count of the piece edge info");
   } else if (nOutParam % nPiece != 0) {
@@ -3038,10 +3102,10 @@ std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ran
       ss.str("");
       ss << "  [" << ranges[i] << "," << (ranges[i+1]-1) << "]";
       oss << left << setw(wRange) << ss.str();
-      oss << formatBaselineParams(params, fixed, rms, masklist, whichrow, false, i*nParam, nParam, true);
+      oss << formatBaselineParams(params, fixed, rms, 0, masklist, whichrow, false, i*nParam, nParam, true);
     }
 
-    oss << formatBaselineParamsFooter(rms, verbose);
+    oss << formatBaselineParamsFooter(rms, nClipped, verbose);
 
     return String(oss);
   }

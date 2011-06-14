@@ -567,6 +567,7 @@ public:
   std::string formatBaselineParams(const std::vector<float>& params, 
 			           const std::vector<bool>& fixed, 
 			           float rms, 
+				   int nClipped,
 		   	           const std::string& masklist, 
 			           int whichrow, 
 			           bool verbose=false,
@@ -577,6 +578,7 @@ public:
 					    const std::vector<float>& params, 
 					    const std::vector<bool>& fixed, 
 					    float rms, 
+					    int nClipped,
 					    const std::string& masklist, 
 					    int whichrow, 
 					    bool verbose=false) const;
@@ -700,6 +702,7 @@ private:
 					  int nPiece,
 					  std::vector<int>& idxEdge,
 					  std::vector<float>& params,
+					  int& nClipped,
 					  float thresClip=3.0, 
 					  int nIterClip=1,
 					  bool getResidual=true);
@@ -707,6 +710,7 @@ private:
 				       const std::vector<bool>& mask,
 				       const std::vector<int>& waveNumbers,
 				       std::vector<float>& params,
+				       int& nClipped,
 				       float thresClip=3.0, 
 				       int nIterClip=1,
 				       bool getResidual=true);
@@ -740,12 +744,12 @@ private:
 				bool verbose=false);
   std::vector<int> getMaskEdgeIndices(const std::vector<bool>& mask);
   std::string formatBaselineParamsHeader(int whichrow, const std::string& masklist, bool verbose) const;
-  std::string formatBaselineParamsFooter(float rms, bool verbose) const;
+  std::string formatBaselineParamsFooter(float rms, int nClipped, bool verbose) const;
   std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask);
   //std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask, const std::vector<int>& edge, const int minEdgeSize, STLineFinder& lineFinder);
   void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, Fitter& fitter);
-  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params);
-  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params);
+  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped);
+  void outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const int nClipped);
   void parseProgressInfo(const std::string& progressInfo, bool& showProgress, int& minNRow);
   void showProgressOnTerminal(const int nProcessed, const int nTotal, const bool showProgress=true, const int nTotalThreshold=1000);
 
