@@ -1108,7 +1108,7 @@ void STLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
   temp_mask.tovector(std_mask);
   sdf.setData(absc,spec,std_mask);
   sdf.setExpression("poly",order);
-  if (!sdf.fit()) return; // fit failed, use old spectrum
+  if (!sdf.lfit()) return; // fit failed, use old spectrum
   spectrum=casa::Vector<casa::Float>(sdf.getResidual());
 }
 
