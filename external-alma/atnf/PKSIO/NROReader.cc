@@ -38,8 +38,11 @@
 #include <atnf/PKSIO/NROOTFDataset.h>
 #include <atnf/PKSIO/ASTEDataset.h>
 
+#include <measures/Measures/MEpoch.h>
+#include <measures/Measures/MPosition.h>
 #include <measures/Measures/MDirection.h>
 #include <measures/Measures/MCDirection.h>
+#include <measures/Measures/MeasFrame.h>
 #include <measures/Measures/MeasConvert.h>
 
 #include <casa/IO/RegularFileIO.h>
@@ -358,11 +361,19 @@ Vector<Double> NROReader::getDirection( int i )
   }
   else if ( icoord == 2 ) {
     // convert from AZEL to RADEC
+    vector<double> antpos = getAntennaPosition() ;
+    Vector<Quantity> qantpos( 3 ) ;
+    for ( int ip = 0 ; ip < 3 ; ip++ )
+      qantpos[ip] = Quantity( antpos[ip], "m" ) ;
+    Double scantime = Double( dataset_->getScanTime( i ) ) ;
+    MEpoch me( Quantity( scantime, "d" ), MEpoch::UTC ) ;
+    MPosition mp( MVPosition( qantpos ), MPosition::ITRF ) ;
+    MeasFrame mf( me, mp ) ;
     MDirection result = 
       MDirection::Convert( MDirection( Quantity( dirx, "rad" ), 
 				       Quantity( diry, "rad" ),
 				       MDirection::Ref( MDirection::AZEL ) ),
-			   MDirection::Ref( MDirection::J2000 ) ) () ;
+			   MDirection::Ref( MDirection::J2000, mf ) ) () ;
     v = result.getAngle().getValue() ;
     //cout << "NROReader::getDirection()  DIRECTION convert from (" 
     //<< dirx << "," << diry << ") AZEL to (" 
@@ -440,10 +451,12 @@ int NROReader::getHeaderInfo( Int &nchan,
   antpos = pos ;
   //cout << "antpos = " << antpos << endl ;
   string eq = dataset_->getEPOCH() ;
-  if ( eq.compare( 0, 5, "B1950" ) == 0 )
-    equinox = 1950.0 ;
-  else if ( eq.compare( 0, 5, "J2000" ) == 0 ) 
-    equinox = 2000.0 ;
+//   if ( eq.compare( 0, 5, "B1950" ) == 0 )
+//     equinox = 1950.0 ;
+//   else if ( eq.compare( 0, 5, "J2000" ) == 0 ) 
+//     equinox = 2000.0 ;
+  // equinox is always 2000.0
+  equinox = 2000.0 ;
   //cout << "equinox = " << equinox << endl ;
   string vref = dataset_->getVREF() ;
   if ( vref.compare( 0, 3, "LSR" ) == 0 ) {
