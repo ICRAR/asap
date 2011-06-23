@@ -40,6 +40,7 @@
 
 //#include <casa/aips.h>
 #include <casa/Logging/LogIO.h>
+#include <casa/Containers/Record.h>
 #include <atnf/PKSIO/NRODataRecord.h>
 #include <casa/namespace.h>
 
@@ -512,6 +513,9 @@ class NRODataset
 
   // reference frequency for each array
   vector<double> refFreq_ ;
+
+  // record to store REFPIX, REFVAL, INCREMENT pair for each array
+  Record frec_ ;
 } ;
 
 

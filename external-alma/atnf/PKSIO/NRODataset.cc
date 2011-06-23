@@ -82,6 +82,9 @@ NRODataset::NRODataset( string name )
     os << LogIO::NORMAL << "BIG_ENDIAN " << LogIO::POST ;
   }
   same_ = -1 ;
+
+  // Record for frequency setting
+  frec_ = Record() ;
 }
 
 // destructor 
@@ -663,72 +666,79 @@ vector<double> NRODataset::getFrequencies( int i )
 
   NRODataRecord *record = getRecord( i ) ;
   string arryt = string( record->ARRYT ) ;
-  //string sbeamno = arryt.substr( 1, arryt.size()-1 ) ;
-  //uInt ib = atoi( sbeamno.c_str() ) - 1 ; 
   uInt ib = getArrayId( arryt ) ;
 
-  int ia = -1 ;
+  if ( frec_.isDefined( arryt ) ) {
+    // frequency for the array is already calculated
+    Vector<Double> f =  frec_.asArrayDouble( arryt ) ;
+    Double *f_p = f.data() ;
+    for ( int i = 0 ; i < 3 ; i++ )
+      v[i] = (double)(f_p[i]) ;
+    return v ;
+  }
+
+  //int ia = -1 ;
   bool isAOS = false ;
   //cout << "NRODataset::getFrequencies()  record->ARRYT=" << record->ARRYT << endl ;
   //cout << "NRODataset::getFrequencies()  ib = " << ib << endl ;
 
-  if ( strncmp( record->ARRYT, "X", 1 ) == 0 ) {
-    // FX
-    if ( strncmp( (record->ARRYT)+1, "1", 1 ) == 0 
-         || strncmp( (record->ARRYT)+1, "3", 1 ) ) {
-      // FX1, 3
-      ia = 2 ;
-    }
-    else {
-      // FX2, 4
-      ia = 1 ;
-    }
-  }
-  else if ( strncmp( record->ARRYT, "A", 1 ) == 0 )
-    ia = 2 ;  // AC
-  else if ( strncmp( record->ARRYT, "W", 1 ) == 0 ) {
-    // AOS-W    
-    ia = 2 ;  
+//   if ( strncmp( record->ARRYT, "X", 1 ) == 0 ) {
+//     // FX
+//     if ( strncmp( (record->ARRYT)+1, "1", 1 ) == 0 
+//          || strncmp( (record->ARRYT)+1, "3", 1 ) ) {
+//       // FX1, 3
+//       ia = 2 ;
+//     }
+//     else {
+//       // FX2, 4
+//       ia = 1 ;
+//     }
+//   }
+//   else if ( strncmp( record->ARRYT, "A", 1 ) == 0 )
+//     ia = 2 ;  // AC
+//   else if ( strncmp( record->ARRYT, "W", 1 ) == 0 ) {
+//     // AOS-W    
+//     ia = 2 ;  
+//     isAOS = true ;
+//   }
+//   else if ( strncmp( record->ARRYT, "U", 1 ) == 0 ) {
+//     // AOS-U
+//     ia = 2 ;  
+//     isAOS = true ;
+//   }
+//   else if ( strncmp( record->ARRYT, "H", 1 ) == 0 ) {
+//     // AOS-H
+//     isAOS = true ;
+//     //cout << record->ARRYT << " " <<  strlen(record->ARRYT) << endl ;
+//     //cout << (record->ARRYT)+1 << endl ;
+//     if ( strncmp( (record->ARRYT)+2, " ", 1 ) == 0 ) {
+//       // H1-9
+//       if ( strncmp( (record->ARRYT)+1, "9", 1 ) == 0 ) {
+//         // H9
+//         ia = 2 ;
+//       }
+//       else {
+//         // H1-8
+//         ia = 1 ;
+//       }
+//     }
+//     else {
+//       // H10-16
+//       ia = 2 ;
+//     }
+//   }
+  if ( arryt[0] == 'A' || arryt[0] == 'W' || arryt[0] == 'U' || arryt[0] == 'H' )
     isAOS = true ;
-  }
-  else if ( strncmp( record->ARRYT, "U", 1 ) == 0 ) {
-    // AOS-U
-    ia = 2 ;  
-    isAOS = true ;
-  }
-  else if ( strncmp( record->ARRYT, "H", 1 ) == 0 ) {
-    // AOS-H
-    isAOS = true ;
-    //cout << record->ARRYT << " " <<  strlen(record->ARRYT) << endl ;
-    //cout << (record->ARRYT)+1 << endl ;
-    if ( strncmp( (record->ARRYT)+2, " ", 1 ) == 0 ) {
-      // H1-9
-      if ( strncmp( (record->ARRYT)+1, "9", 1 ) == 0 ) {
-        // H9
-        ia = 2 ;
-      }
-      else {
-        // H1-8
-        ia = 1 ;
-      }
-    }
-    else {
-      // H10-16
-      ia = 2 ;
-    }
-  }
 
-  int iu ;
+  Bool isUSB ;
   if ( record->FQIF1 > 0 )
-    iu = 1 ;  // USB
+    isUSB = True ;  // USB
   else 
-    iu = 2 ;  // LSB
+    isUSB = False ;  // LSB
 
   int ivdef = -1 ;
-  //if ( strncmp( (dataset_->getVDEF()).c_str(), "RAD", 3 ) == 0 )
   if ( (getVDEF()).compare( 0, 3, "RAD" ) == 0 )
     ivdef = 0 ;
-  //else if ( strncmp( dataset_->getVDEF(), "OPT", 3 ) == 0 )
   else if ( (getVDEF()).compare( 0, 3, "OPT" ) == 0 )
     ivdef = 1 ;
   // DEBUG
@@ -740,38 +750,29 @@ vector<double> NRODataset::getFrequencies( int i )
   //double fq0 = record->FQTRK ;
 
   int ncal = getNFCAL()[ib] ;
-  vector<double> freqs( ncal ) ;
   double cw = 0.0 ;
   vector<double> fqcal = getFQCAL()[ib] ;
   vector<double> chcal = getCHCAL()[ib] ;
+  double f0cal = getF0CAL()[ib] ;
+  Vector<Double> freqs( ncal, fq0-f0cal ) ;
 
+  double factor = vel / cvel ;
+  if ( ivdef == 0 )
+    factor = 1.0 / ( 1.0 - factor ) ;
   for ( int ii = 0 ; ii < ncal ; ii++ ) {
-    freqs[ii] = fqcal[ii] ;
-    freqs[ii] -= getF0CAL()[ib] ;
-    if ( ia == 1 ) {
-      if ( iu == 1 ) {
-        freqs[ii] = fq0 + freqs[ii] ;
-      }
-      else if ( iu == 2 ) {
-        freqs[ii] = fq0 - freqs[ii] ;
-      }
+    freqs[ii] += fqcal[ii] ;
+    if ( ivdef == 0 ) {
+      freqs[ii] = freqs[ii] * factor + record->FQTRK * ( 1.0 - factor ) ;
     }
-    else if ( ia == 2 ) {
-      if ( iu == 1 ) {
-        freqs[ii] = fq0 - freqs[ii] ;
-      }
-      else if ( iu == 2 ) {
-        freqs[ii] = fq0 + freqs[ii] ;
-      }
-    }     
-//       if ( ivdef == 0 ) {
-//         double factor = 1.0 / ( 1.0 - vel / cvel ) ;
-//         freqs[ii] = freqs[ii] * factor - record->FQTRK * ( factor - 1.0 ) ;
-//       }
-//       else if ( ivdef == 1 ) {
-//         double factor = vel / cvel ;
-//         freqs[ii] = freqs[ii] * ( 1.0 + factor ) - record->FQTRK * factor ;
-//       }
+    else if ( ivdef == 1 ) {
+      freqs[ii] = freqs[ii] * ( 1.0 + factor ) - record->FQTRK * factor ;
+    }
+
+    //ofstream ofs("freqs.txt",ios::out|ios::app) ;
+    //ofs << setprecision(16) ;
+    //ofs << i << " " << record->ARRYT << " " << chcal[ii] << " " << freqs[ii] << " " << record->ISCAN << " " << fqcal[ii] << " " << f0cal << " " << record->FQTRK << " " << vel << endl ; 
+    //ofs.close() ;
+
   }
 
   if ( isAOS ) {
@@ -797,30 +798,26 @@ vector<double> NRODataset::getFrequencies( int i )
   }
   else {
     cw = getBERES()[ib] ;
-    
-    if ( iu == 2 )
-      cw *= -1.0 ;
 
+    if ( !isUSB )
+      cw *= -1.0 ;
+    
     if ( cw == 0.0 ) {
       cw = ( freqs[1] - freqs[0] ) 
         / ( chcal[1] - chcal[0] ) ;
-//           if ( cw < 0.0 ) 
-//             cw = - cw ;
     }
+
     v[0] = chcal[0] - 1 ; // 0-base
     v[1] = freqs[0] ;
     v[2] = cw ;
   }
 
-  // conversion from TOPO to LSRK
-  v[1] = toLSR( v[1], getStartIntTime( i ), record_->SCX, record_->SCY ) ;
-
-  if ( refFreq_[ib] != 0.0 ) {
-    v[1] = refFreq_[ib] ;
-  }
-  else {
+  if ( refFreq_[ib] == 0.0 ) 
     refFreq_[ib] = v[1] ;
-  }
+
+  // register frequency setting to Record
+  Vector<Double> f( v ) ;
+  frec_.define( arryt, f ) ;
 
   return v ;
 }
