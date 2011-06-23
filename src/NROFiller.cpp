@@ -74,7 +74,7 @@ NROFiller::~NROFiller()
 
   // 2010/07/30 TBD: Do we need to set frame here?
   table_->frequencies().setFrame( hdr.freqref, true ) ;
-  table_->frequencies().setFrame( String("LSRK"), false ) ;
+  table_->frequencies().setFrame( hdr.freqref, false ) ;
 
   // set Header
   setHeader( hdr ) ;
