@@ -667,10 +667,14 @@ vector<double> NRODataset::getFrequencies( int i )
   NRODataRecord *record = getRecord( i ) ;
   string arryt = string( record->ARRYT ) ;
   uInt ib = getArrayId( arryt ) ;
+  string rxname = getRX()[0] ;
+  string key = arryt ;
+  if ( rxname.find("MULT2") != string::npos )
+    key = "BEARS" ;
 
-  if ( frec_.isDefined( arryt ) ) {
+  if ( frec_.isDefined( key ) ) {
     // frequency for the array is already calculated
-    Vector<Double> f =  frec_.asArrayDouble( arryt ) ;
+    Vector<Double> f =  frec_.asArrayDouble( key ) ;
     Double *f_p = f.data() ;
     for ( int i = 0 ; i < 3 ; i++ )
       v[i] = (double)(f_p[i]) ;
@@ -817,7 +821,7 @@ vector<double> NRODataset::getFrequencies( int i )
 
   // register frequency setting to Record
   Vector<Double> f( v ) ;
-  frec_.define( arryt, f ) ;
+  frec_.define( key, f ) ;
 
   return v ;
 }
