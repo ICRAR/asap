@@ -727,7 +727,7 @@ vector<double> NRODataset::getFrequencies( int i )
 //       ia = 2 ;
 //     }
 //   }
-  if ( arryt[0] == 'A' || arryt[0] == 'W' || arryt[0] == 'U' || arryt[0] == 'H' )
+  if ( arryt[0] == 'W' || arryt[0] == 'U' || arryt[0] == 'H' )
     isAOS = true ;
 
   Bool isUSB ;

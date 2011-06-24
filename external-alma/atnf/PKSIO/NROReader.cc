@@ -520,6 +520,7 @@ string NROReader::getScanType( int i )
 int NROReader::getScanInfo( int irow,
                             uInt &scanno,
                             uInt &cycleno,
+                            uInt &ifno,
                             uInt &beamno,
                             uInt &polno,
                             vector<double> &freqs,   
@@ -563,16 +564,17 @@ int NROReader::getScanInfo( int irow,
   cycleno = 0 ;
   //cout << "cycleno = " << cycleno << endl ;
 
-  // beamno
+  // beamno and ifno
   string rxname = dataset_->getRX()[0] ;
   if ( rxname.find("MULT2") != string::npos ) {
     string arryt = string( record->ARRYT ) ;
-    string sbeamno = arryt.substr( 1, arryt.size()-1 ) ;
-    uInt ibeamno = atoi( sbeamno.c_str() ) ; 
-    beamno = ibeamno - 1 ;
+    beamno = dataset_->getArrayId( arryt ) ;
+    ifno = 0 ;
   }
   else {
     beamno = 0 ;
+    string arryt = string( record->ARRYT ) ;
+    ifno = dataset_->getArrayId( arryt ) ;
   }
   //cout << "beamno = " << beamno << endl ;
 

@@ -634,6 +634,7 @@ int STFiller::readNRO()
   int count = 0 ;
   uInt scanno ;
   uInt cycleno ;
+  uInt iftmp ;
   uInt beamno ;
   uInt polno ;
   vector<double> fqs ;
@@ -691,6 +692,7 @@ int STFiller::readNRO()
       if ( nreader_->getScanInfo( i,
                                   scanno,
                                   cycleno,
+                                  iftmp,
                                   beamno,
                                   polno,
                                   fqs,

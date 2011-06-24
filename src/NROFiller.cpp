@@ -89,6 +89,7 @@ void NROFiller::fill()
   vector< vector<double > > freqs ;
   uInt scanno ;
   uInt cycleno ;
+  uInt ifno ;
   uInt beamno ;
   uInt polno ;
   vector<double> fqs ;
@@ -152,6 +153,7 @@ void NROFiller::fill()
     if ( reader_->getScanInfo( irow,
                                scanno,
                                cycleno,
+                               ifno,
                                beamno,
                                polno,
                                fqs,
@@ -211,7 +213,7 @@ void NROFiller::fill()
     setSpectrum( spectrum, flags, Tsys ) ;
 
     // SCANNO, CYCLENO, IFNO, POLNO, and BEAMNO
-    uInt ifno = table_->frequencies().addEntry( (Double)fqs[0], (Double)fqs[1], (Double)fqs[2] ) ;
+    //uInt ifno = table_->frequencies().addEntry( (Double)fqs[0], (Double)fqs[1], (Double)fqs[2] ) ;
     setIndex( scanno, cycleno, ifno, polno, beamno ) ;
 
     // REFBEAMNO

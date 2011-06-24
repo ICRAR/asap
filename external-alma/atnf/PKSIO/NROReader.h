@@ -128,6 +128,7 @@ class NROReader
   virtual int getScanInfo( int irow,
                            uInt &scanno,
                            uInt &cycleno,
+                           uInt &ifno,
                            uInt &beamno,
                            uInt &polno,
                            vector<double> &freqs,   
