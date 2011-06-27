@@ -2736,8 +2736,7 @@ double NROFITSDataset::getStartIntTime( int i )
 double NROFITSDataset::getScanTime( int i ) 
 {
   double startTime = getStartIntTime( i ) ;
-  double interval ;
-  readTable( interval, "INTEG", same_, i ) ;
+  double interval = getIPTIM() ;
   interval /= 86400.0 ;
   return startTime+0.5*interval ;
 }
