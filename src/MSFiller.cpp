@@ -815,7 +815,7 @@ void MSFiller::fill()
                 // TSYS
                 Matrix<Float> tsys ;
                 if ( sysCalIdx[irow] != -1 && colTsys_ != "NONE" )
-                  tsys = scTsysCol( irow ) ;
+                  tsys = scTsysCol( sysCalIdx[irow] ) ;
                 else 
                   tsys = defaulttsys ;
 
