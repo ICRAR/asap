@@ -1361,7 +1361,7 @@ void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<D
   RecordFieldPtr<Int> antennaRF( rec, "ANTENNA_ID" ) ;
   *antennaRF = 0 ;
   RecordFieldPtr<Int> numpolyRF( rec, "NUM_POLY" ) ;
-  *numpolyRF = dir.ncolumn() ;
+  *numpolyRF = dir.ncolumn() - 1 ;
   RecordFieldPtr<Double> timeRF( rec, "TIME" ) ;
   *timeRF = me ;
   RecordFieldPtr<Double> toriginRF( rec, "TIME_ORIGIN" ) ;
@@ -1375,7 +1375,7 @@ void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<D
   RecordFieldPtr< Array<Double> > dirRF( rec, "DIRECTION" ) ;
   *dirRF = dir ;
   RecordFieldPtr< Array<Double> > targetRF( rec, "TARGET" ) ;
-  *dirRF = dir ;
+  *targetRF = dir ;
   row.put( nrow ) ;
 
 //   double endSec = gettimeofday_sec() ;

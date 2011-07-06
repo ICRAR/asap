@@ -978,14 +978,14 @@ void MSFiller::fill()
   table_->setHeader( sdh ) ;
 
   // save path to POINTING table
-  // 2011/3/2 TN
-  // So far, path to original POINTING table is always stored 
-  // since sd tasks and regressions don't support getpt control
-  //if ( !getPt_ ) {
+  // 2011/07/06 TN
+  // Path to POINTING table in original MS will not be written
+  // if getPt_ is True
   Path datapath( tablename_ ) ;
-  String pTabName = datapath.absoluteName() + "/POINTING" ;
-  stab.rwKeywordSet().define( "POINTING", pTabName ) ;
-  //}
+  if ( !getPt_ ) {
+    String pTabName = datapath.absoluteName() + "/POINTING" ;
+    stab.rwKeywordSet().define( "POINTING", pTabName ) ;
+  }
 
   // for GBT
   if ( antennaName.contains( "GBT" ) ) {
