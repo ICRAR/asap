@@ -76,7 +76,14 @@ class FillerBase
                             casa::Float humidity=0.0f,
                             casa::Float windspeed=0.0f,
                             casa::Float windaz=0.0f);
+    void setWeather2(casa::Float temperature=0.0f,
+                            casa::Float pressure=0.0f,
+                            casa::Float humidity=0.0f,
+                            casa::Float windspeed=0.0f,
+                            casa::Float windaz=0.0f);
     void setTcal(const casa::String& caltime="",
+                         const casa::Vector<casa::Float>& tcal=casa::Vector<casa::Float>());
+    void setTcal2(const casa::String& caltime="",
                          const casa::Vector<casa::Float>& tcal=casa::Vector<casa::Float>());
     void setScanRate(const casa::Vector<casa::Double>& srate=casa::Vector<casa::Double>());
     void setReferenceBeam(casa::Int beamno=-1);

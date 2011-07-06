@@ -11,6 +11,7 @@
 //
 
 #include <casa/Containers/RecordField.h>
+#include <tables/Tables/ExprNode.h>
 
 #include "FillerBase.h"
 
@@ -173,6 +174,127 @@ void FillerBase::commitRow()
 {
   table_->table().addRow();
   row_.put(table_->table().nrow()-1);
+}
+
+void FillerBase::setWeather2(Float temperature, 
+                             Float pressure,
+                             Float humidity,
+                             Float windspeed, 
+                             Float windaz)
+{
+  uInt id ;
+  Table tab = table_->weather().table() ;
+  Table subt = tab( tab.col("TEMPERATURE") == temperature \
+                    && tab.col("PRESSURE") == pressure \
+                    && tab.col("HUMIDITY") == humidity \
+                    && tab.col("WINDSPEED") == windspeed \
+                    && tab.col("WINDAZ") == windaz ) ;
+  Int nrow = tab.nrow() ;
+  Int nrowSel = subt.nrow() ;
+  if ( nrowSel == 0 ) {
+    tab.addRow( 1, True ) ;
+    TableRow row( tab ) ;
+    TableRecord &rec = row.record() ;
+    RecordFieldPtr<casa::uInt> rfpi ;
+    rfpi.attachToRecord( rec, "ID" ) ;
+    *rfpi = (uInt)nrow ;
+    RecordFieldPtr<casa::Float> rfp ;
+    rfp.attachToRecord( rec, "TEMPERATURE" ) ;
+    *rfp = temperature ;
+    rfp.attachToRecord( rec, "PRESSURE" ) ;
+    *rfp = pressure ;
+    rfp.attachToRecord( rec, "HUMIDITY" ) ;
+    *rfp = humidity ;
+    rfp.attachToRecord( rec, "WINDSPEED" ) ;
+    *rfp = windspeed ;
+    rfp.attachToRecord( rec, "WINDAZ" ) ;
+    *rfp = windaz ;
+    row.put( nrow, rec ) ;
+    id = (uInt)nrow ;
+  }
+  else {
+    ROTableColumn tc( subt, "ID" ) ;
+    id = tc.asuInt( 0 ) ;
+  }
+  RecordFieldPtr<uInt> mweatheridCol(row_.record(), "WEATHER_ID");
+  *mweatheridCol = id;
+}
+
+void FillerBase::setTcal2(const String& tcaltime,
+                          const Vector<Float>& tcal)
+{
+  uInt id ;
+  Table tab = table_->tcal().table() ;
+  Int nrow = tab.nrow() ;
+  Vector<uInt> rowList( 0 ) ;
+  ArrayColumn<Float> tcalCol( tab, "TCAL" ) ;
+  TableColumn timeCol( tab, "TIME" ) ;
+  TableColumn idCol( tab, "ID" ) ;
+  uInt nelem = tcal.nelements() ;
+  for ( Int irow = 0 ; irow < nrow ; irow++ ) {
+    if ( tcalCol.shape(irow)[0] == nelem ) {
+      rowList.resize( rowList.nelements()+1, True ) ;
+      rowList[rowList.nelements()-1] = irow ;
+    }
+  }
+  
+  //cout << "rowList = " << rowList << endl ;
+
+  if ( rowList.nelements() == 0 ) {
+    // add new row
+    tab.addRow( 1 ) ;
+    //cout << "tab.nrow() = " << tab.nrow() << endl ;
+    tcalCol.put( nrow, tcal ) ;
+    timeCol.putScalar( nrow, tcaltime ) ; 
+    id = (uInt)nrow ;
+    idCol.putScalar( nrow, id ) ;
+  }
+  else {
+    uInt ichan = 0 ;
+    while ( rowList.nelements() > 1 && ichan < nelem ) {
+      Vector<uInt> tmp = rowList.copy() ;
+      rowList.resize( 0 ) ;
+      for ( uInt irow = 0 ; irow < tmp.nelements() ; irow++ ) {
+        Vector<Float> t = tcalCol( tmp[irow] ) ;
+        if ( t[ichan] == tcal[ichan] ) {
+          rowList.resize( rowList.nelements()+1, True ) ;
+          rowList[rowList.nelements()-1] = irow ;
+        }
+      }
+      ichan++ ;
+    }
+    
+    //cout << "updated rowList = " << rowList << endl ;
+
+    if ( rowList.nelements() == 0 ) {
+      // add new row
+      tab.addRow( 1, True ) ;
+      //cout << "tab.nrow() = " << tab.nrow() << endl ;
+      tcalCol.put( nrow, tcal ) ;
+      timeCol.putScalar( nrow, tcaltime ) ; 
+      id = (uInt)nrow ;
+      idCol.putScalar( nrow, id ) ;
+    }
+    else {
+      Vector<Float> t = tcalCol( rowList[0] ) ;
+      if ( allEQ( t, tcal ) ) {
+        ROTableColumn tc( tab, "ID" ) ;
+        id = tc.asuInt( rowList[0] ) ;
+      }
+      else {
+        // add new row
+        tab.addRow( 1, True ) ;
+        //cout << "tab.nrow() = " << tab.nrow() << endl ;
+        tcalCol.put( nrow, tcal ) ;
+        timeCol.putScalar( nrow, tcaltime ) ; 
+        id = (uInt)nrow ;
+        idCol.putScalar( nrow, id ) ;
+      }
+    }
+  }
+  
+  RecordFieldPtr<uInt> mcalidCol(row_.record(), "TCAL_ID");
+  *mcalidCol = id;
 }
 
 };
