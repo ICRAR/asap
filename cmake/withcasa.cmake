@@ -71,7 +71,6 @@ IF ( NOT DEFINED CASA_CODE_PATH )
 ENDIF()
 message( STATUS "CASA_CODE_PATH = " ${CASA_CODE_PATH} )
 set( CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CASA_CODE_PATH}/install" )
-#unset( CASA_CODE_PATH CACHE )
 message( STATUS "CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH} )
 
 include( config )
@@ -98,6 +97,32 @@ set( WCSLIB_PATHS "${casaroot}/${arch};/usr/local;/usr" )
 
 
 #
+# CASA (only alma/ASDM)
+#
+find_path( LIBXML2_INCLUDE_DIR libxml/xmlversion.h 
+           PATH_SUFFIXES libxml2 )
+if( LIBXML2_INCLUDE_DIR MATCHES "NOTFOUND$" )
+   message( FATAL_ERROR "libxml/xmlversion.h could not be found. Please check!" )
+endif()
+message( STATUS "LIBXML2_INCLUDE_DIR = " ${LIBXML2_INCLUDE_DIR} )
+find_path( LIBXML2_LIBRARY libxml2.so
+           PATHS /usr
+           PATH_SUFFIXES lib64 lib )
+#find_path( LIBXML2_LIBRARY libxml2.so )
+if ( LIBXML2_LIBRARY MATCHES "NOTFOUND$" )
+   message( FATAL_ERROR "libxml2.so could not be found. Please check!" ) 
+endif()
+message( STATUS "LIBXML2_LIBRARY = " ${LIBXML2_LIBRARY} ) 
+set( ASDM_INCLUDE_DIR ${CASA_CODE_PATH}/alma/implement/ASDM
+                      ${CASA_CODE_PATH}/alma/implement/Enumerations
+                      ${CASA_CODE_PATH}/alma/implement/ASDMBinaries
+                      ${CASA_CODE_PATH}/alma/implement/Enumtcl
+                      ${LIBXML2_INCLUDE_DIR} )
+set( ASDM_LIBRARY ${casaroot}/${arch}/lib/libalma.so
+                  ${LIBXML2_LIBRARY}/libxml2.so )
+add_definitions( -DWITHOUT_ACS )
+
+#
 # subdirectories
 #  ASAP2TO3 asap2to3       apps
 #  PYRAPLIB libpyrap.so    external/libpyrap
@@ -113,5 +138,6 @@ macro( asap_add_subdirectory )
    add_subdirectory( src )
    add_subdirectory( python )
    add_subdirectory( share )
+   add_subdirectory( external-alma/asdm2ASAP ) 
 endmacro( asap_add_subdirectory )
 
