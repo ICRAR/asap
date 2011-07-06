@@ -391,7 +391,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
                 Matrix<Double> msDir( 2, 1 ) ;
                 msDir.column( 0 ) = dir ;
                 if ( anyNE( rate, 0.0 ) ) {
-                  msDir.resize( 2, 2 ) ;
+                  msDir.resize( 2, 2, True ) ;
                   msDir.column( 1 ) = rate ;
                 }
                 addPointing( fieldName, mTimeV, interval, msDir ) ;
