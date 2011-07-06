@@ -1,9 +1,14 @@
 #include <iostream>
+#include <fstream>
 #include <casa/Utilities/Regex.h>
 #include <casa/Inputs/Input.h>
 #include <casa/BasicSL/String.h>
 #include <casa/Containers/Record.h>
 #include <casa/OS/Directory.h>
+#include <casa/Logging/LogIO.h>
+#include <casa/Logging/LogSink.h>
+#include <casa/Logging/StreamLogSink.h>
+#include <casa/Logging/LogFilter.h>
 #include <Scantable.h>
 #include "ASDMFiller.h"
 
@@ -17,83 +22,165 @@ int main( int argc, char *argv[] )
   // options
   Input inp ;
   String indent = "   " ;
-  String versionInfo = "$Id$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name>" ;
-  inp.version( versionInfo ) ;
+  String versionInfo = "$Id$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name> [-apc both|yes|no] [-corr-mode ca|ao|ca+ao] [-ocorr-mode ao] [-time-sampling all|integration|subintegration]" ;
+  Bool helpMode = False ;
+  for ( int i = 1 ; i < argc ; i++ ) {
+    if ( strncmp( argv[i], "-h", 2 ) == 0 
+         || strncmp( argv[i], "--help", 6 ) == 0 
+         || strncmp( argv[i], "-v", 2 ) == 0 
+         || strncmp( argv[i], "--version", 9 ) == 0 ) {
+      helpMode = True ;
+      break ;
+    }
+  }
+  if ( helpMode )
+    inp.version( versionInfo ) ;
+  else
+    inp.version( "" ) ;
 
   inp.create( "antenna", "0", "antenna name or id", "String" ) ;
   inp.create( "asdm", "", "ASDM directory name", "String" ) ;
   inp.create( "asap", "", "Scantable name", "String" ) ;
-  inp.create( "apc", "False", "Retrieve Atm Phase Corrected data or not", "Bool" ) ;
-  inp.create( "overwrite", "True", "Overwrite existing Scantable or not", "Bool" ) ;
+  inp.create( "apc", "both", "Retrieve Atm Phase Corrected data or not: both|yes|no", "String" ) ;
+  inp.create( "overwrite", "True", "Overwrite existing Scantable or not: True|False", "Bool" ) ;
+  inp.create( "corr-mode", "ca+ao", "Input correlator mode: ca+ao|ca|ao", "String" ) ;
+  inp.create( "ocorr-mode", "ao", "Output correlator mode: ao", "String" ) ;
+  inp.create( "time-sampling", "all", "time sampling mode: all|integration|subintegration", "String" ) ;
+  inp.create( "logfile", "", "logger output", "String" ) ;
   inp.readArguments( argc, argv ) ;
 
   string asdmname = inp.getString( "asdm" ) ;
   string antenna = inp.getString( "antenna" ) ;
   string asapname = inp.getString( "asap" ) ;
-  Bool apcCorrected = inp.getBool( "apc" ) ;
+  string apc = inp.getString( "apc" ) ;
   Bool overwrite = inp.getBool( "overwrite" ) ;
+  string corrMode = inp.getString( "corr-mode" ) ;
+  string timeSampling = inp.getString( "time-sampling" ) ;
+  string logfile = inp.getString( "logfile" ) ;
     
-    
-  // create ASDMFiller object
-  CountedPtr<Scantable> stable( new Scantable() ) ;
-  ASDMFiller *filler = new ASDMFiller( stable ) ;
-
-  // open data
-  Record rec ;
-  Record asdmRec ;
-  Regex reg( "[0-9]+$" ) ;
-  asdmRec.define( "apc", apcCorrected ) ;
-  if ( reg.match( antenna.c_str(), antenna.size() ) != String::npos ) {
-    // antenna is specifiec as id
-    int aid = atoi( antenna.c_str() ) ;
-    asdmRec.define( "antenna", aid ) ;
+  int numApc = 1 ;
+  Vector<Bool> apcCorrected ;
+  apcCorrected.resize( numApc ) ;
+  if ( apc == "both" ) {
+    numApc = 2 ;
+    apcCorrected.resize( numApc ) ;
+    apcCorrected[0] = True ;
+    apcCorrected[1] = False ;
+  }
+  else if ( apc == "yes" ) {
+    apcCorrected.resize( numApc ) ;
+    apcCorrected[0] = True ;
+  }
+  else if ( apc == "no" ) {
+    apcCorrected.resize( numApc ) ;
+    apcCorrected[0] = False ;
   }
   else {
-    // antenna is specified as name
-    asdmRec.define( "antenna", antenna ) ;
+    throw AipsError( "Unrecognized value for -apc option" ) ;
   }
-  rec.defineRecord( "asdm", asdmRec ) ;
-  filler->open( asdmname, rec ) ;
+    
 
-  // output filename
-  CountedPtr<ASDMReader> reader = filler->getReader() ;
-  string aname = reader->getAntennaName() ;
-  int aid = reader->getAntennaId() ;
-  if ( asapname.size() == 0 ) {
-    asapname = asdmname + "." + aname + ".asap" ;
+  ofstream ofs ;
+  CountedPtr<LogSinkInterface> logsink_p ;
+  String funcname( argv[0] ) ;
+  if ( logfile.size() != 0 ) {
+    ofs.open( logfile.c_str(), ios_base::app ) ;
+    logsink_p = new StreamLogSink( &ofs ) ;
+    logsink_p->cerrToo( false ) ;
+  } 
+  else {
+    logsink_p = new StreamLogSink() ;
   }
+  // create ASDMFiller object
+  //logsink_p->postLocally( LogMessage( "numApc = "+String::toString(numApc), LogOrigin(funcname,WHERE) ) ) ;
+  for ( int iapc = 0 ; iapc < numApc ; iapc++ ) {
+    CountedPtr<Scantable> stable( new Scantable() ) ;
+    ASDMFiller *filler = new ASDMFiller( stable ) ;
 
-  cout << "specified option summary:" << endl ;
-  cout << "   antenna = " << antenna << " (ID: " << aid << ")" << endl ;
-  cout << "   asdmname = " << asdmname << endl ;
-  cout << "   asapname = " << asapname << endl ;
-  cout << "   apcCorrected = " << apcCorrected << endl ;
+    // set logger
+    filler->setLogger( logsink_p ) ;
 
-  // save scantable on disk
-  Directory dir( asapname ) ;
-  if ( dir.exists() ) {
-    if ( overwrite ) {
-      cout << "Delete existing file..." << endl ;
-      dir.removeRecursive() ;
+    // open data
+    Record rec ;
+    Record asdmRec ;
+    Regex reg( "[0-9]+$" ) ;
+    //asdmRec.define( "apc", apcCorrected ) ;
+    asdmRec.define( "apc", apcCorrected[iapc] ) ;
+    asdmRec.define( "corr", corrMode ) ;
+    asdmRec.define( "sampling", timeSampling ) ;
+    if ( reg.match( antenna.c_str(), antenna.size() ) != String::npos ) {
+      // antenna is specifiec as id
+      int aid = atoi( antenna.c_str() ) ;
+      asdmRec.define( "antenna", aid ) ;
     }
     else {
-      cerr << "Output file " << asapname << " exists." << endl ;
-      return 1 ;
+      // antenna is specified as name
+      asdmRec.define( "antenna", antenna ) ;
     }
+    rec.defineRecord( "asdm", asdmRec ) ;
+    filler->open( asdmname, rec ) ;
+    
+    // output filename
+    CountedPtr<ASDMReader> reader = filler->getReader() ;
+    string aname = reader->getAntennaName() ;
+    int aid = reader->getAntennaId() ;
+    string outname = asapname ;
+    if ( asapname.size() == 0 ) {
+      outname = asdmname + "." + aname + ".asap" ;
+    }
+    if ( apcCorrected[iapc] == True ) {
+      outname += ".wvr-corrected" ;
+    }
+    
+    //logsink_p->postLocally( LogMessage("specified option summary:",LogOrigin(funcname,WHERE)) ) ;
+    //logsink_p->postLocally( LogMessage("   antenna = "+String(aname)+" (ID: "+String::toString(aid)+")",LogOrigin(funcname,WHERE)) ) ;
+    //logsink_p->postLocally( LogMessage("   asdmname = "+asdmname,LogOrigin(funcname,WHERE)) ) ;
+    //logsink_p->postLocally( LogMessage("   asapname = "+outname,LogOrigin(funcname,WHERE)) ) ;
+    //logsink_p->postLocally( LogMessage("   apcCorrected = "+String::toString(apcCorrected[iapc]),LogOrigin(funcname,WHERE) ) ) ;
+    //logsink_p->postLocally( LogMessage("   timeSampling = "+timeSampling,LogOrigin(funcname,WHERE) ) ) ;
+    //logsink_p->postLocally( LogMessage("   corrMode = "+corrMode,LogOrigin(funcname,WHERE) ) ) ;
+    
+    // save scantable on disk
+    Directory dir( outname ) ;
+    if ( dir.exists() ) {
+      if ( overwrite ) {
+        //*os << "Delete existing file " << outname << " ..." << LogIO::POST ;
+        logsink_p->postLocally( LogMessage("Delete existing file "+outname+" ...",LogOrigin(funcname,WHERE)) ) ;
+        dir.removeRecursive() ;
+      }
+      else {
+        //*os << LogIO::WARN << "Output file " << outname << " exists." << LogIO::POST ;
+        logsink_p->postLocally( LogMessage("Output file "+outname+" exists.",LogOrigin(funcname,WHERE),LogMessage::WARN) ) ;
+        return 1 ;
+      }
+    }
+    
+    // fill data
+    filler->fill() ;
+    
+    // close data
+    filler->close() ;
+    
+    // save data only if nrow is not zero
+    if ( stable->nrow() > 0 ) {
+      //*os << "Creating " << outname << "..." << LogIO::POST ;
+      logsink_p->postLocally( LogMessage("Creating "+outname+"...",LogOrigin(funcname,WHERE)) ) ;
+      stable->makePersistent( outname ) ;
+    }
+    else {
+      //*os << outname << " will not be created since there are no data associate with the selection" << LogIO::POST ;
+      logsink_p->postLocally( LogMessage(outname+" will not be created since there are no data associate with the selection",LogOrigin(funcname,WHERE)) ) ;
+    }
+    
+    // finalize
+    reader = 0 ;
+    delete filler ;
+   
   }
-
-  // fill data
-  filler->fill() ;
-
-  // close data
-  filler->close() ;
-
-  // save data
-  stable->makePersistent( asapname ) ;
-
-  // finalize
-  reader = 0 ;
-  delete filler ;
+ 
+  if ( logfile.size() != 0 )
+    ofs.close() ;
+  //delete os ;
 
   return 0 ;
 }

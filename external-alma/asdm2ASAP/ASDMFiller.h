@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <casa/Logging/LogSinkInterface.h>
+
 #include <FillerBase.h>
 #include "ASDMReader.h"
 
@@ -24,6 +26,9 @@ public:
   
   // get reader object
   casa::CountedPtr<ASDMReader> getReader() { return reader_ ; } ;
+
+  // set logger
+  void setLogger( casa::CountedPtr<casa::LogSinkInterface> &logsink ) ;
 
 private:
   // fill header
@@ -73,6 +78,10 @@ private:
   casa::String antennaName_ ;
 
   casa::Record ifrec_ ;
+
+  casa::CountedPtr<casa::LogSinkInterface> logsink_ ;
+
+  casa::String className_ ;
 
 } ;
 #endif // ASAP_ASDM_FILLER_H

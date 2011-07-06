@@ -7,6 +7,7 @@
 #include <measures/Measures/MCDirection.h>
 #include <measures/Measures/MeasFrame.h>
 #include <measures/Measures/MeasConvert.h>
+#include <casa/Logging/LogMessage.h>
 
 #include "ASDMReader.h"
 #include <atnf/PKSIO/SrcType.h>
@@ -19,7 +20,6 @@ using namespace sdmbin ;
 // sec to day
 double s2d = 1.0 / 86400.0 ;
 
-
 ASDMReader::ASDMReader()
   : asdm_(0),
     sdmBin_(0),
@@ -27,28 +27,41 @@ ASDMReader::ASDMReader()
     antennaId_( -1 ),
     antennaName_( "" ),
     row_(-1),
-    apc_(AP_CORRECTED)
+    apc_(AP_CORRECTED),
+    className_("ASDMReader")
 {
-  cout << "This is constructor of ASDMReader" << endl ;
-
   configDescIdList_.resize(0) ;
   feedIdList_.resize(0) ;
   fieldIdList_.resize(0) ;
   mainRow_.resize(0) ;
   ifno_.clear() ;
-
+  corrMode_.reset() ;
+  timeSampling_.reset() ;
 }
 
 ASDMReader::~ASDMReader()
 {
-  cout << "This is destructor of ASDMReader" << endl ;
+  close() ;
+  logsink_ = 0 ;
 }
 
 bool ASDMReader::open( const string &filename, const casa::Record &rec )
 {
+  String funcName = "open" ;
+
+  // return value
+  bool status = true ;
+
+  // set default
+  timeSampling_.reset() ;
+  corrMode_.reset() ;
+  apc_ = AP_CORRECTED ;
+
   // parsing ASDM options
   if ( rec.isDefined( "asdm" ) ) {
     casa::Record asdmrec = rec.asRecord( "asdm" ) ;
+
+    // antenna
     if ( asdmrec.isDefined( "antenna" ) ) {
       if ( asdmrec.type( asdmrec.fieldNumber( "antenna" ) ) == casa::TpInt ) {
         antennaId_ = asdmrec.asInt( "antenna" ) ;
@@ -60,19 +73,67 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
     else {
       antennaId_ = 0 ;
     }
+
+    // ATM phase correction
     if ( asdmrec.isDefined( "apc" ) ) {
       if ( asdmrec.asBool( "apc" ) )
         apc_ = AP_CORRECTED ;
       else
         apc_ = AP_UNCORRECTED ;
     }
-    asdmrec.print( cout ) ;
+
+    // time sampling
+    String timeSampling = "all" ; // take all time sampling by default
+    if ( asdmrec.isDefined( "sampling" ) ) {
+      timeSampling = asdmrec.asString( "sampling" ) ;
+    }
+    if ( timeSampling == "all" ) {
+      timeSampling_.set( INTEGRATION ) ;
+      timeSampling_.set( SUBINTEGRATION ) ;
+    }
+    else if ( timeSampling == "integration" ) {
+      timeSampling_.set( INTEGRATION ) ;
+    }
+    else if ( timeSampling == "subintegration" ) {
+      timeSampling_.set( SUBINTEGRATION ) ;
+    }
+    else {
+      //throw AipsError( "Unrecognized option for sampling" ) ;
+      logsink_->postLocally( LogMessage( "Unrecognized option for time sampling: "+String::toString(timeSampling), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
+      status = false ;
+    }      
+
+    // input correlation mode
+    if ( asdmrec.isDefined( "corr" ) ) {
+      string corrMode = string( asdmrec.asString( "corr" ) ) ;
+      //logsink_->postLocally( LogMessage("corrMode = "+String(corrMode),LogOrigin(className_,funcName,WHERE)) ) ;
+      string corrModes[3] ;
+      Int numCorr = split( corrMode, corrModes, 3, "+" ) ;
+      for ( Int ic = 0 ; ic < numCorr ; ic++ ) {
+        if ( corrModes[ic] == "ao" ) {
+          corrMode_.set( AUTO_ONLY ) ;
+        }
+        else if ( corrModes[ic] == "ca" ) {
+          corrMode_.set( CROSS_AND_AUTO ) ;
+        }
+      }
+      //delete corrModes ;
+      if ( corrMode_.size() == 0 ) {
+        logsink_->postLocally( LogMessage( "Invalid option for correlation mode: "+String::toString(corrMode), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
+        status = false ;
+      }
+    }
+
+//     logsink_->postLocally( LogMessage( "### asdmrec summary ###", LogOrigin(className_,funcName,WHERE) ) ) ;
+//     ostringstream oss ;
+//     asdmrec.print( oss ) ;
+//     logsink_->postLocally( LogMessage( oss.str(), LogOrigin(className_,funcName,WHERE) ) ) ;
+//     logsink_->postLocally( LogMessage( "#######################", LogOrigin(className_,funcName,WHERE) ) ) ;
   }
 
   // create ASDM object
   asdm_ = new ASDM() ;
   asdm_->setFromFile( filename ) ;
-  cout << "name = " << asdm_->getName() << endl ;
 
   if ( antennaId_ == -1 ) {
     AntennaTable &atab = asdm_->getAntenna() ;
@@ -119,15 +180,15 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
   // process Station table
   processStation() ;
 
-  cout << "antennaId_ = " << antennaId_ << endl ;
-  cout << "antennaName_ = " << antennaName_ << endl ;
+  logsink_->postLocally( LogMessage(  "antennaId_ = "+String::toString(antennaId_), LogOrigin() ) ) ;
+  logsink_->postLocally( LogMessage(  "antennaName_ = "+antennaName_, LogOrigin() ) ) ;
 
   return true ;
 }
 
-void ASDMReader::fill() 
-{
-}
+// void ASDMReader::fill() 
+// {
+// }
 
 void ASDMReader::close() 
 {
@@ -162,6 +223,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
                              casa::String &epoch, 
                              casa::String &poltype ) 
 {
+  String funcName = "fillHeader" ;
 
   ExecBlockTable &ebtab = asdm_->getExecBlock() ;
   // at the moment take first row of ExecBlock table
@@ -177,7 +239,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
   // antennaname
   // <telescopeName>//<antennaName>@stationName
   antennaname = telescopeName + "//" + antennaName_ + "@" + stationName ;
-  cout << "antennaName = " << antennaname << endl ;
+  //logsink_->postLocally( LogMessage("antennaName = "+antennaname,LogOrigin(className_,funcName,WHERE)) ) ;
 
   // antennaposition
   //vector<Length> antpos = arow->getPosition() ;
@@ -214,7 +276,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
   }
   nchan = casa::Int( *max_element( nchans.begin(), nchans.end() ) ) ;
 
-  cout << "refidx = " << refidx << endl ;
+  //logsink_->postLocally( LogMessage("refidx = "+String::toString(refidx),LogOrigin(className_,funcName,WHERE)) ) ;
 
   // bandwidth
   vector<double> bws ;
@@ -231,7 +293,6 @@ void ASDMReader::fillHeader( casa::Int &nchan,
   // freqref
   if ( spwrows[refidx]->isMeasFreqRefExists() ) {
     string mfr = CFrequencyReferenceCode::name( spwrows[refidx]->getMeasFreqRef() ) ;
-    cout << "measFreqRef = " << mfr << endl ;
     if (mfr == "TOPO") {
       freqref = "TOPOCENT";
     } else if (mfr == "GEO") {
@@ -335,10 +396,12 @@ void ASDMReader::fillHeader( casa::Int &nchan,
 
 void ASDMReader::selectConfigDescription() 
 {
+  String funcName = "selectConfigDescription" ;
+
   vector<ConfigDescriptionRow *> cdrows = asdm_->getConfigDescription().get() ;
   vector<Tag> cdidTags ;
   for ( unsigned int irow = 0 ; irow < cdrows.size() ; irow++ ) {
-    cout << "correlationMode[" << irow << "] = " << cdrows[irow]->getCorrelationMode() << endl ;
+    //logsink_->postLocally( LogMessage("correlationMode["+String::toString(irow)+"] = "+String::toString(cdrows[irow]->getCorrelationMode()),LogOrigin(className_,funcName,WHERE)) ) ;
     if ( cdrows[irow]->getCorrelationMode() != CROSS_ONLY ) {
       cdidTags.push_back( cdrows[irow]->getConfigDescriptionId() ) ;
     }
@@ -369,10 +432,12 @@ void ASDMReader::selectFeed()
 
 casa::Vector<casa::uInt> ASDMReader::getFieldIdList() 
 {
+  String funcName = "getFieldIdList" ;
+
   vector<FieldRow *> frows = asdm_->getField().get() ;
   fieldIdList_.resize( frows.size() ) ;
   for ( unsigned int irow = 0 ; irow < frows.size() ; irow++ ) {
-    cout << "fieldId[" << irow << "]=" << frows[irow]->getFieldId().toString() << endl ;
+    //logsink_->postLocally( LogMessage("fieldId["+String::toString(irow)+"]="+String(frows[irow]->getFieldId().toString()),LogOrigin(className_,funcName,WHERE)) ) ;
     fieldIdList_[irow] = frows[irow]->getFieldId().getTagValue() ;
   }
 
@@ -388,16 +453,22 @@ casa::uInt ASDMReader::getNumMainRow()
 
 void ASDMReader::select() 
 {
-  // selection by CorrelationMode and AtmPhaseCorrection
-  EnumSet<AtmPhaseCorrection> esApcs ;
-//   esApcs.set( AP_UNCORRECTED ) ;
-//   esApcs.set( AP_CORRECTED ) ;
-  esApcs.set( apc_ ) ;
+  // selection by input CorrelationMode
   EnumSet<CorrelationMode> esCorrs ;
-  esCorrs.set( CROSS_AND_AUTO ) ;
-  esCorrs.set( AUTO_ONLY ) ;
+//   esCorrs.set( CROSS_AND_AUTO ) ;
+//   esCorrs.set( AUTO_ONLY ) ;
+//   esCorrs.set( corrMode_ ) ;
+//   sdmBin_->select( esCorrs ) ;
+  sdmBin_->select( corrMode_ ) ;
+
+  // selection by TimeSampling
+  sdmBin_->select( timeSampling_ ) ;
+
+  // selection by AtmPhaseCorrection and output CorrelationMode
+  EnumSet<AtmPhaseCorrection> esApcs ;
+  esApcs.set( apc_ ) ;
+  // always take only autocorrelation data
   Enum<CorrelationMode> esCorr = AUTO_ONLY ;
-  sdmBin_->select( esCorrs ) ;
   sdmBin_->selectDataSubset( esCorr, esApcs ) ;
 
   // select valid configDescriptionId
@@ -418,20 +489,16 @@ casa::Bool ASDMReader::setMainRow( casa::uInt irow )
   else {
     status = (casa::Bool)(sdmBin_->acceptMainRow( mainRow_[row_] )) ;
   }
-  cout << "setMainRow: status = " << status << endl ;
   return status ;
 }
 
 casa::Bool ASDMReader::setMainRow( casa::uInt configDescId, casa::uInt fieldId ) 
 {
-  cout << "setMainRow " << configDescId << " " << fieldId << endl ;
   clearMainRow() ;
 
   Tag configDescTag( (unsigned int)configDescId, TagType::ConfigDescription ) ;
   Tag fieldTag( (unsigned int)fieldId, TagType::Field ) ;
   mainRow_ = casa::Vector<MainRow *>( *(asdm_->getMain().getByContext( configDescTag, fieldTag ) ) ) ;
-
-  cout << "mainRow_.size() = " << mainRow_.size() << endl ;
   
   return true ;
 }
@@ -443,6 +510,8 @@ void ASDMReader::clearMainRow()
 
 void ASDMReader::setupIFNO() 
 {
+  String funcName = "setupIFNO" ;
+
   vector<SpectralWindowRow *> spwrows = asdm_->getSpectralWindow().get() ;
   unsigned int nrow = spwrows.size() ;
   ifno_.clear() ;
@@ -451,14 +520,14 @@ void ASDMReader::setupIFNO()
   for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
     casa::uInt index ;
     if ( isWVR( spwrows[irow] ) ) {
-      cout << spwrows[irow]->getSpectralWindowId().toString() << " is WVR" << endl ;
+      //logsink_->postLocally( LogMessage(spwrows[irow]->getSpectralWindowId().toString()+" is WVR",LogOrigin(className_,funcName,WHERE)) ) ;
       index = wvridx ;
     }
     else {
       index = ++idx ;
     }
     ifno_.insert( pair<Tag,casa::uInt>(spwrows[irow]->getSpectralWindowId(),index) ) ;
-    cout << spwrows[irow]->getSpectralWindowId().toString() << ": IFNO=" << index << endl ; 
+    //logsink_->postLocally( LogMessage(spwrows[irow]->getSpectralWindowId().toString()+": IFNO="+String::toString(index),LogOrigin(className_,funcName,WHERE)) ) ;
   }
 }
 
@@ -472,81 +541,97 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
     return false ;
 } 
 
-casa::Vector<casa::uInt> ASDMReader::getDataDescIdList( casa::uInt cdid ) 
-{
-  Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
-  ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
-  vector<Tag> ddTags = cdrow->getDataDescriptionId() ;
-  casa::Vector<casa::uInt> ddidList( ddTags.size() ) ;
-  for ( unsigned int idd = 0 ; idd < ddTags.size() ; idd++ ) {
-    ddidList[idd] = ddTags[idd].getTagValue() ;
-  }
-  return ddidList ;
-}
+// casa::Vector<casa::uInt> ASDMReader::getDataDescIdList( casa::uInt cdid ) 
+// {
+//   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
+//   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
+//   vector<Tag> ddTags = cdrow->getDataDescriptionId() ;
+//   casa::Vector<casa::uInt> ddidList( ddTags.size() ) ;
+//   for ( unsigned int idd = 0 ; idd < ddTags.size() ; idd++ ) {
+//     ddidList[idd] = ddTags[idd].getTagValue() ;
+//   }
+//   return ddidList ;
+// }
 
-casa::Vector<casa::uInt> ASDMReader::getSwitchCycleIdList( casa::uInt cdid ) 
-{
-  Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
-  ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
-  vector<Tag> scTags = cdrow->getSwitchCycleId() ;
-  casa::Vector<casa::uInt> scidList( scTags.size() ) ;
-  for ( unsigned int idd = 0 ; idd < scTags.size() ; idd++ ) {
-    scidList[idd] = scTags[idd].getTagValue() ;
-  }
-  return scidList ;
-}
+// casa::Vector<casa::uInt> ASDMReader::getSwitchCycleIdList( casa::uInt cdid ) 
+// {
+//   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
+//   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
+//   vector<Tag> scTags = cdrow->getSwitchCycleId() ;
+//   casa::Vector<casa::uInt> scidList( scTags.size() ) ;
+//   for ( unsigned int idd = 0 ; idd < scTags.size() ; idd++ ) {
+//     scidList[idd] = scTags[idd].getTagValue() ;
+//   }
+//   return scidList ;
+// }
 
-casa::Vector<casa::uInt> ASDMReader::getFeedIdList( casa::uInt cdid ) 
-{
-  Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
-  ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
-  casa::Vector<casa::uInt> feedIdList ;
-  vector<int> feedIds = cdrow->getFeedId() ;
-  for ( unsigned int ife = 0 ; ife < feedIds.size() ; ife++ ) {
-    cout << "feedIds[" << ife << "]=" << feedIds[ife] << endl ;
-    if ( casa::anyEQ( feedIdList, casa::uInt( feedIds[ife] ) ) )
-      continue ;
-    if ( casa::anyEQ( feedIdList_, casa::uInt( feedIds[ife] ) ) ) {
-      casa::uInt oldsize = feedIdList.size() ;
-      feedIdList.resize( oldsize+1, true ) ;
-      feedIdList[oldsize] = casa::uInt( feedIds[ife] ) ;
-    }
-  }
-  cout << "feedIdList.size() = " << feedIdList.size() << endl ;
-  return feedIdList ;
-}
+// casa::Vector<casa::uInt> ASDMReader::getFeedIdList( casa::uInt cdid ) 
+// {
+//   String funcName = "getFeedIdList" ;
+//   
+//   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
+//   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
+//   casa::Vector<casa::uInt> feedIdList ;
+//   vector<int> feedIds = cdrow->getFeedId() ;
+//   for ( unsigned int ife = 0 ; ife < feedIds.size() ; ife++ ) {
+//     logsink_->postLocally( LogMessage("feedIds["+String::toString(ife)+"]="+String::toString(feedIds[ife]),LogOrigin(className_,funcName,WHERE)) ) ;
+//     if ( casa::anyEQ( feedIdList, casa::uInt( feedIds[ife] ) ) )
+//       continue ;
+//     if ( casa::anyEQ( feedIdList_, casa::uInt( feedIds[ife] ) ) ) {
+//       casa::uInt oldsize = feedIdList.size() ;
+//       feedIdList.resize( oldsize+1, true ) ;
+//       feedIdList[oldsize] = casa::uInt( feedIds[ife] ) ;
+//     }
+//   }
+//   logsink_->postLocally( LogMessage("feedIdList.size() = "+String::toString(feedIdList.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+//   return feedIdList ;
+// }
 
 casa::Bool ASDMReader::setData()
 {
-  cout << "try to retrieve binary data" << endl ;
+  String funcName = "setData" ;
+
+  //logsink_->postLocally( LogMessage("try to retrieve binary data",LogOrigin(className_,funcName,WHERE)) ) ;
   
+//   EnumSet<AtmPhaseCorrection> esApcs ;
+//   esApcs.set( apc_ ) ;
+//   // always take only autocorrelation data
+//   Enum<CorrelationMode> esCorr = AUTO_ONLY ;
+//   vmsData_ = sdmBin_->getDataCols( esCorr, esApcs ) ;
+
+  // 2011/07/06 TN
+  // Workaround to avoid unwanted message from SDMBinData::getDataCols()
+  ostringstream oss ;
+  streambuf *buforg = cout.rdbuf(oss.rdbuf()) ;
   vmsData_ = sdmBin_->getDataCols() ;
+  cout.rdbuf(buforg) ;
+
+//   logsink_->postLocally( LogMessage("oss.str() = "+oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+//   cout << "This is test: oss.str()=" << oss.str() << endl ;
 
 
-  cout << "succeeded" << endl ;
-
-  cout << "processorId = " << vmsData_->processorId << endl ;
-  cout << "v_time.size() = " << vmsData_->v_time.size() << endl ;
-  cout << "   v_time[0] = " << vmsData_->v_time[0] << endl ;
-  cout << "v_interval.size() = " << vmsData_->v_interval.size() << endl ;
-  cout << "   v_interval[0] = " << vmsData_->v_interval[0] << endl ;
-  cout << "v_atmPhaseCorrection.size() = " << vmsData_->v_atmPhaseCorrection.size() << endl ;
-  cout << "binNum = " << vmsData_->binNum << endl ;
-  cout << "v_projectPath.size() = " << vmsData_->v_projectPath.size() << endl ;
-  cout << "v_antennaId1.size() = " << vmsData_->v_antennaId1.size() << endl ;
-  cout << "v_antennaId2.size() = " << vmsData_->v_antennaId2.size() << endl ;
-  cout << "v_feedId1.size() = " << vmsData_->v_feedId1.size() << endl ;
-  cout << "v_feedId2.size() = " << vmsData_->v_feedId2.size() << endl ;
-  cout << "v_dataDescId.size() = " << vmsData_->v_dataDescId.size() << endl ;
-  cout << "v_timeCentroid.size() = " << vmsData_->v_timeCentroid.size() << endl ;
-  cout << "v_exposure.size() = " << vmsData_->v_exposure.size() << endl ;
-  cout << "v_numData.size() = " << vmsData_->v_numData.size() << endl ;
-  cout << "vv_dataShape.size() = " << vmsData_->vv_dataShape.size() << endl ;
-  cout << "v_m_data.size() = " << vmsData_->v_m_data.size() << endl ;
-  cout << "v_phaseDir.size() = " << vmsData_->v_phaseDir.size() << endl ;
-  cout << "v_stateId.size() = " << vmsData_->v_stateId.size() << endl ;
-  cout << "v_msState.size() = " << vmsData_->v_msState.size() << endl ;
-  cout << "v_flag.size() = " << vmsData_->v_flag.size() << endl ;
+  //logsink_->postLocally( LogMessage("processorId = "+String::toString(vmsData_->processorId),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_time.size() = "+String::toString(vmsData_->v_time.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("   v_time[0] = "+String::toString(vmsData_->v_time[0]),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_interval.size() = "+String::toString(vmsData_->v_interval.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("   v_interval[0] = "+String::toString(vmsData_->v_interval[0]),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_atmPhaseCorrection.size() = "+String::toString(vmsData_->v_atmPhaseCorrection.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("binNum = "+String::toString(vmsData_->binNum),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_projectPath.size() = "+String::toString(vmsData_->v_projectPath.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_antennaId1.size() = "+String::toString(vmsData_->v_antennaId1.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_antennaId2.size() = "+String::toString(vmsData_->v_antennaId2.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_feedId1.size() = "+String::toString(vmsData_->v_feedId1.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_feedId2.size() = "+String::toString(vmsData_->v_feedId2.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_dataDescId.size() = "+String::toString(vmsData_->v_dataDescId.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_timeCentroid.size() = "+String::toString(vmsData_->v_timeCentroid.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_exposure.size() = "+String::toString(vmsData_->v_exposure.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_numData.size() = "+String::toString(vmsData_->v_numData.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("vv_dataShape.size() = "+String::toString(vmsData_->vv_dataShape.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_m_data.size() = "+String::toString(vmsData_->v_m_data.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_phaseDir.size() = "+String::toString(vmsData_->v_phaseDir.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_stateId.size() = "+String::toString(vmsData_->v_stateId.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_msState.size() = "+String::toString(vmsData_->v_msState.size()),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("v_flag.size() = "+String::toString(vmsData_->v_flag.size()),LogOrigin(className_,funcName,WHERE)) ) ;
 
   dataIdList_.clear() ;
   unsigned int numTotalData = vmsData_->v_m_data.size() ;
@@ -556,23 +641,8 @@ casa::Bool ASDMReader::setData()
       dataIdList_.push_back( idata ) ;
   }
   numData_ = dataIdList_.size() ;
-  cout << "numData_ = " << numData_ << endl ;
-
-//  unsigned int numAnt1 = vmsData_->v_antennaId1.size() ;
-//  unsigned int numAnt2 = vmsData_->v_antennaId2.size() ;
-//   for ( unsigned int i = 0 ; i < numAnt1 ; i++ ) {
-//     if ( i == 0 )
-//       cout << "antenna1: " ;
-//     cout << vmsData_->v_antennaId1[i] << " " ;
-//   }
-//   cout << endl ;
-//   for ( unsigned int i = 0 ; i < numAnt2 ; i++ ) {
-//     if ( i == 0 )
-//       cout << "antenna2: " ;
-//     cout << vmsData_->v_antennaId2[i] << " " ;
-//   }
-  cout << endl ;
-  cout << "dataSize = " << mainRow_[row_]->getDataSize() << endl ;
+  //logsink_->postLocally( LogMessage("numData_ = "+String::toString(numData_),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("dataSize = "+String::toString(mainRow_[row_]->getDataSize()),LogOrigin(className_,funcName,WHERE)) ) ;
 
   return true ;
 }
@@ -603,14 +673,15 @@ void ASDMReader::getFrequency( unsigned int idx,
                                double &refval, 
                                double &incr ) 
 {
-  cout << "getFrequency()" << endl ;
+  String funcName = "getFrequency" ;
+
   Tag ddTag( vmsData_->v_dataDescId[dataIdList_[idx]], TagType::DataDescription ) ;
   DataDescriptionRow *ddrow = asdm_->getDataDescription().getRowByKey( ddTag ) ;
   //Tag spwid = ddrow->getSpectralWindowId() ;
   SpectralWindowRow *spwrow = ddrow->getSpectralWindowUsingSpectralWindowId() ;
   int nchan = spwrow->getNumChan() ;
   if ( nchan == 1 ) {
-    cout << "channel averaged data" << endl ;
+    //logsink_->postLocally( LogMessage("channel averaged data",LogOrigin(className_,funcName,WHERE)) ) ;
     refpix = 0.0 ;
     incr = spwrow->getTotBandwidth().get() ;
     if ( spwrow->isChanFreqStartExists() ) {
@@ -625,7 +696,7 @@ void ASDMReader::getFrequency( unsigned int idx,
   }
   else if ( nchan % 2 ) {
     // odd
-    cout << "odd case" << endl ;
+    //logsink_->postLocally( LogMessage("odd case",LogOrigin(className_,funcName,WHERE)) ) ;
     refpix = 0.5 * ( (double)nchan - 1.0 ) ;
     int ic = ( nchan - 1 ) / 2 ;
     if ( spwrow->isChanWidthExists() ) {
@@ -661,7 +732,7 @@ void ASDMReader::getFrequency( unsigned int idx,
   }
   else {
     // even
-    cout << "even case" << endl ;
+    //logsink_->postLocally( LogMessage("even case",LogOrigin(className_,funcName,WHERE)) ) ;
     refpix = 0.5 * ( (double)nchan - 1.0 ) ; 
     int ic = nchan / 2 ;
     if ( spwrow->isChanWidthExists() ) {
@@ -696,12 +767,10 @@ void ASDMReader::getFrequency( unsigned int idx,
       throw (casa::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
     }      
   }
-  cout << "finished getFrequency()" << endl ;
 }
 
 vector<double> ASDMReader::getRestFrequency( unsigned int idx ) 
 {
-  cout << "getRestFrequency" << endl ;
   vector<double> rf( 0 ) ;
   unsigned int index = dataIdList_[idx] ;
   //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
@@ -712,18 +781,17 @@ vector<double> ASDMReader::getRestFrequency( unsigned int idx )
   Tag ftag( vmsData_->v_fieldId[index], TagType::Field ) ;
   FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
   if ( frow->isSourceIdExists() ) {
-    cout << "sourceId exists" << endl ;
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     if ( srow->isRestFrequencyExists() ) {
-      cout << "restFrequency exists" << endl ;
+      //logsink_->postLocally( LogMessage("restFrequency exists",LogOrigin(className_,funcName,WHERE)) ) ;
       vector<Frequency> restfreq = srow->getRestFrequency() ; 
       rf.resize( restfreq.size() ) ;
       for ( unsigned int i = 0 ; i < restfreq.size() ; i++ ) 
         rf[i] = restfreq[i].get() ;
     }
   }
-  cout << "finished getRestFrequency()" << endl ;
   return rf ;
 }
 
@@ -750,7 +818,7 @@ string ASDMReader::getSourceName( unsigned int idx )
   FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
   string srcname ;
   if ( frow->isSourceIdExists() ) {
-    cout << "sourceId exists" << endl ;
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     srcname = srow->getSourceName() ;
@@ -845,8 +913,7 @@ int ASDMReader::getSrcType( unsigned int scan,
 
 unsigned int ASDMReader::getSubscanNo( unsigned int idx ) 
 {
-  //cout << "subscan" << vmsData_->v_msState[dataIdList_[idx]].subscanNum
-  //     << ": obsmode=" << vmsData_->v_msState[dataIdList_[idx]].obsMode << endl ;
+  //logsink_->postLocally( LogMessage("subscan"+String::toString(vmsData_->v_msState[dataIdList_[idx]].subscanNum)+": obsmode="+String::toString(vmsData_->v_msState[dataIdList_[idx]].obsMode),LogOrigin(className_,funcName,WHERE)) ) ;
   return vmsData_->v_msState[dataIdList_[idx]].subscanNum ;
 }
 
@@ -863,7 +930,7 @@ vector<double> ASDMReader::getSourceDirection( unsigned int idx )
   FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
   string srcname ;
   if ( frow->isSourceIdExists() ) {
-    cout << "sourceId exists" << endl ;
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     vector<Angle> srcdir = srow->getDirection() ;
@@ -892,7 +959,7 @@ vector<double> ASDMReader::getSourceProperMotion( unsigned int idx )
   FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
   string srcname ;
   if ( frow->isSourceIdExists() ) {
-    cout << "sourceId exists" << endl ;
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     vector<AngularRate> srcpm = srow->getProperMotion() ;
@@ -915,7 +982,7 @@ double ASDMReader::getSysVel( unsigned int idx )
   FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
   string srcname ;
   if ( frow->isSourceIdExists() ) {
-    cout << "sourceId exists" << endl ;
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     if ( srow->isSysVelExists() ) {
@@ -1087,14 +1154,13 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
                                  float &windspeed,
                                  float &windaz ) 
 {
-  cout << "getWeatherInfo() start" << endl ;
   temperature = 0.0 ;
   pressure = 0.0 ;
   humidity = 0.0 ;
   windspeed = 0.0 ;
   windaz = 0.0 ;
 
-  cout << "weatherStationId_ = " << weatherStationId_ << endl ;
+  //logsink_->postLocally( LogMessage("weatherStationId_ = "+String::toString(weatherStationId_),LogOrigin(className_,funcName,WHERE)) ) ;
 
   WeatherTable &wtab = asdm_->getWeather() ;
   if ( wtab.size() == 0 || weatherStationId_ == -1 ) 
@@ -1104,16 +1170,14 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
   //Tag anttag( antennaId_, TagType::Antenna ) ;
   //Tag sttag = (asdm_->getAntenna().getRowByKey( anttag ))->getStationId() ;
   Tag sttag( (unsigned int)weatherStationId_, TagType::Station ) ;
-  cout << "v_interval=" << vmsData_->v_interval[index] << endl ;
   //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
   double startSec = vmsData_->v_time[index] - 0.5 * vmsData_->v_interval[index] ;
   ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
-  cout << "start " << tint.getStartInMJD() << " duration " << tint.getDurationInNanoSeconds() << endl ;
   //WeatherRow *wrow = wtab.getRowByKey( sttag, tint ) ;
   vector<WeatherRow *> *wrows = wtab.getByContext( sttag ) ;
   WeatherRow *wrow = (*wrows)[0] ;
   unsigned int nrow = wrows->size() ;
-  cout << "There are " << nrow << " rows for given context" << endl ;
+  //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows for given context: stationId "+String::toString(weatherStationId_),LogOrigin(className_,funcName,WHERE)) ) ;
   ArrayTime startTime = tint.getStart() ;
   if ( startTime < (*wrows)[0]->getTimeInterval().getStart() ) {
     temperature = (*wrows)[0]->getTemperature().get() ;
@@ -1133,7 +1197,6 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
     for ( unsigned int irow = 1 ; irow < wrows->size() ; irow++ ) {
       wrow = (*wrows)[irow-1] ;
       if ( startTime < (*wrows)[irow]->getTimeInterval().getStart() ) {
-        cout << "irow = " << irow << endl ;
         temperature = wrow->getTemperature().get() ;
         pressure = wrow->getPressure().get() ;
         humidity = wrow->getRelHumidity().get() ;
@@ -1143,11 +1206,7 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
       }
     }
   }
-  
 
-  cout << "temperature = " << temperature << endl ;
-
-  cout << "getWeatherInfo() end" << endl ;
   return ;
 }
 
@@ -1206,7 +1265,8 @@ void ASDMReader::getPointingInfo( unsigned int idx,
                                   double &el,
                                   vector<double> &srate ) 
 {
-  cout << "getPointingInfo() start" << endl ;
+  String funcName = "getPointingInfo" ;
+
   dir.resize(0) ;
   az = -1.0 ;
   el = -1.0 ;
@@ -1222,15 +1282,15 @@ void ASDMReader::getPointingInfo( unsigned int idx,
   ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
 
   unsigned int nrow = prows->size() ;
-  cout << "There are " << nrow << " rows" << endl ;
+  //logsink_->postLocally( LogMessage("There are " << nrow << " rows for given context: antennaId "+String::toString(antennaId_),LogOrigin(className_,funcName,WHERE)) ) ;
 
 //   for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
 //     prow = (*prows)[irow] ;
 //     ArrayTimeInterval ati = prow->getTimeInterval() ;
 //     ArrayTime pst = ati.getStart() ;
 //     ArrayTime pet( ati.getStartInMJD()+ati.getDurationInDays() ) ;
-//     cout << "start: " << pst.toFITS() << endl ;
-//     cout << "end: " << pet.toFITS() << endl ;
+//     logsink_->postLocally( LogMessage("start: "+pst.toFITS(),LogOrigin(className_,funcName,WHERE)) ) ;
+//     logsink_->postLocally( LogMessage("end: "+pet.toFITS(),LogOrigin(className_,funcName,WHERE)) ) ;
 //   }
   
   if ( nrow == 0 )
@@ -1258,7 +1318,7 @@ void ASDMReader::getPointingInfo( unsigned int idx,
   ArrayTimeInterval pTime0 = (*prows)[0]->getTimeInterval() ;
   ArrayTimeInterval pTime1 = (*prows)[nrow-1]->getTimeInterval() ;
   if ( tint.getStartInMJD()+tint.getDurationInDays() < pTime0.getStartInMJD() ) {
-    cout << "ArrayTimeInterval out of bounds: no data for given position (tint < ptime)" << endl ;
+    logsink_->postLocally( LogMessage( "ArrayTimeInterval out of bounds: no data for given position (tint < ptime)", LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
     prow = (*prows)[0] ;
     //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
     vector< vector<Angle> > dirA = prow->getTarget() ;
@@ -1275,7 +1335,7 @@ void ASDMReader::getPointingInfo( unsigned int idx,
     }      
   }
   else if ( tint.getStartInMJD() > pTime1.getStartInMJD()+pTime1.getDurationInDays() ) {
-    cout << "ArrayTimeInterval out of bounds: no data for given position (tint > ptime)" << endl ;
+    logsink_->postLocally( LogMessage( "ArrayTimeInterval out of bounds: no data for given position (tint > ptime)", LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
     prow = (*prows)[nrow-1] ;
     int numSample = prow->getNumSample() ;
     //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
@@ -1321,7 +1381,7 @@ void ASDMReader::getPointingInfo( unsigned int idx,
       if ( row0 != -1 && row1 != -1 ) 
         break ;
     }
-    cout << "row0 = " << row0 << ", row1 = " << row1 << ", row2 = " << row2 << endl ;
+    //logsink_->postLocally( LogMessage("row0 = "+String::toString(row0)+", row1 = "+String::toString(row1)+", row2 = "+String::toString(row2),LogOrigin(className_,funcName,WHERE)) ) ;
     if ( row0 == -1 && row1 == -1 ) {
       prow = (*prows)[row2] ;
       qrow = (*prows)[row2+1] ;
@@ -1378,10 +1438,8 @@ void ASDMReader::getPointingInfo( unsigned int idx,
       }
       prow = (*prows)[row0] ;
       qrow = (*prows)[row1] ;
-      cout << "usePolynomials = " ;
-      cout << prow->getUsePolynomials() << endl ;
       if ( prow->getUsePolynomials() && qrow->getUsePolynomials() ) {
-        cout << "usePolynomial = True" << endl ;
+        //logsink_->postLocally( LogMessage("usePolynomial = True",LogOrigin(className_,funcName,WHERE)) ) ;
         if ( row0 == row1 ) {
           prow = (*prows)[row0] ;
           //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
@@ -1436,16 +1494,16 @@ void ASDMReader::getPointingInfo( unsigned int idx,
         }
       }
       else if ( prow->getUsePolynomials() == qrow->getUsePolynomials() ) {
-        cout << "numSample == numTerm " << endl ;
+        //logsink_->postLocally( LogMessage("numSample == numTerm",LogOrigin(className_,funcName,WHERE)) ) ;
         for ( int irow = row0 ; irow <= row1 ; irow++ ) {
           prow = (*prows)[irow] ;
           int numSample = prow->getNumSample() ;
-          cout << "numSample = " << numSample << endl ;
+          //logsink_->postLocally( LogMessage("numSample = "+String::toString(numSample),LogOrigin(className_,funcName,WHERE)) ) ;
           //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
           vector< vector<Angle> > dirA = prow->getTarget() ;
           vector< vector<Angle> > offA = prow->getOffset() ;
           if ( prow->isSampledTimeIntervalExists() ) {
-            cout << "sampledTimeIntervalExists" << endl ;
+            //logsink_->postLocally( LogMessage("sampledTimeIntervalExists",LogOrigin(className_,funcName,WHERE)) ) ;
             vector<ArrayTimeInterval> stime = prow->getSampledTimeInterval() ; 
             for ( int isam = 0 ; isam < numSample ; isam++ ) {
               //if ( tint.overlaps( stime[isam] ) ) {
@@ -1461,9 +1519,9 @@ void ASDMReader::getPointingInfo( unsigned int idx,
           else {
             double sampleStart = prow->getTimeInterval().getStartInMJD() ; 
             double sampleInterval = prow->getTimeInterval().getDurationInDays() / (double)numSample ;
-            cout << "sampleStart = " << sampleStart << endl ;
-            cout << "sampleInterval = " << sampleInterval << endl ;
-            cout << "tint = " << tint.toString() << endl ;
+            //logsink_->postLocally( LogMessage("sampleStart = "+String::toString(sampleStart),LogOrigin(className_,funcName,WHERE)) )
+            //logsink_->postLocally( LogMessage("sampleInterval = "+String::toString(sampleInterval),LogOrigin(className_,funcName,WHERE)) ) ;
+            //logsink_->postLocally( LogMessage("tint = "+tint.toString(),LogOrigin(className_,funcName,WHERE)) ) ;
             for ( int isam = 0 ; isam < numSample ; isam++ ) {
               ArrayTimeInterval stime( sampleStart+isam*sampleInterval, sampleInterval ) ;
               //if ( tint.overlaps( stime ) ) {
@@ -1476,7 +1534,6 @@ void ASDMReader::getPointingInfo( unsigned int idx,
                 ndir++ ;
               }
             }
-            cout << "ndir = " << ndir << endl ;
           }
         }
         if ( ndir > 1 ) {
@@ -1496,14 +1553,12 @@ void ASDMReader::getPointingInfo( unsigned int idx,
     casa::Vector<casa::Double> antpos( 3 ) ;
     for ( int i = 0 ; i < 3 ; i++ )
       antpos[i] = antposL[i].get() ;
-    cout << "antennaId = " << antennaId_ << endl ;
-    cout << "tcen = " << tcen << endl ;
-    cout << "antpos = " << antpos << endl ;
+    //logsink_->postLocally( LogMessage("tcen = "+String::toString(tcen),LogOrigin(className_,funcName,WHERE)) ) ;
+    //logsink_->postLocally( LogMessage("antpos = "+String::toString(antpos),LogOrigin(className_,funcName,WHERE)) ) ;
     toJ2000( dir, az, el, tcen, antpos ) ;
 
   }
 
-  cout << "getPointingInfo() end" << endl ;
   return ;
 }
 
@@ -1528,6 +1583,8 @@ void ASDMReader::toJ2000( vector<double> &dir,
                           double mjd,
                           casa::Vector<casa::Double> antpos ) 
 {
+  String funcName = "toJ2000" ;
+
   casa::Vector<casa::Double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
@@ -1538,7 +1595,10 @@ void ASDMReader::toJ2000( vector<double> &dir,
   qantpos[2] = casa::Quantity( antpos[2], "m" ) ;
   casa::MPosition mp( casa::MVPosition( qantpos ),
                       casa::MPosition::ITRF ) ;
-  mp.print( cout ) ;
+  //ostringstream oss ;
+  //mp.print( oss ) ;
+  //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+
   casa::MeasFrame mf( me, mp ) ;
   casa::MDirection::Convert toj2000( casa::MDirection::AZELGEO, 
   //MDirection::Convert toj2000( MDirection::AZEL, 
@@ -1548,8 +1608,13 @@ void ASDMReader::toJ2000( vector<double> &dir,
   //MDirection::Convert toj2000( MDirection::AZELNEGEO, 
                                      casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
   casa::Vector<casa::Double> cdir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
-  cout << "cdir = " << cdir << endl ;
+  //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
   dir.resize(2) ;
   dir[0] = (double)(cdir[0]) ;
   dir[1] = (double)(cdir[1]) ;
+}
+
+void ASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
+{
+  logsink_ = logsink ;
 }

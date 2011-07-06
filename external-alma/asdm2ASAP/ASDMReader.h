@@ -6,6 +6,7 @@
 
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Containers/Record.h>
+#include <casa/Logging/LogSinkInterface.h>
 #include <ASDMAll.h>
 #include <SDMBinData.h>
 
@@ -34,7 +35,7 @@ public:
   /**
    * fill data
    **/
-  void fill() ;
+//   void fill() ;
 
   /**
    * close data
@@ -120,7 +121,8 @@ public:
   void select() ;
 
   /**
-   * set Main rows that matches given context (configDescId and fieldId) to mainRow_
+   * set Main rows that matches given context (configDescId and fieldId) 
+   * to mainRow_
    *
    * @param configDescId 
    * @param fieldId
@@ -356,7 +358,7 @@ public:
    * @param configDescId
    * @return list of dataDescId
    **/
-  casa::Vector<casa::uInt> getDataDescIdList( casa::uInt cdid ) ;
+//   casa::Vector<casa::uInt> getDataDescIdList( casa::uInt cdid ) ;
 
   /**
    * get list of switchCycleId for given configDescId
@@ -364,7 +366,7 @@ public:
    * @param configDescId
    * @return list of dataDescId
    **/
-  casa::Vector<casa::uInt> getSwitchCycleIdList( casa::uInt cdid ) ;
+//   casa::Vector<casa::uInt> getSwitchCycleIdList( casa::uInt cdid ) ;
 
   /**
    * get list of feedId for given configDescId
@@ -374,7 +376,7 @@ public:
    * @param configDescId
    * @return list of valid feedId 
    **/
-  casa::Vector<casa::uInt> getFeedIdList( casa::uInt cdid ) ;
+//   casa::Vector<casa::uInt> getFeedIdList( casa::uInt cdid ) ;
 
   /**
    * set binary data to MSData object
@@ -389,6 +391,13 @@ public:
    * @return number of data
    **/
   unsigned int getNumData() { return numData_ ; } ;
+
+  /**
+   * set Logger
+   *
+   * @param logger (LogSinkInterface)
+   **/
+  void setLogger( casa::CountedPtr<casa::LogSinkInterface> &logsink ) ;
 
 
 private:
@@ -523,5 +532,9 @@ private:
   vector<asdm::Tag> weatherStation_ ; // list of Station Tags for WEATHER_STATION
   int weatherStationId_ ; // closest weather station for antennaId_
   AtmPhaseCorrectionMod::AtmPhaseCorrection apc_ ; // ATM phase correction
+  EnumSet<CorrelationModeMod::CorrelationMode> corrMode_ ; // input correlation mode
+  EnumSet<TimeSamplingMod::TimeSampling> timeSampling_ ; // time sampling
+  casa::CountedPtr<casa::LogSinkInterface> logsink_ ; // Logger
+  casa::String className_ ;
 } ;
 #endif // ASAP_ASDM_READER_H

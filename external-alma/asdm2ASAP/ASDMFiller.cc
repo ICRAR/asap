@@ -11,6 +11,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Matrix.h>
 #include <casa/Quanta/MVTime.h>
+#include <casa/Logging/LogMessage.h>
 
 #include "ASDMFiller.h"
 
@@ -21,35 +22,44 @@ using namespace asap ;
 ASDMFiller::ASDMFiller( CountedPtr<Scantable> stable )
   : FillerBase( stable ),
     antennaId_( -1 ),
-    antennaName_( "" )
+    antennaName_( "" ),
+    className_("ASDMFiller")
 {
-  cout << "This is constructor of ASDMFiller" << endl ;
-
   reader_ = new ASDMReader() ;
-
-  cout << "input filename is " << stable->table().tableName() << endl ;
 }
 
 ASDMFiller::~ASDMFiller()
 {
-  cout << "This is destructor of ASDMFiller" << endl ;
+  // nothing to do?
+  logsink_ = 0 ;
+}
+
+void ASDMFiller::setLogger( CountedPtr<LogSinkInterface> &logsink )
+{
+  logsink_ = logsink ;
+  if ( !(reader_.null()) ) {
+    reader_->setLogger( logsink ) ;
+  }
 }
 
 bool ASDMFiller::open( const string &filename, const Record &rec )
 {
+  String funcName = "open" ;
   bool status = reader_->open( filename, rec ) ;
 
   antennaId_ = reader_->getAntennaId() ;
   antennaName_ = reader_->getAntennaName() ;
 
-  cout << "antennaId_ = " << antennaId_ << endl ;
-  cout << "antennaName_ = " << antennaName_ << endl ;
+  //logsink->postLocally( LogMessage("antennaId_ = "+String::toString(antennaId_),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink->postLocally( LogMessage("antennaName_ = "+antennaName_,LogOrigin(className_,funcName,WHERE)) ) ;
 
   return status ;
 }
 
 void ASDMFiller::fill() 
 {
+  String funcName = "fill" ;
+
   // header
   fillHeader() ;
   
@@ -64,13 +74,13 @@ void ASDMFiller::fill()
   Vector<uInt> configDescIdList = reader_->getConfigDescriptionIdList() ;
   uInt numConfigDescId = configDescIdList.size() ;
 
-  cout << "configDescIdList = " << configDescIdList << endl ;
+  //logsink->postLocally( LogMessage("configDescIdList = "+String::toString(configDescIdList),LogOrigin(className_,funcName,WHERE)) ) ;
 
   // get field list
   Vector<uInt> fieldIdList = reader_->getFieldIdList() ;
   uInt numFieldId = fieldIdList.size() ;
 
-  cout << "fieldIdList = " << fieldIdList << endl ;
+  //logsink->postLocally( LogMessage("fieldIdList = "+String::toString(fieldIdList),LogOrigin(className_,funcName,WHERE)) ) ;
 
   // BEAMNO is always 0 since ALMA antenna is single beam
   uInt beamno = 0 ;
@@ -82,26 +92,19 @@ void ASDMFiller::fill()
   setFocus() ;
 
   for ( uInt icon = 0 ; icon < numConfigDescId ; icon++ ) {
-    //Vector<uInt> dataDescIdList = reader_->getDataDescIdList( configDescIdList[icon] ) ;
-    //uInt numDataDescId = dataDescIdList.size() ;
-    //Vector<uInt> switchCycleIdList = reader_->getSwitchCycleIdList( configDescIdList[icon] ) ;
-    //Vector<uInt> feedIdList = reader_->getFeedIdList( configDescIdList[icon] ) ;
-    //uInt numFeedId = feedIdList.size() ;
     for ( unsigned int ifield = 0 ; ifield < numFieldId ; ifield++ ) {
-      cout << "start configDescId " << configDescIdList[icon] 
-           << " fieldId " << fieldIdList[ifield] << endl ;
+      //logsink_->postLocally( LogMessage("start configDescId "+String::toString(configDescIdList[icon])+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
 
       //Bool status = reader_->setMainRow( configDescIdList[icon], fieldIdList[ifield] ) ;
       if ( !(reader_->setMainRow( configDescIdList[icon], fieldIdList[ifield] )) ) {
-        cout << "skip configDescId " << configDescIdList[icon] 
-             << ", fieldId " << fieldIdList[ifield] << endl ;
+        //logsink_->postLocally( LogMessage("skip configDescId "+String::toString(configDescIdList[icon])+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
         continue ;
       }
 
       // number of rows
       uInt nrow = reader_->getNumMainRow() ;
 
-      cout << "There are " << nrow << " rows in Main table." << endl ;
+      //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows in Main table corresponding to configDescId "+String::toString(configDescIdList[icon]+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
       
       // CYCLENO
       unsigned int cycleno = 0 ;
@@ -111,7 +114,7 @@ void ASDMFiller::fill()
         // set main row
         if ( !(reader_->setMainRow( irow )) ) {
           // skip row since the row doesn't have valid configDescId
-          cout << "skip " << irow << endl ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 
@@ -121,8 +124,9 @@ void ASDMFiller::fill()
 
         // set data
         if ( !(reader_->setData()) ) {
-          // skip row since failed to retrieve data
-          cout << "skip " << irow << endl ;
+          // skip row since reader failed to retrieve data
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHRER)) ) ;
+          continue ;
         }
 
         unsigned int numData = reader_->getNumData() ;
@@ -234,24 +238,27 @@ void ASDMFiller::fill()
           else {
             toJ2000( direction, az, el, mjd, antpos ) ;
           }
-          cout << "direction = " << direction << endl ;
+          //logsink_->postLocally( LogMessage("direction = "+String::toString(direction),LogOrigin(className_,funcName,WHERE)) ) ;
           setDirection( direction, (casa::Float)az, (casa::Float)el ) ;
 
           // loop on polarization
           vector<unsigned int> dataShape = reader_->getDataShape( idata ) ;
-          for ( unsigned int i = 0 ; i < dataShape.size() ; i++ ) {
-            if ( i == 0 )
-              cout << "dataShape=[" << dataShape[i] << ", " ;
-            else if ( i == dataShape.size()-1 )
-              cout << dataShape[i] << "]" << endl ;
-            else 
-              cout << dataShape[i] << ", " ;
-          }
+//           ostringstream oss ;
+//           for ( unsigned int i = 0 ; i < dataShape.size() ; i++ ) {
+//             if ( i == 0 )
+//               oss << "dataShape=[" << dataShape[i] << ", " ;
+//             else if ( i == dataShape.size()-1 )
+//               oss << dataShape[i] << "]"  ;
+//             else 
+//               oss << dataShape[i] << ", " ;
+//           }
+//           logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+                                     
           //int numPol = reader_->getNumPol( idata ) ;
           unsigned int numPol = dataShape[0] ;
           unsigned int numChan = dataShape[1] ;
 
-          cout << "numPol = " << numPol << endl ;
+          //logsink_->postLocally( LogMessage("numPol = "+String::toString(numPol),LogOrigin(className_,funcName,WHERE)) ) ;
 
           // OPACITY
           vector<float> tau = reader_->getOpacity( idata ) ;
@@ -294,8 +301,6 @@ void ASDMFiller::fill()
       }
     }
   }
-
-  cout << "filled" << endl ;
 
   return ;
 }
@@ -480,6 +485,8 @@ void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
                                casa::Double mjd,
                                Vector<casa::Double> antpos ) 
 {
+  String funcName = "toJ2000" ;
+
   Vector<casa::Double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
@@ -490,16 +497,11 @@ void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
   qantpos[2] = Quantity( antpos[2], "m" ) ;
   MPosition mp( MVPosition( qantpos ),
                 MPosition::ITRF ) ;
-  mp.print( cout ) ;
+//   mp.print( os_.output() ) ;
   MeasFrame mf( me, mp ) ;
   MDirection::Convert toj2000( MDirection::AZELGEO, 
-  //MDirection::Convert toj2000( MDirection::AZEL, 
-  //MDirection::Convert toj2000( MDirection::AZELSW, 
-  //MDirection::Convert toj2000( MDirection::AZELSWGEO, 
-  //MDirection::Convert toj2000( MDirection::AZELNE, 
-  //MDirection::Convert toj2000( MDirection::AZELNEGEO, 
                                MDirection::Ref( MDirection::J2000, mf ) ) ;
   dir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
-  cout << "dir = " << dir << endl ;
+  //logsink->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
 }
 
