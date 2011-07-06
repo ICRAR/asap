@@ -69,7 +69,7 @@ MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
     tablename_( "" ),
     antenna_( -1 ),
     antennaStr_(""),
-    getPt_( False ),
+    getPt_( True ),
     isFloatData_( False ),
     isData_( False ),
     isDoppler_( False ),
