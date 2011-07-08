@@ -686,51 +686,6 @@ vector<double> NRODataset::getFrequencies( int i )
   //cout << "NRODataset::getFrequencies()  record->ARRYT=" << record->ARRYT << endl ;
   //cout << "NRODataset::getFrequencies()  ib = " << ib << endl ;
 
-//   if ( strncmp( record->ARRYT, "X", 1 ) == 0 ) {
-//     // FX
-//     if ( strncmp( (record->ARRYT)+1, "1", 1 ) == 0 
-//          || strncmp( (record->ARRYT)+1, "3", 1 ) ) {
-//       // FX1, 3
-//       ia = 2 ;
-//     }
-//     else {
-//       // FX2, 4
-//       ia = 1 ;
-//     }
-//   }
-//   else if ( strncmp( record->ARRYT, "A", 1 ) == 0 )
-//     ia = 2 ;  // AC
-//   else if ( strncmp( record->ARRYT, "W", 1 ) == 0 ) {
-//     // AOS-W    
-//     ia = 2 ;  
-//     isAOS = true ;
-//   }
-//   else if ( strncmp( record->ARRYT, "U", 1 ) == 0 ) {
-//     // AOS-U
-//     ia = 2 ;  
-//     isAOS = true ;
-//   }
-//   else if ( strncmp( record->ARRYT, "H", 1 ) == 0 ) {
-//     // AOS-H
-//     isAOS = true ;
-//     //cout << record->ARRYT << " " <<  strlen(record->ARRYT) << endl ;
-//     //cout << (record->ARRYT)+1 << endl ;
-//     if ( strncmp( (record->ARRYT)+2, " ", 1 ) == 0 ) {
-//       // H1-9
-//       if ( strncmp( (record->ARRYT)+1, "9", 1 ) == 0 ) {
-//         // H9
-//         ia = 2 ;
-//       }
-//       else {
-//         // H1-8
-//         ia = 1 ;
-//       }
-//     }
-//     else {
-//       // H10-16
-//       ia = 2 ;
-//     }
-//   }
   if ( arryt[0] == 'W' || arryt[0] == 'U' || arryt[0] == 'H' )
     isAOS = true ;
 
@@ -801,16 +756,18 @@ vector<double> NRODataset::getFrequencies( int i )
     v[2] = dz ;
   }
   else {
-    cw = getBERES()[ib] ;
 
-    if ( !isUSB )
+    cw = ( freqs[1] - freqs[0] ) 
+      / ( chcal[1] - chcal[0] ) ;    
+
+    if ( isUSB ) {
+      // channel frequency inversion 
       cw *= -1.0 ;
-    
-    if ( cw == 0.0 ) {
-      cw = ( freqs[1] - freqs[0] ) 
-        / ( chcal[1] - chcal[0] ) ;
+      Double tmp = freqs[1] ;
+      freqs[1] = freqs[0] ; 
+      freqs[0] = tmp ;
     }
-
+    
     v[0] = chcal[0] - 1 ; // 0-base
     v[1] = freqs[0] ;
     v[2] = cw ;
