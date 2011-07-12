@@ -55,6 +55,7 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
   // set default
   timeSampling_.reset() ;
   corrMode_.reset() ;
+  resolutionType_.reset() ;
   apc_ = AP_CORRECTED ;
 
   // parsing ASDM options
@@ -103,6 +104,30 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
       status = false ;
     }      
 
+    // spectral resolution type
+    String resolutionType = "all" ;
+    if ( asdmrec.isDefined( "srt" ) ) {
+      resolutionType = asdmrec.asString( "srt" ) ;
+    }
+    if ( resolutionType == "all" ) {
+      resolutionType_.set( FULL_RESOLUTION ) ;
+      resolutionType_.set( BASEBAND_WIDE ) ;
+      resolutionType_.set( CHANNEL_AVERAGE ) ;
+    }
+    else if ( resolutionType == "fr" ) {
+      resolutionType_.set( FULL_RESOLUTION ) ;
+    }
+    else if ( resolutionType == "bw" ) {
+      resolutionType_.set( BASEBAND_WIDE ) ;
+    }
+    else if ( resolutionType == "ca" ) {
+      resolutionType_.set( CHANNEL_AVERAGE ) ;
+    }
+    else {
+      logsink_->postLocally( LogMessage( "Unrecognized option for spectral resolution type: "+String::toString(resolutionType), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
+      status = false ;
+    }
+    
     // input correlation mode
     if ( asdmrec.isDefined( "corr" ) ) {
       string corrMode = string( asdmrec.asString( "corr" ) ) ;
@@ -455,14 +480,13 @@ void ASDMReader::select()
 {
   // selection by input CorrelationMode
   EnumSet<CorrelationMode> esCorrs ;
-//   esCorrs.set( CROSS_AND_AUTO ) ;
-//   esCorrs.set( AUTO_ONLY ) ;
-//   esCorrs.set( corrMode_ ) ;
-//   sdmBin_->select( esCorrs ) ;
   sdmBin_->select( corrMode_ ) ;
 
   // selection by TimeSampling
   sdmBin_->select( timeSampling_ ) ;
+
+  // selection by SpectralResolutionType
+  sdmBin_->select( resolutionType_ ) ;
 
   // selection by AtmPhaseCorrection and output CorrelationMode
   EnumSet<AtmPhaseCorrection> esApcs ;

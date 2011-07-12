@@ -534,6 +534,7 @@ private:
   AtmPhaseCorrectionMod::AtmPhaseCorrection apc_ ; // ATM phase correction
   EnumSet<CorrelationModeMod::CorrelationMode> corrMode_ ; // input correlation mode
   EnumSet<TimeSamplingMod::TimeSampling> timeSampling_ ; // time sampling
+  EnumSet<SpectralResolutionTypeMod::SpectralResolutionType> resolutionType_ ; // spectral resolution type
   casa::CountedPtr<casa::LogSinkInterface> logsink_ ; // Logger
   casa::String className_ ;
 } ;
