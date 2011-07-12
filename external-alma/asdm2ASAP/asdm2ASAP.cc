@@ -22,7 +22,7 @@ int main( int argc, char *argv[] )
   // options
   Input inp ;
   String indent = "   " ;
-  String versionInfo = "$Id$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name> [-apc both|yes|no] [-corr-mode ca|ao|ca+ao] [-ocorr-mode ao] [-time-sampling all|integration|subintegration] [-srt fr|bw|ca|all]" ;
+  String versionInfo = "$Id$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name> [-apc both|yes|no] [-corr-mode ca|ao|ca,ao] [-ocorr-mode ao] [-time-sampling all|integration|subintegration] [-srt fr|bw|ca|fr,bw|fr,ca|ca,bw|all]" ;
   Bool helpMode = False ;
   for ( int i = 1 ; i < argc ; i++ ) {
     if ( strncmp( argv[i], "-h", 2 ) == 0 
@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
   inp.create( "corr-mode", "ca+ao", "Input correlator mode: ca+ao|ca|ao", "String" ) ;
   inp.create( "ocorr-mode", "ao", "Output correlator mode: ao", "String" ) ;
   inp.create( "time-sampling", "all", "time sampling mode: all|integration|subintegration", "String" ) ;
-  inp.create( "srt", "all", "spectral resolution mode: all|fr(full resolution)|ca(channel average)|bw(baseband wide)", "String" ) ;
+  inp.create( "srt", "all", "spectral resolution mode: all|fr(full resolution)|ca(channel average)|bw(baseband wide)|fr+ca|fr+bw|ca+bw", "String" ) ;
   inp.create( "logfile", "", "logger output", "String" ) ;
   inp.readArguments( argc, argv ) ;
 

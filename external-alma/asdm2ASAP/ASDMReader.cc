@@ -105,48 +105,54 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
     }      
 
     // spectral resolution type
-    String resolutionType = "all" ;
+    string resolutionType = "all" ;
     if ( asdmrec.isDefined( "srt" ) ) {
-      resolutionType = asdmrec.asString( "srt" ) ;
+      resolutionType = string( asdmrec.asString( "srt" ) ) ;
     }
-    if ( resolutionType == "all" ) {
-      resolutionType_.set( FULL_RESOLUTION ) ;
-      resolutionType_.set( BASEBAND_WIDE ) ;
-      resolutionType_.set( CHANNEL_AVERAGE ) ;
+    string resolutionTypes[3] ;
+    Int numType = split( resolutionType, resolutionTypes, 3, "," ) ;
+    for ( Int it = 0 ; it < numType ; it++ ) {
+      if ( resolutionTypes[it] == "all" ) {
+        resolutionType_.reset() ;
+        resolutionType_.set( FULL_RESOLUTION ) ;
+        resolutionType_.set( BASEBAND_WIDE ) ;
+        resolutionType_.set( CHANNEL_AVERAGE ) ;
+        break ;
+      }
+      else if ( resolutionTypes[it] == "fr" ) {
+        resolutionType_.set( FULL_RESOLUTION ) ;
+      }
+      else if ( resolutionTypes[it] == "bw" ) {
+        resolutionType_.set( BASEBAND_WIDE ) ;
+      }
+      else if ( resolutionTypes[it] == "ca" ) {
+        resolutionType_.set( CHANNEL_AVERAGE ) ;
+      }
     }
-    else if ( resolutionType == "fr" ) {
-      resolutionType_.set( FULL_RESOLUTION ) ;
-    }
-    else if ( resolutionType == "bw" ) {
-      resolutionType_.set( BASEBAND_WIDE ) ;
-    }
-    else if ( resolutionType == "ca" ) {
-      resolutionType_.set( CHANNEL_AVERAGE ) ;
-    }
-    else {
+    if ( resolutionType_.size() == 0 ) {
       logsink_->postLocally( LogMessage( "Unrecognized option for spectral resolution type: "+String::toString(resolutionType), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
       status = false ;
     }
     
     // input correlation mode
+    string corrMode = "ao+ca" ;
     if ( asdmrec.isDefined( "corr" ) ) {
-      string corrMode = string( asdmrec.asString( "corr" ) ) ;
+      corrMode = string( asdmrec.asString( "corr" ) ) ;
       //logsink_->postLocally( LogMessage("corrMode = "+String(corrMode),LogOrigin(className_,funcName,WHERE)) ) ;
-      string corrModes[3] ;
-      Int numCorr = split( corrMode, corrModes, 3, "+" ) ;
-      for ( Int ic = 0 ; ic < numCorr ; ic++ ) {
-        if ( corrModes[ic] == "ao" ) {
-          corrMode_.set( AUTO_ONLY ) ;
-        }
-        else if ( corrModes[ic] == "ca" ) {
-          corrMode_.set( CROSS_AND_AUTO ) ;
-        }
+    }
+    string corrModes[3] ;
+    Int numCorr = split( corrMode, corrModes, 3, "," ) ;
+    for ( Int ic = 0 ; ic < numCorr ; ic++ ) {
+      if ( corrModes[ic] == "ao" ) {
+        corrMode_.set( AUTO_ONLY ) ;
       }
-      //delete corrModes ;
-      if ( corrMode_.size() == 0 ) {
-        logsink_->postLocally( LogMessage( "Invalid option for correlation mode: "+String::toString(corrMode), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
-        status = false ;
+      else if ( corrModes[ic] == "ca" ) {
+        corrMode_.set( CROSS_AND_AUTO ) ;
       }
+    }
+    if ( corrMode_.size() == 0 ) {
+      logsink_->postLocally( LogMessage( "Invalid option for correlation mode: "+String::toString(corrMode), LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
+      status = false ;
     }
 
 //     logsink_->postLocally( LogMessage( "### asdmrec summary ###", LogOrigin(className_,funcName,WHERE) ) ) ;
