@@ -711,6 +711,8 @@ void MSFiller::fill()
                   const TableRecord &dataColKeys = mFloatDataCol.keywordSet() ;
                   if ( dataColKeys.isDefined( "UNIT" ) )
                     sdh.fluxunit = dataColKeys.asString( "UNIT" ) ;
+                  else if ( dataColKeys.isDefined( "QuantumUnits" ) ) 
+                    sdh.fluxunit = dataColKeys.asString( "QuantumUnits" ) ;
                 } 
               }
               else if ( isData_ ) {
@@ -751,6 +753,8 @@ void MSFiller::fill()
                   const TableRecord &dataColKeys = mDataCol.keywordSet() ;
                   if ( dataColKeys.isDefined( "UNIT" ) )
                     sdh.fluxunit = dataColKeys.asString( "UNIT" ) ;
+                  else if ( dataColKeys.isDefined( "QuantumUnits" ) ) 
+                    sdh.fluxunit = dataColKeys.asString( "QuantumUnits" ) ;
                 } 
               }
               ROScalarMeasColumn<MEpoch> *mTimeCol = new ROScalarMeasColumn<MEpoch>( t5, "TIME" ) ;
@@ -976,6 +980,9 @@ void MSFiller::fill()
   } else if (sdh.freqref == "REST") {
     sdh.freqref = "SOURCE";
   }
+  //if ( sdh.fluxunit == "" )
+  if ( sdh.fluxunit == "" || sdh.fluxunit == "CNTS" )
+    sdh.fluxunit = "K" ;
   table_->setHeader( sdh ) ;
 
   // save path to POINTING table
