@@ -393,6 +393,13 @@ public:
   unsigned int getNumData() { return numData_ ; } ;
 
   /**
+   * get frequency frame
+   *
+   * @return string representating frequency frame
+   **/
+  std::string getFrame() ;
+
+  /**
    * set Logger
    *
    * @param logger (LogSinkInterface)

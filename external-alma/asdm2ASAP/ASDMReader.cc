@@ -1648,3 +1648,32 @@ void ASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
 {
   logsink_ = logsink ;
 }
+
+string ASDMReader::getFrame()
+{
+  String funcName = "getFrame" ;
+ 
+  // default is TOPO
+  string frame = "TOPO" ;
+
+  SpectralWindowTable &spwtab = asdm_->getSpectralWindow() ;
+  vector<SpectralWindowRow *> rows = spwtab.get() ;
+  vector<FrequencyReferenceCode> measFreqRef( rows.size() ) ;
+  int nref = 0 ;
+  for ( unsigned int irow = 0 ; irow < rows.size() ; irow++ ) {
+    int nchan = rows[irow]->getNumChan() ;
+    if ( nchan != 4 ) {
+      if ( rows[irow]->isMeasFreqRefExists() ) {
+        measFreqRef[nref] = rows[irow]->getMeasFreqRef() ;
+        nref++ ;
+      }
+    }
+  }
+  if ( nref != 0 ) {
+    frame = CFrequencyReferenceCode::toString( measFreqRef[0] ) ;
+  }
+  
+  logsink_->postLocally( LogMessage("frame = "+String::toString(frame),LogOrigin(className_,funcName,WHERE)) ) ;
+
+  return frame ;
+}

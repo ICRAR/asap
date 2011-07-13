@@ -73,6 +73,9 @@ private:
                 casa::Double mjd,
                 casa::Vector<casa::Double> antpos ) ;
 
+  // get frequency frame enum value from string
+  casa::MFrequency::Types toFrameType( std::string &s ) ;
+
   casa::CountedPtr<ASDMReader> reader_ ;
   casa::Int antennaId_ ;
   casa::String antennaName_ ;

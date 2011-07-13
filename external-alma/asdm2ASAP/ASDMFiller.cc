@@ -62,6 +62,12 @@ void ASDMFiller::fill()
 
   // header
   fillHeader() ;
+
+  // set Frame for FREQUENCIES table
+  string sFreqFrame = reader_->getFrame() ;
+  MFrequency::Types freqFrame = toFrameType( sFreqFrame ) ;
+  table_->frequencies().setFrame( freqFrame, false ) ;
+  table_->frequencies().setFrame( freqFrame, true ) ;
   
   Vector<casa::Double> antpos = table_->getHeader().antennaposition ;
 
@@ -505,3 +511,15 @@ void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
   //logsink->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
 }
 
+MFrequency::Types ASDMFiller::toFrameType( string &s ) 
+{
+  MFrequency::Types ftype = MFrequency::DEFAULT ;
+  if ( s == "LABREST" )
+    ftype = MFrequency::REST ;
+  else {
+    Bool b = MFrequency::getType( ftype, String(s) ) ;
+    if (!b)
+      ftype = MFrequency::DEFAULT ;
+  }
+  return ftype ;
+}
