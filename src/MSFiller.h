@@ -99,6 +99,9 @@ private:
 
   // tool for HPC
   double gettimeofday_sec() ;
+
+  // get frequency frame
+  std::string getFrame() ;
   
   casa::CountedPtr<Scantable> table_ ;
   casa::MeasurementSet mstable_ ;

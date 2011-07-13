@@ -248,8 +248,9 @@ void MSFiller::fill()
   //
 
   // SUBTABLES: FREQUENCIES
-  table_->frequencies().setFrame( "LSRK" ) ;
-  table_->frequencies().setFrame( "LSRK", True ) ;
+  string freqFrame = getFrame() ;
+  table_->frequencies().setFrame( freqFrame ) ;
+  table_->frequencies().setFrame( freqFrame, True ) ;
 
   // SUBTABLES: WEATHER
   fillWeather() ;
@@ -1736,5 +1737,24 @@ uInt MSFiller::binarySearch( Vector<MEpoch> &timeList, Double target )
   
 }
 
+string MSFiller::getFrame()
+{
+  MFrequency::Types frame = MFrequency::DEFAULT ;
+  ROTableColumn numChanCol( mstable_.spectralWindow(), "NUM_CHAN" ) ;
+  ROTableColumn measFreqRefCol( mstable_.spectralWindow(), "MEAS_FREQ_REF" ) ;
+  uInt nrow = numChanCol.nrow() ;
+  Vector<Int> measFreqRef( nrow, MFrequency::DEFAULT ) ;
+  uInt nref = 0 ;
+  for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+    if ( numChanCol.asInt( irow ) != 4 ) { // exclude WVR
+      measFreqRef[nref] = measFreqRefCol.asInt( irow ) ;
+      nref++ ;
+    }
+  }
+  if ( nref > 0 )
+    frame = (MFrequency::Types)measFreqRef[0] ;
+
+  return MFrequency::showType( frame ) ;
+}
 } ;
 
