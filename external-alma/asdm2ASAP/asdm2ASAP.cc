@@ -147,12 +147,10 @@ int main( int argc, char *argv[] )
     Directory dir( outname ) ;
     if ( dir.exists() ) {
       if ( overwrite ) {
-        //*os << "Delete existing file " << outname << " ..." << LogIO::POST ;
         logsink_p->postLocally( LogMessage("Delete existing file "+outname+" ...",LogOrigin(funcname,WHERE)) ) ;
         dir.removeRecursive() ;
       }
       else {
-        //*os << LogIO::WARN << "Output file " << outname << " exists." << LogIO::POST ;
         logsink_p->postLocally( LogMessage("Output file "+outname+" exists.",LogOrigin(funcname,WHERE),LogMessage::WARN) ) ;
         return 1 ;
       }
@@ -166,12 +164,10 @@ int main( int argc, char *argv[] )
     
     // save data only if nrow is not zero
     if ( stable->nrow() > 0 ) {
-      //*os << "Creating " << outname << "..." << LogIO::POST ;
       logsink_p->postLocally( LogMessage("Creating "+outname+"...",LogOrigin(funcname,WHERE)) ) ;
       stable->makePersistent( outname ) ;
     }
     else {
-      //*os << outname << " will not be created since there are no data associate with the selection" << LogIO::POST ;
       logsink_p->postLocally( LogMessage(outname+" will not be created since there are no data associate with the selection",LogOrigin(funcname,WHERE)) ) ;
     }
     
@@ -183,7 +179,6 @@ int main( int argc, char *argv[] )
  
   if ( logfile.size() != 0 )
     ofs.close() ;
-  //delete os ;
 
   return 0 ;
 }

@@ -211,8 +211,8 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
   // process Station table
   processStation() ;
 
-  logsink_->postLocally( LogMessage(  "antennaId_ = "+String::toString(antennaId_), LogOrigin() ) ) ;
-  logsink_->postLocally( LogMessage(  "antennaName_ = "+antennaName_, LogOrigin() ) ) ;
+  logsink_->postLocally( LogMessage(  "antennaId_ = "+String::toString(antennaId_), LogOrigin(className_,funcName,WHERE) ) ) ;
+  logsink_->postLocally( LogMessage(  "antennaName_ = "+antennaName_, LogOrigin(className_,funcName,WHERE) ) ) ;
 
   return true ;
 }
@@ -293,14 +293,16 @@ void ASDMReader::fillHeader( casa::Int &nchan,
 
   SpectralWindowTable &spwtab = asdm_->getSpectralWindow() ;
   vector<SpectralWindowRow *> spwrows = spwtab.get() ;
+  int nspwrow = spwrows.size() ;
 
   // nif
-  nif = spwrows.size() ;
+  //nif = spwrows.size() ;
+  nif = getNumIFs() ;
 
   // nchan 
   int refidx = -1 ;
   vector<int> nchans ;
-  for ( int irow = 0 ; irow < nif ; irow++ ) {
+  for ( int irow = 0 ; irow < nspwrow ; irow++ ) {
     nchans.push_back( spwrows[irow]->getNumChan() ) ;
     if ( refidx == -1 && nchans[irow] != 1 && nchans[irow] != 4 )
       refidx = irow ;
@@ -311,7 +313,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
 
   // bandwidth
   vector<double> bws ;
-  for ( int irow = 0 ; irow < nif ; irow++ ) {
+  for ( int irow = 0 ; irow < nspwrow ; irow++ ) {
     if ( nchans[irow] != 4 ) { // exclude WVR data
       bws.push_back( spwrows[irow]->getTotBandwidth().get() ) ;
     }
@@ -1673,7 +1675,46 @@ string ASDMReader::getFrame()
     frame = CFrequencyReferenceCode::toString( measFreqRef[0] ) ;
   }
   
-  logsink_->postLocally( LogMessage("frame = "+String::toString(frame),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("frame = "+String::toString(frame),LogOrigin(className_,funcName,WHERE)) ) ;
 
   return frame ;
+}
+
+int ASDMReader::getNumIFs()
+{
+  String funcName = "getNumIFs" ;
+
+  int nif = 0 ;
+  vector<SpectralWindowRow *> rows = asdm_->getSpectralWindow().get() ;
+  unsigned int nrow = rows.size() ;
+  // check if all rows have freqGroup attribute
+  bool freqGroupExists = true ;
+  bool countedWvr = false ;
+  for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
+    freqGroupExists &= rows[irow]->isFreqGroupExists() ;
+    if ( rows[irow]->getNumChan() == 4 ) {
+      if ( !countedWvr ) {
+        countedWvr = true ;
+        nif++ ;
+      }
+    }
+    else {
+      nif++ ;
+    }
+  }
+  
+  if ( freqGroupExists ) {
+    vector<int> freqGroup(0) ;
+    for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
+      int fg = rows[irow]->getFreqGroup() ;
+      if ( (int)count( freqGroup.begin(), freqGroup.end(), fg ) == 0 ) {
+        freqGroup.push_back( fg ) ;
+      }
+    }
+    nif = freqGroup.size() ;
+  }
+
+  //logsink_->postLocally( LogMessage("nif = "+String::toString(nif),LogOrigin(className_,funcName,WHERE)) ) ;
+
+  return nif ;
 }

@@ -68,6 +68,7 @@ void ASDMFiller::fill()
   MFrequency::Types freqFrame = toFrameType( sFreqFrame ) ;
   table_->frequencies().setFrame( freqFrame, false ) ;
   table_->frequencies().setFrame( freqFrame, true ) ;
+  //logsink_->postLocally( LogMessage("sFreqFrame = "+sFreqFrame,LogOrigin(className_,funcName,WHERE)) ) ;
   
   Vector<casa::Double> antpos = table_->getHeader().antennaposition ;
 
@@ -110,7 +111,7 @@ void ASDMFiller::fill()
       // number of rows
       uInt nrow = reader_->getNumMainRow() ;
 
-      //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows in Main table corresponding to configDescId "+String::toString(configDescIdList[icon]+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
+      //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows in Main table corresponding to configDescId "+String::toString(configDescIdList[icon])+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
       
       // CYCLENO
       unsigned int cycleno = 0 ;
@@ -131,7 +132,7 @@ void ASDMFiller::fill()
         // set data
         if ( !(reader_->setData()) ) {
           // skip row since reader failed to retrieve data
-          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHRER)) ) ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 

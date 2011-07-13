@@ -495,6 +495,13 @@ private:
                 double mjd,
                 casa::Vector<casa::Double> antpos ) ;
 
+  /**
+   * get nIF
+   *
+   * @return number of IFs
+   **/
+  int getNumIFs() ;
+
   asdm::ASDM *asdm_ ; // pointer to ASDM object
   sdmbin::SDMBinData *sdmBin_ ; // pointer to ASDM binary data
   /**
