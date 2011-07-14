@@ -73,8 +73,24 @@ private:
                 casa::Double mjd,
                 casa::Vector<casa::Double> antpos ) ;
 
+  // to J2000
+  casa::Vector<casa::Double> toJ2000( casa::Vector<casa::Double> dir,
+                                      casa::String dirref,
+                                      casa::Double mjd,
+                                      casa::Vector<casa::Double> antpos ) ;
+
   // get frequency frame enum value from string
   casa::MFrequency::Types toFrameType( std::string &s ) ;
+
+  // to LSRK 
+  // utc must be UTC time in "d" (day)
+  // antpos must be ITRF value in "m"
+  casa::Double toLSRK( casa::Double freq,
+                       casa::String freqref,
+                       casa::Double utc,
+                       casa::Vector<casa::Double> antpos,
+                       casa::Vector<casa::Double> dir,
+                       casa::String dirref ) ;
 
   casa::CountedPtr<ASDMReader> reader_ ;
   casa::Int antennaId_ ;

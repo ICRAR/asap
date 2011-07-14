@@ -6,6 +6,8 @@
 #include <measures/Measures/MPosition.h>
 #include <measures/Measures/MDirection.h>
 #include <measures/Measures/MCDirection.h>
+#include <measures/Measures/MFrequency.h>
+#include <measures/Measures/MCFrequency.h>
 #include <measures/Measures/MeasFrame.h>
 #include <measures/Measures/MeasConvert.h>
 #include <casa/Arrays/Vector.h>
@@ -50,8 +52,8 @@ bool ASDMFiller::open( const string &filename, const Record &rec )
   antennaId_ = reader_->getAntennaId() ;
   antennaName_ = reader_->getAntennaName() ;
 
-  //logsink->postLocally( LogMessage("antennaId_ = "+String::toString(antennaId_),LogOrigin(className_,funcName,WHERE)) ) ;
-  //logsink->postLocally( LogMessage("antennaName_ = "+antennaName_,LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("antennaId_ = "+String::toString(antennaId_),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("antennaName_ = "+antennaName_,LogOrigin(className_,funcName,WHERE)) ) ;
 
   return status ;
 }
@@ -81,13 +83,13 @@ void ASDMFiller::fill()
   Vector<uInt> configDescIdList = reader_->getConfigDescriptionIdList() ;
   uInt numConfigDescId = configDescIdList.size() ;
 
-  //logsink->postLocally( LogMessage("configDescIdList = "+String::toString(configDescIdList),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("configDescIdList = "+String::toString(configDescIdList),LogOrigin(className_,funcName,WHERE)) ) ;
 
   // get field list
   Vector<uInt> fieldIdList = reader_->getFieldIdList() ;
   uInt numFieldId = fieldIdList.size() ;
 
-  //logsink->postLocally( LogMessage("fieldIdList = "+String::toString(fieldIdList),LogOrigin(className_,funcName,WHERE)) ) ;
+  //logsink_->postLocally( LogMessage("fieldIdList = "+String::toString(fieldIdList),LogOrigin(className_,funcName,WHERE)) ) ;
 
   // BEAMNO is always 0 since ALMA antenna is single beam
   uInt beamno = 0 ;
@@ -186,7 +188,10 @@ void ASDMFiller::fill()
           string srcname = reader_->getSourceName( idata ) ;
           string fieldname = reader_->getFieldName( idata ) ;
           int srctype = reader_->getSrcType( scanno, subscanno ) ;
-          vector<double> srcDirection = reader_->getSourceDirection( idata ) ;
+          //vector<double> srcDirection = reader_->getSourceDirection( idata ) ;
+          vector<double> srcDirection ;
+          string srcDirRef ;
+          reader_->getSourceDirection( idata, srcDirection, srcDirRef ) ;
           vector<double> srcProperMotion = reader_->getSourceProperMotion( idata ) ;
           double sysVel = reader_->getSysVel( idata ) ;
           
@@ -341,6 +346,31 @@ void ASDMFiller::fillHeader()
                        hdr.fluxunit,
                        hdr.epoch,
                        hdr.poltype ) ;
+
+  if ( hdr.freqref != "LSRK" ) {
+//     String freqref ;
+//     if (hdr.freqref == "TOPOCENT") {
+//       freqref = "TOPO";
+//     } else if (hdr.freqref == "GEOCENTR") {
+//       freqref = "GEO";
+//     } else if (hdr.freqref == "BARYCENT") {
+//       freqref = "BARY";
+//     } else if (hdr.freqref == "GALACTOC") {
+//       freqref = "GALACTO";
+//     } else if (hdr.freqref == "LOCALGRP") {
+//       freqref = "LGROUP";
+//     } else if (hdr.freqref == "CMBDIPOL") {
+//       freqref = "CMB";
+//     } else if (hdr.freqref == "SOURCE") {
+//       freqref = "REST";
+//     }
+    vector<double> sdir ;
+    string ref ;
+    reader_->getSourceDirection( sdir, ref ) ;
+    Vector<casa::Double> sourceDir( sdir ) ; 
+    hdr.reffreq = toLSRK( hdr.reffreq, hdr.freqref, hdr.utc, hdr.antennaposition, sdir, String(ref) ) ;
+    hdr.freqref = "LSRK" ;
+  }
 
   setHeader( hdr ) ;
 }
@@ -497,19 +527,47 @@ void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
   Vector<casa::Double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
-  MEpoch me( Quantity( mjd, "d" ), MEpoch::UTC ) ;
-  Vector<Quantity> qantpos( 3 ) ;
-  qantpos[0] = Quantity( antpos[0], "m" ) ;
-  qantpos[1] = Quantity( antpos[1], "m" ) ;
-  qantpos[2] = Quantity( antpos[2], "m" ) ;
-  MPosition mp( MVPosition( qantpos ),
-                MPosition::ITRF ) ;
-//   mp.print( os_.output() ) ;
-  MeasFrame mf( me, mp ) ;
-  MDirection::Convert toj2000( MDirection::AZELGEO, 
-                               MDirection::Ref( MDirection::J2000, mf ) ) ;
-  dir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
-  //logsink->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
+//   MEpoch me( Quantity( mjd, "d" ), MEpoch::UTC ) ;
+//   Vector<Quantity> qantpos( 3 ) ;
+//   qantpos[0] = Quantity( antpos[0], "m" ) ;
+//   qantpos[1] = Quantity( antpos[1], "m" ) ;
+//   qantpos[2] = Quantity( antpos[2], "m" ) ;
+//   MPosition mp( MVPosition( qantpos ),
+//                 MPosition::ITRF ) ;
+// //   mp.print( os_.output() ) ;
+//   MeasFrame mf( me, mp ) ;
+//   MDirection::Convert toj2000( MDirection::AZELGEO, 
+//                                MDirection::Ref( MDirection::J2000, mf ) ) ;
+//   dir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
+  dir = toJ2000( azel, "AZELGEO", mjd, antpos ) ;
+  //logsink_->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
+}
+
+Vector<casa::Double> ASDMFiller::toJ2000( Vector<casa::Double> dir,
+                                          String dirref,
+                                          casa::Double mjd,
+                                          Vector<casa::Double> antpos ) 
+{
+  Vector<casa::Double> newd( dir ) ;
+  if ( dirref != "J2000" ) {
+    MEpoch me( Quantity( mjd, "d" ), MEpoch::UTC ) ;
+    Vector<Quantity> qantpos( 3 ) ;
+    qantpos[0] = Quantity( antpos[0], "m" ) ;
+    qantpos[1] = Quantity( antpos[1], "m" ) ;
+    qantpos[2] = Quantity( antpos[2], "m" ) ;
+    MPosition mp( MVPosition( qantpos ),
+                  MPosition::ITRF ) ;
+    //   mp.print( os_.output() ) ;
+    MeasFrame mf( me, mp ) ;
+    MDirection::Types dirtype ;
+    Bool b = MDirection::getType( dirtype, dirref ) ;
+    if ( b ) {
+      MDirection::Convert toj2000( dirtype, 
+                                   MDirection::Ref( MDirection::J2000, mf ) ) ;
+      newd = toj2000( dir ).getAngle( "rad" ).getValue() ; 
+    }
+  }
+  return newd ;
 }
 
 MFrequency::Types ASDMFiller::toFrameType( string &s ) 
@@ -523,4 +581,41 @@ MFrequency::Types ASDMFiller::toFrameType( string &s )
       ftype = MFrequency::DEFAULT ;
   }
   return ftype ;
+}
+
+casa::Double ASDMFiller::toLSRK( casa::Double freq,
+                                 String freqref,
+                                 casa::Double utc,
+                                 Vector<casa::Double> antpos,
+                                 Vector<casa::Double> dir,
+                                 String dirref ) 
+{
+  String funcName = "toLSRK" ;
+
+  //logsink_->postLocally( LogMessage("freqref = "+freqref,LogOrigin(className_,funcName,WHERE)) ) ;
+  casa::Double newf = freq ;
+  if ( freqref != "LSRK" ) {
+    MEpoch me( Quantum<casa::Double>( utc, Unit("d") ), MEpoch::UTC ) ;
+    Vector< Quantum<casa::Double> > antposQ( 3 ) ;
+    for ( int i = 0 ; i < 3 ; i++ ) 
+      antposQ[i] = Quantum<casa::Double>( antpos[i], Unit("m") ) ;
+    MPosition mp( antposQ, MPosition::ITRF ) ;
+    MDirection::Types dirtype ;
+    Bool b = MDirection::getType( dirtype, dirref ) ;
+    if ( !b )
+      dirtype = MDirection::J2000 ;
+    MDirection md( Quantum<casa::Double>( dir[0], Unit("rad") ), 
+                   Quantum<casa::Double>( dir[1], Unit("rad") ),
+                   dirtype ) ;
+    MeasFrame mf( me, mp, md ) ;
+    MFrequency::Types freqtype ;
+    b = MFrequency::getType( freqtype, freqref ) ;
+    if ( !b )
+      freqtype = MFrequency::TOPO ;
+    MFrequency::Convert tolsr( freqtype, 
+                               MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
+    newf = tolsr( Quantum<casa::Double>( freq, Unit("Hz") ) ).get( "Hz" ).getValue() ;
+    //logsink_->postLocally( LogMessage("freq = "+String::toString(freq)+", newf = "+String::toString(newf),LogOrigin(className_,funcName,WHERE)) ) ;
+  }
+  return newf ;
 }

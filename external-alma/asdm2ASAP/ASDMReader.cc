@@ -326,26 +326,27 @@ void ASDMReader::fillHeader( casa::Int &nchan,
   // freqref
   if ( spwrows[refidx]->isMeasFreqRefExists() ) {
     string mfr = CFrequencyReferenceCode::name( spwrows[refidx]->getMeasFreqRef() ) ;
-    if (mfr == "TOPO") {
-      freqref = "TOPOCENT";
-    } else if (mfr == "GEO") {
-      freqref = "GEOCENTR";
-    } else if (mfr == "BARY") {
-      freqref = "BARYCENT";
-    } else if (mfr == "GALACTO") {
-      freqref = "GALACTOC";
-    } else if (mfr == "LGROUP") {
-      freqref = "LOCALGRP";
-    } else if (mfr == "CMB") {
-      freqref = "CMBDIPOL";
-    } else if (mfr == "REST") {
-      freqref = "SOURCE";
-    }
-
+//     if (mfr == "TOPO") {
+//       freqref = "TOPOCENT";
+//     } else if (mfr == "GEO") {
+//       freqref = "GEOCENTR";
+//     } else if (mfr == "BARY") {
+//       freqref = "BARYCENT";
+//     } else if (mfr == "GALACTO") {
+//       freqref = "GALACTOC";
+//     } else if (mfr == "LGROUP") {
+//       freqref = "LOCALGRP";
+//     } else if (mfr == "CMB") {
+//       freqref = "CMBDIPOL";
+//     } else if (mfr == "REST") {
+//       freqref = "SOURCE";
+//     }
+    freqref = String( mfr ) ;
   }
   else {
     // frequency reference is TOPOCENT by default
-    freqref = "TOPOCENT" ;
+    //freqref = "TOPOCENT" ;
+    freqref = "TOPO" ;
   }
 
 
@@ -976,6 +977,50 @@ vector<double> ASDMReader::getSourceDirection( unsigned int idx )
     dir[1] = srcdir[1].get() ;
   }
   return dir ;
+}
+
+void ASDMReader::getSourceDirection( unsigned int idx,
+                                     vector<double> &dir,
+                                     string &ref ) 
+{
+  dir.resize( 2 ) ;
+  dir[0] = 0.0 ;
+  dir[1] = 0.0 ;
+  ref = "J2000" ;
+  unsigned int index = dataIdList_[idx] ;
+  //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
+  double startSec = vmsData_->v_time[index] - 0.5 * vmsData_->v_interval[index] ;
+  ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
+  Tag ddtag( vmsData_->v_dataDescId[index], TagType::DataDescription ) ;
+  Tag spwtag = asdm_->getDataDescription().getRowByKey(ddtag)->getSpectralWindowId() ;
+  Tag ftag( vmsData_->v_fieldId[index], TagType::Field ) ;
+  FieldRow *frow = asdm_->getField().getRowByKey( ftag ) ;
+  string srcname ;
+  if ( frow->isSourceIdExists() ) {
+    //logsink_->postLocally( LogMessage("sourceId exists",LogOrigin(className_,funcName,WHERE)) ) ;
+    int sid = frow->getSourceId() ;
+    SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
+    vector<Angle> srcdir = srow->getDirection() ;
+    if ( srow->isDirectionCodeExists() ) {
+      ref = CDirectionReferenceCode::toString( srow->getDirectionCode() ) ;
+    }
+    dir[0] = srcdir[0].get() ;
+    dir[1] = srcdir[1].get() ;
+  }
+}
+
+void ASDMReader::getSourceDirection( vector<double> &dir, string &ref )
+{
+  dir.resize( 2 ) ;
+  ref = "J2000" ; // default is J2000
+  SourceTable &tab = asdm_->getSource() ;
+  SourceRow *row = tab.get()[0] ;
+  vector<Angle> dirA = row->getDirection() ;
+  dir[0] = dirA[0].get() ;
+  dir[1] = dirA[1].get() ;
+  if ( row->isDirectionCodeExists() ) {
+    ref = CDirectionReferenceCode::toString( row->getDirectionCode() ) ;
+  }
 }
 
 vector<double> ASDMReader::getSourceProperMotion( unsigned int idx ) 
@@ -1617,33 +1662,67 @@ void ASDMReader::toJ2000( vector<double> &dir,
 {
   String funcName = "toJ2000" ;
 
-  casa::Vector<casa::Double> azel( 2 ) ;
+//   casa::Vector<casa::Double> azel( 2 ) ;
+//   azel[0] = az ;
+//   azel[1] = el ;
+//   casa::MEpoch me( casa::Quantity( (casa::Double)mjd, "d" ), casa::MEpoch::UTC ) ;
+//   casa::Vector<casa::Quantity> qantpos( 3 ) ;
+//   qantpos[0] = casa::Quantity( antpos[0], "m" ) ;
+//   qantpos[1] = casa::Quantity( antpos[1], "m" ) ;
+//   qantpos[2] = casa::Quantity( antpos[2], "m" ) ;
+//   casa::MPosition mp( casa::MVPosition( qantpos ),
+//                       casa::MPosition::ITRF ) ;
+//   //ostringstream oss ;
+//   //mp.print( oss ) ;
+//   //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+
+//   casa::MeasFrame mf( me, mp ) ;
+//   casa::MDirection::Convert toj2000( casa::MDirection::AZELGEO, 
+//                                      casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
+//   casa::Vector<casa::Double> cdir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
+//   //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
+//   dir.resize(2) ;
+//   dir[0] = (double)(cdir[0]) ;
+//   dir[1] = (double)(cdir[1]) ;
+  vector<double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
-  casa::MEpoch me( casa::Quantity( (casa::Double)mjd, "d" ), casa::MEpoch::UTC ) ;
-  casa::Vector<casa::Quantity> qantpos( 3 ) ;
-  qantpos[0] = casa::Quantity( antpos[0], "m" ) ;
-  qantpos[1] = casa::Quantity( antpos[1], "m" ) ;
-  qantpos[2] = casa::Quantity( antpos[2], "m" ) ;
-  casa::MPosition mp( casa::MVPosition( qantpos ),
-                      casa::MPosition::ITRF ) ;
-  //ostringstream oss ;
-  //mp.print( oss ) ;
-  //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+  dir = toJ2000( azel, "AZELGEO", mjd, antpos ) ;
+}
 
-  casa::MeasFrame mf( me, mp ) ;
-  casa::MDirection::Convert toj2000( casa::MDirection::AZELGEO, 
-  //MDirection::Convert toj2000( MDirection::AZEL, 
-  //MDirection::Convert toj2000( MDirection::AZELSW, 
-  //MDirection::Convert toj2000( MDirection::AZELSWGEO, 
-  //MDirection::Convert toj2000( MDirection::AZELNE, 
-  //MDirection::Convert toj2000( MDirection::AZELNEGEO, 
-                                     casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
-  casa::Vector<casa::Double> cdir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
-  //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
-  dir.resize(2) ;
-  dir[0] = (double)(cdir[0]) ;
-  dir[1] = (double)(cdir[1]) ;
+vector<double> ASDMReader::toJ2000( vector<double> dir,
+                                    casa::String dirref,
+                                    double mjd,
+                                    casa::Vector<casa::Double> antpos ) 
+{
+  casa::String funcname = "toJ2000" ;
+
+  vector<double> newd( dir ) ;
+  if ( dirref != "J2000" ) {
+    casa::MEpoch me( casa::Quantity( (casa::Double)mjd, "d" ), casa::MEpoch::UTC ) ;
+    casa::Vector<casa::Quantity> qantpos( 3 ) ;
+    qantpos[0] = casa::Quantity( antpos[0], "m" ) ;
+    qantpos[1] = casa::Quantity( antpos[1], "m" ) ;
+    qantpos[2] = casa::Quantity( antpos[2], "m" ) ;
+    casa::MPosition mp( casa::MVPosition( qantpos ),
+                        casa::MPosition::ITRF ) ;
+    //ostringstream oss ;
+    //mp.print( oss ) ;
+    //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+    
+    casa::MeasFrame mf( me, mp ) ;
+    casa::MDirection::Types dirtype ;
+    casa::Bool b = casa::MDirection::getType( dirtype, dirref ) ;
+    if ( b ) {
+      casa::MDirection::Convert toj2000( dirtype,
+                                         casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
+      casa::Vector<casa::Double> cdir = toj2000( dir ).getAngle( "rad" ).getValue() ; 
+      //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
+      newd[0] = (double)(cdir[0]) ;
+      newd[1] = (double)(cdir[1]) ;
+    }
+  }
+  return newd ;
 }
 
 void ASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )

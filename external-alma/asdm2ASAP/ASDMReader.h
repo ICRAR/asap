@@ -236,6 +236,18 @@ public:
    * @return source direction as vector<double>
    **/
   std::vector<double> getSourceDirection( unsigned int idx ) ;
+  void getSourceDirection( unsigned int idx, 
+                           std::vector<double> &dir, 
+                           std::string &ref  ) ;
+
+  /**
+   * get source direction with reference 
+   *
+   * @param dir source direction
+   * @param reference frame
+   * @param idx for Source table
+   **/
+  void getSourceDirection( std::vector<double> &dir, std::string &ref ) ;
   
   /**
    * get source proper motion for given index
@@ -495,6 +507,19 @@ private:
                 double mjd,
                 casa::Vector<casa::Double> antpos ) ;
 
+  /**
+  * to J2000
+  *
+  * @param dir pointing direction
+  * @param dirref direction reference
+  * @param mjd reference time
+  * @param antpos antenna position vector 
+  * @return new direction
+  **/
+  std::vector<double> toJ2000( std::vector<double> dir,
+                               casa::String dirref,
+                               double mjd,
+                               casa::Vector<casa::Double> antpos ) ;
   /**
    * get nIF
    *
