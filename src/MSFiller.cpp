@@ -560,6 +560,9 @@ void MSFiller::fill()
           *uintRF = molId ;
 
           // spectral setup
+          ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( t3, "TIME" ) ;
+          me = MEpoch( (*tmpQuantCol)( 0 ), MEpoch::UTC ) ;
+          delete tmpQuantCol ;
           MeasFrame mf( me, mp, md ) ;
           tcolr = tpoolr->construct( spwtab, "MEAS_FREQ_REF" ) ;
           MFrequency::Types freqRef = MFrequency::castType((uInt)(tcolr->asInt(spwId))) ;
@@ -572,7 +575,7 @@ void MSFiller::fill()
           Bool even = False ;
           if ( (nchan/2)*2 == nchan ) even = True ;
           sdh.nchan = max( sdh.nchan, nchan ) ;
-          ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
+          tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
           Double totbw = (*tmpQuantCol)( spwId ).getValue( "Hz" ) ;
           delete tmpQuantCol ;
           if ( nchan != 4 )
