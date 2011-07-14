@@ -182,11 +182,13 @@ public:
    * @param refpix REFPIX
    * @param refval REFVAL
    * @param incr INCREMENT
+   * @param freqref frequency reference
    **/
   void getFrequency( unsigned int idx, 
                      double &refpix, 
                      double &refval, 
-                     double &incr ) ;
+                     double &incr,
+                     std::string &freqref ) ;
 
   /**
    * get rest frequencies for given index

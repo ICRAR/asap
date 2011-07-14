@@ -47,7 +47,7 @@ ASDMReader::~ASDMReader()
 
 bool ASDMReader::open( const string &filename, const casa::Record &rec )
 {
-  String funcName = "open" ;
+  casa::String funcName = "open" ;
 
   // return value
   bool status = true ;
@@ -254,7 +254,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
                              casa::String &epoch, 
                              casa::String &poltype ) 
 {
-  String funcName = "fillHeader" ;
+  casa::String funcName = "fillHeader" ;
 
   ExecBlockTable &ebtab = asdm_->getExecBlock() ;
   // at the moment take first row of ExecBlock table
@@ -430,7 +430,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
 
 void ASDMReader::selectConfigDescription() 
 {
-  String funcName = "selectConfigDescription" ;
+  casa::String funcName = "selectConfigDescription" ;
 
   vector<ConfigDescriptionRow *> cdrows = asdm_->getConfigDescription().get() ;
   vector<Tag> cdidTags ;
@@ -466,7 +466,7 @@ void ASDMReader::selectFeed()
 
 casa::Vector<casa::uInt> ASDMReader::getFieldIdList() 
 {
-  String funcName = "getFieldIdList" ;
+  casa::String funcName = "getFieldIdList" ;
 
   vector<FieldRow *> frows = asdm_->getField().get() ;
   fieldIdList_.resize( frows.size() ) ;
@@ -543,7 +543,7 @@ void ASDMReader::clearMainRow()
 
 void ASDMReader::setupIFNO() 
 {
-  String funcName = "setupIFNO" ;
+  casa::String funcName = "setupIFNO" ;
 
   vector<SpectralWindowRow *> spwrows = asdm_->getSpectralWindow().get() ;
   unsigned int nrow = spwrows.size() ;
@@ -600,7 +600,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
 
 // casa::Vector<casa::uInt> ASDMReader::getFeedIdList( casa::uInt cdid ) 
 // {
-//   String funcName = "getFeedIdList" ;
+//   casa::String funcName = "getFeedIdList" ;
 //   
 //   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
 //   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
@@ -622,7 +622,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
 
 casa::Bool ASDMReader::setData()
 {
-  String funcName = "setData" ;
+  casa::String funcName = "setData" ;
 
   //logsink_->postLocally( LogMessage("try to retrieve binary data",LogOrigin(className_,funcName,WHERE)) ) ;
   
@@ -704,15 +704,19 @@ int ASDMReader::getNumPol( unsigned int idx )
 void ASDMReader::getFrequency( unsigned int idx, 
                                double &refpix, 
                                double &refval, 
-                               double &incr ) 
+                               double &incr,
+                               string &freqref ) 
 {
-  String funcName = "getFrequency" ;
+  casa::String funcName = "getFrequency" ;
 
   Tag ddTag( vmsData_->v_dataDescId[dataIdList_[idx]], TagType::DataDescription ) ;
   DataDescriptionRow *ddrow = asdm_->getDataDescription().getRowByKey( ddTag ) ;
   //Tag spwid = ddrow->getSpectralWindowId() ;
   SpectralWindowRow *spwrow = ddrow->getSpectralWindowUsingSpectralWindowId() ;
   int nchan = spwrow->getNumChan() ;
+  freqref = "TOPO" ;
+  if ( spwrow->isMeasFreqRefExists() )
+    freqref = CFrequencyReferenceCode::toString( spwrow->getMeasFreqRef() ) ;
   if ( nchan == 1 ) {
     //logsink_->postLocally( LogMessage("channel averaged data",LogOrigin(className_,funcName,WHERE)) ) ;
     refpix = 0.0 ;
@@ -1695,7 +1699,7 @@ vector<double> ASDMReader::toJ2000( vector<double> dir,
                                     double mjd,
                                     casa::Vector<casa::Double> antpos ) 
 {
-  casa::String funcname = "toJ2000" ;
+  casa::String funcName = "toJ2000" ;
 
   vector<double> newd( dir ) ;
   if ( dirref != "J2000" ) {
@@ -1732,7 +1736,7 @@ void ASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
 
 string ASDMReader::getFrame()
 {
-  String funcName = "getFrame" ;
+  casa::String funcName = "getFrame" ;
  
   // default is TOPO
   string frame = "TOPO" ;
@@ -1761,7 +1765,7 @@ string ASDMReader::getFrame()
 
 int ASDMReader::getNumIFs()
 {
-  String funcName = "getNumIFs" ;
+  casa::String funcName = "getNumIFs" ;
 
   int nif = 0 ;
   vector<SpectralWindowRow *> rows = asdm_->getSpectralWindow().get() ;

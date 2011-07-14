@@ -67,7 +67,8 @@ void ASDMFiller::fill()
 
   // set Frame for FREQUENCIES table
   string sFreqFrame = reader_->getFrame() ;
-  MFrequency::Types freqFrame = toFrameType( sFreqFrame ) ;
+  //MFrequency::Types freqFrame = toFrameType( sFreqFrame ) ;
+  MFrequency::Types freqFrame = MFrequency::LSRK ;
   table_->frequencies().setFrame( freqFrame, false ) ;
   table_->frequencies().setFrame( freqFrame, true ) ;
   //logsink_->postLocally( LogMessage("sFreqFrame = "+sFreqFrame,LogOrigin(className_,funcName,WHERE)) ) ;
@@ -142,6 +143,7 @@ void ASDMFiller::fill()
         double refpix = 0.0 ;
         double refval = 0.0 ;
         double incr = 0.0 ;
+        string freqref = "" ;
 
         for ( unsigned int idata = 0 ; idata < numData ; idata++ ) {
 
@@ -150,21 +152,6 @@ void ASDMFiller::fill()
 
           // IFNO
           uInt ifno = reader_->getIFNo( idata ) ;
-
-
-          // REFPIX, REFVAL, INCREMENT
-          String ifkey = getIFKey( ifno ) ;
-          if ( ifrec_.isDefined( ifkey ) ) {
-            getFrequencyRec( ifkey, refpix, refval, incr ) ;
-          }
-          else {
-            reader_->getFrequency( idata, refpix, refval, incr ) ;
-            setFrequencyRec( ifkey, refpix, refval, incr ) ;
-          }
-
-          // fill FREQ_ID and add FREQUENCIES row if necessary
-          setFrequency( (casa::Double)refpix, (casa::Double)refval, (casa::Double)incr ) ;
-
 
           // rest frequency
           vector<double> rf = reader_->getRestFrequency( idata ) ;
@@ -175,7 +162,6 @@ void ASDMFiller::fill()
             restFreqs[i] = (casa::Double)(rf[i]) ;
           setMolecule( restFreqs ) ;
           
-
           // time and interval
           casa::Double mjd = (casa::Double)(reader_->getTime( idata )) ;
           casa::Double interval = (casa::Double)(reader_->getInterval( idata )) ;
@@ -252,6 +238,26 @@ void ASDMFiller::fill()
           }
           //logsink_->postLocally( LogMessage("direction = "+String::toString(direction),LogOrigin(className_,funcName,WHERE)) ) ;
           setDirection( direction, (casa::Float)az, (casa::Float)el ) ;
+
+           // REFPIX, REFVAL, INCREMENT
+          String ifkey = getIFKey( ifno ) ;
+          if ( ifrec_.isDefined( ifkey ) ) {
+            getFrequencyRec( ifkey, refpix, refval, incr ) ;
+          }
+          else {
+            reader_->getFrequency( idata, refpix, refval, incr, freqref ) ;
+            refval = (double)toLSRK( casa::Double(refval), 
+                                     String(freqref),
+                                     mjd,
+                                     antpos,
+                                     //direction,
+                                     srcDir,
+                                     "J2000" ) ;
+            setFrequencyRec( ifkey, refpix, refval, incr ) ;
+          }
+
+          // fill FREQ_ID and add FREQUENCIES row if necessary
+          setFrequency( (casa::Double)refpix, (casa::Double)refval, (casa::Double)incr ) ;
 
           // loop on polarization
           vector<unsigned int> dataShape = reader_->getDataShape( idata ) ;
