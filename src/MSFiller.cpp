@@ -1368,10 +1368,7 @@ void MSFiller::fillFocus()
 //   double startSec = gettimeofday_sec() ;
 //   os_ << "start MSFiller::fillFocus() startSec=" << startSec << LogIO::POST ;
   // tentative
-  Table tab = table_->focus().table() ;
-  tab.addRow( 1 ) ;
-  ScalarColumn<uInt> idCol( tab, "ID" ) ;
-  idCol.put( 0, 0 ) ;
+  table_->focus().addEntry( 0.0, 0.0, 0.0, 0.0 ) ;
 //   double endSec = gettimeofday_sec() ;
 //   os_ << "end MSFiller::fillFocus() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
