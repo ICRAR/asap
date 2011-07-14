@@ -584,6 +584,7 @@ void MSFiller::fill()
             tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "REF_FREQUENCY" ) ;
             Quantum<Double> qreffreq = (*tmpQuantCol)( spwId ) ;
             delete tmpQuantCol ;
+//             sdh.reffreq = qreffreq.getValue("Hz") ;
             if ( freqRef == MFrequency::LSRK ) {
               sdh.reffreq = qreffreq.getValue("Hz") ;
             }
@@ -605,6 +606,15 @@ void MSFiller::fill()
           delete sharedQDArrCol ;
           if ( nchan > 1 && chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz") ) 
             increment *= -1.0 ;
+//           if ( even ) {
+//             IPosition refip0( 1, refchan-1 ) ;
+//             Double refval0 = chanFreqs(refip0).getValue("Hz") ;
+//             Double refval1 = chanFreqs(refip).getValue("Hz") ;
+//             refval = 0.5 * ( refval0 + refval1 ) ;
+//           }
+//           else {
+//             refval = chanFreqs(refip).getValue("Hz") ;
+//           }
           if ( freqRef == MFrequency::LSRK ) {
             if ( even ) {
               IPosition refip0( 1, refchan-1 ) ;
