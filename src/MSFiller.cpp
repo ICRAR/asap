@@ -575,11 +575,12 @@ void MSFiller::fill()
           ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
           Double totbw = (*tmpQuantCol)( spwId ).getValue( "Hz" ) ;
           delete tmpQuantCol ;
-          sdh.bandwidth = max( sdh.bandwidth, totbw ) ;
+          if ( nchan != 4 )
+            sdh.bandwidth = max( sdh.bandwidth, totbw ) ;
           if ( sdh.freqref == "" && nchan != 4) 
             //sdh.freqref = MFrequency::showType( freqRef ) ;
             sdh.freqref = "LSRK" ;
-          if ( sdh.reffreq == -1.0 ) {
+          if ( sdh.reffreq == -1.0 && nchan != 4 ) {
             tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "REF_FREQUENCY" ) ;
             Quantum<Double> qreffreq = (*tmpQuantCol)( spwId ) ;
             delete tmpQuantCol ;
