@@ -560,92 +560,98 @@ void MSFiller::fill()
           *uintRF = molId ;
 
           // spectral setup
-          ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( t3, "TIME" ) ;
-          me = MEpoch( (*tmpQuantCol)( 0 ), MEpoch::UTC ) ;
-          delete tmpQuantCol ;
-          MeasFrame mf( me, mp, md ) ;
-          tcolr = tpoolr->construct( spwtab, "MEAS_FREQ_REF" ) ;
-          MFrequency::Types freqRef = MFrequency::castType((uInt)(tcolr->asInt(spwId))) ;
-          tpoolr->destroy( tcolr ) ;
+          uInt freqId ;
           tcolr = tpoolr->construct( spwtab, "NUM_CHAN" ) ;
           Int nchan = tcolr->asInt( spwId ) ;
           Bool iswvr = False ;
           if ( nchan == 4 ) iswvr = True ;
           tpoolr->destroy( tcolr ) ;
-          Bool even = False ;
-          if ( (nchan/2)*2 == nchan ) even = True ;
-          sdh.nchan = max( sdh.nchan, nchan ) ;
-          tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
-          Double totbw = (*tmpQuantCol)( spwId ).getValue( "Hz" ) ;
-          delete tmpQuantCol ;
-          if ( nchan != 4 )
-            sdh.bandwidth = max( sdh.bandwidth, totbw ) ;
-          if ( sdh.freqref == "" && nchan != 4) 
-            //sdh.freqref = MFrequency::showType( freqRef ) ;
-            sdh.freqref = "LSRK" ;
-          if ( sdh.reffreq == -1.0 && nchan != 4 ) {
-            tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "REF_FREQUENCY" ) ;
-            Quantum<Double> qreffreq = (*tmpQuantCol)( spwId ) ;
+          map<Int,uInt>::iterator iter = ifmap.find( spwId ) ;
+          if ( iter == ifmap.end() ) {
+            ROScalarQuantColumn<Double> *tmpQuantCol = new ROScalarQuantColumn<Double>( t3, "TIME" ) ;
+            me = MEpoch( (*tmpQuantCol)( 0 ), MEpoch::UTC ) ;
             delete tmpQuantCol ;
-//             sdh.reffreq = qreffreq.getValue("Hz") ;
+            MeasFrame mf( me, mp, md ) ;
+            tcolr = tpoolr->construct( spwtab, "MEAS_FREQ_REF" ) ;
+            MFrequency::Types freqRef = MFrequency::castType((uInt)(tcolr->asInt(spwId))) ;
+            tpoolr->destroy( tcolr ) ;
+            Bool even = False ;
+            if ( (nchan/2)*2 == nchan ) even = True ;
+            sdh.nchan = max( sdh.nchan, nchan ) ;
+            tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "TOTAL_BANDWIDTH" ) ;
+            Double totbw = (*tmpQuantCol)( spwId ).getValue( "Hz" ) ;
+            delete tmpQuantCol ;
+            if ( nchan != 4 )
+              sdh.bandwidth = max( sdh.bandwidth, totbw ) ;
+            if ( sdh.freqref == "" && nchan != 4) 
+              //sdh.freqref = MFrequency::showType( freqRef ) ;
+              sdh.freqref = "LSRK" ;
+            if ( sdh.reffreq == -1.0 && nchan != 4 ) {
+              tmpQuantCol = new ROScalarQuantColumn<Double>( spwtab, "REF_FREQUENCY" ) ;
+              Quantum<Double> qreffreq = (*tmpQuantCol)( spwId ) ;
+              delete tmpQuantCol ;
+              //             sdh.reffreq = qreffreq.getValue("Hz") ;
+              if ( freqRef == MFrequency::LSRK ) {
+                sdh.reffreq = qreffreq.getValue("Hz") ;
+              }
+              else {
+                MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
+                sdh.reffreq = tolsr( qreffreq ).get("Hz").getValue() ; 
+              }
+            }
+            Int refchan = nchan / 2 ;
+            IPosition refip( 1, refchan ) ;
+            Double refpix = 0.5*(nchan-1) ;
+            Double refval = 0.0 ;
+            sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_WIDTH" ) ;
+            Double increment = (*sharedQDArrCol)( spwId )( refip ).getValue( "Hz" ) ;
+            delete sharedQDArrCol ;
+            //           os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
+            sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_FREQ" ) ;
+            Vector< Quantum<Double> > chanFreqs = (*sharedQDArrCol)( spwId ) ;
+            delete sharedQDArrCol ;
+            if ( nchan > 1 && chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz") ) 
+              increment *= -1.0 ;
+            //           if ( even ) {
+            //             IPosition refip0( 1, refchan-1 ) ;
+            //             Double refval0 = chanFreqs(refip0).getValue("Hz") ;
+            //             Double refval1 = chanFreqs(refip).getValue("Hz") ;
+            //             refval = 0.5 * ( refval0 + refval1 ) ;
+            //           }
+            //           else {
+            //             refval = chanFreqs(refip).getValue("Hz") ;
+            //           }
             if ( freqRef == MFrequency::LSRK ) {
-              sdh.reffreq = qreffreq.getValue("Hz") ;
+              if ( even ) {
+                IPosition refip0( 1, refchan-1 ) ;
+                Double refval0 = chanFreqs(refip0).getValue("Hz") ;
+                Double refval1 = chanFreqs(refip).getValue("Hz") ;
+                refval = 0.5 * ( refval0 + refval1 ) ;
+              }
+              else {
+                refval = chanFreqs(refip).getValue("Hz") ;
+              }
             }
             else {
               MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
-              sdh.reffreq = tolsr( qreffreq ).get("Hz").getValue() ; 
+              if ( even ) {
+                IPosition refip0( 1, refchan-1 ) ;
+                Double refval0 = chanFreqs(refip0).getValue("Hz") ;
+                Double refval1 = chanFreqs(refip).getValue("Hz") ;
+                refval = 0.5 * ( refval0 + refval1 ) ;
+                refval = tolsr( refval ).get("Hz").getValue() ;
+              }
+              else {
+                refval = tolsr( chanFreqs(refip) ).get("Hz").getValue() ;
+              }
             }
-          }
-          Int refchan = nchan / 2 ;
-          IPosition refip( 1, refchan ) ;
-          Double refpix = 0.5*(nchan-1) ;
-          Double refval = 0.0 ;
-          sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_WIDTH" ) ;
-          Double increment = (*sharedQDArrCol)( spwId )( refip ).getValue( "Hz" ) ;
-          delete sharedQDArrCol ;
-//           os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
-          sharedQDArrCol = new ROArrayQuantColumn<Double>( spwtab, "CHAN_FREQ" ) ;
-          Vector< Quantum<Double> > chanFreqs = (*sharedQDArrCol)( spwId ) ;
-          delete sharedQDArrCol ;
-          if ( nchan > 1 && chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz") ) 
-            increment *= -1.0 ;
-//           if ( even ) {
-//             IPosition refip0( 1, refchan-1 ) ;
-//             Double refval0 = chanFreqs(refip0).getValue("Hz") ;
-//             Double refval1 = chanFreqs(refip).getValue("Hz") ;
-//             refval = 0.5 * ( refval0 + refval1 ) ;
-//           }
-//           else {
-//             refval = chanFreqs(refip).getValue("Hz") ;
-//           }
-          if ( freqRef == MFrequency::LSRK ) {
-            if ( even ) {
-              IPosition refip0( 1, refchan-1 ) ;
-              Double refval0 = chanFreqs(refip0).getValue("Hz") ;
-              Double refval1 = chanFreqs(refip).getValue("Hz") ;
-              refval = 0.5 * ( refval0 + refval1 ) ;
-            }
-            else {
-              refval = chanFreqs(refip).getValue("Hz") ;
-            }
-          }
-          else {
-            MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
-            if ( even ) {
-              IPosition refip0( 1, refchan-1 ) ;
-              Double refval0 = chanFreqs(refip0).getValue("Hz") ;
-              Double refval1 = chanFreqs(refip).getValue("Hz") ;
-              refval = 0.5 * ( refval0 + refval1 ) ;
-              refval = tolsr( refval ).get("Hz").getValue() ;
-            }
-            else {
-              refval = tolsr( chanFreqs(refip) ).get("Hz").getValue() ;
-            }
-          }
-          uInt freqId = table_->frequencies().addEntry( refpix, refval, increment ) ;
-          if ( ifmap.find( spwId ) == ifmap.end() ) {
+            freqId = table_->frequencies().addEntry( refpix, refval, increment ) ;
+            //if ( ifmap.find( spwId ) == ifmap.end() ) {
             ifmap.insert( pair<Int, uInt>(spwId,freqId) ) ;
             //os_ << "added to ifmap: (" << spwId << "," << freqId << ")" << LogIO::POST ;
+          }
+          else {
+            freqId = iter->second ;
           }
 
           // FREQ_ID
@@ -858,8 +864,9 @@ void MSFiller::fill()
                   String refString ;
                   diridx = getDirection( diridx, dir, scanrate, refString, pointtab, mTimeB[irow].get("s").getValue() ) ;
                   MDirection::getType( dirType, refString ) ;
-                  mf.resetEpoch( mTimeB[irow] ) ;
-                  mf.resetDirection( MDirection( MVDirection(dir), dirType ) ) ;
+                  MeasFrame mf( mTimeB[irow], mp ) ;
+                  //mf.resetEpoch( mTimeB[irow] ) ;
+                  //mf.resetDirection( MDirection( MVDirection(dir), dirType ) ) ;
                   if ( refString == "J2000" ) {
                     *dirRF = dir ;
                     MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZEL, mf ) ) ;
@@ -894,6 +901,7 @@ void MSFiller::fill()
                   String ref = md.getRefString() ;
                   //Vector<Double> defaultDir = srcDir ;
                   MDirection::getType( dirType, "J2000" ) ;
+                  MeasFrame mf( mTimeB[irow], mp ) ;
                   if ( ref != "J2000" ) {
                     ROScalarMeasColumn<MEpoch> tmCol( pointtab, "TIME" ) ;
                     mf.resetEpoch( tmCol( 0 ) ) ;
