@@ -497,8 +497,10 @@ Matrix<casa::Float> ASDMFiller::toMatrix( vector< vector<float> > &tsys,
 Vector<casa::Float> ASDMFiller::toVector( vector<float> &tau,
                                                unsigned int npol ) 
 {
-  Vector<casa::Float> ret( npol ) ;
+  String funcName = "toVector" ;
 
+  Vector<casa::Float> ret( npol ) ;
+  //logsink_->postLocally( LogMessage("tau0="+String::toString(tau[0]),LogOrigin(className_,funcName,WHERE)) ) ;
   if ( npol == 4 ) {
     ret[0] = (casa::Float)tau[0] ;
     ret[1] = (casa::Float)tau[1] ;
@@ -514,6 +516,7 @@ Vector<casa::Float> ASDMFiller::toVector( vector<float> &tau,
     for ( unsigned int ipol = 0 ; ipol < npol ; ipol++ )
       ret[ipol] = (casa::Float)tau[0] ;
   }
+  //logsink_->postLocally( LogMessage("tau="+String::toString(ret),LogOrigin(className_,funcName,WHERE)) ) ;
   return ret ;
 }
 

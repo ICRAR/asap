@@ -1225,6 +1225,10 @@ vector<float> ASDMReader::getOpacity( unsigned int idx )
       tau = atmrow->getTau() ;
     }
   }
+  else {
+    tau.resize( 1 ) ;
+    tau[0] = 0.0 ;
+  }
   return tau ;
 }
 
