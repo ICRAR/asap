@@ -101,8 +101,11 @@ void ASDMFiller::fill()
   // fill FOCUS_ID and add FOCUS row if necessary
   setFocus() ;
 
-  for ( uInt icon = 0 ; icon < numConfigDescId ; icon++ ) {
-    for ( unsigned int ifield = 0 ; ifield < numFieldId ; ifield++ ) {
+  // CYCLENO
+  unsigned int cycleno = 0 ;
+
+  for ( unsigned int ifield = 0 ; ifield < numFieldId ; ifield++ ) {
+    for ( uInt icon = 0 ; icon < numConfigDescId ; icon++ ) {
       //logsink_->postLocally( LogMessage("start configDescId "+String::toString(configDescIdList[icon])+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
 
       //Bool status = reader_->setMainRow( configDescIdList[icon], fieldIdList[ifield] ) ;
@@ -116,9 +119,6 @@ void ASDMFiller::fill()
 
       //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows in Main table corresponding to configDescId "+String::toString(configDescIdList[icon])+" fieldId "+String::toString(fieldIdList[ifield]),LogOrigin(className_,funcName,WHERE)) ) ;
       
-      // CYCLENO
-      unsigned int cycleno = 0 ;
-
       for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
 
         // set main row
