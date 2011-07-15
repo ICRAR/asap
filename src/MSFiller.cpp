@@ -318,7 +318,7 @@ void MSFiller::fill()
 
   // REFBEAMNO
   RecordFieldPtr<Int> intRF( trec, "REFBEAMNO" ) ;
-  *intRF = 0 ;
+  *intRF = -1 ;
 
   // FIT_ID
   intRF.attachToRecord( trec, "FIT_ID" ) ;
