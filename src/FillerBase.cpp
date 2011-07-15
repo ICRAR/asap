@@ -23,6 +23,10 @@ FillerBase::FillerBase(casa::CountedPtr<Scantable> stable) :
   table_(stable)
 {
     row_ = TableRow(table_->table());
+
+    // FIT_ID is -1 by default
+    RecordFieldPtr<Int> fitIdCol( row_.record(), "FIT_ID" ) ;
+    *fitIdCol = -1 ;
 }
 
 void FillerBase::setHeader(const STHeader& header)
