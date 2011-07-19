@@ -1239,6 +1239,8 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
                                  float &windspeed,
                                  float &windaz ) 
 {
+  casa::String funcName = "getWeatherInfo" ;
+
   temperature = 0.0 ;
   pressure = 0.0 ;
   humidity = 0.0 ;
@@ -1263,15 +1265,15 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
   WeatherRow *wrow = (*wrows)[0] ;
   unsigned int nrow = wrows->size() ;
   //logsink_->postLocally( LogMessage("There are "+String::toString(nrow)+" rows for given context: stationId "+String::toString(weatherStationId_),LogOrigin(className_,funcName,WHERE)) ) ;
-  ArrayTime startTime = tint.getStart() ;
+  ArrayTime startTime = getMidTime( tint ) ;
   if ( startTime < (*wrows)[0]->getTimeInterval().getStart() ) {
     temperature = (*wrows)[0]->getTemperature().get() ;
-    pressure = (*wrows)[0]->getPressure().get() ;
+    pressure = (*wrows)[0]->getPressure().get() ; 
     humidity = (*wrows)[0]->getRelHumidity().get() ;
     windspeed = (*wrows)[0]->getWindSpeed().get() ;
     windaz = (*wrows)[0]->getWindDirection().get() ;
   }
-  else if ( startTime > (*wrows)[nrow-1]->getTimeInterval().getStart() ) {
+  else if ( startTime > getEndTime( (*wrows)[nrow-1]->getTimeInterval() ) ) {
     temperature = (*wrows)[nrow-1]->getTemperature().get() ;
     pressure = (*wrows)[nrow-1]->getPressure().get() ;
     humidity = (*wrows)[nrow-1]->getRelHumidity().get() ;
@@ -1281,7 +1283,9 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
   else {
     for ( unsigned int irow = 1 ; irow < wrows->size() ; irow++ ) {
       wrow = (*wrows)[irow-1] ;
-      if ( startTime < (*wrows)[irow]->getTimeInterval().getStart() ) {
+      ArrayTime tStart = wrow->getTimeInterval().getStart() ;
+      ArrayTime tEnd = (*wrows)[irow]->getTimeInterval().getStart() ;
+      if ( startTime >= tStart && startTime <= tEnd ) {
         temperature = wrow->getTemperature().get() ;
         pressure = wrow->getPressure().get() ;
         humidity = wrow->getRelHumidity().get() ;
@@ -1291,6 +1295,9 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
       }
     }
   }
+
+  // Pa -> hPa
+  pressure /= 100.0 ;
 
   return ;
 }
