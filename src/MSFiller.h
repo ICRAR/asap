@@ -128,6 +128,7 @@ private:
   
   casa::Vector<casa::Double> mwTime_ ;
   casa::Vector<casa::Double> mwInterval_ ;
+  casa::Vector<casa::uInt> mwIndex_ ;
 
   // Record for TCAL_ID
   // "FIELD0": "SPW0": Vector<uInt>

@@ -852,9 +852,13 @@ void MSFiller::fill()
                 }
 
                 // WEATHER_ID
-                if ( isWeather_ )
+                if ( isWeather_ ) {
                   wid = getWeatherId( wid, mTimeB[irow].get("s").getValue() ) ;
-                *widRF = wid ;
+                  *widRF = mwIndex_[wid] ;
+                }
+                else {
+                  *widRF = wid ;
+                }
                   
 
                 // DIRECTION, AZEL, SCANRATE
@@ -1313,6 +1317,40 @@ void MSFiller::fillWeather()
   Table wtab = table_->weather().table() ;
   wtab.addRow( wnrow ) ;
 
+  Bool stationInfoExists = mWeatherSel.tableDesc().isColumn( "NS_WX_STATION_ID" ) ;
+  Int stationId = -1 ;
+  if ( stationInfoExists ) {
+    // determine which station is closer
+    ROScalarColumn<Int> stationCol( mWeatherSel, "NS_WX_STATION_ID" ) ;
+    ROArrayColumn<Double> stationPosCol( mWeatherSel, "NS_WX_STATION_POSITION" ) ;
+    Vector<Int> stationIds = stationCol.getColumn() ;
+    Vector<Int> stationIdList( 0 ) ;
+    Matrix<Double> stationPosList( 0, 3, 0.0 ) ;
+    uInt numStation = 0 ;
+    for ( uInt i = 0 ; i < stationIds.size() ; i++ ) {
+      if ( !anyEQ( stationIdList, stationIds[i] ) ) {
+        numStation++ ;
+        stationIdList.resize( numStation, True ) ;
+        stationIdList[numStation-1] = stationIds[i] ;
+        stationPosList.resize( numStation, 3, True ) ;
+        stationPosList.row( numStation-1 ) = stationPosCol( i ) ;
+      }
+    }
+    //os_ << "staionIdList = " << stationIdList << endl ;
+    Table mAntenna = mstable_.antenna() ;
+    ROArrayColumn<Double> antposCol( mAntenna, "POSITION" ) ;
+    Vector<Double> antpos = antposCol( antenna_ ) ;
+    Double minDiff = -1.0 ;
+    for ( uInt i = 0 ; i < stationIdList.size() ; i++ ) {
+      Double diff = sum( square( antpos - stationPosList.row( i ) ) ) ;
+      if ( minDiff < 0.0 || minDiff > diff ) {
+        minDiff = diff ;
+        stationId = stationIdList[i] ;
+      }
+    }
+  }
+  //os_ << "stationId = " << stationId << endl ;
+  
   ScalarColumn<Float> *fCol ;
   ROScalarColumn<Float> *sharedFloatCol ;
   if ( mWeatherSel.tableDesc().isColumn( "TEMPERATURE" ) ) {
@@ -1357,15 +1395,39 @@ void MSFiller::fillWeather()
   ROScalarQuantColumn<Double> tqCol( mWeatherSel, "TIME" ) ;
   ROScalarColumn<Double> tCol( mWeatherSel, "TIME" ) ;
   String tUnit = tqCol.getUnits() ;
-  mwTime_ = tCol.getColumn() ;
+  Vector<Double> mwTime = tCol.getColumn() ;
   if ( tUnit == "d" ) 
-    mwTime_ *= 86400.0 ;
+    mwTime *= 86400.0 ;
   tqCol.attach( mWeatherSel, "INTERVAL" ) ;
   tCol.attach( mWeatherSel, "INTERVAL" ) ;
   String iUnit = tqCol.getUnits() ;
-  mwInterval_ = tCol.getColumn() ;
+  Vector<Double> mwInterval = tCol.getColumn() ;
   if ( iUnit == "d" ) 
-    mwInterval_ *= 86400.0 ; 
+    mwInterval *= 86400.0 ; 
+
+  if ( stationId > 0 ) {
+    ROScalarColumn<Int> stationCol( mWeatherSel, "NS_WX_STATION_ID" ) ;
+    Vector<Int> stationVec = stationCol.getColumn() ;
+    uInt wsnrow = ntrue( stationVec == stationId ) ;
+    mwTime_.resize( wsnrow ) ;
+    mwInterval_.resize( wsnrow ) ;
+    mwIndex_.resize( wsnrow ) ;
+    uInt wsidx = 0 ;
+    for ( uInt irow = 0 ; irow < wnrow ; irow++ ) {
+      if ( stationId == stationVec[irow] ) {
+        mwTime_[wsidx] = mwTime[irow] ;
+        mwInterval_[wsidx] = mwInterval[irow] ;
+        mwIndex_[wsidx] = irow ;
+        wsidx++ ;
+      }
+    }
+  }
+  else {
+    mwTime_ = mwTime ;
+    mwInterval_ = mwInterval ;
+    mwIndex_.resize( mwTime_.size() ) ;
+    indgen( mwIndex_ ) ;
+  }
   //os_ << "mwTime[0] = " << mwTime_[0] << " mwInterval[0] = " << mwInterval_[0] << LogIO::POST ; 
 //   double endSec = gettimeofday_sec() ;
 //   os_ << "end MSFiller::fillWeather() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
@@ -1504,6 +1566,12 @@ uInt MSFiller::getWeatherId( uInt idx, Double wtime )
   if ( nrow < 2 ) 
     return 0 ;
   uInt wid = nrow ;
+  if ( idx == 0 ) {
+    wid = 0 ;
+    Double tStart = mwTime_[wid]-0.5*mwInterval_[wid] ;
+    if ( wtime < tStart )
+      return wid ;
+  }
   for ( uInt i = idx ; i < nrow-1 ; i++ ) {
     Double tStart = mwTime_[i]-0.5*mwInterval_[i] ;
     // use of INTERVAL column is problematic 
