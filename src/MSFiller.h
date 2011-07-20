@@ -90,6 +90,8 @@ private:
 
   // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
   casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &srate, casa::String &ref, casa::MSPointing &tab, casa::Double t ) ;
+  casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &azel, casa::Vector<casa::Double> &srate, casa::MSPointing &tab, casa::MEpoch &t, casa::MPosition &antpos ) ;
+  void getSourceDirection( casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &azel, casa::Vector<casa::Double> &srate, casa::MEpoch &t, casa::MPosition &antpos, casa::Vector<casa::MDirection> &srcdir ) ;
 
   // create key for TCAL table
   casa::String keyTcal( casa::Int feedid, casa::Int spwid, casa::String stime ) ; 
@@ -102,7 +104,68 @@ private:
 
   // get frequency frame
   std::string getFrame() ;
+
+  // reshape SPECTRA and FLAGTRA
+  void reshapeSpectraAndFlagtra( casa::Cube<casa::Float> &sp, 
+                                 casa::Cube<casa::Bool> &fl,
+                                 casa::Table &tab,
+                                 casa::Int &npol,
+                                 casa::Int &nchan,
+                                 casa::Int &nrow,
+                                 casa::Vector<casa::Int> &corrtype ) ;
   
+  // initialize header
+  void initHeader( STHeader &header ) ;
+
+  // get value from table column using object pool
+  casa::String asString( casa::String name,
+                         casa::uInt idx,
+                         casa::Table tab, 
+                         boost::object_pool<casa::ROTableColumn> *pool ) ;
+  casa::Bool asBool( casa::String name,
+                     casa::uInt idx,
+                     casa::Table &tab, 
+                     boost::object_pool<casa::ROTableColumn> *pool ) ;
+  casa::Int asInt( casa::String name,
+                   casa::uInt idx,
+                   casa::Table &tab, 
+                   boost::object_pool<casa::ROTableColumn> *pool ) ;
+  casa::uInt asuInt( casa::String name,
+                     casa::uInt idx,
+                     casa::Table &tab, 
+                     boost::object_pool<casa::ROTableColumn> *pool ) ;
+  casa::Float asFloat( casa::String name,
+                       casa::uInt idx,
+                       casa::Table &tab, 
+                       boost::object_pool<casa::ROTableColumn> *pool ) ;
+  casa::Double asDouble( casa::String name,
+                         casa::uInt idx,
+                         casa::Table &tab, 
+                         boost::object_pool<casa::ROTableColumn> *pool ) ;
+
+  void sourceInfo( casa::Int sourceId,
+                   casa::Int spwId,
+                   casa::String &name, 
+                   casa::MDirection &direction,
+                   casa::Vector<casa::Double> &properMotion,
+                   casa::Vector<casa::Double> &restFreqs,
+                   casa::Vector<casa::String> &transitions,
+                   casa::Vector<casa::Double> &sysVels,
+                   boost::object_pool<casa::ROTableColumn> *pool ) ;
+
+  void spectralSetup( casa::Int spwId,
+                      casa::MEpoch &me,
+                      casa::MPosition &mp,
+                      casa::MDirection &md,
+                      casa::Double &refpix,
+                      casa::Double &refval,
+                      casa::Double &increment,
+                      casa::Int &nchan,
+                      casa::String &freqref,
+                      casa::Double &reffreq,
+                      casa::Double &bandwidth,
+                      boost::object_pool<casa::ROTableColumn> *pool ) ;
+
   casa::CountedPtr<Scantable> table_ ;
   casa::MeasurementSet mstable_ ;
   casa::String tablename_ ;
