@@ -262,6 +262,8 @@ void MSFiller::fill()
   if ( getPt_ ) {
     pointtab = MSPointing( pointtab( pointtab.col("ANTENNA_ID")==antenna_ ).sort("TIME") ) ;
   }
+  ROScalarColumn<Double> ptcol( pointtab, "TIME" ) ;
+  ROArrayColumn<Double> pdcol( pointtab, "DIRECTION" ) ; 
   String stationName = asString( "STATION", antenna_, anttab, tpoolr ) ;
   String antennaName = asString( "NAME", antenna_, anttab, tpoolr ) ;
   sdh.antennaposition.resize( 3 ) ;
@@ -650,7 +652,8 @@ void MSFiller::fill()
                 Vector<Double> scanrate ;
                 String refString ;
                 if ( getPt_ )
-                  diridx = getDirection( diridx, dir, azel, scanrate, pointtab, mTimeB[irow], mp ) ;
+                  //diridx = getDirection( diridx, dir, azel, scanrate, pointtab, mTimeB[irow], mp ) ;
+                  diridx = getDirection( diridx, dir, azel, scanrate, ptcol, pdcol, mTimeB[irow], mp ) ;
                 else
                   getSourceDirection( dir, azel, scanrate, mTimeB[irow], mp, delayDir ) ;
                 *dirRF = dir ;
@@ -1398,36 +1401,45 @@ Block<uInt> MSFiller::getTcalId( Int fid, Int spwid, MEpoch &t )
   return tcalids ;
 }
 
-uInt MSFiller::getDirection( uInt idx, Vector<Double> &dir, Vector<Double> &srate, String &ref, MSPointing &tab, Double t ) 
+uInt MSFiller::getDirection( uInt idx, 
+                             Vector<Double> &dir, 
+                             Vector<Double> &srate, 
+                             String &ref, 
+                             ROScalarColumn<Double> &tcol, 
+                             ROArrayColumn<Double> &dcol, 
+                             Double t ) 
 {
   //double startSec = gettimeofday_sec() ;
   //os_ << "start MSFiller::getDirection1() startSec=" << startSec << LogIO::POST ;
+  //double time0 = gettimeofday_sec() ;
+  //os_ << "start getDirection 1st stage startSec=" << time0 << LogIO::POST ;
   // assume that cols is sorted by TIME
   Bool doInterp = False ;
-  //uInt nrow = cols.nrow() ;
-  uInt nrow = tab.nrow() ;
+  uInt nrow = tcol.nrow() ;
   if ( nrow == 0 ) 
     return 0 ;
-  ROScalarMeasColumn<MEpoch> tcol( tab, "TIME" ) ;
-  ROArrayMeasColumn<MDirection> dmcol( tab, "DIRECTION" ) ;
-  ROArrayColumn<Double> dcol( tab, "DIRECTION" ) ;
+  TableRecord trec = tcol.keywordSet() ;
+  String tUnit = trec.asArrayString( "QuantumUnits" ).data()[0] ;
+  Double factor = 1.0 ;
+  if ( tUnit == "d" )
+    factor = 86400.0 ;
   // binary search if idx == 0
   if ( idx == 0 ) {
-    uInt nrowb = 75000 ;
+    uInt nrowb = 1000 ;
     if ( nrow > nrowb ) {
       uInt nblock = nrow / nrowb + 1 ;
       for ( uInt iblock = 0 ; iblock < nblock ; iblock++ ) {
         uInt high = min( nrowb, nrow-iblock*nrowb ) ;
 
-        if ( tcol( high-1 ).get( "s" ).getValue() < t ) {
+        if ( tcol( high-1 ) * factor < t ) {
           idx = iblock * nrowb ;
           continue ;
         }
 
-        Vector<MEpoch> tarr( high ) ;
-        for ( uInt irow = 0 ; irow < high ; irow++ ) {
-          tarr[irow] = tcol( iblock*nrowb+irow ) ;
-        }
+        RefRows refrows( iblock*nrowb, iblock*nrowb+high, 1 ) ;
+        Vector<Double> tarr = tcol.getColumnCells( refrows ) ;
+        if ( tUnit == "d" )
+          tarr *= factor ;
 
         uInt bidx = binarySearch( tarr, t ) ;
 
@@ -1436,22 +1448,26 @@ uInt MSFiller::getDirection( uInt idx, Vector<Double> &dir, Vector<Double> &srat
       }
     }
     else {
-      Vector<MEpoch> tarr( nrow ) ;
-      for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-        tarr[irow] = tcol( irow ) ;
-      }
+      Vector<Double> tarr = tcol.getColumn() ;
+      if ( tUnit == "d" )
+        tarr *= factor ;
       idx = binarySearch( tarr, t ) ;
     }
   }
+  //double time1 = gettimeofday_sec() ;
+  //os_ << "end getDirection 1st stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
   // ensure that tcol(idx) < t
   //os_ << "tcol(idx) = " << tcol(idx).get("s").getValue() << " t = " << t << " diff = " << tcol(idx).get("s").getValue()-t << endl ;
-  while ( tcol(idx).get("s").getValue() > t && idx > 0 ) 
+  //time0 = gettimeofday_sec() ;
+  //os_ << "start getDirection 2nd stage startSec=" << time0 << LogIO::POST ;
+  while( tcol( idx ) * factor > t && idx > 0 )
     idx-- ;
   //os_ << "idx = " << idx << LogIO::POST ;
 
   // index search
   for ( uInt i = idx ; i < nrow ; i++ ) {
-    Double tref = tcol( i ).get( "s" ).getValue() ;
+    //Double tref = tcol( i ).get( "s" ).getValue() ;
+    Double tref = tcol( i ) * factor ;
     if ( tref == t ) {
       idx = i ;
       break ;
@@ -1470,18 +1486,28 @@ uInt MSFiller::getDirection( uInt idx, Vector<Double> &dir, Vector<Double> &srat
       idx = nrow - 1 ;
     }
   }
+  //time1 = gettimeofday_sec() ;
+  //os_ << "end getDirection 2nd stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
   //os_ << "searched idx = " << idx << LogIO::POST ;
 
+  //time0 = gettimeofday_sec() ;
+  //os_ << "start getDirection 3rd stage startSec=" << time0 << LogIO::POST ;
   //os_ << "dmcol(idx).shape() = " << dmcol(idx).shape() << LogIO::POST ;
-  IPosition ip( dmcol(idx).shape().nelements(), 0 ) ;
+  //IPosition ip( dmcol(idx).shape().nelements(), 0 ) ;
+  IPosition ip( dcol(idx).shape().nelements(), 0 ) ;
   //os_ << "ip = " << ip << LogIO::POST ;
-  ref = dmcol(idx)(ip).getRefString() ;
+  //ref = dmcol(idx)(ip).getRefString() ;
+  trec = dcol.keywordSet() ;
+  Record rec = trec.asRecord( "MEASINFO" ) ;
+  ref = rec.asString( "Ref" ) ;
   //os_ << "ref = " << ref << LogIO::POST ;
   if ( doInterp ) {
     //os_ << "do interpolation" << LogIO::POST ;
     //os_ << "dcol(idx).shape() = " << dcol(idx).shape() << LogIO::POST ;
-    Double tref0 = tcol(idx).get("s").getValue() ;
-    Double tref1 = tcol(idx+1).get("s").getValue() ;
+//     Double tref0 = tcol(idx).get("s").getValue() ;
+//     Double tref1 = tcol(idx+1).get("s").getValue() ;
+    Double tref0 = tcol(idx) * factor ;
+    Double tref1 = tcol(idx+1) * factor ;
     Matrix<Double> mdir0 = dcol( idx ) ;
     Matrix<Double> mdir1 = dcol( idx+1 ) ;
     Vector<Double> dir0 = mdir0.column( 0 ) ;
@@ -1507,6 +1533,8 @@ uInt MSFiller::getDirection( uInt idx, Vector<Double> &dir, Vector<Double> &srat
       srate.reference( mdir0.column( 1 ) ) ;
   }
 
+  //time1 = gettimeofday_sec() ;
+  //os_ << "end getDirection 3rd stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
   //double endSec = gettimeofday_sec() ;
   //os_ << "end MSFiller::getDirection1() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
   return idx ;
@@ -1532,14 +1560,37 @@ uInt MSFiller::binarySearch( Vector<MEpoch> &timeList, Double target )
       low = idx + 1 ;
     else if ( t > target )
       high = idx - 1 ;
-    else 
+    else {
       return idx ;
+    }
   }
 
   idx = max( 0, min( low, high ) ) ;
 
   return idx ;
-  
+}
+
+uInt MSFiller::binarySearch( Vector<Double> &timeList, Double target ) 
+{
+  Int low = 0 ;
+  Int high = timeList.nelements() ;
+  uInt idx = 0 ;
+
+  while ( low <= high ) {
+    idx = (Int)( 0.5 * ( low + high ) ) ;
+    Double t = timeList[idx] ;
+    if ( t < target ) 
+      low = idx + 1 ;
+    else if ( t > target )
+      high = idx - 1 ;
+    else {
+      return idx ;
+    }
+  }
+
+  idx = max( 0, min( low, high ) ) ;
+
+  return idx ;
 }
 
 string MSFiller::getFrame()
@@ -1583,32 +1634,51 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
     fl.resize( npol, nchan, nrow ) ;
     ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
     ROArrayColumn<Complex> mDataCol( tab, "DATA" ) ;
-    for ( Int irow = 0 ; irow < nrow ; irow++ ) {
-      Bool crossOK = False ;
-      Matrix<Complex> mSp = mDataCol( irow ) ;
-      Matrix<Bool> mFl = mFlagCol( irow ) ;
-      Matrix<Float> spxy = sp.xyPlane( irow ) ;
-      Matrix<Bool> flxy = fl.xyPlane( irow ) ;
-      for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
-        if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::YX 
-             || corrtype[ipol] == Stokes::RL || corrtype[ipol] == Stokes::LR ) {
-          if ( !crossOK ) {
+    if ( npol < 3 ) {
+//       Cube<Complex> tmp = mDataCol.getColumn() ;
+//       Float *sp_p = sp.data() ;
+//       Complex *tmp_p = tmp.data() ;
+//       for ( uInt i = 0 ; i < sp.nelements() ; i++ )
+//         sp_p[i] = tmp_p[i].real() ;
+      Cube<Float> tmp = ComplexToReal( mDataCol.getColumn() ) ;
+      IPosition start( 3, 0, 0, 0 ) ;
+      IPosition end( 3, 2*npol-1, nchan-1, nrow-1 ) ;
+      IPosition inc( 3, 2, 1, 1 ) ;
+      sp = tmp( start, end, inc ) ;
+//       sp = tmp( Slice( 0, npol, 2 ),
+//                 Slice( 0, nchan, 1 ),
+//                 Slice( 0, nrow, 1 ) ) ;
+      //sp = real( mDataCol.getColumn() ) ;
+      fl = mFlagCol.getColumn() ;
+    }
+    else {
+      for ( Int irow = 0 ; irow < nrow ; irow++ ) {
+        Bool crossOK = False ;
+        Matrix<Complex> mSp = mDataCol( irow ) ;
+        Matrix<Bool> mFl = mFlagCol( irow ) ;
+        Matrix<Float> spxy = sp.xyPlane( irow ) ;
+        Matrix<Bool> flxy = fl.xyPlane( irow ) ;
+        for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
+          if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::YX 
+               || corrtype[ipol] == Stokes::RL || corrtype[ipol] == Stokes::LR ) {
+            if ( !crossOK ) {
+              spxy.row( ipol ) = real( mSp.row( ipol ) ) ;
+              flxy.row( ipol ) = mFl.row( ipol ) ;
+              if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::RL ) {
+                spxy.row( ipol+1 ) = imag( mSp.row( ipol ) ) ;
+                flxy.row( ipol+1 ) = mFl.row( ipol ) ;
+              }                        
+              else {
+                spxy.row( ipol+1 ) = imag( conj( mSp.row( ipol ) ) ) ;
+                flxy.row( ipol+1 ) = mFl.row( ipol ) ;
+              }
+              crossOK = True ;
+            }
+          }
+          else {
             spxy.row( ipol ) = real( mSp.row( ipol ) ) ;
             flxy.row( ipol ) = mFl.row( ipol ) ;
-            if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::RL ) {
-              spxy.row( ipol+1 ) = imag( mSp.row( ipol ) ) ;
-              flxy.row( ipol+1 ) = mFl.row( ipol ) ;
-            }                        
-            else {
-              spxy.row( ipol+1 ) = imag( conj( mSp.row( ipol ) ) ) ;
-              flxy.row( ipol+1 ) = mFl.row( ipol ) ;
-            }
-            crossOK = True ;
           }
-        }
-        else {
-          spxy.row( ipol ) = real( mSp.row( ipol ) ) ;
-          flxy.row( ipol ) = mFl.row( ipol ) ;
         }
       }
     }
@@ -1621,7 +1691,8 @@ uInt MSFiller::getDirection( uInt idx,
                              Vector<Double> &dir,
                              Vector<Double> &azel,
                              Vector<Double> &srate,
-                             MSPointing &ptab,
+                             ROScalarColumn<Double> &ptcol,
+                             ROArrayColumn<Double> &pdcol,
                              MEpoch &t,
                              MPosition &antpos )
 {
@@ -1629,7 +1700,8 @@ uInt MSFiller::getDirection( uInt idx,
   //os_ << "start MFiller::getDirection2() startSec=" << startSec << LogIO::POST ;  
   String refString ;
   MDirection::Types dirType ;
-  uInt diridx = getDirection( idx, dir, srate, refString, ptab, t.get("s").getValue() ) ;
+  //uInt diridx = getDirection( idx, dir, srate, refString, ptab, t.get("s").getValue() ) ;
+  uInt diridx = getDirection( idx, dir, srate, refString, ptcol, pdcol, t.get("s").getValue() ) ;
   MDirection::getType( dirType, refString ) ;
   MeasFrame mf( t, antpos ) ;
   if ( refString == "J2000" ) {

@@ -89,15 +89,33 @@ private:
   casa::Block<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::MEpoch &t ) ;
 
   // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
-  casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &srate, casa::String &ref, casa::MSPointing &tab, casa::Double t ) ;
-  casa::uInt getDirection( casa::uInt idx, casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &azel, casa::Vector<casa::Double> &srate, casa::MSPointing &tab, casa::MEpoch &t, casa::MPosition &antpos ) ;
-  void getSourceDirection( casa::Vector<casa::Double> &dir, casa::Vector<casa::Double> &azel, casa::Vector<casa::Double> &srate, casa::MEpoch &t, casa::MPosition &antpos, casa::Vector<casa::MDirection> &srcdir ) ;
+  casa::uInt getDirection( casa::uInt idx, 
+                           casa::Vector<casa::Double> &dir, 
+                           casa::Vector<casa::Double> &srate, 
+                           casa::String &ref, 
+                           casa::ROScalarColumn<casa::Double> &ptcol, 
+                           casa::ROArrayColumn<casa::Double> &pdcol, 
+                           casa::Double t ) ;
+  casa::uInt getDirection( casa::uInt idx, 
+                           casa::Vector<casa::Double> &dir, 
+                           casa::Vector<casa::Double> &azel, 
+                           casa::Vector<casa::Double> &srate, 
+                           casa::ROScalarColumn<casa::Double> &ptcol, 
+                           casa::ROArrayColumn<casa::Double> &pdcol,
+                           casa::MEpoch &t, casa::MPosition &antpos ) ;
+  void getSourceDirection( casa::Vector<casa::Double> &dir, 
+                           casa::Vector<casa::Double> &azel, 
+                           casa::Vector<casa::Double> &srate, 
+                           casa::MEpoch &t, 
+                           casa::MPosition &antpos, 
+                           casa::Vector<casa::MDirection> &srcdir ) ;
 
   // create key for TCAL table
   casa::String keyTcal( casa::Int feedid, casa::Int spwid, casa::String stime ) ; 
 
   // binary search
   casa::uInt binarySearch( casa::Vector<casa::MEpoch> &timeList, casa::Double target ) ; 
+  casa::uInt binarySearch( casa::Vector<casa::Double> &timeList, casa::Double target ) ; 
 
   // tool for HPC
   double gettimeofday_sec() ;
