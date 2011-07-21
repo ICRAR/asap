@@ -272,7 +272,7 @@ void MSFiller::fill()
   String telescopeName = "" ;
 
   //double time1 = gettimeofday_sec() ;
-  //os_ << "end fill init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
+  //os_ << "end init fill: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
 
   // row based 
   Table &stab = table_->table() ; 
@@ -292,19 +292,30 @@ void MSFiller::fill()
   RecordFieldPtr<uInt> tcalidRF( trec, "TCAL_ID" ) ;
   RecordFieldPtr<uInt> widRF( trec, "WEATHER_ID" ) ;
   RecordFieldPtr<uInt> polnoRF( trec, "POLNO" ) ;
-
+  RecordFieldPtr<Int> refbRF( trec, "REFBEAMNO" ) ;
+  RecordFieldPtr<Int> fitidRF( trec, "FIT_ID" ) ;
+  RecordFieldPtr<Float> tauRF( trec, "OPACITY" ) ;
+  RecordFieldPtr<uInt> beamRF( trec, "BEAMNO" ) ;
+  RecordFieldPtr<uInt> focusidRF( trec, "FOCUS_ID" ) ;
+  RecordFieldPtr<uInt> ifnoRF( trec, "IFNO" ) ;
+  RecordFieldPtr<uInt> molidRF( trec, "MOLECULE_ID" ) ;
+  RecordFieldPtr<uInt> freqidRF( trec, "FREQ_ID" ) ;
+  RecordFieldPtr<uInt> scanRF( trec, "SCANNO" ) ;
+  RecordFieldPtr<Int> srctypeRF( trec, "SRCTYPE" ) ;
+  RecordFieldPtr<String> srcnameRF( trec, "SRCNAME" ) ;
+  RecordFieldPtr<String> fieldnameRF( trec, "FIELDNAME" ) ;
+  RecordFieldPtr< Array<Double> > srcpmRF( trec, "SRCPROPERMOTION" ) ;
+  RecordFieldPtr< Array<Double> > srcdirRF( trec, "SRCDIRECTION" ) ;
+  RecordFieldPtr<Double> sysvelRF( trec, "SRCVELOCITY" ) ;
 
   // REFBEAMNO
-  RecordFieldPtr<Int> intRF( trec, "REFBEAMNO" ) ;
-  *intRF = -1 ;
+  *refbRF = -1 ;
 
   // FIT_ID
-  intRF.attachToRecord( trec, "FIT_ID" ) ;
-  *intRF = -1 ;
+  *fitidRF = -1 ;
 
   // OPACITY
-  RecordFieldPtr<Float> floatRF( trec, "OPACITY" ) ;
-  *floatRF = 0.0 ;
+  *tauRF = 0.0 ;
 
   //
   // ITERATION: OBSERVATION_ID
@@ -346,12 +357,10 @@ void MSFiller::fill()
       nbeam++ ;
 
       // BEAMNO
-      RecordFieldPtr<uInt> uintRF( trec, "BEAMNO" ) ;
-      *uintRF = feedId ;
+      *beamRF = feedId ;
 
       // FOCUS_ID
-      uintRF.attachToRecord( trec, "FOCUS_ID" ) ;
-      *uintRF = 0 ;
+      *focusidRF = 0 ;
 
       //time1 = gettimeofday_sec() ;
       //os_ << "end 1st iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
@@ -372,8 +381,7 @@ void MSFiller::fill()
         delete delayDirCol ;          
 
         // FIELDNAME
-        RecordFieldPtr<String> strRF( trec, "FIELDNAME" ) ;
-        *strRF = fieldName ;
+        *fieldnameRF = fieldName ;
 
 
         //time1 = gettimeofday_sec() ;
@@ -391,8 +399,7 @@ void MSFiller::fill()
           Int spwId = asInt( "SPECTRAL_WINDOW_ID", ddId, ddtab, tpoolr ) ;
 
           // IFNO
-          uintRF.attachToRecord( trec, "IFNO" ) ;
-          *uintRF = (uInt)spwId ;
+          *ifnoRF = (uInt)spwId ;
 
           // polarization information
           Int npol = asInt( "NUM_CORR", polId, poltab, tpoolr ) ;
@@ -414,21 +421,17 @@ void MSFiller::fill()
 //           os_ << "srcId = " << srcId << ", spwId = " << spwId << LogIO::POST ;
 
           // SRCNAME
-          strRF.attachToRecord( trec, "SRCNAME" ) ;
-          *strRF = srcName ;
+          *srcnameRF = srcName ;
 
 //           os_ << "srcName = " << srcName << LogIO::POST ;
 
           // SRCPROPERMOTION
-          RecordFieldPtr< Array<Double> > darrRF( trec, "SRCPROPERMOTION" ) ;
-          *darrRF = srcPM ;
+          *srcpmRF = srcPM ;
 
           //os_ << "srcPM = " << srcPM << LogIO::POST ;
 
           // SRCDIRECTION
-          darrRF.attachToRecord( trec, "SRCDIRECTION" ) ;
-//           *darrRF = srcDir ;
-          *darrRF = md.getAngle().getValue( "rad" ) ;
+          *srcdirRF = md.getAngle().getValue( "rad" ) ;
 
           //os_ << "srcDir = " << srcDir << LogIO::POST ;
 
@@ -436,16 +439,14 @@ void MSFiller::fill()
           Double sysVel = 0.0 ;
           if ( !sysVels.empty() ) 
             sysVel = sysVels[0] ;
-          RecordFieldPtr<Double> doubleRF( trec, "SRCVELOCITY" ) ;
-          *doubleRF = sysVel ;
+          *sysvelRF = sysVel ;
 
 //           os_ << "sysVel = " << sysVel << LogIO::POST ;
 
           uInt molId = table_->molecules().addEntry( restFreqs, transitionName, transitionName ) ;
 
           // MOLECULE_ID
-          uintRF.attachToRecord( trec, "MOLECULE_ID" ) ;
-          *uintRF = molId ;
+          *molidRF = molId ;
 
           // spectral setup
           uInt freqId ;
@@ -482,8 +483,7 @@ void MSFiller::fill()
           }
 
           // FREQ_ID
-          uintRF.attachToRecord( trec, "FREQ_ID" ) ;
-          *uintRF = freqId ;
+          *freqidRF = freqId ;
 
           // for TSYS and TCAL
           Vector<MEpoch> scTime ;
@@ -519,8 +519,7 @@ void MSFiller::fill()
             Int scanNum = asInt( "SCAN_NUMBER", 0, t4, tpoolr ) ;
 
             // SCANNO
-            uintRF.attachToRecord( trec, "SCANNO" ) ;
-            *uintRF = scanNum - 1 ;
+            *scanRF = scanNum - 1 ;
 
             //time1 = gettimeofday_sec() ;
             //os_ << "end 4th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
@@ -599,8 +598,7 @@ void MSFiller::fill()
               }
               
               // SRCTYPE
-              intRF.attachToRecord( trec, "SRCTYPE" ) ;
-              *intRF = srcType ;
+              *srctypeRF = srcType ;
 
               for ( Int irow = 0 ; irow < nrow ; irow++ ) {
                 // CYCLENO
@@ -678,7 +676,7 @@ void MSFiller::fill()
 
                 cycle++ ;
               }
-
+              
               //time1 = gettimeofday_sec() ;
               //os_ << "end 5th iteration: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
 
@@ -1622,7 +1620,7 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
                                          Vector<Int> &corrtype )
 {
   //double startSec = gettimeofday_sec() ;
-  //os_ << "start MFiller::reshapeSpectraAndFlagtra() startSec=" << startSec << LogIO::POST ;  
+  //os_ << "start MSFiller::reshapeSpectraAndFlagtra() startSec=" << startSec << LogIO::POST ;  
   if ( isFloatData_ ) {
     ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
     ROArrayColumn<Float> mFloatDataCol( tab, "FLOAT_DATA" ) ;
@@ -1645,10 +1643,6 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
       IPosition end( 3, 2*npol-1, nchan-1, nrow-1 ) ;
       IPosition inc( 3, 2, 1, 1 ) ;
       sp = tmp( start, end, inc ) ;
-//       sp = tmp( Slice( 0, npol, 2 ),
-//                 Slice( 0, nchan, 1 ),
-//                 Slice( 0, nrow, 1 ) ) ;
-      //sp = real( mDataCol.getColumn() ) ;
       fl = mFlagCol.getColumn() ;
     }
     else {
@@ -1662,21 +1656,27 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
           if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::YX 
                || corrtype[ipol] == Stokes::RL || corrtype[ipol] == Stokes::LR ) {
             if ( !crossOK ) {
-              spxy.row( ipol ) = real( mSp.row( ipol ) ) ;
+              Vector<Float> tmp = ComplexToReal( mSp.row( ipol ) ) ;
+              IPosition start( 1, 0 ) ;
+              IPosition end( 1, 2*nchan-1 ) ;
+              IPosition inc( 1, 2 ) ;
+              spxy.row( ipol ) = tmp( start, end, inc ) ;
               flxy.row( ipol ) = mFl.row( ipol ) ;
-              if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::RL ) {
-                spxy.row( ipol+1 ) = imag( mSp.row( ipol ) ) ;
-                flxy.row( ipol+1 ) = mFl.row( ipol ) ;
-              }                        
-              else {
-                spxy.row( ipol+1 ) = imag( conj( mSp.row( ipol ) ) ) ;
-                flxy.row( ipol+1 ) = mFl.row( ipol ) ;
+              start = IPosition( 1, 1 ) ;
+              spxy.row( ipol+1 ) = tmp( start, end, inc ) ;
+              flxy.row( ipol+1 ) = mFl.row( ipol ) ;
+              if ( corrtype[ipol] == Stokes::YX || corrtype[ipol] == Stokes::LR ) {
+                spxy.row( ipol+1 ) = spxy.row( ipol+1 ) * (Float)-1.0 ;
               }
               crossOK = True ;
             }
           }
           else {
-            spxy.row( ipol ) = real( mSp.row( ipol ) ) ;
+            Vector<Float> tmp = ComplexToReal( mSp.row( ipol ) ) ;
+            IPosition start( 1, 0 ) ;
+            IPosition end( 1, 2*nchan-1 ) ;
+            IPosition inc( 1, 2 ) ;
+            spxy.row( ipol ) = tmp( start, end, inc ) ;
             flxy.row( ipol ) = mFl.row( ipol ) ;
           }
         }
@@ -1697,10 +1697,9 @@ uInt MSFiller::getDirection( uInt idx,
                              MPosition &antpos )
 {
   //double startSec = gettimeofday_sec() ;
-  //os_ << "start MFiller::getDirection2() startSec=" << startSec << LogIO::POST ;  
+  //os_ << "start MSFiller::getDirection2() startSec=" << startSec << LogIO::POST ;  
   String refString ;
   MDirection::Types dirType ;
-  //uInt diridx = getDirection( idx, dir, srate, refString, ptab, t.get("s").getValue() ) ;
   uInt diridx = getDirection( idx, dir, srate, refString, ptcol, pdcol, t.get("s").getValue() ) ;
   MDirection::getType( dirType, refString ) ;
   MeasFrame mf( t, antpos ) ;
@@ -1719,8 +1718,10 @@ uInt MSFiller::getDirection( uInt idx,
     MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
     dir = toj2000( dir ).getAngle("rad").getValue() ;
   }
-  if ( srate.size() == 0 )
-    srate = Vector<Double>( 2, 0.0 ) ;
+  if ( srate.size() == 0 ) {
+    srate.resize( 2 ) ;
+    srate = 0.0 ;
+  }
   //double endSec = gettimeofday_sec() ;
   //os_ << "end MSFiller::getDirection2() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
   return diridx ;
@@ -1734,7 +1735,7 @@ void MSFiller::getSourceDirection( Vector<Double> &dir,
                                    Vector<MDirection> &srcdir ) 
 {
   //double startSec = gettimeofday_sec() ;
-  //os_ << "start MFiller::getSourceDirection() startSec=" << startSec << LogIO::POST ; 
+  //os_ << "start MSFiller::getSourceDirection() startSec=" << startSec << LogIO::POST ; 
   Vector<Double> defaultScanrate( 2, 0.0 ) ;
   Vector<Double> defaultDir = srcdir[0].getAngle( "rad" ).getValue() ;
   if ( srcdir.nelements() > 1 ) 
@@ -1858,7 +1859,7 @@ void MSFiller::sourceInfo( Int sourceId,
                            boost::object_pool<ROTableColumn> *tpoolr ) 
 {
   //double startSec = gettimeofday_sec() ;
-  //os_ << "start MFiller::sourceInfo() startSec=" << startSec << LogIO::POST ; 
+  //os_ << "start MSFiller::sourceInfo() startSec=" << startSec << LogIO::POST ; 
 
   MSSource srctab = mstable_.source() ;
   MSSource srctabSel = srctab( srctab.col("SOURCE_ID") == sourceId && srctab.col("SPECTRAL_WINDOW_ID") == spwId ) ;
@@ -1929,7 +1930,7 @@ void MSFiller::spectralSetup( Int spwId,
                               boost::object_pool<ROTableColumn> *tpoolr ) 
 {
   //double startSec = gettimeofday_sec() ;
-  //os_ << "start MFiller::spectralSetup() startSec=" << startSec << LogIO::POST ; 
+  //os_ << "start MSFiller::spectralSetup() startSec=" << startSec << LogIO::POST ; 
 
   MSSpectralWindow spwtab = mstable_.spectralWindow() ;
   MeasFrame mf( me, mp, md ) ;
