@@ -105,7 +105,7 @@ void STFocus::setup( )
                           && near(table_.col("USERPHASE"), user)
                           && near(table_.col("MOUNT"), mount)
                           && near(table_.col("XYPHASE"), xyphase)
-                          && near(table_.col("XYPHASEOFFSET"), xyphaseoffset)
+                          && near(table_.col("XYPHASEOFFSET"), xyphaseoffset), 1
                           );
   uInt resultid = 0;
   if ( result.nrow() > 0) {

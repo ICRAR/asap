@@ -87,8 +87,8 @@ uInt STFrequencies::addEntry( Double refpix, Double refval, Double inc )
 {
   // test if this already exists
   Table result = table_( near(table_.col("REFVAL"), refval)
-                    && near(table_.col("REFPIX"), refpix)
-                    && near(table_.col("INCREMENT"), inc) );
+                         && near(table_.col("REFPIX"), refpix)
+                         && near(table_.col("INCREMENT"), inc), 1 );
   uInt resultid = 0;
   if ( result.nrow() > 0) {
     ROScalarColumn<uInt> c(result, "ID");
