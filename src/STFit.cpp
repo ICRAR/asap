@@ -89,7 +89,7 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
   bool foundentry = false;
   // replace
   if ( id > -1 ) {
-    Table t = table_(table_.col("ID") == id );
+    Table t = table_(table_.col("ID") == id, 1 );
     if (t.nrow() > 0) {
       rno = t.rowNumbers(table_)[0];
       resultid = id;
@@ -128,7 +128,7 @@ uInt STFit::addEntry( const STFitEntry& fit, Int id )
 
 void STFit::getEntry( STFitEntry& fit, uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFit::getEntry - id out of range"));
   }

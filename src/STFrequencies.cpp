@@ -115,7 +115,7 @@ uInt STFrequencies::addEntry( Double refpix, Double refval, Double inc )
 void STFrequencies::getEntry( Double& refpix, Double& refval, Double& inc,
                               uInt id )
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFrequencies::getEntry - freqID out of range"));
   }
@@ -129,7 +129,7 @@ void STFrequencies::getEntry( Double& refpix, Double& refval, Double& inc,
 
 void STFrequencies::setEntry( Double refpix, Double refval, Double inc, uInt id )
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFrequencies::getEntry - freqID out of range"));
   }
@@ -146,7 +146,7 @@ void STFrequencies::setEntry( Double refpix, Double refval, Double inc, uInt id 
 
 SpectralCoordinate STFrequencies::getSpectralCoordinate( uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
 
   if (t.nrow() == 0 ) {
     throw(AipsError("STFrequencies::getSpectralCoordinate - ID out of range"));
@@ -308,7 +308,7 @@ std::string STFrequencies::print( int id, Bool strip ) const
   Table t;
   ostringstream oss;
   if ( id < 0 ) t = table_;
-  else  t = table_(table_.col("ID") == Int(id) );
+  else  t = table_(table_.col("ID") == Int(id), 1 );
   ROTableRow row(t);
   for (uInt i=0; i<t.nrow(); ++i) {
     const TableRecord& rec = row.get(i);
@@ -336,7 +336,7 @@ std::string STFrequencies::print( int id, Bool strip ) const
 
 float STFrequencies::getRefFreq( uInt id, uInt channel )
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if ( t.nrow() == 0 ) throw(AipsError("Selected Illegal frequency id"));
   ROTableRow row(t);
   const TableRecord& rec = row.get(0);
@@ -440,7 +440,7 @@ void STFrequencies::setDoppler( const std::string & doppler )
 
 void STFrequencies::shiftRefPix(int npix, uInt id)
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1  );
   if ( t.nrow() == 0 ) throw(AipsError("Selected Illegal frequency id"));
   ScalarColumn<Double> tcol(t, "REFPIX");
   tcol.put(0, tcol(0)+Double(npix));

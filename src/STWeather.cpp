@@ -109,7 +109,7 @@ void STWeather::getEntry( Float& temperature, Float& pressure,
                           Float& humidity, Float& windspeed, Float& windaz,
                           uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STWeather::getEntry - id out of range"));
   }

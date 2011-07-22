@@ -70,7 +70,7 @@ uInt STHistory::addEntry( const String& item)
 
 void asap::STHistory::getEntry( String& item, uInt id)
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STHistory::getEntry - id out of range"));
   }

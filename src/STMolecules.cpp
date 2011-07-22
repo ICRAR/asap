@@ -151,7 +151,7 @@ void STMolecules::getEntry( Double& restfreq, String& name,
 void STMolecules::getEntry( Vector<Double>& restfreq, Vector<String>& name,
                             Vector<String>& formattedname, uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STMolecules::getEntry - id out of range"));
   }
@@ -181,7 +181,7 @@ std::vector< double > asap::STMolecules::getRestFrequencies( ) const
 std::vector< double > asap::STMolecules::getRestFrequency( uInt id ) const
 {
   std::vector<double> out;
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STMolecules::getRestFrequency - id out of range"));
   }

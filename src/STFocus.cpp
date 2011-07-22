@@ -138,7 +138,7 @@ void STFocus::setup( )
                                 Float& xyphase, Float& xyphaseoffset,
                                 uInt id) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFocus::getEntry - id out of range"));
   }
@@ -160,7 +160,7 @@ void STFocus::setup( )
 casa::Float STFocus::getTotalAngle( casa::uInt id ) const
 {
   Float total = 0.0f;
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFocus::getTotalAngle - id out of range"));
   }
@@ -180,7 +180,7 @@ casa::Float STFocus::getTotalAngle( casa::uInt id ) const
 
 casa::Float STFocus::getFeedHand( casa::uInt id ) const
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {
     throw(AipsError("STFocus::getEntry - id out of range"));
   }
