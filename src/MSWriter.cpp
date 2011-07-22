@@ -1092,9 +1092,9 @@ void MSWriter::fillSysCal()
     }
     else {
 //       os_ << "NOT sorted at irow=" << irow << " ids[0]=" << ids[0] << LogIO::POST ;
-      t = stt( stt.col("ID") == ids[0] ) ;
+      t = stt( stt.col("ID") == ids[0], 1 ) ;
       Vector<Float> dummyC = tcalCol( 0 ) ;
-      tcal.resize( npol, dummyC.size() ) ;
+      tcal.resize( npol, dummyC.size(), True ) ;
       tcal.row( 0 ) = dummyC ;
     }
     if ( npol == 2 ) {
@@ -1104,23 +1104,23 @@ void MSWriter::fillSysCal()
       }
       else {
 //         os_ << "NOT sorted at irow=" << irow << " ids[1]=" << ids[1] << LogIO::POST ;
-        t = stt( stt.col("ID") == ids[1] ) ;
+        t = stt( stt.col("ID") == ids[1], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
-        tcal.row( 1 ) = tcalCol( 1 ) ;
+        tcal.row( 1 ) = tcalCol( 0 ) ;
       }
     }
     else if ( npol == 3 ) {
       if ( idCol.asuInt( ids[2] ) == ids[2] )
         tcal.row( 1 ) = tcalCol( ids[2] ) ;
       else {
-        t = stt( stt.col("ID") == ids[2] ) ;
+        t = stt( stt.col("ID") == ids[2], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 1 ) = tcalCol( 0 ) ;
       }
       if ( idCol.asuInt( ids[1] ) == ids[1] )
         tcal.row( 2 ) = tcalCol( ids[1] ) ;
       else {
-        t = stt( stt.col("ID") == ids[1] ) ;
+        t = stt( stt.col("ID") == ids[1], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 2 ) = tcalCol( 0 ) ;
       }
@@ -1129,21 +1129,21 @@ void MSWriter::fillSysCal()
       if ( idCol.asuInt( ids[2] ) == ids[2] )
         tcal.row( 1 ) = tcalCol( ids[2] ) ;
       else {
-        t = stt( stt.col("ID") == ids[2] ) ;
+        t = stt( stt.col("ID") == ids[2], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 1 ) = tcalCol( 0 ) ;
       }
       if ( idCol.asuInt( ids[3] ) == ids[3] )
         tcal.row( 2 ) = tcalCol( ids[3] ) ;
       else {
-        t = stt( stt.col("ID") == ids[3] ) ;
+        t = stt( stt.col("ID") == ids[3], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 2 ) = tcalCol( 0 ) ;
       }
       if ( idCol.asuInt( ids[1] ) == ids[1] )
         tcal.row( 2 ) = tcalCol( ids[1] ) ;
       else {
-        t = stt( stt.col("ID") == ids[1] ) ;
+        t = stt( stt.col("ID") == ids[1], 1 ) ;
         tcalCol.attach( t, "TCAL" ) ;
         tcal.row( 3 ) = tcalCol( 0 ) ;
       }
@@ -1323,7 +1323,7 @@ void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Ve
   Vector<Int> srcIdArr = msSrcIdx.matchSourceName( srcname ) ;
   if ( srcIdArr.size() != 0 ) {
     srcId = srcIdArr[0] ;
-    MSSource msSrcSel = msSrc( msSrc.col("SOURCE_ID") == srcId ) ;
+    MSSource msSrcSel = msSrc( msSrc.col("SOURCE_ID") == srcId, 1 ) ;
     ROMSSourceColumns msSrcCols( msSrcSel ) ;
     Vector<Double> srcDir = msSrcCols.direction()( 0 ) ;
     Matrix<Double> srcDirA( IPosition( 2, 2, 1+numPoly ) ) ;

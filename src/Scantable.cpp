@@ -671,7 +671,7 @@ int Scantable::nchan( int ifno ) const
   } else {
     // take the first SCANNO,POLNO,BEAMNO,CYCLENO as nbeam shouldn't
     // vary with these
-    Table t = table_(table_.col("IFNO") == ifno);
+    Table t = table_(table_.col("IFNO") == ifno, 1);
     if ( t.nrow() == 0 ) return 0;
     ROArrayColumn<Float> v(t, "SPECTRA");
     return v.shape(0)(0);
@@ -1017,7 +1017,7 @@ std::string Scantable::headerSummary()
   Bool firstline = True;
   oss << setw(15) << "Rest Freqs:";
   for (int i=0; i<nid; i++) {
-      Table t = table_(table_.col("MOLECULE_ID") == i);
+    Table t = table_(table_.col("MOLECULE_ID") == i, 1);
       if (t.nrow() >  0) {
           Vector<Double> vec(moleculeTable_.getRestFrequency(i));
           if (vec.nelements() > 0) {
