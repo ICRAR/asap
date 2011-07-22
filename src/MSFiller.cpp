@@ -1624,8 +1624,8 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
   if ( isFloatData_ ) {
     ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
     ROArrayColumn<Float> mFloatDataCol( tab, "FLOAT_DATA" ) ;
-    sp = mFloatDataCol.getColumn() ;
-    fl = mFlagCol.getColumn() ;
+    mFloatDataCol.getColumn( sp ) ;
+    mFlagCol.getColumn( fl ) ;
   }
   else if ( isData_ ) {
     sp.resize( npol, nchan, nrow ) ;
@@ -1633,11 +1633,6 @@ void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
     ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
     ROArrayColumn<Complex> mDataCol( tab, "DATA" ) ;
     if ( npol < 3 ) {
-//       Cube<Complex> tmp = mDataCol.getColumn() ;
-//       Float *sp_p = sp.data() ;
-//       Complex *tmp_p = tmp.data() ;
-//       for ( uInt i = 0 ; i < sp.nelements() ; i++ )
-//         sp_p[i] = tmp_p[i].real() ;
       Cube<Float> tmp = ComplexToReal( mDataCol.getColumn() ) ;
       IPosition start( 3, 0, 0, 0 ) ;
       IPosition end( 3, 2*npol-1, nchan-1, nrow-1 ) ;
