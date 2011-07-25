@@ -259,11 +259,19 @@ void MSFiller::fill()
   Vector< Quantum<Double> > antpos = (*sharedQDArrCol)( antenna_ ) ;
   delete sharedQDArrCol ;
   MPosition mp( MVPosition( antpos ), MPosition::ITRF ) ;
+  Vector<Double> pt ;
+  ROArrayColumn<Double> pdcol ;
+  Vector<Double> defaultScanrate( 2, 0.0 ) ;
   if ( getPt_ ) {
     pointtab = MSPointing( pointtab( pointtab.col("ANTENNA_ID")==antenna_ ).sort("TIME") ) ;
+    ROScalarColumn<Double> ptcol( pointtab, "TIME" ) ;
+    ptcol.getColumn( pt ) ;
+    TableRecord trec = ptcol.keywordSet() ;
+    String tUnit = trec.asArrayString( "QuantumUnits" ).data()[0] ;
+    if ( tUnit == "d" )
+      pt *= 86400.0 ;
+    pdcol.attach( pointtab, "DIRECTION" ) ; 
   }
-  ROScalarColumn<Double> ptcol( pointtab, "TIME" ) ;
-  ROArrayColumn<Double> pdcol( pointtab, "DIRECTION" ) ; 
   String stationName = asString( "STATION", antenna_, anttab, tpoolr ) ;
   String antennaName = asString( "NAME", antenna_, anttab, tpoolr ) ;
   sdh.antennaposition.resize( 3 ) ;
@@ -496,9 +504,8 @@ void MSFiller::fill()
             scTime.resize( caltabsel.nrow() ) ;
             for ( uInt irow = 0 ; irow < caltabsel.nrow() ; irow++ ) 
               scTime[irow] = scTimeCol( irow ) ;
-            ROScalarColumn<Double> *scIntervalCol = new ROScalarColumn<Double>( caltabsel, "INTERVAL" ) ;
-            scInterval = scIntervalCol->getColumn() ;
-            delete scIntervalCol ;
+            ROScalarColumn<Double> scIntervalCol( caltabsel, "INTERVAL" ) ;
+            scIntervalCol.getColumn( scInterval ) ;
             if ( colTsys_ != "NONE" )
               scTsysCol.attach( caltabsel, colTsys_ ) ;
           }
@@ -565,8 +572,6 @@ void MSFiller::fill()
               Block<MEpoch> mTimeB( nrow ) ;
               for ( Int irow = 0 ; irow < nrow ; irow++ ) 
                 mTimeB[irow] = (*mTimeCol)( irow ) ;
-//               ROTableColumn *mIntervalCol = tpoolr->construct( t5, "INTERVAL" ) ;
-//               ROTableColumn *mFlagRowCol = tpoolr->construct( t5, "FLAG_ROW" ) ;
               Block<Int> sysCalIdx( nrow, -1 ) ;
               if ( isSysCal_ ) {
                 getSysCalTime( scTime, scInterval, mTimeB, sysCalIdx ) ;
@@ -605,7 +610,6 @@ void MSFiller::fill()
                 *cycleRF = cycle ;
 
                 // FLAGROW
-//                 *flrRF = (uInt)mFlagRowCol->asBool( irow ) ;
                 *flrRF = (uInt)asBool( "FLAG_ROW", irow, t5, tpoolr ) ;
 
                 // SPECTRA, FLAG
@@ -618,7 +622,6 @@ void MSFiller::fill()
                 *timeRF = mTimeB[irow].get("d").getValue() ;
 
                 // INTERVAL
-//                 *intervalRF = (Double)(mIntervalCol->asdouble( irow )) ;
                 *intervalRF = asDouble( "INTERVAL", irow, t5, tpoolr ) ;
 
                 // TSYS
@@ -647,11 +650,10 @@ void MSFiller::fill()
                 // DIRECTION, AZEL, SCANRATE
                 Vector<Double> dir ;
                 Vector<Double> azel ;
-                Vector<Double> scanrate ;
+                Vector<Double> scanrate = defaultScanrate ;
                 String refString ;
                 if ( getPt_ )
-                  //diridx = getDirection( diridx, dir, azel, scanrate, pointtab, mTimeB[irow], mp ) ;
-                  diridx = getDirection( diridx, dir, azel, scanrate, ptcol, pdcol, mTimeB[irow], mp ) ;
+                  diridx = getDirection( diridx, dir, azel, scanrate, pt, pdcol, mTimeB[irow], mp ) ;
                 else
                   getSourceDirection( dir, azel, scanrate, mTimeB[irow], mp, delayDir ) ;
                 *dirRF = dir ;
@@ -1403,7 +1405,7 @@ uInt MSFiller::getDirection( uInt idx,
                              Vector<Double> &dir, 
                              Vector<Double> &srate, 
                              String &ref, 
-                             ROScalarColumn<Double> &tcol, 
+                             Vector<Double> &tcol, 
                              ROArrayColumn<Double> &dcol, 
                              Double t ) 
 {
@@ -1413,15 +1415,10 @@ uInt MSFiller::getDirection( uInt idx,
   //os_ << "start getDirection 1st stage startSec=" << time0 << LogIO::POST ;
   // assume that cols is sorted by TIME
   Bool doInterp = False ;
-  uInt nrow = tcol.nrow() ;
+  //uInt nrow = tcol.nrow() ;
+  uInt nrow = dcol.nrow() ;
   if ( nrow == 0 ) 
     return 0 ;
-  TableRecord trec = tcol.keywordSet() ;
-  String tUnit = trec.asArrayString( "QuantumUnits" ).data()[0] ;
-  Double factor = 1.0 ;
-  if ( tUnit == "d" )
-    factor = 86400.0 ;
-  // binary search if idx == 0
   if ( idx == 0 ) {
     uInt nrowb = 1000 ;
     if ( nrow > nrowb ) {
@@ -1429,15 +1426,13 @@ uInt MSFiller::getDirection( uInt idx,
       for ( uInt iblock = 0 ; iblock < nblock ; iblock++ ) {
         uInt high = min( nrowb, nrow-iblock*nrowb ) ;
 
-        if ( tcol( high-1 ) * factor < t ) {
+        if ( tcol( high-1 ) < t ) {
           idx = iblock * nrowb ;
           continue ;
         }
 
-        RefRows refrows( iblock*nrowb, iblock*nrowb+high, 1 ) ;
-        Vector<Double> tarr = tcol.getColumnCells( refrows ) ;
-        if ( tUnit == "d" )
-          tarr *= factor ;
+        Slice slice( iblock*nrowb, nrowb ) ;
+        Vector<Double> tarr = tcol( slice ) ;
 
         uInt bidx = binarySearch( tarr, t ) ;
 
@@ -1446,10 +1441,7 @@ uInt MSFiller::getDirection( uInt idx,
       }
     }
     else {
-      Vector<Double> tarr = tcol.getColumn() ;
-      if ( tUnit == "d" )
-        tarr *= factor ;
-      idx = binarySearch( tarr, t ) ;
+      idx = binarySearch( tcol, t ) ;
     }
   }
   //double time1 = gettimeofday_sec() ;
@@ -1458,14 +1450,14 @@ uInt MSFiller::getDirection( uInt idx,
   //os_ << "tcol(idx) = " << tcol(idx).get("s").getValue() << " t = " << t << " diff = " << tcol(idx).get("s").getValue()-t << endl ;
   //time0 = gettimeofday_sec() ;
   //os_ << "start getDirection 2nd stage startSec=" << time0 << LogIO::POST ;
-  while( tcol( idx ) * factor > t && idx > 0 )
+  //while( tcol( idx ) * factor > t && idx > 0 )
+  while( tcol[idx] > t && idx > 0 )
     idx-- ;
   //os_ << "idx = " << idx << LogIO::POST ;
 
   // index search
   for ( uInt i = idx ; i < nrow ; i++ ) {
-    //Double tref = tcol( i ).get( "s" ).getValue() ;
-    Double tref = tcol( i ) * factor ;
+    Double tref = tcol[i] ;
     if ( tref == t ) {
       idx = i ;
       break ;
@@ -1495,17 +1487,15 @@ uInt MSFiller::getDirection( uInt idx,
   IPosition ip( dcol(idx).shape().nelements(), 0 ) ;
   //os_ << "ip = " << ip << LogIO::POST ;
   //ref = dmcol(idx)(ip).getRefString() ;
-  trec = dcol.keywordSet() ;
+  TableRecord trec = dcol.keywordSet() ;
   Record rec = trec.asRecord( "MEASINFO" ) ;
   ref = rec.asString( "Ref" ) ;
   //os_ << "ref = " << ref << LogIO::POST ;
   if ( doInterp ) {
     //os_ << "do interpolation" << LogIO::POST ;
     //os_ << "dcol(idx).shape() = " << dcol(idx).shape() << LogIO::POST ;
-//     Double tref0 = tcol(idx).get("s").getValue() ;
-//     Double tref1 = tcol(idx+1).get("s").getValue() ;
-    Double tref0 = tcol(idx) * factor ;
-    Double tref1 = tcol(idx+1) * factor ;
+    Double tref0 = tcol[idx] ;
+    Double tref1 = tcol[idx+1] ;
     Matrix<Double> mdir0 = dcol( idx ) ;
     Matrix<Double> mdir1 = dcol( idx+1 ) ;
     Vector<Double> dir0 = mdir0.column( 0 ) ;
@@ -1686,7 +1676,7 @@ uInt MSFiller::getDirection( uInt idx,
                              Vector<Double> &dir,
                              Vector<Double> &azel,
                              Vector<Double> &srate,
-                             ROScalarColumn<Double> &ptcol,
+                             Vector<Double> &ptcol,
                              ROArrayColumn<Double> &pdcol,
                              MEpoch &t,
                              MPosition &antpos )
@@ -1731,10 +1721,9 @@ void MSFiller::getSourceDirection( Vector<Double> &dir,
 {
   //double startSec = gettimeofday_sec() ;
   //os_ << "start MSFiller::getSourceDirection() startSec=" << startSec << LogIO::POST ; 
-  Vector<Double> defaultScanrate( 2, 0.0 ) ;
   Vector<Double> defaultDir = srcdir[0].getAngle( "rad" ).getValue() ;
   if ( srcdir.nelements() > 1 ) 
-    defaultScanrate = srcdir[1].getAngle( "rad" ).getValue() ;
+    srate = srcdir[1].getAngle( "rad" ).getValue() ;
   String ref = srcdir[0].getRefString() ;
   MDirection::Types dirType ;
   MDirection::getType( dirType, ref ) ;
@@ -1745,13 +1734,8 @@ void MSFiller::getSourceDirection( Vector<Double> &dir,
   }
   else 
     dir = defaultDir ;
-  if ( ref != "AZELGEO" ) {
-    MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZELGEO, mf ) ) ;
-    azel = toazel( defaultDir ).getAngle("rad").getValue() ;
-  }
-  else 
-    azel = defaultDir ;
-  srate = defaultScanrate ;
+  MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZELGEO, mf ) ) ;
+  azel = toazel( defaultDir ).getAngle("rad").getValue() ;
   //double endSec = gettimeofday_sec() ;
   //os_ << "end MSFiller::getSourceDirection() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }

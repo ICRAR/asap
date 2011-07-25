@@ -30,8 +30,6 @@
 #include <casa/Containers/Record.h>
 #include <casa/Containers/Block.h>
 
-//#include <tables/Tables/TableColumn.h>
-
 #include <ms/MeasurementSets/MeasurementSet.h>
 #include <ms/MeasurementSets/MSPointing.h>
 
@@ -93,14 +91,14 @@ private:
                            casa::Vector<casa::Double> &dir, 
                            casa::Vector<casa::Double> &srate, 
                            casa::String &ref, 
-                           casa::ROScalarColumn<casa::Double> &ptcol, 
+                           casa::Vector<casa::Double> &ptcol, 
                            casa::ROArrayColumn<casa::Double> &pdcol, 
                            casa::Double t ) ;
   casa::uInt getDirection( casa::uInt idx, 
                            casa::Vector<casa::Double> &dir, 
                            casa::Vector<casa::Double> &azel, 
                            casa::Vector<casa::Double> &srate, 
-                           casa::ROScalarColumn<casa::Double> &ptcol, 
+                           casa::Vector<casa::Double> &ptcol, 
                            casa::ROArrayColumn<casa::Double> &pdcol,
                            casa::MEpoch &t, casa::MPosition &antpos ) ;
   void getSourceDirection( casa::Vector<casa::Double> &dir, 
