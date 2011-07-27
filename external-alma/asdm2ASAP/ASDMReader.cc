@@ -926,6 +926,45 @@ int ASDMReader::getSrcType( unsigned int scan,
       }
     }
   }
+  else if ( scanIntent == CALIBRATE_ATMOSPHERE ) {
+    if ( swmode == NO_SWITCHING || swmode == POSITION_SWITCHING ) {
+      // position switching
+      // tentatively set NO_SWITCHING = POSITION_SWITCHING
+      if ( subIntent == ON_SOURCE ) {
+        srctype = SrcType::PONCAL ;
+      }
+      else if ( subIntent == OFF_SOURCE ) {
+        srctype = SrcType::POFFCAL ;
+      }
+    }
+    else if ( swmode == FREQUENCY_SWITCHING ) {
+      // frequency switching
+      if ( subIntent == ON_SOURCE ) {
+        srctype = SrcType::FONCAL ;
+      }
+      else if ( subIntent == OFF_SOURCE ) {
+        srctype = SrcType::FOFFCAL ;
+      }
+    }
+    else if ( swmode == NUTATOR_SWITCHING ) {
+      // nutator switching
+      if ( subIntent == ON_SOURCE ) {
+        srctype = SrcType::PONCAL ;
+      }
+      else if ( subIntent == OFF_SOURCE ) {
+        srctype = SrcType::POFFCAL ;
+      }
+    }
+    else {
+      // other switching mode
+      if ( subIntent == ON_SOURCE ) {
+        srctype = SrcType::CAL ;
+      }
+      else if ( subIntent == OFF_SOURCE ) {
+        srctype = SrcType::CAL ;
+      }
+    }
+  }
   else {
     // off sky (e.g. calibrator device) scan
     if ( subIntent == ON_SOURCE ) {
