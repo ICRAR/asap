@@ -43,7 +43,7 @@ int main( int argc, char *argv[] )
   inp.create( "asap", "", "Scantable name", "String" ) ;
   inp.create( "apc", "both", "Retrieve Atm Phase Corrected data or not: both|yes|no", "String" ) ;
   inp.create( "overwrite", "True", "Overwrite existing Scantable or not: True|False", "Bool" ) ;
-  inp.create( "corr-mode", "ca+ao", "Input correlator mode: ca+ao|ca|ao", "String" ) ;
+  inp.create( "corr-mode", "ca,ao", "Input correlator mode: ca+ao|ca|ao", "String" ) ;
   inp.create( "ocorr-mode", "ao", "Output correlator mode: ao", "String" ) ;
   inp.create( "time-sampling", "all", "time sampling mode: all|integration|subintegration", "String" ) ;
   inp.create( "srt", "all", "spectral resolution mode: all|fr(full resolution)|ca(channel average)|bw(baseband wide)|fr+ca|fr+bw|ca+bw", "String" ) ;

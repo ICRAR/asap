@@ -135,7 +135,7 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
     }
     
     // input correlation mode
-    string corrMode = "ao+ca" ;
+    string corrMode = "ao,ca" ;
     if ( asdmrec.isDefined( "corr" ) ) {
       corrMode = string( asdmrec.asString( "corr" ) ) ;
       //logsink_->postLocally( LogMessage("corrMode = "+String(corrMode),LogOrigin(className_,funcName,WHERE)) ) ;
