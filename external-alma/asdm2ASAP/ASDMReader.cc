@@ -1115,7 +1115,7 @@ vector< vector<float> > ASDMReader::getTsys( unsigned int idx )
   if ( sctab.size() == 0 ) 
     return defaultTsys ;
   SysCalRow *scrow = sctab.getRowByKey( anttag, spwtag, tint, feedid ) ;
-  if ( scrow->isTsysSpectrumExists() ) {
+  if ( scrow != 0 && scrow->isTsysSpectrumExists() ) {
     vector< vector<Temperature> > tsysSpec = scrow->getTsysSpectrum() ;
     unsigned int numReceptor = tsysSpec.size() ;
     unsigned int numChan = tsysSpec[0].size() ;
@@ -1156,7 +1156,7 @@ vector< vector<float> > ASDMReader::getTcal( unsigned int idx )
   if ( sctab.size() == 0 ) 
     return defaultTcal ;
   SysCalRow *scrow = sctab.getRowByKey( anttag, spwtag, tint, feedid ) ;
-  if ( scrow->isTcalSpectrumExists() ) {
+  if ( scrow != 0 && scrow->isTcalSpectrumExists() ) {
     vector< vector<Temperature> > tcalSpec = scrow->getTcalSpectrum() ;
     unsigned int numReceptor = tcalSpec.size() ;
     unsigned int numChan = tcalSpec[0].size() ;
