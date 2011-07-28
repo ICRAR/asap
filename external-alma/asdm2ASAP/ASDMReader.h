@@ -548,6 +548,14 @@ private:
    **/
   asdm::SysCalRow *getSysCalRow( unsigned int idx ) ;
 
+  /**
+   * limit angule in radian within [-pi,pi]
+   *
+   * @param any angule in radian
+   * @return equivalent angle that satisfies [-pi,pi]
+   **/
+  double limitedAngle( double angle ) ;
+
   asdm::ASDM *asdm_ ; // pointer to ASDM object
   sdmbin::SDMBinData *sdmBin_ ; // pointer to ASDM binary data
   /**

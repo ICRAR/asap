@@ -8,6 +8,7 @@
 #include <measures/Measures/MeasFrame.h>
 #include <measures/Measures/MeasConvert.h>
 #include <casa/Logging/LogMessage.h>
+#include <casa/BasicSL/Constants.h>
 
 #include "ASDMReader.h"
 #include <atnf/PKSIO/SrcType.h>
@@ -1010,14 +1011,25 @@ vector<double> ASDMReader::getSourceDirection( unsigned int idx )
     int sid = frow->getSourceId() ;
     SourceRow *srow = asdm_->getSource().getRowByKey( sid, tint, spwtag ) ;
     vector<Angle> srcdir = srow->getDirection() ;
+    dir[0] = limitedAngle( srcdir[0].get() ) ;
+    dir[1] = limitedAngle( srcdir[1].get() ) ;
     if ( srow->isDirectionCodeExists() ) {
       DirectionReferenceCode dircode = srow->getDirectionCode() ;
+      //logsink_->postLocally( LogMessage("dircode="+CDirectionReferenceCode::toString(dircode),LogOrigin(className_,funcName,WHERE)) ) ;
       if ( dircode != J2000 ) {
         // if not J2000, need direction conversion
+        string ref = CDirectionReferenceCode::toString( dircode ) ;
+        double mjd = vmsData_->v_time[index] * s2d ;
+        Tag atag( antennaId_, TagType::Antenna ) ;
+        AntennaRow *arow = asdm_->getAntenna().getRowByKey( atag ) ;
+        StationRow *srow = arow->getStationUsingStationId() ;
+        vector<Length> antposL = srow->getPosition() ;
+        casa::Vector<casa::Double> antpos( 3 ) ;
+        for ( int i = 0 ; i < 3 ; i++ )
+          antpos[i] = antposL[i].get() ;
+        dir = toJ2000( dir, ref, mjd, antpos ) ;
       }
     }
-    dir[0] = srcdir[0].get() ;
-    dir[1] = srcdir[1].get() ;
   }
   return dir ;
 }
@@ -1047,8 +1059,8 @@ void ASDMReader::getSourceDirection( unsigned int idx,
     if ( srow->isDirectionCodeExists() ) {
       ref = CDirectionReferenceCode::toString( srow->getDirectionCode() ) ;
     }
-    dir[0] = srcdir[0].get() ;
-    dir[1] = srcdir[1].get() ;
+    dir[0] = limitedAngle( srcdir[0].get() ) ;
+    dir[1] = limitedAngle( srcdir[1].get() ) ;
   }
 }
 
@@ -1738,28 +1750,6 @@ void ASDMReader::toJ2000( vector<double> &dir,
 {
   String funcName = "toJ2000" ;
 
-//   casa::Vector<casa::Double> azel( 2 ) ;
-//   azel[0] = az ;
-//   azel[1] = el ;
-//   casa::MEpoch me( casa::Quantity( (casa::Double)mjd, "d" ), casa::MEpoch::UTC ) ;
-//   casa::Vector<casa::Quantity> qantpos( 3 ) ;
-//   qantpos[0] = casa::Quantity( antpos[0], "m" ) ;
-//   qantpos[1] = casa::Quantity( antpos[1], "m" ) ;
-//   qantpos[2] = casa::Quantity( antpos[2], "m" ) ;
-//   casa::MPosition mp( casa::MVPosition( qantpos ),
-//                       casa::MPosition::ITRF ) ;
-//   //ostringstream oss ;
-//   //mp.print( oss ) ;
-//   //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
-
-//   casa::MeasFrame mf( me, mp ) ;
-//   casa::MDirection::Convert toj2000( casa::MDirection::AZELGEO, 
-//                                      casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
-//   casa::Vector<casa::Double> cdir = toj2000( azel ).getAngle( "rad" ).getValue() ; 
-//   //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
-//   dir.resize(2) ;
-//   dir[0] = (double)(cdir[0]) ;
-//   dir[1] = (double)(cdir[1]) ;
   vector<double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
@@ -1922,4 +1912,13 @@ SysCalRow *ASDMReader::getSysCalRow( unsigned int idx )
     row = (*rows)[scindex] ;
   }
   return row ;
+}
+
+double ASDMReader::limitedAngle( double angle )
+{
+  if ( angle > C::pi )
+    while ( angle > C::pi ) angle -= C::_2pi ;
+  else if ( angle < -C::pi )
+    while ( angle < -C::pi ) angle += C::_2pi ;
+  return angle ;
 }
