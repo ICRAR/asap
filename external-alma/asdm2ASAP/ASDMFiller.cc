@@ -174,10 +174,10 @@ void ASDMFiller::fill()
           string srcname = reader_->getSourceName( idata ) ;
           string fieldname = reader_->getFieldName( idata ) ;
           int srctype = reader_->getSrcType( scanno, subscanno ) ;
-          //vector<double> srcDirection = reader_->getSourceDirection( idata ) ;
-          vector<double> srcDirection ;
-          string srcDirRef ;
-          reader_->getSourceDirection( idata, srcDirection, srcDirRef ) ;
+          vector<double> srcDirection = reader_->getSourceDirection( idata ) ;
+          //vector<double> srcDirection ;
+          //string srcDirRef ;
+          //reader_->getSourceDirection( idata, srcDirection, srcDirRef ) ;
           vector<double> srcProperMotion = reader_->getSourceProperMotion( idata ) ;
           double sysVel = reader_->getSysVel( idata ) ;
           
