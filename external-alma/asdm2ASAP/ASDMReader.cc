@@ -1140,20 +1140,8 @@ float * ASDMReader::getSpectrum( unsigned int idx )
 
 vector< vector<float> > ASDMReader::getTsys( unsigned int idx ) 
 {
-  unsigned int index = dataIdList_[idx] ;
-  Tag anttag( antennaId_, TagType::Antenna ) ;
-  int feedid = vmsData_->v_feedId1[index] ;
-  //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
-  double startSec = vmsData_->v_time[index] - 0.5 * vmsData_->v_interval[index] ;
-  ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
-  Tag ddtag( vmsData_->v_dataDescId[index], TagType::DataDescription ) ;
-  Tag spwtag = asdm_->getDataDescription().getRowByKey(ddtag)->getSpectralWindowId() ;
-  //int nchan = asdm_->getSpectralWindow().getRowByKey(spwtag)->getNumChan() ;
   vector< vector<float> > defaultTsys( 1, vector<float>( 1, 1.0 ) ) ;
-  SysCalTable &sctab = asdm_->getSysCal() ;
-  if ( sctab.size() == 0 ) 
-    return defaultTsys ;
-  SysCalRow *scrow = sctab.getRowByKey( anttag, spwtag, tint, feedid ) ;
+  SysCalRow *scrow = getSysCalRow( idx ) ;
   if ( scrow != 0 && scrow->isTsysSpectrumExists() ) {
     vector< vector<Temperature> > tsysSpec = scrow->getTsysSpectrum() ;
     unsigned int numReceptor = tsysSpec.size() ;
@@ -1181,20 +1169,8 @@ vector< vector<float> > ASDMReader::getTsys( unsigned int idx )
 
 vector< vector<float> > ASDMReader::getTcal( unsigned int idx ) 
 {
-  unsigned int index = dataIdList_[idx] ;
-  Tag anttag( antennaId_, TagType::Antenna ) ;
-  int feedid = vmsData_->v_feedId1[index] ;
-  //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
-  double startSec = vmsData_->v_time[index] - 0.5 * vmsData_->v_interval[index] ;
-  ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
-  Tag ddtag( vmsData_->v_dataDescId[index], TagType::DataDescription ) ;
-  Tag spwtag = asdm_->getDataDescription().getRowByKey(ddtag)->getSpectralWindowId() ;
-  //int nchan = asdm_->getSpectralWindow().getRowByKey(spwtag)->getNumChan() ;
   vector< vector<float> > defaultTcal( 1, vector<float>( 1, 1.0 ) ) ;
-  SysCalTable &sctab = asdm_->getSysCal() ;
-  if ( sctab.size() == 0 ) 
-    return defaultTcal ;
-  SysCalRow *scrow = sctab.getRowByKey( anttag, spwtag, tint, feedid ) ;
+  SysCalRow *scrow = getSysCalRow( idx ) ;
   if ( scrow != 0 && scrow->isTcalSpectrumExists() ) {
     vector< vector<Temperature> > tcalSpec = scrow->getTcalSpectrum() ;
     unsigned int numReceptor = tcalSpec.size() ;
@@ -1219,6 +1195,52 @@ vector< vector<float> > ASDMReader::getTcal( unsigned int idx )
     return defaultTcal ;
   }
 } 
+
+void ASDMReader::getTcalAndTsys( unsigned int idx,
+                                 vector< vector<float> > &tcal,
+                                 vector< vector<float> > &tsys ) 
+{
+  String funcName = "getTcalAndTsys" ;
+
+  vector< vector<float> > defaultT( 1, vector<float>( 1, 1.0 ) ) ;
+  SysCalRow *scrow = getSysCalRow( idx ) ;
+  if ( scrow == 0 ) {
+    tcal = defaultT ;
+    tsys = defaultT ;
+  }
+  else {
+    if ( scrow->isTsysSpectrumExists() ) {
+      vector< vector<Temperature> > tsysSpec = scrow->getTsysSpectrum() ;
+      unsigned int numReceptor = tsysSpec.size() ;
+      unsigned int numChan = tsysSpec[0].size() ;
+      tsys.resize( numReceptor ) ;
+      for ( unsigned int ir = 0 ; ir < numReceptor ; ir++ ) {
+        tsys[ir].resize( numChan ) ;
+        for ( unsigned int ic = 0 ; ic < numChan ; ic++ ) {
+          tsys[ir][ic] = tsysSpec[ir][ic].get() ;
+        }
+      }
+    }
+    else {
+      tsys = defaultT ;
+    }
+    if ( scrow->isTcalSpectrumExists() ) {
+      vector< vector<Temperature> > tcalSpec = scrow->getTcalSpectrum() ;
+      unsigned int numReceptor = tcalSpec.size() ;
+      unsigned int numChan = tcalSpec[0].size() ;
+      tcal.resize( numReceptor ) ;
+      for ( unsigned int ir = 0 ; ir < numReceptor ; ir++ ) {
+        tcal[ir].resize( numReceptor ) ;
+        for ( unsigned int ic = 0 ; ic < numChan ; ic++ ) {
+          tcal[ir][ic] = tcalSpec[ir][ic].get() ;
+        }
+      }
+    }
+    else {
+      tcal = defaultT ;
+    }
+  }
+}
 
 vector<float> ASDMReader::getOpacity( unsigned int idx ) 
 {
@@ -1850,4 +1872,54 @@ int ASDMReader::getNumIFs()
   //logsink_->postLocally( LogMessage("nif = "+String::toString(nif),LogOrigin(className_,funcName,WHERE)) ) ;
 
   return nif ;
+}
+
+SysCalRow *ASDMReader::getSysCalRow( unsigned int idx )
+{
+  String funcName = "getSysCalRow" ;
+
+  SysCalRow *row = 0 ;
+  unsigned int index = dataIdList_[idx] ;
+  Tag anttag( antennaId_, TagType::Antenna ) ;
+  int feedid = vmsData_->v_feedId1[index] ;
+  //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
+  double startSec = vmsData_->v_time[index] - 0.5 * vmsData_->v_interval[index] ;
+  ArrayTimeInterval tint( startSec*s2d, vmsData_->v_interval[index]*s2d ) ;
+  Tag ddtag( vmsData_->v_dataDescId[index], TagType::DataDescription ) ;
+  Tag spwtag = asdm_->getDataDescription().getRowByKey(ddtag)->getSpectralWindowId() ;
+  //int nchan = asdm_->getSpectralWindow().getRowByKey(spwtag)->getNumChan() ;
+  vector< vector<float> > defaultTsys( 1, vector<float>( 1, 1.0 ) ) ;
+  SysCalTable &sctab = asdm_->getSysCal() ;
+  //vector<SysCalRow *> rows = sctab.get() ;
+  vector<SysCalRow *> *rows = sctab.getByContext( anttag, spwtag, feedid ) ;
+  //if ( nrow == 0 ) {
+  if ( rows == 0 ) {
+    //logsink_->postLocally( LogMessage("no rows in SysCal table",LogOrigin(className_,funcName,WHERE)) ) ;
+    row = 0 ;
+  }
+  else {
+    unsigned int nrow = rows->size() ;
+    //logsink_->postLocally( LogMessage("nrow = "+String::toString(nrow),LogOrigin(className_,funcName,WHERE)) ) ;
+    int scindex = -1 ;
+    if ( nrow == 1 ) {
+      scindex = 0 ;
+    }
+    else if ( getEndTime( tint ) <= getStartTime( (*rows)[0]->getTimeInterval() ) )
+      scindex = 0 ;
+    else {
+      for ( unsigned int irow = 0 ; irow < nrow-1 ; irow++ ) {
+        ArrayTime t = getMidTime( tint ) ;
+        if ( t > getStartTime( (*rows)[irow]->getTimeInterval() )
+             && t <= getStartTime( (*rows)[irow+1]->getTimeInterval() ) ) {
+          scindex = irow ;
+          break ;
+        }
+      }
+      if ( scindex == -1 )
+        scindex = nrow-1 ;
+    }
+    //logsink_->postLocally( LogMessage("irow = "+String::toString(scindex),LogOrigin(className_,funcName,WHERE)) ) ;
+    row = (*rows)[scindex] ;
+  }
+  return row ;
 }

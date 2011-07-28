@@ -315,6 +315,17 @@ public:
    * @return Tcal
    **/
   std::vector< std::vector<float> > getTcal( unsigned int idx ) ;
+
+  /**
+   * get Tcal and Tsys for given index
+   *
+   * @param idx for vmsData_
+   * @param tcal Tcal
+   * @param tsys Tsys
+   **/
+  void getTcalAndTsys( unsigned int idx, 
+                       std::vector< std::vector<float> > &tcal,
+                       std::vector< std::vector<float> > &tsys ) ;
   
   /**
    * get opacity for given index
@@ -528,6 +539,14 @@ private:
    * @return number of IFs
    **/
   int getNumIFs() ;
+
+  /**
+   * get appropriate row from SysCal table
+   *
+   * @param idx for vmsData_
+   * @return pointer to SysCalRow object (0 when no appropriate row)
+   **/
+  asdm::SysCalRow *getSysCalRow( unsigned int idx ) ;
 
   asdm::ASDM *asdm_ ; // pointer to ASDM object
   sdmbin::SDMBinData *sdmBin_ ; // pointer to ASDM binary data
