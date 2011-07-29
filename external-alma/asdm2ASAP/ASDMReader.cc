@@ -1440,6 +1440,10 @@ void ASDMReader::getPointingInfo( unsigned int idx,
   Tag atag( antennaId_, TagType::Antenna ) ;
   unsigned int index = dataIdList_[idx] ;
   vector<PointingRow *> *prows = asdm_->getPointing().getByContext( atag ) ;
+
+  if ( prows == 0 )
+    return ;
+
   PointingRow *prow ;
   PointingRow *qrow ;
   //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
@@ -1458,15 +1462,13 @@ void ASDMReader::getPointingInfo( unsigned int idx,
 //     logsink_->postLocally( LogMessage("end: "+pet.toFITS(),LogOrigin(className_,funcName,WHERE)) ) ;
 //   }
   
-  if ( nrow == 0 )
-    return ;
-
   srate.resize(2) ;
   srate[0] = 0.0 ;
   srate[1] = 0.0 ;
   az = 0.0 ;
   el = 0.0 ;
-  double tcen = 0.0 ;
+  //double tcen = 0.0 ;
+  double tcen = getMidTime( tint ).getMJD() ;
 
   // 
   // shape of pointingDirection is (numSample,2) if usePolynomial = False, while it is 
@@ -1482,52 +1484,40 @@ void ASDMReader::getPointingInfo( unsigned int idx,
   //
   ArrayTimeInterval pTime0 = (*prows)[0]->getTimeInterval() ;
   ArrayTimeInterval pTime1 = (*prows)[nrow-1]->getTimeInterval() ;
-  if ( tint.getStartInMJD()+tint.getDurationInDays() < pTime0.getStartInMJD() ) {
+  //if ( tint.getStartInMJD()+tint.getDurationInDays() < pTime0.getStartInMJD() ) {
+  if ( getEndTime( tint ) < getStartTime( pTime0 ) ) {
     logsink_->postLocally( LogMessage( "ArrayTimeInterval out of bounds: no data for given position (tint < ptime)", LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
     prow = (*prows)[0] ;
-    //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
-    vector< vector<Angle> > dirA = prow->getTarget() ;
-    vector< vector<Angle> > offA = prow->getOffset() ;
-    //az = dirA[0][0].get() ;
-    //el = dirA[0][1].get() ;
-    az = dirA[0][0].get() + offA[0][0].get() ;
-    el = dirA[0][1].get() + offA[0][1].get() ;
+    vector< vector<double> > dirA = pointingDir( prow ) ;
+    az = dirA[0][0] ;
+    el = dirA[0][1] ;
     if ( prow->getUsePolynomials() && prow->getNumTerm() > 1 ) {
-      //srate[0] = dirA[1][0].get() ;
-      //srate[1] = dirA[1][1].get() ;
-      srate[0] = dirA[1][0].get() + offA[1][0].get() ;
-      srate[1] = dirA[1][1].get() + offA[1][1].get() ;
+      srate[0] = dirA[1][0] ;
+      srate[1] = dirA[1][1] ;
     }      
   }
-  else if ( tint.getStartInMJD() > pTime1.getStartInMJD()+pTime1.getDurationInDays() ) {
+  //else if ( tint.getStartInMJD() > pTime1.getStartInMJD()+pTime1.getDurationInDays() ) {
+  else if ( getStartTime( tint ) > getEndTime( pTime1 ) ) {
     logsink_->postLocally( LogMessage( "ArrayTimeInterval out of bounds: no data for given position (tint > ptime)", LogOrigin(className_,funcName,WHERE), LogMessage::WARN ) ) ;
     prow = (*prows)[nrow-1] ;
     int numSample = prow->getNumSample() ;
-    //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
-    vector< vector<Angle> > dirA = prow->getTarget() ;
-    vector< vector<Angle> > offA = prow->getOffset() ;
+    vector< vector<double> > dirA = pointingDir( prow ) ;
     if ( prow->getUsePolynomials() ) {
-      //az = dirA[0][0].get() ;
-      //el = dirA[0][1].get() ; 
-      az = dirA[0][0].get() + offA[0][0].get() ;
-      el = dirA[0][1].get() + offA[0][1].get() ; 
+      az = dirA[0][0] ;
+      el = dirA[0][1] ; 
       if ( prow->getNumTerm() > 1 ) {
-        //srate[0] = dirA[1][0].get() ;
-        //srate[1] = dirA[1][1].get() ;
-        srate[0] = dirA[1][0].get() + offA[1][0].get() ;
-        srate[1] = dirA[1][1].get() + offA[1][0].get() ;
+        srate[0] = dirA[1][0] ;
+        srate[1] = dirA[1][1] ;
       }
     }
     else {
-      //az = dirA[numSample-1][0].get() ;
-      //el = dirA[numSample-1][1].get() ;
-      az = dirA[numSample-1][0].get() + offA[numSample-1][0].get() ;
-      el = dirA[numSample-1][1].get() + offA[numSample-1][1].get() ;
+      az = dirA[numSample-1][0] ;
+      el = dirA[numSample-1][1] ;
     }
   }
   else {
     ArrayTime startTime = tint.getStart() ;
-    ArrayTime endTime( tint.getStartInMJD()+tint.getDurationInDays() ) ;
+    ArrayTime endTime = getEndTime( tint ) ;
     int row0 = -1 ;
     int row1 = -1 ;
     int row2 = -1 ;
@@ -1552,40 +1542,27 @@ void ASDMReader::getPointingInfo( unsigned int idx,
       qrow = (*prows)[row2+1] ;
       double t0 = getEndTime( prow->getTimeInterval() ).getMJD() ;
       double t1 = qrow->getTimeInterval().getStartInMJD() ;
-      double t = startTime.getMJD() ;
-      //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
-      //vector< vector<Angle> > dirB = qrow->getPointingDirection() ;
-      vector< vector<Angle> > dirA = prow->getTarget() ;
-      vector< vector<Angle> > offA = prow->getOffset() ;
-      vector< vector<Angle> > dirB = qrow->getTarget() ;
-      vector< vector<Angle> > offB = qrow->getOffset() ;
-      //double da0 = dirA[0][0].get() ;
-      //double db0 = dirB[0][0].get() ;
-      //double da1 = dirA[0][1].get() ;
-      //double db1 = dirB[0][1].get() ;
-      double da0 = dirA[0][0].get() + offA[0][0].get() ;
-      double db0 = dirB[0][0].get() + offB[0][0].get() ;
-      double da1 = dirA[0][1].get() + offA[0][1].get() ;
-      double db1 = dirB[0][1].get() + offB[0][1].get() ;
+      vector< vector<double> > dirA = pointingDir( prow ) ;
+      vector< vector<double> > dirB = pointingDir( qrow ) ;
+      double da0 = dirA[0][0] ;
+      double db0 = dirB[0][0] ;
+      double da1 = dirA[0][1] ;
+      double db1 = dirB[0][1] ;
       if ( prow->getUsePolynomials() && qrow->getUsePolynomials() ) {
-        double dt = ( t - t0 ) / ( t1 - t0 ) ;
+        double dt = ( tcen - t0 ) / ( t1 - t0 ) ;
         az = da0 + ( db0 - da0 ) * dt ;
         el = da1 + ( db1 - da1 ) * dt ;
         if ( prow->getNumTerm() > 0 && qrow->getNumTerm() > 1 ) {
-          //double ra0 = dirA[1][0].get() ;
-          //double rb0 = dirB[1][0].get() ;
-          //double ra1 = dirA[1][1].get() ;
-          //double rb1 = dirB[1][1].get() ;
-          double ra0 = dirA[1][0].get() + offA[1][0].get() ;
-          double rb0 = dirB[1][0].get() + offB[1][0].get() ;
-          double ra1 = dirA[1][1].get() + offA[1][1].get() ;
-          double rb1 = dirB[1][1].get() + offB[1][1].get() ;          
+          double ra0 = dirA[1][0] ;
+          double rb0 = dirB[1][0] ;
+          double ra1 = dirA[1][1] ;
+          double rb1 = dirB[1][1] ;
           srate[0] = ra0 + ( rb0 - ra0 ) * dt ;
           srate[1] = ra1 + ( rb1 - ra1 ) * dt ;
         }
       }
       else if ( !(qrow->getUsePolynomials()) ) {
-        double dt = ( t - t0 ) / ( t1 - t0 ) ;
+        double dt = ( tcen - t0 ) / ( t1 - t0 ) ;
         az = da0 + ( db0 - da0 ) * dt ;
         el = da1 + ( db1 - da1 ) * dt ;
       }
@@ -1607,52 +1584,33 @@ void ASDMReader::getPointingInfo( unsigned int idx,
         //logsink_->postLocally( LogMessage("usePolynomial = True",LogOrigin(className_,funcName,WHERE)) ) ;
         if ( row0 == row1 ) {
           prow = (*prows)[row0] ;
-          //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
-          vector< vector<Angle> > dirA = prow->getTarget() ;
-          vector< vector<Angle> > offA = prow->getOffset() ;
-          //az = dirA[0][0].get() ;
-          //el = dirA[0][1].get() ; 
-          az = dirA[0][0].get() + offA[0][0].get() ;
-          el = dirA[0][1].get() + offA[0][1].get() ; 
+          vector< vector<double> > dirA = pointingDir( prow ) ;
+          az = dirA[0][0] ;
+          el = dirA[0][1] ; 
           if ( prow->getNumTerm() > 1 ) {
-            //srate[0] = dirA[1][0].get() ;
-            //srate[1] = dirA[1][1].get() ;
-            srate[0] = dirA[1][0].get() + offA[1][0].get() ;
-            srate[1] = dirA[1][1].get() + offA[1][0].get() ;
+            srate[0] = dirA[1][0] ;
+            srate[1] = dirA[1][1] ;
           }
         }
         else {
           prow = (*prows)[row0] ;
           qrow = (*prows)[row1] ;
-          //vector< vector<Angle> > dirA = qrow->getPointingDirection() ;
-          //vector< vector<Angle> > dirB = qrow->getPointingDirection() ;
-          vector< vector<Angle> > dirA = qrow->getTarget() ;
-          vector< vector<Angle> > offA = prow->getOffset() ;
-          vector< vector<Angle> > dirB = qrow->getTarget() ;
-          vector< vector<Angle> > offB = qrow->getOffset() ;
+          vector< vector<double> > dirA = pointingDir( prow ) ;
+          vector< vector<double> > dirB = pointingDir( qrow ) ;
           double t0 = getMidTime( prow->getTimeInterval() ).getMJD() ;
           double t1 = getMidTime( qrow->getTimeInterval() ).getMJD() ;
-          double t = startTime.getMJD() ;
-          double dt = ( t - t0 ) / ( t1 - t0 ) ;
-          //double da0 = dirA[0][0].get() ;
-          //double db0 = dirB[0][0].get() ;
-          //double da1 = dirA[0][1].get() ;
-          //double db1 = dirB[0][1].get() ;
-          double da0 = dirA[0][0].get() + offA[0][0].get() ;
-          double db0 = dirB[0][0].get() + offB[0][0].get() ;
-          double da1 = dirA[0][1].get() + offA[0][1].get() ;
-          double db1 = dirB[0][1].get() + offB[0][1].get() ;
+          double dt = ( tcen - t0 ) / ( t1 - t0 ) ;
+          double da0 = dirA[0][0] ;
+          double db0 = dirB[0][0] ;
+          double da1 = dirA[0][1] ;
+          double db1 = dirB[0][1] ;
           az = da0 + ( db0 - da0 ) * dt ;
           el = da1 + ( db1 - db0 ) * dt ;
           if ( prow->getNumTerm() > 0 && qrow->getNumTerm() > 1 ) {
-            //double ra0 = dirA[1][0].get() ;
-            //double rb0 = dirB[1][0].get() ;
-            //double ra1 = dirA[1][1].get() ;
-            //double rb1 = dirB[1][1].get() ;
-            double ra0 = dirA[1][0].get() + offA[1][0].get() ;
-            double rb0 = dirB[1][0].get() + offB[1][0].get() ;
-            double ra1 = dirA[1][1].get() + offA[1][1].get() ;
-            double rb1 = dirB[1][1].get() + offB[1][1].get() ;          
+            double ra0 = dirA[1][0] ;
+            double rb0 = dirB[1][0] ;
+            double ra1 = dirA[1][1] ;
+            double rb1 = dirB[1][1] ;
             srate[0] = ra0 + ( rb0 - ra0 ) * dt ;
             srate[1] = ra1 + ( rb1 - ra1 ) * dt ;
           }
@@ -1660,23 +1618,21 @@ void ASDMReader::getPointingInfo( unsigned int idx,
       }
       else if ( prow->getUsePolynomials() == qrow->getUsePolynomials() ) {
         //logsink_->postLocally( LogMessage("numSample == numTerm",LogOrigin(className_,funcName,WHERE)) ) ;
+        tcen = 0.0 ;
         for ( int irow = row0 ; irow <= row1 ; irow++ ) {
           prow = (*prows)[irow] ;
           int numSample = prow->getNumSample() ;
           //logsink_->postLocally( LogMessage("numSample = "+String::toString(numSample),LogOrigin(className_,funcName,WHERE)) ) ;
-          //vector< vector<Angle> > dirA = prow->getPointingDirection() ;
-          vector< vector<Angle> > dirA = prow->getTarget() ;
-          vector< vector<Angle> > offA = prow->getOffset() ;
+          vector< vector<double> > dirA = pointingDir( prow ) ;
           if ( prow->isSampledTimeIntervalExists() ) {
             //logsink_->postLocally( LogMessage("sampledTimeIntervalExists",LogOrigin(className_,funcName,WHERE)) ) ;
             vector<ArrayTimeInterval> stime = prow->getSampledTimeInterval() ; 
             for ( int isam = 0 ; isam < numSample ; isam++ ) {
               //if ( tint.overlaps( stime[isam] ) ) {
               if ( tint.contains( stime[isam] ) ) {
-                //az += dirA[isam][0].get() ;
-                //el += dirA[isam][1].get() ;
-                az += dirA[isam][0].get() + offA[isam][0].get() ;
-                el += dirA[isam][1].get() + offA[isam][1].get() ;
+                az += dirA[isam][0] ;
+                el += dirA[isam][1] ;
+                tcen += getMidTime( stime[isam] ).getMJD() ;
                 ndir++ ;
               }
             }
@@ -1691,10 +1647,8 @@ void ASDMReader::getPointingInfo( unsigned int idx,
               ArrayTimeInterval stime( sampleStart+isam*sampleInterval, sampleInterval ) ;
               //if ( tint.overlaps( stime ) ) {
               if ( tint.contains( stime ) ) {
-                //az += dirA[isam][0].get() ;
-                //el += dirA[isam][1].get() ;
-                az += dirA[isam][0].get() + offA[isam][0].get() ;
-                el += dirA[isam][1].get() + offA[isam][1].get() ;
+                az += dirA[isam][0] ;
+                el += dirA[isam][1] ;
                 tcen += getMidTime( stime ).getMJD() ;
                 ndir++ ;
               }
@@ -1921,4 +1875,23 @@ double ASDMReader::limitedAngle( double angle )
   else if ( angle < -C::pi )
     while ( angle < -C::pi ) angle += C::_2pi ;
   return angle ;
+}
+
+vector< vector<double> > ASDMReader::pointingDir( PointingRow *row ) 
+{
+  //vector< vector<Angle> > aDir = row->getPointingDirection() ;
+  vector< vector<Angle> > aDir = row->getTarget() ;
+  vector< vector<Angle> > aOff = row->getOffset() ;
+  unsigned int n = aDir.size() ;
+  unsigned int m = 0 ;
+  vector< vector<double> > dir( n ) ;
+  for ( unsigned int i = 0 ; i < n ; i++ ) {
+    m = aDir[i].size() ;
+    dir[i].resize( m ) ;
+    for ( unsigned int j = 0 ; j < m ; j++ ) {
+      //dir[i][j] = aDir[i][j].get() ;
+      dir[i][j] = aDir[i][j].get() + aOff[i][j].get() ;
+    }
+  }
+  return dir ;
 }

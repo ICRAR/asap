@@ -556,6 +556,15 @@ private:
    **/
   double limitedAngle( double angle ) ;
 
+  /**
+   * retrieve pointing direction from pointingDirection column
+   * or from target+offset 
+   *
+   * @param row pointer to PointingRow object
+   * @return pointing direction vector (matrix)
+   **/
+  std::vector< std::vector<double> > pointingDir( asdm::PointingRow *row ) ;
+
   asdm::ASDM *asdm_ ; // pointer to ASDM object
   sdmbin::SDMBinData *sdmBin_ ; // pointer to ASDM binary data
   /**
