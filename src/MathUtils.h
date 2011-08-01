@@ -108,6 +108,11 @@ casa::Vector<casa::String> toVectorString(const std::vector<std::string>& in);
 void doZeroOrderInterpolation(casa::Vector<casa::Float>& data, 
 			      std::vector<bool>& mask);
 
+/**
+ * tool to record current time stamp
+ **/
+double gettimeofday_sec() ;
+
 }
 
 #endif

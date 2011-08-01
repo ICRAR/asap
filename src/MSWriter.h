@@ -87,7 +87,7 @@ private:
   casa::Double getDishDiameter( casa::String antname ) ;
 
   // tool for HPC
-  double gettimeofday_sec() ;
+//   double gettimeofday_sec() ;
 
   casa::CountedPtr<Scantable> table_ ;
   STHeader header_ ;

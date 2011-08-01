@@ -37,20 +37,22 @@
 #include "STFrequencies.h" 
 #include "STMolecules.h"
 #include "STTcal.h" 
+#include "MathUtils.h"
 
-#include <ctime>
-#include <sys/time.h>
+// #include <ctime>
+// #include <sys/time.h>
+
 
 using namespace casa ;
 using namespace std ;
 
 namespace asap {
-double MSWriter::gettimeofday_sec()
-{
-  struct timeval tv ;
-  gettimeofday( &tv, NULL ) ;
-  return tv.tv_sec + (double)tv.tv_usec*1.0e-6 ;
-}
+// double MSWriter::gettimeofday_sec()
+// {
+//   struct timeval tv ;
+//   gettimeofday( &tv, NULL ) ;
+//   return tv.tv_sec + (double)tv.tv_usec*1.0e-6 ;
+// }
 
 MSWriter::MSWriter(CountedPtr<Scantable> stable) 
   : table_(stable),
@@ -80,7 +82,7 @@ MSWriter::~MSWriter()
 bool MSWriter::write(const string& filename, const Record& rec) 
 {
   os_.origin( LogOrigin( "MSWriter", "write()", WHERE ) ) ;
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::write() startSec=" << startSec << LogIO::POST ;
 
   filename_ = filename ;
@@ -472,7 +474,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
     newPtTab.copy( filename_+"/POINTING", Table::New ) ;
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::write() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return True ;
@@ -481,7 +483,7 @@ bool MSWriter::write(const string& filename, const Record& rec)
 void MSWriter::init()
 {
 //   os_.origin( LogOrigin( "MSWriter", "init()", WHERE ) ) ;
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::init() startSec=" << startSec << LogIO::POST ;
   
   // access to scantable
@@ -573,14 +575,14 @@ void MSWriter::init()
     }
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::init() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::setupMS()
 {
 //   os_.origin( LogOrigin( "MSWriter", "setupMS()", WHERE ) ) ;
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::setupMS() startSec=" << startSec << LogIO::POST ;
   
   String dunit = table_->getHeader().fluxunit ;
@@ -688,13 +690,13 @@ void MSWriter::setupMS()
 
   mstable_->initRefs() ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::setupMS() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillObservation() 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillObservation() startSec=" << startSec << LogIO::POST ;
 
   // only 1 row
@@ -723,13 +725,13 @@ void MSWriter::fillObservation()
   trange[1] = timeCol( table_->nrow()-1 ) ;
   msObsCols.timeRangeMeas().put( 0, trange ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillObservation() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillAntenna() 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillAntenna() startSec=" << startSec << LogIO::POST ;
 
   // only 1 row
@@ -768,26 +770,26 @@ void MSWriter::fillAntenna()
   Double diameter = getDishDiameter( antennaName ) ;
   msAntCols.dishDiameterQuant().put( 0, Quantity( diameter, "m" ) ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillAntenna() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillProcessor() 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillProcessor() startSec=" << startSec << LogIO::POST ;
   
   // only add empty 1 row
   MSProcessor msProc = mstable_->processor() ;
   msProc.addRow( 1, True ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillProcessor() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillSource()
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillSource() startSec=" << startSec << LogIO::POST ;
  
   // access to MS SOURCE subtable
@@ -925,13 +927,13 @@ void MSWriter::fillSource()
     iter0.next() ;
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillSource() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillWeather() 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillWeather() startSec=" << startSec << LogIO::POST ;
 
   // access to MS WEATHER subtable
@@ -983,13 +985,13 @@ void MSWriter::fillWeather()
   }
   mswCols.interval().putColumn( intervalArr ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillWeather() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::fillSysCal()
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::fillSysCal() startSec=" << startSec << LogIO::POST ;
 
   //tcalIdRec_.print( cout ) ;
@@ -1050,7 +1052,7 @@ void MSWriter::fillSysCal()
   ROTableColumn beamnoCol( tab, "BEAMNO" ) ;
   ROTableColumn ifnoCol( tab, "IFNO" ) ;
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-//     double t1 = gettimeofday_sec() ;
+//     double t1 = mathutil::gettimeofday_sec() ;
     Vector<uInt> ids = tcalIdRec_.asArrayuInt( irow ) ;
 //     os_ << "ids = " << ids << LogIO::POST ;
     uInt npol = ids.size() ;
@@ -1186,17 +1188,17 @@ void MSWriter::fillSysCal()
     mssc.addRow( 1, True ) ;
     row.put( mssc.nrow()-1 ) ;
 
-//     double t2 = gettimeofday_sec() ;
+//     double t2 = mathutil::gettimeofday_sec() ;
 //     os_ << irow << "th loop elapsed time = " << t2-t1 << "sec" << LogIO::POST ;
   }
   
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::fillSysCal() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addFeed( Int id ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addFeed() startSec=" << startSec << LogIO::POST ;
 
   // add row
@@ -1234,13 +1236,13 @@ void MSWriter::addFeed( Int id )
   msFeedCols.receptorAngle().put( nrow-1, receptorAngle ) ;
   msFeedCols.polResponse().put( nrow-1, polResponse ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addFeed() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addSpectralWindow( Int spwid, Int freqid ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addSpectralWindow() startSec=" << startSec << LogIO::POST ;
   
   // add row
@@ -1293,13 +1295,13 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   indgen( sharedDoubleArr, refFreq, inc ) ;
   msSpwCols.chanFreq().put( spwid, sharedDoubleArr ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addSpectralWindow() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Vector<Double> rate ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addField() startSec=" << startSec << LogIO::POST ;
  
   MSField msField = mstable_->field() ;
@@ -1339,13 +1341,13 @@ void MSWriter::addField( Int fid, String fieldname, String srcname, Double t, Ve
   }
   msFieldCols.sourceId().put( fid, srcId ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addField() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<Double> &dir ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addPointing() startSec=" << startSec << LogIO::POST ;
   
   // access to POINTING subtable
@@ -1378,13 +1380,13 @@ void MSWriter::addPointing( String &name, Double &me, Double &interval, Matrix<D
   *targetRF = dir ;
   row.put( nrow ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addPointing() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 Int MSWriter::addPolarization( Vector<Int> polnos ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addPolarization() startSec=" << startSec << LogIO::POST ;
 
 //   os_ << "polnos = " << polnos << LogIO::POST ;
@@ -1443,7 +1445,7 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
     msPolCols.corrProduct().put( nrow, corrProd ) ;    
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addPolarization() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return polid ;
@@ -1451,7 +1453,7 @@ Int MSWriter::addPolarization( Vector<Int> polnos )
 
 Int MSWriter::addDataDescription( Int polid, Int spwid ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addDataDescription() startSec=" << startSec << LogIO::POST ;
 
   MSDataDescription msDataDesc = mstable_->dataDescription() ;
@@ -1481,7 +1483,7 @@ Int MSWriter::addDataDescription( Int polid, Int spwid )
     ddid = (Int)nrow ;
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addDataDescription() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return ddid ;
@@ -1489,7 +1491,7 @@ Int MSWriter::addDataDescription( Int polid, Int spwid )
 
 Int MSWriter::addState( Int st, Int &subscan ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::addState() startSec=" << startSec << LogIO::POST ;
 
   // access to STATE subtable
@@ -1536,7 +1538,7 @@ Int MSWriter::addState( Int st, Int &subscan )
   }
   subscan++ ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::addState() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return idx ;
@@ -1544,7 +1546,7 @@ Int MSWriter::addState( Int st, Int &subscan )
 
 Vector<Int> MSWriter::toCorrType( Vector<Int> polnos ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::toCorrType() startSec=" << startSec << LogIO::POST ;
 
   uInt npol = polnos.size() ;
@@ -1631,7 +1633,7 @@ Vector<Int> MSWriter::toCorrType( Vector<Int> polnos )
       corrType[0] = Stokes::I ;
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::toCorrType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 
   return corrType ;
@@ -1639,7 +1641,7 @@ Vector<Int> MSWriter::toCorrType( Vector<Int> polnos )
 
 void MSWriter::getValidTimeRange( Double &me, Double &interval, Table &tab ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
 
   // sort table
@@ -1657,13 +1659,13 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Table &tab )
   me = midTime ;
   interval = ( maxTime - minTime ) * 86400.0 ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &atime, Vector<Double> &ainterval ) 
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::getVaridTimeRange() startSec=" << startSec << LogIO::POST ;
 
   // sort table
@@ -1679,14 +1681,14 @@ void MSWriter::getValidTimeRange( Double &me, Double &interval, Vector<Double> &
   me = midTime ;
   interval = ( maxTime - minTime ) * 86400.0 + mean( ainterval ) ;
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::getValidTimeRange() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
 //void MSWriter::queryType( Int type, String &stype, Bool &b )
 void MSWriter::queryType( Int type, String &stype, Bool &b, Double &t, Double &l )
 {
-//   double startSec = gettimeofday_sec() ;
+//   double startSec = mathutil::gettimeofday_sec() ;
 //   os_ << "start MSWriter::queryType() startSec=" << startSec << LogIO::POST ;
 
   // 2011/03/14 TN
@@ -1915,7 +1917,7 @@ void MSWriter::queryType( Int type, String &stype, Bool &b, Double &t, Double &l
     break ;
   }
 
-//   double endSec = gettimeofday_sec() ;
+//   double endSec = mathutil::gettimeofday_sec() ;
 //   os_ << "end MSWriter::queryType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 

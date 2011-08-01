@@ -43,6 +43,8 @@
 #include <scimath/Functionals/Polynomial.h>
 #include <scimath/Mathematics/AutoDiff.h>
 
+#include <ctime>
+#include <sys/time.h>
 
 #include "MathUtils.h"
 
@@ -286,4 +288,12 @@ void mathutil::doZeroOrderInterpolation(casa::Vector<casa::Float>& data,
     fstart = -1;
     fend = -1;
   }
+
+}
+
+double mathutil::gettimeofday_sec()
+{
+  struct timeval tv ;
+  gettimeofday( &tv, NULL ) ;
+  return tv.tv_sec + (double)tv.tv_usec*1.0e-6 ;
 }

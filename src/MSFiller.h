@@ -116,7 +116,7 @@ private:
   casa::uInt binarySearch( casa::Vector<casa::Double> &timeList, casa::Double target ) ; 
 
   // tool for HPC
-  double gettimeofday_sec() ;
+//   double gettimeofday_sec() ;
 
   // get frequency frame
   std::string getFrame() ;
