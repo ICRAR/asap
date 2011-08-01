@@ -1271,7 +1271,7 @@ void MSWriter::addSpectralWindow( Int spwid, Int freqid )
   msSpwCols.numChan().put( spwid, nchan ) ;
 
   // TOTAL_BANDWIDTH
-  Double bw = nchan * inc ;
+  Double bw = nchan * abs( inc ) ;
   msSpwCols.totalBandwidth().put( spwid, bw ) ;
 
   // REF_FREQUENCY
