@@ -528,6 +528,8 @@ void MSFiller::fill()
             // SCANNO
             *scanRF = scanNum - 1 ;
 
+            uInt cycle = 0 ;
+
             //time1 = gettimeofday_sec() ;
             //os_ << "end 4th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
             // 
@@ -545,8 +547,6 @@ void MSFiller::fill()
               Int nrow = t5.nrow() ;
               //time1 = gettimeofday_sec() ;
               //os_ << "end 5th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-
-              uInt cycle = 0 ;
 
               Cube<Float> spArr ;
               Cube<Bool> flArr ;
