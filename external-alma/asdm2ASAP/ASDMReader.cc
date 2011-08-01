@@ -1879,21 +1879,28 @@ double ASDMReader::limitedAngle( double angle )
 
 vector< vector<double> > ASDMReader::pointingDir( PointingRow *row ) 
 {
-  vector< vector<Angle> > aDir = row->getTarget() ;
+  vector< vector<Angle> > aTar = row->getTarget() ;
   vector< vector<Angle> > aOff = row->getOffset() ;
-  unsigned int n = aDir.size() ;
+  vector< vector<Angle> > aDir = row->getPointingDirection() ;
+  vector< vector<Angle> > aEnc = row->getEncoder() ;
+  unsigned int n = aTar.size() ;
   vector< vector<double> > dir( n ) ;
-  double factor = 1.0 / cos( aDir[0][1].get() ) ;
+  double factor = 1.0 / cos( aTar[0][1].get() ) ;
   for ( unsigned int i = 0 ; i < n ; i++ ) {
     dir[i].resize( 2 ) ;
     /**
-     * This is approximate way to add offset
+     * This is approximate way to add offset taking tracking error 
+     * into account
      * 
      * az = dir[0][0] = target[0][0] + offset[0][0] / cos(el)
+     *                 + encorder[0][0] - direction[0][0]
      * el = dir[0][1] = target[0][1] + offset[0][1]
+     *                 + encorder[0][1] - direction[0][1]
      **/
-    dir[i][0] = aDir[i][0].get() + factor * aOff[i][0].get() ;
-    dir[i][1] = aDir[i][1].get() + aOff[i][1].get() ;
+    dir[i][0] = aTar[i][0].get() + factor * aOff[i][0].get() ;
+               + aEnc[i][0].get() - aDir[i][0].get() ;
+    dir[i][1] = aTar[i][1].get() + aOff[i][1].get() ;
+               + aEnc[i][1].get() - aDir[i][1].get() ;
   }
   return dir ;
 }
