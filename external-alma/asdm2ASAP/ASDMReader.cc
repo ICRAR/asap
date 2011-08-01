@@ -1879,19 +1879,21 @@ double ASDMReader::limitedAngle( double angle )
 
 vector< vector<double> > ASDMReader::pointingDir( PointingRow *row ) 
 {
-  //vector< vector<Angle> > aDir = row->getPointingDirection() ;
   vector< vector<Angle> > aDir = row->getTarget() ;
   vector< vector<Angle> > aOff = row->getOffset() ;
   unsigned int n = aDir.size() ;
-  unsigned int m = 0 ;
   vector< vector<double> > dir( n ) ;
+  double factor = 1.0 / cos( aDir[0][1].get() ) ;
   for ( unsigned int i = 0 ; i < n ; i++ ) {
-    m = aDir[i].size() ;
-    dir[i].resize( m ) ;
-    for ( unsigned int j = 0 ; j < m ; j++ ) {
-      //dir[i][j] = aDir[i][j].get() ;
-      dir[i][j] = aDir[i][j].get() + aOff[i][j].get() ;
-    }
+    dir[i].resize( 2 ) ;
+    /**
+     * This is approximate way to add offset
+     * 
+     * az = dir[0][0] = target[0][0] + offset[0][0] / cos(el)
+     * el = dir[0][1] = target[0][1] + offset[0][1]
+     **/
+    dir[i][0] = aDir[i][0].get() + factor * aOff[i][0].get() ;
+    dir[i][1] = aDir[i][1].get() + aOff[i][1].get() ;
   }
   return dir ;
 }
