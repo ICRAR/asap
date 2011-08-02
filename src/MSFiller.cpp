@@ -1941,11 +1941,15 @@ void MSFiller::spectralSetup( Int spwId,
   refpix = 0.5*(nchan-1) ;
   refval = 0.0 ;
   ROArrayQuantColumn<Double> sharedQDArrCol( spwtab, "CHAN_WIDTH" ) ;
+  ROTableColumn netSidebandCol( spwtab, "NET_SIDEBAND" ) ;
+  Int netSideband = netSidebandCol.asInt( spwId ) ;
   increment = sharedQDArrCol( spwId )( refip ).getValue( "Hz" ) ;
   //           os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
   sharedQDArrCol.attach( spwtab, "CHAN_FREQ" ) ;
   Vector< Quantum<Double> > chanFreqs = sharedQDArrCol( spwId ) ;
-  if ( nchan > 1 && chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz") ) 
+  if ( ( nchan > 1 && 
+         chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz")  ) 
+       || ( nchan == 1 && netSideband == 1 ) )  
     increment *= -1.0 ;
   if ( freqRef == MFrequency::LSRK ) {
     if ( even ) {
