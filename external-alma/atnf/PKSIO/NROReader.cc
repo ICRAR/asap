@@ -316,9 +316,9 @@ Vector<Double> NROReader::getSourceDirection()
     //cout << "NROReader::getSourceDirection()  SRCDIRECTION convert from (" 
     //<< srcra << "," << srcdec << ") B1950 to (" 
     //<< v( 0 ) << ","<< v( 1 ) << ") J2000" << endl ;
-    os << LogIO::NORMAL << "SRCDIRECTION convert from (" 
-       << srcra << "," << srcdec << ") B1950 to (" 
-       << v( 0 ) << ","<< v( 1 ) << ") J2000" << LogIO::POST ;
+    //os << LogIO::NORMAL << "SRCDIRECTION convert from (" 
+    //   << srcra << "," << srcdec << ") B1950 to (" 
+    //   << v( 0 ) << ","<< v( 1 ) << ") J2000" << LogIO::POST ;
   }
   else if ( strncmp( epoch, "J2000", 5 ) == 0 ) {
     v.resize( 2 ) ;
@@ -355,9 +355,9 @@ Vector<Double> NROReader::getDirection( int i )
     //cout << "NROReader::getDirection()  DIRECTION convert from (" 
     //<< dirx << "," << diry << ") LB to (" 
     //<< v( 0 ) << ","<< v( 1 ) << ") RADEC" << endl ;
-    os << LogIO::NORMAL << "DIRECTION convert from (" 
-       << dirx << "," << diry << ") LB to (" 
-       << v( 0 ) << ","<< v( 1 ) << ") RADEC" << LogIO::POST ;
+    //os << LogIO::NORMAL << "DIRECTION convert from (" 
+    //   << dirx << "," << diry << ") LB to (" 
+    //   << v( 0 ) << ","<< v( 1 ) << ") RADEC" << LogIO::POST ;
   }
   else if ( icoord == 2 ) {
     // convert from AZEL to RADEC
@@ -378,9 +378,9 @@ Vector<Double> NROReader::getDirection( int i )
     //cout << "NROReader::getDirection()  DIRECTION convert from (" 
     //<< dirx << "," << diry << ") AZEL to (" 
     //<< v( 0 ) << ","<< v( 1 ) << ") RADEC" << endl ;
-    os << LogIO::NORMAL << "DIRECTION convert from (" 
-       << dirx << "," << diry << ") AZEL to (" 
-       << v( 0 ) << ","<< v( 1 ) << ") RADEC" << LogIO::POST ;
+    //os << LogIO::NORMAL << "DIRECTION convert from (" 
+    //   << dirx << "," << diry << ") AZEL to (" 
+    //   << v( 0 ) << ","<< v( 1 ) << ") RADEC" << LogIO::POST ;
   }
   else if ( icoord == 0 ) {
     if ( strncmp( epoch, "B1950", 5 ) == 0 ) {
@@ -397,9 +397,9 @@ Vector<Double> NROReader::getDirection( int i )
       //cout << "STFiller::readNRO()  DIRECTION convert from (" 
       //<< dirx << "," << diry << ") B1950 to (" 
       //<< v( 0 ) << ","<< v( 1 ) << ") J2000" << endl ;
-      os << LogIO::NORMAL << "DIRECTION convert from (" 
-         << dirx << "," << diry << ") B1950 to (" 
-         << v( 0 ) << ","<< v( 1 ) << ") J2000" << LogIO::POST ;
+      //os << LogIO::NORMAL << "DIRECTION convert from (" 
+      //   << dirx << "," << diry << ") B1950 to (" 
+      //   << v( 0 ) << ","<< v( 1 ) << ") J2000" << LogIO::POST ;
     }
     else if ( strncmp( epoch, "J2000", 5 ) == 0 ) {
       v.resize( 2 ) ;
