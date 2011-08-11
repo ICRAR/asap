@@ -197,7 +197,12 @@ void NROFiller::fill()
     // FOCUS subtable row
     setFocus( parangle ) ;
 
-    // WEATHER subtable row 
+    // WEATHER subtable row
+    float p = 7.5 * temperature / ( 273.3 + temperature ) ;
+    float sh = 6.11 * powf( 10, p ) ;
+    temperature += 273.15 ; // C->K
+    winddir *= C::degree ; // deg->rad
+    humidity /= sh ; // P_H2O->relative humidity
     setWeather( temperature, pressure, humidity, windvel, winddir ) ;
 
     // TCAL subtable row
