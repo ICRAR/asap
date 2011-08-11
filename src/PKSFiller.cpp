@@ -318,7 +318,8 @@ void PKSFiller::fill( )
                  pksrec.refFreq, pksrec.freqInc);
 
     // Note: this is only one value for all polarisations!
-    setFlagrow(pksrec.flagrow);
+    
+    //setFlagrow(pksrec.flagrow);
     // Turn the (nchan,npol) matrix and possible complex xPol vector
     // into 2-4 rows in the scantable
     Vector<Float> tsysvec(1);
