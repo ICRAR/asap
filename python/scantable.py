@@ -2172,7 +2172,8 @@ class scantable(Scantable):
         return s
 
     @asaplog_post_dec
-    def smooth(self, kernel="hanning", width=5.0, order=2, plot=False, insitu=None):
+    def smooth(self, kernel="hanning", width=5.0, order=2, plot=False, 
+               insitu=None):
         """\
         Smooth the spectrum by the specified kernel (conserving flux).
 
@@ -2290,9 +2291,12 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
-                          addwn=None, rejwn=None, clipthresh=None, clipniter=None, plot=None,
-                          getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
+    def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, 
+                          fftmethod=None, fftthresh=None,
+                          addwn=None, rejwn=None, clipthresh=None,
+                          clipniter=None, plot=None,
+                          getresidual=None, showprogress=None, 
+                          minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal functions.
         Parameters:
@@ -2681,7 +2685,14 @@ class scantable(Scantable):
             if blfile         is None: blfile         = ''
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method.
-            workscan._auto_cspline_baseline(mask, npiece, clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
+            workscan._auto_cspline_baseline(mask, npiece, clipthresh, 
+                                            clipniter, 
+                                            normalise_edge_param(edge), 
+                                            threshold, 
+                                            chan_avg_limit, getresidual, 
+                                            pack_progress_params(showprogress, 
+                                                                 minnrow), 
+                                            outlog, blfile)
             workscan._add_history("auto_cspline_baseline", varlist)
             
             if insitu:
@@ -2693,8 +2704,9 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def poly_baseline(self, insitu=None, mask=None, order=None, plot=None, getresidual=None,
-                      showprogress=None, minnrow=None, outlog=None, blfile=None):
+    def poly_baseline(self, mask=None, order=None, insitu=None, plot=None, 
+                      getresidual=None, showprogress=None, minnrow=None, 
+                      outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
@@ -2727,13 +2739,15 @@ class scantable(Scantable):
         try:
             varlist = vars()
         
-            if insitu is None: insitu = rcParams["insitu"]
+            if insitu is None: 
+                insitu = rcParams["insitu"]
             if insitu:
                 workscan = self
             else:
                 workscan = self.copy()
 
-            if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
+            if mask         is None: mask         = [True for i in \
+                                                       xrange(workscan.nchan())]
             if order        is None: order        = 0
             if plot         is None: plot         = False
             if getresidual  is None: getresidual  = True
@@ -2743,8 +2757,10 @@ class scantable(Scantable):
             if blfile       is None: blfile       = ""
 
             if plot:
-                outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
-                if outblfile: blf = open(blfile, "a")
+                outblfile = (blfile != "") and \
+                    os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
+                if outblfile: 
+                    blf = open(blfile, "a")
                 
                 f = fitter()
                 f.set_function(lpoly=order)
@@ -2768,11 +2784,16 @@ class scantable(Scantable):
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
                     #workscan._append_blinfo(blpars, masklist, f.mask)
-                    workscan._setspectrum((f.fitter.getresidual() if getresidual else f.fitter.getfit()), r)
+                    workscan._setspectrum((f.fitter.getresidual() 
+                                           if getresidual else f.fitter.getfit()), r)
                     
                     if outblfile:
                         rms = workscan.get_rms(f.mask, r)
-                        dataout = workscan.format_blparams_row(blpars["params"], blpars["fixed"], rms, str(masklist), r, True)
+                        dataout = \
+                            workscan.format_blparams_row(blpars["params"], 
+                                                         blpars["fixed"], 
+                                                         rms, str(masklist), 
+                                                         r, True)
                         blf.write(dataout)
 
                 f._p.unmap()
@@ -2780,7 +2801,10 @@ class scantable(Scantable):
 
                 if outblfile: blf.close()
             else:
-                workscan._poly_baseline(mask, order, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
+                workscan._poly_baseline(mask, order, getresidual, 
+                                        pack_progress_params(showprogress, 
+                                                             minnrow), 
+                                        outlog, blfile)
             
             workscan._add_history("poly_baseline", varlist)
             
@@ -2793,8 +2817,11 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_poly_baseline(self, insitu=None, mask=None, order=None, edge=None, threshold=None, chan_avg_limit=None,
-                           plot=None, getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
+    def auto_poly_baseline(self, mask=None, order=None, edge=None, 
+                           threshold=None, chan_avg_limit=None,
+                           plot=None, insitu=None,
+                           getresidual=None, showprogress=None, 
+                           minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
@@ -2848,7 +2875,8 @@ class scantable(Scantable):
         try:
             varlist = vars()
 
-            if insitu is None: insitu = rcParams['insitu']
+            if insitu is None: 
+                insitu = rcParams['insitu']
             if insitu:
                 workscan = self
             else:
@@ -2869,12 +2897,13 @@ class scantable(Scantable):
             edge = normalise_edge_param(edge)
 
             if plot:
-                outblfile = (blfile != "") and os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
+                outblfile = (blfile != "") and \
+                    os.path.exists(os.path.expanduser(os.path.expandvars(blfile)))
                 if outblfile: blf = open(blfile, "a")
                 
                 from asap.asaplinefind import linefinder
                 fl = linefinder()
-                fl.set_options(threshold=threshold,avg_limit=chan_avg_limit)
+                fl.set_options(threshold=threshold, avg_limit=chan_avg_limit)
                 fl.set_scan(workscan)
                 
                 f = fitter()
@@ -2885,7 +2914,8 @@ class scantable(Scantable):
                 
                 for r in rows:
                     idx = 2*workscan.getif(r)
-                    fl.find_lines(r, mask_and(mask, workscan._getmask(r)), edge[idx:idx+2])  # (CAS-1434)
+                    fl.find_lines(r, mask_and(mask, workscan._getmask(r)), 
+                                  edge[idx:idx+2])  # (CAS-1434)
 
                     f.x = workscan._getabcissa(r)
                     f.y = workscan._getspectrum(r)
@@ -2902,11 +2932,16 @@ class scantable(Scantable):
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
                     #workscan._append_blinfo(blpars, masklist, f.mask)
-                    workscan._setspectrum((f.fitter.getresidual() if getresidual else f.fitter.getfit()), r)
+                    workscan._setspectrum((f.fitter.getresidual() \
+                                               if getresidual else f.fitter.getfit()), r)
 
                     if outblfile:
                         rms = workscan.get_rms(f.mask, r)
-                        dataout = workscan.format_blparams_row(blpars["params"], blpars["fixed"], rms, str(masklist), r, True)
+                        dataout = \
+                            workscan.format_blparams_row(blpars["params"], 
+                                                         blpars["fixed"], 
+                                                         rms, str(masklist), 
+                                                         r, True)
                         blf.write(dataout)
                     
                 f._p.unmap()
@@ -2914,7 +2949,11 @@ class scantable(Scantable):
 
                 if outblfile: blf.close()
             else:
-                workscan._auto_poly_baseline(mask, order, edge, threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
+                workscan._auto_poly_baseline(mask, order, edge, threshold, 
+                                             chan_avg_limit, getresidual, 
+                                             pack_progress_params(showprogress,
+                                                                  minnrow), 
+                                             outlog, blfile)
 
             workscan._add_history("auto_poly_baseline", varlist)
             
