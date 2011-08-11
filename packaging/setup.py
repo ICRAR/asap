@@ -16,6 +16,7 @@ spectral-line data.
       install_requires = ["ipython>=0.8", "matplotlib>=0.99", "numpy>=1.3"],
       package_data = {"": ["_asap.so", "data/ipy*"],
                       },
+      scripts = ["bin/asap"],
       license = 'GPL',
       zip_safe = 0,
       #test_suite = "nose.collector",
