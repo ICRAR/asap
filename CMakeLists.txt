@@ -543,6 +543,7 @@ set( PYRAPLIB pyrap )
 set( ATNFLIB atnf )
 set( ASAP2TO3 asap2to3 )
 if ( NOT STANDALONE )
+   set( ASDM2ASAP_OLD oldasdm2ASAP )
    set( ASDM2ASAP asdm2ASAP )
 endif()
 

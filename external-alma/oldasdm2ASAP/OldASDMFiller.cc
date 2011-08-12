@@ -15,28 +15,28 @@
 #include <casa/Quanta/MVTime.h>
 #include <casa/Logging/LogMessage.h>
 
-#include "ASDMFiller.h"
+#include "OldASDMFiller.h"
 
 using namespace std ;
 using namespace casa ;
 using namespace asap ;
 
-ASDMFiller::ASDMFiller( CountedPtr<Scantable> stable )
+OldASDMFiller::OldASDMFiller( CountedPtr<Scantable> stable )
   : FillerBase( stable ),
     antennaId_( -1 ),
     antennaName_( "" ),
-    className_("ASDMFiller")
+    className_("OldASDMFiller")
 {
-  reader_ = new ASDMReader() ;
+  reader_ = new OldASDMReader() ;
 }
 
-ASDMFiller::~ASDMFiller()
+OldASDMFiller::~OldASDMFiller()
 {
   // nothing to do?
   logsink_ = 0 ;
 }
 
-void ASDMFiller::setLogger( CountedPtr<LogSinkInterface> &logsink )
+void OldASDMFiller::setLogger( CountedPtr<LogSinkInterface> &logsink )
 {
   logsink_ = logsink ;
   if ( !(reader_.null()) ) {
@@ -44,7 +44,7 @@ void ASDMFiller::setLogger( CountedPtr<LogSinkInterface> &logsink )
   }
 }
 
-bool ASDMFiller::open( const string &filename, const Record &rec )
+bool OldASDMFiller::open( const string &filename, const Record &rec )
 {
   String funcName = "open" ;
   bool status = reader_->open( filename, rec ) ;
@@ -58,7 +58,7 @@ bool ASDMFiller::open( const string &filename, const Record &rec )
   return status ;
 }
 
-void ASDMFiller::fill() 
+void OldASDMFiller::fill() 
 {
   String funcName = "fill" ;
 
@@ -124,7 +124,7 @@ void ASDMFiller::fill()
         // set main row
         if ( !(reader_->setMainRow( irow )) ) {
           // skip row since the row doesn't have valid configDescId
-          //logsink_->postLocally( LogMessage("skip "+String::toString(irow)+" since ASDMReader::setMainrow() returns False",LogOrigin(className_,funcName,WHERE)) ) ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 
@@ -135,7 +135,7 @@ void ASDMFiller::fill()
         // set data
         if ( !(reader_->setData()) ) {
           // skip row since reader failed to retrieve data
-          //logsink_->postLocally( LogMessage("skip "+String::toString(irow)+" since ASDMReader::setData() returns False",LogOrigin(className_,funcName,WHERE)) ) ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 
@@ -270,7 +270,7 @@ void ASDMFiller::fill()
 //             else 
 //               oss << dataShape[i] << ", " ;
 //           }
-          //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+//           logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
                                      
           //int numPol = reader_->getNumPol( idata ) ;
           unsigned int numPol = dataShape[0] ;
@@ -284,6 +284,8 @@ void ASDMFiller::fill()
 
           // SPECTRA, FLAGTRA, TSYS, TCAL
           float *sp = reader_->getSpectrum( idata ) ;
+          //vector< vector<float> > ts = reader_->getTsys( idata ) ;
+          //vector< vector<float> > tc = reader_->getTcal( idata ) ;
           vector< vector<float> > ts ;
           vector< vector<float> > tc ;
           reader_->getTcalAndTsys( idata, tc, ts ) ;
@@ -324,7 +326,7 @@ void ASDMFiller::fill()
   return ;
 }
 
-void ASDMFiller::close() 
+void OldASDMFiller::close() 
 {
   reader_->close() ;
   reader_ = 0 ;
@@ -332,7 +334,7 @@ void ASDMFiller::close()
   return ;
 }
 
-void ASDMFiller::fillHeader() 
+void OldASDMFiller::fillHeader() 
 {
   STHeader hdr ;
 
@@ -382,12 +384,12 @@ void ASDMFiller::fillHeader()
   setHeader( hdr ) ;
 }
 
-String ASDMFiller::getIFKey( uInt ifno ) 
+String OldASDMFiller::getIFKey( uInt ifno ) 
 {
   return "IFNO"+String::toString( ifno ) ;
 }
 
-void ASDMFiller::getFrequencyRec( String key,
+void OldASDMFiller::getFrequencyRec( String key,
                                        double &refpix, 
                                        double &refval,
                                        double &incr )
@@ -398,7 +400,7 @@ void ASDMFiller::getFrequencyRec( String key,
   incr = frec.asdouble( "INCREMENT" ) ;
 }
 
-void ASDMFiller::setFrequencyRec( String key,
+void OldASDMFiller::setFrequencyRec( String key,
                                        double refpix, 
                                        double refval,
                                        double incr )
@@ -410,7 +412,7 @@ void ASDMFiller::setFrequencyRec( String key,
   ifrec_.defineRecord( key, frec ) ;
 }
 
-Matrix<casa::Float> ASDMFiller::toMatrix( float *sp,
+Matrix<casa::Float> OldASDMFiller::toMatrix( float *sp,
                                          unsigned int npol,
                                          unsigned int nchan )
 {
@@ -435,7 +437,7 @@ Matrix<casa::Float> ASDMFiller::toMatrix( float *sp,
   return mSp ;
 }
 
-Matrix<casa::Float> ASDMFiller::toMatrix( vector< vector<float> > &tsys,
+Matrix<casa::Float> OldASDMFiller::toMatrix( vector< vector<float> > &tsys,
                                                unsigned int npol,
                                                unsigned int nchan ) 
 {
@@ -495,7 +497,7 @@ Matrix<casa::Float> ASDMFiller::toMatrix( vector< vector<float> > &tsys,
   return ret ;
 }
 
-Vector<casa::Float> ASDMFiller::toVector( vector<float> &tau,
+Vector<casa::Float> OldASDMFiller::toVector( vector<float> &tau,
                                                unsigned int npol ) 
 {
   String funcName = "toVector" ;
@@ -521,12 +523,12 @@ Vector<casa::Float> ASDMFiller::toVector( vector<float> &tau,
   return ret ;
 }
 
-String ASDMFiller::toTcalTime( casa::Double mjd ) 
+String OldASDMFiller::toTcalTime( casa::Double mjd ) 
 {
   return MVTime( mjd ).string( MVTime::YMD ) ;
 }
 
-void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
+void OldASDMFiller::toJ2000( Vector<casa::Double> &dir,
                                double az, 
                                double el,
                                casa::Double mjd,
@@ -553,7 +555,7 @@ void ASDMFiller::toJ2000( Vector<casa::Double> &dir,
   //logsink_->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
 }
 
-Vector<casa::Double> ASDMFiller::toJ2000( Vector<casa::Double> dir,
+Vector<casa::Double> OldASDMFiller::toJ2000( Vector<casa::Double> dir,
                                           String dirref,
                                           casa::Double mjd,
                                           Vector<casa::Double> antpos ) 
@@ -580,7 +582,7 @@ Vector<casa::Double> ASDMFiller::toJ2000( Vector<casa::Double> dir,
   return newd ;
 }
 
-MFrequency::Types ASDMFiller::toFrameType( string &s ) 
+MFrequency::Types OldASDMFiller::toFrameType( string &s ) 
 {
   MFrequency::Types ftype = MFrequency::DEFAULT ;
   if ( s == "LABREST" )
@@ -593,7 +595,7 @@ MFrequency::Types ASDMFiller::toFrameType( string &s )
   return ftype ;
 }
 
-casa::Double ASDMFiller::toLSRK( casa::Double freq,
+casa::Double OldASDMFiller::toLSRK( casa::Double freq,
                                  String freqref,
                                  casa::Double utc,
                                  Vector<casa::Double> antpos,

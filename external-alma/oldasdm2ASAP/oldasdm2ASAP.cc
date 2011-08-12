@@ -10,7 +10,7 @@
 #include <casa/Logging/StreamLogSink.h>
 #include <casa/Logging/LogFilter.h>
 #include "../../src/Scantable.h"
-#include "ASDMFiller.h"
+#include "OldASDMFiller.h"
 
 using namespace std ;
 using namespace asdm ;
@@ -22,7 +22,7 @@ int main( int argc, char *argv[] )
   // options
   Input inp ;
   String indent = "   " ;
-  String versionInfo = "$Id$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name> [-apc both|yes|no] [-corr-mode ca|ao|ca,ao] [-ocorr-mode ao] [-time-sampling all|integration|subintegration] [-srt fr|bw|ca|fr,bw|fr,ca|ca,bw|all]" ;
+  String versionInfo = "$Id:$\nConverts an ASDM dataset into Scantable.\nUsage:\n"+indent+argv[0]+" -antenna <antenna name or id> -asdm <ASDM directory> -asap <Scantable name> [-apc both|yes|no] [-corr-mode ca|ao|ca,ao] [-ocorr-mode ao] [-time-sampling all|integration|subintegration] [-srt fr|bw|ca|fr,bw|fr,ca|ca,bw|all]" ;
   Bool helpMode = False ;
   for ( int i = 1 ; i < argc ; i++ ) {
     if ( strncmp( argv[i], "-h", 2 ) == 0 
@@ -93,11 +93,11 @@ int main( int argc, char *argv[] )
   else {
     logsink_p = new StreamLogSink() ;
   }
-  // create ASDMFiller object
+  // create OldASDMFiller object
   //logsink_p->postLocally( LogMessage( "numApc = "+String::toString(numApc), LogOrigin(funcname,WHERE) ) ) ;
   for ( int iapc = 0 ; iapc < numApc ; iapc++ ) {
     CountedPtr<Scantable> stable( new Scantable() ) ;
-    ASDMFiller *filler = new ASDMFiller( stable ) ;
+    OldASDMFiller *filler = new OldASDMFiller( stable ) ;
 
     // set logger
     filler->setLogger( logsink_p ) ;
@@ -124,7 +124,7 @@ int main( int argc, char *argv[] )
     filler->open( asdmname, rec ) ;
     
     // output filename
-    CountedPtr<ASDMReader> reader = filler->getReader() ;
+    CountedPtr<OldASDMReader> reader = filler->getReader() ;
     string aname = reader->getAntennaName() ;
     string outname = asapname ;
     if ( asapname.size() == 0 ) {

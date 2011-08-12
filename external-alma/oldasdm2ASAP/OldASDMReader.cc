@@ -10,7 +10,7 @@
 #include <casa/Logging/LogMessage.h>
 #include <casa/BasicSL/Constants.h>
 
-#include "ASDMReader.h"
+#include "OldASDMReader.h"
 #include <atnf/PKSIO/SrcType.h>
 
 using namespace std ;
@@ -21,7 +21,7 @@ using namespace sdmbin ;
 // sec to day
 double s2d = 1.0 / 86400.0 ;
 
-ASDMReader::ASDMReader()
+OldASDMReader::OldASDMReader()
   : asdm_(0),
     sdmBin_(0),
     vmsData_(0),
@@ -29,7 +29,7 @@ ASDMReader::ASDMReader()
     antennaName_( "" ),
     row_(-1),
     apc_(AP_CORRECTED),
-    className_("ASDMReader")
+    className_("OldASDMReader")
 {
   configDescIdList_.resize(0) ;
   feedIdList_.resize(0) ;
@@ -40,13 +40,13 @@ ASDMReader::ASDMReader()
   timeSampling_.reset() ;
 }
 
-ASDMReader::~ASDMReader()
+OldASDMReader::~OldASDMReader()
 {
   close() ;
   logsink_ = 0 ;
 }
 
-bool ASDMReader::open( const string &filename, const casa::Record &rec )
+bool OldASDMReader::open( const string &filename, const casa::Record &rec )
 {
   casa::String funcName = "open" ;
 
@@ -165,11 +165,7 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
 
   // create ASDM object
   asdm_ = new ASDM() ;
-  // avoid unwanted message to stdout
-  ostringstream oss ;
-  streambuf *buforg = cout.rdbuf(oss.rdbuf()) ;
   asdm_->setFromFile( filename ) ;
-  cout.rdbuf(buforg) ;
 
   if ( antennaId_ == -1 ) {
     AntennaTable &atab = asdm_->getAntenna() ;
@@ -216,17 +212,17 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
   // process Station table
   processStation() ;
 
-  //logsink_->postLocally( LogMessage(  "antennaId_ = "+String::toString(antennaId_), LogOrigin(className_,funcName,WHERE) ) ) ;
-  //logsink_->postLocally( LogMessage(  "antennaName_ = "+antennaName_, LogOrigin(className_,funcName,WHERE) ) ) ;
+  logsink_->postLocally( LogMessage(  "antennaId_ = "+String::toString(antennaId_), LogOrigin(className_,funcName,WHERE) ) ) ;
+  logsink_->postLocally( LogMessage(  "antennaName_ = "+antennaName_, LogOrigin(className_,funcName,WHERE) ) ) ;
 
   return true ;
 }
 
-// void ASDMReader::fill() 
+// void OldASDMReader::fill() 
 // {
 // }
 
-void ASDMReader::close() 
+void OldASDMReader::close() 
 {
   clearMainRow() ;
 
@@ -241,7 +237,7 @@ void ASDMReader::close()
   return ;
 }
 
-void ASDMReader::fillHeader( casa::Int &nchan, 
+void OldASDMReader::fillHeader( casa::Int &nchan, 
                              casa::Int &npol, 
                              casa::Int &nif, 
                              casa::Int &nbeam, 
@@ -289,7 +285,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
 
   // project
   // T.B.D. (project UID?)
-  project = "T.B.D. (" + ebrow->getProjectUID().toString() + ")" ;
+  project = "T.B.D. (" + ebrow->getProjectId().toString() + ")" ;
 
   // utc
   // start time of the project
@@ -433,7 +429,7 @@ void ASDMReader::fillHeader( casa::Int &nchan,
   }
 }
 
-void ASDMReader::selectConfigDescription() 
+void OldASDMReader::selectConfigDescription() 
 {
   casa::String funcName = "selectConfigDescription" ;
 
@@ -452,7 +448,7 @@ void ASDMReader::selectConfigDescription()
   }
 }
 
-void ASDMReader::selectFeed() 
+void OldASDMReader::selectFeed() 
 {
   feedIdList_.resize(0) ;
   vector<FeedRow *> frows = asdm_->getFeed().get() ;
@@ -469,7 +465,7 @@ void ASDMReader::selectFeed()
   }
 }
 
-casa::Vector<casa::uInt> ASDMReader::getFieldIdList() 
+casa::Vector<casa::uInt> OldASDMReader::getFieldIdList() 
 {
   casa::String funcName = "getFieldIdList" ;
 
@@ -483,14 +479,14 @@ casa::Vector<casa::uInt> ASDMReader::getFieldIdList()
   return fieldIdList_ ;
 }
 
-casa::uInt ASDMReader::getNumMainRow() 
+casa::uInt OldASDMReader::getNumMainRow() 
 {
   casa::uInt nrow = casa::uInt( mainRow_.size() ) ;
 
   return nrow ;
 }
 
-void ASDMReader::select() 
+void OldASDMReader::select() 
 {
   // selection by input CorrelationMode
   EnumSet<CorrelationMode> esCorrs ;
@@ -516,7 +512,7 @@ void ASDMReader::select()
   selectFeed() ;
 }
 
-casa::Bool ASDMReader::setMainRow( casa::uInt irow ) 
+casa::Bool OldASDMReader::setMainRow( casa::uInt irow ) 
 {
   casa::Bool status = true ;
   row_ = irow ;
@@ -530,7 +526,7 @@ casa::Bool ASDMReader::setMainRow( casa::uInt irow )
   return status ;
 }
 
-casa::Bool ASDMReader::setMainRow( casa::uInt configDescId, casa::uInt fieldId ) 
+casa::Bool OldASDMReader::setMainRow( casa::uInt configDescId, casa::uInt fieldId ) 
 {
   clearMainRow() ;
 
@@ -541,12 +537,12 @@ casa::Bool ASDMReader::setMainRow( casa::uInt configDescId, casa::uInt fieldId )
   return true ;
 }
 
-void ASDMReader::clearMainRow() 
+void OldASDMReader::clearMainRow() 
 {
   mainRow_.resize(0) ;
 }
 
-void ASDMReader::setupIFNO() 
+void OldASDMReader::setupIFNO() 
 {
   casa::String funcName = "setupIFNO" ;
 
@@ -569,7 +565,7 @@ void ASDMReader::setupIFNO()
   }
 }
 
-bool ASDMReader::isWVR( SpectralWindowRow *row )
+bool OldASDMReader::isWVR( SpectralWindowRow *row )
 {
   BasebandName bbname = row->getBasebandName() ;
   int nchan = row->getNumChan() ;
@@ -579,7 +575,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
     return false ;
 } 
 
-// casa::Vector<casa::uInt> ASDMReader::getDataDescIdList( casa::uInt cdid ) 
+// casa::Vector<casa::uInt> OldASDMReader::getDataDescIdList( casa::uInt cdid ) 
 // {
 //   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
 //   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
@@ -591,7 +587,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
 //   return ddidList ;
 // }
 
-// casa::Vector<casa::uInt> ASDMReader::getSwitchCycleIdList( casa::uInt cdid ) 
+// casa::Vector<casa::uInt> OldASDMReader::getSwitchCycleIdList( casa::uInt cdid ) 
 // {
 //   Tag cdTag( (unsigned int)cdid, TagType::ConfigDescription ) ;
 //   ConfigDescriptionRow *cdrow = asdm_->getConfigDescription().getRowByKey( cdTag ) ;
@@ -603,7 +599,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
 //   return scidList ;
 // }
 
-// casa::Vector<casa::uInt> ASDMReader::getFeedIdList( casa::uInt cdid ) 
+// casa::Vector<casa::uInt> OldASDMReader::getFeedIdList( casa::uInt cdid ) 
 // {
 //   casa::String funcName = "getFeedIdList" ;
 //   
@@ -625,7 +621,7 @@ bool ASDMReader::isWVR( SpectralWindowRow *row )
 //   return feedIdList ;
 // }
 
-casa::Bool ASDMReader::setData()
+casa::Bool OldASDMReader::setData()
 {
   casa::String funcName = "setData" ;
 
@@ -685,7 +681,7 @@ casa::Bool ASDMReader::setData()
   return true ;
 }
 
-casa::uInt ASDMReader::getIFNo( unsigned int idx )
+casa::uInt OldASDMReader::getIFNo( unsigned int idx )
 {
   Tag ddTag( vmsData_->v_dataDescId[dataIdList_[idx]], TagType::DataDescription ) ;
   DataDescriptionRow *ddrow = asdm_->getDataDescription().getRowByKey( ddTag ) ;
@@ -698,7 +694,7 @@ casa::uInt ASDMReader::getIFNo( unsigned int idx )
   }
 }
 
-int ASDMReader::getNumPol( unsigned int idx ) 
+int OldASDMReader::getNumPol( unsigned int idx ) 
 {
   Tag ddTag( vmsData_->v_dataDescId[dataIdList_[idx]], TagType::DataDescription ) ;
   DataDescriptionRow *ddrow = asdm_->getDataDescription().getRowByKey( ddTag ) ;
@@ -706,7 +702,7 @@ int ASDMReader::getNumPol( unsigned int idx )
   return polrow->getNumCorr() ;
 }
 
-void ASDMReader::getFrequency( unsigned int idx, 
+void OldASDMReader::getFrequency( unsigned int idx, 
                                double &refpix, 
                                double &refval, 
                                double &incr,
@@ -811,7 +807,7 @@ void ASDMReader::getFrequency( unsigned int idx,
   }
 }
 
-vector<double> ASDMReader::getRestFrequency( unsigned int idx ) 
+vector<double> OldASDMReader::getRestFrequency( unsigned int idx ) 
 {
   vector<double> rf( 0 ) ;
   unsigned int index = dataIdList_[idx] ;
@@ -837,18 +833,18 @@ vector<double> ASDMReader::getRestFrequency( unsigned int idx )
   return rf ;
 }
 
-double ASDMReader::getTime( unsigned int idx )
+double OldASDMReader::getTime( unsigned int idx )
 {
   double tsec = vmsData_->v_time[dataIdList_[idx]] ;
   return tsec * s2d ;
 }
 
-double ASDMReader::getInterval( unsigned int idx )
+double OldASDMReader::getInterval( unsigned int idx )
 {
   return vmsData_->v_interval[dataIdList_[idx]] ;
 }
 
-string ASDMReader::getSourceName( unsigned int idx ) 
+string OldASDMReader::getSourceName( unsigned int idx ) 
 {
   unsigned int index = dataIdList_[idx] ;
   //ArrayTimeInterval tint( vmsData_->v_time[index]*s2d, vmsData_->v_interval[index]*s2d ) ;
@@ -871,7 +867,7 @@ string ASDMReader::getSourceName( unsigned int idx )
   return srcname ;
 }
 
-string ASDMReader::getFieldName( unsigned int idx ) 
+string OldASDMReader::getFieldName( unsigned int idx ) 
 {
   int fid = vmsData_->v_fieldId[dataIdList_[idx]] ;
   Tag ftag( fid, TagType::Field ) ;
@@ -881,7 +877,7 @@ string ASDMReader::getFieldName( unsigned int idx )
   return oss.str() ;
 }
 
-int ASDMReader::getSrcType( unsigned int scan,
+int OldASDMReader::getSrcType( unsigned int scan,
                             unsigned int subscan ) 
 {
   int srctype = SrcType::NOTYPE ;
@@ -992,13 +988,13 @@ int ASDMReader::getSrcType( unsigned int scan,
   return srctype ;
 }
 
-unsigned int ASDMReader::getSubscanNo( unsigned int idx ) 
+unsigned int OldASDMReader::getSubscanNo( unsigned int idx ) 
 {
   //logsink_->postLocally( LogMessage("subscan"+String::toString(vmsData_->v_msState[dataIdList_[idx]].subscanNum)+": obsmode="+String::toString(vmsData_->v_msState[dataIdList_[idx]].obsMode),LogOrigin(className_,funcName,WHERE)) ) ;
   return vmsData_->v_msState[dataIdList_[idx]].subscanNum ;
 }
 
-vector<double> ASDMReader::getSourceDirection( unsigned int idx ) 
+vector<double> OldASDMReader::getSourceDirection( unsigned int idx ) 
 {
   vector<double> dir( 2, 0.0 ) ;
   unsigned int index = dataIdList_[idx] ;
@@ -1038,7 +1034,7 @@ vector<double> ASDMReader::getSourceDirection( unsigned int idx )
   return dir ;
 }
 
-void ASDMReader::getSourceDirection( unsigned int idx,
+void OldASDMReader::getSourceDirection( unsigned int idx,
                                      vector<double> &dir,
                                      string &ref ) 
 {
@@ -1068,7 +1064,7 @@ void ASDMReader::getSourceDirection( unsigned int idx,
   }
 }
 
-void ASDMReader::getSourceDirection( vector<double> &dir, string &ref )
+void OldASDMReader::getSourceDirection( vector<double> &dir, string &ref )
 {
   dir.resize( 2 ) ;
   ref = "J2000" ; // default is J2000
@@ -1082,7 +1078,7 @@ void ASDMReader::getSourceDirection( vector<double> &dir, string &ref )
   }
 }
 
-vector<double> ASDMReader::getSourceProperMotion( unsigned int idx ) 
+vector<double> OldASDMReader::getSourceProperMotion( unsigned int idx ) 
 {
   vector<double> pm( 2, 0.0 ) ;
   unsigned int index = dataIdList_[idx] ;
@@ -1105,7 +1101,7 @@ vector<double> ASDMReader::getSourceProperMotion( unsigned int idx )
   return pm ;
 }
 
-double ASDMReader::getSysVel( unsigned int idx ) 
+double OldASDMReader::getSysVel( unsigned int idx ) 
 {
   double sysvel = 0.0 ;
   unsigned int index = dataIdList_[idx] ;
@@ -1130,17 +1126,17 @@ double ASDMReader::getSysVel( unsigned int idx )
   return sysvel ;
 }
 
-unsigned int ASDMReader::getFlagRow( unsigned int idx ) 
+unsigned int OldASDMReader::getFlagRow( unsigned int idx ) 
 {
   return vmsData_->v_flag[dataIdList_[idx]] ;
 }
 
-vector<unsigned int> ASDMReader::getDataShape( unsigned int idx ) 
+vector<unsigned int> OldASDMReader::getDataShape( unsigned int idx ) 
 {
   return vmsData_->vv_dataShape[dataIdList_[idx]] ;
 }
 
-float * ASDMReader::getSpectrum( unsigned int idx ) 
+float * OldASDMReader::getSpectrum( unsigned int idx ) 
 {
   map<AtmPhaseCorrection, float*> data = vmsData_->v_m_data[dataIdList_[idx]] ;
   //map<AtmPhaseCorrection, float*>::iterator iter = data.find(AP_UNCORRECTED) ;
@@ -1149,12 +1145,12 @@ float * ASDMReader::getSpectrum( unsigned int idx )
   return autoCorr ;
 }
 
-// bool * ASDMReader::getFlagChannel( unsigned int idx ) 
+// bool * OldASDMReader::getFlagChannel( unsigned int idx ) 
 // {
 //   return 0 ;
 // }
 
-vector< vector<float> > ASDMReader::getTsys( unsigned int idx ) 
+vector< vector<float> > OldASDMReader::getTsys( unsigned int idx ) 
 {
   vector< vector<float> > defaultTsys( 1, vector<float>( 1, 1.0 ) ) ;
   SysCalRow *scrow = getSysCalRow( idx ) ;
@@ -1183,7 +1179,7 @@ vector< vector<float> > ASDMReader::getTsys( unsigned int idx )
   }
 } 
 
-vector< vector<float> > ASDMReader::getTcal( unsigned int idx ) 
+vector< vector<float> > OldASDMReader::getTcal( unsigned int idx ) 
 {
   vector< vector<float> > defaultTcal( 1, vector<float>( 1, 1.0 ) ) ;
   SysCalRow *scrow = getSysCalRow( idx ) ;
@@ -1212,7 +1208,7 @@ vector< vector<float> > ASDMReader::getTcal( unsigned int idx )
   }
 } 
 
-void ASDMReader::getTcalAndTsys( unsigned int idx,
+void OldASDMReader::getTcalAndTsys( unsigned int idx,
                                  vector< vector<float> > &tcal,
                                  vector< vector<float> > &tsys ) 
 {
@@ -1258,7 +1254,7 @@ void ASDMReader::getTcalAndTsys( unsigned int idx,
   }
 }
 
-vector<float> ASDMReader::getOpacity( unsigned int idx ) 
+vector<float> OldASDMReader::getOpacity( unsigned int idx ) 
 {
   vector<float> tau(0) ;
   CalAtmosphereTable &atmtab = asdm_->getCalAtmosphere() ;
@@ -1309,7 +1305,7 @@ vector<float> ASDMReader::getOpacity( unsigned int idx )
   return tau ;
 }
 
-void ASDMReader::getWeatherInfo( unsigned int idx,
+void OldASDMReader::getWeatherInfo( unsigned int idx,
                                  float &temperature,
                                  float &pressure,
                                  float &humidity,
@@ -1379,7 +1375,7 @@ void ASDMReader::getWeatherInfo( unsigned int idx,
   return ;
 }
 
-void ASDMReader::processStation() 
+void OldASDMReader::processStation() 
 {
   antennaPad_.resize(0) ;
   weatherStation_.resize(0) ;
@@ -1397,7 +1393,7 @@ void ASDMReader::processStation()
    weatherStationId_ = getClosestWeatherStation() ;
 }
 
-int ASDMReader::getClosestWeatherStation()
+int OldASDMReader::getClosestWeatherStation()
 {
   if ( weatherStation_.size() == 0 ) 
     return -1 ;
@@ -1428,7 +1424,7 @@ int ASDMReader::getClosestWeatherStation()
   return retval ;
 }
 
-void ASDMReader::getPointingInfo( unsigned int idx,
+void OldASDMReader::getPointingInfo( unsigned int idx,
                                   vector<double> &dir,
                                   double &az,
                                   double &el,
@@ -1685,22 +1681,22 @@ void ASDMReader::getPointingInfo( unsigned int idx,
   return ;
 }
 
-ArrayTime ASDMReader::getMidTime( const ArrayTimeInterval &t ) 
+ArrayTime OldASDMReader::getMidTime( const ArrayTimeInterval &t ) 
 {
   return ArrayTime( t.getStartInMJD() + 0.5 * t.getDurationInDays() ) ;
 }
 
-ArrayTime ASDMReader::getEndTime( const ArrayTimeInterval &t ) 
+ArrayTime OldASDMReader::getEndTime( const ArrayTimeInterval &t ) 
 {
   return ArrayTime( t.getStartInMJD() + t.getDurationInDays() ) ;
 }
 
-ArrayTime ASDMReader::getStartTime( const ArrayTimeInterval &t ) 
+ArrayTime OldASDMReader::getStartTime( const ArrayTimeInterval &t ) 
 {
   return ArrayTime( t.getStartInMJD() ) ;
 }
 
-void ASDMReader::toJ2000( vector<double> &dir,
+void OldASDMReader::toJ2000( vector<double> &dir,
                           double az, 
                           double el,
                           double mjd,
@@ -1714,7 +1710,7 @@ void ASDMReader::toJ2000( vector<double> &dir,
   dir = toJ2000( azel, "AZELGEO", mjd, antpos ) ;
 }
 
-vector<double> ASDMReader::toJ2000( vector<double> dir,
+vector<double> OldASDMReader::toJ2000( vector<double> dir,
                                     casa::String dirref,
                                     double mjd,
                                     casa::Vector<casa::Double> antpos ) 
@@ -1749,12 +1745,12 @@ vector<double> ASDMReader::toJ2000( vector<double> dir,
   return newd ;
 }
 
-void ASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
+void OldASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
 {
   logsink_ = logsink ;
 }
 
-string ASDMReader::getFrame()
+string OldASDMReader::getFrame()
 {
   casa::String funcName = "getFrame" ;
  
@@ -1783,7 +1779,7 @@ string ASDMReader::getFrame()
   return frame ;
 }
 
-int ASDMReader::getNumIFs()
+int OldASDMReader::getNumIFs()
 {
   casa::String funcName = "getNumIFs" ;
 
@@ -1822,7 +1818,7 @@ int ASDMReader::getNumIFs()
   return nif ;
 }
 
-SysCalRow *ASDMReader::getSysCalRow( unsigned int idx )
+SysCalRow *OldASDMReader::getSysCalRow( unsigned int idx )
 {
   String funcName = "getSysCalRow" ;
 
@@ -1872,7 +1868,7 @@ SysCalRow *ASDMReader::getSysCalRow( unsigned int idx )
   return row ;
 }
 
-double ASDMReader::limitedAngle( double angle )
+double OldASDMReader::limitedAngle( double angle )
 {
   if ( angle > C::pi )
     while ( angle > C::pi ) angle -= C::_2pi ;
@@ -1881,9 +1877,8 @@ double ASDMReader::limitedAngle( double angle )
   return angle ;
 }
 
-vector< vector<double> > ASDMReader::pointingDir( PointingRow *row ) 
+vector< vector<double> > OldASDMReader::pointingDir( PointingRow *row ) 
 {
-  //String funcName = "pointingDir" ;
   vector< vector<Angle> > aTar = row->getTarget() ;
   vector< vector<Angle> > aOff = row->getOffset() ;
   vector< vector<Angle> > aDir = row->getPointingDirection() ;
@@ -1906,7 +1901,6 @@ vector< vector<double> > ASDMReader::pointingDir( PointingRow *row )
                + aEnc[i][0].get() - aDir[i][0].get() ;
     dir[i][1] = aTar[i][1].get() + aOff[i][1].get()
                + aEnc[i][1].get() - aDir[i][1].get() ;
-    //logsink_->postLocally( LogMessage("tracking offset: ["+String::toString(aEnc[i][0].get()-aDir[i][0].get())+","+String::toString(aEnc[i][0]-aDir[i][0].get())+"]",LogOrigin(className_,funcName,WHERE)) ) ;
   }
   return dir ;
 }
