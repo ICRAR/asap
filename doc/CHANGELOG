@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Release 3.1.0 [2011-08-10]
+
+* additional baseline fitting, e.g. sinusoid, cspline
+* speed ups in various areas
+* plotter metadata display
+* interactive statistics
+* improved packaging
+* matplotlib >= 1.0 support
+* better support for MeasurementSet data
+* more statistics e.g. max/min abcissa
+* row-based flagging
+* apply fft to spectra
+* improved mask handling
+
 Release 3.0.0 [2010-05-06]
 
 * BEWARE: added asap2to3 which converts '.asap' files from version 2 to 
