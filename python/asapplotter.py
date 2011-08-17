@@ -913,10 +913,12 @@ class asapplotter:
             if self._rows and self._cols:
                 n = min(n,self._rows*self._cols)
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
-                                         nplots=n,margin=self._margins,ganged=ganged)
+                                         nplots=n,margin=self._margins,
+                                         ganged=ganged)
             else:
                 n = min(n,maxpanel)
-                self._plotter.set_panels(rows=n,cols=0,nplots=n,margin=self._margins,ganged=ganged)
+                self._plotter.set_panels(rows=n,cols=0,nplots=n,
+                                         margin=self._margins,ganged=ganged)
         else:
             self._plotter.set_panels(margin=self._margins)
         #r = 0
@@ -971,7 +973,8 @@ class asapplotter:
                     self._panelrows += [r]
                     
             #if (b > b0 or newpanel) and stackcount < nstack:
-            if stackcount < nstack and (newpanel or rowstack or (a == a0 and b > b0)):
+            if stackcount < nstack and (newpanel or rowstack 
+                                        or (a == a0 and b > b0)):
                 y = []
                 if len(polmodes):
                     y = scan._getspectrum(r, polmodes[scan.getpol(r)])
@@ -979,6 +982,7 @@ class asapplotter:
                     y = scan._getspectrum(r)
                 # flag application
                 mr = scan._getflagrow(r)
+                #mr = False
                 from numpy import ma, array
                 if mr:
                     y = ma.masked_array(y,mask=mr)
@@ -986,9 +990,11 @@ class asapplotter:
                     m = scan._getmask(r)
                     from numpy import logical_not, logical_and
                     if self._maskselection and len(self._usermask) == len(m):
-                        if d[self._stacking](r) in self._maskselection[self._stacking]:
+                        if d[self._stacking](r) in \
+                                self._maskselection[self._stacking]:
                             m = logical_and(m, self._usermask)
-                    y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
+                    y = ma.masked_array(y,mask=logical_not(array(m,
+                                                                 copy=False)))
 
                 x = array(scan._getabcissa(r))
                 if self._offset:
