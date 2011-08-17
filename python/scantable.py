@@ -87,35 +87,29 @@ def normalise_edge_param(edge):
     Accepted format of edge include:
             * an integer - will be used for both sides of spectra of all IFs.
                   e.g. 10 is converted to [10,10]
-            * an empty list/tuple [] - converted to [0, 0] and used for all 
-              IFs. 
+            * an empty list/tuple [] - converted to [0, 0] and used for all IFs. 
             * a list/tuple containing an integer - same as the above case.
                   e.g. [10] is converted to [10,10]
             * a list/tuple containing two integers - will be used for all IFs. 
                   e.g. [5,10] is output as it is. no need to convert.
             * a list/tuple of lists/tuples containing TWO integers -
                   each element of edge will be used for each IF.
-                  e.g. [[5,10],[15,20]] - [5,10] for IF[0] and [15,20] for 
-                  IF[1].
-                  If an element contains the same integer values, the input 
-                  'edge' parameter can be given in a simpler shape in the 
-                  following cases:
+                  e.g. [[5,10],[15,20]] - [5,10] for IF[0] and [15,20] for IF[1].
+                  
+                  If an element contains the same integer values, the input 'edge'
+                  parameter can be given in a simpler shape in the following cases:
                       ** when len(edge)!=2
-                          any elements containing the same values can be 
-                          replaced to single integers.
-                          e.g. [[15,15]] can be simplified to [15] 
-                          (or [15,15] or 15 also). 
-                          e.g. [[1,1],[2,2],[3,3]] can be simplified to 
-                          [1,2,3]. 
+                          any elements containing the same values can be replaced
+                          to single integers.
+                          e.g. [[15,15]] can be simplified to [15] (or [15,15] or 15 also). 
+                          e.g. [[1,1],[2,2],[3,3]] can be simplified to [1,2,3]. 
                       ** when len(edge)=2
                           care is needed for this case: ONLY ONE of the
                           elements can be a single integer,
                           e.g. [[5,5],[10,10]] can be simplified to [5,[10,10]]
-                               or [[5,5],10], but can NOT be simplified to 
-                               [5,10].
+                               or [[5,5],10], but can NOT be simplified to [5,10].
                                when [5,10] given, it is interpreted as
-                               [[5,10],[5,10],[5,10],...] instead, as shown
-                               before. 
+                               [[5,10],[5,10],[5,10],...] instead, as shown before. 
     """
     from asap import _is_sequence_or_number as _is_valid
     if isinstance(edge, list) or isinstance(edge, tuple):
@@ -186,8 +180,7 @@ class scantable(Scantable):
     @asaplog_post_dec
     #def __init__(self, filename, average=None, unit=None, getpt=None,
     #             antenna=None, parallactify=None):
-    def __init__(self, filename, average=None, unit=None, parallactify=None, 
-                 **args):
+    def __init__(self, filename, average=None, unit=None, parallactify=None, **args):
         """\
         Create a scantable from a saved one or make a reference
 
@@ -214,8 +207,7 @@ class scantable(Scantable):
                           the MS data faster in some cases.
 
             antenna:      for MeasurementSet input data only:
-                          Antenna selection. integer (id) or string (name 
-                          or id).
+                          Antenna selection. integer (id) or string (name or id).
 
             parallactify: Indicate that the data had been parallatified. Default
                           is taken from rc file.
@@ -309,8 +301,7 @@ class scantable(Scantable):
                             * 'SDFITS' (save as SDFITS file)
                             * 'ASCII' (saves as ascii text file)
                             * 'MS2' (saves as an casacore MeasurementSet V2)
-                            * 'FITS' (save as image FITS - not readable by 
-                              CLASS)
+                            * 'FITS' (save as image FITS - not readable by class)
                             * 'CLASS' (save as FITS readable by CLASS)
 
             overwrite:   If the file should be overwritten if it exists.
@@ -378,8 +369,7 @@ class scantable(Scantable):
         from asap import _to_list
         from asap import unique
         if not _is_valid(scanid):
-            raise RuntimeError( 'Please specify a scanno to drop from the '\
-                                'scantable' )
+            raise RuntimeError( 'Please specify a scanno to drop from the scantable' )
         scanid = _to_list(scanid)
         allscans = unique([ self.getscan(i) for i in range(self.nrow())])
         for sid in scanid: allscans.remove(sid)
@@ -861,8 +851,7 @@ class scantable(Scantable):
 
             asdatetime:   return values as datetime objects rather than strings
 
-            prec:         number of digits shown. Default -1 to automatic
-                          calculation.
+            prec:         number of digits shown. Default -1 to automatic calculation.
                           Note this number is equals to the digits of MVTime,
                           i.e., 0<prec<3: dates with hh:: only,
                           <5: with hh:mm:, <7 or 0: with hh:mm:ss,
@@ -1155,8 +1144,7 @@ class scantable(Scantable):
         Parameters:
 
             rows:   list of row numbers to be flagged. Default is no row
-                    (must be explicitly specified to execute row-based 
-                    flagging).
+                    (must be explicitly specified to execute row-based flagging).
 
             unflag: if True, unflag the data.
 
@@ -1176,8 +1164,7 @@ class scantable(Scantable):
 
             dthres:      lower threshold
 
-            clipoutside: True for flagging data outside the range 
-                         [dthres:uthres].
+            clipoutside: True for flagging data outside the range [dthres:uthres].
                          False for flagging data inside the range.
 
             unflag:      if True, unflag the data.
@@ -2267,42 +2254,33 @@ class scantable(Scantable):
         elif isinstance(wn, int):
             return [ wn ]
         elif isinstance(wn, str):
-            if '-' in wn:                            
-                # case 'a-b' : return [a,a+1,...,b-1,b]
+            if '-' in wn:                            # case 'a-b' : return [a,a+1,...,b-1,b]
                 val = wn.split('-')
                 val = [int(val[0]), int(val[1])]
                 val.sort()
                 res = [i for i in xrange(val[0], val[1]+1)]
-            elif wn[:2] == '<=' or wn[:2] == '=<':
-                # cases '<=a','=<a' : return [0,1,...,a-1,a]
+            elif wn[:2] == '<=' or wn[:2] == '=<':   # cases '<=a','=<a' : return [0,1,...,a-1,a]
                 val = int(wn[2:])+1
                 res = [i for i in xrange(val)]
-            elif wn[-2:] == '>=' or wn[-2:] == '=>': 
-                # cases 'a>=','a=>' : return [0,1,...,a-1,a]
+            elif wn[-2:] == '>=' or wn[-2:] == '=>': # cases 'a>=','a=>' : return [0,1,...,a-1,a]
                 val = int(wn[:-2])+1
                 res = [i for i in xrange(val)]
-            elif wn[0] == '<':                      
-                # case '<a' :         return [0,1,...,a-2,a-1]
+            elif wn[0] == '<':                       # case '<a' :         return [0,1,...,a-2,a-1]
                 val = int(wn[1:])
                 res = [i for i in xrange(val)]
-            elif wn[-1] == '>':                      
-                # case 'a>' :         return [0,1,...,a-2,a-1]
+            elif wn[-1] == '>':                      # case 'a>' :         return [0,1,...,a-2,a-1]
                 val = int(wn[:-1])
                 res = [i for i in xrange(val)]
-            elif wn[:2] == '>=' or wn[:2] == '=>':
-                # cases '>=a','=>a' : return [a,a+1,...,a_nyq]
+            elif wn[:2] == '>=' or wn[:2] == '=>':   # cases '>=a','=>a' : return [a,a+1,...,a_nyq]
                 val = int(wn[2:])
                 res = [i for i in xrange(val, self.nchan()/2+1)]
-            elif wn[-2:] == '<=' or wn[-2:] == '=<': 
-                # cases 'a<=','a=<' : return [a,a+1,...,a_nyq]
+            elif wn[-2:] == '<=' or wn[-2:] == '=<': # cases 'a<=','a=<' : return [a,a+1,...,a_nyq]
                 val = int(wn[:-2])
                 res = [i for i in xrange(val, self.nchan()/2+1)]
-            elif wn[0] == '>':
-                # case '>a' :         return [a+1,a+2,...,a_nyq]
+            elif wn[0] == '>':                       # case '>a' :         return [a+1,a+2,...,a_nyq]
                 val = int(wn[1:])+1
                 res = [i for i in xrange(val, self.nchan()/2+1)]
-            elif wn[-1] == '<':
-                # case 'a<' :         return [a+1,a+2,...,a_nyq]
+            elif wn[-1] == '<':                      # case 'a<' :         return [a+1,a+2,...,a_nyq]
                 val = int(wn[:-1])+1
                 res = [i for i in xrange(val, self.nchan()/2+1)]
 
@@ -2313,7 +2291,7 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def sinusoid_baseline(self, mask=None, insitu=None, applyfft=None, 
+    def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, 
                           fftmethod=None, fftthresh=None,
                           addwn=None, rejwn=None, clipthresh=None,
                           clipniter=None, plot=None,
@@ -2393,8 +2371,7 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask          is None: mask          = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask          is None: mask          = [True for i in xrange(workscan.nchan())]
             if applyfft      is None: applyfft      = True
             if fftmethod     is None: fftmethod     = 'fft'
             if fftthresh     is None: fftthresh     = 3.0
@@ -2410,14 +2387,7 @@ class scantable(Scantable):
             if blfile        is None: blfile        = ''
 
             #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
-            workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(),
-                                        str(fftthresh).lower(),
-                                        workscan._parse_wn(addwn),
-                                        workscan._parse_wn(rejwn), clipthresh,
-                                        clipniter, getresidual,
-                                        pack_progress_params(showprogress,
-                                                             minnrow),
-                                        outlog, blfile)
+            workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history('sinusoid_baseline', varlist)
             
             if insitu:
@@ -2430,17 +2400,12 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def auto_sinusoid_baseline(self, mask=None, insitu=None, applyfft=None,
-                               fftmethod=None, fftthresh=None,
-                               addwn=None, rejwn=None, clipthresh=None,
-                               clipniter=None, edge=None, threshold=None,
-                               chan_avg_limit=None, plot=None,
-                               getresidual=None, showprogress=None, 
-                               minnrow=None,
+    def auto_sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, fftmethod=None, fftthresh=None,
+                               addwn=None, rejwn=None, clipthresh=None, clipniter=None, edge=None, threshold=None,
+                               chan_avg_limit=None, plot=None, getresidual=None, showprogress=None, minnrow=None,
                                outlog=None, blfile=None):
         """\
-        Return a scan which has been baselined (all rows) with sinusoidal
-        functions.
+        Return a scan which has been baselined (all rows) with sinusoidal functions.
         Spectral lines are detected first using linefinder and masked out
         to avoid them affecting the baseline solution.
 
@@ -2461,8 +2426,7 @@ class scantable(Scantable):
                             both float and string values accepted. 
                             given a float value, the unit is set to sigma.
                             for string values, allowed formats include:
-                                'xsigma' or 'x' (= x-sigma level. e.g., 
-                                 '3sigma'), or
+                                'xsigma' or 'x' (= x-sigma level. e.g., '3sigma'), or
                                 'topx' (= the x strongest ones, e.g. 'top5'). 
                             default is 3.0 (unit: sigma). 
             addwn:          the additional wave numbers to be used for fitting.
@@ -2480,8 +2444,7 @@ class scantable(Scantable):
                             wave numbers which are specified both in addwn
                             and rejwn will NOT be used. default is []. 
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:      maximum number of iteration of 'clipthresh'-sigma
-                            clipping (default is 0)
+            clipniter:      maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
             edge:           an optional number of channel to drop at
                             the edge of spectrum. If only one value is
                             specified, the same number will be dropped
@@ -2535,8 +2498,7 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask           is None: mask           = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
             if applyfft       is None: applyfft       = True
             if fftmethod      is None: fftmethod      = 'fft'
             if fftthresh      is None: fftthresh      = 3.0
@@ -2554,19 +2516,8 @@ class scantable(Scantable):
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
 
-            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is 
-            # implemented as a fitter method. 
-            workscan._auto_sinusoid_baseline(mask, applyfft, fftmethod.lower(),
-                                             str(fftthresh).lower(), 
-                                             workscan._parse_wn(addwn), 
-                                             workscan._parse_wn(rejwn),
-                                             clipthresh, clipniter, 
-                                             normalise_edge_param(edge),
-                                             threshold, chan_avg_limit,
-                                             getresidual,
-                                             pack_progress_params(showprogress,
-                                                                  minnrow),
-                                             outlog, blfile)
+            #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
+            workscan._auto_sinusoid_baseline(mask, applyfft, fftmethod.lower(), str(fftthresh).lower(), workscan._parse_wn(addwn), workscan._parse_wn(rejwn), clipthresh, clipniter, normalise_edge_param(edge), threshold, chan_avg_limit, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history("auto_sinusoid_baseline", varlist)
             
             if insitu:
@@ -2578,13 +2529,10 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def cspline_baseline(self, mask=None, insitu=None, npiece=None, 
-                         clipthresh=None, clipniter=None, plot=None, 
-                         getresidual=None, showprogress=None, minnrow=None,
-                         outlog=None, blfile=None):
+    def cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None, clipniter=None,
+                         plot=None, getresidual=None, showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
-        Return a scan which has been baselined (all rows) by cubic spline 
-        function (piecewise cubic polynomial).
+        Return a scan which has been baselined (all rows) by cubic spline function (piecewise cubic polynomial).
         Parameters:
             insitu:       If False a new scantable is returned.
                           Otherwise, the scaling is done in-situ
@@ -2592,8 +2540,7 @@ class scantable(Scantable):
             mask:         An optional mask
             npiece:       Number of pieces. (default is 2)
             clipthresh:   Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:    maximum number of iteration of 'clipthresh'-sigma 
-                          clipping (default is 0)
+            clipniter:    maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
             plot:     *** CURRENTLY UNAVAILABLE, ALWAYS FALSE ***
                           plot the fit and the residual. In this each
                           indivual fit has to be approved, by typing 'y'
@@ -2611,8 +2558,7 @@ class scantable(Scantable):
                           (default is "": no file/logger output)
 
         Example:
-            # return a scan baselined by a cubic spline consisting of 2 
-            # pieces (i.e., 1 internal knot),
+            # return a scan baselined by a cubic spline consisting of 2 pieces (i.e., 1 internal knot),
             # also with 3-sigma clipping, iteration up to 4 times
             bscan = scan.cspline_baseline(npiece=2,clipthresh=3.0,clipniter=4)
         
@@ -2630,8 +2576,7 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask         is None: mask         = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
             if npiece       is None: npiece       = 2
             if clipthresh   is None: clipthresh   = 3.0
             if clipniter    is None: clipniter    = 0
@@ -2643,11 +2588,7 @@ class scantable(Scantable):
             if blfile       is None: blfile       = ''
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
-            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter,
-                                       getresidual, 
-                                       pack_progress_params(showprogress,
-                                                            minnrow),
-                                       outlog, blfile)
+            workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, getresidual, pack_progress_params(showprogress, minnrow), outlog, blfile)
             workscan._add_history("cspline_baseline", varlist)
             
             if insitu:
@@ -2659,12 +2600,9 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_cspline_baseline(self, mask=None, insitu=None, npiece=None, 
-                              clipthresh=None, clipniter=None,
-                              edge=None, threshold=None, chan_avg_limit=None, 
-                              getresidual=None, plot=None,
-                              showprogress=None, minnrow=None, outlog=None,
-                              blfile=None):
+    def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, clipthresh=None, clipniter=None,
+                              edge=None, threshold=None, chan_avg_limit=None, getresidual=None, plot=None,
+                              showprogress=None, minnrow=None, outlog=None, blfile=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline
         function (piecewise cubic polynomial).
@@ -2678,8 +2616,7 @@ class scantable(Scantable):
             mask:           an optional mask retreived from scantable
             npiece:         Number of pieces. (default is 2)
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
-            clipniter:      maximum number of iteration of 'clipthresh'-sigma 
-                            clipping (default is 0)
+            clipniter:      maximum number of iteration of 'clipthresh'-sigma clipping (default is 0)
             edge:           an optional number of channel to drop at
                             the edge of spectrum. If only one value is
                             specified, the same number will be dropped
@@ -2733,8 +2670,7 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask           is None: mask           = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
             if npiece         is None: npiece         = 2
             if clipthresh     is None: clipthresh     = 3.0
             if clipniter      is None: clipniter      = 0
@@ -2748,8 +2684,7 @@ class scantable(Scantable):
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
 
-            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is 
-            # implemented as a fitter method.
+            #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method.
             workscan._auto_cspline_baseline(mask, npiece, clipthresh, 
                                             clipniter, 
                                             normalise_edge_param(edge), 
@@ -2811,8 +2746,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask         is None: mask         = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask         is None: mask         = [True for i in \
+                                                       xrange(workscan.nchan())]
             if order        is None: order        = 0
             if plot         is None: plot         = False
             if getresidual  is None: getresidual  = True
@@ -2947,8 +2882,7 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask           is None: mask           = \
-                    [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
             if order          is None: order          = 0
             if edge           is None: edge           = (0, 0)
             if threshold      is None: threshold      = 3
@@ -3360,13 +3294,11 @@ class scantable(Scantable):
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "SUB", False))
         elif isinstance(other, list) or isinstance(other, numpy.ndarray):
-            if isinstance(other[0], list) or isinstance(other[0], 
-                                                        numpy.ndarray):
+            if isinstance(other[0], list) or isinstance(other[0], numpy.ndarray):
                 from asapmath import _array2dOp
                 s = _array2dOp( self.copy(), other, "SUB", False )
             else:
-                s = scantable( self._math._arrayop( self.copy(), other, 
-                                                    "SUB", False ) )
+                s = scantable( self._math._arrayop( self.copy(), other, "SUB", False ) )
         else:
             raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator -", varlist)
@@ -3384,13 +3316,11 @@ class scantable(Scantable):
         elif isinstance(other, float):
             s = scantable(self._math._unaryop(self, other, "MUL", False))
         elif isinstance(other, list) or isinstance(other, numpy.ndarray):
-            if isinstance(other[0], list) or isinstance(other[0], 
-                                                        numpy.ndarray):
+            if isinstance(other[0], list) or isinstance(other[0], numpy.ndarray):
                 from asapmath import _array2dOp
                 s = _array2dOp( self.copy(), other, "MUL", False )
             else:
-                s = scantable( self._math._arrayop( self.copy(), other, 
-                                                    "MUL", False ) )
+                s = scantable( self._math._arrayop( self.copy(), other, "MUL", False ) )
         else:
             raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator *", varlist)
@@ -3411,13 +3341,11 @@ class scantable(Scantable):
                 raise ZeroDivisionError("Dividing by zero is not recommended")
             s = scantable(self._math._unaryop(self, other, "DIV", False))
         elif isinstance(other, list) or isinstance(other, numpy.ndarray):
-            if isinstance(other[0], list) or isinstance(other[0], 
-                                                        numpy.ndarray):
+            if isinstance(other[0], list) or isinstance(other[0], numpy.ndarray):
                 from asapmath import _array2dOp
                 s = _array2dOp( self.copy(), other, "DIV", False )
             else:
-                s = scantable( self._math._arrayop( self.copy(), other, 
-                                                    "DIV", False ) )
+                s = scantable( self._math._arrayop( self.copy(), other, "DIV", False ) )
         else:
             raise TypeError("Other input is not a scantable or float value")
         s._add_history("operator /", varlist)

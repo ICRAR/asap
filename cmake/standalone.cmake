@@ -7,7 +7,7 @@
 # casacore
 #
 # always use libcasacore.so
-set( USE_LIBCASACORE OFF )
+set( USE_LIBCASACORE ON )
 set( CASACORE_PATHS "/usr/local;/usr" )
 
 
@@ -16,7 +16,6 @@ set( CASACORE_PATHS "/usr/local;/usr" )
 #
 set( WCSLIB_PATHS "/usr/local;/usr" )
 
-find_package (RPFITS REQUIRED)
 
 #
 # subdirectories

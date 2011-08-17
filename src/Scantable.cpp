@@ -1816,9 +1816,7 @@ bool Scantable::getFlagtraFast(uInt whichrow)
   return ((flag >> 7) == 1);
 }
 
-void Scantable::polyBaseline(const std::vector<bool>& mask, int order, 
-			     bool getResidual, const std::string& progressInfo,
-			     const bool outLogger, const std::string& blfile)
+void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
   try {
     ofstream ofs;
@@ -1851,9 +1849,7 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
       chanMask = getCompositeChanMask(whichrow, mask);
       fitBaseline(chanMask, whichrow, fitter);
       setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "polyBaseline()", 
-			  fitter);
+      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
