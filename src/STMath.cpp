@@ -2271,7 +2271,7 @@ CountedPtr< Scantable > STMath::opacity( const CountedPtr< Scantable > & in,
   TableIterator iiter(outtab, "IFNO");
   while ( !iiter.pastEnd() ) {
     Table itab = iiter.table();
-    TableIterator piter(outtab, "POLNO");
+    TableIterator piter(itab, "POLNO");
     while ( !piter.pastEnd() ) {
       Table tab = piter.table();
       ROScalarColumn<Float> elev(tab, "ELEVATION");
