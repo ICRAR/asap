@@ -341,6 +341,9 @@ message( STATUS "LAPACK_LIBRARIES = " ${LAPACK_LIBRARIES} )
 # Boost
 #
 set( boost_components python )
+if( NOT STANDALONE )
+  set( boost_components ${boost_components} system )
+endif()
 find_package( Boost REQUIRED ${boost_components} )
 if( NOT Boost_FOUND )
   message( FATAL_ERROR "Boost could not be found. Please check!" )
