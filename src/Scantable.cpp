@@ -1039,9 +1039,16 @@ std::string Scantable::headerSummary()
   return String(oss);
 }
 
-std::string Scantable::summary()
+  //std::string Scantable::summary( const std::string& filename )
+void Scantable::summary( const std::string& filename )
 {
   ostringstream oss;
+  ofstream ofs;
+  LogIO ols(LogOrigin("Scantable", "summary", WHERE));
+
+  if (filename != "")
+    ofs.open( filename.c_str(),  ios::out );
+
   oss << endl;
   oss << asap::SEPERATOR << endl;
   oss << " Scan Table Summary" << endl;
@@ -1066,6 +1073,59 @@ std::string Scantable::summary()
       << setw(7) << "Channels"
       << endl;
   oss << asap::SEPERATOR << endl;
+
+  // Flush summary and clear up the string
+  ols << String(oss) << LogIO::POST;
+  if (ofs) ofs << String(oss) << flush;
+  oss.str("");
+  oss.clear();
+
+//   TableIterator iter(table_, "SCANNO");
+//   while (!iter.pastEnd()) {
+//     Table subt = iter.table();
+//     ROTableRow row(subt);
+//     MEpoch::ROScalarColumn timeCol(subt,"TIME");
+//     const TableRecord& rec = row.get(0);
+//     oss << setw(4) << std::right << rec.asuInt("SCANNO")
+//         << std::left << setw(1) << ""
+//         << setw(15) << rec.asString("SRCNAME")
+//         << setw(10) << formatTime(timeCol(0), false);
+//     // count the cycles in the scan
+//     TableIterator cyciter(subt, "CYCLENO");
+//     int nint = 0;
+//     while (!cyciter.pastEnd()) {
+//       ++nint;
+//       ++cyciter;
+//     }
+//     oss << setw(3) << std::right << nint  << setw(3) << " x " << std::left
+//         << setw(11) <<  formatSec(rec.asFloat("INTERVAL")) << setw(1) << ""
+// 	<< setw(15) << SrcType::getName(rec.asInt("SRCTYPE")) << endl;
+
+//     TableIterator biter(subt, "BEAMNO");
+//     while (!biter.pastEnd()) {
+//       Table bsubt = biter.table();
+//       ROTableRow brow(bsubt);
+//       const TableRecord& brec = brow.get(0);
+//       uInt row0 = bsubt.rowNumbers(table_)[0];
+//       oss << setw(5) << "" <<  setw(4) << std::right << brec.asuInt("BEAMNO")<< std::left;
+//       oss  << setw(4) << ""  << formatDirection(getDirection(row0)) << endl;
+//       TableIterator iiter(bsubt, "IFNO");
+//       while (!iiter.pastEnd()) {
+//         Table isubt = iiter.table();
+//         ROTableRow irow(isubt);
+//         const TableRecord& irec = irow.get(0);
+//         oss << setw(9) << "";
+//         oss << setw(3) << std::right << irec.asuInt("IFNO") << std::left
+//             << setw(1) << "" << frequencies().print(irec.asuInt("FREQ_ID"))
+//             << setw(3) << "" << nchan(irec.asuInt("IFNO"))
+//             << endl;
+
+//         ++iiter;
+//       }
+//       ++biter;
+//     }
+//     ++iter;
+//   }
   TableIterator iter(table_, "SCANNO");
   while (!iter.pastEnd()) {
     Table subt = iter.table();
@@ -1110,9 +1170,21 @@ std::string Scantable::summary()
       }
       ++biter;
     }
+    // Flush summary every scan and clear up the string
+    ols << String(oss) << LogIO::POST;
+    if (ofs) ofs << String(oss) << flush;
+    oss.str("");
+    oss.clear();
+
     ++iter;
   }
-  return String(oss);
+  oss << asap::SEPERATOR << endl;
+  ols << String(oss) << LogIO::POST;
+  if (ofs) {
+    //ofs << String(oss) << flush;
+    ofs.close();
+  }
+  //  return String(oss);
 }
 
 // std::string Scantable::getTime(int whichrow, bool showdate) const

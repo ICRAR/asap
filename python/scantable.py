@@ -444,20 +444,24 @@ class scantable(Scantable):
                          Default - no file output
 
         """
-        info = Scantable._summary(self)
+#         info = Scantable._summary(self)
         if filename is not None:
             if filename is "":
                 filename = 'scantable_summary.txt'
             from os.path import expandvars, isdir
             filename = expandvars(filename)
-            if not isdir(filename):
-                data = open(filename, 'w')
-                data.write(info)
-                data.close()
-            else:
+#             if not isdir(filename):
+#                 data = open(filename, 'w')
+#                 data.write(info)
+#                 data.close()
+#             else:
+            if isdir(filename):
                 msg = "Illegal file name '%s'." % (filename)
                 raise IOError(msg)
-        return page(info)
+        else:
+            filename = ""
+        Scantable._summary(self, filename)
+#         return page(info)
 
     def get_spectrum(self, rowno):
         """Return the spectrum for the current row in the scantable as a list.

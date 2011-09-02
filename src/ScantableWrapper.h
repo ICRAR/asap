@@ -216,8 +216,11 @@ public:
   casa::CountedPtr<Scantable> getCP() const {return table_;}
   Scantable* getPtr() {return &(*table_);}
 
-  std::string summary() const {
-    return table_->summary();
+  //  std::string summary() const {
+  //  return table_->summary();
+  //  }
+  void summary(const std::string& filename="") {
+    return table_->summary(filename);
   }
 
   std::string listHeader() const {
