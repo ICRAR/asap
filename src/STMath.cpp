@@ -978,7 +978,7 @@ CountedPtr< Scantable > STMath::quotient( const CountedPtr< Scantable > & on,
 CountedPtr< Scantable > STMath::dototalpower( const CountedPtr< Scantable >& calon,
                                               const CountedPtr< Scantable >& caloff, Float tcal )
 {
-if ( ! calon->conformant(*caloff) ) {
+  if ( ! calon->conformant(*caloff) ) {
     throw(AipsError("'CAL on' and 'CAL off' scantables are not conformant."));
   }
   setInsitu(false);
@@ -986,7 +986,18 @@ if ( ! calon->conformant(*caloff) ) {
   Table& tout = out->table();
   const Table& tcon = calon->table();
   Vector<Float> tcalout;
-  Vector<Float> tcalout2;  //debug
+
+  std::map<uInt,uInt> tcalIdToRecNoMap;
+  const Table& calOffTcalTable = caloff->tcal().table();
+  {
+    ROScalarColumn<uInt> calOffTcalTable_IDcol(calOffTcalTable, "ID");
+    const Vector<uInt> tcalIds(calOffTcalTable_IDcol.getColumn());
+    size_t tcalIdsEnd = tcalIds.nelements();
+    for (uInt i = 0; i < tcalIdsEnd; i++) {
+      tcalIdToRecNoMap[tcalIds[i]] = i;
+    }
+  }
+  ROArrayColumn<Float> calOffTcalTable_TCALcol(calOffTcalTable, "TCAL");
 
   if ( tout.nrow() != tcon.nrow() ) {
     throw(AipsError("Mismatch in number of rows to form cal on - off pair."));
@@ -1057,11 +1068,11 @@ if ( ! calon->conformant(*caloff) ) {
       }
 **/
       // get tcal if input tcal <= 0
-      String tcalt;
       Float tcalUsed;
       tcalUsed = tcal;
       if ( tcal <= 0.0 ) {
-        caloff->tcal().getEntry(tcalt, tcalout, tcalId);
+	uInt tcalRecNo = tcalIdToRecNoMap[tcalId];
+	calOffTcalTable_TCALcol.get(tcalRecNo, tcalout);
 //         if (polno<=3) {
 //           tcalUsed = tcalout[polno];
 //         }
@@ -2417,38 +2428,55 @@ CountedPtr< Scantable >
     }
     out->appendToHistoryTable((*it)->history());
     const Table& tab = (*it)->table();
+
+    Block<String> cols(3);
+    cols[0] = String("FREQ_ID");
+    cols[1] = String("MOLECULE_ID");
+    cols[2] = String("FOCUS_ID");
+
     TableIterator scanit(tab, "SCANNO");
     while (!scanit.pastEnd()) {
-      TableIterator freqit(scanit.table(), "FREQ_ID");
-      while ( !freqit.pastEnd() ) {
-        Table thetab = freqit.table();
+      ScalarColumn<uInt> thescannocol(scanit.table(),"SCANNO");
+      Vector<uInt> thescannos(thescannocol.nrow(),newscanno);
+      thescannocol.putColumn(thescannos);
+      TableIterator subit(scanit.table(), cols);
+      while ( !subit.pastEnd() ) {
         uInt nrow = tout.nrow();
+        Table thetab = subit.table();
+        ROTableRow row(thetab);
+	Vector<uInt> thecolvals(thetab.nrow());
+	ScalarColumn<uInt> thefreqidcol(thetab,"FREQ_ID");
+	ScalarColumn<uInt> themolidcol(thetab, "MOLECULE_ID");
+	ScalarColumn<uInt> thefocusidcol(thetab,"FOCUS_ID");
+	// The selected subset of table should have 
+	// the equal FREQ_ID, MOLECULE_ID, and FOCUS_ID values.
+	const TableRecord& rec = row.get(0);
+	// Set the proper FREQ_ID
+	Double rv,rp,inc;
+	(*it)->frequencies().getEntry(rp, rv, inc, rec.asuInt("FREQ_ID"));
+	uInt id;
+	id = out->frequencies().addEntry(rp, rv, inc);
+	thecolvals = id;
+	thefreqidcol.putColumn(thecolvals);
+	// Set the proper MOLECULE_ID
+	Vector<String> name,fname;Vector<Double> rf;
+	(*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
+	id = out->molecules().addEntry(rf, name, fname);
+	thecolvals = id;
+	themolidcol.putColumn(thecolvals);
+	// Set the proper FOCUS_ID
+	Float fpa,frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
+	(*it)->focus().getEntry(fpa, fax, ftan, frot, fhand, fmount,fuser,
+				fxy, fxyp, rec.asuInt("FOCUS_ID"));
+	id = out->focus().addEntry(fpa, fax, ftan, frot, fhand, fmount,fuser,
+				   fxy, fxyp);
+	thecolvals = id;
+	thefocusidcol.putColumn(thecolvals);
+
         tout.addRow(thetab.nrow());
         TableCopy::copyRows(tout, thetab, nrow, 0, thetab.nrow());
-        ROTableRow row(thetab);
-        for ( uInt i=0; i<thetab.nrow(); ++i) {
-          uInt k = nrow+i;
-          scannocol.put(k, newscanno);
-          const TableRecord& rec = row.get(i);
-          Double rv,rp,inc;
-          (*it)->frequencies().getEntry(rp, rv, inc, rec.asuInt("FREQ_ID"));
-          uInt id;
-          id = out->frequencies().addEntry(rp, rv, inc);
-          freqidcol.put(k,id);
-          //String name,fname;Double rf;
-          Vector<String> name,fname;Vector<Double> rf;
-          (*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
-          id = out->molecules().addEntry(rf, name, fname);
-          molidcol.put(k, id);
-          Float fpa,frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
-          (*it)->focus().getEntry(fpa, fax, ftan, frot, fhand,
-                                  fmount,fuser, fxy, fxyp,
-                                  rec.asuInt("FOCUS_ID"));
-          id = out->focus().addEntry(fpa, fax, ftan, frot, fhand,
-                                     fmount,fuser, fxy, fxyp);
-          focusidcol.put(k, id);
-        }
-        ++freqit;
+
+        ++subit;
       }
       ++newscanno;
       ++scanit;

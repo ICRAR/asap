@@ -44,17 +44,20 @@ public:
     if ( !file.exists() ) {
       throw(AipsError("File does not exist"));
     }
-    filler_ = new PKSFiller(stable_);
-    if (filler_->open(filename, rec)) {
-      //    if (filler_->open(filename)) {
-      attached_ = true;
-      return;
+    int fileType = dataType( filename ) ;
+    if ( fileType == 0 ) {
+      filler_ = new PKSFiller(stable_);
+      if (filler_->open(filename, rec)) {
+        attached_ = true;
+        return;
+      }
     }
-    filler_ = new NROFiller(stable_);
-    if (filler_->open(filename, rec)) {
-      //    if (filler_->open(filename)) {
-      attached_ = true;
-      return;
+    else if ( fileType == 1 ) {
+      filler_ = new NROFiller(stable_);
+      if (filler_->open(filename, rec)) {
+        attached_ = true;
+        return;
+      }
     }
     filler_ = 0;
     attached_ = false;
@@ -79,6 +82,34 @@ public:
   }
 
 private:
+
+  int dataType( const std::string &filename ) {
+    int ret = -1 ;
+    int pks = 0 ;
+    int nro = 1 ;
+    casa::File file( filename ) ;
+    if ( file.isDirectory() )
+      ret = pks ;
+    else if ( file.isReadable() ) {
+      FILE *f = fopen( filename.c_str(), "r") ;
+      char buf[8] ;
+      fread( buf, 6, 1, f ) ;
+      fclose( f ) ;
+      buf[7]='\0' ;
+      // NRO data has two types:
+      //  1) specific binary data for OTF observation
+      //  2) (pseudo-)FITS data that doesn't have primary HDU
+      // So, one can distinguish NRO and non-NRO data by examining 
+      // first keyword name.
+      if ( casa::String( buf ) == "SIMPLE" ) {
+        ret = pks ;
+      }
+      else {
+        ret = nro ;
+      }
+    }
+    return ret ;
+  }
 
   FillerWrapper();
   FillerWrapper(const FillerWrapper&);

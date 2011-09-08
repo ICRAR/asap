@@ -27,6 +27,13 @@ FillerBase::FillerBase(casa::CountedPtr<Scantable> stable) :
     // FIT_ID is -1 by default
     RecordFieldPtr<Int> fitIdCol( row_.record(), "FIT_ID" ) ;
     *fitIdCol = -1 ;
+
+    mEntry_.resize( 0 ) ;
+    mIdx_.resize( 0 ) ;
+    fEntry_.resize( 0 ) ;
+    fIdx_.resize( 0 ) ;
+    wEntry_.resize( 0 ) ;
+    wIdx_.resize( 0 ) ;
 }
 
 void FillerBase::setHeader(const STHeader& header)
@@ -81,7 +88,27 @@ void FillerBase::setFrequency(Double refpix, Double refval,
                               Double incr)
 {
   /// @todo this has to change when nchan isn't global anymore
-  uInt id= table_->frequencies().addEntry(refpix, refval, incr);
+  uInt nEntry = fEntry_.size() ;
+  Int idx = -1 ;
+  Vector<Double> entry( 3 ) ;
+  entry[0] = refpix ;
+  entry[1] = refval ;
+  entry[2] = incr ;
+  for ( uInt i = 0 ; i < nEntry ; i++ ) {
+    if ( allEQ( entry, fEntry_[i] ) ) {
+      idx = i ;
+      break ;
+    }
+  }
+  uInt id ;
+  if ( idx != -1 )
+    id = fIdx_[idx] ;
+  else {
+    id= table_->frequencies().addEntry(refpix, refval, incr);
+    RecordFieldPtr<uInt> mfreqidCol(row_.record(), "FREQ_ID");
+    fEntry_.push_back( entry ) ;
+    fIdx_.push_back( id ) ;
+  }
   RecordFieldPtr<uInt> mfreqidCol(row_.record(), "FREQ_ID");
   *mfreqidCol = id;
 
@@ -90,8 +117,25 @@ void FillerBase::setFrequency(Double refpix, Double refval,
 
 void FillerBase::setMolecule(const Vector<Double>& restfreq)
 {
-  Vector<String> tmp;
-  uInt id = table_->molecules().addEntry(restfreq, tmp, tmp);
+  uInt nEntry = mEntry_.size() ;
+  Int idx = -1 ;
+  for ( uInt i = 0 ; i < nEntry ; i++ ) {
+    if ( restfreq.conform( mEntry_[i] ) ) {
+      if ( allEQ( restfreq, mEntry_[i] ) ) {
+        idx = i ;
+        break ;
+      }
+    }
+  }
+  uInt id ;
+  if ( idx != -1 )
+    id = mIdx_[idx] ;
+  else {
+    Vector<String> tmp ;
+    id = table_->molecules().addEntry(restfreq,tmp,tmp) ;
+    mEntry_.push_back( restfreq ) ;
+    mIdx_.push_back( id ) ;
+  }
   RecordFieldPtr<uInt> molidCol(row_.record(), "MOLECULE_ID");
   *molidCol = id;
 }
@@ -128,10 +172,31 @@ void FillerBase::setWeather(Float temperature, Float pressure,
                         Float humidity,
                         Float windspeed, Float windaz)
 {
-    uInt id = table_->weather().addEntry(temperature, pressure,
-                                         humidity, windspeed, windaz);
-    RecordFieldPtr<uInt> mweatheridCol(row_.record(), "WEATHER_ID");
-    *mweatheridCol = id;
+  uInt nEntry = wEntry_.size() ;
+  Int idx = -1 ;
+  Vector<Float> entry( 5 ) ;
+  entry[0] = temperature ;
+  entry[1] = pressure ;
+  entry[2] = humidity ;
+  entry[3] = windspeed ;
+  entry[4] = windaz ;
+  for ( uInt i = 0 ; i < nEntry ; i++ ) {
+    if ( allEQ( entry, wEntry_[i] ) ) {
+      idx = i ;
+      break ;
+    }
+  }
+  uInt id ;
+  if ( idx != -1 )
+    id = wIdx_[idx] ;
+  else {
+    id = table_->weather().addEntry(temperature, pressure,
+                                    humidity, windspeed, windaz);
+    wEntry_.push_back( entry ) ;
+    wIdx_.push_back( id ) ;
+  }
+  RecordFieldPtr<uInt> mweatheridCol(row_.record(), "WEATHER_ID");
+  *mweatheridCol = id;
 }
 
 void FillerBase::setTcal(const String& tcaltime,
@@ -186,39 +251,59 @@ void FillerBase::setWeather2(Float temperature,
                              Float windspeed, 
                              Float windaz)
 {
-  uInt id ;
-  Table tab = table_->weather().table() ;
-  Table subt = tab( tab.col("TEMPERATURE") == temperature \
-                    && tab.col("PRESSURE") == pressure \
-                    && tab.col("HUMIDITY") == humidity \
-                    && tab.col("WINDSPEED") == windspeed \
-                    && tab.col("WINDAZ") == windaz, 1 ) ;
-  Int nrow = tab.nrow() ;
-  Int nrowSel = subt.nrow() ;
-  if ( nrowSel == 0 ) {
-    tab.addRow( 1, True ) ;
-    TableRow row( tab ) ;
-    TableRecord &rec = row.record() ;
-    RecordFieldPtr<casa::uInt> rfpi ;
-    rfpi.attachToRecord( rec, "ID" ) ;
-    *rfpi = (uInt)nrow ;
-    RecordFieldPtr<casa::Float> rfp ;
-    rfp.attachToRecord( rec, "TEMPERATURE" ) ;
-    *rfp = temperature ;
-    rfp.attachToRecord( rec, "PRESSURE" ) ;
-    *rfp = pressure ;
-    rfp.attachToRecord( rec, "HUMIDITY" ) ;
-    *rfp = humidity ;
-    rfp.attachToRecord( rec, "WINDSPEED" ) ;
-    *rfp = windspeed ;
-    rfp.attachToRecord( rec, "WINDAZ" ) ;
-    *rfp = windaz ;
-    row.put( nrow, rec ) ;
-    id = (uInt)nrow ;
+  uInt nEntry = wEntry_.size() ;
+  Int idx = -1 ;
+  Vector<Float> entry( 5 ) ;
+  entry[0] = temperature ;
+  entry[1] = pressure ;
+  entry[2] = humidity ;
+  entry[3] = windspeed ;
+  entry[4] = windaz ;
+  for ( uInt i = 0 ; i < nEntry ; i++ ) {
+    if ( allEQ( entry, wEntry_[i] ) ) {
+      idx = i ;
+      break ;
+    }
   }
+  uInt id ;
+  if ( idx != -1 )
+    id = wIdx_[idx] ;
   else {
-    ROTableColumn tc( subt, "ID" ) ;
-    id = tc.asuInt( 0 ) ;
+    Table tab = table_->weather().table() ;
+    Table subt = tab( tab.col("TEMPERATURE") == temperature     \
+                      && tab.col("PRESSURE") == pressure        \
+                      && tab.col("HUMIDITY") == humidity        \
+                      && tab.col("WINDSPEED") == windspeed      \
+                      && tab.col("WINDAZ") == windaz, 1 ) ;
+    Int nrow = tab.nrow() ;
+    Int nrowSel = subt.nrow() ;
+    if ( nrowSel == 0 ) {
+      tab.addRow( 1, True ) ;
+      TableRow row( tab ) ;
+      TableRecord &rec = row.record() ;
+      RecordFieldPtr<casa::uInt> rfpi ;
+      rfpi.attachToRecord( rec, "ID" ) ;
+      *rfpi = (uInt)nrow ;
+      RecordFieldPtr<casa::Float> rfp ;
+      rfp.attachToRecord( rec, "TEMPERATURE" ) ;
+      *rfp = temperature ;
+      rfp.attachToRecord( rec, "PRESSURE" ) ;
+      *rfp = pressure ;
+      rfp.attachToRecord( rec, "HUMIDITY" ) ;
+      *rfp = humidity ;
+      rfp.attachToRecord( rec, "WINDSPEED" ) ;
+      *rfp = windspeed ;
+      rfp.attachToRecord( rec, "WINDAZ" ) ;
+      *rfp = windaz ;
+      row.put( nrow, rec ) ;
+      id = (uInt)nrow ;
+    }
+    else {
+      ROTableColumn tc( subt, "ID" ) ;
+      id = tc.asuInt( 0 ) ;
+    }
+    wEntry_.push_back( entry ) ;
+    wIdx_.push_back( id ) ;
   }
   RecordFieldPtr<uInt> mweatheridCol(row_.record(), "WEATHER_ID");
   *mweatheridCol = id;

@@ -26,6 +26,7 @@
 
 // STL
 #include <string>
+#include <vector>
 // AIPS++
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
@@ -102,6 +103,13 @@ class FillerBase
     FillerBase& operator=(const FillerBase&);
     casa::String referenceRx_;
     casa::TableRow row_;
+ 
+    std::vector< casa::Vector<casa::Double> > mEntry_ ;
+    std::vector<casa::uInt> mIdx_ ;
+    std::vector< casa::Vector<casa::Double> > fEntry_ ;
+    std::vector<casa::uInt> fIdx_ ;
+    std::vector< casa::Vector<casa::Float> > wEntry_ ;
+    std::vector<casa::uInt> wIdx_ ;
 };
 
 

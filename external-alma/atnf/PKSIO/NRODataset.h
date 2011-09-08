@@ -505,7 +505,6 @@ class NRODataset
   FILE *fp_ ;
 
   // OS endian
-  int endian_ ;
   int same_ ;
 
   // Logger

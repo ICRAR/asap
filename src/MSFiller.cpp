@@ -1417,7 +1417,6 @@ uInt MSFiller::getDirection( uInt idx,
   //os_ << "start getDirection 1st stage startSec=" << time0 << LogIO::POST ;
   // assume that cols is sorted by TIME
   Bool doInterp = False ;
-  //uInt nrow = tcol.nrow() ;
   uInt nrow = dcol.nrow() ;
   if ( nrow == 0 ) 
     return 0 ;

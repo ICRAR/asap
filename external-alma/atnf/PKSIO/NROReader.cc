@@ -530,10 +530,10 @@ int NROReader::getScanInfo( int irow,
                             Double &interval,
                             String &srcname,
                             String &fieldname,
-                            Array<Float> &spectra,
-                            Array<uChar> &flagtra,
-                            Array<Float> &tsys,
-                            Array<Double> &direction,
+                            Vector<Float> &spectra,
+                            Vector<uChar> &flagtra,
+                            Vector<Float> &tsys,
+                            Vector<Double> &direction,
                             Float &azimuth,
                             Float &elevation,
                             Float &parangle,
@@ -547,10 +547,12 @@ int NROReader::getScanInfo( int irow,
                             Float &windvel,      
                             Float &winddir,      
                             Double &srcvel,
-                            Array<Double> &propermotion,
+                            Vector<Double> &propermotion,
                             Vector<Double> &srcdir,
-                            Array<Double> &scanrate )
+                            Vector<Double> &scanrate )
 {
+  static const IPosition oneByOne( 1, 1 );
+
   // DEBUG
   //cout << "NROReader::getScanInfo()  irow = " << irow << endl ;
   //
@@ -588,9 +590,8 @@ int NROReader::getScanInfo( int irow,
   //cout << "freqs = [" << freqs[0] << ", " << freqs[1] << ", " << freqs[2] << "]" << endl ;
 
   // restfreq (for MOLECULE_ID)
-  Vector<Double> rf( IPosition( 1, 1 ) ) ;
-  rf( 0 ) = record->FREQ0 ;
-  restfreq = rf ;
+  restfreq.resize( oneByOne ) ;
+  restfreq[0] = record->FREQ0 ;
   //cout << "restfreq = " << rf << endl ;
 
   // refbeamno
@@ -616,23 +617,21 @@ int NROReader::getScanInfo( int irow,
 
   // spectra
   vector<double> spec = dataset_->getSpectrum( irow ) ;
-  Array<Float> sp( IPosition( 1, spec.size() ) ) ;
+  spectra.resize( spec.size() ) ;
   int index = 0 ;
-  for ( Array<Float>::iterator itr = sp.begin() ; itr != sp.end() ; itr++ ) {
+  for ( Vector<Float>::iterator itr = spectra.begin() ; itr != spectra.end() ; itr++ ) {
     *itr = spec[index++] ;
   }
-  spectra = sp ;
   //cout << "spec.size() = " << spec.size() << endl ;
   
   // flagtra
-  Array<uChar> flag( spectra.shape() ) ;
-  flag.set( 0 ) ;
-  flagtra = flag ;
+  flagtra.resize( spectra.nelements() ) ;
+  flagtra.set( 0 ) ;
   //cout << "flag.size() = " << flag.size() << endl ;
 
   // tsys
-  Array<Float> tmp( IPosition( 1, 1 ), record->TSYS ) ;
-  tsys = tmp ;
+  tsys.resize( oneByOne ) ;
+  tsys[0] = record->TSYS ;
   //cout << "tsys[0] = " << tsys[0] << endl ;
 
   // direction
@@ -692,20 +691,14 @@ int NROReader::getScanInfo( int irow,
   //cout << "srcvel = " << srcvel << endl ;
 
   // propermotion
-  Array<Double> srcarr( IPosition( 1, 2 ) ) ;
-  srcarr = 0.0 ;
-  propermotion = srcarr ;
-  //cout << "propermotion = [" << propermotion[0] << ", " << propermotion[1] << "]" << endl ; 
+  // do nothing
 
   // srcdir
   srcdir = getSourceDirection() ;
   //cout << "srcdir = [" << srcdir[0] << ", " << srcdir[1] << endl ;
 
   // scanrate
-  Array<Double> sr( IPosition( 1, 1 ) ) ;
-  sr = 0.0 ;
-  scanrate = sr ;
-  //cout << "scanrate = " << scanrate[0] << endl ;
+  // do nothing
 
   return 0 ;
 }

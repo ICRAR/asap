@@ -21,6 +21,7 @@ add_definitions( -DHAVE_LIBPYRAP )
 # source files for libpyrap
 set( ASAP_SRCS
      ${SRCDIR}/MathUtils.cpp
+     ${SRCDIR}/TableTraverse.cpp
      ${SRCDIR}/RowAccumulator.cpp
      ${SRCDIR}/Logger.cpp
      ${SRCDIR}/LineCatalog.cpp

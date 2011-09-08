@@ -70,17 +70,7 @@ NRODataset::NRODataset( string name )
   dataLen_ = 0 ;
   dataid_ = -1 ;
 
-  // OS endian 
-  int i = 1 ;
-  endian_ = -1 ;
-  if ( *reinterpret_cast<char *>(&i) == 1 ) {
-    endian_ = LITTLE_ENDIAN ;
-    os << LogIO::NORMAL << "LITTLE_ENDIAN " << LogIO::POST ;
-  }
-  else {
-    endian_ = BIG_ENDIAN ;
-    os << LogIO::NORMAL << "BIG_ENDIAN " << LogIO::POST ;
-  }
+  // endian matches
   same_ = -1 ;
 
   // Record for frequency setting
@@ -352,10 +342,10 @@ void NRODataset::close()
 // get spectrum
 vector< vector<double> > NRODataset::getSpectrum()
 {
-  vector< vector<double> > spec;
+  vector< vector<double> > spec(rowNum_);
 
   for ( int i = 0 ; i < rowNum_ ; i++ ) {
-    spec.push_back( getSpectrum( i ) ) ;
+    spec[i] = getSpectrum( i ) ;
   }
 
   return spec ;
@@ -369,8 +359,7 @@ vector<double> NRODataset::getSpectrum( int i )
   //cout << "NRODataset::getSpectrum() start process (" << i << ")" << endl ;
   //
   // size of spectrum is not chmax_ but dataset_->getNCH() after binding
-  int nchan = NUMCH ;
-  vector<double> spec( chmax_, 0.0 ) ;  // spectrum "before" binding
+  const int nchan = NUMCH ;
   vector<double> bspec( nchan, 0.0 ) ;  // spectrum "after" binding
   // DEBUG
   //cout << "NRODataset::getSpectrum()  nchan = " << nchan << " chmax_ = " << chmax_ << endl ;
@@ -378,7 +367,7 @@ vector<double> NRODataset::getSpectrum( int i )
 
   NRODataRecord *record = getRecord( i ) ;
 
-  int bit = IBIT ;   // fixed to 12 bit
+  const int bit = IBIT ;   // fixed to 12 bit
   double scale = record->SFCTR ;
   // DEBUG
   //cout << "NRODataset::getSpectrum()  scale = " << scale << endl ;
@@ -391,7 +380,7 @@ vector<double> NRODataset::getSpectrum( int i )
     //cerr << "NRODataset::getSpectrum()  zero spectrum (" << i << ")" << endl ;
     return bspec ;
   }
-  char *cdata = record->LDATA ;
+  unsigned char *cdata = (unsigned char *)record->LDATA ;
   vector<double> mscale = MLTSCF ;
   double dscale = mscale[getIndex( i )] ;
   int cbind = CHBIND ;
@@ -399,57 +388,27 @@ vector<double> NRODataset::getSpectrum( int i )
 
   // char -> int
   vector<int> ispec( chmax_, 0 ) ;
-  union SharedMemory {
-    int ivalue ;
-    unsigned char cbuf[4] ;
-  } ;
-  SharedMemory u ;
-  int j = 0 ;
-  char ctmp = 0x00 ;
-  int sw = 0 ;
-  for ( int i = 0 ; i < chmax_ ; i++ ) {
-    if ( bit == 12 ) {  // 12 bit qunatization
-      u.ivalue = 0 ;
 
-      if ( endian_ == BIG_ENDIAN ) {
-        // big endian
-        if ( sw == 0 ) {
-          char c0 = (cdata[j] >> 4) & 0x0f ;
-          char c1 = ((cdata[j] << 4) & 0xf0) | ((cdata[j+1] >> 4) & 0x0f) ;
-          ctmp = cdata[j+1] & 0x0f ;
-          u.cbuf[2] = c0 ;
-          u.cbuf[3] = c1 ;
-          j += 2 ;
-          sw = 1 ;
-        }
-        else if ( sw == 1 ) {
-          u.cbuf[2] = ctmp ;
-          u.cbuf[3] = cdata[j] ;
-          j++ ;
-          sw = 0 ;
-        }
-      }
-      else if ( endian_ == LITTLE_ENDIAN ) {
-        // little endian
-        if ( sw == 0 ) {
-          char c0 = (cdata[j] >> 4) & 0x0f ;
-          char c1 = ((cdata[j] << 4) & 0xf0) | ((cdata[j+1] >> 4) & 0x0f) ;
-          ctmp = cdata[j+1] & 0x0f ;
-          u.cbuf[1] = c0 ;
-          u.cbuf[0] = c1 ;
-          j += 2 ;
-          sw = 1 ;
-        }
-        else if ( sw == 1 ) {
-          u.cbuf[1] = ctmp ;
-          u.cbuf[0] = cdata[j] ;
-          j++ ;
-          sw = 0 ;
-        }
-      }
+  static const int shift_right[] = {
+    4, 0
+  };
+  static const int start_pos[] = {
+    0, 1
+  };
+  static const int incr[] = {
+    0, 3
+  };
+  int j = 0 ;
+  for ( int i = 0 ; i < chmax_ ; i++ ) {
+    int ivalue = 0 ;
+    if ( bit == 12 ) {  // 12 bit qunatization
+      const int idx = j + start_pos[i & 1];
+      const unsigned tmp = unsigned(cdata[idx]) << 8 | cdata[idx + 1];
+      ivalue = int((tmp >> shift_right[i & 1]) & 0xFFF);
+      j += incr[i & 1];
     }
-    
-    ispec[i] = u.ivalue ;
+
+    ispec[i] = ivalue ;
     if ( ( ispec[i] < 0 ) || ( ispec[i] > 4096 ) ) {
       //cerr << "NRODataset::getSpectrum()  ispec[" << i << "] is out of range" << endl ;
       os << LogIO::SEVERE << "ispec[" << i << "] is out of range" << LogIO::EXCEPTION ;
@@ -460,6 +419,7 @@ vector<double> NRODataset::getSpectrum( int i )
     //
   }
 
+  double *const spec = new double[ chmax_ ] ;  // spectrum "before" binding
   // int -> double 
   for ( int i = 0 ; i < chmax_ ; i++ ) {
     spec[i] = (double)( ispec[i] * scale + offset ) * dscale ; 
@@ -489,6 +449,7 @@ vector<double> NRODataset::getSpectrum( int i )
     for ( int i = 0 ; i < nchan ; i++ ) 
       bspec[i] = spec[i] ;
   }
+  delete[] spec;
 
   // DEBUG
   //cout << "NRODataset::getSpectrum() end process" << endl ;

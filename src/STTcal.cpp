@@ -119,7 +119,7 @@ uInt STTcal::addEntry( const String& time, const Vector<Float>& cal)
 
 void STTcal::getEntry( String& time, Vector<Float>& tcal, uInt id )
 {
-  Table t = table_(table_.col("ID") == Int(id) );
+  Table t = table_(table_.col("ID") == Int(id),1);
   if (t.nrow() == 0 ) {
     throw(AipsError("STTcal::getEntry - id out of range"));
   }

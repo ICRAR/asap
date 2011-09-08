@@ -99,13 +99,13 @@ void NROFiller::fill()
   Double interval ;
   String srcname ;
   String fieldname ;
-  Array<Float> spectra ;
-  Array<uChar> flagtra ;
-  Array<Float> tsys ;
-  Array<Double> direction ;
+  Vector<Float> spectra ;
+  Vector<uChar> flagtra ;
+  Vector<Float> tsys ;
+  Vector<Double> direction ;
   Float azimuth ;
   Float elevation ;
-  Float parangle ;
+  Float parangle = 0.0 ;
   Float opacity ;
   uInt tcalid ;
   Int fitid ;
@@ -116,15 +116,22 @@ void NROFiller::fill()
   Float windvel ;
   Float winddir ;
   Double srcvel ;
-  Array<Double> propermotion ;
+  Vector<Double> propermotion( 2, 0.0 ) ;
   Vector<Double> srcdir ;
-  Array<Double> scanrate ;
+  Vector<Double> scanrate( 2, 0.0 ) ;
   Int rowCount = 0 ;
 
   STHeader header = table_->getHeader() ;
   String obsType = header.obstype.substr( 0, 3 ) ;
   Vector<Float> defaultTcal( 1, 1.0 ) ;
   String tcalTime = MVTime( header.utc ).string( MVTime::YMD ) ;
+
+  // TCAL subtable rows
+  setTcal( tcalTime, defaultTcal ) ;
+
+  // FOCUS subtable rows
+  setFocus( parangle ) ;
+
   for ( Int irow = 0 ; irow < (Int)nRow ; irow++ ) {
     // check scan intent
     string scanType = reader_->getScanType( irow ) ;
@@ -194,50 +201,35 @@ void NROFiller::fill()
     // MOLECULES subtable row
     setMolecule( restfreq ) ;
 
-    // FOCUS subtable row
-    setFocus( parangle ) ;
-
     // WEATHER subtable row
     float p = 7.5 * temperature / ( 273.3 + temperature ) ;
     float sh = 6.11 * powf( 10, p ) ;
     temperature += 273.15 ; // C->K
     winddir *= C::degree ; // deg->rad
     humidity /= sh ; // P_H2O->relative humidity
-    setWeather( temperature, pressure, humidity, windvel, winddir ) ;
-
-    // TCAL subtable row
-    // use default since NRO input is calibrated data
-    setTcal( tcalTime, defaultTcal ) ;
-    
+    setWeather2( temperature, pressure, humidity, windvel, winddir ) ;
 
     // set row attributes
     // SPECTRA, FLAGTRA, and TSYS
-    Vector<Float> spectrum( spectra );
-    Vector<uChar> flags( flagtra ) ;
-    Vector<Float> Tsys( tsys ) ;
-    setSpectrum( spectrum, flags, Tsys ) ;
+    setSpectrum( spectra, flagtra, tsys ) ;
 
     // SCANNO, CYCLENO, IFNO, POLNO, and BEAMNO
-    //uInt ifno = table_->frequencies().addEntry( (Double)fqs[0], (Double)fqs[1], (Double)fqs[2] ) ;
     setIndex( scanno, cycleno, ifno, polno, beamno ) ;
 
     // REFBEAMNO
     setReferenceBeam( (Int)refbeamno ) ;
 
     // DIRECTION
-    Vector<Double> dir( direction ) ;
-    setDirection(dir, azimuth, elevation ) ;
+    setDirection( direction, azimuth, elevation ) ;
 
     // TIME and INTERVAL
     setTime( scantime, interval ) ;
 
     // SRCNAME, SRCTYPE, FIELDNAME, SRCDIRECTION, SRCPROPERMOTION, and SRCVELOCITY
-    Vector<Double> propermot( propermotion ) ;
-    setSource( srcname, srcType, fieldname, srcdir, propermot, srcvel ) ;
+    setSource( srcname, srcType, fieldname, srcdir, propermotion, srcvel ) ;
 
     // SCANRATE
-    Vector<Double> srate( scanrate ) ;
-    setScanRate( srate ) ;
+    setScanRate( scanrate ) ;
 
     // OPACITY
     setOpacity( opacity ) ;

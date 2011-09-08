@@ -80,26 +80,26 @@ template class TabVecTemp<uChar>;
 template class TabVecRep<uChar>;
 
 //template void convertArray<Bool, uChar>(Array<Bool> &, Array<uChar> const &);
-template void convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
+template void casa::convertArray<uChar, Bool>(Array<uChar> &, Array<Bool> const &);
 
-template Array<Float>& operator/=<Float>(Array<Float>&, MaskedArray<Float> const&);
-template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Float const&);
-template MaskedArray<Float> const& operator*=<Float>(MaskedArray<Float> const&, Array<Float> const&);
-template MaskedArray<Float> const& operator/=<Float>(MaskedArray<Float> const&, Float const&);
-template MaskedArray<Float> operator+<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator-<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator-<Float>(MaskedArray<Float> const&, Array<Float> const&);
+template Array<Float>& casa::operator/=<Float>(Array<Float>&, MaskedArray<Float> const&);
+template MaskedArray<Float> const& casa::operator*=<Float>(MaskedArray<Float> const&, Float const&);
+template MaskedArray<Float> const& casa::operator*=<Float>(MaskedArray<Float> const&, Array<Float> const&);
+template MaskedArray<Float> const& casa::operator/=<Float>(MaskedArray<Float> const&, Float const&);
+template MaskedArray<Float> casa::operator+<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator-<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator-<Float>(MaskedArray<Float> const&, Array<Float> const&);
 
-template MaskedArray<Float> operator/<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator/<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
 
-template MaskedArray<Float> operator*<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator*<Float>(MaskedArray<Float> const&, Array<Float> const&);
-template MaskedArray<Float> operator*<Float>(Array<Float> const&, MaskedArray<Float> const&);
-template MaskedArray<Float> operator*<Float>(Float const&, MaskedArray<Float> const&);
-template Float stddev<Float>(MaskedArray<Float> const&);
-template Float median<Float>(MaskedArray<Float> const&, Bool, Bool);
-template Float sumsquares<Float>(MaskedArray<Float> const&);
-template Float avdev<Float>(MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator*<Float>(MaskedArray<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator*<Float>(MaskedArray<Float> const&, Array<Float> const&);
+template MaskedArray<Float> casa::operator*<Float>(Array<Float> const&, MaskedArray<Float> const&);
+template MaskedArray<Float> casa::operator*<Float>(Float const&, MaskedArray<Float> const&);
+template Float casa::stddev<Float>(MaskedArray<Float> const&);
+template Float casa::median<Float>(MaskedArray<Float> const&, Bool, Bool);
+template Float casa::sumsquares<Float>(MaskedArray<Float> const&);
+template Float casa::avdev<Float>(MaskedArray<Float> const&);
 
 template void LatticeUtilities::bin(MaskedArray<float>&, MaskedArray<float> const&, uInt, uInt);
 

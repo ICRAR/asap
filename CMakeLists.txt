@@ -35,7 +35,7 @@ project( ASAP )
 
 # flags
 set( DEFAULT_CXX_FLAGS
-     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment -O3" )
+     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment -O3 -fno-omit-frame-pointer" )
 find_package( OpenMP )
 if( OPENMP_FOUND )
    set( DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )

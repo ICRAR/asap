@@ -129,7 +129,7 @@ private:
                                  casa::Int &nchan,
                                  casa::Int &nrow,
                                  casa::Vector<casa::Int> &corrtype ) ;
-  
+
   // initialize header
   void initHeader( STHeader &header ) ;
 

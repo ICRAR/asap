@@ -138,10 +138,10 @@ class NROReader
                            Double &interval,
                            String &srcname,
                            String &fieldname,
-                           Array<Float> &spectra,
-                           Array<uChar> &flagtra,
-                           Array<Float> &tsys,
-                           Array<Double> &direction,
+                           Vector<Float> &spectra,
+                           Vector<uChar> &flagtra,
+                           Vector<Float> &tsys,
+                           Vector<Double> &direction,
                            Float &azimuth,
                            Float &elevation,
                            Float &parangle,
@@ -155,9 +155,9 @@ class NROReader
                            Float &windvel,      
                            Float &winddir,      
                            Double &srcvel,
-                           Array<Double> &propermotion,
+                           Vector<Double> &propermotion,
                            Vector<Double> &srcdir,
-                           Array<Double> &scanrate ) ;
+                           Vector<Double> &scanrate ) ;
 
   // Get scan type
   virtual string getScanType( int i ) ;

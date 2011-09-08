@@ -64,7 +64,7 @@ private:
   static const casa::String name_;
   casa::ScalarColumn<casa::Float> rotationCol_, axisCol_,
     tanCol_,handCol_, parangleCol_,
-    mountCol_,userCol_, xyphCol_,xyphoffCol_,;
+    mountCol_,userCol_, xyphCol_,xyphoffCol_;
 };
 
 }
