@@ -995,6 +995,344 @@ std::string Scantable::headerSummary()
 //   sdh.print();
   ostringstream oss;
   oss.flags(std::ios_base::left);
+  String tmp;
+  // Project
+  table_.keywordSet().get("Project", tmp);
+  oss << setw(15) << "Project:" << tmp << endl;
+  // Observation date
+  oss << setw(15) << "Obs Date:" << getTime(-1,true) << endl;
+  // Observer
+  oss << setw(15) << "Observer:"
+      << table_.keywordSet().asString("Observer") << endl;
+  // Antenna Name
+  table_.keywordSet().get("AntennaName", tmp);
+  oss << setw(15) << "Antenna Name:" << tmp << endl;
+  // Obs type
+  table_.keywordSet().get("Obstype", tmp);
+  // Records (nrow)
+  oss << setw(15) << "Data Records:" << table_.nrow() << " rows" << endl;
+  oss << setw(15) << "Obs. Type:" << tmp << endl;
+  // Beams, IFs, Polarizations, and Channels
+  oss << setw(15) << "Beams:" << setw(4) << nbeam() << endl
+      << setw(15) << "IFs:" << setw(4) << nif() << endl
+      << setw(15) << "Polarisations:" << setw(4) << npol()
+      << "(" << getPolType() << ")" << endl
+      << setw(15) << "Channels:" << nchan() << endl;
+  // Flux unit
+  table_.keywordSet().get("FluxUnit", tmp);
+  oss << setw(15) << "Flux Unit:" << tmp << endl;
+  // Abscissa Unit
+  oss << setw(15) << "Abscissa:" << getAbcissaLabel(0) << endl;
+  // Selection
+  oss << selector_.print() << endl;
+
+  return String(oss);
+}
+
+void Scantable::summary( const std::string& filename )
+{
+  ostringstream oss;
+  ofstream ofs;
+  LogIO ols(LogOrigin("Scantable", "summary", WHERE));
+
+  if (filename != "")
+    ofs.open( filename.c_str(),  ios::out );
+
+  oss << endl;
+  oss << asap::SEPERATOR << endl;
+  oss << " Scan Table Summary" << endl;
+  oss << asap::SEPERATOR << endl;
+
+  // Format header info
+  oss << headerSummary();
+  oss << endl;
+
+  if (table_.nrow() <= 0){
+    oss << asap::SEPERATOR << endl;
+    oss << "The MAIN table is empty: there are no data!!!" << endl;
+    oss << asap::SEPERATOR << endl;
+
+    ols << String(oss) << LogIO::POST;
+    if (ofs) {
+      ofs << String(oss) << flush;
+      ofs.close();
+    }
+    return;
+  }
+
+
+
+  // main table
+  String dirtype = "Position ("
+                  + getDirectionRefString()
+                  + ")";
+  oss.flags(std::ios_base::left);
+  oss << setw(5) << "Scan" 
+      << setw(15) << "Source"
+      << setw(35) << "Time range"
+      << setw(2) << "" << setw(7) << "Int[s]"
+      << setw(7) << "Record"
+      << setw(8) << "SrcType"
+      << setw(8) << "FreqIDs"
+      << setw(7) << "MolIDs" << endl;
+  oss << setw(7)<< "" << setw(6) << "Beam"
+      << setw(23) << dirtype << endl;
+
+  oss << asap::SEPERATOR << endl;
+
+  // Flush summary and clear up the string
+  ols << String(oss) << LogIO::POST;
+  if (ofs) ofs << String(oss) << flush;
+  oss.str("");
+  oss.clear();
+
+
+  // Get Freq_ID map
+  ROScalarColumn<uInt> ftabIds(frequencies().table(), "ID");
+  Int nfid = ftabIds.nrow();
+  if (nfid <= 0){
+    oss << "FREQUENCIES subtable is empty: there are no data!!!" << endl;
+    oss << asap::SEPERATOR << endl;
+
+    ols << String(oss) << LogIO::POST;
+    if (ofs) {
+      ofs << String(oss) << flush;
+      ofs.close();
+    }
+    return;
+  }
+  // Storages of overall IFNO, POLNO, and nchan per FREQ_ID
+  // the orders are identical to ID in FREQ subtable
+  Block< Vector<uInt> > ifNos(nfid), polNos(nfid);
+  Vector<Int> fIdchans(nfid,-1);
+  map<uInt, Int> fidMap;  // (FREQ_ID, row # in FREQ subtable) pair
+  for (Int i=0; i < nfid; i++){
+   // fidMap[freqId] returns row number in FREQ subtable
+   fidMap.insert(pair<uInt, Int>(ftabIds(i),i));
+   ifNos[i] = Vector<uInt>();
+   polNos[i] = Vector<uInt>();
+  }
+
+  TableIterator iter(table_, "SCANNO");
+
+  // Vars for keeping track of time, freqids, molIds in a SCANNO
+  Vector<uInt> freqids;
+  Vector<uInt> molids;
+  Vector<uInt> beamids(1,0);
+  Vector<MDirection> beamDirs;
+  Vector<Int> stypeids(1,0);
+  Vector<String> stypestrs;
+  Int nfreq(1);
+  Int nmol(1);
+  uInt nbeam(1);
+  uInt nstype(1);
+
+  Double btime(0.0), etime(0.0);
+  Double meanIntTim(0.0);
+
+  uInt currFreqId(0), ftabRow(0);
+  Int iflen(0), pollen(0);
+
+  while (!iter.pastEnd()) {
+    Table subt = iter.table();
+    uInt snrow = subt.nrow();
+    ROTableRow row(subt);
+    const TableRecord& rec = row.get(0);
+
+    // relevant columns
+    ROScalarColumn<Double> mjdCol(subt,"TIME");
+    ROScalarColumn<Double> intervalCol(subt,"INTERVAL");
+    MDirection::ROScalarColumn dirCol(subt,"DIRECTION");
+
+    ScalarColumn<uInt> freqIdCol(subt,"FREQ_ID");
+    ScalarColumn<uInt> molIdCol(subt,"MOLECULE_ID");
+    ROScalarColumn<uInt> beamCol(subt,"BEAMNO");
+    ROScalarColumn<Int> stypeCol(subt,"SRCTYPE");
+
+    ROScalarColumn<uInt> ifNoCol(subt,"IFNO");
+    ROScalarColumn<uInt> polNoCol(subt,"POLNO");
+
+
+    // Times
+    meanIntTim = sum(intervalCol.getColumn()) / (double) snrow;
+    minMax(btime, etime, mjdCol.getColumn());
+    etime += meanIntTim/C::day;
+
+    // MOLECULE_ID and FREQ_ID
+    molids = getNumbers(molIdCol);
+    molids.shape(nmol);
+
+    freqids = getNumbers(freqIdCol);
+    freqids.shape(nfreq);
+
+    // Add first beamid, and srcNames
+    beamids.resize(1,False);
+    beamDirs.resize(1,False);
+    beamids(0)=beamCol(0);
+    beamDirs(0)=dirCol(0);
+    nbeam = 1;
+
+    stypeids.resize(1,False);
+    stypeids(0)=stypeCol(0);
+    nstype = 1;
+
+    // Global listings of nchan/IFNO/POLNO per FREQ_ID
+    currFreqId=freqIdCol(0);
+    ftabRow = fidMap[currFreqId];
+    // Assumes an identical number of channels per FREQ_ID
+    if (fIdchans(ftabRow) < 0 ) {
+      RORecordFieldPtr< Array<Float> > spec(rec, "SPECTRA");
+      fIdchans(ftabRow)=(*spec).shape()(0);
+    }
+    // Should keep ifNos and polNos form the previous SCANNO
+    if ( !anyEQ(ifNos[ftabRow],ifNoCol(0)) ) {
+      ifNos[ftabRow].shape(iflen);
+      iflen++;
+      ifNos[ftabRow].resize(iflen,True);
+      ifNos[ftabRow](iflen-1) = ifNoCol(0);
+    }
+    if ( !anyEQ(polNos[ftabRow],polNoCol(0)) ) {
+      polNos[ftabRow].shape(pollen);
+      pollen++;
+      polNos[ftabRow].resize(pollen,True);
+      polNos[ftabRow](pollen-1) = polNoCol(0);
+    }
+
+    for (uInt i=1; i < snrow; i++){
+      // Need to list BEAMNO and DIRECTION in the same order
+      if ( !anyEQ(beamids,beamCol(i)) ) {
+	nbeam++;
+	beamids.resize(nbeam,True);
+	beamids(nbeam-1)=beamCol(i);
+	beamDirs.resize(nbeam,True);
+	beamDirs(nbeam-1)=dirCol(i);
+      }
+
+      // SRCTYPE is Int (getNumber takes only uInt)
+      if ( !anyEQ(stypeids,stypeCol(i)) ) {
+	nstype++;
+	stypeids.resize(nstype,True);
+	stypeids(nstype-1)=stypeCol(i);
+      }
+
+      // Global listings of nchan/IFNO/POLNO per FREQ_ID
+      currFreqId=freqIdCol(i);
+      ftabRow = fidMap[currFreqId];
+      if (fIdchans(ftabRow) < 0 ) {
+	const TableRecord& rec = row.get(i);
+	RORecordFieldPtr< Array<Float> > spec(rec, "SPECTRA");
+	fIdchans(ftabRow) = (*spec).shape()(0);
+      }
+      if ( !anyEQ(ifNos[ftabRow],ifNoCol(i)) ) {
+	ifNos[ftabRow].shape(iflen);
+	iflen++;
+	ifNos[ftabRow].resize(iflen,True);
+	ifNos[ftabRow](iflen-1) = ifNoCol(i);
+      }
+      if ( !anyEQ(polNos[ftabRow],polNoCol(i)) ) {
+	polNos[ftabRow].shape(pollen);
+	pollen++;
+	polNos[ftabRow].resize(pollen,True);
+	polNos[ftabRow](pollen-1) = polNoCol(i);
+      }
+    } // end of row iteration
+
+    stypestrs.resize(nstype,False);
+    for (uInt j=0; j < nstype; j++)
+      stypestrs(j) = SrcType::getName(stypeids(j));
+
+    // Format Scan summary
+    oss << setw(4) << std::right << rec.asuInt("SCANNO")
+	<< std::left << setw(1) << ""
+	<< setw(15) << rec.asString("SRCNAME")
+	<< setw(21) << MVTime(btime).string(MVTime::YMD,7)
+	<< setw(3) << " - " << MVTime(etime).string(MVTime::TIME,7)
+	<< setw(3) << "" << setw(6) << meanIntTim << setw(1) << "" 
+	<< std::right << setw(5) << snrow << setw(2) << ""
+	<< std::left << stypestrs << setw(1) << ""
+	<< freqids << setw(1) << ""
+	<< molids  << endl;
+    // Format Beam summary
+    for (uInt j=0; j < nbeam; j++) {
+      oss << setw(7) << "" << setw(6) << beamids(j) << setw(1) << ""
+	  << formatDirection(beamDirs(j)) << endl;
+    }
+    // Flush summary every scan and clear up the string
+    ols << String(oss) << LogIO::POST;
+    if (ofs) ofs << String(oss) << flush;
+    oss.str("");
+    oss.clear();
+
+    ++iter;
+  } // end of scan iteration
+  oss << asap::SEPERATOR << endl;
+  
+  // List FRECUENCIES Table (using STFrequencies.print may be slow)
+  oss << "FREQUENCIES: " << nfreq << endl;
+  oss << std::right << setw(5) << "ID" << setw(2) << ""
+      << std::left  << setw(5) << "IFNO" << setw(2) << ""
+      << setw(8) << "Frame"
+      << setw(16) << "RefVal"
+      << setw(7) << "RefPix"
+      << setw(15) << "Increment"
+      << setw(9) << "Channels"
+      << setw(6) << "POLNOs" << endl;
+  Int tmplen;
+  for (Int i=0; i < nfid; i++){
+    // List row=i of FREQUENCIES subtable
+    ifNos[i].shape(tmplen);
+    if (tmplen == 1) {
+      oss << std::right << setw(5) << ftabIds(i) << setw(2) << ""
+	  << setw(3) << ifNos[i](0) << setw(1) << ""
+	  << std::left << setw(46) << frequencies().print(ftabIds(i)) 
+	  << setw(2) << ""
+	  << std::right << setw(8) << fIdchans[i] << setw(2) << ""
+	  << std::left << polNos[i] << endl;
+    } else if (tmplen > 0 ) {
+      // You shouldn't come here
+      oss << std::left
+	  << "Multiple IFNOs in FREQ_ID = " << ftabIds(i) 
+	  << " !!!" << endl;
+    }
+  }
+  oss << asap::SEPERATOR << endl;
+
+  // List MOLECULES Table (currently lists all rows)
+  oss << "MOLECULES: " << endl;
+  if (molecules().nrow() <= 0) {
+    oss << "   MOLECULES subtable is empty: there are no data" << endl;
+  } else {
+    ROTableRow row(molecules().table());
+    oss << std::right << setw(5) << "ID" 
+	<< std::left << setw(3) << ""
+	<< setw(18) << "RestFreq"
+	<< setw(15) << "Name" << endl;
+    for (Int i=0; i < molecules().nrow(); i++){
+      const TableRecord& rec=row.get(i);
+      oss << std::right << setw(5) << rec.asuInt("ID")
+	  << std::left << setw(3) << ""
+	  << rec.asArrayDouble("RESTFREQUENCY") << setw(1) << ""
+	  << rec.asArrayString("NAME") << endl;
+    }
+  }
+  oss << asap::SEPERATOR << endl;
+  ols << String(oss) << LogIO::POST;
+  if (ofs) {
+    ofs << String(oss) << flush;
+    ofs.close();
+  }
+  //  return String(oss);
+}
+
+
+std::string Scantable::oldheaderSummary()
+{
+  // Format header info
+//   STHeader sdh;
+//   sdh = getHeader();
+//   sdh.print();
+  ostringstream oss;
+  oss.flags(std::ios_base::left);
   oss << setw(15) << "Beams:" << setw(4) << nbeam() << endl
       << setw(15) << "IFs:" << setw(4) << nif() << endl
       << setw(15) << "Polarisations:" << setw(4) << npol()
@@ -1012,7 +1350,6 @@ std::string Scantable::headerSummary()
   oss << setw(15) << "Antenna Name:" << tmp << endl;
   table_.keywordSet().get("FluxUnit", tmp);
   oss << setw(15) << "Flux Unit:" << tmp << endl;
-  //Vector<Double> vec(moleculeTable_.getRestFrequencies());
   int nid = moleculeTable_.nrow();
   Bool firstline = True;
   oss << setw(15) << "Rest Freqs:";
@@ -1040,7 +1377,7 @@ std::string Scantable::headerSummary()
 }
 
   //std::string Scantable::summary( const std::string& filename )
-void Scantable::summary( const std::string& filename )
+void Scantable::oldsummary( const std::string& filename )
 {
   ostringstream oss;
   ofstream ofs;
@@ -1055,7 +1392,7 @@ void Scantable::summary( const std::string& filename )
   oss << asap::SEPERATOR << endl;
 
   // Format header info
-  oss << headerSummary();
+  oss << oldheaderSummary();
   oss << endl;
 
   // main table
@@ -1080,52 +1417,6 @@ void Scantable::summary( const std::string& filename )
   oss.str("");
   oss.clear();
 
-//   TableIterator iter(table_, "SCANNO");
-//   while (!iter.pastEnd()) {
-//     Table subt = iter.table();
-//     ROTableRow row(subt);
-//     MEpoch::ROScalarColumn timeCol(subt,"TIME");
-//     const TableRecord& rec = row.get(0);
-//     oss << setw(4) << std::right << rec.asuInt("SCANNO")
-//         << std::left << setw(1) << ""
-//         << setw(15) << rec.asString("SRCNAME")
-//         << setw(10) << formatTime(timeCol(0), false);
-//     // count the cycles in the scan
-//     TableIterator cyciter(subt, "CYCLENO");
-//     int nint = 0;
-//     while (!cyciter.pastEnd()) {
-//       ++nint;
-//       ++cyciter;
-//     }
-//     oss << setw(3) << std::right << nint  << setw(3) << " x " << std::left
-//         << setw(11) <<  formatSec(rec.asFloat("INTERVAL")) << setw(1) << ""
-// 	<< setw(15) << SrcType::getName(rec.asInt("SRCTYPE")) << endl;
-
-//     TableIterator biter(subt, "BEAMNO");
-//     while (!biter.pastEnd()) {
-//       Table bsubt = biter.table();
-//       ROTableRow brow(bsubt);
-//       const TableRecord& brec = brow.get(0);
-//       uInt row0 = bsubt.rowNumbers(table_)[0];
-//       oss << setw(5) << "" <<  setw(4) << std::right << brec.asuInt("BEAMNO")<< std::left;
-//       oss  << setw(4) << ""  << formatDirection(getDirection(row0)) << endl;
-//       TableIterator iiter(bsubt, "IFNO");
-//       while (!iiter.pastEnd()) {
-//         Table isubt = iiter.table();
-//         ROTableRow irow(isubt);
-//         const TableRecord& irec = irow.get(0);
-//         oss << setw(9) << "";
-//         oss << setw(3) << std::right << irec.asuInt("IFNO") << std::left
-//             << setw(1) << "" << frequencies().print(irec.asuInt("FREQ_ID"))
-//             << setw(3) << "" << nchan(irec.asuInt("IFNO"))
-//             << endl;
-
-//         ++iiter;
-//       }
-//       ++biter;
-//     }
-//     ++iter;
-//   }
   TableIterator iter(table_, "SCANNO");
   while (!iter.pastEnd()) {
     Table subt = iter.table();
@@ -1181,7 +1472,7 @@ void Scantable::summary( const std::string& filename )
   oss << asap::SEPERATOR << endl;
   ols << String(oss) << LogIO::POST;
   if (ofs) {
-    //ofs << String(oss) << flush;
+    ofs << String(oss) << flush;
     ofs.close();
   }
   //  return String(oss);

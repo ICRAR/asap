@@ -1424,9 +1424,8 @@ class asapplotter:
         # Get header information and format it.
         ssum=self._data._list_header()
         # Print Observation header to the upper-left corner of plot
-        headstr=[ssum[ssum.find('Observer:'):ssum.find('Flux Unit:')]]
-        headstr.append(ssum[ssum.find('Beams:'):ssum.find('Observer:')]
-                       +ssum[ssum.find('Rest Freqs:'):ssum.find('Abcissa:')])
+        headstr=[ssum[0:ssum.find('Obs. Type:')]]
+        headstr.append(ssum[ssum.find('Obs. Type:'):ssum.find('Flux Unit:')])
         if extrastr != '':
             headstr[0]=extrastr+'\n'+headstr[0]
             self._headtext['extrastr'] = extrastr
@@ -1449,8 +1448,7 @@ class asapplotter:
             selstr = "Selections:    "+ssel
             asaplog.push("----------------\n  Plot Summary\n----------------")
             asaplog.push(extrastr)
-            asaplog.push(ssum[ssum.find('Beams:'):ssum.find('Selection:')]\
-                         #+ selstr + ssum[ssum.find('Scan Source'):])
+            asaplog.push(ssum[0:ssum.find('Selection:')]\
                          + selstr)
         self._headtext['string'] = headstr
         del ssel, ssum, headstr

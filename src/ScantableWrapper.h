@@ -220,7 +220,8 @@ public:
   //  return table_->summary();
   //  }
   void summary(const std::string& filename="") {
-    return table_->summary(filename);
+    //std::string summary(const std::string& filename="") const {
+    table_->summary(filename);
   }
 
   std::string listHeader() const {

@@ -461,6 +461,7 @@ class scantable(Scantable):
         else:
             filename = ""
         Scantable._summary(self, filename)
+#         info = Scantable._summary(self, filename)
 #         return page(info)
 
     def get_spectrum(self, rowno):
