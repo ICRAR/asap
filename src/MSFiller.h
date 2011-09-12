@@ -16,9 +16,6 @@
 // STL
 #include <string>
 
-// Boost
-#include <boost/pool/object_pool.hpp>
-
 // AIPS++
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
@@ -26,25 +23,124 @@
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/Cube.h>
 #include <casa/Logging/LogIO.h>
-
+#include <casa/Containers/RecordField.h>
 #include <casa/Containers/Record.h>
 #include <casa/Containers/Block.h>
+#include <casa/Quanta/MVTime.h>
 
 #include <ms/MeasurementSets/MeasurementSet.h>
 #include <ms/MeasurementSets/MSPointing.h>
 
+#include <tables/Tables/ScalarColumn.h>
+#include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/TableRow.h>
+
+#include <measures/TableMeasures/ScalarMeasColumn.h>
+#include <measures/TableMeasures/ArrayMeasColumn.h>
+#include <measures/TableMeasures/ScalarQuantColumn.h>
+#include <measures/TableMeasures/ArrayQuantColumn.h>
+
+#include "TableTraverse.h"
 #include "Scantable.h"
+#include "MathUtils.h"
+
+using namespace casa;
 
 namespace asap
 {
 
+class MSFillerUtils {
+protected:
+  template<class T> void getScalar( const String &name, 
+                                    const uInt &idx, 
+                                    const Table &tab, 
+                                    T &val )
+  {
+    ROScalarColumn<T> col( tab, name ) ;
+    val = col( idx ) ;
+  }
+  template<class T> void getArray( const String &name, 
+                                   const uInt &idx, 
+                                   const Table &tab, 
+                                   Array<T> &val )
+  {
+    ROArrayColumn<T> col( tab, name ) ;
+    val = col( idx ) ;
+  }
+  template<class T> void getScalarMeas( const String &name, 
+                                        const uInt &idx, 
+                                        const Table &tab, 
+                                        T &val )
+  {
+    ROScalarMeasColumn<T> measCol( tab, name ) ;
+    val = measCol( idx ) ;
+  }
+  template<class T> void getArrayMeas( const String &name, 
+                                       const uInt &idx, 
+                                       const Table &tab, 
+                                       Array<T> &val )
+  {
+    ROArrayMeasColumn<T> measCol( tab, name ) ;
+    val = measCol( idx ) ;
+  }
+  template<class T> void getScalarQuant( const String &name, 
+                                         const uInt &idx, 
+                                         const Table &tab, 
+                                         Quantum<T> &val )
+  {
+    ROScalarQuantColumn<T> quantCol( tab, name ) ;
+    val = quantCol( idx ) ;
+  }
+  template<class T> void getArrayQuant( const String &name, 
+                                        const uInt &idx, 
+                                        const Table &tab, 
+                                        Array< Quantum<T> > &val )
+  {
+    ROArrayQuantColumn<T> quantCol( tab, name ) ;
+    val = quantCol( idx ) ;
+  }
+//   template<class T> void putField( const String &name, 
+//                                    TableRecord &rec, 
+//                                    T &val )
+//   {
+//     RecordFieldPtr<T> rf( rec, name ) ;
+//     *rf = val ;
+//   }
+//   template<class T> void defineField( const String &name, 
+//                                       TableRecord &rec, 
+//                                       T &val )
+//   {
+//     RecordFieldPtr<T> rf( rec, name ) ;
+//     rf.define( val ) ;
+//   }
+  template<class T> T interp( Double x0, Double x1, Double x, T y0, T y1 )
+  {
+    Double dx0 = x - x0 ;
+    Double dx1 = x1 - x ;
+    return ( y0 * dx1 + y1 * dx0 ) / ( x1 - x0 ) ;
+  }
+  String keyTcal( const Int &feedid, const Int &spwid, const Double &time )
+  {
+    String stime = MVTime( Quantity(time,Unit("s")) ).string( MVTime::YMD ) ;
+    String sfeed = "FEED" + String::toString( feedid ) ;
+    String sspw = "SPW" + String::toString( spwid ) ;
+    return sfeed+":"+sspw+":"+stime ;
+  }
+  String keyTcal( const Int &feedid, const Int &spwid, const String &stime )
+  {
+    String sfeed = "FEED" + String::toString( feedid ) ;
+    String sspw = "SPW" + String::toString( spwid ) ;
+    return sfeed+":"+sspw+":"+stime ;
+  }
+};
+
 class MSFiller
 {
 public:
-  explicit MSFiller(casa::CountedPtr<Scantable> stable) ;
+  explicit MSFiller(CountedPtr<Scantable> stable) ;
   virtual ~MSFiller() ;
   
-  virtual bool open(const std::string& filename, const casa::Record& rec) ;
+  virtual bool open(const std::string& filename, const Record& rec) ;
   virtual void fill() ;
   virtual void close() ;
   
@@ -64,158 +160,50 @@ private:
   void fillFocus() ;
   //void fillHistory() ;
   //void fillFit() ;
-  void fillTcal( boost::object_pool<casa::ROTableColumn> *poolr ) ;
-
-  // get SRCTYPE from STATE_ID
-  casa::Int getSrcType( casa::Int stateId, boost::object_pool<casa::ROTableColumn> *pool ) ;
-
-  // get POLNO from CORR_TYPE
-  casa::Block<casa::uInt> getPolNo( casa::Int corrType ) ;
-
-  // get poltype from CORR_TYPE 
-  casa::String getPolType( casa::Int corrType ) ;
-
-  // get WEATHER_ID 
-  casa::uInt getWeatherId( casa::uInt idx, casa::Double wtime ) ;
-
-  // get time stamp in SYSCAL table
-  // assume that tab is selected by ANTENNA_ID, FEED_ID, SPECTRAL_WINDOW_ID 
-  // and sorted by TIME
-  void getSysCalTime( casa::Vector<casa::MEpoch> &scTimeIn, casa::Vector<casa::Double> &scInterval, casa::Block<casa::MEpoch> &tcol, casa::Block<casa::Int> &tidx ) ;
-
-  // get TCAL_ID 
-  casa::Block<casa::uInt> getTcalId( casa::Int feedId, casa::Int spwId, casa::MEpoch &t ) ;
-
-  // get direction for DIRECTION, AZIMUTH, and ELEVATION columns
-  casa::uInt getDirection( casa::uInt idx, 
-                           casa::Vector<casa::Double> &dir, 
-                           casa::Vector<casa::Double> &srate, 
-                           casa::String &ref, 
-                           casa::Vector<casa::Double> &ptcol, 
-                           casa::ROArrayColumn<casa::Double> &pdcol, 
-                           casa::Double t ) ;
-  casa::uInt getDirection( casa::uInt idx, 
-                           casa::Vector<casa::Double> &dir, 
-                           casa::Vector<casa::Double> &azel, 
-                           casa::Vector<casa::Double> &srate, 
-                           casa::Vector<casa::Double> &ptcol, 
-                           casa::ROArrayColumn<casa::Double> &pdcol,
-                           casa::MEpoch &t, casa::MPosition &antpos ) ;
-  void getSourceDirection( casa::Vector<casa::Double> &dir, 
-                           casa::Vector<casa::Double> &azel, 
-                           casa::Vector<casa::Double> &srate, 
-                           casa::MEpoch &t, 
-                           casa::MPosition &antpos, 
-                           casa::Vector<casa::MDirection> &srcdir ) ;
+  void fillTcal() ;
 
   // create key for TCAL table
-  casa::String keyTcal( casa::Int feedid, casa::Int spwid, casa::String stime ) ; 
-
-  // binary search
-  casa::uInt binarySearch( casa::Vector<casa::MEpoch> &timeList, casa::Double target ) ; 
-  casa::uInt binarySearch( casa::Vector<casa::Double> &timeList, casa::Double target ) ; 
-
-  // tool for HPC
-//   double gettimeofday_sec() ;
+  String keyTcal( Int feedid, Int spwid, String stime ) ; 
 
   // get frequency frame
   std::string getFrame() ;
 
-  // reshape SPECTRA and FLAGTRA
-  void reshapeSpectraAndFlagtra( casa::Cube<casa::Float> &sp, 
-                                 casa::Cube<casa::Bool> &fl,
-                                 casa::Table &tab,
-                                 casa::Int &npol,
-                                 casa::Int &nchan,
-                                 casa::Int &nrow,
-                                 casa::Vector<casa::Int> &corrtype ) ;
-
   // initialize header
   void initHeader( STHeader &header ) ;
 
-  // get value from table column using object pool
-  casa::String asString( casa::String name,
-                         casa::uInt idx,
-                         casa::Table tab, 
-                         boost::object_pool<casa::ROTableColumn> *pool ) ;
-  casa::Bool asBool( casa::String name,
-                     casa::uInt idx,
-                     casa::Table &tab, 
-                     boost::object_pool<casa::ROTableColumn> *pool ) ;
-  casa::Int asInt( casa::String name,
-                   casa::uInt idx,
-                   casa::Table &tab, 
-                   boost::object_pool<casa::ROTableColumn> *pool ) ;
-  casa::uInt asuInt( casa::String name,
-                     casa::uInt idx,
-                     casa::Table &tab, 
-                     boost::object_pool<casa::ROTableColumn> *pool ) ;
-  casa::Float asFloat( casa::String name,
-                       casa::uInt idx,
-                       casa::Table &tab, 
-                       boost::object_pool<casa::ROTableColumn> *pool ) ;
-  casa::Double asDouble( casa::String name,
-                         casa::uInt idx,
-                         casa::Table &tab, 
-                         boost::object_pool<casa::ROTableColumn> *pool ) ;
+  CountedPtr<Scantable> table_ ;
+  MeasurementSet mstable_ ;
+  String tablename_ ;
+  Int antenna_ ;
+  String antennaStr_ ;
+  Bool getPt_ ;
 
-  void sourceInfo( casa::Int sourceId,
-                   casa::Int spwId,
-                   casa::String &name, 
-                   casa::MDirection &direction,
-                   casa::Vector<casa::Double> &properMotion,
-                   casa::Vector<casa::Double> &restFreqs,
-                   casa::Vector<casa::String> &transitions,
-                   casa::Vector<casa::Double> &sysVels,
-                   boost::object_pool<casa::ROTableColumn> *pool ) ;
+  Bool isFloatData_ ;
+  Bool isData_ ;
 
-  void spectralSetup( casa::Int spwId,
-                      casa::MEpoch &me,
-                      casa::MPosition &mp,
-                      casa::MDirection &md,
-                      casa::Double &refpix,
-                      casa::Double &refval,
-                      casa::Double &increment,
-                      casa::Int &nchan,
-                      casa::String &freqref,
-                      casa::Double &reffreq,
-                      casa::Double &bandwidth,
-                      boost::object_pool<casa::ROTableColumn> *pool ) ;
+  Bool isDoppler_ ;
+  Bool isFlagCmd_ ;
+  Bool isFreqOffset_ ;
+  Bool isHistory_ ;
+  Bool isProcessor_ ;
+  Bool isSysCal_ ;
+  Bool isWeather_ ;
 
-  casa::CountedPtr<Scantable> table_ ;
-  casa::MeasurementSet mstable_ ;
-  casa::String tablename_ ;
-  casa::Int antenna_ ;
-  casa::String antennaStr_ ;
-  casa::Bool getPt_ ;
+  String colTsys_ ;
+  String colTcal_ ;
 
-  casa::Bool isFloatData_ ;
-  casa::Bool isData_ ;
-
-  casa::Bool isDoppler_ ;
-  casa::Bool isFlagCmd_ ;
-  casa::Bool isFreqOffset_ ;
-  casa::Bool isHistory_ ;
-  casa::Bool isProcessor_ ;
-  casa::Bool isSysCal_ ;
-  casa::Bool isWeather_ ;
-
-  casa::String colTsys_ ;
-  casa::String colTcal_ ;
-
-  casa::LogIO os_ ;
+  LogIO os_ ;
   
-  casa::Vector<casa::Double> mwTime_ ;
-  casa::Vector<casa::Double> mwInterval_ ;
-  casa::Vector<casa::uInt> mwIndex_ ;
+  Vector<Double> mwTime_ ;
+  Vector<Double> mwInterval_ ;
+  Vector<uInt> mwIndex_ ;
 
   // Record for TCAL_ID
   // "FIELD0": "SPW0": Vector<uInt>
   //           "SPW1": Vector<uInt>
   //  ...
-  casa::Record tcalrec_ ;
-
-  //casa::ROTableColumn *scCol_ ;
+  Record tcalrec_ ;
+  //map< String,Vector<uInt> > tcalrec_ ;
 };
 
 

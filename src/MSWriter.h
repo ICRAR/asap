@@ -22,6 +22,7 @@
 #include <casa/Arrays/Matrix.h>
 #include <casa/Logging/LogIO.h>
 #include <casa/Containers/Record.h>
+#include <casa/Containers/RecordField.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/RefRows.h>
@@ -38,6 +39,24 @@
 
 namespace asap
 {
+class MSWriterUtils
+{
+protected:
+  template<class T> void putField( const String &name, 
+                                   TableRecord &r, 
+                                   T &val )
+  {
+    RecordFieldPtr<T> rf( r, name ) ;
+    *rf = val ;
+  }
+  template<class T> void defineField( const String &name, 
+                                      TableRecord &r, 
+                                      T &val )
+  {
+    RecordFieldPtr<T> rf( r, name ) ;
+    rf.define( val ) ;
+  }
+};
 
 class MSWriter
 {
@@ -64,7 +83,10 @@ private:
   void fillProcessor() ;
   void fillSource() ;
   void fillWeather() ;
-  void fillSysCal() ;
+  void fillSysCal( std::map< casa::Int,casa::Vector<casa::uInt> > &idrec, 
+                   std::map< casa::Int,casa::Vector<casa::uInt> > &rowrec ) ;
+//   void fillSysCal( Record &idrec, Record &rowrec ) ;
+//   void fillSysCal() ;
 
   // fill empty rows
   void infillSpectralWindow() ;
@@ -85,6 +107,7 @@ private:
   //void queryType( casa::Int type, casa::String &stype, casa::Bool &b ) ; 
   void queryType( casa::Int type, casa::String &stype, casa::Bool &b, casa::Double &t, Double &l ) ; 
   casa::Double getDishDiameter( casa::String antname ) ;
+  void antennaProperty( casa::String &name, casa::String &mount, casa::String &type, casa::Double &diameter ) ;
 
   // tool for HPC
 //   double gettimeofday_sec() ;
@@ -110,8 +133,9 @@ private:
 
   casa::LogIO os_ ;
 
-  casa::Record tcalIdRec_ ;
-  casa::Record tcalRowRec_ ;
+//   casa::Record tcalIdRec_ ;
+//   casa::Record tcalRowRec_ ;
+  casa::Record srcRec_ ;
   
   MSWriter();
   MSWriter(const MSWriter&);

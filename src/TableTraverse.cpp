@@ -250,14 +250,15 @@ namespace asap {
       colValues[i] = typeManagers[i]->allocArray(nRows);
       sizes[i] = typeManagers[i]->sizeOf();
       BaseColumn *baseCol = ROTableColumnBackDoor::baseColumnPtr(cols[i]);
-      PlainColumn *col = dynamic_cast <PlainColumn *>(baseCol);
-      if (col) {
-	const uInt gotRows = col->dataManagerColumn()->
-	  getBlockV(0, nRows, colValues[i]);
-	DebugAssert(gotRows == nRows, AipsError);
-      } else {
-	copyColumnData(colValues[i], typeManagers[i]->sizeOf(), nRows, baseCol);
-      }
+      copyColumnData(colValues[i], typeManagers[i]->sizeOf(), nRows, baseCol);
+//       PlainColumn *col = dynamic_cast <PlainColumn *>(baseCol);
+//       if (col) {
+// 	const uInt gotRows = col->dataManagerColumn()->
+// 	  getBlockV(0, nRows, colValues[i]);
+// 	DebugAssert(gotRows == nRows, AipsError);
+//       } else {
+// 	copyColumnData(colValues[i], typeManagers[i]->sizeOf(), nRows, baseCol);
+//       }
     }
 
     uInt *idx = new uInt[nRows];

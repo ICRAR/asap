@@ -1,16 +1,19 @@
+
 //
 // C++ Interface: MSFiller
 //
 // Description:
 //
-// This class is specific filler for MS format
+// This class is specific filler for MS format 
+// New version that is implemented using TableVisitor instead of TableIterator
 //
-// Takeshi Nakazato <takeshi.nakazato@nao.ac.jp>, (C) 2010
+// Takeshi Nakazato <takeshi.nakazato@nao.ac.jp>, (C) 2011
 //
 // Copyright: See COPYING file that comes with this distribution
 //
 //
 
+#include <assert.h>
 #include <iostream>
 #include <map>
 
@@ -50,21 +53,1489 @@
 #include "MSFiller.h"
 #include "STHeader.h" 
 
-// #include <ctime>
-// #include <sys/time.h>
-
 #include "MathUtils.h"
 
 using namespace casa ;
 using namespace std ;
 
 namespace asap {
-// double MSFiller::gettimeofday_sec()
-// {
-//   struct timeval tv ;
-//   gettimeofday( &tv, NULL ) ;
-//   return tv.tv_sec + (double)tv.tv_usec*1.0e-6 ;
-// }
+
+class BaseMSFillerVisitor: public TableVisitor {
+  uInt lastRecordNo ;
+  Int lastObservationId ;
+  Int lastFeedId ;
+  Int lastFieldId ;
+  Int lastDataDescId ;
+  Int lastScanNo ;
+  Int lastStateId ;
+  Double lastTime ;
+protected:
+  const Table &table;
+  uInt count;
+public:
+  BaseMSFillerVisitor(const Table &table)
+   : table(table)
+  {
+    count = 0;
+  }
+  
+  virtual void enterObservationId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveObservationId(const uInt recordNo, Int columnValue) { }
+  virtual void enterFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void enterFieldId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveFieldId(const uInt recordNo, Int columnValue) { }
+  virtual void enterDataDescId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveDataDescId(const uInt recordNo, Int columnValue) { }
+  virtual void enterScanNo(const uInt recordNo, Int columnValue) { }
+  virtual void leaveScanNo(const uInt recordNo, Int columnValue) { }
+  virtual void enterStateId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveStateId(const uInt recordNo, Int columnValue) { }
+  virtual void enterTime(const uInt recordNo, Double columnValue) { }
+  virtual void leaveTime(const uInt recordNo, Double columnValue) { }
+
+  virtual Bool visitRecord(const uInt recordNo,
+			   const Int ObservationId,
+			   const Int feedId,
+			   const Int fieldId,
+			   const Int dataDescId,
+			   const Int scanNo,
+			   const Int stateId,
+			   const Double time) { return True ; }
+
+  virtual Bool visit(Bool isFirst, const uInt recordNo,
+		     const uInt nCols, void const *const colValues[]) {
+    Int observationId, feedId, fieldId, dataDescId, scanNo, stateId;
+    Double time;
+    { // prologue
+      uInt i = 0;
+      {
+	const Int *col = (const Int *)colValues[i++];
+	observationId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	feedId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	fieldId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	dataDescId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	scanNo = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	stateId = col[recordNo];
+      }
+      {
+	const Double *col = (const Double *)colValues[i++];
+	time = col[recordNo];
+      }
+      assert(nCols == i);
+    }
+
+    if (isFirst) {
+      enterObservationId(recordNo, observationId);
+      enterFeedId(recordNo, feedId);
+      enterFieldId(recordNo, fieldId);
+      enterDataDescId(recordNo, dataDescId);
+      enterScanNo(recordNo, scanNo);
+      enterStateId(recordNo, stateId);
+      enterTime(recordNo, time);
+    } else {
+      if (lastObservationId != observationId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+	leaveScanNo(lastRecordNo, lastScanNo);
+	leaveDataDescId(lastRecordNo, lastDataDescId);
+	leaveFieldId(lastRecordNo, lastFieldId);
+	leaveFeedId(lastRecordNo, lastFeedId);
+	leaveObservationId(lastRecordNo, lastObservationId);
+
+	enterObservationId(recordNo, observationId);
+	enterFeedId(recordNo, feedId);
+	enterFieldId(recordNo, fieldId);
+	enterDataDescId(recordNo, dataDescId);
+	enterScanNo(recordNo, scanNo);
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastFeedId != feedId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+	leaveScanNo(lastRecordNo, lastScanNo);
+	leaveDataDescId(lastRecordNo, lastDataDescId);
+	leaveFieldId(lastRecordNo, lastFieldId);
+	leaveFeedId(lastRecordNo, lastFeedId);
+
+	enterFeedId(recordNo, feedId);
+	enterFieldId(recordNo, fieldId);
+	enterDataDescId(recordNo, dataDescId);
+	enterScanNo(recordNo, scanNo);
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastFieldId != fieldId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+	leaveScanNo(lastRecordNo, lastScanNo);
+	leaveDataDescId(lastRecordNo, lastDataDescId);
+	leaveFieldId(lastRecordNo, lastFieldId);
+
+	enterFieldId(recordNo, fieldId);
+	enterDataDescId(recordNo, dataDescId);
+	enterScanNo(recordNo, scanNo);
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastDataDescId != dataDescId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+	leaveScanNo(lastRecordNo, lastScanNo);
+	leaveDataDescId(lastRecordNo, lastDataDescId);
+
+	enterDataDescId(recordNo, dataDescId);
+	enterScanNo(recordNo, scanNo);
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastScanNo != scanNo) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+	leaveScanNo(lastRecordNo, lastScanNo);
+
+	enterScanNo(recordNo, scanNo);
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastStateId != stateId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveStateId(lastRecordNo, lastStateId);
+
+	enterStateId(recordNo, stateId);
+	enterTime(recordNo, time);
+      } else if (lastTime != time) {
+	leaveTime(lastRecordNo, lastTime);
+	enterTime(recordNo, time);
+      }
+    }
+    count++;
+    Bool result = visitRecord(recordNo, observationId, feedId, fieldId, dataDescId,
+                              scanNo, stateId, time);
+
+    { // epilogue
+      lastRecordNo = recordNo;
+
+      lastObservationId = observationId;
+      lastFeedId = feedId;
+      lastFieldId = fieldId;
+      lastDataDescId = dataDescId;
+      lastScanNo = scanNo;
+      lastStateId = stateId;
+      lastTime = time;
+    }
+    return result ;
+  }
+
+  virtual void finish() {
+    if (count > 0) {
+      leaveTime(lastRecordNo, lastTime);
+      leaveStateId(lastRecordNo, lastStateId);
+      leaveScanNo(lastRecordNo, lastScanNo);
+      leaveDataDescId(lastRecordNo, lastDataDescId);
+      leaveFieldId(lastRecordNo, lastFieldId);
+      leaveFeedId(lastRecordNo, lastFeedId);
+      leaveObservationId(lastRecordNo, lastObservationId);
+    }
+  }
+};
+
+class MSFillerVisitor: public BaseMSFillerVisitor, public MSFillerUtils {
+public:
+  MSFillerVisitor(const Table &from, Scantable &to)
+    : BaseMSFillerVisitor(from),
+      scantable( to )
+  { 
+    antennaId = 0 ;
+    rowidx = 0 ;
+    tablerow = TableRow( scantable.table() ) ;
+    feedEntry = Vector<Int>( 64, -1 ) ;
+    nbeam = 0 ;
+    ifmap.clear() ;
+    const TableDesc &desc = table.tableDesc() ;
+    if ( desc.isColumn( "DATA" ) )
+      dataColumnName = "DATA" ;
+    else if ( desc.isColumn( "FLOAT_DATA" ) )
+      dataColumnName = "FLOAT_DATA" ;
+    getpt = False ;
+    isWeather = False ;
+    isSysCal = False ;
+    cycleNo = 0 ;
+    numSysCalRow = 0 ;
+    header = scantable.getHeader() ;
+    fluxUnit( header.fluxunit ) ;
+
+    // MS subtables
+    const TableRecord &hdr = table.keywordSet();
+    obstab = hdr.asTable( "OBSERVATION" ) ;
+    sctab = hdr.asTable( "SYSCAL" ) ;
+    spwtab = hdr.asTable( "SPECTRAL_WINDOW" ) ;
+    statetab = hdr.asTable( "STATE" ) ;
+    ddtab = hdr.asTable( "DATA_DESCRIPTION" ) ;
+    poltab = hdr.asTable( "POLARIZATION" ) ;
+    fieldtab = hdr.asTable( "FIELD" ) ;
+    anttab = hdr.asTable( "ANTENNA" ) ;
+    srctab = hdr.asTable( "SOURCE" ) ;
+
+    // attach to columns
+    // MS MAIN
+    intervalCol.attach( table, "INTERVAL" ) ;
+    flagRowCol.attach( table, "FLAG_ROW" ) ;
+    flagCol.attach( table, "FLAG" ) ;
+    if ( dataColumnName.compare( "DATA" ) == 0 )
+      dataCol.attach( table, dataColumnName ) ;
+    else
+      floatDataCol.attach( table, dataColumnName ) ;
+
+    // set dummy epoch
+    mf.set( currentTime ) ;
+
+    // initialize dirType
+    dirType = MDirection::N_Types ;
+
+    //
+    // add rows to scantable
+    //
+    // number of polarization is up to 4
+    uInt addrow = table.nrow() * maxNumPol() ;
+    scantable.table().addRow( addrow ) ;
+
+    // attach to columns
+    // Scantable MAIN
+    TableRecord &r = tablerow.record() ;
+    timeRF.attachToRecord( r, "TIME" ) ;
+    intervalRF.attachToRecord( r, "INTERVAL" ) ;
+    directionRF.attachToRecord( r, "DIRECTION" ) ;
+    azimuthRF.attachToRecord( r, "AZIMUTH" ) ;
+    elevationRF.attachToRecord( r, "ELEVATION" ) ;
+    scanRateRF.attachToRecord( r, "SCANRATE" ) ;
+    weatherIdRF.attachToRecord( r, "WEATHER_ID" ) ;
+    cycleNoRF.attachToRecord( r, "CYCLENO" ) ;
+    flagRowRF.attachToRecord( r, "FLAGROW" ) ;
+    polNoRF.attachToRecord( r, "POLNO" ) ;
+    tcalIdRF.attachToRecord( r, "TCAL_ID" ) ;
+    spectraRF.attachToRecord( r, "SPECTRA" ) ;
+    flagtraRF.attachToRecord( r, "FLAGTRA" ) ;
+    tsysRF.attachToRecord( r, "TSYS" ) ;
+    beamNoRF.attachToRecord( r, "BEAMNO" ) ;
+    ifNoRF.attachToRecord( r, "IFNO" ) ;
+    freqIdRF.attachToRecord( r, "FREQ_ID" ) ;
+    moleculeIdRF.attachToRecord( r, "MOLECULE_ID" ) ;
+    sourceNameRF.attachToRecord( r, "SRCNAME" ) ;
+    sourceProperMotionRF.attachToRecord( r, "SRCPROPERMOTION" ) ;
+    sourceDirectionRF.attachToRecord( r, "SRCDIRECTION" ) ;
+    sourceVelocityRF.attachToRecord( r, "SRCVELOCITY" ) ;
+    focusIdRF.attachToRecord( r, "FOCUS_ID" ) ;
+    fieldNameRF.attachToRecord( r, "FIELDNAME" ) ;
+    sourceTypeRF.attachToRecord( r, "SRCTYPE" ) ;
+    scanNoRF.attachToRecord( r, "SCANNO" ) ;
+
+    // put values
+    RecordFieldPtr<Int> refBeamNoRF( r, "REFBEAMNO" ) ;
+    *refBeamNoRF = -1 ;
+    RecordFieldPtr<Int> fitIdRF( r, "FIT_ID" ) ;
+    *fitIdRF = -1 ;
+    RecordFieldPtr<Float> opacityRF( r, "OPACITY" ) ;
+    *opacityRF = 0.0 ;
+  }
+
+  virtual void enterObservationId(const uInt recordNo, Int columnValue) {
+    //printf("%u: ObservationId: %d\n", recordNo, columnValue);
+    // update header 
+    if ( header.observer.empty() ) 
+      getScalar( String("OBSERVER"), (uInt)columnValue, obstab, header.observer ) ;
+    if ( header.project.empty() )
+      getScalar( "PROJECT", (uInt)columnValue, obstab, header.project ) ;
+    if ( header.utc == 0.0 ) {
+      Vector<MEpoch> amp ;
+      getArrayMeas( "TIME_RANGE", (uInt)columnValue, obstab, amp ) ;
+      header.utc = amp[0].get( "d" ).getValue() ;
+    }
+    if ( header.antennaname.empty() )
+      getScalar( "TELESCOPE_NAME", (uInt)columnValue, obstab, header.antennaname ) ;
+  }
+  virtual void leaveObservationId(const uInt recordNo, Int columnValue) {
+    // update header
+    header.nbeam = max( header.nbeam, (Int)nbeam ) ;
+
+    nbeam = 0 ;
+    feedEntry = -1 ;
+  }
+  virtual void enterFeedId(const uInt recordNo, Int columnValue) {
+    //printf("%u: FeedId: %d\n", recordNo, columnValue);
+
+    // update feed entry
+    if ( allNE( feedEntry, columnValue ) ) {
+      feedEntry[nbeam] = columnValue ;
+      nbeam++ ;
+    }
+
+    // put values
+    *beamNoRF = (uInt)columnValue ;
+    *focusIdRF = (uInt)0 ;
+  }
+  virtual void leaveFeedId(const uInt recordNo, Int columnValue) {
+    Int nelem = (Int)feedEntry.nelements() ;
+    if ( nbeam > nelem ) {
+      feedEntry.resize( nelem+64, True ) ;
+      Slicer slice( IPosition( 1, nelem ), IPosition( 1, feedEntry.nelements()-1 ) ) ;
+      feedEntry( slice ) = -1 ;
+    }
+  }
+  virtual void enterFieldId(const uInt recordNo, Int columnValue) {
+    //printf("%u: FieldId: %d\n", recordNo, columnValue);
+    // update sourceId and fieldName
+    getScalar( "SOURCE_ID", (uInt)columnValue, fieldtab, sourceId ) ;
+    String fieldName ;
+    getScalar( "NAME", (uInt)columnValue, fieldtab, fieldName ) ; 
+    fieldName += "__" + String::toString( columnValue ) ;
+
+    // put values
+    *fieldNameRF = fieldName ;
+  }
+  virtual void leaveFieldId(const uInt recordNo, Int columnValue) {
+    sourceId = -1 ;
+  }
+  virtual void enterDataDescId(const uInt recordNo, Int columnValue) {
+    //printf("%u: DataDescId: %d\n", recordNo, columnValue);
+    // update polarization and spectral window ids
+    getScalar( "POLARIZATION_ID", (uInt)columnValue, ddtab, polId ) ;
+    getScalar( "SPECTRAL_WINDOW_ID", (uInt)columnValue, ddtab, spwId ) ;
+
+    // polarization setup
+    getScalar( "NUM_CORR", (uInt)polId, poltab, npol ) ;
+    Vector<Int> corrtype ;
+    getArray( "CORR_TYPE", (uInt)polId, poltab, corrtype ) ;
+    polnos = getPolNos( corrtype ) ; 
+    
+    // process SOURCE table
+    String sourceName ;
+    Vector<Double> sourcePM, restFreqs, sysVels ;
+    Vector<String> transition ;
+    processSource( sourceId, spwId, sourceName, sourceDir, sourcePM, 
+                   restFreqs, transition, sysVels ) ;
+
+    // spectral setup
+    uInt freqId ;
+    Double reffreq, bandwidth ;
+    String freqref ;
+    getScalar( "NUM_CHAN", (uInt)spwId, spwtab, nchan ) ;
+    Bool iswvr = (Bool)(nchan == 4) ;
+    map<Int,uInt>::iterator iter = ifmap.find( spwId ) ;
+    if ( iter == ifmap.end() ) {
+      MEpoch me ;
+      getScalarMeas( "TIME", recordNo, table, me ) ;
+      spectralSetup( spwId, me, antpos, sourceDir, 
+                     freqId, nchan, 
+                     freqref, reffreq, bandwidth ) ;
+      ifmap.insert( pair<Int,uInt>(spwId,freqId) ) ;
+    }
+    else {
+      freqId = iter->second ;
+    }
+    sp.resize( npol, nchan ) ;
+    fl.resize( npol, nchan ) ;
+
+
+    // molecular setup
+    STMolecules mtab = scantable.molecules() ;
+    uInt molId = mtab.addEntry( restFreqs, transition, transition ) ;
+
+    // process SYSCAL table
+    if ( isSysCal )
+      processSysCal( spwId ) ;
+
+    // update header
+    if ( !iswvr ) {
+      header.nchan = max( header.nchan, nchan ) ;
+      header.bandwidth = max( header.bandwidth, bandwidth ) ;
+      if ( header.reffreq == -1.0 )
+        header.reffreq = reffreq ;
+      header.npol = max( header.npol, npol ) ;
+      if ( header.poltype.empty() )
+        header.poltype = getPolType( corrtype[0] ) ;
+      if ( header.freqref.empty() )
+        header.freqref = freqref ;
+    }
+    
+    // put values
+    *ifNoRF = (uInt)spwId ;
+    *freqIdRF = freqId ;
+    *moleculeIdRF = molId ;
+    *sourceNameRF = sourceName ;
+    sourceProperMotionRF.define( sourcePM ) ;
+    Vector<Double> srcD = sourceDir.getAngle().getValue( "rad" ) ;
+    sourceDirectionRF.define( srcD ) ;
+    if ( !sysVels.empty() ) 
+      *sourceVelocityRF = sysVels[0] ;
+    else {
+      *sourceVelocityRF = (Double)0.0 ;
+    }
+  }
+  virtual void leaveDataDescId(const uInt recordNo, Int columnValue) {
+    npol = 0 ;
+    nchan = 0 ;
+    numSysCalRow = 0 ;
+  }
+  virtual void enterScanNo(const uInt recordNo, Int columnValue) {
+    //printf("%u: ScanNo: %d\n", recordNo, columnValue);
+    // put value
+    // scan number is 1-based in MS while 0-based in Scantable
+    *scanNoRF = (uInt)columnValue - 1 ;
+  }
+  virtual void leaveScanNo(const uInt recordNo, Int columnValue) {
+    cycleNo = 0 ;
+  }
+  virtual void enterStateId(const uInt recordNo, Int columnValue) {
+    //printf("%u: StateId: %d\n", recordNo, columnValue);
+    // SRCTYPE
+    Int srcType = getSrcType( columnValue ) ;
+    
+    // update header
+    if ( header.obstype.empty() ) 
+      getScalar( "OBS_MODE", (uInt)columnValue, statetab, header.obstype ) ;
+
+    // put value
+    *sourceTypeRF = srcType ;
+  }
+  virtual void leaveStateId(const uInt recordNo, Int columnValue) { }
+  virtual void enterTime(const uInt recordNo, Double columnValue) {
+    //printf("%u: Time: %f\n", recordNo, columnValue);
+    currentTime = MEpoch( Quantity( columnValue, "s" ), MEpoch::UTC ) ;
+
+    // DIRECTION, AZEL, and SCANRATE
+    Vector<Double> direction, azel ;
+    Vector<Double> scanrate( 2, 0.0 ) ;
+    if ( getpt )
+      getDirection( direction, azel, scanrate ) ;
+    else 
+      getSourceDirection( direction, azel, scanrate ) ;
+
+    // INTERVAL
+    Double interval = intervalCol.asdouble( recordNo ) ;
+
+    // WEATHER_ID
+    uInt wid = 0 ;
+    if ( isWeather ) 
+      wid = getWeatherId() ;
+
+    // put value
+    Double t = currentTime.get( "d" ).getValue() ;
+    *timeRF = t ;
+    *intervalRF = interval ;
+    directionRF.define( direction ) ;
+    *azimuthRF = (Float)azel[0] ;
+    *elevationRF = (Float)azel[1] ;
+    scanRateRF.define( scanrate ) ;
+    *weatherIdRF = wid ;
+  }
+  virtual void leaveTime(const uInt recordNo, Double columnValue) { }
+  virtual Bool visitRecord(const uInt recordNo,
+			   const Int observationId,
+			   const Int feedId,
+			   const Int fieldId,
+			   const Int dataDescId,
+			   const Int scanNo,
+			   const Int stateId,
+			   const Double time)
+  {
+    //printf("%u: %d, %d, %d, %d, %d, %d, %f\n", recordNo,
+    //observationId, feedId, fieldId, dataDescId, scanNo, stateId, time);
+
+    // SPECTRA and FLAGTRA
+    //Matrix<Float> sp;
+    //Matrix<uChar> fl;
+    spectraAndFlagtra( recordNo, sp, fl ) ;
+
+    // FLAGROW
+    Bool flr = flagRowCol.asBool( recordNo ) ;
+
+    // TSYS
+    Matrix<Float> tsys ;
+    uInt scIdx = getSysCalIndex() ;
+    if ( numSysCalRow > 0 ) {
+      tsys = sysCalTsysCol( syscalRow[scIdx] ) ;
+    }
+    else {
+      tsys.resize( npol, 1 ) ;
+      tsys = 1.0 ;
+    }
+
+    // TCAL_ID
+    Block<uInt> tcalids( npol, 0 ) ;
+    if ( numSysCalRow > 0 ) {
+      tcalids = getTcalId( syscalTime[scIdx] ) ;
+    }
+
+    // put value
+    *cycleNoRF = cycleNo ;
+    *flagRowRF = (uInt)flr ;
+
+    // for each polarization component
+    for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
+      // put value depending on polarization component
+      *polNoRF = polnos[ipol] ;
+      *tcalIdRF = tcalids[ipol] ;
+      spectraRF.define( sp.row( ipol ) ) ;
+      flagtraRF.define( fl.row( ipol ) ) ;
+      tsysRF.define( tsys.row( ipol ) ) ;
+      
+      // commit row
+      tablerow.put( rowidx ) ;
+      rowidx++ ;
+    }
+
+    // increment CYCLENO
+    cycleNo++ ;
+
+    return True ;
+  }
+  virtual void finish()
+  {
+    BaseMSFillerVisitor::finish();
+    //printf("Total: %u\n", count);
+    // remove redundant rows
+    //cout << "filled " << rowidx << " rows out of " << scantable.nrow() << " rows" << endl ;
+    if ( scantable.nrow() > rowidx ) {
+      uInt numRemove = scantable.nrow() - rowidx ;
+      //cout << "numRemove = " << numRemove << endl ;
+      Vector<uInt> rows( numRemove ) ;
+      indgen( rows, rowidx ) ;
+      scantable.table().removeRow( rows ) ;
+    }
+    
+    // antenna name and station name
+    String antennaName ;
+    getScalar( "NAME", (uInt)antennaId, anttab, antennaName ) ;
+    String stationName ;
+    getScalar( "STATION", (uInt)antennaId, anttab, stationName ) ;
+
+    // update header
+    header.nif = ifmap.size() ;
+    header.antennaposition = antpos.get( "m" ).getValue() ;
+    if ( header.antennaname.empty() || header.antennaname == antennaName )
+      header.antennaname = antennaName ;
+    else 
+      header.antennaname += "//" + antennaName ;
+    if ( !stationName.empty() && stationName != antennaName )
+      header.antennaname += "@" + stationName ;
+    if ( header.fluxunit.empty() || header.fluxunit == "CNTS" )
+      header.fluxunit = "K" ;
+    header.epoch = "UTC" ;
+    header.equinox = 2000.0 ;
+    if (header.freqref == "TOPO") {
+      header.freqref = "TOPOCENT";
+    } else if (header.freqref == "GEO") {
+      header.freqref = "GEOCENTR";
+    } else if (header.freqref == "BARY") {
+      header.freqref = "BARYCENT";
+    } else if (header.freqref == "GALACTO") {
+      header.freqref = "GALACTOC";
+    } else if (header.freqref == "LGROUP") {
+      header.freqref = "LOCALGRP";
+    } else if (header.freqref == "CMB") {
+      header.freqref = "CMBDIPOL";
+    } else if (header.freqref == "REST") {
+      header.freqref = "SOURCE";
+    }
+    scantable.setHeader( header ) ;
+  }
+  void setAntenna( Int id )
+  { 
+    antennaId = id ; 
+
+    Vector< Quantum<Double> > pos ;
+    getArrayQuant( "POSITION", (uInt)antennaId, anttab, pos ) ;
+    antpos = MPosition( MVPosition( pos ), MPosition::ITRF ) ; 
+    mf.set( antpos ) ;
+  } 
+  void setPointingTable( const Table &tab, String columnToUse="DIRECTION" )
+  {
+    // input POINTING table must be
+    //  1) selected by antenna
+    //  2) sorted by TIME
+    ROScalarColumn<Double> tcol( tab, "TIME" ) ;
+    ROArrayColumn<Double> dcol( tab, columnToUse ) ;
+    tcol.getColumn( pointingTime ) ;
+    dcol.getColumn( pointingDirection ) ;
+    const TableRecord &rec = dcol.keywordSet() ;
+    String pointingRef = rec.asRecord( "MEASINFO" ).asString( "Ref" ) ;
+    MDirection::getType( dirType, pointingRef ) ;
+    getpt = True ;
+  }
+  void setWeatherTime( const Vector<Double> &t, const Vector<Double> &it )
+  {
+    isWeather = True ;
+    weatherTime = t ;
+    weatherInterval = it ;
+  }
+  void setSysCalRecord( const Record &r )
+  //void setSysCalRecord( const map< String,Vector<uInt> > &r )
+  {
+    isSysCal = True ;
+    syscalRecord = r ;
+
+    const TableDesc &desc = sctab.tableDesc() ;
+    uInt nrow = sctab.nrow() ;
+    syscalRow.resize( nrow ) ;
+    syscalTime.resize( nrow ) ;
+    syscalInterval.resize( nrow ) ;
+    String tsysCol = "NONE" ;
+    Vector<String> tsysCols = stringToVector( "TSYS_SPECTRUM,TSYS" ) ;
+    for ( uInt i = 0 ; i < tsysCols.nelements() ; i++ ) {
+      if ( tsysCol == "NONE" && desc.isColumn( tsysCols[i] ) )
+        tsysCol = tsysCols[i] ;
+    }
+    sysCalTsysCol.attach( sctab, tsysCol ) ;
+  }
+  STHeader getHeader() { return header ; }
+  uInt getNumBeam() { return nbeam ; }
+  uInt getFilledRowNum() { return rowidx ; }
+private:
+  void fluxUnit( String &u )
+  {
+    ROTableColumn col( table, dataColumnName ) ;
+    const TableRecord &rec = col.keywordSet() ;
+    if ( rec.isDefined( "UNIT" ) )
+      u = rec.asString( "UNIT" ) ;
+    else if ( rec.isDefined( "QuantumUnits" ) )
+      u = rec.asString( "QuantumUnits" ) ;
+    if ( u.empty() )
+      u = "K" ;
+  }
+  void processSource( Int sourceId, Int spwId,
+                      String &name, MDirection &dir, Vector<Double> &pm,
+                      Vector<Double> &rf, Vector<String> &trans, Vector<Double> &vel )
+  {
+    // find row
+    uInt nrow = srctab.nrow() ;
+    Int idx = -1 ;
+    ROTableRow row( srctab ) ;
+    for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+      const TableRecord &r = row.get( irow ) ;
+      if ( r.asInt( "SOURCE_ID" ) == sourceId ) {
+        Int tmpSpwId = r.asInt( "SPECTRAL_WINDOW_ID" ) ;
+        if ( tmpSpwId == spwId || tmpSpwId == -1 ) {
+          idx = (Int)irow ;
+          break ;
+        }
+      }
+    }
+
+    // fill
+    Int numLines = 0 ;
+    if ( idx != -1 ) {
+      const TableRecord &r = row.get( idx ) ;
+      name = r.asString( "NAME" ) ;
+      getScalarMeas( "DIRECTION", idx, srctab, dir ) ;
+      pm = r.toArrayDouble( "PROPER_MOTION" ) ;
+      numLines = r.asInt( "NUM_LINES" ) ;
+    }
+    else {
+      name = "" ;
+      pm = Vector<Double>( 2, 0.0 ) ;
+      dir = MDirection( Quantum<Double>(0.0,Unit("rad")), Quantum<Double>(0.0,Unit("rad")) ) ;
+    }
+    if ( !getpt ) {
+      String ref = dir.getRefString() ;
+      MDirection::getType( dirType, ref ) ;
+    }
+
+    rf.resize( numLines ) ;
+    trans.resize( numLines ) ;
+    vel.resize( numLines ) ;
+    if ( numLines > 0 ) {
+      Block<Bool> isDefined = row.getDefined() ;
+      Vector<String> colNames = row.columnNames() ;
+      Vector<Int> indexes( 3, -1 ) ;
+      Vector<String> cols = stringToVector( "REST_FREQUENCY,TRANSITION,SYSVEL" ) ;
+      for ( uInt icol = 0 ; icol < colNames.nelements() ; icol++ ) {
+        if ( anyEQ( indexes, -1 ) ) {
+          for ( uInt jcol = 0 ; jcol < cols.nelements() ; jcol++ ) {
+            if ( colNames[icol] == cols[jcol] )
+              indexes[jcol] = icol ;
+          }
+        }
+      }
+      if ( indexes[0] != -1 && isDefined[indexes[0]] == True ) {
+        Vector< Quantum<Double> > qrf ;
+        getArrayQuant( "REST_FREQUENCY", idx, srctab, qrf ) ;
+        for ( int i = 0 ; i < numLines ; i++ )
+          rf[i] = qrf[i].getValue( "Hz" ) ;
+      }
+      if ( indexes[1] != -1 && isDefined[indexes[1]] == True ) {
+        getArray( "TRANSITION", idx, srctab, trans ) ;
+      }
+      if ( indexes[2] != -1 && isDefined[indexes[2]] == True ) {
+        Vector< Quantum<Double> > qsv ;
+        getArrayQuant( "SYSVEL", idx, srctab, qsv ) ;
+        for ( int i = 0 ; i < numLines ; i++ )
+          vel[i] = qsv[i].getValue( "m/s" ) ;
+      }
+    }
+  }
+  void spectralSetup( Int &spwId, MEpoch &me, MPosition &mp, MDirection &md,
+                      uInt &freqId, Int &nchan,
+                      String &freqref, Double &reffreq, Double &bandwidth )
+  {
+    // fill
+    Int measFreqRef ;
+    getScalar( "MEAS_FREQ_REF", spwId, spwtab, measFreqRef ) ;
+    MFrequency::Types freqRef = MFrequency::castType( measFreqRef ) ;
+    //freqref = MFrequency::showType( freqRef ) ;
+    freqref = "LSRK" ;
+    Quantum<Double> q ;
+    getScalarQuant( "TOTAL_BANDWIDTH", spwId, spwtab, q ) ;
+    bandwidth = q.getValue( "Hz" ) ;
+    getScalarQuant( "REF_FREQUENCY", spwId, spwtab, q ) ;
+    reffreq = q.getValue( "Hz" ) ;
+    Double refpix = 0.5 * ( (Double)nchan-1.0 ) ;
+    Int refchan = ( nchan - 1 ) / 2 ;
+    Bool even = (Bool)( nchan % 2 == 0 ) ;
+    Vector< Quantum<Double> > qa ;
+    getArrayQuant( "CHAN_WIDTH", spwId, spwtab, qa ) ;
+    Double increment = qa[refchan].getValue( "Hz" ) ;
+    getArrayQuant( "CHAN_FREQ", spwId, spwtab, qa ) ;
+    if ( nchan == 1 ) {
+      Int netSideband ;
+      getScalar( "NET_SIDEBAND", spwId, spwtab, netSideband ) ;
+      if ( netSideband == 1 ) increment *= -1.0 ;
+    }
+    else {
+      if ( qa[0].getValue( "Hz" ) > qa[1].getValue( "Hz" ) )
+        increment *= -1.0 ;
+    }
+    Double refval = qa[refchan].getValue( "Hz" ) ;
+    if ( even )
+      refval = 0.5 * ( refval + qa[refchan+1].getValue( "Hz" ) ) ;
+    if ( freqRef != MFrequency::LSRK ) {
+      MeasFrame mframe( me, mp, md ) ;
+      MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mframe ) ) ;
+      refval = tolsr( Quantum<Double>( refval, "Hz" ) ).get( "Hz" ).getValue() ;
+    }
+    
+    // add new row to FREQUENCIES
+    Table ftab = scantable.frequencies().table() ;
+    freqId = ftab.nrow() ;
+    ftab.addRow() ;
+    TableRow row( ftab ) ;
+    TableRecord &r = row.record() ;
+    RecordFieldPtr<uInt> idRF( r, "ID" ) ;
+    *idRF = freqId ;
+    RecordFieldPtr<Double> refpixRF( r, "REFPIX" ) ;
+    RecordFieldPtr<Double> refvalRF( r, "REFVAL" ) ;
+    RecordFieldPtr<Double> incrRF( r, "INCREMENT" ) ;
+    *refpixRF = refpix ;
+    *refvalRF = refval ;
+    *incrRF = increment ;
+    row.put( freqId ) ;
+  }
+  void spectraAndFlagtra( uInt recordNo, Matrix<Float> &sp, Matrix<uChar> &fl )
+  {
+    Matrix<Bool> b = flagCol( recordNo ) ;
+    if ( dataColumnName.compare( "FLOAT_DATA" ) == 0 ) {
+      sp = floatDataCol( recordNo ) ;
+      convertArray( fl, b ) ;
+    }
+    else {
+      Bool notyet = True ;
+      Matrix<Complex> c = dataCol( recordNo ) ;
+      for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
+        if ( ( header.poltype == "linear" || header.poltype == "circular" ) 
+             && ( polnos[ipol] == 2 || polnos[ipol] == 3 ) ) {
+          if ( notyet ) {
+            Vector<Float> tmp = ComplexToReal( c.row( ipol ) ) ;
+            IPosition start( 1, 0 ) ;
+            IPosition end( 1, 2*nchan-1 ) ;
+            IPosition inc( 1, 2 ) ;
+            if ( polnos[ipol] == 2 ) {
+              sp.row( ipol ) = tmp( start, end, inc ) ;
+              Vector<Bool> br = b.row( ipol ) ;
+              Vector<uChar> flr = fl.row( ipol ) ;
+              convertArray( flr, br ) ;
+              start = IPosition( 1, 1 ) ;
+              Int jpol = ipol+1 ;
+              while( polnos[jpol] != 3 && jpol < npol )
+                jpol++ ;
+              sp.row( jpol ) = tmp( start, end, inc ) ;
+              flr.reference( fl.row( jpol ) ) ;
+              convertArray( flr, br ) ;
+            }
+            else if ( polnos[ipol] == 3 ) {
+              sp.row( ipol ) = sp.row( ipol ) * (Float)(-1.0) ;
+              Int jpol = ipol+1 ;
+              while( polnos[jpol] != 2 && jpol < npol )
+                jpol++ ;
+              Vector<Bool> br = b.row( ipol ) ;
+              Vector<uChar> flr = fl.row( jpol ) ;
+              sp.row( jpol ) = tmp( start, end, inc ) ;
+              convertArray( flr, br ) ;
+              start = IPosition( 1, 1 ) ;
+              sp.row( ipol ) = tmp( start, end, inc ) * (Float)(-1.0) ;
+              flr.reference( fl.row( ipol ) ) ;
+              convertArray( flr, br ) ;
+            }
+            notyet = False ;
+          }
+        }
+        else {
+          Vector<Float> tmp = ComplexToReal( c.row( ipol ) ) ;
+          IPosition start( 1, 0 ) ;
+          IPosition end( 1, 2*nchan-1 ) ;
+          IPosition inc( 1, 2 ) ;
+          sp.row( ipol ) = tmp( start, end, inc ) ;
+          Vector<Bool> br = b.row( ipol ) ;
+          Vector<uChar> flr = fl.row( ipol ) ;
+          convertArray( flr, br ) ;
+        }
+      }
+    }
+  }
+  uInt binarySearch( Vector<Double> &timeList, Double target )
+  {
+    Int low = 0 ;
+    Int high = timeList.nelements() ;
+    uInt idx = 0 ;
+    
+    while ( low <= high ) {
+      idx = (Int)( 0.5 * ( low + high ) ) ;
+      Double t = timeList[idx] ;
+      if ( t < target ) 
+        low = idx + 1 ;
+      else if ( t > target )
+        high = idx - 1 ;
+      else {
+        return idx ;
+      }
+    }
+    
+    idx = max( 0, min( low, high ) ) ;
+    return idx ;
+  }
+  void getDirection( Vector<Double> &dir, Vector<Double> &azel, Vector<Double> &srate )
+  {
+    // @todo At the moment, do binary search every time
+    //       if this is bottleneck, frequency of binary search must be reduced
+    Double t = currentTime.get( "s" ).getValue() ;
+    uInt idx = min( binarySearch( pointingTime, t ), pointingTime.nelements()-1 ) ;
+    Matrix<Double> d ;
+    if ( pointingTime[idx] == t )
+      d = pointingDirection.xyPlane( idx ) ;
+    else if ( pointingTime[idx] < t ) {
+      if ( idx == pointingTime.nelements()-1 ) 
+        d = pointingDirection.xyPlane( idx ) ;
+      else 
+        d = interp( pointingTime[idx], pointingTime[idx+1], t,
+                    pointingDirection.xyPlane( idx ), pointingDirection.xyPlane( idx+1 ) ) ;
+    }
+    else {
+      if ( idx == 0 )
+        d = pointingDirection.xyPlane( idx ) ;
+      else 
+        d = interp( pointingTime[idx-1], pointingTime[idx], t,
+                    pointingDirection.xyPlane( idx-1 ), pointingDirection.xyPlane( idx ) ) ;
+    }
+    mf.resetEpoch( currentTime ) ;
+    Quantum< Vector<Double> > tmp( d.column( 0 ), Unit( "rad" ) ) ;
+    if ( dirType != MDirection::J2000 ) {
+      MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
+      dir = toj2000( tmp ).getAngle( "rad" ).getValue() ;
+    }
+    else {
+      dir = d.column( 0 ) ;
+    }
+    if ( dirType != MDirection::AZELGEO ) {
+      MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZELGEO, mf ) ) ;
+      //MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZEL, mf ) ) ;
+      azel = toazel( tmp ).getAngle( "rad" ).getValue() ;
+    }
+    else {
+      azel = d.column( 0 ) ;
+    }
+    if ( d.ncolumn() > 1 )
+      srate = d.column( 1 ) ;
+  }
+  void getSourceDirection( Vector<Double> &dir, Vector<Double> &azel, Vector<Double> &srate )
+  {
+    dir = sourceDir.getAngle( "rad" ).getValue() ;
+    mf.resetEpoch( currentTime ) ;
+    MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZELGEO, mf ) ) ;
+    azel = toazel( Quantum< Vector<Double> >( dir, Unit("rad") ) ).getAngle( "rad" ).getValue() ;
+    if ( dirType != MDirection::J2000 ) {
+      MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
+      dir = toj2000( Quantum< Vector<Double> >( dir, Unit("rad") ) ).getAngle( "rad" ).getValue() ;
+    }
+  }
+  String detectSeparator( String &s )
+  {
+    String tmp = s.substr( 0, s.find_first_of( "," ) ) ;
+    Char *separators[] = { ":", "#", ".", "_" } ;
+    uInt nsep = 4 ;
+    for ( uInt i = 0 ; i < nsep ; i++ ) {
+      if ( tmp.find( separators[i] ) != String::npos )
+        return separators[i] ;
+    }
+    return "" ;
+  }
+  Int getSrcType( Int stateId )
+  {
+    // get values
+    Bool sig ;
+    getScalar( "SIG", stateId, statetab, sig ) ;
+    Bool ref ;
+    getScalar( "REF", stateId, statetab, ref ) ;
+    Double cal ;
+    getScalar( "CAL", stateId, statetab, cal ) ;
+    String obsmode ;
+    getScalar( "OBS_MODE", stateId, statetab, obsmode ) ;
+    String sep = detectSeparator( obsmode ) ;
+    
+    Int srcType = SrcType::NOTYPE ;
+    if ( sep == ":" )
+      srcTypeGBT( srcType, sep, obsmode, sig, ref, cal ) ;
+    else if ( sep == "." || sep == "#" ) 
+      srcTypeALMA( srcType, sep, obsmode ) ;
+    else if ( sep == "_" )
+      srcTypeOldALMA( srcType, sep, obsmode, sig, ref ) ;
+    else 
+      srcTypeDefault( srcType, sig, ref ) ;
+
+    return srcType ;
+  }
+  void srcTypeDefault( Int &st, Bool &sig, Bool &ref )
+  {
+    if ( sig ) st = SrcType::SIG ;
+    else if ( ref ) st = SrcType::REF ;
+  }
+  void srcTypeGBT( Int &st, String &sep, String &mode, Bool &sig, Bool &ref, Double &cal )
+  {
+    Int epos = mode.find_first_of( sep ) ;
+    Int nextpos = mode.find_first_of( sep, epos+1 ) ;
+    String m1 = mode.substr( 0, epos ) ;
+    String m2 = mode.substr( epos+1, nextpos-epos-1 ) ;
+    if ( m1 == "Nod" ) {
+      st = SrcType::NOD ;
+    }
+    else if ( m1 == "OffOn" ) {
+      if ( m2 == "PSWITCHON" ) st = SrcType::PSON ;
+      if ( m2 == "PSWITCHOFF" ) st = SrcType::PSOFF ;
+    }
+    else {
+      if ( m2 == "FSWITCH" ) {
+        if ( sig ) st = SrcType::FSON ;
+        else if ( ref ) st = SrcType::FSOFF ;
+      }
+    }
+    if ( cal > 0.0 ) {
+      if ( st == SrcType::NOD )
+        st = SrcType::NODCAL ;
+      else if ( st == SrcType::PSON ) 
+        st = SrcType::PONCAL ;
+      else if ( st == SrcType::PSOFF )
+        st = SrcType::POFFCAL ;
+      else if ( st == SrcType::FSON ) 
+        st = SrcType::FONCAL ;
+      else if ( st == SrcType::FSOFF ) 
+        st = SrcType::FOFFCAL ;
+      else
+        st = SrcType::CAL ;
+    }
+  }
+  void srcTypeALMA( Int &st, String &sep, String &mode )
+  {
+    Int epos = mode.find_first_of( "," ) ;
+    String first = mode.substr( 0, epos ) ;
+    epos = first.find_first_of( sep ) ;
+    Int nextpos = first.find_first_of( sep, epos+1 ) ;
+    String m1 = first.substr( 0, epos ) ;
+    String m2 = first.substr( epos+1, nextpos-epos-1 ) ;
+    if ( m1.find( "CALIBRATE_" ) == 0 ) {
+      if ( m2.find( "ON_SOURCE" ) == 0 )
+        st = SrcType::PONCAL ;
+      else if ( m2.find( "OFF_SOURCE" ) == 0 )
+        st = SrcType::POFFCAL ;
+    }
+    else if ( m1.find( "OBSERVE_TARGET" ) == 0 ) {
+      if ( m2.find( "ON_SOURCE" ) == 0 ) 
+        st = SrcType::PSON ;
+      else if ( m2.find( "OFF_SOURCE" ) == 0 )
+        st = SrcType::PSOFF ;
+    }
+  }
+  void srcTypeOldALMA( Int &st, String &sep, String &mode, Bool &sig, Bool &ref )
+  {
+    Int epos = mode.find_first_of( "," ) ;
+    String first = mode.substr( 0, epos ) ;
+    string substr[4] ;
+    int numSubstr = split( first, substr, 4, sep ) ;
+    String m1( substr[0] ) ;
+    String m2( substr[2] ) ;
+    if ( numSubstr == 4 ) {
+      if ( m1.find( "CALIBRATE" ) == 0 ) {
+        if ( m2.find( "ON" ) == 0 ) 
+          st = SrcType::PONCAL ;
+        else if ( m2.find( "OFF" ) == 0 )
+          st = SrcType::POFFCAL ;
+      }
+      else if ( m1.find( "OBSERVE" ) == 0 ) {
+        if ( m2.find( "ON" ) == 0 ) 
+          st = SrcType::PSON ;
+        else if ( m2.find( "OFF" ) == 0 )
+          st = SrcType::PSOFF ;
+      }
+    }
+    else {
+      if ( sig ) st = SrcType::SIG ;
+      else if ( ref ) st = SrcType::REF ;
+    }
+  }
+  Block<uInt> getPolNos( Vector<Int> &corr )
+  {
+    Block<uInt> polnos( npol ) ;
+    for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
+      if ( corr[ipol] == Stokes::I || corr[ipol] == Stokes::RR || corr[ipol] == Stokes::XX )
+        polnos[ipol] = 0 ;
+      else if ( corr[ipol] == Stokes::Q || corr[ipol] == Stokes::LL || corr[ipol] == Stokes::YY )
+        polnos[ipol] = 1 ;
+      else if ( corr[ipol] == Stokes::U || corr[ipol] == Stokes::RL || corr[ipol] == Stokes::XY )
+        polnos[ipol] = 2 ;
+      else if ( corr[ipol] == Stokes::V || corr[ipol] == Stokes::LR || corr[ipol] == Stokes::YX )
+        polnos[ipol] = 3 ;
+    }
+    return polnos ;
+  }
+  String getPolType( Int &corr )
+  {
+    String poltype = "" ;
+    if ( corr == Stokes::I || corr == Stokes::Q || corr == Stokes::U || corr == Stokes::V )
+      poltype = "stokes" ;
+    else if ( corr == Stokes::XX || corr == Stokes::YY || corr == Stokes::XY || corr == Stokes::YX ) 
+      poltype = "linear" ;
+    else if ( corr == Stokes::RR || corr == Stokes::LL || corr == Stokes::RL || corr == Stokes::LR ) 
+      poltype = "circular" ;
+    else if ( corr == Stokes::Plinear || corr == Stokes::Pangle )
+      poltype = "linpol" ;
+    return poltype ;    
+  }
+  uInt getWeatherId()
+  {
+    // if only one row, return 0
+    if ( weatherTime.nelements() == 1 )
+      return 0 ;
+
+    // @todo At the moment, do binary search every time
+    //       if this is bottleneck, frequency of binary search must be reduced
+    Double t = currentTime.get( "s" ).getValue() ;
+    uInt idx = min( binarySearch( weatherTime, t ), weatherTime.nelements()-1 ) ;
+    if ( weatherTime[idx] < t ) {
+      if ( idx != weatherTime.nelements()-1 ) {
+        if ( weatherTime[idx+1] - t < 0.5 * weatherInterval[idx+1] )
+          idx++ ;
+      }
+    }
+    else if ( weatherTime[idx] > t ) {
+      if ( idx != 0 ) {
+        if ( weatherTime[idx] - t > 0.5 * weatherInterval[idx] )
+          idx-- ;
+      }
+    }
+    return idx ;
+  }
+  void processSysCal( Int &spwId )
+  {
+    // get feedId from row
+    Int feedId = (Int)tablerow.record().asuInt( "BEAMNO" ) ;
+
+    uInt nrow = sctab.nrow() ;
+    ROScalarColumn<Int> col( sctab, "ANTENNA_ID" ) ;
+    Vector<Int> aids = col.getColumn() ;
+    col.attach( sctab, "FEED_ID" ) ;
+    Vector<Int> fids = col.getColumn() ;
+    col.attach( sctab, "SPECTRAL_WINDOW_ID" ) ;
+    Vector<Int> sids = col.getColumn() ;
+    ROScalarColumn<Double> timeCol( sctab, "TIME" ) ;
+    ROScalarColumn<Double> intCol( sctab, "INTERVAL" ) ;
+    for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+      if ( aids[irow] == antennaId 
+           && fids[irow] == feedId 
+           && sids[irow] == spwId ) {
+        syscalRow[numSysCalRow] = irow ;
+        syscalTime[numSysCalRow] = timeCol( irow ) ;
+        syscalInterval[numSysCalRow] = intCol( irow ) ;
+        numSysCalRow++ ;
+      }
+    }
+  }
+  uInt getSysCalIndex()
+  {
+    // if only one row, return 0
+    if ( numSysCalRow == 1 || !isSysCal )
+      return 0 ;
+
+    // @todo At the moment, do binary search every time
+    //       if this is bottleneck, frequency of binary search must be reduced
+    Double t = currentTime.get( "s" ).getValue() ;
+    Vector<Double> tslice  = syscalTime( Slice(0, numSysCalRow) ) ;
+    uInt idx = min( binarySearch( tslice, t ), numSysCalRow-1 ) ;
+    if ( syscalTime[idx] < t ) {
+      if ( idx != numSysCalRow-1 ) {
+        if ( syscalTime[idx+1] - t < 0.5 * syscalInterval[idx+1] )
+          idx++ ;
+      }
+    }
+    else if ( syscalTime[idx] > t ) {
+      if ( idx != 0 ) {
+        if ( syscalTime[idx] - t > 0.5 * syscalInterval[idx] )
+          idx-- ;
+      }
+    }
+    return idx ;    
+  }
+  Block<uInt> getTcalId( Double &t )
+  {
+    // return 0 if no SysCal table
+    if ( !isSysCal ) {
+      return Block<uInt>( 4, 0 ) ;
+    }
+      
+    // get feedId from row
+    Int feedId = (Int)tablerow.record().asuInt( "BEAMNO" ) ;
+
+    // key
+    String key = keyTcal( feedId, spwId, t ) ;
+    
+    // retrieve ids
+    Vector<uInt> ids = syscalRecord.asArrayuInt( key ) ;
+    //Vector<uInt> ids = syscalRecord[key] ;
+    uInt np = ids[1] - ids[0] + 1 ;
+    Block<uInt> tcalids( np ) ;
+    if ( np > 0 ) {
+      tcalids[0] = ids[0] ;
+      if ( np > 1 ) {
+        tcalids[1] = ids[1] ;
+        for ( uInt ip = 2 ; ip < np ; ip++ )
+          tcalids[ip] = ids[0] + ip - 1 ;
+      }
+    }
+    return tcalids ;
+  }
+  uInt maxNumPol()
+  {
+    ROScalarColumn<Int> numCorrCol( poltab, "NUM_CORR" ) ;
+    return max( numCorrCol.getColumn() ) ;
+  }
+
+  Scantable &scantable;
+  Int antennaId;
+  uInt rowidx;
+  String dataColumnName;
+  TableRow tablerow;
+  STHeader header;
+  Vector<Int> feedEntry;
+  uInt nbeam;
+  Int npol;
+  Int nchan;
+  Int sourceId;
+  Int polId;
+  Int spwId;
+  uInt cycleNo;
+  MDirection sourceDir;
+  MPosition antpos;
+  MEpoch currentTime;
+  map<Int,uInt> ifmap;
+  Block<uInt> polnos;
+  Bool getpt;
+  Vector<Double> pointingTime;
+  Cube<Double> pointingDirection;
+  MDirection::Types dirType;
+  Bool isWeather;
+  Vector<Double> weatherTime;
+  Vector<Double> weatherInterval;
+  Bool isSysCal;
+  Record syscalRecord;
+  //map< String,Vector<uInt> > syscalRecord;
+  uInt numSysCalRow ;
+  Vector<uInt> syscalRow;
+  Vector<Double> syscalTime;
+  Vector<Double> syscalInterval;
+  //String tsysCol;
+  //String tcalCol;
+
+  // MS subtables
+  Table obstab;
+  Table sctab;
+  Table spwtab;
+  Table statetab;
+  Table ddtab;
+  Table poltab;
+  Table fieldtab;
+  Table anttab;
+  Table srctab;
+  Matrix<Float> sp;
+  Matrix<uChar> fl;
+  MeasFrame mf;
+
+  // MS MAIN columns
+  ROTableColumn intervalCol;
+  ROTableColumn flagRowCol;
+  ROArrayColumn<Float> floatDataCol;
+  ROArrayColumn<Complex> dataCol;
+  ROArrayColumn<Bool> flagCol;
+
+  // MS SYSCAL columns 
+  ROArrayColumn<Float> sysCalTsysCol;
+
+  // Scantable MAIN columns
+  RecordFieldPtr<Double> timeRF,intervalRF,sourceVelocityRF;
+  RecordFieldPtr< Vector<Double> > directionRF,scanRateRF,
+    sourceProperMotionRF,sourceDirectionRF;
+  RecordFieldPtr<Float> azimuthRF,elevationRF;
+  RecordFieldPtr<uInt> weatherIdRF,cycleNoRF,flagRowRF,polNoRF,tcalIdRF,
+    ifNoRF,freqIdRF,moleculeIdRF,beamNoRF,focusIdRF,scanNoRF;
+  RecordFieldPtr< Vector<Float> > spectraRF,tsysRF;
+  RecordFieldPtr< Vector<uChar> > flagtraRF;
+  RecordFieldPtr<String> sourceNameRF,fieldNameRF;
+  RecordFieldPtr<Int> sourceTypeRF;
+};
+
+class BaseTcalVisitor: public TableVisitor {
+  uInt lastRecordNo ;
+  Int lastAntennaId ;
+  Int lastFeedId ;
+  Int lastSpwId ;
+  Double lastTime ;
+protected:
+  const Table &table;
+  uInt count;
+public:
+  BaseTcalVisitor(const Table &table)
+   : table(table)
+  {
+    count = 0;
+  }
+  
+  virtual void enterAntennaId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveAntennaId(const uInt recordNo, Int columnValue) { }
+  virtual void enterFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void enterSpwId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveSpwId(const uInt recordNo, Int columnValue) { }
+  virtual void enterTime(const uInt recordNo, Double columnValue) { }
+  virtual void leaveTime(const uInt recordNo, Double columnValue) { }
+
+  virtual Bool visitRecord(const uInt recordNo,
+                           const Int antennaId,
+			   const Int feedId,
+			   const Int spwId,
+			   const Double time) { return True ; }
+
+  virtual Bool visit(Bool isFirst, const uInt recordNo,
+		     const uInt nCols, void const *const colValues[]) {
+    Int antennaId, feedId, spwId; 
+    Double time;
+    { // prologue
+      uInt i = 0;
+      {
+        const Int *col = (const Int *)colValues[i++];
+        antennaId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	feedId = col[recordNo];
+      }
+      {
+	const Int *col = (const Int *)colValues[i++];
+	spwId = col[recordNo];
+      }
+      {
+	const Double *col = (const Double *)colValues[i++];
+	time = col[recordNo];
+      }
+      assert(nCols == i);
+    }
+
+    if (isFirst) {
+      enterAntennaId(recordNo, antennaId);
+      enterFeedId(recordNo, feedId);
+      enterSpwId(recordNo, spwId);
+      enterTime(recordNo, time);
+    } else {
+      if ( lastAntennaId != antennaId ) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveSpwId(lastRecordNo, lastSpwId);
+	leaveFeedId(lastRecordNo, lastFeedId);
+        leaveAntennaId(lastRecordNo, lastAntennaId);
+
+        enterAntennaId(recordNo, antennaId);
+	enterFeedId(recordNo, feedId);
+	enterSpwId(recordNo, spwId);
+	enterTime(recordNo, time);
+      }        
+      else if (lastFeedId != feedId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveSpwId(lastRecordNo, lastSpwId);
+	leaveFeedId(lastRecordNo, lastFeedId);
+
+	enterFeedId(recordNo, feedId);
+	enterSpwId(recordNo, spwId);
+	enterTime(recordNo, time);
+      } else if (lastSpwId != spwId) {
+	leaveTime(lastRecordNo, lastTime);
+	leaveSpwId(lastRecordNo, lastSpwId);
+
+	enterSpwId(recordNo, spwId);
+	enterTime(recordNo, time);
+      } else if (lastTime != time) {
+	leaveTime(lastRecordNo, lastTime);
+	enterTime(recordNo, time);
+      }
+    }
+    count++;
+    Bool result = visitRecord(recordNo, antennaId, feedId, spwId, time);
+
+    { // epilogue
+      lastRecordNo = recordNo;
+
+      lastAntennaId = antennaId;
+      lastFeedId = feedId;
+      lastSpwId = spwId;
+      lastTime = time;
+    }
+    return result ;
+  }
+
+  virtual void finish() {
+    if (count > 0) {
+      leaveTime(lastRecordNo, lastTime);
+      leaveSpwId(lastRecordNo, lastSpwId);
+      leaveFeedId(lastRecordNo, lastFeedId);
+      leaveAntennaId(lastRecordNo, lastAntennaId);
+    }
+  }
+};
+
+class TcalVisitor: public BaseTcalVisitor, public MSFillerUtils {
+public:
+  TcalVisitor(const Table &table, Table &tcaltab, Record &r, Int aid )
+  //TcalVisitor(const Table &table, Table &tcaltab, map< String,Vector<uInt> > &r, Int aid )
+    : BaseTcalVisitor( table ),
+      tcal(tcaltab),
+      rec(r),
+      antenna(aid) 
+  { 
+    process = False ;
+    rowidx = 0 ;
+
+    // attach to SYSCAL columns
+    timeCol.attach( table, "TIME" ) ;
+
+    // add rows
+    uInt addrow = table.nrow() * 4 ;
+    tcal.addRow( addrow ) ;
+
+    // attach to TCAL columns
+    row = TableRow( tcal ) ;
+    TableRecord &trec = row.record() ;
+    idRF.attachToRecord( trec, "ID" ) ;
+    timeRF.attachToRecord( trec, "TIME" ) ;
+    tcalRF.attachToRecord( trec, "TCAL" ) ;
+  }
+
+  virtual void enterAntennaId(const uInt recordNo, Int columnValue) {
+    if ( columnValue == antenna )
+      process = True ;
+  }
+  virtual void leaveAntennaId(const uInt recordNo, Int columnValue) {
+    process = False ;
+  }
+  virtual void enterFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveFeedId(const uInt recordNo, Int columnValue) { }
+  virtual void enterSpwId(const uInt recordNo, Int columnValue) { }
+  virtual void leaveSpwId(const uInt recordNo, Int columnValue) { }
+  virtual void enterTime(const uInt recordNo, Double columnValue) {
+    qtime = timeCol( recordNo ) ;
+  }
+  virtual void leaveTime(const uInt recordNo, Double columnValue) { }
+  virtual Bool visitRecord(const uInt recordNo,
+                           const Int antennaId,
+			   const Int feedId,
+			   const Int spwId,
+			   const Double time) 
+  { 
+    //cout << "(" << recordNo << "," << antennaId << "," << feedId << "," << spwId << ")" << endl ;
+    if ( process ) {
+      String sTime = MVTime( qtime ).string( MVTime::YMD ) ;
+      *timeRF = sTime ;
+      uInt oldidx = rowidx ;
+      Matrix<Float> subtcal = tcalCol( recordNo ) ;
+      Vector<uInt> idminmax( 2 ) ;
+      for ( uInt ipol = 0 ; ipol < subtcal.nrow() ; ipol++ ) {
+        *idRF = rowidx ;
+        tcalRF.define( subtcal.row( ipol ) ) ;
+        
+        // commit row
+        row.put( rowidx ) ;
+        rowidx++ ;
+      }
+      
+      idminmax[0] = oldidx ;
+      idminmax[1] = rowidx - 1 ;
+      
+      String key = keyTcal( feedId, spwId, sTime ) ;
+      rec.define( key, idminmax ) ;
+      //rec[key] = idminmax ;
+    }
+    return True ; 
+  }
+  virtual void finish() 
+  {
+    BaseTcalVisitor::finish() ;
+
+    if ( tcal.nrow() > rowidx ) {
+      uInt numRemove = tcal.nrow() - rowidx ;
+      //cout << "numRemove = " << numRemove << endl ;
+      Vector<uInt> rows( numRemove ) ;
+      indgen( rows, rowidx ) ;
+      tcal.removeRow( rows ) ;
+    }
+
+  }
+  void setTcalColumn( String &col ) 
+  {
+    //colName = col ;
+    tcalCol.attach( table, col ) ;
+  }
+private:
+  Table &tcal;
+  Record &rec;
+  //map< String,Vector<uInt> > &rec;
+  Int antenna;
+  uInt rowidx;
+  Bool process;
+  Quantum<Double> qtime;
+  TableRow row;
+  String colName;
+
+  // MS SYSCAL columns
+  ROScalarQuantColumn<Double> timeCol;
+  ROArrayColumn<Float> tcalCol;
+
+  // TCAL columns
+  RecordFieldPtr<uInt> idRF;
+  RecordFieldPtr<String> timeRF;
+  RecordFieldPtr< Vector<Float> > tcalRF;
+};
 
 MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
   : table_( stable ),
@@ -121,8 +1592,6 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
   }
 
   MeasurementSet *tmpMS = new MeasurementSet( filename, Table::Old ) ;
-  //mstable_ = (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
-  //                     && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ;
   tablename_ = tmpMS->tableName() ;
   if ( antenna_ == -1 && antennaStr_.size() > 0 ) {
     MSAntennaIndex msAntIdx( tmpMS->antenna() ) ;
@@ -138,10 +1607,7 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
 
   mstable_ = MeasurementSet( (*tmpMS)( tmpMS->col("ANTENNA1") == antenna_ 
                                        && tmpMS->col("ANTENNA1") == tmpMS->col("ANTENNA2") ) ) ;
-//   stringstream ss ;
-//   ss << "SELECT FROM $1 WHERE ANTENNA1 == ANTENNA2 && ANTENNA1 == " << antenna_ ;
-//   String taql( ss.str() ) ;
-//   mstable_ = MeasurementSet( tableCommand( taql, *tmpMS ) ) ;
+
   delete tmpMS ;
 
   // check which data column exists
@@ -155,20 +1621,18 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
 
 void MSFiller::fill()
 {
-  os_.origin( LogOrigin( "MSFiller", "fill()", WHERE ) ) ;
   //double startSec = mathutil::gettimeofday_sec() ;
   //os_ << "start MSFiller::fill() startSec=" << startSec << LogIO::POST ;
 
-  //double time0 = mathutil::gettimeofday_sec() ;
-  //os_ << "start init fill: " << time0 << LogIO::POST ;
+  os_.origin( LogOrigin( "MSFiller", "fill()", WHERE ) ) ;
 
   // Initialize header
   STHeader sdh ;  
   initHeader( sdh ) ;
+  table_->setHeader( sdh ) ;
  
   // check if optional table exists
-  //const TableRecord msrec = tablesel_.keywordSet() ;
-  const TableRecord msrec = mstable_.keywordSet() ;
+  const TableRecord &msrec = mstable_.keywordSet() ;
   isDoppler_ = msrec.isDefined( "DOPPLER" ) ;
   if ( isDoppler_ )
     if ( mstable_.doppler().nrow() == 0 ) 
@@ -198,17 +1662,9 @@ void MSFiller::fill()
     if ( mstable_.weather().nrow() == 0 ) 
       isWeather_ = False ;
 
-  // Access to MS subtables
-  MSField fieldtab = mstable_.field() ;
-  MSPolarization poltab = mstable_.polarization() ;
-  MSDataDescription ddtab = mstable_.dataDescription() ;
-  MSObservation obstab = mstable_.observation() ;
-  MSSource srctab = mstable_.source() ;
-  MSSpectralWindow spwtab = mstable_.spectralWindow() ;
-  MSSysCal caltab = mstable_.sysCal() ; 
-  if ( caltab.nrow() == 0 ) 
-    isSysCal_ = False ;
-  else {
+  // column name for Tsys and Tcal
+  if ( isSysCal_ ) {
+    const MSSysCal &caltab = mstable_.sysCal() ;
     if ( !caltab.tableDesc().isColumn( colTcal_ ) ) {
       colTcal_ = "TCAL" ;
       if ( !caltab.tableDesc().isColumn( colTcal_ ) ) 
@@ -220,18 +1676,22 @@ void MSFiller::fill()
         colTsys_ = "NONE" ;
     }
   }
-//   colTcal_ = "TCAL" ;
-//   colTsys_ = "TSYS" ;
-  MSPointing pointtab = mstable_.pointing() ;
-  if ( mstable_.weather().nrow() == 0 ) 
-    isWeather_ = False ;
-  MSState stattab = mstable_.state() ;
-  MSAntenna anttab = mstable_.antenna() ;
+  else {
+    colTcal_ = "NONE" ;
+    colTsys_ = "NONE" ;
+  }
 
-  // TEST
-  // memory allocation by boost::object_pool
-  boost::object_pool<ROTableColumn> *tpoolr = new boost::object_pool<ROTableColumn> ;
-  //
+  // Access to MS subtables
+  //MSField &fieldtab = mstable_.field() ;
+  //MSPolarization &poltab = mstable_.polarization() ;
+  //MSDataDescription &ddtab = mstable_.dataDescription() ;
+  //MSObservation &obstab = mstable_.observation() ;
+  //MSSource &srctab = mstable_.source() ;
+  //MSSpectralWindow &spwtab = mstable_.spectralWindow() ;
+  //MSSysCal &caltab = mstable_.sysCal() ; 
+  MSPointing &pointtab = mstable_.pointing() ;
+  //MSState &stattab = mstable_.state() ;
+  //MSAntenna &anttab = mstable_.antenna() ;
 
   // SUBTABLES: FREQUENCIES
   //string freqFrame = getFrame() ;
@@ -246,7 +1706,7 @@ void MSFiller::fill()
   fillFocus() ;
 
   // SUBTABLES: TCAL
-  fillTcal( tpoolr ) ;
+  fillTcal() ;
 
   // SUBTABLES: FIT
   //fillFit() ;
@@ -254,492 +1714,50 @@ void MSFiller::fill()
   // SUBTABLES: HISTORY
   //fillHistory() ;
 
-  // MAIN 
-  // Iterate over several ids
-  map<Int, uInt> ifmap ; // (IFNO, FREQ_ID) pair
-  ROArrayQuantColumn<Double> *sharedQDArrCol = new ROArrayQuantColumn<Double>( anttab, "POSITION" ) ;
-  Vector< Quantum<Double> > antpos = (*sharedQDArrCol)( antenna_ ) ;
-  delete sharedQDArrCol ;
-  MPosition mp( MVPosition( antpos ), MPosition::ITRF ) ;
-  Vector<Double> pt ;
-  ROArrayColumn<Double> pdcol ;
-  Vector<Double> defaultScanrate( 2, 0.0 ) ;
-  if ( getPt_ ) {
-    pointtab = MSPointing( pointtab( pointtab.col("ANTENNA_ID")==antenna_ ).sort("TIME") ) ;
-    ROScalarColumn<Double> ptcol( pointtab, "TIME" ) ;
-    ptcol.getColumn( pt ) ;
-    TableRecord trec = ptcol.keywordSet() ;
-    String tUnit = trec.asArrayString( "QuantumUnits" ).data()[0] ;
-    if ( tUnit == "d" )
-      pt *= 86400.0 ;
-    pdcol.attach( pointtab, "DIRECTION" ) ; 
-  }
-  String stationName = asString( "STATION", antenna_, anttab, tpoolr ) ;
-  String antennaName = asString( "NAME", antenna_, anttab, tpoolr ) ;
-  sdh.antennaposition.resize( 3 ) ;
-  for ( int i = 0 ; i < 3 ; i++ )
-    sdh.antennaposition[i] = antpos[i].getValue( "m" ) ;
-  String telescopeName = "" ;
-
-  //double time1 = mathutil::gettimeofday_sec() ;
-  //os_ << "end init fill: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-
-  // row based 
-  Table &stab = table_->table() ; 
-  TableRow row( stab ) ;
-  TableRecord &trec = row.record() ;
-  RecordFieldPtr< Array<Float> > spRF( trec, "SPECTRA" ) ;
-  RecordFieldPtr< Array<uChar> > ucarrRF( trec, "FLAGTRA" ) ;
-  RecordFieldPtr<Double> timeRF( trec, "TIME" ) ;
-  RecordFieldPtr< Array<Float> > tsysRF( trec, "TSYS" ) ;
-  RecordFieldPtr<Double> intervalRF( trec, "INTERVAL" ) ;
-  RecordFieldPtr< Array<Double> > dirRF( trec, "DIRECTION" ) ;
-  RecordFieldPtr<Float> azRF( trec, "AZIMUTH" ) ;
-  RecordFieldPtr<Float> elRF( trec, "ELEVATION" ) ;
-  RecordFieldPtr< Array<Double> > scrRF( trec, "SCANRATE" ) ;
-  RecordFieldPtr<uInt> cycleRF( trec, "CYCLENO" ) ;
-  RecordFieldPtr<uInt> flrRF( trec, "FLAGROW" ) ;
-  RecordFieldPtr<uInt> tcalidRF( trec, "TCAL_ID" ) ;
-  RecordFieldPtr<uInt> widRF( trec, "WEATHER_ID" ) ;
-  RecordFieldPtr<uInt> polnoRF( trec, "POLNO" ) ;
-  RecordFieldPtr<Int> refbRF( trec, "REFBEAMNO" ) ;
-  RecordFieldPtr<Int> fitidRF( trec, "FIT_ID" ) ;
-  RecordFieldPtr<Float> tauRF( trec, "OPACITY" ) ;
-  RecordFieldPtr<uInt> beamRF( trec, "BEAMNO" ) ;
-  RecordFieldPtr<uInt> focusidRF( trec, "FOCUS_ID" ) ;
-  RecordFieldPtr<uInt> ifnoRF( trec, "IFNO" ) ;
-  RecordFieldPtr<uInt> molidRF( trec, "MOLECULE_ID" ) ;
-  RecordFieldPtr<uInt> freqidRF( trec, "FREQ_ID" ) ;
-  RecordFieldPtr<uInt> scanRF( trec, "SCANNO" ) ;
-  RecordFieldPtr<Int> srctypeRF( trec, "SRCTYPE" ) ;
-  RecordFieldPtr<String> srcnameRF( trec, "SRCNAME" ) ;
-  RecordFieldPtr<String> fieldnameRF( trec, "FIELDNAME" ) ;
-  RecordFieldPtr< Array<Double> > srcpmRF( trec, "SRCPROPERMOTION" ) ;
-  RecordFieldPtr< Array<Double> > srcdirRF( trec, "SRCDIRECTION" ) ;
-  RecordFieldPtr<Double> sysvelRF( trec, "SRCVELOCITY" ) ;
-
-  // REFBEAMNO
-  *refbRF = -1 ;
-
-  // FIT_ID
-  *fitidRF = -1 ;
-
-  // OPACITY
-  *tauRF = 0.0 ;
-
-  //
-  // ITERATION: OBSERVATION_ID
-  //
-  TableIterator iter0( mstable_, "OBSERVATION_ID" ) ;
-  while( !iter0.pastEnd() ) {
-    //time0 = mathutil::gettimeofday_sec() ;
-    //os_ << "start 0th iteration: " << time0 << LogIO::POST ;
-    Table t0 = iter0.table() ;
-    Int obsId = asInt( "OBSERVATION_ID", 0, t0, tpoolr ) ;
-    if ( sdh.observer == "" ) {
-      sdh.observer = asString( "OBSERVER", obsId, obstab, tpoolr ) ;
+  /***
+   * Start iteration using TableVisitor
+   ***/
+  Table stab = table_->table() ;
+  {
+    static const char *cols[] = {
+      "OBSERVATION_ID", "FEED1", "FIELD_ID", "DATA_DESC_ID", "SCAN_NUMBER", 
+      "STATE_ID", "TIME",
+      NULL
+    };
+    static const TypeManagerImpl<Int> tmInt;
+    static const TypeManagerImpl<Double> tmDouble;
+    static const TypeManager *const tms[] = {
+      &tmInt, &tmInt, &tmInt, &tmInt, &tmInt, &tmInt, &tmDouble, NULL
+    };
+    //double t0 = mathutil::gettimeofday_sec() ;
+    MSFillerVisitor myVisitor(mstable_, *table_ );
+    //double t1 = mathutil::gettimeofday_sec() ;
+    //cout << "MSFillerVisitor(): elapsed time " << t1-t0 << " sec" << endl ;
+    myVisitor.setAntenna( antenna_ ) ;
+    //myVisitor.setHeader( sdh ) ;
+    if ( getPt_ ) {
+      Table ptsel = pointtab( pointtab.col("ANTENNA_ID")==antenna_ ).sort( "TIME" ) ;
+      myVisitor.setPointingTable( ptsel ) ;
     }
-    if ( sdh.project == "" ) {
-      sdh.project = asString( "PROJECT", obsId, obstab, tpoolr ) ;
-    }
-    ROArrayMeasColumn<MEpoch> *tmpMeasCol = new ROArrayMeasColumn<MEpoch>( obstab, "TIME_RANGE" ) ;
-    MEpoch me = (*tmpMeasCol)( obsId )( IPosition(1,0) ) ;
-    delete tmpMeasCol ;
-    if ( sdh.utc == 0.0 ) {
-      sdh.utc = me.get( "d" ).getValue() ;
-    }
-    if ( telescopeName == "" ) {
-      telescopeName = asString( "TELESCOPE_NAME", obsId, obstab, tpoolr ) ;
-    }
-    Int nbeam = 0 ;
-    //time1 = mathutil::gettimeofday_sec() ;
-    //os_ << "end 0th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-    //
-    // ITERATION: FEED1
-    //
-    TableIterator iter1( t0, "FEED1" ) ;
-    while( !iter1.pastEnd() ) {
-      //time0 = mathutil::gettimeofday_sec() ;
-      //os_ << "start 1st iteration: " << time0 << LogIO::POST ;
-      Table t1 = iter1.table() ;
-      // assume FEED1 == FEED2
-      Int feedId = asInt( "FEED1", 0, t1, tpoolr ) ;
-      nbeam++ ;
-
-      // BEAMNO
-      *beamRF = feedId ;
-
-      // FOCUS_ID
-      *focusidRF = 0 ;
-
-      //time1 = mathutil::gettimeofday_sec() ;
-      //os_ << "end 1st iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-      // 
-      // ITERATION: FIELD_ID 
-      //
-      TableIterator iter2( t1, "FIELD_ID" ) ;
-      while( !iter2.pastEnd() ) {
-        //time0 = mathutil::gettimeofday_sec() ;
-        //os_ << "start 2nd iteration: " << time0 << LogIO::POST ;
-        Table t2 = iter2.table() ;
-        Int fieldId = asInt( "FIELD_ID", 0, t2, tpoolr ) ;
-        Int srcId = asInt( "SOURCE_ID", fieldId, fieldtab, tpoolr ) ;
-        String fieldName = asString( "NAME", fieldId, fieldtab, tpoolr ) ;
-        fieldName += "__" + String::toString(fieldId) ;
-        ROArrayMeasColumn<MDirection> *delayDirCol = new ROArrayMeasColumn<MDirection>( fieldtab, "DELAY_DIR" ) ;
-        Vector<MDirection> delayDir = (*delayDirCol)( fieldId ) ;
-        delete delayDirCol ;          
-
-        // FIELDNAME
-        *fieldnameRF = fieldName ;
-
-
-        //time1 = mathutil::gettimeofday_sec() ;
-        //os_ << "end 2nd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-        // 
-        // ITERATION: DATA_DESC_ID
-        //
-        TableIterator iter3( t2, "DATA_DESC_ID" ) ;
-        while( !iter3.pastEnd() ) {
-          //time0 = mathutil::gettimeofday_sec() ;
-          //os_ << "start 3rd iteration: " << time0 << LogIO::POST ;
-          Table t3 = iter3.table() ;
-          Int ddId = asInt( "DATA_DESC_ID", 0, t3, tpoolr ) ;
-          Int polId = asInt( "POLARIZATION_ID", ddId, ddtab, tpoolr ) ;
-          Int spwId = asInt( "SPECTRAL_WINDOW_ID", ddId, ddtab, tpoolr ) ;
-
-          // IFNO
-          *ifnoRF = (uInt)spwId ;
-
-          // polarization information
-          Int npol = asInt( "NUM_CORR", polId, poltab, tpoolr ) ;
-          ROArrayColumn<Int> *roArrICol = new ROArrayColumn<Int>( poltab, "CORR_TYPE" ) ;
-          Vector<Int> corrtype = (*roArrICol)( polId ) ;
-          delete roArrICol ;
-          String srcName( "" ) ;
-          Vector<Double> srcPM( 2, 0.0 ) ;
-          Vector<Double> srcDir( 2, 0.0 ) ;
-          MDirection md ;
-          Vector<Double> restFreqs ;
-          Vector<String> transitionName ;
-          Vector<Double> sysVels ;
-//           os_ << "npol = " << npol << LogIO::POST ;
-//           os_ << "corrtype = " << corrtype << LogIO::POST ;
-
-          // source and molecular transition
-          sourceInfo( srcId, spwId, srcName, md, srcPM, restFreqs, transitionName, sysVels, tpoolr ) ;
-//           os_ << "srcId = " << srcId << ", spwId = " << spwId << LogIO::POST ;
-
-          // SRCNAME
-          *srcnameRF = srcName ;
-
-//           os_ << "srcName = " << srcName << LogIO::POST ;
-
-          // SRCPROPERMOTION
-          *srcpmRF = srcPM ;
-
-          //os_ << "srcPM = " << srcPM << LogIO::POST ;
-
-          // SRCDIRECTION
-          *srcdirRF = md.getAngle().getValue( "rad" ) ;
-
-          //os_ << "srcDir = " << srcDir << LogIO::POST ;
-
-          // SRCVELOCITY
-          Double sysVel = 0.0 ;
-          if ( !sysVels.empty() ) 
-            sysVel = sysVels[0] ;
-          *sysvelRF = sysVel ;
-
-//           os_ << "sysVel = " << sysVel << LogIO::POST ;
-
-          uInt molId = table_->molecules().addEntry( restFreqs, transitionName, transitionName ) ;
-
-          // MOLECULE_ID
-          *molidRF = molId ;
-
-          // spectral setup
-          uInt freqId ;
-          Int nchan = asInt( "NUM_CHAN", spwId, spwtab, tpoolr ) ;
-          Bool iswvr = False ;
-          if ( nchan == 4 ) iswvr = True ;
-          sdh.nchan = max( sdh.nchan, nchan ) ;
-          map<Int,uInt>::iterator iter = ifmap.find( spwId ) ;
-          if ( iter == ifmap.end() ) {
-            ROScalarMeasColumn<MEpoch> *tmpMeasCol = new ROScalarMeasColumn<MEpoch>( t3, "TIME" ) ;
-            me = (*tmpMeasCol)( 0 ) ;
-            delete tmpMeasCol ;
-            Double refpix ;
-            Double refval ;
-            Double increment ;
-            spectralSetup( spwId, 
-                           me,
-                           mp, 
-                           md,
-                           refpix,
-                           refval,
-                           increment,
-                           nchan,
-                           sdh.freqref,
-                           sdh.reffreq,
-                           sdh.bandwidth,
-                           tpoolr ) ;
-            freqId = table_->frequencies().addEntry( refpix, refval, increment ) ;
-            ifmap.insert( pair<Int, uInt>(spwId,freqId) ) ;
-            //os_ << "added to ifmap: (" << spwId << "," << freqId << ")" << LogIO::POST ;
-          }
-          else {
-            freqId = iter->second ;
-          }
-
-          // FREQ_ID
-          *freqidRF = freqId ;
-
-          // for TSYS and TCAL
-          Vector<MEpoch> scTime ;
-          Vector<Double> scInterval ;
-          ROArrayColumn<Float> scTsysCol ;
-          MSSysCal caltabsel ;
-          if ( isSysCal_ ) {
-            caltabsel = caltab( caltab.col("ANTENNA_ID") == antenna_ && caltab.col("FEED_ID") == feedId && caltab.col("SPECTRAL_WINDOW_ID") == spwId ).sort("TIME") ;
-            ROScalarMeasColumn<MEpoch> scTimeCol( caltabsel, "TIME" ) ;
-            scTime.resize( caltabsel.nrow() ) ;
-            for ( uInt irow = 0 ; irow < caltabsel.nrow() ; irow++ ) 
-              scTime[irow] = scTimeCol( irow ) ;
-            ROScalarColumn<Double> scIntervalCol( caltabsel, "INTERVAL" ) ;
-            scIntervalCol.getColumn( scInterval ) ;
-            if ( colTsys_ != "NONE" )
-              scTsysCol.attach( caltabsel, colTsys_ ) ;
-          }
-
-          sdh.npol = max( sdh.npol, npol ) ;
-          if ( !iswvr && sdh.poltype == "" ) sdh.poltype = getPolType( corrtype[0] ) ;
-
-          //time1 = mathutil::gettimeofday_sec() ;
-          //os_ << "end 3rd iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-          //
-          // ITERATION: SCAN_NUMBER
-          //
-          TableIterator iter4( t3, "SCAN_NUMBER" ) ;
-          while( !iter4.pastEnd() ) {
-            //time0 = mathutil::gettimeofday_sec() ;
-            //os_ << "start 4th iteration: " << time0 << LogIO::POST ;
-            Table t4 = iter4.table() ;
-            Int scanNum = asInt( "SCAN_NUMBER", 0, t4, tpoolr ) ;
-
-            // SCANNO
-            *scanRF = scanNum - 1 ;
-
-            uInt cycle = 0 ;
-
-            //time1 = mathutil::gettimeofday_sec() ;
-            //os_ << "end 4th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-            // 
-            // ITERATION: STATE_ID
-            //
-            TableIterator iter5( t4, "STATE_ID" ) ; 
-            while( !iter5.pastEnd() ) {
-              //time0 = mathutil::gettimeofday_sec() ;
-              //os_ << "start 5th iteration: " << time0 << LogIO::POST ;
-              Table t5 = iter5.table() ;
-              Int stateId = asInt( "STATE_ID", 0, t5, tpoolr ) ;
-              String obstype = asString( "OBS_MODE", 0, stattab, tpoolr ) ;
-              if ( sdh.obstype == "" ) sdh.obstype = obstype ;
-
-              Int nrow = t5.nrow() ;
-              //time1 = mathutil::gettimeofday_sec() ;
-              //os_ << "end 5th iteration init: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-
-              Cube<Float> spArr ;
-              Cube<Bool> flArr ;
-              reshapeSpectraAndFlagtra( spArr, 
-                                        flArr, 
-                                        t5, 
-                                        npol, 
-                                        nchan, 
-                                        nrow,
-                                        corrtype ) ;
-              if ( sdh.fluxunit == "" ) {
-                String colName = "FLOAT_DATA" ;
-                if ( isData_ ) colName = "DATA" ;
-                ROTableColumn dataCol( t5, colName ) ;
-                const TableRecord &dataColKeys = dataCol.keywordSet() ;
-                if ( dataColKeys.isDefined( "UNIT" ) )
-                  sdh.fluxunit = dataColKeys.asString( "UNIT" ) ;
-                else if ( dataColKeys.isDefined( "QuantumUnits" ) )
-                  sdh.fluxunit = dataColKeys.asString( "QuantumUnits" ) ;
-              }
-
-              ROScalarMeasColumn<MEpoch> *mTimeCol = new ROScalarMeasColumn<MEpoch>( t5, "TIME" ) ;
-              Block<MEpoch> mTimeB( nrow ) ;
-              for ( Int irow = 0 ; irow < nrow ; irow++ ) 
-                mTimeB[irow] = (*mTimeCol)( irow ) ;
-              Block<Int> sysCalIdx( nrow, -1 ) ;
-              if ( isSysCal_ ) {
-                getSysCalTime( scTime, scInterval, mTimeB, sysCalIdx ) ;
-              }
-              delete mTimeCol ;
-              Matrix<Float> defaulttsys( npol, 1, 1.0 ) ;
-              Int srcType = getSrcType( stateId, tpoolr ) ;
-              uInt diridx = 0 ;
-              uInt wid = 0 ;
-              Int pidx = 0 ;
-              Bool crossOK = False ;
-              Block<uInt> polnos( npol, 99 ) ;
-              for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
-                Block<uInt> p = getPolNo( corrtype[ipol] ) ;
-                if ( p.size() > 1 ) {
-                  if ( crossOK ) continue ;
-                  else {
-                    polnos[pidx] = p[0] ;
-                    pidx++ ;
-                    polnos[pidx] = p[1] ;
-                    pidx++ ;
-                    crossOK = True ;
-                  }
-                }
-                else {
-                  polnos[pidx] = p[0] ;
-                  pidx++ ;
-                }
-              }
-              
-              // SRCTYPE
-              *srctypeRF = srcType ;
-
-              for ( Int irow = 0 ; irow < nrow ; irow++ ) {
-                // CYCLENO
-                *cycleRF = cycle ;
-
-                // FLAGROW
-                *flrRF = (uInt)asBool( "FLAG_ROW", irow, t5, tpoolr ) ;
-
-                // SPECTRA, FLAG
-                Matrix<Float> sp = spArr.xyPlane( irow ) ;
-                Matrix<Bool> flb = flArr.xyPlane( irow ) ;
-                Matrix<uChar> fl( flb.shape() ) ;
-                convertArray( fl, flb ) ;
-
-                // TIME
-                *timeRF = mTimeB[irow].get("d").getValue() ;
-
-                // INTERVAL
-                *intervalRF = asDouble( "INTERVAL", irow, t5, tpoolr ) ;
-
-                // TSYS
-                Matrix<Float> tsys ;
-                if ( sysCalIdx[irow] != -1 && colTsys_ != "NONE" )
-                  tsys = scTsysCol( sysCalIdx[irow] ) ;
-                else 
-                  tsys = defaulttsys ;
-
-                // TCAL_ID
-                Block<uInt> tcalids( npol, 0 ) ;
-                if ( sysCalIdx[irow] != -1 && colTcal_ != "NONE" ) {
-                  tcalids = getTcalId( feedId, spwId, scTime[sysCalIdx[irow]] ) ;
-                }
-
-                // WEATHER_ID
-                if ( isWeather_ ) {
-                  wid = getWeatherId( wid, mTimeB[irow].get("s").getValue() ) ;
-                  *widRF = mwIndex_[wid] ;
-                }
-                else {
-                  *widRF = wid ;
-                }
-                  
-
-                // DIRECTION, AZEL, SCANRATE
-                Vector<Double> dir ;
-                Vector<Double> azel ;
-                Vector<Double> scanrate = defaultScanrate ;
-                String refString ;
-                if ( getPt_ )
-                  diridx = getDirection( diridx, dir, azel, scanrate, pt, pdcol, mTimeB[irow], mp ) ;
-                else
-                  getSourceDirection( dir, azel, scanrate, mTimeB[irow], mp, delayDir ) ;
-                *dirRF = dir ;
-                *azRF = azel[0] ;
-                *elRF = azel[1] ;
-                *scrRF = scanrate ;
-
-                // Polarization dependent things
-                for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
-                  // POLNO
-                  *polnoRF = polnos[ipol] ;
-
-                  spRF.define( sp.row( ipol ) ) ;
-                  ucarrRF.define( fl.row( ipol ) ) ;
-                  tsysRF.define( tsys.row( ipol ) ) ;
-                  *tcalidRF = tcalids[ipol] ;
-
-                  // Commit row
-                  stab.addRow() ;
-                  row.put( stab.nrow()-1 ) ;
-                }
-
-                cycle++ ;
-              }
-              
-              //time1 = mathutil::gettimeofday_sec() ;
-              //os_ << "end 5th iteration: " << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-
-              iter5.next() ;
-            }
-            iter4.next() ;
-          }
-          iter3.next() ;
-        }
-        iter2.next() ;
-      }
-      iter1.next() ;
-    }
-    if ( sdh.nbeam < nbeam ) sdh.nbeam = nbeam ;
-
-    iter0.next() ;
+    if ( isWeather_ )
+      myVisitor.setWeatherTime( mwTime_, mwInterval_ ) ;
+    if ( isSysCal_ ) 
+      myVisitor.setSysCalRecord( tcalrec_ ) ;
+    
+    //double t2 = mathutil::gettimeofday_sec() ;
+    traverseTable(mstable_, cols, tms, &myVisitor);
+    //double t3 = mathutil::gettimeofday_sec() ;
+    //cout << "traverseTable(): elapsed time " << t3-t2 << " sec" << endl ;
+    
+    sdh = myVisitor.getHeader() ;
   }
+  /***
+   * End iteration using TableVisitor
+   ***/
 
-
-  delete tpoolr ;
-
-
-  // Table Keywords
-  sdh.nif = ifmap.size() ;
-  if ( ( telescopeName == "" ) || ( antennaName == telescopeName ) ) {
-    sdh.antennaname = antennaName ;
-  }
-  else {
-    sdh.antennaname = telescopeName + "//" + antennaName ;
-  }
-  if ( stationName != "" && stationName != antennaName ) {
-    sdh.antennaname += "@" + stationName ;
-  }
-  ROArrayColumn<Double> pdirCol( pointtab, "DIRECTION" ) ; 
-  String dirref = pdirCol.keywordSet().asRecord("MEASINFO").asString("Ref") ;
-  if ( dirref == "AZELGEO" || dirref == "AZEL" ) {
-    dirref = "J2000" ;
-  }
-  sscanf( dirref.chars()+1, "%f", &sdh.equinox ) ;
-  sdh.epoch = "UTC" ;
-  if (sdh.freqref == "TOPO") {
-    sdh.freqref = "TOPOCENT";
-  } else if (sdh.freqref == "GEO") {
-    sdh.freqref = "GEOCENTR";
-  } else if (sdh.freqref == "BARY") {
-    sdh.freqref = "BARYCENT";
-  } else if (sdh.freqref == "GALACTO") {
-    sdh.freqref = "GALACTOC";
-  } else if (sdh.freqref == "LGROUP") {
-    sdh.freqref = "LOCALGRP";
-  } else if (sdh.freqref == "CMB") {
-    sdh.freqref = "CMBDIPOL";
-  } else if (sdh.freqref == "REST") {
-    sdh.freqref = "SOURCE";
-  }
-
-  if ( sdh.fluxunit == "" || sdh.fluxunit == "CNTS" )
-    sdh.fluxunit = "K" ;
-  table_->setHeader( sdh ) ;
+  // set header
+  //sdh = myVisitor.getHeader() ;
+  //table_->setHeader( sdh ) ;
 
   // save path to POINTING table
   // 2011/07/06 TN
@@ -752,13 +1770,12 @@ void MSFiller::fill()
   }
 
   // for GBT
-  if ( antennaName.contains( "GBT" ) ) {
+  if ( sdh.antennaname.contains( "GBT" ) ) {
     String goTabName = datapath.absoluteName() + "/GBT_GO" ;
     stab.rwKeywordSet().define( "GBT_GO", goTabName ) ;
   }
 
   // for MS created from ASDM
-  //mstable_.keywordSet().print(cout) ;
   const TableRecord &msKeys = mstable_.keywordSet() ;
   uInt nfields = msKeys.nfields() ;
   for ( uInt ifield = 0 ; ifield < nfields ; ifield++ ) {
@@ -781,229 +1798,6 @@ void MSFiller::close()
   mstable_.closeSubTables() ;
   //tablesel_.unlock() ;
   mstable_.unlock() ;
-}
-
-Int MSFiller::getSrcType( Int stateId, boost::object_pool<ROTableColumn> *tpool ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getSrcType() startSec=" << startSec << LogIO::POST ;
-
-  MSState statetab = mstable_.state() ;
-  String obsMode = asString( "OBS_MODE", stateId, statetab, tpool ) ;
-  Bool sig = asBool( "SIG", stateId, statetab, tpool ) ;
-  Bool ref = asBool( "REF", stateId, statetab, tpool ) ;
-  Double cal = asDouble( "CAL", stateId, statetab, tpool ) ;
-  //os_ << "OBS_MODE = " << obsMode << LogIO::POST ;
-
-  // determine separator
-  String sep = "" ;
-  String tmpStr = obsMode.substr( 0, obsMode.find_first_of( "," ) ) ;
-  //os_ << "tmpStr = " << tmpStr << LogIO::POST ;
-  //if ( obsMode.find( ":" ) != String::npos ) {
-  if ( tmpStr.find( ":" ) != String::npos ) {
-    sep = ":" ;
-  }
-  //else if ( obsMode.find( "." ) != String::npos ) {
-  else if ( tmpStr.find( "." ) != String::npos ) {
-    sep = "." ;
-  }
-  else if ( tmpStr.find( "#" ) != String::npos ) {
-    sep = "#" ;
-  }
-  //else if ( obsMode.find( "_" ) != String::npos ) {
-  else if ( tmpStr.find( "_" ) != String::npos ) {
-    sep = "_" ;
-  }
-  //os_ << "separator = " << sep << LogIO::POST ;
-
-  // determine SRCTYPE
-  Int srcType = SrcType::NOTYPE ;
-  if ( sep == ":" ) {
-    // sep == ":"
-    // 
-    // GBT case 
-    //
-    // obsMode1=Nod
-    //    NOD
-    // obsMode1=OffOn
-    //    obsMode2=PSWITCHON:  PSON
-    //    obsMode2=PSWITCHOFF: PSOFF
-    // obsMode1=??
-    //    obsMode2=FSWITCH: 
-    //       SIG=1: FSON
-    //       REF=1: FSOFF
-    // Calibration scan if CAL != 0
-    Int epos = obsMode.find_first_of( sep ) ;
-    Int nextpos = obsMode.find_first_of( sep, epos+1 ) ;
-    String obsMode1 = obsMode.substr( 0, epos ) ;
-    String obsMode2 = obsMode.substr( epos+1, nextpos-epos-1 ) ;
-    if ( obsMode1 == "Nod" ) {
-      srcType = SrcType::NOD ;
-    }
-    else if ( obsMode1 == "OffOn" ) {
-      if ( obsMode2 == "PSWITCHON" ) srcType = SrcType::PSON ;
-      if ( obsMode2 == "PSWITCHOFF" ) srcType = SrcType::PSOFF ;
-    }
-    else {
-      if ( obsMode2 == "FSWITCH" ) {
-        if ( sig ) srcType = SrcType::FSON ;
-        if ( ref ) srcType = SrcType::FSOFF ;
-      }
-    }
-    if ( cal > 0.0 ) {
-      if ( srcType == SrcType::NOD )
-        srcType = SrcType::NODCAL ;
-      else if ( srcType == SrcType::PSON ) 
-        srcType = SrcType::PONCAL ;
-      else if ( srcType == SrcType::PSOFF ) 
-        srcType = SrcType::POFFCAL ;
-      else if ( srcType == SrcType::FSON ) 
-        srcType = SrcType::FONCAL ;
-      else if ( srcType == SrcType::FSOFF )
-        srcType = SrcType::FOFFCAL ;
-      else 
-        srcType = SrcType::CAL ;
-    }
-  }
-  else if ( sep == "." || sep == "#" ) {
-    // sep == "." or "#"
-    //
-    // ALMA & EVLA case (MS via ASDM) before3.1
-    //
-    // obsMode1=CALIBRATE_*
-    //    obsMode2=ON_SOURCE: PONCAL
-    //    obsMode2=OFF_SOURCE: POFFCAL
-    // obsMode1=OBSERVE_TARGET
-    //    obsMode2=ON_SOURCE: PON
-    //    obsMode2=OFF_SOURCE: POFF
-    string substr[2] ; 
-    int numSubstr = split( obsMode, substr, 2, "," ) ;
-    //os_ << "numSubstr = " << numSubstr << LogIO::POST ;
-    //for ( int i = 0 ; i < numSubstr ; i++ )
-    //os_ << "substr[" << i << "] = " << substr[i] << LogIO::POST ;
-    String obsType( substr[0] ) ;
-    //os_ << "obsType = " << obsType << LogIO::POST ;
-    Int epos = obsType.find_first_of( sep ) ;
-    Int nextpos = obsType.find_first_of( sep, epos+1 ) ;
-    String obsMode1 = obsType.substr( 0, epos ) ;
-    String obsMode2 = obsType.substr( epos+1, nextpos-epos-1 ) ;
-    //os_ << "obsMode1 = " << obsMode1 << LogIO::POST ;
-    //os_ << "obsMode2 = " << obsMode2 << LogIO::POST ;
-    if ( obsMode1.find( "CALIBRATE_" ) == 0 ) {
-      if ( obsMode2 == "ON_SOURCE" ) srcType = SrcType::PONCAL ;
-      if ( obsMode2 == "OFF_SOURCE" ) srcType = SrcType::POFFCAL ;
-    }
-    else if ( obsMode1 == "OBSERVE_TARGET" ) {
-      if ( obsMode2 == "ON_SOURCE" ) srcType = SrcType::PSON ;
-      if ( obsMode2 == "OFF_SOURCE" ) srcType = SrcType::PSOFF ;
-    }
-  }
-  else if ( sep == "_" ) {
-    // sep == "_"
-    //
-    // ALMA & EVLA case (MS via ASDM) after 3.2
-    //
-    // obsMode1=CALIBRATE_*
-    //    obsMode2=ON_SOURCE: PONCAL
-    //    obsMode2=OFF_SOURCE: POFFCAL
-    // obsMode1=OBSERVE_TARGET
-    //    obsMode2=ON_SOURCE: PON
-    //    obsMode2=OFF_SOURCE: POFF
-    string substr[2] ; 
-    int numSubstr = split( obsMode, substr, 2, "," ) ;
-    //os_ << "numSubstr = " << numSubstr << LogIO::POST ;
-    //for ( int i = 0 ; i < numSubstr ; i++ )
-    //os_ << "substr[" << i << "] = " << substr[i] << LogIO::POST ;
-    String obsType( substr[0] ) ;
-    //os_ << "obsType = " << obsType << LogIO::POST ;
-    string substr2[4] ;
-    int numSubstr2 = split( obsType, substr2, 4, sep ) ; 
-    //Int epos = obsType.find_first_of( sep ) ;
-    //Int nextpos = obsType.find_first_of( sep, epos+1 ) ;
-    //String obsMode1 = obsType.substr( 0, epos ) ;
-    //String obsMode2 = obsType.substr( epos+1, nextpos-epos-1 ) ;
-    String obsMode1( substr2[0] ) ;
-    String obsMode2( substr2[2] ) ;
-    //os_ << "obsMode1 = " << obsMode1 << LogIO::POST ;
-    //os_ << "obsMode2 = " << obsMode2 << LogIO::POST ;
-    if ( obsMode1.find( "CALIBRATE" ) == 0 ) {
-      if ( obsMode2 == "ON" ) srcType = SrcType::PONCAL ;
-      if ( obsMode2 == "OFF" ) srcType = SrcType::POFFCAL ;
-    }
-    else if ( obsMode1 == "OBSERVE" ) {
-      if ( obsMode2 == "ON" ) srcType = SrcType::PSON ;
-      if ( obsMode2 == "OFF" ) srcType = SrcType::PSOFF ;
-    }
-  }
-  else {
-    if ( sig ) srcType = SrcType::SIG ;
-    if ( ref ) srcType = SrcType::REF ;
-  }
-    
-  //os_ << "srcType = " << srcType << LogIO::POST ;
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getSrcType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return srcType ;
-}
-
-//Vector<uInt> MSFiller::getPolNo( Int corrType ) 
-Block<uInt> MSFiller::getPolNo( Int corrType ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getPolNo() startSec=" << startSec << LogIO::POST ;
-  Block<uInt> polno( 1 ) ;
-
-  if ( corrType == Stokes::I || corrType == Stokes::RR || corrType == Stokes::XX ) {
-    polno = 0 ;
-  }
-  else if ( corrType == Stokes::Q || corrType == Stokes::LL || corrType == Stokes::YY ) {
-    polno = 1 ;
-  }
-  else if ( corrType == Stokes::U ) {
-    polno = 2 ;
-  }
-  else if ( corrType == Stokes::V ) {
-    polno = 3 ;
-  }
-  else if ( corrType == Stokes::RL || corrType == Stokes::XY || corrType == Stokes::LR || corrType == Stokes::RL ) {
-    polno.resize( 2 ) ;
-    polno[0] = 2 ;
-    polno[1] = 3 ;
-  }
-  else if ( corrType == Stokes::Plinear ) {
-    polno[0] = 1 ;
-  }
-  else if ( corrType == Stokes::Pangle ) {
-    polno[0] = 2 ;
-  }
-  else {
-    polno = 99 ;
-  }
-  //os_ << "polno = " << polno << LogIO::POST ;
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getPolNo() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  
-  return polno ;
-}
-
-String MSFiller::getPolType( Int corrType ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getPolType() startSec=" << startSec << LogIO::POST ;
-  String poltype = "" ;
-
-  if ( corrType == Stokes::I || corrType == Stokes::Q || corrType == Stokes::U || corrType == Stokes::V )
-    poltype = "stokes" ;
-  else if ( corrType == Stokes::XX || corrType == Stokes::YY || corrType == Stokes::XY || corrType == Stokes::YX ) 
-    poltype = "linear" ;
-  else if ( corrType == Stokes::RR || corrType == Stokes::LL || corrType == Stokes::RL || corrType == Stokes::LR ) 
-    poltype = "circular" ;
-  else if ( corrType == Stokes::Plinear || corrType == Stokes::Pangle )
-    poltype = "linpol" ;
-
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getPolType() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return poltype ;
 }
 
 void MSFiller::fillWeather()
@@ -1163,7 +1957,7 @@ void MSFiller::fillFocus()
   //os_ << "end MSFiller::fillFocus() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
 }
 
-void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
+void MSFiller::fillTcal()
 {
   //double startSec = mathutil::gettimeofday_sec() ;
   //os_ << "start MSFiller::fillTcal() startSec=" << startSec << LogIO::POST ;
@@ -1188,398 +1982,52 @@ void MSFiller::fillTcal( boost::object_pool<ROTableColumn> *tpoolr )
     return ;
   }
 
-  Table sctab = mstable_.sysCal() ;
+  Table &sctab = mstable_.sysCal() ;
   if ( sctab.nrow() == 0 ) {
     os_ << "No SYSCAL rows" << LogIO::POST ;
     return ;
   } 
-  Table sctabsel( sctab( sctab.col("ANTENNA_ID") == antenna_ ) ) ;
-  if ( sctabsel.nrow() == 0 ) {
+  ROScalarColumn<Int> antCol( sctab, "ANTENNA_ID" ) ;
+  Vector<Int> ant = antCol.getColumn() ;
+  if ( allNE( ant, antenna_ ) ) {
     os_ << "No SYSCAL rows" << LogIO::POST ;
     return ;
   } 
-  ROArrayColumn<Float> *tmpTcalCol = new ROArrayColumn<Float>( sctabsel, colTcal_ ) ;
-  // return if any rows without Tcal value exists
+  ROTableColumn tcalCol( sctab, colTcal_ ) ;
   Bool notDefined = False ;
-  for ( uInt irow = 0 ; irow < sctabsel.nrow() ; irow++ ) {
-    if ( !tmpTcalCol->isDefined( irow ) ) {
+  for ( uInt irow = 0 ; irow < sctab.nrow() ; irow++ ) {
+    if ( ant[irow] == antenna_ && !tcalCol.isDefined( irow ) ) {
       notDefined = True ;
       break ;
     }
   }
   if ( notDefined ) {
     os_ << "No TCAL value" << LogIO::POST ;
-    delete tmpTcalCol ;
     table_->tcal().table().addRow(1,True) ;
     Vector<Float> defaultTcal( 1, 1.0 ) ;
     ArrayColumn<Float> tcalCol( table_->tcal().table(), "TCAL" ) ;
     tcalCol.put( 0, defaultTcal ) ;
     return ;
   }    
-  uInt npol = tmpTcalCol->shape( 0 )(0) ;
-  delete tmpTcalCol ;
-  //os_ << "fillTcal(): npol = " << npol << LogIO::POST ;
+  
+  static const char *cols[] = {
+    "ANTENNA_ID", "FEED_ID", "SPECTRAL_WINDOW_ID", "TIME",
+    NULL
+  };
+  static const TypeManagerImpl<Int> tmInt;
+  static const TypeManagerImpl<Double> tmDouble;
+  static const TypeManager *const tms[] = {
+    &tmInt, &tmInt, &tmInt, &tmDouble, NULL
+  };
   Table tab = table_->tcal().table() ;
-  ArrayColumn<Float> tcalCol( tab, "TCAL" ) ;
-  uInt oldnr = 0 ;
-  uInt newnr = 0 ;
-  TableRow row( tab ) ;
-  TableRecord &trec = row.record() ;
-  RecordFieldPtr<uInt> idRF( trec, "ID" ) ;
-  RecordFieldPtr<String> timeRF( trec, "TIME" ) ;
-  RecordFieldPtr< Array<Float> > tcalRF( trec, "TCAL" ) ;
-  TableIterator iter0( sctabsel, "FEED_ID" ) ;
-  while( !iter0.pastEnd() ) {
-    Table t0 = iter0.table() ;
-    Int feedId = asInt( "FEED_ID", 0, t0, tpoolr ) ;
-    TableIterator iter1( t0, "SPECTRAL_WINDOW_ID" ) ;
-    while( !iter1.pastEnd() ) {
-      Table t1 = iter1.table() ;
-      Int spwId = asInt( "SPECTRAL_WINDOW_ID", 0, t1, tpoolr ) ;
-      tmpTcalCol = new ROArrayColumn<Float>( t1, colTcal_ ) ;
-      ROScalarQuantColumn<Double> scTimeCol( t1, "TIME" ) ;
-      Vector<uInt> idminmax( 2, oldnr ) ;
-      for ( uInt irow = 0 ; irow < t1.nrow() ; irow++ ) {
-        String sTime = MVTime( scTimeCol(irow) ).string( MVTime::YMD ) ;
-        *timeRF = sTime ;
-        uInt idx = oldnr ;
-        Matrix<Float> subtcal = (*tmpTcalCol)( irow ) ;
-        for ( uInt ipol = 0 ; ipol < npol ; ipol++ ) {
-          *idRF = idx++ ;
-          //*tcalRF = subtcal.row( ipol ) ;
-          tcalRF.define( subtcal.row( ipol ) ) ;
-
-          // commit row
-          tab.addRow() ;
-          row.put( tab.nrow()-1 ) ;
-
-          newnr++ ;
-        }
-        idminmax[0] = oldnr ;
-        idminmax[1] = newnr - 1 ;
-        oldnr = newnr ;
-
-        String key = keyTcal( feedId, spwId, sTime ) ;
-        tcalrec_.define( key, idminmax ) ;
-      }
-      delete tmpTcalCol ;
-      iter1++ ;
-    }
-    iter0++ ;
-  }
+  TcalVisitor visitor( sctab, tab, tcalrec_, antenna_ ) ;
+  visitor.setTcalColumn( colTcal_ ) ;
+  
+  traverseTable(sctab, cols, tms, &visitor);
 
   //tcalrec_.print( std::cout ) ;
   //double endSec = mathutil::gettimeofday_sec() ;
   //os_ << "end MSFiller::fillTcal() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-}
-
-uInt MSFiller::getWeatherId( uInt idx, Double wtime ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getWeatherId() startSec=" << startSec << LogIO::POST ;
-  uInt nrow = mwTime_.size() ;
-  if ( nrow < 2 ) 
-    return 0 ;
-  uInt wid = nrow ;
-  if ( idx == 0 ) {
-    wid = 0 ;
-    Double tStart = mwTime_[wid]-0.5*mwInterval_[wid] ;
-    if ( wtime < tStart )
-      return wid ;
-  }
-  for ( uInt i = idx ; i < nrow-1 ; i++ ) {
-    Double tStart = mwTime_[i]-0.5*mwInterval_[i] ;
-    // use of INTERVAL column is problematic 
-    // since there are "blank" time of weather monitoring
-    //Double tEnd = tStart + mwInterval_[i] ;
-    Double tEnd = mwTime_[i+1]-0.5*mwInterval_[i+1] ;
-    //os_ << "tStart = " << tStart << " dtEnd = " << tEnd-tStart << " dwtime = " << wtime-tStart << LogIO::POST ;
-    if ( wtime >= tStart && wtime <= tEnd ) {
-      wid = i ;
-      break ;
-    }
-  }
-  if ( wid == nrow ) {
-    uInt i = nrow - 1 ;
-    Double tStart = mwTime_[i-1]+0.5*mwInterval_[i-1] ;
-    Double tEnd = mwTime_[i]+0.5*mwInterval_[i] ;
-    //os_ << "tStart = " << tStart << " dtEnd = " << tEnd-tStart << " dwtime = " << wtime-tStart << LogIO::POST ;
-    if ( wtime >= tStart && wtime <= tEnd )
-      wid = i-1 ;
-    else 
-      wid = i ;
-  }
-
-  //if ( wid == nrow ) 
-  //os_ << LogIO::WARN << "Couldn't find correct WEATHER_ID for time " << wtime << LogIO::POST ;
-
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getWeatherId() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return wid ;
-}
-
-void MSFiller::getSysCalTime( Vector<MEpoch> &scTime, Vector<Double> &scInterval, Block<MEpoch> &tcol, Block<Int> &tidx )
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getSysCalTime() startSec=" << startSec << LogIO::POST ;
-
-  if ( !isSysCal_ )
-    return ;
-
-  uInt nrow = tidx.nelements() ;
-  if ( scTime.nelements() == 0 ) 
-    return ;
-  else if ( scTime.nelements() == 1 ) {
-    tidx[0] = 0 ;
-    return ;
-  }
-  uInt scnrow = scTime.nelements() ;
-  uInt idx = 0 ;
-  const Double half = 0.5e0 ;
-  // execute  binary search
-  idx = binarySearch( scTime, tcol[0].get( "s" ).getValue() ) ;
-  if ( idx != 0 )
-    idx -= 1 ;
-  for ( uInt i = 0 ; i < nrow ; i++ ) {
-    Double t = tcol[i].get( "s" ).getValue() ;
-    Double tsc = scTime[0].get( "s" ).getValue() ;
-    if ( t < tsc ) {
-      tidx[i] = 0 ;
-      continue ;
-    }
-    for ( uInt j = idx ; j < scnrow-1 ; j++ ) {
-      Double tsc1 = scTime[j].get( "s" ).getValue() ;
-      Double dt1 = scInterval[j] ;
-      Double tsc2 = scTime[j+1].get( "s" ).getValue() ;
-      Double dt2 = scInterval[j+1] ;
-      if ( t > tsc1-half*dt1 && t <= tsc2-half*dt2 ) {
-        tidx[i] = j ;
-        idx = j ;
-        break ;
-      }
-    }
-    if ( tidx[i] == -1 ) {
-//       Double tsc = scTime[scnrow-1].get( "s" ).getValue() ;
-//       Double dt = scInterval[scnrow-1] ;
-//       if ( t <= tsc+0.5*dt ) {
-//         tidx[i] = scnrow-1 ;
-//       }
-      tidx[i] = scnrow-1 ;
-    }
-  }
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getSysCalTime() endSec=" << endSec << " (" << endSec-startSec << "sec) scnrow = " << scnrow << " tcol.nelements = " << tcol.nelements() << LogIO::POST ;
-  return ;
-}
-
-Block<uInt> MSFiller::getTcalId( Int fid, Int spwid, MEpoch &t ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getTcalId() startSec=" << startSec << LogIO::POST ;
-  //if ( table_->tcal().table().nrow() == 0 ) {
-  if ( !isSysCal_ ) {
-    os_ << "No TCAL rows" << LogIO::POST ;
-    Block<uInt> tcalids( 4, 0 ) ;
-    return  tcalids ;
-  }    
-  //String sctime = MVTime( Quantum<Double>(t,"s") ).string(MVTime::YMD) ;
-  String sctime = MVTime( t.getValue() ).string(MVTime::YMD) ;
-  String key = keyTcal( fid, spwid, sctime ) ;
-  if ( !tcalrec_.isDefined( key ) ) {
-    os_ << "No TCAL rows" << LogIO::POST ;
-    Block<uInt> tcalids( 4, 0 ) ;
-    return tcalids ;
-  }
-  Vector<uInt> ids = tcalrec_.asArrayuInt( key ) ;
-  uInt npol = ids[1] - ids[0] + 1 ;
-  Block<uInt> tcalids( npol ) ;
-  tcalids[0] = ids[0] ;
-  tcalids[1] = ids[1] ;
-  for ( uInt ipol = 2 ; ipol < npol ; ipol++ )
-    tcalids[ipol] = ids[0] + ipol - 1 ;
-
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getTcalId() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return tcalids ;
-}
-
-uInt MSFiller::getDirection( uInt idx, 
-                             Vector<Double> &dir, 
-                             Vector<Double> &srate, 
-                             String &ref, 
-                             Vector<Double> &tcol, 
-                             ROArrayColumn<Double> &dcol, 
-                             Double t ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getDirection1() startSec=" << startSec << LogIO::POST ;
-  //double time0 = mathutil::gettimeofday_sec() ;
-  //os_ << "start getDirection 1st stage startSec=" << time0 << LogIO::POST ;
-  // assume that cols is sorted by TIME
-  Bool doInterp = False ;
-  uInt nrow = dcol.nrow() ;
-  if ( nrow == 0 ) 
-    return 0 ;
-  if ( idx == 0 ) {
-    uInt nrowb = 1000 ;
-    if ( nrow > nrowb ) {
-      uInt nblock = nrow / nrowb + 1 ;
-      for ( uInt iblock = 0 ; iblock < nblock ; iblock++ ) {
-        uInt high = min( nrowb, nrow-iblock*nrowb ) ;
-
-        if ( tcol( high-1 ) < t ) {
-          idx = iblock * nrowb ;
-          continue ;
-        }
-
-        Slice slice( iblock*nrowb, nrowb ) ;
-        Vector<Double> tarr = tcol( slice ) ;
-
-        uInt bidx = binarySearch( tarr, t ) ;
-
-        idx = iblock * nrowb + bidx ;
-        break ;
-      }
-    }
-    else {
-      idx = binarySearch( tcol, t ) ;
-    }
-  }
-  //double time1 = mathutil::gettimeofday_sec() ;
-  //os_ << "end getDirection 1st stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-  // ensure that tcol(idx) < t
-  //os_ << "tcol(idx) = " << tcol(idx).get("s").getValue() << " t = " << t << " diff = " << tcol(idx).get("s").getValue()-t << endl ;
-  //time0 = mathutil::gettimeofday_sec() ;
-  //os_ << "start getDirection 2nd stage startSec=" << time0 << LogIO::POST ;
-  //while( tcol( idx ) * factor > t && idx > 0 )
-  while( tcol[idx] > t && idx > 0 )
-    idx-- ;
-  //os_ << "idx = " << idx << LogIO::POST ;
-
-  // index search
-  for ( uInt i = idx ; i < nrow ; i++ ) {
-    Double tref = tcol[i] ;
-    if ( tref == t ) {
-      idx = i ;
-      break ;
-    }
-    else if ( tref > t ) {
-      if ( i == 0 ) {
-        idx = i ;
-      }
-      else {
-        idx = i-1 ;
-        doInterp = True ;
-      }
-      break ;
-    }
-    else {
-      idx = nrow - 1 ;
-    }
-  }
-  //time1 = mathutil::gettimeofday_sec() ;
-  //os_ << "end getDirection 2nd stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-  //os_ << "searched idx = " << idx << LogIO::POST ;
-
-  //time0 = mathutil::gettimeofday_sec() ;
-  //os_ << "start getDirection 3rd stage startSec=" << time0 << LogIO::POST ;
-  //os_ << "dmcol(idx).shape() = " << dmcol(idx).shape() << LogIO::POST ;
-  //IPosition ip( dmcol(idx).shape().nelements(), 0 ) ;
-  IPosition ip( dcol(idx).shape().nelements(), 0 ) ;
-  //os_ << "ip = " << ip << LogIO::POST ;
-  //ref = dmcol(idx)(ip).getRefString() ;
-  TableRecord trec = dcol.keywordSet() ;
-  Record rec = trec.asRecord( "MEASINFO" ) ;
-  ref = rec.asString( "Ref" ) ;
-  //os_ << "ref = " << ref << LogIO::POST ;
-  if ( doInterp ) {
-    //os_ << "do interpolation" << LogIO::POST ;
-    //os_ << "dcol(idx).shape() = " << dcol(idx).shape() << LogIO::POST ;
-    Double tref0 = tcol[idx] ;
-    Double tref1 = tcol[idx+1] ;
-    Matrix<Double> mdir0 = dcol( idx ) ;
-    Matrix<Double> mdir1 = dcol( idx+1 ) ;
-    Vector<Double> dir0 = mdir0.column( 0 ) ;
-    //os_ << "dir0 = " << dir0 << LogIO::POST ; 
-    Vector<Double> dir1 = mdir1.column( 0 ) ;
-    //os_ << "dir1 = " << dir1 << LogIO::POST ; 
-    Double dt0 = t - tref0 ;
-    Double dt1 = tref1 - t ;
-    dir.reference( (dt0*dir1+dt1*dir0)/(dt0+dt1) ) ;
-    if ( mdir0.ncolumn() > 1 ) {
-      if ( dt0 >= dt1 )
-        srate.reference( mdir0.column( 1 ) ) ;
-      else
-        srate.reference( mdir1.column( 1 ) ) ;
-    }
-    //os_ << "dir = " << dir << LogIO::POST ; 
-  }
-  else {
-    //os_ << "no interpolation" << LogIO::POST ;
-    Matrix<Double> mdir0 = dcol( idx ) ;
-    dir.reference( mdir0.column( 0 ) ) ;
-    if ( mdir0.ncolumn() > 1 )
-      srate.reference( mdir0.column( 1 ) ) ;
-  }
-
-  //time1 = mathutil::gettimeofday_sec() ;
-  //os_ << "end getDirection 3rd stage endSec=" << time1 << " (" << time1-time0 << "sec)" << LogIO::POST ;
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getDirection1() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return idx ;
-}
-
-String MSFiller::keyTcal( Int feedid, Int spwid, String stime ) 
-{
-  String sfeed = "FEED" + String::toString( feedid ) ;
-  String sspw = "SPW" + String::toString( spwid ) ;
-  return sfeed+":"+sspw+":"+stime ;
-}
-
-uInt MSFiller::binarySearch( Vector<MEpoch> &timeList, Double target ) 
-{
-  Int low = 0 ;
-  Int high = timeList.nelements() ;
-  uInt idx = 0 ;
-
-  while ( low <= high ) {
-    idx = (Int)( 0.5 * ( low + high ) ) ;
-    Double t = timeList[idx].get( "s" ).getValue() ;
-    if ( t < target ) 
-      low = idx + 1 ;
-    else if ( t > target )
-      high = idx - 1 ;
-    else {
-      return idx ;
-    }
-  }
-
-  idx = max( 0, min( low, high ) ) ;
-
-  return idx ;
-}
-
-uInt MSFiller::binarySearch( Vector<Double> &timeList, Double target ) 
-{
-  Int low = 0 ;
-  Int high = timeList.nelements() ;
-  uInt idx = 0 ;
-
-  while ( low <= high ) {
-    idx = (Int)( 0.5 * ( low + high ) ) ;
-    Double t = timeList[idx] ;
-    if ( t < target ) 
-      low = idx + 1 ;
-    else if ( t > target )
-      high = idx - 1 ;
-    else {
-      return idx ;
-    }
-  }
-
-  idx = max( 0, min( low, high ) ) ;
-
-  return idx ;
 }
 
 string MSFiller::getFrame()
@@ -1602,145 +2050,6 @@ string MSFiller::getFrame()
   return MFrequency::showType( frame ) ;
 }
 
-void MSFiller::reshapeSpectraAndFlagtra( Cube<Float> &sp,
-                                         Cube<Bool> &fl,
-                                         Table &tab,
-                                         Int &npol,
-                                         Int &nchan,
-                                         Int &nrow,
-                                         Vector<Int> &corrtype )
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::reshapeSpectraAndFlagtra() startSec=" << startSec << LogIO::POST ;  
-  if ( isFloatData_ ) {
-    ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
-    ROArrayColumn<Float> mFloatDataCol( tab, "FLOAT_DATA" ) ;
-    mFloatDataCol.getColumn( sp ) ;
-    mFlagCol.getColumn( fl ) ;
-  }
-  else if ( isData_ ) {
-    sp.resize( npol, nchan, nrow ) ;
-    fl.resize( npol, nchan, nrow ) ;
-    ROArrayColumn<Bool> mFlagCol( tab, "FLAG" ) ;
-    ROArrayColumn<Complex> mDataCol( tab, "DATA" ) ;
-    if ( npol < 3 ) {
-      Cube<Float> tmp = ComplexToReal( mDataCol.getColumn() ) ;
-      IPosition start( 3, 0, 0, 0 ) ;
-      IPosition end( 3, 2*npol-1, nchan-1, nrow-1 ) ;
-      IPosition inc( 3, 2, 1, 1 ) ;
-      sp = tmp( start, end, inc ) ;
-      fl = mFlagCol.getColumn() ;
-    }
-    else {
-      for ( Int irow = 0 ; irow < nrow ; irow++ ) {
-        Bool crossOK = False ;
-        Matrix<Complex> mSp = mDataCol( irow ) ;
-        Matrix<Bool> mFl = mFlagCol( irow ) ;
-        Matrix<Float> spxy = sp.xyPlane( irow ) ;
-        Matrix<Bool> flxy = fl.xyPlane( irow ) ;
-        for ( Int ipol = 0 ; ipol < npol ; ipol++ ) {
-          if ( corrtype[ipol] == Stokes::XY || corrtype[ipol] == Stokes::YX 
-               || corrtype[ipol] == Stokes::RL || corrtype[ipol] == Stokes::LR ) {
-            if ( !crossOK ) {
-              Vector<Float> tmp = ComplexToReal( mSp.row( ipol ) ) ;
-              IPosition start( 1, 0 ) ;
-              IPosition end( 1, 2*nchan-1 ) ;
-              IPosition inc( 1, 2 ) ;
-              spxy.row( ipol ) = tmp( start, end, inc ) ;
-              flxy.row( ipol ) = mFl.row( ipol ) ;
-              start = IPosition( 1, 1 ) ;
-              spxy.row( ipol+1 ) = tmp( start, end, inc ) ;
-              flxy.row( ipol+1 ) = mFl.row( ipol ) ;
-              if ( corrtype[ipol] == Stokes::YX || corrtype[ipol] == Stokes::LR ) {
-                spxy.row( ipol+1 ) = spxy.row( ipol+1 ) * (Float)-1.0 ;
-              }
-              crossOK = True ;
-            }
-          }
-          else {
-            Vector<Float> tmp = ComplexToReal( mSp.row( ipol ) ) ;
-            IPosition start( 1, 0 ) ;
-            IPosition end( 1, 2*nchan-1 ) ;
-            IPosition inc( 1, 2 ) ;
-            spxy.row( ipol ) = tmp( start, end, inc ) ;
-            flxy.row( ipol ) = mFl.row( ipol ) ;
-          }
-        }
-      }
-    }
-  }
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::reshapeSpectraAndFlagtra() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-}
-
-uInt MSFiller::getDirection( uInt idx,
-                             Vector<Double> &dir,
-                             Vector<Double> &azel,
-                             Vector<Double> &srate,
-                             Vector<Double> &ptcol,
-                             ROArrayColumn<Double> &pdcol,
-                             MEpoch &t,
-                             MPosition &antpos )
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getDirection2() startSec=" << startSec << LogIO::POST ;  
-  String refString ;
-  MDirection::Types dirType ;
-  uInt diridx = getDirection( idx, dir, srate, refString, ptcol, pdcol, t.get("s").getValue() ) ;
-  MDirection::getType( dirType, refString ) ;
-  MeasFrame mf( t, antpos ) ;
-  if ( refString == "J2000" ) {
-    MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZEL, mf ) ) ;
-    azel = toazel( dir ).getAngle("rad").getValue() ;
-  }
-  else if ( refString(0,4) == "AZEL" ) {
-    azel = dir.copy() ;
-    MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
-    dir = toj2000( dir ).getAngle("rad").getValue() ;
-  }
-  else {
-    MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZEL, mf ) ) ;
-    azel = toazel( dir ).getAngle("rad").getValue() ;
-    MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
-    dir = toj2000( dir ).getAngle("rad").getValue() ;
-  }
-  if ( srate.size() == 0 ) {
-    srate.resize( 2 ) ;
-    srate = 0.0 ;
-  }
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getDirection2() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-  return diridx ;
-}
-
-void MSFiller::getSourceDirection( Vector<Double> &dir, 
-                                   Vector<Double> &azel, 
-                                   Vector<Double> &srate, 
-                                   MEpoch &t, 
-                                   MPosition &antpos, 
-                                   Vector<MDirection> &srcdir ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::getSourceDirection() startSec=" << startSec << LogIO::POST ; 
-  Vector<Double> defaultDir = srcdir[0].getAngle( "rad" ).getValue() ;
-  if ( srcdir.nelements() > 1 ) 
-    srate = srcdir[1].getAngle( "rad" ).getValue() ;
-  String ref = srcdir[0].getRefString() ;
-  MDirection::Types dirType ;
-  MDirection::getType( dirType, ref ) ;
-  MeasFrame mf( t, antpos ) ;
-  if ( ref != "J2000" ) {
-    MDirection::Convert toj2000( dirType, MDirection::Ref( MDirection::J2000, mf ) ) ;
-    dir = toj2000( defaultDir ).getAngle("rad").getValue() ;
-  }
-  else 
-    dir = defaultDir ;
-  MDirection::Convert toazel( dirType, MDirection::Ref( MDirection::AZELGEO, mf ) ) ;
-  azel = toazel( defaultDir ).getAngle("rad").getValue() ;
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::getSourceDirection() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-}
-
 void MSFiller::initHeader( STHeader &header )
 {
   header.nchan = 0 ;
@@ -1751,7 +2060,7 @@ void MSFiller::initHeader( STHeader &header )
   header.project = "" ;
   header.obstype = "" ;
   header.antennaname = "" ;
-  header.antennaposition.resize( 0 ) ;
+  header.antennaposition.resize( 3 ) ;
   header.equinox = 0.0 ;
   header.freqref = "" ;
   header.reffreq = -1.0 ;
@@ -1762,222 +2071,4 @@ void MSFiller::initHeader( STHeader &header )
   header.poltype = "" ;
 }
 
-String MSFiller::asString( String name,
-                           uInt idx,
-                           Table tab,
-                           boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  String v = col->asString( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-Bool MSFiller::asBool( String name,
-                         uInt idx,
-                         Table &tab,
-                         boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  Bool v = col->asBool( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-uInt MSFiller::asuInt( String name,
-                         uInt idx,
-                         Table &tab,
-                         boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  uInt v = col->asuInt( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-Int MSFiller::asInt( String name,
-                        uInt idx,
-                        Table &tab,
-                        boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  Int v = col->asInt( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-Float MSFiller::asFloat( String name,
-                          uInt idx,
-                          Table &tab,
-                          boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  Float v = col->asfloat( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-Double MSFiller::asDouble( String name,
-                           uInt idx,
-                           Table &tab,
-                           boost::object_pool<ROTableColumn> *pool )
-{
-  ROTableColumn *col = pool->construct( tab, name ) ;
-  Double v = col->asdouble( idx ) ;
-  pool->destroy( col ) ;
-  return v ;
-}
-
-void MSFiller::sourceInfo( Int sourceId,
-                           Int spwId,
-                           String &name, 
-                           MDirection &direction,
-                           Vector<casa::Double> &properMotion,
-                           Vector<casa::Double> &restFreqs,
-                           Vector<casa::String> &transitions,
-                           Vector<casa::Double> &sysVels,
-                           boost::object_pool<ROTableColumn> *tpoolr ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::sourceInfo() startSec=" << startSec << LogIO::POST ; 
-
-  MSSource srctab = mstable_.source() ;
-  MSSource srctabSel = srctab( srctab.col("SOURCE_ID") == sourceId && srctab.col("SPECTRAL_WINDOW_ID") == spwId ) ;
-  if ( srctabSel.nrow() == 0 ) {
-    srctabSel = srctab( srctab.col("SOURCE_ID") == sourceId && srctab.col("SPECTRAL_WINDOW_ID") == -1 ) ;
-  }
-  Int numLines = 0 ;
-  if ( srctabSel.nrow() > 0 ) {
-    // source name
-    name = asString( "NAME", 0, srctabSel, tpoolr ) ;
-    
-    // source proper motion
-    ROArrayColumn<Double> roArrDCol( srctabSel, "PROPER_MOTION" ) ;
-    properMotion = roArrDCol( 0 ) ;
-    
-    // source direction as MDirection object
-    ROScalarMeasColumn<MDirection> tmpMeasCol( srctabSel, "DIRECTION" ) ;
-    direction = tmpMeasCol( 0 ) ;
-    
-    // number of lines
-    numLines = asInt( "NUM_LINES", 0, srctabSel, tpoolr ) ;
-  }
-  else {
-    name = "" ;
-    properMotion = Vector<Double>( 2, 0.0 ) ;
-    direction = MDirection( Quantum<Double>(0.0,Unit("rad")), Quantum<Double>(0.0,Unit("rad")) ) ;
-  }
-
-  restFreqs.resize( numLines ) ;
-  transitions.resize( numLines ) ;
-  sysVels.resize( numLines ) ;
-  if ( numLines > 0 ) {
-    if ( srctabSel.tableDesc().isColumn( "REST_FREQUENCY" ) ) {
-      ROArrayQuantColumn<Double> quantArrCol( srctabSel, "REST_FREQUENCY" ) ;
-      Array< Quantum<Double> > qRestFreqs = quantArrCol( 0 ) ;
-      for ( int i = 0 ; i < numLines ; i++ ) {
-        restFreqs[i] = qRestFreqs( IPosition( 1, i ) ).getValue( "Hz" ) ;
-      }
-    }
-    //os_ << "restFreqs = " << restFreqs << LogIO::POST ;
-    if ( srctabSel.tableDesc().isColumn( "TRANSITION" ) ) {
-      ROArrayColumn<String> transitionCol( srctabSel, "TRANSITION" ) ;
-      if ( transitionCol.isDefined( 0 ) )
-        transitions = transitionCol( 0 ) ;
-      //os_ << "transitionNameCol.nrow() = " << transitionCol.nrow() << LogIO::POST ;
-    }
-    if ( srctabSel.tableDesc().isColumn( "SYSVEL" ) ) {
-      ROArrayColumn<Double> roArrDCol( srctabSel, "SYSVEL" ) ;
-      sysVels = roArrDCol( 0 ) ;
-    }
-  }
-  
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::sourceInfo() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-}
-
-void MSFiller::spectralSetup( Int spwId,
-                              MEpoch &me,
-                              MPosition &mp,
-                              MDirection &md,
-                              Double &refpix,
-                              Double &refval,
-                              Double &increment,
-                              Int &nchan,
-                              String &freqref,
-                              Double &reffreq,
-                              Double &bandwidth,
-                              boost::object_pool<ROTableColumn> *tpoolr ) 
-{
-  //double startSec = mathutil::gettimeofday_sec() ;
-  //os_ << "start MSFiller::spectralSetup() startSec=" << startSec << LogIO::POST ; 
-
-  MSSpectralWindow spwtab = mstable_.spectralWindow() ;
-  MeasFrame mf( me, mp, md ) ;
-  MFrequency::Types freqRef = MFrequency::castType( (uInt)asInt( "MEAS_FREQ_REF", spwId, spwtab, tpoolr ) ) ;
-  Bool even = False ;
-  if ( (nchan/2)*2 == nchan ) even = True ;
-  ROScalarQuantColumn<Double> tmpQuantCol( spwtab, "TOTAL_BANDWIDTH" ) ;
-  Double totbw = tmpQuantCol( spwId ).getValue( "Hz" ) ;
-  if ( nchan != 4 )
-    bandwidth = max( bandwidth, totbw ) ;
-  if ( freqref == "" && nchan != 4) 
-    //sdh.freqref = MFrequency::showType( freqRef ) ;
-    freqref = "LSRK" ;
-  if ( reffreq == -1.0 && nchan != 4 ) {
-    tmpQuantCol.attach( spwtab, "REF_FREQUENCY" ) ;
-    Quantum<Double> qreffreq = tmpQuantCol( spwId ) ;
-    if ( freqRef == MFrequency::LSRK ) {
-      reffreq = qreffreq.getValue("Hz") ;
-    }
-    else {
-      MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
-      reffreq = tolsr( qreffreq ).get("Hz").getValue() ; 
-    }
-  }
-  Int refchan = nchan / 2 ;
-  IPosition refip( 1, refchan ) ;
-  refpix = 0.5*(nchan-1) ;
-  refval = 0.0 ;
-  ROArrayQuantColumn<Double> sharedQDArrCol( spwtab, "CHAN_WIDTH" ) ;
-  ROTableColumn netSidebandCol( spwtab, "NET_SIDEBAND" ) ;
-  Int netSideband = netSidebandCol.asInt( spwId ) ;
-  increment = sharedQDArrCol( spwId )( refip ).getValue( "Hz" ) ;
-  //           os_ << "nchan = " << nchan << " refchan = " << refchan << "(even=" << even << ") refpix = " << refpix << LogIO::POST ;
-  sharedQDArrCol.attach( spwtab, "CHAN_FREQ" ) ;
-  Vector< Quantum<Double> > chanFreqs = sharedQDArrCol( spwId ) ;
-  if ( ( nchan > 1 && 
-         chanFreqs[0].getValue("Hz") > chanFreqs[1].getValue("Hz")  ) 
-       || ( nchan == 1 && netSideband == 1 ) )  
-    increment *= -1.0 ;
-  if ( freqRef == MFrequency::LSRK ) {
-    if ( even ) {
-      IPosition refip0( 1, refchan-1 ) ;
-      Double refval0 = chanFreqs(refip0).getValue("Hz") ;
-      Double refval1 = chanFreqs(refip).getValue("Hz") ;
-      refval = 0.5 * ( refval0 + refval1 ) ;
-    }
-    else {
-      refval = chanFreqs(refip).getValue("Hz") ;
-    }
-  }
-  else {
-    MFrequency::Convert tolsr( freqRef, MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
-    if ( even ) {
-      IPosition refip0( 1, refchan-1 ) ;
-      Double refval0 = chanFreqs(refip0).getValue("Hz") ;
-      Double refval1 = chanFreqs(refip).getValue("Hz") ;
-      refval = 0.5 * ( refval0 + refval1 ) ;
-      refval = tolsr( refval ).get("Hz").getValue() ;
-    }
-    else {
-      refval = tolsr( chanFreqs(refip) ).get("Hz").getValue() ;
-    }
-  }
-  
-  //double endSec = mathutil::gettimeofday_sec() ;
-  //os_ << "end MSFiller::spectralSetup() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
-}
-
-} ;
-
+};
