@@ -279,14 +279,16 @@ public:
     // MS subtables
     const TableRecord &hdr = table.keywordSet();
     obstab = hdr.asTable( "OBSERVATION" ) ;
-    sctab = hdr.asTable( "SYSCAL" ) ;
     spwtab = hdr.asTable( "SPECTRAL_WINDOW" ) ;
     statetab = hdr.asTable( "STATE" ) ;
     ddtab = hdr.asTable( "DATA_DESCRIPTION" ) ;
     poltab = hdr.asTable( "POLARIZATION" ) ;
     fieldtab = hdr.asTable( "FIELD" ) ;
     anttab = hdr.asTable( "ANTENNA" ) ;
-    srctab = hdr.asTable( "SOURCE" ) ;
+    if ( hdr.isDefined( "SYSCAL" ) ) 
+      sctab = hdr.asTable( "SYSCAL" ) ;
+    if ( hdr.isDefined( "SOURCE" ) ) 
+      srctab = hdr.asTable( "SOURCE" ) ;
 
     // attach to columns
     // MS MAIN
