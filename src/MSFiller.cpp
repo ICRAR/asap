@@ -271,6 +271,7 @@ public:
     getpt = False ;
     isWeather = False ;
     isSysCal = False ;
+    isTcal = False ;
     cycleNo = 0 ;
     numSysCalRow = 0 ;
     header = scantable.getHeader() ;
@@ -686,7 +687,10 @@ public:
   //void setSysCalRecord( const map< String,Vector<uInt> > &r )
   {
     isSysCal = True ;
+    isTcal = True ;
     syscalRecord = r ;
+    if ( syscalRecord.nfields() == 0 )
+      isTcal = False ;
 
     const TableDesc &desc = sctab.tableDesc() ;
     uInt nrow = sctab.nrow() ;
@@ -1207,7 +1211,7 @@ private:
   Block<uInt> getTcalId( Double &t )
   {
     // return 0 if no SysCal table
-    if ( !isSysCal ) {
+    if ( !isSysCal or !isTcal ) {
       return Block<uInt>( 4, 0 ) ;
     }
       
@@ -1265,6 +1269,7 @@ private:
   Vector<Double> weatherTime;
   Vector<Double> weatherInterval;
   Bool isSysCal;
+  Bool isTcal;
   Record syscalRecord;
   //map< String,Vector<uInt> > syscalRecord;
   uInt numSysCalRow ;
