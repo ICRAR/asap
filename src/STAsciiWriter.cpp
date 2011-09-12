@@ -136,9 +136,14 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     int nf = restfreqs.size();
     //addLine(of, "Rest Freq.", 
     //        stable.molecules().getRestFrequency(rec.asuInt("MOLECULE_ID") ));
-    addLine(of, "Rest Freq.", restfreqs[0]);
-    for ( int i=1; i<nf; ++i) {
-      addLine(of, " ", restfreqs[i]);
+    if ( nf > 0 ) {
+      addLine(of, "Rest Freq.", restfreqs[0]);
+      for ( int i=1; i<nf; ++i) {
+        addLine(of, " ", restfreqs[i]);
+      }
+    }
+    else {
+      addLine(of, "Rest Freq.", "NONE" );
     }
     ostringstream osflagrow;
     for ( unsigned int i=0; i<t.nrow(); ++i) {
