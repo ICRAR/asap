@@ -99,20 +99,6 @@ protected:
     ROArrayQuantColumn<T> quantCol( tab, name ) ;
     val = quantCol( idx ) ;
   }
-//   template<class T> void putField( const String &name, 
-//                                    TableRecord &rec, 
-//                                    T &val )
-//   {
-//     RecordFieldPtr<T> rf( rec, name ) ;
-//     *rf = val ;
-//   }
-//   template<class T> void defineField( const String &name, 
-//                                       TableRecord &rec, 
-//                                       T &val )
-//   {
-//     RecordFieldPtr<T> rf( rec, name ) ;
-//     rf.define( val ) ;
-//   }
   template<class T> T interp( Double x0, Double x1, Double x, T y0, T y1 )
   {
     Double dx0 = x - x0 ;

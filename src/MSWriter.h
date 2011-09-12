@@ -85,28 +85,10 @@ private:
   void fillWeather() ;
   void fillSysCal( std::map< casa::Int,casa::Vector<casa::uInt> > &idrec, 
                    std::map< casa::Int,casa::Vector<casa::uInt> > &rowrec ) ;
-//   void fillSysCal( Record &idrec, Record &rowrec ) ;
-//   void fillSysCal() ;
-
-  // fill empty rows
-  void infillSpectralWindow() ;
-
-  // add rows to subtables
-  void addFeed( casa::Int id ) ;
-  void addSpectralWindow( casa::Int spwid, casa::Int freqid ) ;
-  void addField( casa::Int fid, casa::String fieldname, casa::String srcname, casa::Double t, casa::Vector<casa::Double> scanrate ) ;
-  void addPointing( casa::String &name, casa::Double &me, casa::Double &interval, casa::Matrix<casa::Double> &dir ) ;
-  casa::Int addPolarization( casa::Vector<casa::Int> polnos ) ;
-  casa::Int addDataDescription( casa::Int polid, casa::Int spwid ) ;
-  casa::Int addState( casa::Int type, casa::Int &subscan ) ;
 
   // utility
-  casa::Vector<casa::Int> toCorrType( casa::Vector<casa::Int> polnos ) ;
   void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Table &tab ) ;
   void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Vector<casa::Double> &atime, casa::Vector<casa::Double> &ainterval ) ;
-  //void queryType( casa::Int type, casa::String &stype, casa::Bool &b ) ; 
-  void queryType( casa::Int type, casa::String &stype, casa::Bool &b, casa::Double &t, Double &l ) ; 
-  casa::Double getDishDiameter( casa::String antname ) ;
   void antennaProperty( casa::String &name, casa::String &mount, casa::String &type, casa::Double &diameter ) ;
 
   // tool for HPC
@@ -114,7 +96,6 @@ private:
 
   casa::CountedPtr<Scantable> table_ ;
   STHeader header_ ;
-  //casa::CountedPtr<casa::MeasurementSet> mstable_ ;
   casa::MeasurementSet *mstable_ ;
 
   casa::Bool isTcal_ ;
@@ -133,8 +114,6 @@ private:
 
   casa::LogIO os_ ;
 
-//   casa::Record tcalIdRec_ ;
-//   casa::Record tcalRowRec_ ;
   casa::Record srcRec_ ;
   
   MSWriter();
