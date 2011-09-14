@@ -886,7 +886,9 @@ int OldASDMReader::getSrcType( unsigned int scan,
   ScanIntent scanIntent = scanrow->getScanIntent()[0] ;
   SubscanRow *subrow = asdm_->getSubscan().getRowByKey( ebtag, (int)scan, (int)subscan ) ;
   SubscanIntent subIntent = subrow->getSubscanIntent() ;
-  SwitchingMode swmode = subrow->getSubscanMode() ;
+  SwitchingMode swmode = NO_SWITCHING ;
+  if ( subrow->isSubscanModeExists() )
+    swmode = subrow->getSubscanMode() ;
   if ( scanIntent == OBSERVE_TARGET ) {
     // on sky scan
     if ( swmode == NO_SWITCHING || swmode == POSITION_SWITCHING ) {

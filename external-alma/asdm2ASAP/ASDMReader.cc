@@ -166,10 +166,10 @@ bool ASDMReader::open( const string &filename, const casa::Record &rec )
   // create ASDM object
   asdm_ = new ASDM() ;
   // avoid unwanted message to stdout
-  ostringstream oss ;
-  streambuf *buforg = cout.rdbuf(oss.rdbuf()) ;
+  //ostringstream oss ;
+  //streambuf *buforg = cout.rdbuf(oss.rdbuf()) ;
   asdm_->setFromFile( filename ) ;
-  cout.rdbuf(buforg) ;
+  //cout.rdbuf(buforg) ;
 
   if ( antennaId_ == -1 ) {
     AntennaTable &atab = asdm_->getAntenna() ;
@@ -890,7 +890,9 @@ int ASDMReader::getSrcType( unsigned int scan,
   ScanIntent scanIntent = scanrow->getScanIntent()[0] ;
   SubscanRow *subrow = asdm_->getSubscan().getRowByKey( ebtag, (int)scan, (int)subscan ) ;
   SubscanIntent subIntent = subrow->getSubscanIntent() ;
-  SwitchingMode swmode = subrow->getSubscanMode() ;
+  SwitchingMode swmode = NO_SWITCHING ;
+  if ( subrow->isSubscanModeExists() )
+    swmode = subrow->getSubscanMode() ;
   if ( scanIntent == OBSERVE_TARGET ) {
     // on sky scan
     if ( swmode == NO_SWITCHING || swmode == POSITION_SWITCHING ) {
