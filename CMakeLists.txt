@@ -30,35 +30,45 @@ if( APPLE )
     endif()
 endif()
 
+
 # project name is ASAP
 project( ASAP )
 
-# flags
+
+#
+# build type and their flags 
+#
+# CMAKE_BUILD_TYPE (Release, Debug, RelWithDebInfo, MinSizeRel, Profile)
+# default is RelWithDebInfo
+#
+if ( NOT CMAKE_BUILD_TYPE )
+   set( CMAKE_BUILD_TYPE RelWithDebInfo )
+endif()
+message( STATUS "CMAKE_BUILD_TYPE = " ${CMAKE_BUILD_TYPE} )
+
+# flags for Debug build
+if ( CMAKE_BUILD_TYPE STREQUAL Debug )
+   add_definitions( -DAIPS_DEBUG )
+endif()
+set( CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -O0 -fno-omit-frame-pointer" )
+
+# flags for Profile build
+set( CMAKE_CXX_FLAGS_PROFILE "-g -O2 -pg -fprofile-arcs -fno-omit-frame-pointer" )
+
+# flags for Release build
+set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-s" )
+
+# flags for MinSizeRel build
+set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -Wl,-s" )
+
+# default flags
 set( DEFAULT_CXX_FLAGS
-     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment -O3 -fno-omit-frame-pointer" )
+     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
+
 find_package( OpenMP )
 if( OPENMP_FOUND )
    set( DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
 endif()
-
-set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
-  -DCASA_USECASAPATH
-  -DCASACORE_NEEDS_RETHROW
-  -DAIPS_STDLIB
-  -DAIPS_AUTO_STL
-  -D_GNU_SOURCE )
-
-if( CMAKE_SYSTEM_NAME STREQUAL Linux )
-  set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
-    -D_FILE_OFFSET_BITS=64
-    -D_LARGEFILE_SOURCE 
-    )
-endif()
-
-add_definitions( ${CASACORE_DEFINITIONS} )
-
-# set flags for cpp compiler
-set( CMAKE_CXX_FLAGS ${DEFAULT_CXX_FLAGS} )
 
 # environment dependent settings
 message( STATUS "CMAKE_SYSTEM = " ${CMAKE_SYSTEM} )
@@ -97,6 +107,29 @@ elseif( CMAKE_SYSTEM_NAME STREQUAL Linux )
       set( DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} -Wno-deprecated -Woverloaded-virtual" )
    endif()
 endif()
+
+# set flags for cpp compiler
+set( CMAKE_CXX_FLAGS ${DEFAULT_CXX_FLAGS} )
+
+
+#
+# casacore definitions
+#
+set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
+  -DCASA_USECASAPATH
+  -DCASACORE_NEEDS_RETHROW
+  -DAIPS_STDLIB
+  -DAIPS_AUTO_STL
+  -D_GNU_SOURCE )
+
+if( CMAKE_SYSTEM_NAME STREQUAL Linux )
+  set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
+    -D_FILE_OFFSET_BITS=64
+    -D_LARGEFILE_SOURCE 
+    )
+endif()
+
+add_definitions( ${CASACORE_DEFINITIONS} )
 
 
 #
