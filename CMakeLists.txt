@@ -56,10 +56,12 @@ set( CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -O0 -fno-omit-frame-pointer" )
 set( CMAKE_CXX_FLAGS_PROFILE "-g -O2 -pg -fprofile-arcs -fno-omit-frame-pointer" )
 
 # flags for Release build
-set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-s" )
+set( CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-s" )
+set( CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-s" )
 
 # flags for MinSizeRel build
-set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -Wl,-s" )
+set( CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+set( CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
 
 # default flags
 set( DEFAULT_CXX_FLAGS
