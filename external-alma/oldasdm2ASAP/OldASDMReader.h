@@ -142,14 +142,21 @@ public:
    *
    * @return scan number
    **/
-  unsigned int getScanNo() { return (unsigned int)(mainRow_[row_]->getScanNumber()) ; } ;
+  unsigned int getScanNoOfCurrentRow() { return (unsigned int)(mainRow_[row_]->getScanNumber()) ; } ;
 
   /**
    * get subscan number of current row
    *
    * @return subscan number
    **/
-  unsigned int getSubscanNo() { return (unsigned int)(mainRow_[row_]->getSubscanNumber()) ; } ;
+  unsigned int getSubscanNoOfCurrentRow() { return (unsigned int)(mainRow_[row_]->getSubscanNumber()) ; } ;
+
+  /**
+   * set data index
+   *
+   * @param idx for vmsData_
+   **/
+  void prepareData( unsigned int idx ) ;
 
   /**
    * get subscan number for given index
@@ -158,6 +165,7 @@ public:
    * @return subscan number
    **/
   unsigned int getSubscanNo( unsigned int idx ) ;
+  unsigned int getSubscanNo() ;
 
   /**
    * get IF number for given index 
@@ -166,6 +174,7 @@ public:
    * @return IF number
    **/
   casa::uInt getIFNo( unsigned int idx ) ;
+  casa::uInt getIFNo() ;
 
   /**
    * get number of polarization for given index
@@ -174,6 +183,7 @@ public:
    * @return number of polarizations
    **/
   int getNumPol( unsigned int idx ) ;
+  int getNumPol() ;
 
   /**
    * get REFPIX, REFVAL, INCREMENT for given index
@@ -189,14 +199,10 @@ public:
                      double &refval, 
                      double &incr,
                      std::string &freqref ) ;
-
-  /**
-   * get rest frequencies for given index
-   *
-   * @param idx for vmsData_
-   * @return rest frequencies
-   **/
-  vector<double> getRestFrequency( unsigned int idx ) ;
+  void getFrequency( double &refpix,
+                     double &refval,
+                     double &incr,
+                     std::string &freqref ) ;
 
   /**
    * get MJD time in day for given index
@@ -205,6 +211,7 @@ public:
    * @return MJD time in day
    **/
   double getTime( unsigned int idx ) ;
+  double getTime() ;
 
   /**
    * get integration time in sec for given index
@@ -213,34 +220,7 @@ public:
    * @return integration time in sec
    **/
   double getInterval( unsigned int idx ) ;
-
-  /**
-   * get source name for given index
-   *
-   * @param idx for vmsData_
-   * @return source name
-   **/
-  string getSourceName( unsigned int idx ) ;
-
-  /**
-   * get field name for given index
-   * field name = fieldName + "__" + fieldId
-   *
-   * @param idx for vmsData_
-   * @return field name
-   **/
-  string getFieldName( unsigned int idx ) ;
-
-  /**
-   * get source direction for given index
-   *
-   * @param idx for vmsData_
-   * @return source direction as vector<double>
-   **/
-  std::vector<double> getSourceDirection( unsigned int idx ) ;
-  void getSourceDirection( unsigned int idx, 
-                           std::vector<double> &dir, 
-                           std::string &ref  ) ;
+  double getInterval() ;
 
   /**
    * get source direction with reference 
@@ -252,29 +232,13 @@ public:
   void getSourceDirection( std::vector<double> &dir, std::string &ref ) ;
   
   /**
-   * get source proper motion for given index
-   *
-   * @param idx for vmsData_
-   * @return source proper motion as vector<double>
-   **/
-  std::vector<double> getSourceProperMotion( unsigned int idx ) ;
-
-  /**
-   * get systemic velocity of the source for given index
-   * at the moment return 0-th element of sysVel vector
-   *
-   * @param idx for vmsData_
-   * @return systemic velocity of the source
-   **/
-  double getSysVel( unsigned int idx ) ;
-
-  /**
    * get row-based flag for given index
    *
    * @param idx for vmsData_
    * @return row-based flag 
    **/
   unsigned int getFlagRow( unsigned int idx ) ;
+  unsigned int getFlagRow() ;
 
   /**
    * get data shape (nPol, nChan, nApc=1) for given index
@@ -283,6 +247,7 @@ public:
    * @return data shape
    **/
   std::vector<unsigned int> getDataShape( unsigned int idx ) ;
+  std::vector<unsigned int> getDataShape() ;
 
   /**
    * get spectral data for given index
@@ -291,15 +256,8 @@ public:
    * @return spectral data 
    **/
   float *getSpectrum( unsigned int idx ) ;
+  float *getSpectrum() ;
 
-  /**
-   * get channel flag data for given index 
-   *
-   * @param idx for vmsData_
-   * @return channel flag 
-   **/
-  //bool *getFlagChannel( unsigned int idx ) ;
-  
   /**
    * get Tsys for given index
    *
@@ -307,6 +265,7 @@ public:
    * @return Tsys
    **/
   std::vector< std::vector<float> > getTsys( unsigned int idx ) ;
+  std::vector< std::vector<float> > getTsys() ;
   
   /**
    * get Tcal for given index
@@ -315,6 +274,7 @@ public:
    * @return Tcal
    **/
   std::vector< std::vector<float> > getTcal( unsigned int idx ) ;
+  std::vector< std::vector<float> > getTcal() ;
 
   /**
    * get Tcal and Tsys for given index
@@ -326,6 +286,8 @@ public:
   void getTcalAndTsys( unsigned int idx, 
                        std::vector< std::vector<float> > &tcal,
                        std::vector< std::vector<float> > &tsys ) ;
+  void getTcalAndTsys( std::vector< std::vector<float> > &tcal,
+                       std::vector< std::vector<float> > &tsys ) ;
   
   /**
    * get opacity for given index
@@ -334,6 +296,7 @@ public:
    * @return opacity
    **/
   std::vector<float> getOpacity( unsigned int idx ) ;
+  std::vector<float> getOpacity() ;
   
   /**
    * get weather information for given index
@@ -347,6 +310,11 @@ public:
    **/
   void getWeatherInfo( unsigned int idx,
                        float &temperature,
+                       float &pressure,
+                       float &humidity,
+                       float &windspeed,
+                       float &windaz ) ;
+  void getWeatherInfo( float &temperature,
                        float &pressure,
                        float &humidity,
                        float &windspeed,
@@ -366,6 +334,10 @@ public:
                         double &az,
                         double &el,
                         std::vector<double> &srate ) ;
+  void getPointingInfo( std::vector<double> &dir,
+                        double &az,
+                        double &el,
+                        std::vector<double> &srate ) ;
 
   /**
    * get source type enum (int) for given scan and subscan
@@ -378,30 +350,29 @@ public:
                   unsigned int subscan ) ;
 
   /**
-   * get list of dataDescId for given configDescId
-   *
-   * @param configDescId
-   * @return list of dataDescId
+   * get source properties 
+   * 
+   * @param idx for vmsData_
+   * @param srcname source name
+   * @param fieldname field name
+   * @param srcdir source direction
+   * @param srcpm source proper motion
+   * @param sysvel systemic velocity of the source
+   * @param restfreq rest frequency
    **/
-//   casa::Vector<casa::uInt> getDataDescIdList( casa::uInt cdid ) ;
-
-  /**
-   * get list of switchCycleId for given configDescId
-   *
-   * @param configDescId
-   * @return list of dataDescId
-   **/
-//   casa::Vector<casa::uInt> getSwitchCycleIdList( casa::uInt cdid ) ;
-
-  /**
-   * get list of feedId for given configDescId
-   *
-   * only return list of feedId that corresponds to specified antenna.
-   *
-   * @param configDescId
-   * @return list of valid feedId 
-   **/
-//   casa::Vector<casa::uInt> getFeedIdList( casa::uInt cdid ) ;
+  void getSourceProperty( unsigned int idx,
+                          std::string &srcname,
+                          std::string &fieldname,
+                          std::vector<double> &srcdir,
+                          std::vector<double> &srcpm,
+                          double &sysvel,
+                          std::vector<double> &restfreq ) ;
+  void getSourceProperty( std::string &srcname,
+                          std::string &fieldname,
+                          std::vector<double> &srcdir,
+                          std::vector<double> &srcpm,
+                          double &sysvel,
+                          std::vector<double> &restfreq ) ;
 
   /**
    * set binary data to MSData object
@@ -515,10 +486,10 @@ private:
    * @param antpos antenna position vector
    **/
   void toJ2000( std::vector<double> &dir,
-                double az, 
-                double el,
-                double mjd,
-                casa::Vector<casa::Double> antpos ) ;
+                double &az, 
+                double &el,
+                double &mjd,
+                casa::Vector<casa::Quantity> &antpos ) ;
 
   /**
   * to J2000
@@ -529,10 +500,10 @@ private:
   * @param antpos antenna position vector 
   * @return new direction
   **/
-  std::vector<double> toJ2000( std::vector<double> dir,
-                               casa::String dirref,
-                               double mjd,
-                               casa::Vector<casa::Double> antpos ) ;
+  std::vector<double> toJ2000( std::vector<double> &dir,
+                               casa::String &dirref,
+                               double &mjd,
+                               casa::Vector<casa::Quantity> &antpos ) ;
   /**
    * get nIF
    *
@@ -547,6 +518,7 @@ private:
    * @return pointer to SysCalRow object (0 when no appropriate row)
    **/
   asdm::SysCalRow *getSysCalRow( unsigned int idx ) ;
+  asdm::SysCalRow *getSysCalRow() ;
 
   /**
    * limit angule in radian within [-pi,pi]
@@ -594,10 +566,12 @@ private:
    * vector< MSState > v_msState 
    * vector< unsigned int > v_flag
    **/
-  const sdmbin::VMSData *vmsData_ ; 
+  const sdmbin::VMSData *vmsData_ ;
+ 
   casa::Int antennaId_ ; // antenna id
   casa::String antennaName_ ; // antenna name
-  casa::Vector<asdm::MainRow *> mainRow_ ; // list of pointers to all Main rows
+  casa::String stationName_ ; // station name
+  casa::Vector<casa::Quantity> antennaPosition_ ; // antenna position
   casa::Vector<casa::uInt> configDescIdList_ ; // list of valid configDescriptionId 
   casa::Vector<casa::uInt> feedIdList_ ; // list of valid feedId 
   casa::Vector<casa::uInt> fieldIdList_ ; // list of fieldId
@@ -614,5 +588,22 @@ private:
   EnumSet<SpectralResolutionTypeMod::SpectralResolutionType> resolutionType_ ; // spectral resolution type
   casa::CountedPtr<casa::LogSinkInterface> logsink_ ; // Logger
   casa::String className_ ;
+  unsigned int dataIndex_ ;
+
+  // Tables/Rows for ASDM
+  casa::Vector<asdm::MainRow *> mainRow_ ; // list of pointers to all Main rows
+  //asdm::AntennaRow *antennaRow_p ; // pointer to target Antenna row
+  //asdm::StationRow *stationRow_p ; // pointer to target Station row that target antenna is located
+  asdm::SpectralWindowRow *specWinRow_p ; // pointer to SpectralWindow row
+  asdm::PolarizationRow *polarizationRow_p ; // pointer to Polarization row
+  asdm::FieldRow *fieldRow_p ; // pointer to Field row 
+
+  // Tags
+  asdm::Tag antennaTag_ ;
+  asdm::Tag specWinTag_ ;
+  asdm::Tag execBlockTag_ ;
+
+  // time
+  asdm::ArrayTimeInterval timeInterval_ ;
 } ;
 #endif // ASAP_OLD_ASDM_READER_H

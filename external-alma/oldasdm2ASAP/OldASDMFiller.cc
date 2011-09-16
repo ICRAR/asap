@@ -102,7 +102,9 @@ void OldASDMFiller::fill()
   setFocus() ;
 
   // CYCLENO
-  unsigned int cycleno = 0 ;
+  //unsigned int cycleno = 0 ;
+  map< unsigned int, unsigned int > cycleno ;
+  map< unsigned int, unsigned int >::iterator citer ;
 
   for ( unsigned int ifield = 0 ; ifield < numFieldId ; ifield++ ) {
     for ( uInt icon = 0 ; icon < numConfigDescId ; icon++ ) {
@@ -124,18 +126,22 @@ void OldASDMFiller::fill()
         // set main row
         if ( !(reader_->setMainRow( irow )) ) {
           // skip row since the row doesn't have valid configDescId
-          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow)+" since OldASDMReader::setMainrow() returns False",LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 
         // scan and subscan
-        unsigned int scanno = reader_->getScanNo() ;
+        //unsigned int scanno = reader_->getScanNo() ;
+        unsigned int scanno = reader_->getScanNoOfCurrentRow() ;
         //uInt subscanno = reader_->getSubscanNo() ;
+        citer = cycleno.find( scanno ) ;
+        if ( citer == cycleno.end() )
+          cycleno[scanno] = 0 ;
 
         // set data
         if ( !(reader_->setData()) ) {
           // skip row since reader failed to retrieve data
-          //logsink_->postLocally( LogMessage("skip "+String::toString(irow),LogOrigin(className_,funcName,WHERE)) ) ;
+          //logsink_->postLocally( LogMessage("skip "+String::toString(irow)+" since OldASDMReader::setData() returns False",LogOrigin(className_,funcName,WHERE)) ) ;
           continue ;
         }
 
@@ -146,15 +152,38 @@ void OldASDMFiller::fill()
         string freqref = "" ;
 
         for ( unsigned int idata = 0 ; idata < numData ; idata++ ) {
+          // prepare to extract binary data
+          reader_->prepareData( idata ) ;
 
           // subscan number
-          unsigned int subscanno = reader_->getSubscanNo( idata ) ;
+          //unsigned int subscanno = reader_->getSubscanNo( idata ) ;
+          unsigned int subscanno = reader_->getSubscanNo() ;
 
           // IFNO
-          uInt ifno = reader_->getIFNo( idata ) ;
+          //uInt ifno = reader_->getIFNo( idata ) ;
+          uInt ifno = reader_->getIFNo() ;
 
-          // rest frequency
-          vector<double> rf = reader_->getRestFrequency( idata ) ;
+          // source spec
+          int srctype = reader_->getSrcType( scanno, subscanno ) ;
+          string srcname ;
+          string fieldname ;
+          vector<double> srcDirection ;
+          vector<double> srcProperMotion ;
+          double sysVel ;
+          vector<double> rf ;
+          //reader_->getSourceProperty( idata, 
+          //                            srcname, 
+          //                            fieldname,
+          //                            srcDirection,
+          //                            srcProperMotion,
+          //                            sysVel,
+          //                            rf ) ;
+          reader_->getSourceProperty( srcname, 
+                                      fieldname,
+                                      srcDirection,
+                                      srcProperMotion,
+                                      sysVel,
+                                      rf ) ;
           
           // fill MOLECULE_ID and add MOLECULES row if necessary
           Vector<casa::Double> restFreqs( rf.size() ) ;
@@ -163,23 +192,13 @@ void OldASDMFiller::fill()
           setMolecule( restFreqs ) ;
           
           // time and interval
-          casa::Double mjd = (casa::Double)(reader_->getTime( idata )) ;
-          casa::Double interval = (casa::Double)(reader_->getInterval( idata )) ;
+          //casa::Double mjd = (casa::Double)(reader_->getTime( idata )) ;
+          //casa::Double interval = (casa::Double)(reader_->getInterval( idata )) ;
+          casa::Double mjd = (casa::Double)(reader_->getTime()) ;
+          casa::Double interval = (casa::Double)(reader_->getInterval()) ;
 
           // fill TIME and INTERVAL
           setTime( mjd, interval ) ;
-
-
-          // source spec
-          string srcname = reader_->getSourceName( idata ) ;
-          string fieldname = reader_->getFieldName( idata ) ;
-          int srctype = reader_->getSrcType( scanno, subscanno ) ;
-          vector<double> srcDirection = reader_->getSourceDirection( idata ) ;
-          //vector<double> srcDirection ;
-          //string srcDirRef ;
-          //reader_->getSourceDirection( idata, srcDirection, srcDirRef ) ;
-          vector<double> srcProperMotion = reader_->getSourceProperMotion( idata ) ;
-          double sysVel = reader_->getSysVel( idata ) ;
           
           // fill SRCNAME, SRCTYPE, FIELDNAME, SRCDIRECTION, SRCPROPERMOTION, and SRCVELOCITY
           Vector<casa::Double> srcDir( 2 ) ;
@@ -191,7 +210,8 @@ void OldASDMFiller::fill()
           setSource( srcname, srctype, fieldname, srcDir, srcPM, (casa::Double)sysVel ) ;
 
           // fill FLAGROW
-          unsigned int flagrow = reader_->getFlagRow( idata ) ;
+          //unsigned int flagrow = reader_->getFlagRow( idata ) ;
+          unsigned int flagrow = reader_->getFlagRow() ;
           setFlagrow( (uInt)flagrow ) ;
 
           // fill WEATHER_ID and add WEATHER row if necessary
@@ -200,8 +220,13 @@ void OldASDMFiller::fill()
           float humidity ;
           float windspeed ;
           float windaz ;
-          reader_->getWeatherInfo( idata,
-                                   temperature, 
+          //reader_->getWeatherInfo( idata,
+          //                         temperature, 
+          //                         pressure,
+          //                         humidity,
+          //                         windspeed,
+          //                         windaz ) ;
+          reader_->getWeatherInfo( temperature, 
                                    pressure,
                                    humidity,
                                    windspeed,
@@ -217,8 +242,12 @@ void OldASDMFiller::fill()
           double az ;
           double el ;
           vector<double> srate ;
-          reader_->getPointingInfo( idata,
-                                    dir,
+          //reader_->getPointingInfo( idata,
+          //                          dir,
+          //                          az,
+          //                          el,
+          //                          srate ) ;
+          reader_->getPointingInfo( dir,
                                     az,
                                     el,
                                     srate ) ;
@@ -245,7 +274,8 @@ void OldASDMFiller::fill()
             getFrequencyRec( ifkey, refpix, refval, incr ) ;
           }
           else {
-            reader_->getFrequency( idata, refpix, refval, incr, freqref ) ;
+            //reader_->getFrequency( idata, refpix, refval, incr, freqref ) ;
+            reader_->getFrequency( refpix, refval, incr, freqref ) ;
             refval = (double)toLSRK( casa::Double(refval), 
                                      String(freqref),
                                      mjd,
@@ -260,7 +290,8 @@ void OldASDMFiller::fill()
           setFrequency( (casa::Double)refpix, (casa::Double)refval, (casa::Double)incr ) ;
 
           // loop on polarization
-          vector<unsigned int> dataShape = reader_->getDataShape( idata ) ;
+          //vector<unsigned int> dataShape = reader_->getDataShape( idata ) ;
+          vector<unsigned int> dataShape = reader_->getDataShape() ;
 //           ostringstream oss ;
 //           for ( unsigned int i = 0 ; i < dataShape.size() ; i++ ) {
 //             if ( i == 0 )
@@ -270,7 +301,7 @@ void OldASDMFiller::fill()
 //             else 
 //               oss << dataShape[i] << ", " ;
 //           }
-//           logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
+          //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
                                      
           //int numPol = reader_->getNumPol( idata ) ;
           unsigned int numPol = dataShape[0] ;
@@ -279,16 +310,17 @@ void OldASDMFiller::fill()
           //logsink_->postLocally( LogMessage("numPol = "+String::toString(numPol),LogOrigin(className_,funcName,WHERE)) ) ;
 
           // OPACITY
-          vector<float> tau = reader_->getOpacity( idata ) ;
+          //vector<float> tau = reader_->getOpacity( idata ) ;
+          vector<float> tau = reader_->getOpacity() ;
           Vector<casa::Float> opacity = toVector( tau, numPol ) ;
 
           // SPECTRA, FLAGTRA, TSYS, TCAL
-          float *sp = reader_->getSpectrum( idata ) ;
-          //vector< vector<float> > ts = reader_->getTsys( idata ) ;
-          //vector< vector<float> > tc = reader_->getTcal( idata ) ;
+          //float *sp = reader_->getSpectrum( idata ) ;
+          float *sp = reader_->getSpectrum() ;
           vector< vector<float> > ts ;
           vector< vector<float> > tc ;
-          reader_->getTcalAndTsys( idata, tc, ts ) ;
+          //reader_->getTcalAndTsys( idata, tc, ts ) ;
+          reader_->getTcalAndTsys( tc, ts ) ;
           Matrix<casa::Float> spectra = toMatrix( sp, numPol, numChan ) ;
           Vector<uChar> flagtra( numChan, 0 ) ;
           Matrix<casa::Float> tsys = toMatrix( ts, numPol, numChan ) ;
@@ -301,7 +333,7 @@ void OldASDMFiller::fill()
           for ( unsigned int ipol = 0 ; ipol < numPol ; ipol++ ) {
 
             // fill SCANNO, CYCLENO, IFNO, POLNO, and BEAMNO
-            setIndex( (uInt)scanno-1, (uInt)cycleno, ifno, ipol, beamno ) ;
+            setIndex( (uInt)scanno-1, (uInt)cycleno[scanno], ifno, ipol, beamno ) ;
 
             // fill SPECTRA, FLAGTRA, TSYS
             setSpectrum( spectra.row(ipol), flagtra, tsys.row(ipol) ) ;
@@ -317,7 +349,7 @@ void OldASDMFiller::fill()
           }
 
           // increment CYCLENO
-          cycleno++ ;
+          cycleno[scanno]++ ;
         }
       }
     }
