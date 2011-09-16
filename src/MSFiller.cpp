@@ -1605,6 +1605,12 @@ bool MSFiller::open( const std::string &filename, const casa::Record &rec )
     Vector<Int> id = msAntIdx.matchAntennaName( antennaStr_ ) ;
     if ( id.size() > 0 )
       antenna_ = id[0] ;
+    else {
+      delete tmpMS ;
+      //throw( AipsError( "Antenna " + antennaStr_ + " doesn't exist." ) ) ;
+      os_ << LogIO::SEVERE << "Antenna " << antennaStr_ << " doesn't exist." << LogIO::POST ;
+      return False ;
+    }
   }
 
   os_ << "Parsing MS options" << endl ;
