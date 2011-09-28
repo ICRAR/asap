@@ -70,7 +70,7 @@ namespace asap {
         .value( "fhicold", SrcType::FHICOLD )
         .value( "sig", SrcType::SIG )
         .value( "ref", SrcType::REF )
-        .value( "cal", SrcType::CAl )
+        .value( "cal", SrcType::CAL )
         .value( "notype", SrcType::NOTYPE )
         ;
 
