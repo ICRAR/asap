@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <TableTraverse.h>
+#include "TableTraverse.h"
 #include <tables/Tables/TableColumn.h>
 #include <tables/Tables/PlainColumn.h>
 #include <tables/Tables/DataManager.h>
