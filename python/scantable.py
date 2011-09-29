@@ -1,6 +1,7 @@
 """This module defines the scantable class."""
 
 import os
+import tempfile
 import numpy
 try:
     from functools import wraps as wraps_dec
@@ -180,7 +181,8 @@ class scantable(Scantable):
     @asaplog_post_dec
     #def __init__(self, filename, average=None, unit=None, getpt=None,
     #             antenna=None, parallactify=None):
-    def __init__(self, filename, average=None, unit=None, parallactify=None, **args):
+    def __init__(self, filename, average=None, unit=None, parallactify=None,
+                 **args):
         """\
         Create a scantable from a saved one or make a reference
 
@@ -301,7 +303,8 @@ class scantable(Scantable):
                             * 'SDFITS' (save as SDFITS file)
                             * 'ASCII' (saves as ascii text file)
                             * 'MS2' (saves as an casacore MeasurementSet V2)
-                            * 'FITS' (save as image FITS - not readable by class)
+                            * 'FITS' (save as image FITS - not readable by 
+                                      class)
                             * 'CLASS' (save as FITS readable by CLASS)
 
             overwrite:   If the file should be overwritten if it exists.
@@ -369,7 +372,8 @@ class scantable(Scantable):
         from asap import _to_list
         from asap import unique
         if not _is_valid(scanid):
-            raise RuntimeError( 'Please specify a scanno to drop from the scantable' )
+            raise RuntimeError( 'Please specify a scanno to drop from the'
+                                ' scantable' )
         scanid = _to_list(scanid)
         allscans = unique([ self.getscan(i) for i in range(self.nrow())])
         for sid in scanid: allscans.remove(sid)
@@ -432,8 +436,13 @@ class scantable(Scantable):
             raise
 
     def __str__(self):
-        return Scantable._summary(self)
+        tempFile = tempfile.NamedTemporaryFile()
+        Scantable._summary(self, tempFile.name)
+        tempFile.seek(0)
+        asaplog.clear()
+        return tempFile.file.read()
 
+    @asaplog_post_dec
     def summary(self, filename=None):
         """\
         Print a summary of the contents of this scantable.

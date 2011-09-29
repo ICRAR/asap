@@ -18,7 +18,7 @@ class AsapLogger(object):
     Inside casapy this will connect to `taskinit.casalog`. Otherwise it will
     create its own casa log sink.
 
-    .. note:: Do instantiate a new one - use the :obj:`asaplog` instead.
+    .. note:: Do not instantiate a new one - use the :obj:`asaplog` instead.
 
     """
     def __init__(self):
@@ -57,6 +57,10 @@ class AsapLogger(object):
                 print logs
         self._log = ""
 
+    def clear(self):
+        if isinstance(self.logger, LogSink):
+            logs = self.logger.pop()
+            
     def push(self, msg, newline=True):
         """Push logs into the buffer. post needs to be called to send them.
 
