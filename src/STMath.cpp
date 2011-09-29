@@ -395,6 +395,10 @@ STMath::averageChannel( const CountedPtr < Scantable > & in,
     Int length = subt.nrow() ;
     vector< Vector<Double> > dirs ;
     vector<int> indexes ;
+    // Handle MX mode averaging
+    if (in->nbeam() > 1 ) {      
+      length = 1;
+    }
     for ( Int i = 0 ; i < length ; i++ ) {
       Vector<Double> t = dircol(i).getAngle(Unit(String("rad"))).getValue() ;
       bool adddir = true ;
@@ -418,14 +422,16 @@ STMath::averageChannel( const CountedPtr < Scantable > & in,
     tout.addRow( rowNum );
     for ( uInt i = 0 ; i < rowNum ; i++ ) {
       TableCopy::copyRows(tout, subt, outrowCount+i, indexes[i], 1) ;
+      // Handle MX mode averaging
       if ( avmode != "SCAN") {
-        //scanColOut.put(outrowCount+i, uInt(0));
+        scanColOut.put(outrowCount+i, uInt(0));
       }
     }
     MDirection::ScalarColumn dircolOut ;
     dircolOut.attach( tout, "DIRECTION" ) ;
     for ( uInt irow = 0 ; irow < rowNum ; irow++ ) {
-      Vector<Double> t = dircolOut(outrowCount+irow).getAngle(Unit(String("rad"))).getValue() ;
+      Vector<Double> t = \
+	dircolOut(outrowCount+irow).getAngle(Unit(String("rad"))).getValue() ;
       Vector<Float> tmp;
       specCol.get(0, tmp);
       uInt nchan = tmp.nelements();
@@ -434,13 +440,14 @@ STMath::averageChannel( const CountedPtr < Scantable > & in,
       Vector<uChar> flags = flagCol.getColumn(Slicer(Slice(0)));
       // mask spectra for different DIRECTION
       for ( uInt jrow = 0 ; jrow < subt.nrow() ; jrow++ ) {
-        Vector<Double> direction = dircol(jrow).getAngle(Unit(String("rad"))).getValue() ;
+        Vector<Double> direction = \
+	  dircol(jrow).getAngle(Unit(String("rad"))).getValue() ;
         //if ( t[0] != direction[0] || t[1] != direction[1] ) {
         Double dx = t[0] - direction[0] ;
         Double dy = t[1] - direction[1] ;
         Double dd = sqrt( dx * dx + dy * dy ) ;
         //if ( !allNearAbs( t, direction, tol ) ) {
-        if ( dd > tol ) {
+        if ( dd > tol &&  in->nbeam() < 2 ) {
           flags[jrow] = userflag ;
         }
       }
