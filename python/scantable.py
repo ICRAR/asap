@@ -1132,20 +1132,20 @@ class scantable(Scantable):
         return abc, lbl
 
     @asaplog_post_dec
-    def flag(self, row=-1, mask=None, unflag=False):
+    def flag(self, mask=None, unflag=False, row=-1):
         """\
         Flag the selected data using an optional channel mask.
 
         Parameters:
 
-            row:    an optional row number in the scantable.
-                      Default -1 flags all rows
-                      
             mask:   an optional channel mask, created with create_mask. Default
                     (no mask) is all channels.
 
             unflag:    if True, unflag the data
 
+            row:    an optional row number in the scantable.
+                      Default -1 flags all rows
+                      
         """
         varlist = vars()
         mask = mask or []
@@ -1153,19 +1153,22 @@ class scantable(Scantable):
         self._add_history("flag", varlist)
 
     @asaplog_post_dec
-    def flag_row(self, rows=[], unflag=False):
+    def flag_row(self, rows=None, unflag=False):
         """\
         Flag the selected data in row-based manner.
 
         Parameters:
 
             rows:   list of row numbers to be flagged. Default is no row
-                    (must be explicitly specified to execute row-based flagging).
+                    (must be explicitly specified to execute row-based 
+                    flagging).
 
             unflag: if True, unflag the data.
 
         """
         varlist = vars()
+        if rows is None:
+            rows = []
         self._flag_row(rows, unflag)
         self._add_history("flag_row", varlist)
 
@@ -1180,7 +1183,8 @@ class scantable(Scantable):
 
             dthres:      lower threshold
 
-            clipoutside: True for flagging data outside the range [dthres:uthres].
+            clipoutside: True for flagging data outside the range 
+                         [dthres:uthres].
                          False for flagging data inside the range.
 
             unflag:      if True, unflag the data.
