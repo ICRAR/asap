@@ -67,6 +67,7 @@
 #include "STPolCircular.h"
 #include "STPolLinear.h"
 #include "STPolStokes.h"
+#include "STUpgrade.h"
 #include "Scantable.h"
 
 using namespace casa;
@@ -115,35 +116,18 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
   Table tab(name, Table::Update);
   uInt version = tab.keywordSet().asuInt("VERSION");
   if (version != version_) {
-    if ( version == 2 && version_ == 3 ) {
-      // run asap2to3 command
+      STUpgrade upgrader(version_);
       LogIO os( LogOrigin( "Scantable" ) ) ;
-      string command="asap2to3" ;
-      string exec=command+" in="+name ;
-      string outname=name ;
-      if ( name.at(name.length()-1) == '/' )
-        outname = outname.substr( 0, name.length()-1 ) ;
-      outname += ".asap3" ;
       os << LogIO::WARN
-         << name << " is incompatible data format (Scantable v2)." << endl 
-         << "Running " << command << " to create " << outname << ", " << endl  
-         << "which is identical to " << name << " but compatible " << endl 
-         << "data format with current software version (Scantable v3)." 
+         << name << " data format version " << version 
+	 << " is deprecated" << endl 
+         << "Running upgrade."<< endl  
          << LogIO::POST ;  
-      int ret = system( string("which "+command+" > /dev/null 2>&1").c_str() ) ;
-      if ( ret != 0 )
-        throw(AipsError(command+" is not installed")) ;
+      std::string outname = upgrader.upgrade(name);
       os << LogIO::WARN
          << "Data will be loaded from " << outname << " instead of " 
          << name << LogIO::POST ;
-      int tmp = system( exec.c_str() ) ;
-      (void) tmp;
       tab = Table(outname, Table::Update ) ;
-      //os << "tab.tableName()=" << tab.tableName() << LogIO::POST ;
-    }
-    else {
-      throw(AipsError("Unsupported version of ASAP file."));
-    }
   }
   if ( type_ == Table::Memory ) {
     table_ = tab.copyToMemoryTable(generateName());

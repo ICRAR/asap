@@ -43,15 +43,18 @@ public:
                        const casa::String& formattedname="");
 ***/
 
-  casa::uInt addEntry( casa::Vector<casa::Double> restfreq, const casa::Vector<casa::String>& name=casa::Vector<casa::String>(0),
+  casa::uInt addEntry( casa::Vector<casa::Double> restfreq, 
+		       const casa::Vector<casa::String>& name=casa::Vector<casa::String>(0),
                        const casa::Vector<casa::String>& formattedname=casa::Vector<casa::String>(0));
 
 /***
   void getEntry( casa::Double& restfreq, casa::String& name,
                  casa::String& formattedname, casa::uInt id) const;
 ***/
-  void getEntry( casa::Vector<casa::Double>& restfreq, casa::Vector<casa::String>& name,
-                 casa::Vector<casa::String>& formattedname, casa::uInt id) const;
+  void getEntry( casa::Vector<casa::Double>& restfreq, 
+		 casa::Vector<casa::String>& name,
+                 casa::Vector<casa::String>& formattedname, 
+		 casa::uInt id) const;
 
   std::vector<double> getRestFrequencies() const;
   std::vector<double> getRestFrequency( casa::uInt id ) const;

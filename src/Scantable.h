@@ -85,10 +85,11 @@ public:
   explicit Scantable(casa::Table::TableType ttype = casa::Table::Memory);
 
   /**
-   * Create a Scantable object form an existing table on disk
+   * Create a Scantable object from an existing table on disk
    * @param[in] name the name of the existing Scantable
    */
-  explicit Scantable(const std::string& name, casa::Table::TableType ttype = casa::Table::Memory);
+  explicit Scantable(const std::string& name, 
+		     casa::Table::TableType ttype = casa::Table::Memory);
 
   /// @fixme this is only sensible for MemoryTables....
   Scantable(const Scantable& other, bool clear=true);
@@ -637,7 +638,7 @@ private:
 
   std::vector<uint> getNumbers(const casa::ScalarColumn<casa::uInt>& col) const;
 
-  static const casa::uInt version_ = 3;
+  static const casa::uInt version_ = 4;
 
   STSelector selector_;
 

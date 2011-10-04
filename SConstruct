@@ -195,7 +195,7 @@ if not env.GetOption('clean'):
         conf.env["moduledir"] =  mdir
     env = conf.Finish()
 
-env["version"] = "3.1.x"
+env["version"] = "4.0.x"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
@@ -269,9 +269,9 @@ if len(env["makedist"]):
     else:
         env.Command("No data tables available. Use 'asap_update_data' after install",
                     '', env.MessageAction)
-    arch = env.Archiver(os.path.join("dist",
-				     env["stagedir"]+"_"+env["makedist"]),
-                        env["stagedir"])
+#    arch = env.Archiver(os.path.join("dist",
+#				     env["stagedir"]+"_"+env["makedist"]),
+#                        env["stagedir"])
 #    env.AddPostAction(arch, Delete("$stagedir"))
 
 if env["apps"]:
