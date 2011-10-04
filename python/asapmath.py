@@ -1011,7 +1011,7 @@ def splitant(filename, outprefix='',overwrite=False):
     return outfiles
 
 @asaplog_post_dec
-def _array2dOp( scan, value, mode="ADD", tsys=False ):
+def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
     """
     This function is workaround on the basic operation of scantable
     with 2 dimensional float list.
@@ -1023,20 +1023,23 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
     """
     nrow = scan.nrow()
     s = None
+    from asap._asap import stmath
+    stm = stmath()
+    stm._setinsitu(insitu)
     if len( value ) == 1:
-        from asap._asap import stmath
-        stm = stmath()
-        s = scantable( stm._arrayop( scan.copy(), value[0], mode, tsys ) )
-        del stm
+        s = scantable( stm._arrayop( scan, value[0], mode, tsys ) )
     elif len( value ) != nrow:
         raise ValueError( 'len(value) must be 1 or conform to scan.nrow()' )
     else:
         from asap._asap import stmath
-        stm = stmath()
-        # insitu must be True
+        if not insitu:
+            s = scan.copy()
+        else:
+            s = scan
+        # insitu must be True as we go row by row on the same data
         stm._setinsitu( True )
-        s = scan.copy()
-        sel = selector()
+        basesel = s.get_selection()
+        sel = selector()+basesel
         for irow in range( nrow ):
             sel.set_rows( irow )
             s.set_selection( sel )
@@ -1045,8 +1048,5 @@ def _array2dOp( scan, value, mode="ADD", tsys=False ):
             else:
                 #stm._arrayop( s, value[irow], mode, tsys, 'channel' )
                 stm._arrayop( s, value[irow], mode, tsys )
-            s.set_selection()
-            sel.reset()
-        del sel
-        del stm
+        s.set_selection(basesel)
     return s

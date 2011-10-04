@@ -574,7 +574,9 @@ class scantable(Scantable):
                 # try keywords
                 for k in kw:
                     if k not in selector.fields:
-                        raise KeyError("Invalid selection key '%s', valid keys are %s" % (k, selector.fields))
+                        raise KeyError("Invalid selection key '%s', "
+                                       "valid keys are %s" % (k, 
+                                                              selector.fields))
                 selection = selector(**kw)
         self._setselection(selection)
 
@@ -3115,13 +3117,15 @@ class scantable(Scantable):
         s = None
         import numpy
         if isinstance(factor, list) or isinstance(factor, numpy.ndarray):
-            if isinstance(factor[0], list) or isinstance(factor[0], numpy.ndarray):
+            if isinstance(factor[0], list) or isinstance(factor[0], 
+                                                         numpy.ndarray):
                 from asapmath import _array2dOp
-                s = _array2dOp( self.copy(), factor, "MUL", tsys )
+                s = _array2dOp( self, factor, "MUL", tsys, insitu )
             else:
-                s = scantable( self._math._arrayop( self.copy(), factor, "MUL", tsys ) )
+                s = scantable( self._math._arrayop( self, factor, 
+                                                    "MUL", tsys ) )
         else:
-            s = scantable(self._math._unaryop(self.copy(), factor, "MUL", tsys))
+            s = scantable(self._math._unaryop(self, factor, "MUL", tsys))
         s._add_history("scale", varlist)
         if insitu:
             self._assign(s)
