@@ -3,6 +3,7 @@
 __all__ = ["asaplog", "asaplog_post_dec", "AsapLogger"]
 
 import inspect
+import sys
 from asap.env import is_casapy
 from asap.parameters import rcParams
 from asap._asap import LogSink, set_global_sink
@@ -54,7 +55,8 @@ class AsapLogger(object):
         if isinstance(self.logger, LogSink):
             logs = self.logger.pop().strip()
             if len(logs) > 0:
-                print logs
+                print >>sys.stdout, logs
+                sys.stdout.flush()
         self._log = ""
 
     def clear(self):
