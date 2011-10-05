@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Release 4.0.0 [2011-10-05]
+
+* Ticket #251 fixed scantable.scale broken behaviour when selection was set
+* Ticket #250 fixed average_time's change in behaviour
+* Ticket #249 fixed backwards compatibility with existing scantable
+* speed up of scantable.summary which has changed the 
+  output of the summary information
+* various changes to MS export
+
 Release 3.1.0 [2011-08-10]
 
 * additional baseline fitting, e.g. sinusoid, cspline
