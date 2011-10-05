@@ -175,7 +175,8 @@ class CustomToolbarCommon:
         else:
             if self.lastspan: self._remove_span(self.lastspan)
 
-        self.lastspan = self._draw_span(self._thisregion['axes'],self._thisregion['xs'],xnow,fill="")
+        self.lastspan = self._draw_span(self._thisregion['axes'],
+                                        self._thisregion['xs'], xnow, fill="")
         del xnow
 
     def _draw_span(self,axes,x0,x1,**kwargs):
@@ -216,19 +217,24 @@ class CustomToolbarCommon:
         self.plotter._plotter.register('button_press',self._single_mask)
 
     def _subplot_stats(self,selection):
-        #from numpy import ma, ndarray
-        import numpy
         statstr = ['max', 'min', 'median', 'mean', 'sum', 'std'] #'rms']
         panelstr = selection['axes'].title.get_text()
         ssep = "-"*70
         asaplog.push(ssep)
         asaplog.post()
         for line in selection['axes'].lines:
+            # Don't include annotations
+            if line.get_label().startswith("_"):
+                continue
             label = panelstr + ", "+line.get_label()
             x = line.get_xdata()
-            selmsk = self._create_flag_from_array(x,selection['worldx'],selection['invert'])
+            newmsk = None
+            selmsk = self._create_flag_from_array(x,
+                                                  selection['worldx'],
+                                                  selection['invert'])
+            ydat = None
             y = line.get_ydata()
-            if isinstance(y,numpy.ma.masked_array):
+            if numpy.ma.isMaskedArray(y):
                 ydat = y.data
                 basemsk = y.mask
             else:
@@ -236,25 +242,23 @@ class CustomToolbarCommon:
                 basemsk = False
             if not isinstance(basemsk, bool):
                 # should be ndarray
-                newmsk = mask_or(selmsk,basemsk)
+                newmsk = mask_or(selmsk, basemsk)
             elif basemsk:
                 # the whole original spectrum is flagged
                 newmsk = basemsk
             else:
                 # no channel was flagged originally
                 newmsk = selmsk
-            mdata = numpy.ma.masked_array(ydat,mask=newmsk)
-            del x, y, ydat, basemsk, selmsk, newmsk
+            mdata = numpy.ma.masked_array(ydat, mask=newmsk)
             statval = {}
             for stat in statstr:
-                statval[stat] = getattr(numpy,stat)(mdata)
-            self._print_stats(statval,statstr=statstr,label=label,\
+                # need to get the stat functions from the ma module!!!
+                statval[stat] = getattr(numpy.ma,stat)(mdata)
+            self._print_stats(statval, statstr=statstr, label=label,\
                               mask=selection['worldx'],\
                               unmask=selection['invert'])
             asaplog.push(ssep)
             asaplog.post()
-            del mdata, statval
-        del ssep, panelstr
 
     def _create_flag_from_array(self,x,masklist,invert):
         # Return True for channels which should be EXCLUDED (flag)
@@ -296,7 +300,7 @@ class CustomToolbarCommon:
         sout += "\n"
         sout += ("%f "*len(statstr) % tuple(statvals))
         asaplog.push(sout)
-        del sout, maskstr, masktype, statvals, key, stats, statstr, mask, label
+        #del sout, maskstr, masktype, statvals, key, stats, statstr, mask, label
 
 
     ### Page chages
@@ -1076,7 +1080,7 @@ class CustomFlagToolbarCommon:
         mathobj = stmath( rcParams['insitu'] )
         statval = {}
         statstr = ['max', 'min', 'mean', 'median', 'sum', 'stddev', 'rms']
-        if isinstance(rows,list) and len(rows) > 0:
+        if isinstance(rows, list) and len(rows) > 0:
             for irow in rows:
                 for stat in statstr:
                     statval[stat] = mathobj._statsrow(scan,[],stat,irow)[0]
@@ -1094,7 +1098,8 @@ class CustomFlagToolbarCommon:
                 mask = scan.create_mask(masklist,invert=False,row=irow)
                 for stat in statstr:
                     statval[stat] = mathobj._statsrow(scan,mask,stat,irow)[0]
-                self._print_stats(scan,irow,statval,statstr=statstr,mask=masklist)
+                self._print_stats(scan,irow,statval,statstr=statstr,
+                                  mask=masklist)
                 del irow, mask
             del srow, masklist
         del scan, statval, mathobj
