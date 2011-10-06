@@ -46,37 +46,46 @@ std::string STUpgrade::two2three(const std::string& name) {
 }
 
 std::string STUpgrade::three2four(const std::string& name) {
-  std::string fname = name+".asap4";
+  std::string fname = name;
   Table origtab(name);
-  origtab.deepCopy(fname, Table::New);
-  Table tab(fname, Table::Update);
-  Table moltable = tab.rwKeywordSet().asTable("MOLECULES");
   Vector<String> cnames(3);
   cnames[0] = "RESTFREQUENCY";
   cnames[1] = "NAME";
   cnames[2] = "FORMATTEDNAME";
-  ROScalarColumn<Double> rfcol(moltable, cnames[0]);
-  ROScalarColumn<String> nmecol(moltable,  cnames[1]);
-  ROScalarColumn<String> fmtnmecol(moltable, cnames[2]);
-  Vector<Double> rf = rfcol.getColumn();
-  Vector<String> nme = nmecol.getColumn();
-  Vector<String> fmtnme = fmtnmecol.getColumn();
-  Array<Double> arf = rf.addDegenerate(1);
-  Array<String> anme = nme.addDegenerate(1);
-  Array<String> afmtnme = fmtnme.addDegenerate(1);
-  moltable.removeColumn(cnames);
-  moltable.addColumn(ArrayColumnDesc<Double>(cnames[0]));
-  moltable.addColumn(ArrayColumnDesc<String>(cnames[1]));
-  moltable.addColumn(ArrayColumnDesc<String>(cnames[2]));
-  ArrayColumn<Double> arfcol(moltable, cnames[0]);
-  ArrayColumn<String> anmecol(moltable, cnames[1]);
-  ArrayColumn<String> afmtnmecol(moltable, cnames[2] );
-  arfcol.putColumn(arf);
-  anmecol.putColumn(anme);
-  afmtnmecol.putColumn(afmtnme);
-
-  Int verid = tab.rwKeywordSet().fieldNumber("VERSION");
-  tab.rwKeywordSet().define(verid, uInt(4));
+  Table origmoltab = origtab.rwKeywordSet().asTable("MOLECULES");
+  const ColumnDesc &desc = (origmoltab.tableDesc().columnDescSet())[cnames[0]];
+  Bool isScalar = desc.isScalar() ;
+  if ( isScalar ) {
+    fname += ".asap4";
+    origtab.deepCopy(fname, Table::New);
+    Table tab(fname, Table::Update);
+    Table moltable = tab.rwKeywordSet().asTable("MOLECULES");
+    ROScalarColumn<Double> rfcol(moltable, cnames[0]);
+    ROScalarColumn<String> nmecol(moltable,  cnames[1]);
+    ROScalarColumn<String> fmtnmecol(moltable, cnames[2]);
+    Vector<Double> rf = rfcol.getColumn();
+    Vector<String> nme = nmecol.getColumn();
+    Vector<String> fmtnme = fmtnmecol.getColumn();
+    Array<Double> arf = rf.addDegenerate(1);
+    Array<String> anme = nme.addDegenerate(1);
+    Array<String> afmtnme = fmtnme.addDegenerate(1);
+    moltable.removeColumn(cnames);
+    moltable.addColumn(ArrayColumnDesc<Double>(cnames[0]));
+    moltable.addColumn(ArrayColumnDesc<String>(cnames[1]));
+    moltable.addColumn(ArrayColumnDesc<String>(cnames[2]));
+    ArrayColumn<Double> arfcol(moltable, cnames[0]);
+    ArrayColumn<String> anmecol(moltable, cnames[1]);
+    ArrayColumn<String> afmtnmecol(moltable, cnames[2] );
+    arfcol.putColumn(arf);
+    anmecol.putColumn(anme);
+    afmtnmecol.putColumn(afmtnme);
+    Int verid = tab.rwKeywordSet().fieldNumber("VERSION");
+    tab.rwKeywordSet().define(verid, uInt(4));
+  }
+  else {
+    Int verid = origtab.rwKeywordSet().fieldNumber("VERSION");
+    origtab.rwKeywordSet().define(verid, uInt(4));
+  }
   return fname;
 }
 

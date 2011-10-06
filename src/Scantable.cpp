@@ -124,10 +124,12 @@ Scantable::Scantable(const std::string& name, Table::TableType ttype) :
          << "Running upgrade."<< endl  
          << LogIO::POST ;  
       std::string outname = upgrader.upgrade(name);
-      os << LogIO::WARN
-         << "Data will be loaded from " << outname << " instead of " 
-         << name << LogIO::POST ;
-      tab = Table(outname, Table::Update ) ;
+      if ( outname != name ) {
+        os << LogIO::WARN
+           << "Data will be loaded from " << outname << " instead of " 
+           << name << LogIO::POST ;
+        tab = Table(outname, Table::Update ) ;
+      }
   }
   if ( type_ == Table::Memory ) {
     table_ = tab.copyToMemoryTable(generateName());
