@@ -152,7 +152,7 @@ Bool STAsciiWriter::write(const Scantable& stable, const String& fileName)
     addLine(of, "Row_Flagged", String(osflagrow));
     of << setfill('#') << setw(70) << "" << setfill(' ') << endl;
 
-    of << std::left << setw(16) << "x";
+    of << std::left << setw(16) << "#x";
     for ( unsigned int i=0; i<t.nrow(); ++i ) {
       ostringstream os,os1;
       os << "y" << i;
