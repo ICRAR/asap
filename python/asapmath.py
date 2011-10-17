@@ -1020,6 +1020,8 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
     value:   float list operand
     mode:    operation mode (ADD, SUB, MUL, DIV)
     tsys:    if True, operate tsys as well
+    insitu:  if False, a new scantable is returned.
+             Otherwise, the array operation is done in-sitsu.
     """
     nrow = scan.nrow()
     s = None
@@ -1039,7 +1041,8 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
         # insitu must be True as we go row by row on the same data
         stm._setinsitu( True )
         basesel = s.get_selection()
-        sel = selector()+basesel
+        # Make sure basesel comes first to create a new selector instance
+        sel = basesel+selector()
         for irow in range( nrow ):
             sel.set_rows( irow )
             s.set_selection( sel )
