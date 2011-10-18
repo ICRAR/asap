@@ -34,7 +34,8 @@ STSelector::STSelector( const STSelector&  other ) :
   stringselections_(other.stringselections_),
   poltypes_(other.poltypes_),
   order_(other.order_),
-  taql_(other.taql_)
+  taql_(other.taql_),
+  rowselection_(other.rowselection_)
 {
 }
 
@@ -46,6 +47,7 @@ STSelector& STSelector::operator=( const STSelector& other )
     this->taql_ = other.taql_;
     this->poltypes_ = other.poltypes_;
     this->order_ = other.order_;
+    this->rowselection_ = other.rowselection_;
   }
   return *this;
 }
