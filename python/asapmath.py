@@ -1041,8 +1041,8 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
         # insitu must be True as we go row by row on the same data
         stm._setinsitu( True )
         basesel = s.get_selection()
-        # Make sure basesel comes first to create a new selector instance
-        sel = basesel+selector()
+        # generate a new selector object based on basesel
+        sel = selector(basesel)
         for irow in range( nrow ):
             sel.set_rows( irow )
             s.set_selection( sel )
