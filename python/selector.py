@@ -245,14 +245,15 @@ class selector(_selector):
 	    return out[:-1]
 	else:
 	    return out
+
     def __add__(self, other):
         """
         Merge two selections.
         """
         if self.is_empty():
-            return other
+            return selector(other)
         elif other.is_empty():
-            return self
+            return selector(self)
         union = selector()
         gets = [[self._getscans(), other._getscans(), union._setscans],
                 [self._getcycles(), other._getcycles(),union._setcycles],
