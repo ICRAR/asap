@@ -1397,7 +1397,7 @@ Vector<String> PKSMS2reader::splitAntennaSelectionString( const String s )
   Char delim = ',' ;
   Int n = s.freq( delim ) + 1 ;
   Vector<String> antlist ;
-  string sl[n] ;
+  string *sl = new string[n] ;
   Int numSubstr = split( s, sl, n, "," );
   antlist.resize( numSubstr ) ;
   for ( Int i = 0 ; i < numSubstr ; i++ ) {
@@ -1405,6 +1405,7 @@ Vector<String> PKSMS2reader::splitAntennaSelectionString( const String s )
     antlist[i].trim() ;
   }
   //cerr << "antlist = " << antlist << endl ;
+  delete [] sl;
   return antlist ;
 }
 

@@ -64,6 +64,7 @@ namespace asap {
   // <src>casa::ObjCompare&lt;T&gt;</src>.
   template<class T> class TypeManagerImpl: public TypeManager {
   public:
+    TypeManagerImpl(){}
     virtual casa::BaseCompare *getComparator() const {
       static casa::ObjCompare<T> comparator;
       return &comparator;
