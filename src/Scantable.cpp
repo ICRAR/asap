@@ -10,6 +10,7 @@
 //
 //
 #include <map>
+#include <mcheck.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
@@ -89,8 +90,8 @@ Scantable::Scantable(Table::TableType ttype) :
 {
   initFactories();
   setupMainTable();
-  freqTable_ = STFrequencies(*this);
-  table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_.table());
+  freqTable_ = new STFrequencies(*this);
+  table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_->table());
   weatherTable_ = STWeather(*this);
   table_.rwKeywordSet().defineTable("WEATHER", weatherTable_.table());
   focusTable_ = STFocus(*this);
@@ -193,7 +194,7 @@ Scantable::Scantable( const Scantable& other, bool clear ):
 
 void Scantable::copySubtables(const Scantable& other) {
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
-  TableCopy::copyRows(t, other.freqTable_.table());
+  TableCopy::copyRows(t, other.freqTable_->table());
   t = table_.rwKeywordSet().asTable("FOCUS");
   TableCopy::copyRows(t, other.focusTable_.table());
   t = table_.rwKeywordSet().asTable("WEATHER");
@@ -210,7 +211,7 @@ void Scantable::copySubtables(const Scantable& other) {
 
 void Scantable::attachSubtables()
 {
-  freqTable_ = STFrequencies(table_);
+  freqTable_ = new STFrequencies(table_);
   focusTable_ = STFocus(table_);
   weatherTable_ = STWeather(table_);
   tcalTable_ = STTcal(table_);
@@ -221,7 +222,7 @@ void Scantable::attachSubtables()
 
 Scantable::~Scantable()
 {
-  //cout << "~Scantable() " << this << endl;
+  delete freqTable_;
 }
 
 void Scantable::setupMainTable()
@@ -1508,7 +1509,7 @@ SpectralCoordinate Scantable::getSpectralCoordinate(int whichrow) const {
   const MEpoch& me = timeCol_(whichrow);
   //Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
-  return freqTable_.getSpectralCoordinate(md, mp, me, rf,
+  return freqTable_->getSpectralCoordinate(md, mp, me, rf,
                                           mfreqidCol_(whichrow));
 }
 
@@ -1517,7 +1518,7 @@ std::vector< double > Scantable::getAbcissa( int whichrow ) const
   if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal row number"));
   std::vector<double> stlout;
   int nchan = specCol_(whichrow).nelements();
-  String us = freqTable_.getUnitString();
+  String us = freqTable_->getUnitString();
   if ( us == "" || us == "pixel" || us == "channel" ) {
     for (int i=0; i<nchan; ++i) {
       stlout.push_back(double(i));
@@ -1584,10 +1585,10 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
   //const Double& rf = mmolidCol_(whichrow);
   const Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   SpectralCoordinate spc =
-    freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
+    freqTable_->getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
 
   String s = "Channel";
-  Unit u = Unit(freqTable_.getUnitString());
+  Unit u = Unit(freqTable_->getUnitString());
   if (u == Unit("km/s")) {
     s = CoordinateUtil::axisLabel(spc, 0, True,True,  True);
   } else if (u == Unit("Hz")) {
@@ -1848,18 +1849,18 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
   Double refpix ;
   Double refval ;
   Double increment ;
-  int freqnrow = freqTable_.table().nrow() ;
+  int freqnrow = freqTable_->table().nrow() ;
   Vector<uInt> oldId( freqnrow ) ;
   Vector<uInt> newId( freqnrow ) ;
   for ( int irow = 0 ; irow < freqnrow ; irow++ ) {
-    freqTable_.getEntry( refpix, refval, increment, irow ) ;
+    freqTable_->getEntry( refpix, refval, increment, irow ) ;
     /***
      * need to shift refpix to nmin
      * note that channel nmin in old index will be channel 0 in new one
      ***/
     refval = refval - ( refpix - nmin ) * increment ;
     refpix = 0 ;
-    freqTable_.setEntry( refpix, refval, increment, irow ) ;
+    freqTable_->setEntry( refpix, refval, increment, irow ) ;
   }
 
   // update nchan
@@ -2304,18 +2305,20 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
     //fitter.setExpression("cspline", nPiece);
     //fitter.setIterClipping(thresClip, nIterClip);
 
-    int nRow = nrow();
-    std::vector<bool> chanMask;
     bool showProgress;
     int minNRow;
     parseProgressInfo(progressInfo, showProgress, minNRow);
 
+    int nRow = nrow();
+    std::vector<bool> chanMask;
+
+    //--------------------------------
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       chanMask = getCompositeChanMask(whichrow, mask);
       //fitBaseline(chanMask, whichrow, fitter);
       //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-      std::vector<int> pieceEdges;
-      std::vector<float> params;
+      std::vector<int> pieceEdges(nPiece+1);
+      std::vector<float> params(nPiece*4);
       int nClipped = 0;
       std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
       setSpectrum(res, whichrow);
@@ -2324,7 +2327,8 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
       outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
-
+    //--------------------------------
+    
     if (outTextFile) ofs.close();
 
   } catch (...) {
@@ -2393,8 +2397,8 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
 
       //fitBaseline(chanMask, whichrow, fitter);
       //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-      std::vector<int> pieceEdges;
-      std::vector<float> params;
+      std::vector<int> pieceEdges(nPiece+1);
+      std::vector<float> params(nPiece*4);
       int nClipped = 0;
       std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
       setSpectrum(res, whichrow);
@@ -2421,47 +2425,50 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
   }
 
   int nChan = data.size();
-  std::vector<int> maskArray;
-  std::vector<int> x;
+  std::vector<int> maskArray(nChan);
+  std::vector<int> x(nChan);
+  int j = 0;
   for (int i = 0; i < nChan; ++i) {
-    maskArray.push_back(mask[i] ? 1 : 0);
+    maskArray[i] = mask[i] ? 1 : 0;
     if (mask[i]) {
-      x.push_back(i);
+      x[j] = i;
+      j++;
     }
   }
+  int initNData = j;
 
-  int initNData = x.size();
   if (initNData < nPiece) {
     throw(AipsError("too few non-flagged channels"));
   }
 
   int nElement = (int)(floor(floor((double)(initNData/nPiece))+0.5));
-  std::vector<double> invEdge;
-  idxEdge.clear();
-  idxEdge.push_back(x[0]);
+  std::vector<double> invEdge(nPiece-1);
+  idxEdge[0] = x[0];
   for (int i = 1; i < nPiece; ++i) {
     int valX = x[nElement*i];
-    idxEdge.push_back(valX);
-    invEdge.push_back(1.0/(double)valX);
+    idxEdge[i] = valX;
+    invEdge[i-1] = 1.0/(double)valX;
   }
-  idxEdge.push_back(x[x.size()-1]+1);
+  idxEdge[nPiece] = x[initNData-1]+1;
 
   int nData = initNData;
   int nDOF = nPiece + 3;  //number of parameters to solve, namely, 4+(nPiece-1).
 
-  std::vector<double> x1, x2, x3, z1, x1z1, x2z1, x3z1, r1, residual;
+  std::vector<double> x1(nChan), x2(nChan), x3(nChan);
+  std::vector<double> z1(nChan), x1z1(nChan), x2z1(nChan), x3z1(nChan);
+  std::vector<double> r1(nChan), residual(nChan);
   for (int i = 0; i < nChan; ++i) {
     double di = (double)i;
     double dD = (double)data[i];
-    x1.push_back(di);
-    x2.push_back(di*di);
-    x3.push_back(di*di*di);
-    z1.push_back(dD);
-    x1z1.push_back(dD*di);
-    x2z1.push_back(dD*di*di);
-    x3z1.push_back(dD*di*di*di);
-    r1.push_back(0.0);
-    residual.push_back(0.0);
+    x1[i]   = di;
+    x2[i]   = di*di;
+    x3[i]   = di*di*di;
+    z1[i]   = dD;
+    x1z1[i] = dD*di;
+    x2z1[i] = dD*di*di;
+    x3z1[i] = dD*di*di*di;
+    r1[i]   = 0.0;
+    residual[i] = 0.0;
   }
 
   for (int nClip = 0; nClip < nIterClip+1; ++nClip) {
@@ -2539,9 +2546,9 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
       }
     }
 
-    std::vector<double> invDiag;
+    std::vector<double> invDiag(nDOF);
     for (int i = 0; i < nDOF; ++i) {
-      invDiag.push_back(1.0/xMatrix[i][i]);
+      invDiag[i] = 1.0/xMatrix[i][i];
       for (int j = 0; j < nDOF; ++j) {
 	xMatrix[i][j] *= invDiag[i];
       }
@@ -2573,10 +2580,9 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     //compute a vector y which consists of the coefficients of the best-fit spline curves 
     //(a0,a1,a2,a3(,b3,c3,...)), namely, the ones for the leftmost piece and the ones of 
     //cubic terms for the other pieces (in case nPiece>1).
-    std::vector<double> y;
-    y.clear();
+    std::vector<double> y(nDOF);
     for (int i = 0; i < nDOF; ++i) {
-      y.push_back(0.0);
+      y[i] = 0.0;
       for (int j = 0; j < nDOF; ++j) {
 	y[i] += xMatrix[i][nDOF+j]*zMatrix[j];
       }
@@ -2586,17 +2592,17 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
     double a1 = y[1];
     double a2 = y[2];
     double a3 = y[3];
-    params.clear();
 
+    int j = 0;
     for (int n = 0; n < nPiece; ++n) {
       for (int i = idxEdge[n]; i < idxEdge[n+1]; ++i) {
 	r1[i] = a0 + a1*x1[i] + a2*x2[i] + a3*x3[i];
-	residual[i] = z1[i] - r1[i];
       }
-      params.push_back(a0);
-      params.push_back(a1);
-      params.push_back(a2);
-      params.push_back(a3);
+      params[j]   = a0;
+      params[j+1] = a1;
+      params[j+2] = a2;
+      params[j+3] = a3;
+      j += 4;
 
       if (n == nPiece-1) break;
 
@@ -2606,6 +2612,35 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
       a1 -= 3.0*d*iE;
       a2 += 3.0*d*iE*iE;
       a3 -=     d*iE*iE*iE;
+    }
+
+    //subtract constant value for masked regions at the edge of spectrum
+    if (idxEdge[0] > 0) {
+      int n = idxEdge[0];
+      for (int i = 0; i < idxEdge[0]; ++i) {
+	//--cubic extrapolate--
+	//r1[i] = params[0] + params[1]*x1[i] + params[2]*x2[i] + params[3]*x3[i];
+	//--linear extrapolate--
+	//r1[i] = (r1[n+1] - r1[n])/(x1[n+1] - x1[n])*(x1[i] - x1[n]) + r1[n];
+	//--constant--
+	r1[i] = r1[n];
+      }
+    }
+    if (idxEdge[nPiece] < nChan) {
+      int n = idxEdge[nPiece]-1;
+      for (int i = idxEdge[nPiece]; i < nChan; ++i) {
+	//--cubic extrapolate--
+	//int m = 4*(nPiece-1);
+	//r1[i] = params[m] + params[m+1]*x1[i] + params[m+2]*x2[i] + params[m+3]*x3[i];
+	//--linear extrapolate--
+	//r1[i] = (r1[n-1] - r1[n])/(x1[n-1] - x1[n])*(x1[i] - x1[n]) + r1[n];
+	//--constant--
+	r1[i] = r1[n];
+      }
+    }
+
+    for (int i = 0; i < nChan; ++i) {
+      residual[i] = z1[i] - r1[i];
     }
 
     if ((nClip == nIterClip) || (thresClip <= 0.0)) {
@@ -2637,21 +2672,21 @@ std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& dat
 
   nClipped = initNData - nData;
 
-  std::vector<float> result;
+  std::vector<float> result(nChan);
   if (getResidual) {
     for (int i = 0; i < nChan; ++i) {
-      result.push_back((float)residual[i]);
+      result[i] = (float)residual[i];
     }
   } else {
     for (int i = 0; i < nChan; ++i) {
-      result.push_back((float)r1[i]);
+      result[i] = (float)r1[i];
     }
   }
 
   return result;
 }
 
-  void Scantable::selectWaveNumbers(const int whichrow, const std::vector<bool>& chanMask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, std::vector<int>& nWaves)
+void Scantable::selectWaveNumbers(const int whichrow, const std::vector<bool>& chanMask, const bool applyFFT, const std::string& fftMethod, const std::string& fftThresh, const std::vector<int>& addNWaves, const std::vector<int>& rejectNWaves, std::vector<int>& nWaves)
 {
   nWaves.clear();
 
