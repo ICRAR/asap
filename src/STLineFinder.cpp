@@ -954,8 +954,8 @@ void STLineFinder::setData(const std::vector<float> &in_spectrum)
 //   in_edge is introduced for convinience, although all functionality
 //   can be achieved using a spectrum mask only
 int STLineFinder::findLines(const std::vector<bool> &in_mask,
-                const std::vector<int> &in_edge,
-                const casa::uInt &whichRow) throw(casa::AipsError)
+			    const std::vector<int> &in_edge,
+			    const casa::uInt &whichRow) throw(casa::AipsError)
 {
   if (useScantable && scan.null())
       throw AipsError("STLineFinder::findLines - a scan should be set first,"

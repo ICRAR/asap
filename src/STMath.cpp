@@ -223,8 +223,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
         //if ( !allTrue((subt.col("DIRECTION").getArrayDouble(TableExprId(irow)))==rec.asArrayDouble("DIRECTION")) ) {
         Vector<Double> x0 = (subt.col("DIRECTION").getArrayDouble(TableExprId(irow))) ;
         Vector<Double> x1 = rec.asArrayDouble("DIRECTION") ;
-        double dx = x0[0] - x1[0] ;
-        double dy = x0[0] - x1[0] ;
+        double dx = x0[0] - x1[0];
+        double dy = x0[1] - x1[1];
         Double dd = sqrt( dx * dx + dy * dy ) ;
         //if ( !allNearAbs((subt.col("DIRECTION").getArrayDouble(TableExprId(irow))), rec.asArrayDouble("DIRECTION"), tol ) ) {
         if ( dd > tol ) {
@@ -443,9 +443,9 @@ STMath::averageChannel( const CountedPtr < Scantable > & in,
         Vector<Double> direction = \
 	  dircol(jrow).getAngle(Unit(String("rad"))).getValue() ;
         //if ( t[0] != direction[0] || t[1] != direction[1] ) {
-        Double dx = t[0] - direction[0] ;
-        Double dy = t[1] - direction[1] ;
-        Double dd = sqrt( dx * dx + dy * dy ) ;
+        Double dx = t[0] - direction[0];
+        Double dy = t[1] - direction[1];
+        Double dd = sqrt(dx*dx + dy*dy);
         //if ( !allNearAbs( t, direction, tol ) ) {
         if ( dd > tol &&  in->nbeam() < 2 ) {
           flags[jrow] = userflag ;
@@ -3710,7 +3710,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     out =  average( in, mask, weight, avmode ) ;
   }
   
-  return out ;
+  return out;
 }
 
 CountedPtr<Scantable> STMath::cwcal( const CountedPtr<Scantable>& s,
