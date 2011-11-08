@@ -90,8 +90,8 @@ Scantable::Scantable(Table::TableType ttype) :
 {
   initFactories();
   setupMainTable();
-  freqTable_ = new STFrequencies(*this);
-  table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_->table());
+  freqTable_ = STFrequencies(*this);
+  table_.rwKeywordSet().defineTable("FREQUENCIES", freqTable_.table());
   weatherTable_ = STWeather(*this);
   table_.rwKeywordSet().defineTable("WEATHER", weatherTable_.table());
   focusTable_ = STFocus(*this);
@@ -194,7 +194,7 @@ Scantable::Scantable( const Scantable& other, bool clear ):
 
 void Scantable::copySubtables(const Scantable& other) {
   Table t = table_.rwKeywordSet().asTable("FREQUENCIES");
-  TableCopy::copyRows(t, other.freqTable_->table());
+  TableCopy::copyRows(t, other.freqTable_.table());
   t = table_.rwKeywordSet().asTable("FOCUS");
   TableCopy::copyRows(t, other.focusTable_.table());
   t = table_.rwKeywordSet().asTable("WEATHER");
@@ -211,7 +211,7 @@ void Scantable::copySubtables(const Scantable& other) {
 
 void Scantable::attachSubtables()
 {
-  freqTable_ = new STFrequencies(table_);
+  freqTable_ = STFrequencies(table_);
   focusTable_ = STFocus(table_);
   weatherTable_ = STWeather(table_);
   tcalTable_ = STTcal(table_);
@@ -222,7 +222,6 @@ void Scantable::attachSubtables()
 
 Scantable::~Scantable()
 {
-  delete freqTable_;
 }
 
 void Scantable::setupMainTable()
@@ -1509,7 +1508,7 @@ SpectralCoordinate Scantable::getSpectralCoordinate(int whichrow) const {
   const MEpoch& me = timeCol_(whichrow);
   //Double rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
-  return freqTable_->getSpectralCoordinate(md, mp, me, rf,
+  return freqTable_.getSpectralCoordinate(md, mp, me, rf,
                                           mfreqidCol_(whichrow));
 }
 
@@ -1518,7 +1517,7 @@ std::vector< double > Scantable::getAbcissa( int whichrow ) const
   if ( whichrow > int(table_.nrow()) ) throw(AipsError("Illegal row number"));
   std::vector<double> stlout;
   int nchan = specCol_(whichrow).nelements();
-  String us = freqTable_->getUnitString();
+  String us = freqTable_.getUnitString();
   if ( us == "" || us == "pixel" || us == "channel" ) {
     for (int i=0; i<nchan; ++i) {
       stlout.push_back(double(i));
@@ -1585,10 +1584,10 @@ std::string Scantable::getAbcissaLabel( int whichrow ) const
   //const Double& rf = mmolidCol_(whichrow);
   const Vector<Double> rf = moleculeTable_.getRestFrequency(mmolidCol_(whichrow));
   SpectralCoordinate spc =
-    freqTable_->getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
+    freqTable_.getSpectralCoordinate(md, mp, me, rf, mfreqidCol_(whichrow));
 
   String s = "Channel";
-  Unit u = Unit(freqTable_->getUnitString());
+  Unit u = Unit(freqTable_.getUnitString());
   if (u == Unit("km/s")) {
     s = CoordinateUtil::axisLabel(spc, 0, True,True,  True);
   } else if (u == Unit("Hz")) {
@@ -1849,18 +1848,18 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
   Double refpix ;
   Double refval ;
   Double increment ;
-  int freqnrow = freqTable_->table().nrow() ;
+  int freqnrow = freqTable_.table().nrow() ;
   Vector<uInt> oldId( freqnrow ) ;
   Vector<uInt> newId( freqnrow ) ;
   for ( int irow = 0 ; irow < freqnrow ; irow++ ) {
-    freqTable_->getEntry( refpix, refval, increment, irow ) ;
+    freqTable_.getEntry( refpix, refval, increment, irow ) ;
     /***
      * need to shift refpix to nmin
      * note that channel nmin in old index will be channel 0 in new one
      ***/
     refval = refval - ( refpix - nmin ) * increment ;
     refpix = 0 ;
-    freqTable_->setEntry( refpix, refval, increment, irow ) ;
+    freqTable_.setEntry( refpix, refval, increment, irow ) ;
   }
 
   // update nchan
