@@ -10,7 +10,6 @@
 //
 //
 #include <map>
-#include <mcheck.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
