@@ -356,7 +356,7 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
             #p.set_axes('title',title,fontsize=40)
             ymin=1.0e100
             ymax=-1.0e100
-            nchan=s.nchan()
+            nchan=s.nchan(ifnos[int(i/len(polnos))])
             edge=int(nchan*0.01)
             for j in range(4):
                 spmin=min(precal[keys[j]][i][edge:nchan-edge])
@@ -576,7 +576,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
             #p.set_axes('title',title,fontsize=40)
             ymin=1.0e100
             ymax=-1.0e100
-            nchan=scantab.nchan()
+            nchan=scantab.nchan(ifnos[int(i/len(polnos))])
             edge=int(nchan*0.01)
             for j in range(4):
                 spmin=min(precal[keys[j]][i][edge:nchan-edge])
@@ -769,7 +769,7 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
             #p.set_axes('title',title,fontsize=40)
             ymin=1.0e100
             ymax=-1.0e100
-            nchan=s.nchan()
+            nchan=s.nchan(ifnos[2*int(i/len(polnos))])
             edge=int(nchan*0.01)
             for j in range(4):
                 spmin=min(precal[keys[j]][i][edge:nchan-edge])

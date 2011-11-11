@@ -503,7 +503,7 @@ class scantable(Scantable):
              rowno:  the row number to set the spectrum for
 
         """
-        assert(len(spec) == self.nchan())
+        assert(len(spec) == self.nchan(self.getif(rowno)))
         return self._setspectrum(spec, rowno)
 
     def get_coordinate(self, rowno):
@@ -1369,7 +1369,7 @@ class scantable(Scantable):
         if not i:
             msg += "\nThis mask is only valid for IF=%d" % (self.getif(i))
         asaplog.push(msg)
-        n = self.nchan()
+        n = len(data)
         msk = _n_bools(n, False)
         # test if args is a 'list' or a 'normal *args - UGLY!!!
 
@@ -1415,10 +1415,10 @@ class scantable(Scantable):
             raise TypeError("The mask should be list or tuple.")
         if len(mask) < 2:
             raise TypeError("The mask elements should be > 1")
-        if self.nchan() != len(mask):
+        data = self._getabcissa(row)
+        if len(data) != len(mask):
             msg = "Number of channels in scantable != number of mask elements"
             raise TypeError(msg)
-        data = self._getabcissa(row)
         u = self._getcoordinfo()[0]
         if u == "":
             u = "channel"

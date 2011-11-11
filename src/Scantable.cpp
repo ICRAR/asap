@@ -772,7 +772,7 @@ void Scantable::srchChannelsToClip(uInt whichrow, const Float uthres, const Floa
 				   Vector<uChar> flgs)
 {
     Vector<Float> spcs = specCol_(whichrow);
-    uInt nchannel = nchan();
+    uInt nchannel = spcs.nelements();
     if (spcs.nelements() != nchannel) {
       throw(AipsError("Data has incorrect number of channels"));
     }
@@ -836,7 +836,7 @@ void Scantable::applyChanFlag( uInt whichrow, const std::vector<bool>& msk, uCha
     flagsCol_.put(whichrow, flgs);
     return;
   }
-  if ( int(msk.size()) != nchan() ) {
+  if ( int(msk.size()) != nchan( getIF(whichrow) ) ) {
     throw(AipsError("Mask has incorrect number of channels."));
   }
   if ( flgs.nelements() != msk.size() ) {
