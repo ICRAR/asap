@@ -243,8 +243,8 @@ class scantable(Scantable):
                     self._fill([filename], unit, average, opts)
                 elif os.path.isfile(filename):
                     self._fill([filename], unit, average)
-#                    # only apply to new data not "copy constructor"
-#                    self.parallactify(parallactify)
+                    # only apply to new data not "copy constructor"
+                    self.parallactify(parallactify)
                 else:
                     msg = "The given file '%s'is not a valid " \
                           "asap table." % (filename)
