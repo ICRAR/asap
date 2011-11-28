@@ -1589,7 +1589,7 @@ class scantable(Scantable):
         return seldict
 
     def _parse_selection(self, selstr, typestr='float', offset=0.,
-                         minval=None, axval=None):
+                         minval=None, maxval=None):
         """
         Parameters:
             selstr :    The Selection string, e.g., '<3;5~7;100~103;9'
