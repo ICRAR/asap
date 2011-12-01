@@ -1200,7 +1200,7 @@ void OldASDMReader::getTcalAndTsys( vector< vector<float> > &tcal,
       unsigned int numChan = tcalSpec[0].size() ;
       tcal.resize( numReceptor ) ;
       for ( unsigned int ir = 0 ; ir < numReceptor ; ir++ ) {
-        tcal[ir].resize( numReceptor ) ;
+        tcal[ir].resize( numChan ) ;
         for ( unsigned int ic = 0 ; ic < numChan ; ic++ ) {
           tcal[ir][ic] = tcalSpec[ir][ic].get() ;
         }

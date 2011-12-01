@@ -849,21 +849,33 @@ void ASDMReader::getSourceProperty( string &srcname,
                                     double &sysvel,
                                     vector<double> &restfreq ) 
 {
+  String funcName = "getSourceProperty" ;
   ostringstream oss ;
   oss << fieldRow_p->getFieldName() << "__" << vmsData_->v_fieldId[dataIndex_] ;
   fieldname = oss.str() ;
+  SourceRow *srow = 0 ; 
   if ( fieldRow_p->isSourceIdExists() ) {
     int sourceId = fieldRow_p->getSourceId() ;
-    SourceRow *srow = asdm_->getSource().getRowByKey( sourceId, timeInterval_, specWinTag_ ) ;
+    srow = asdm_->getSource().getRowByKey( sourceId, timeInterval_, specWinTag_ ) ;
+  }
+  if ( srow != 0 ) {
+    //logsink_->postLocally( LogMessage("timeInterval_="+String::toString(timeInterval_.getStart().getMJD()),LogOrigin(className_,funcName,WHERE)) ) ;
+    //logsink_->postLocally( LogMessage("specWinTag_="+String::toString(specWinTag_.toString()),LogOrigin(className_,funcName,WHERE)) ) ;
+    //SourceRow *srow = asdm_->getSource().getRowByKey( sourceId, timeInterval_, specWinTag_ ) ;
+    //logsink_->postLocally( LogMessage("sourceId="+String::toString(sourceId),LogOrigin(className_,funcName,WHERE)) ) ;
+    //if ( srow == 0 ) 
+    //logsink_->postLocally( LogMessage("nullpo",LogOrigin(className_,funcName,WHERE)) ) ;
 
     // source name
     srcname = srow->getSourceName() ;
+    //logsink_->postLocally( LogMessage("srcname="+String::toString(srcname),LogOrigin(className_,funcName,WHERE)) ) ;
 
     // source direction
     vector<Angle> srcdirA = srow->getDirection() ;
     srcdir.resize( 2 ) ;
     srcdir[0] = limitedAngle( srcdirA[0].get() ) ;
     srcdir[1] = limitedAngle( srcdirA[1].get() ) ;
+    //logsink_->postLocally( LogMessage("srcdir=["+String::toString(srcdir[0])+","+String::toString(srcdir[1])+"]",LogOrigin(className_,funcName,WHERE)) ) ;
     if ( srow->isDirectionCodeExists() ) {
       DirectionReferenceCodeMod::DirectionReferenceCode dircode = srow->getDirectionCode() ;
       //logsink_->postLocally( LogMessage("dircode="+CDirectionReferenceCode::toString(dircode),LogOrigin(className_,funcName,WHERE)) ) ;
@@ -880,7 +892,7 @@ void ASDMReader::getSourceProperty( string &srcname,
     vector<AngularRate> srcpmA = srow->getProperMotion() ;
     srcpm[0] = srcpmA[0].get() ;
     srcpm[1] = srcpmA[1].get() ;
-
+    //logsink_->postLocally( LogMessage("srcpm=["+String::toString(srcpm[0])+","+String::toString(srcpm[1])+"]",LogOrigin(className_,funcName,WHERE)) ) ;
     // systemic velocity
     if ( srow->isSysVelExists() ) {
       vector<Speed> sysvelV = srow->getSysVel() ;
@@ -890,7 +902,7 @@ void ASDMReader::getSourceProperty( string &srcname,
     else {
       sysvel = 0.0 ;
     }
-
+    //logsink_->postLocally( LogMessage("sysvel="+String::toString(sysvel),LogOrigin(className_,funcName,WHERE)) ) ;
     // rest frequency
     if ( srow->isRestFrequencyExists() ) {
       //logsink_->postLocally( LogMessage("restFrequency exists",LogOrigin(className_,funcName,WHERE)) ) ;
@@ -902,6 +914,7 @@ void ASDMReader::getSourceProperty( string &srcname,
     else {
       restfreq.resize( 0 ) ;
     }
+    //logsink_->postLocally( LogMessage("restfreq.size()="+String::toString(restfreq.size()),LogOrigin(className_,funcName,WHERE)) ) ;
   }
   else {
     srcname = fieldRow_p->getFieldName() ;
@@ -1174,6 +1187,7 @@ void ASDMReader::getTcalAndTsys( vector< vector<float> > &tcal,
 
   vector< vector<float> > defaultT( 1, vector<float>( 1, 1.0 ) ) ;
   SysCalRow *scrow = getSysCalRow() ;
+  //logsink_->postLocally( LogMessage("scrow = "+String::toString((long)scrow),LogOrigin(className_,funcName,WHERE)) ) ;
   if ( scrow == 0 ) {
     tcal = defaultT ;
     tsys = defaultT ;
@@ -1183,6 +1197,8 @@ void ASDMReader::getTcalAndTsys( vector< vector<float> > &tcal,
       vector< vector<Temperature> > tsysSpec = scrow->getTsysSpectrum() ;
       unsigned int numReceptor = tsysSpec.size() ;
       unsigned int numChan = tsysSpec[0].size() ;
+      //logsink_->postLocally( LogMessage("TSYS: numReceptor = "+String::toString(numReceptor),LogOrigin(className_,funcName,WHERE)) ) ;
+      //logsink_->postLocally( LogMessage("TSYS:numChan = "+String::toString(numChan),LogOrigin(className_,funcName,WHERE)) ) ;
       tsys.resize( numReceptor ) ;
       for ( unsigned int ir = 0 ; ir < numReceptor ; ir++ ) {
         tsys[ir].resize( numChan ) ;
@@ -1198,9 +1214,11 @@ void ASDMReader::getTcalAndTsys( vector< vector<float> > &tcal,
       vector< vector<Temperature> > tcalSpec = scrow->getTcalSpectrum() ;
       unsigned int numReceptor = tcalSpec.size() ;
       unsigned int numChan = tcalSpec[0].size() ;
+      //logsink_->postLocally( LogMessage("TCAL: numReceptor = "+String::toString(numReceptor),LogOrigin(className_,funcName,WHERE)) ) ;
+      //logsink_->postLocally( LogMessage("TCAL: numChan = "+String::toString(numChan),LogOrigin(className_,funcName,WHERE)) ) ;
       tcal.resize( numReceptor ) ;
       for ( unsigned int ir = 0 ; ir < numReceptor ; ir++ ) {
-        tcal[ir].resize( numReceptor ) ;
+        tcal[ir].resize( numChan ) ;
         for ( unsigned int ic = 0 ; ic < numChan ; ic++ ) {
           tcal[ir][ic] = tcalSpec[ir][ic].get() ;
         }
