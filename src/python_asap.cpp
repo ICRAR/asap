@@ -83,6 +83,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STCoordinate();
   asap::python::python_STAtmosphere();
   asap::python::python_SrcType();
+  asap::python::python_STGrid();
 
 #ifndef HAVE_LIBPYRAP
   // Use built-in pyconversions.h

@@ -37,6 +37,7 @@ set( PYTHON_MODULES
      ${PYTHONDIR}/selector.py
      ${PYTHONDIR}/simplelinefinder.py
      ${PYTHONDIR}/utils.py 
+     ${PYTHONDIR}/asapgrid.py
      ${PYTHONDIR}/svninfo.txt )
 
 install( PROGRAMS ${PYTHON_MODULES} 

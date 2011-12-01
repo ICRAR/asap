@@ -51,6 +51,7 @@ namespace asap {
     void python_STCoordinate();
     void python_STAtmosphere();
     void python_SrcType();
+    void python_STGrid();
 
   } // python
 } //asap
