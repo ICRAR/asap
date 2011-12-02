@@ -24,9 +24,9 @@ class asapgrid:
     def save( self, outfile='' ):
         self.outfile = self.gridder._save( outfile ) 
 
-    def plot( self ):
+    def plot( self, plotchan=-1 ):
         plotter = _SDGridPlotter( self.infile, self.outfile )
-        plotter.plot()
+        plotter.plot( chan=plotchan )
         
 class _SDGridPlotter:
     def __init__( self, infile, outfile=None ):
@@ -57,7 +57,7 @@ class _SDGridPlotter:
         del s
 
         idx = spectra.nonzero()[1]
-        self.nonzero = self.pointing.take( idx, axis=1 )
+        #self.nonzero = self.pointing.take( idx, axis=1 )
         
         s = scantable( self.outfile, average=False )
         self.grid = numpy.array( s.get_directionval() ).transpose()
@@ -84,13 +84,15 @@ class _SDGridPlotter:
     def plot( self, chan=-1 ):
         if chan < 0:
             data = self.data.mean(axis=0)
+            title = 'Gridded Image (averaged over channel)'
         else:
             data = self.data[chan]
+            title = 'Gridded Image (channel %s)'%(chan)
         pl.figure(10)
         pl.clf()
         pl.plot(self.grid[0],self.grid[1],'.',color='blue')
         pl.plot(self.pointing[0],self.pointing[1],'.',color='red')
-        pl.plot(self.nonzero[0],self.nonzero[1],'o',color='green')
+        #pl.plot(self.nonzero[0],self.nonzero[1],'o',color='green')
         extent=[self.grid[0].min()-0.5*self.cellx,
                 self.grid[0].max()+0.5*self.cellx,
                 self.grid[1].min()-0.5*self.celly,
@@ -99,3 +101,4 @@ class _SDGridPlotter:
         pl.colorbar()
         pl.xlabel('R.A. [rad]')
         pl.ylabel('Dec. [rad]')
+        pl.title( title )
