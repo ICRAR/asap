@@ -146,12 +146,18 @@ void STGrid::grid()
   //cout << "rflagI.shape() = " << rflagI.shape() << endl ;
   
   // grid parameter
-  cout << "----------" << endl ;
-  cout << "Grid parameter summary" << endl ;
-  cout << "   (nx,ny) = (" << nx_ << "," << ny_ << ")" << endl ;
-  cout << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
-  cout << "   center = " << center_ << endl ;
-  cout << "----------" << endl ;
+//   cout << "----------" << endl ;
+//   cout << "Grid parameter summary" << endl ;
+//   cout << "   (nx,ny) = (" << nx_ << "," << ny_ << ")" << endl ;
+//   cout << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
+//   cout << "   center = " << center_ << endl ;
+//   cout << "----------" << endl ;
+
+  // convolution kernel
+  Vector<Float> convFunc ;
+  setConvFunc( convFunc ) ;
+  //cout << "convSupport=" << convSupport_ << endl ;
+  //cout << "convFunc=" << convFunc << endl ;
 
   // world -> pixel
   Matrix<Double> xypos( direction.shape(), 0.0 ) ;
@@ -161,16 +167,12 @@ void STGrid::grid()
   //cout << "max(xypos.row(1))=" << max(xypos.row(1)) << endl ;
   //cout << "min(xypos.row(1))=" << min(xypos.row(1)) << endl ;
 //   for ( Int irow = 0 ; irow < nrow ; irow++ ) {
-//     cout << irow << ": xypos=" << xypos.column( irow ) 
-//          << " data = " << spectra.column( irow ) << endl ;
+//     if ( spectra.column( irow )(0) > 0.0 ) {
+//       cout << irow << ": xypos=" << xypos.column( irow ) 
+//            << " data = " << spectra.column( irow ) << endl ;
+//     }
 //   }
   
-  // convolution kernel
-  Vector<Float> convFunc ;
-  setConvFunc( convFunc ) ;
-  //cout << "convSupport=" << convSupport_ << endl ;
-  //cout << "convFunc=" << convFunc << endl ;
-
   // weighting factor
   Matrix<Float> weight( IPosition( 2, nchan, nrow ), 1.0 ) ;
 
@@ -185,7 +187,11 @@ void STGrid::grid()
   const Int *rflag_p = rflagI.getStorage( deleteFlagR ) ;
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
   Int npol = 1 ;
-  IPosition gshape( 4, nx_, ny_, npol, nchan ) ;
+  // Extend grid plane with convSupport_
+  //IPosition gshape( 4, nx_, ny_, npol, nchan ) ;
+  Int gnx = nx_+convSupport_*2 ;
+  Int gny = ny_+convSupport_*2 ;
+  IPosition gshape( 4, gnx, gny, npol, nchan ) ;
   Array<Complex> gdataArrC( gshape, 0.0 ) ;
   Array<Float> gwgtArr( gshape, 0.0 ) ;
   Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
@@ -228,8 +234,10 @@ void STGrid::grid()
            &irow,
            gdata_p,
            wdata_p, 
-           &nx_, 
-           &ny_,
+           //&nx_, 
+           //&ny_,
+           &gnx,
+           &gny,
            &npol,
            &nchan,
            &convSupport_,
@@ -249,7 +257,6 @@ void STGrid::grid()
   gdataArrC.putStorage( gdata_p, deleteDataG ) ;
   gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
   Array<Float> gdataArr = real( gdataArrC ) ;
-  //Array<Float> gdataArrN( gdataArr.shape(), 0.0 ) ;
   data_.resize( gdataArr.shape() ) ;
   data_ = 0.0 ;
   for ( Int ix = 0 ; ix < nx_ ; ix++ ) {
@@ -257,9 +264,11 @@ void STGrid::grid()
       for ( Int ip = 0 ; ip < npol ; ip++ ) {
         for ( Int ic = 0 ; ic < nchan ; ic++ ) {
           IPosition pos( 4, ix, iy, ip, ic ) ;
-          if ( gwgtArr( pos ) > 0.0 ) 
-            //gdataArrN( pos ) = gdataArr( pos ) / gwgtArr( pos ) ;
-            data_( pos ) = gdataArr( pos ) / gwgtArr( pos ) ;
+          //if ( gwgtArr( pos ) > 0.0 ) 
+          //  data_( pos ) = gdataArr( pos ) / gwgtArr( pos ) ;
+          IPosition gpos( 4, ix+convSupport_, iy+convSupport_, ip, ic ) ;
+          if ( gwgtArr( gpos ) > 0.0 ) 
+            data_( pos ) = gdataArr( gpos ) / gwgtArr( gpos ) ;
         }
       }
     }
@@ -268,7 +277,7 @@ void STGrid::grid()
   //cout << "sumWeight = " << sumWeight << endl ;
   //cout << "gdataArr = " << gdataArr << endl ;
   //cout << "gwgtArr = " << gwgtArr << endl ;
-  //cout << "gdataArr/gwgtArr = " << gdataArrN << endl ;
+  //cout << "data_ " << data_ << endl ;
 }
 
 void STGrid::setupGrid( Int &nx, 
@@ -282,9 +291,46 @@ void STGrid::setupGrid( Int &nx,
                         String &center )
 {
   //cout << "nx=" << nx << ", ny=" << ny << endl ;
-  Double wx = xmax - xmin ;
-  Double wy = ymax - ymin ;
-  // take some margin
+
+  // center position
+  if ( center.size() == 0 ) {
+    center_(0) = 0.5 * ( xmin + xmax ) ;
+    center_(1) = 0.5 * ( ymin + ymax ) ;
+  }
+  else {
+    String::size_type pos0 = center.find( " " ) ;
+    if ( pos0 == String::npos ) {
+      throw AipsError( "bad string format in parameter center" ) ;
+    }
+    String::size_type pos1 = center.find( " ", pos0+1 ) ;
+    String typestr, xstr, ystr ;
+    if ( pos1 != String::npos ) {
+      typestr = center.substr( 0, pos0 ) ;
+      xstr = center.substr( pos0+1, pos1-pos0 ) ;
+      ystr = center.substr( pos1+1 ) ;
+      // todo: convert to J2000 (or direction ref for DIRECTION column)
+    }
+    else {
+      typestr = "J2000" ;
+      xstr = center.substr( 0, pos0 ) ;
+      ystr = center.substr( pos0+1 ) ;
+    }
+    QuantumHolder qh ;
+    String err ;
+    qh.fromString( err, xstr ) ;
+    Quantum<Double> xcen = qh.asQuantumDouble() ;
+    qh.fromString( err, ystr ) ;
+    Quantum<Double> ycen = qh.asQuantumDouble() ;
+    center_(0) = xcen.getValue( "rad" ) ;
+    center_(1) = ycen.getValue( "rad" ) ;
+  }
+
+
+  //Double wx = xmax - xmin ;
+  //Double wy = ymax - ymin ;
+  Double wx = max( abs(xmax-center_(0)), abs(xmin-center_(0)) ) * 2 ;
+  Double wy = max( abs(ymax-center_(1)), abs(ymin-center_(1)) ) * 2 ;
+  // take 10% margin
   wx *= 1.10 ;
   wy *= 1.10 ;
   Quantum<Double> qcellx ;
@@ -330,38 +376,6 @@ void STGrid::setupGrid( Int &nx,
   if ( nx_ < 0 ) {
     nx_ = Int( ceil( wx/cellx_ ) ) ;
     ny_ = Int( ceil( wy/celly_ ) ) ;
-  }
-
-  if ( center.size() == 0 ) {
-    center_(0) = 0.5 * ( xmin + xmax ) ;
-    center_(1) = 0.5 * ( ymin + ymax ) ;
-  }
-  else {
-    String::size_type pos0 = center.find( " " ) ;
-    if ( pos0 == String::npos ) {
-      throw AipsError( "bad string format in parameter center" ) ;
-    }
-    String::size_type pos1 = center.find( " ", pos0+1 ) ;
-    String typestr, xstr, ystr ;
-    if ( pos1 != String::npos ) {
-      typestr = center.substr( 0, pos0 ) ;
-      xstr = center.substr( pos0+1, pos1-pos0 ) ;
-      ystr = center.substr( pos1+1 ) ;
-      // todo: convert to J2000 (or direction ref for DIRECTION column)
-    }
-    else {
-      typestr = "J2000" ;
-      xstr = center.substr( 0, pos0 ) ;
-      ystr = center.substr( pos0+1 ) ;
-    }
-    QuantumHolder qh ;
-    String err ;
-    qh.fromString( err, xstr ) ;
-    Quantum<Double> xcen = qh.asQuantumDouble() ;
-    qh.fromString( err, ystr ) ;
-    Quantum<Double> ycen = qh.asQuantumDouble() ;
-    center_(0) = xcen.getValue( "rad" ) ;
-    center_(1) = ycen.getValue( "rad" ) ;
   }
 }
 
@@ -418,9 +432,13 @@ void STGrid::toInt( Vector<uInt> &u, Vector<Int> &v )
 
 void STGrid::toPixel( Matrix<Double> &world, Matrix<Double> &pixel )
 {
+  // gridding will be done on (nx_+2*convSupport_) x (ny_+2*convSupport_) 
+  // grid plane to avoid unexpected behavior on grid edge
   Vector<Double> pixc( 2 ) ;
-  pixc(0) = Double( nx_-1 ) * 0.5 ;
-  pixc(1) = Double( ny_-1 ) * 0.5 ;
+  //pixc(0) = Double( nx_-1 ) * 0.5 ;
+  //pixc(1) = Double( ny_-1 ) * 0.5 ;
+  pixc(0) = Double( nx_+2*convSupport_-1 ) * 0.5 ;
+  pixc(1) = Double( ny_+2*convSupport_-1 ) * 0.5 ;
   uInt nrow = world.shape()[1] ;
   Vector<Double> cell( 2 ) ;
   cell(0) = cellx_ ;
@@ -501,8 +519,11 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
     convFunc.resize( convSize ) ;
     gaussFunc( convFunc ) ;
   }
-  else if ( convType_ == "PB" )
+  else if ( convType_ == "PB" ) {
+    if ( convSupport_ < 0 ) 
+      convSupport_ = 0 ;
     pbFunc( convFunc ) ;
+  }
   else {
     throw AipsError( "Unsupported convolution function" ) ;
   }
