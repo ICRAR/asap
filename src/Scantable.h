@@ -479,7 +479,7 @@ public:
    * @param[in] flag true or false
    */
   void parallactify(bool flag)
-    { focus().setParallactify(flag); }
+    { focusTable_.setParallactify(flag); }
 
   /**
    * Reshape spectrum
