@@ -21,6 +21,9 @@ class asapgrid:
     def setOption( self, convType='box', convSupport=-1 ):
         self.gridder._setoption( convType, convSupport )
 
+    def setWeight( self, weightType='uniform' ):
+        self.gridder._setweight( weightType ) 
+
     def grid( self ):
         self.gridder._grid()
 

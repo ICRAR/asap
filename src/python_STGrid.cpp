@@ -20,16 +20,12 @@ void python_STGrid() {
   class_<STGrid>("stgrid")
     .def( init <> () )
     .def( init < const std::string > () )
-    //.def( init < const STGrid& > () )
-//     .def("_defineimage", &STGridWrapper::defineImage)
-//     .def("_setoption", &STGridWrapper::setOption)
-//     .def("_grid", &STGridWrapper::grid)
     .def("_setpollist", &STGrid::setPolList)
     .def("_defineimage", &STGrid::defineImage)
     .def("_setoption", &STGrid::setOption)
     .def("_grid", &STGrid::grid)
     .def("_setin", &STGrid::setFileIn)
-//     .def("_setout", &STGrid::setFileOut)
+    .def("_setweight", &STGrid::setWeight)
     .def("_save", &STGrid::saveData)
     ;
 };

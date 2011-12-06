@@ -57,6 +57,9 @@ public:
                     string scenter="" ) ;
   void setOption( string convtype="box",
                   int convsupport=-1 ) ;
+
+  void setWeight( const string wType="uniform" ) ;
+
   void grid() ;
   
   string saveData( string outfile="" ) ;
@@ -78,7 +81,12 @@ private:
                 Cube<Float> &spectra,
                 Matrix<Double> &direction,
                 Cube<uChar> &flagtra,
-                Matrix<uInt> &rflag ) ;
+                Matrix<uInt> &rflag,
+                Matrix<Float> &weight ) ;
+
+  void getWeight( Matrix<Float> &w,
+                  Cube<Float> &tsys,
+                  Matrix<Double> &tint ) ;
 
   void toInt( Array<uChar> *u, Array<Int> *v ) ;
   void toInt( Array<uInt> *u, Array<Int> *v ) ;
@@ -94,6 +102,10 @@ private:
   String infile_ ;
   Int nx_ ;
   Int ny_ ;
+  Int npol_ ;
+  Int nchan_ ;
+  Int nrow_ ;
+  Int ngrid_ ;
   Double cellx_ ;
   Double celly_ ;
   Vector<Double> center_ ;
@@ -103,6 +115,7 @@ private:
   Int convSampling_ ;
   Array<Float> data_ ;
   Vector<uInt> pollist_ ;
+  String wtype_ ;
 
   Table tab_ ;
 };
