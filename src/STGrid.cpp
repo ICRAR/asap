@@ -12,6 +12,8 @@
 #include <casa/Utilities/CountedPtr.h>
 
 #include <tables/Tables/Table.h>
+#include <tables/Tables/TableRecord.h>
+#include <tables/Tables/ExprNode.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
 
@@ -59,6 +61,13 @@ void STGrid::setFileIn( const string infile )
     infile_ = String( infile ) ;
     tab_ = Table( infile_ ) ;
   }
+}
+
+void STGrid::setPolList( vector<unsigned int> pols )
+{
+  //pollist_ = Vector<uInt>( pols ) ;
+  pollist_.assign( Vector<uInt>( pols ) ) ;
+  cout << "pollist_ = " << pollist_ << endl ;
 }
 
 void STGrid::defineImage( int nx,
@@ -125,25 +134,29 @@ void STGrid::grid()
 {
 
   // retrieve data
-  Matrix<Float> spectra ;
+  Cube<Float> spectra ;
   Matrix<Double> direction ;
-  Matrix<uChar> flagtra ;
-  Vector<uInt> rflag ;
+  Cube<uChar> flagtra ;
+  Matrix<uInt> rflag ;
   getData( infile_, spectra, direction, flagtra, rflag ) ;
   IPosition sshape = spectra.shape() ;
-  Int nchan = sshape[0] ;
-  Int nrow = sshape[1] ;
-  //cout << "data.shape()=" << data.shape() << endl ;
+  Int npol = sshape[0] ;
+  Int nchan = sshape[1] ;
+  Int nrow = sshape[2] ;
+  cout << "spectra.shape()=" << spectra.shape() << endl ;
+  cout << "max(spectra) = " << max(spectra) << endl ;
 
   // flagtra: uChar -> Int
   // rflag: uInt -> Int
-  Matrix<Int> flagI ;
-  Vector<Int> rflagI ;
-  toInt( flagtra, flagI ) ;
-  toInt( rflag, rflagI ) ;
+//   Matrix<Int> flagI ;
+//   Vector<Int> rflagI ;
+  Cube<Int> flagI ;
+  Matrix<Int> rflagI ;
+  toInt( &flagtra, &flagI ) ;
+  toInt( &rflag, &rflagI ) ;
   
-  //cout << "flagI.shape() = " << flagI.shape() << endl ;
-  //cout << "rflagI.shape() = " << rflagI.shape() << endl ;
+  cout << "flagI.shape() = " << flagI.shape() << endl ;
+  cout << "rflagI.shape() = " << rflagI.shape() << endl ;
   
   // grid parameter
 //   cout << "----------" << endl ;
@@ -176,17 +189,18 @@ void STGrid::grid()
   // weighting factor
   Matrix<Float> weight( IPosition( 2, nchan, nrow ), 1.0 ) ;
 
-  // call ggridsd
+//   // call ggridsd
   Bool deletePos, deleteData, deleteWgt, deleteFlag, deleteFlagR, deleteConv, deleteDataG, deleteWgtG ;
   Double *xypos_p = xypos.getStorage( deletePos ) ;
-  Matrix<Complex> dataC( spectra.shape(), 0.0 ) ;
+  //Matrix<Complex> dataC( spectra.shape(), 0.0 ) ;
+  Cube<Complex> dataC( spectra.shape(), 0.0 ) ;
   setReal( dataC, spectra ) ;
   const Complex *data_p = dataC.getStorage( deleteData ) ;
   const Float *wgt_p = weight.getStorage( deleteWgt ) ;
   const Int *flag_p = flagI.getStorage( deleteFlag ) ;
   const Int *rflag_p = rflagI.getStorage( deleteFlagR ) ;
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
-  Int npol = 1 ;
+  //Int npol = 1 ;
   // Extend grid plane with convSupport_
   //IPosition gshape( 4, nx_, ny_, npol, nchan ) ;
   Int gnx = nx_+convSupport_*2 ;
@@ -234,8 +248,6 @@ void STGrid::grid()
            &irow,
            gdata_p,
            wdata_p, 
-           //&nx_, 
-           //&ny_,
            &gnx,
            &gny,
            &npol,
@@ -380,28 +392,77 @@ void STGrid::setupGrid( Int &nx,
 }
 
 void STGrid::getData( String &infile, 
-                      Matrix<Float> &spectra,
+                      Cube<Float> &spectra,
                       Matrix<Double> &direction,
-                      Matrix<uChar> &flagtra,
-                      Vector<uInt> &rflag ) 
+                      Cube<uChar> &flagtra,
+                      Matrix<uInt> &rflag ) 
 {
   Table tab( infile ) ;
-  ROArrayColumn<Float> spectraCol( tab, "SPECTRA" ) ;
-  ROArrayColumn<Double> directionCol( tab, "DIRECTION" ) ;
-  ROArrayColumn<uChar> flagtraCol( tab, "FLAGTRA" ) ;
-  ROScalarColumn<uInt> rflagCol( tab, "FLAGROW" ) ;
-  spectraCol.getColumn( spectra ) ;
-  directionCol.getColumn( direction ) ;
-  flagtraCol.getColumn( flagtra ) ;
-  rflagCol.getColumn( rflag ) ;
+  //uInt npol = tab.keywordSet().asuInt( "nPol" ) ;
+  ROScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
+  //uInt npol = max( polnoCol.getColumn() ) + 1 ;
+  Vector<uInt> pols = polnoCol.getColumn() ;
+  Vector<uInt> pollistOrg ;
+  uInt npolOrg = 0 ;
+  for ( uInt i = 0 ; i < pols.size() ; i++ ) {
+    if ( allNE( pollistOrg, pols[i] ) ) {
+      pollistOrg.resize( npolOrg+1, True ) ;
+      pollistOrg[npolOrg] = pols[i] ;
+      npolOrg++ ;
+    }
+  }
+  if ( pollist_.size() == 0 )
+    pollist_ = pollistOrg ;
+  else {
+    Vector<uInt> newlist ;
+    uInt newsize = 0 ;
+    for ( uInt i = 0 ; i < pollist_.size() ; i++ ) {
+      if ( anyEQ( pols, pollist_[i] ) ) {
+        newlist.resize( newsize+1, True ) ;
+        newlist[newsize] = pollist_[i] ;
+        newsize++ ;
+      }
+    }
+    pollist_ = newlist ;
+  }
+  uInt npol = pollist_.size() ;
+  ROArrayColumn<uChar> tmpCol( tab, "FLAGTRA" ) ;
+  uInt nchan = tmpCol( 0 ).nelements() ;
+  uInt nrow = tab.nrow() / npolOrg ;
+  cout << "npol = " << npol << endl ;
+  cout << "nchan = " << nchan << endl ;
+  cout << "nrow = " << nrow << endl ;
+  spectra.resize( npol, nchan, nrow ) ;
+  flagtra.resize( npol, nchan, nrow ) ;
+  rflag.resize( npol, nrow ) ;
+  cout << "pollist_=" << pollist_ << endl ;
+  for ( uInt ipol = 0 ; ipol < npol ; ipol++ ) {
+    Table subt = tab( tab.col("POLNO") == pollist_[ipol] ) ;
+    ROArrayColumn<Float> spectraCol( subt, "SPECTRA" ) ;
+    ROArrayColumn<Double> directionCol( subt, "DIRECTION" ) ;
+    ROArrayColumn<uChar> flagtraCol( subt, "FLAGTRA" ) ;
+    ROScalarColumn<uInt> rflagCol( subt, "FLAGROW" ) ;
+    Matrix<Float> tmpF = spectra.yzPlane( ipol ) ;
+    Matrix<uChar> tmpUC = flagtra.yzPlane( ipol ) ;
+    Vector<uInt> tmpUI = rflag.row( ipol ) ;
+    cout << "tmpF.shape()=" << tmpF.shape() << endl ;
+    cout << "tmpUC.shape()=" << tmpUC.shape() << endl ;
+    cout << "tmpUI.shape()=" << tmpUI.shape() << endl ;
+    spectraCol.getColumn( tmpF ) ;
+    flagtraCol.getColumn( tmpUC ) ;
+    rflagCol.getColumn( tmpUI ) ;
+    if ( ipol == 0 )
+      directionCol.getColumn( direction ) ;
+  }
+  cout << "getData end" << endl ;
 }
 
-void STGrid::toInt( Matrix<uChar> &u, Matrix<Int> &v ) 
+void STGrid::toInt( Array<uChar> *u, Array<Int> *v ) 
 {
-  uInt len = u.nelements() ;
+  uInt len = u->nelements() ;
   Int *int_p = new Int[len] ;
   Bool deleteIt ;
-  const uChar *data_p = u.getStorage( deleteIt ) ;
+  const uChar *data_p = u->getStorage( deleteIt ) ;
   Int *i_p = int_p ;
   const uChar *u_p = data_p ;
   for ( uInt i = 0 ; i < len ; i++ ) {
@@ -409,16 +470,16 @@ void STGrid::toInt( Matrix<uChar> &u, Matrix<Int> &v )
     i_p++ ;
     u_p++ ;
   }
-  u.freeStorage( data_p, deleteIt ) ;
-  v.takeStorage( u.shape(), int_p, TAKE_OVER ) ;
+  u->freeStorage( data_p, deleteIt ) ;
+  v->takeStorage( u->shape(), int_p, TAKE_OVER ) ;
 }
 
-void STGrid::toInt( Vector<uInt> &u, Vector<Int> &v ) 
+void STGrid::toInt( Array<uInt> *u, Array<Int> *v ) 
 {
-  uInt len = u.nelements() ;
+  uInt len = u->nelements() ;
   Int *int_p = new Int[len] ;
   Bool deleteIt ;
-  const uInt *data_p = u.getStorage( deleteIt ) ;
+  const uInt *data_p = u->getStorage( deleteIt ) ;
   Int *i_p = int_p ;
   const uInt *u_p = data_p ;
   for ( uInt i = 0 ; i < len ; i++ ) {
@@ -426,8 +487,8 @@ void STGrid::toInt( Vector<uInt> &u, Vector<Int> &v )
     i_p++ ;
     u_p++ ;
   }
-  u.freeStorage( data_p, deleteIt ) ;
-  v.takeStorage( u.shape(), int_p, TAKE_OVER ) ;
+  u->freeStorage( data_p, deleteIt ) ;
+  v->takeStorage( u->shape(), int_p, TAKE_OVER ) ;
 }
 
 void STGrid::toPixel( Matrix<Double> &world, Matrix<Double> &pixel )
@@ -531,7 +592,7 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
 
 string STGrid::saveData( string outfile )
 {
-  Int polno = 0 ;
+  //Int polno = 0 ;
   string outfile_ ;
   if ( outfile.size() == 0 ) {
     if ( infile_.lastchar() == '/' ) {
@@ -549,11 +610,12 @@ string STGrid::saveData( string outfile )
   //cout << "ref->nchan()=" << ref->nchan() << endl ;
   CountedPtr<Scantable> out( new Scantable( *ref, True ) ) ;
   Table tab = out->table() ;
-  Int nrow = nx_ * ny_ ;
-  tab.addRow( nrow ) ;
   IPosition dshape = data_.shape() ;
   Int npol = dshape[2] ;
   Int nchan = dshape[3] ;
+  Int nrow = nx_ * ny_ * npol ;
+  tab.rwKeywordSet().define( "nPol", npol ) ;
+  tab.addRow( nrow ) ;
   Vector<Double> cpix( 2 ) ;
   cpix(0) = Double( nx_ - 1 ) * 0.5 ;
   cpix(1) = Double( ny_ - 1 ) * 0.5 ;
@@ -573,7 +635,7 @@ string STGrid::saveData( string outfile )
         dir(1) = center_(1) - ( cpix(1) - (Double)iy ) * celly_ ;
         spectraCol.put( irow, sp ) ;
         directionCol.put( irow, dir ) ;
-        polnoCol.put( irow, polno ) ;
+        polnoCol.put( irow, pollist_[ipol] ) ;
         irow++ ;
       }
     }

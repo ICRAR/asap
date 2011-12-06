@@ -15,11 +15,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/Vector.h>
-// #include <casa/Arrays/Matrix.h>
-// #include <casa/Arrays/Cube.h>
+#include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/Cube.h>
 // #include <casa/Arrays/ArrayMath.h>
 // #include <casa/Inputs/Input.h>
 // #include <casa/Quanta/Quantum.h>
@@ -46,7 +47,8 @@ public:
   virtual ~STGrid() {} ;
 
   void setFileIn( const string infile ) ;
-//   void setFileOut( const string outfile ) ;
+
+  void setPolList( vector<unsigned int> pols ) ;
 
   void defineImage( int nx=-1,
                     int ny=-1,
@@ -73,13 +75,13 @@ private:
                   String &center ) ;
   
   void getData( String &infile, 
-                Matrix<Float> &spectra,
+                Cube<Float> &spectra,
                 Matrix<Double> &direction,
-                Matrix<uChar> &flagtra,
-                Vector<uInt> &rflag ) ;
+                Cube<uChar> &flagtra,
+                Matrix<uInt> &rflag ) ;
 
-  void toInt( Matrix<uChar> &u, Matrix<Int> &v ) ;
-  void toInt( Vector<uInt> &u, Vector<Int> &v ) ;
+  void toInt( Array<uChar> *u, Array<Int> *v ) ;
+  void toInt( Array<uInt> *u, Array<Int> *v ) ;
 
   void toPixel( Matrix<Double> &world, Matrix<Double> &pixel ) ;
   
@@ -100,6 +102,7 @@ private:
   Int userSupport_ ;
   Int convSampling_ ;
   Array<Float> data_ ;
+  Vector<uInt> pollist_ ;
 
   Table tab_ ;
 };

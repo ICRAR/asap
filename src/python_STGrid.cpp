@@ -2,6 +2,7 @@
 //# python_STGrid.cc: python exposure of c++ STGrid class
 //#---------------------------------------------------------------------------
 #include <string>
+#include <vector>
 
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
@@ -23,6 +24,7 @@ void python_STGrid() {
 //     .def("_defineimage", &STGridWrapper::defineImage)
 //     .def("_setoption", &STGridWrapper::setOption)
 //     .def("_grid", &STGridWrapper::grid)
+    .def("_setpollist", &STGrid::setPolList)
     .def("_defineimage", &STGrid::defineImage)
     .def("_setoption", &STGrid::setOption)
     .def("_grid", &STGrid::grid)
