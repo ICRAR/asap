@@ -20,6 +20,7 @@ void python_STGrid() {
   class_<STGrid>("stgrid")
     .def( init <> () )
     .def( init < const std::string > () )
+    .def("_setif", &STGrid::setIF)
     .def("_setpollist", &STGrid::setPolList)
     .def("_defineimage", &STGrid::defineImage)
     .def("_setoption", &STGrid::setOption)

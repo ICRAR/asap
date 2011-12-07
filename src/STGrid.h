@@ -48,6 +48,8 @@ public:
 
   void setFileIn( const string infile ) ;
 
+  void setIF( unsigned int ifno ) { ifno_ = ifno ; } ;
+
   void setPolList( vector<unsigned int> pols ) ;
 
   void defineImage( int nx=-1,
@@ -77,8 +79,7 @@ private:
                   Double &ymax,
                   String &center ) ;
   
-  void getData( String &infile, 
-                Cube<Float> &spectra,
+  void getData( Cube<Float> &spectra,
                 Matrix<Double> &direction,
                 Cube<uChar> &flagtra,
                 Matrix<uInt> &rflag,
@@ -98,14 +99,15 @@ private:
   void gaussFunc( Vector<Float> &convFunc ) ;
   void pbFunc( Vector<Float> &convFunc ) ;
   void setConvFunc( Vector<Float> &convFunc ) ;
+  void selectData( Table &tab ) ;
 
   String infile_ ;
+  Int ifno_ ;
   Int nx_ ;
   Int ny_ ;
   Int npol_ ;
   Int nchan_ ;
   Int nrow_ ;
-  Int ngrid_ ;
   Double cellx_ ;
   Double celly_ ;
   Vector<Double> center_ ;

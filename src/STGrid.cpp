@@ -44,12 +44,12 @@ STGrid::STGrid( const string infile )
 
 void  STGrid::init() 
 {
+  ifno_ = -1 ;
   nx_ = -1 ;
   ny_ = -1 ;
   npol_ = 0 ;
   nchan_ = 0 ;
   nrow_ = 0 ;
-  ngrid_ = 0 ;
   cellx_ = 0.0 ;
   celly_ = 0.0 ;
   center_ = Vector<Double> ( 2, 0.0 ) ;
@@ -153,7 +153,7 @@ void STGrid::grid()
   Cube<uChar> flagtra ;
   Matrix<uInt> rflag ;
   Matrix<Float> weight ;
-  getData( infile_, spectra, direction, flagtra, rflag, weight ) ;
+  getData( spectra, direction, flagtra, rflag, weight ) ;
   IPosition sshape = spectra.shape() ;
   //os << "spectra.shape()=" << spectra.shape() << LogIO::POST ;
   //os << "max(spectra) = " << max(spectra) << LogIO::POST ;
@@ -167,12 +167,14 @@ void STGrid::grid()
   toInt( &rflag, &rflagI ) ;
   
   // grid parameter
-//   os << "----------" << endl ;
-//   os << "Grid parameter summary" << endl ;
-//   os << "   (nx,ny) = (" << nx_ << "," << ny_ << ")" << endl ;
-//   os << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
-//   os << "   center = " << center_ << endl ;
-//   os << "----------" << LogIO::POST ;
+  os << LogIO::DEBUGGING ;
+  os << "----------" << endl ;
+  os << "Grid parameter summary" << endl ;
+  os << "   (nx,ny) = (" << nx_ << "," << ny_ << ")" << endl ;
+  os << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
+  os << "   center = " << center_ << endl ;
+  os << "----------" << LogIO::POST ;
+  os << LogIO::NORMAL ;
 
   // convolution kernel
   Vector<Float> convFunc ;
@@ -383,17 +385,38 @@ void STGrid::setupGrid( Int &nx,
   }
 }
 
-void STGrid::getData( String &infile, 
-                      Cube<Float> &spectra,
+void STGrid::selectData( Table &tab )
+{
+  Int ifno = ifno_ ;
+  Table taborg( infile_ ) ;
+  if ( ifno == -1 ) {
+    LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+//     os << LogIO::SEVERE
+//        << "Please set IFNO before actual gridding" 
+//        << LogIO::EXCEPTION ;
+    ROScalarColumn<uInt> ifnoCol( taborg, "IFNO" ) ;
+    ifno = ifnoCol( 0 ) ;
+    os << LogIO::WARN
+       << "IFNO is not given. Using default IFNO: " << ifno << LogIO::POST ;
+  }
+  tab = taborg( taborg.col("IFNO") == ifno ) ;
+  if ( tab.nrow() == 0 ) {
+    LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+    os << LogIO::SEVERE
+       << "No corresponding rows for given IFNO: " << ifno 
+       << LogIO::EXCEPTION ;
+  }
+}
+
+void STGrid::getData( Cube<Float> &spectra,
                       Matrix<Double> &direction,
                       Cube<uChar> &flagtra,
                       Matrix<uInt> &rflag,
                       Matrix<Float> &weight ) 
 {
-  Table tab( infile ) ;
-  //uInt npol = tab.keywordSet().asuInt( "nPol" ) ;
+  Table tab ;
+  selectData( tab ) ;
   ROScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
-  //uInt npol = max( polnoCol.getColumn() ) + 1 ;
   Vector<uInt> pols = polnoCol.getColumn() ;
   Vector<uInt> pollistOrg ;
   uInt npolOrg = 0 ;
@@ -508,7 +531,7 @@ void STGrid::getWeight( Matrix<Float> &w,
 
   if ( npol_ > 1 ) {
     LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
-    os << LogIO::WARN << "STGrid doesn't support assigning independent polarization-dependent weight. Use averaged weight over polarization." << LogIO::POST ;
+    os << LogIO::WARN << "STGrid doesn't support assigning polarization-dependent weight. Use averaged weight over polarization." << LogIO::POST ;
   }
 }
 
@@ -666,8 +689,6 @@ string STGrid::saveData( string outfile )
   CountedPtr<Scantable> out( new Scantable( *ref, True ) ) ;
   Table tab = out->table() ;
   IPosition dshape = data_.shape() ;
-  //Int npol = dshape[2] ;
-  //Int nchan = dshape[3] ;
   Int nrow = nx_ * ny_ * npol_ ;
   tab.rwKeywordSet().define( "nPol", npol_ ) ;
   tab.addRow( nrow ) ;

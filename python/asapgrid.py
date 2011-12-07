@@ -12,6 +12,9 @@ class asapgrid:
     def setData( self, infile ):
         self.gridder._setin( infile )
 
+    def setIF( self, ifno ):
+        self.gridder._setif( ifno )
+
     def setPolList( self, pollist ):
         self.gridder._setpollist( pollist )
 
