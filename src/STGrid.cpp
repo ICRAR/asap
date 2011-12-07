@@ -622,8 +622,11 @@ void STGrid::spheroidalFunc( Vector<Float> &convFunc )
 void STGrid::gaussFunc( Vector<Float> &convFunc ) 
 {
   convFunc = 0.0 ;
-  for ( Int i = 0 ; i < convSampling_*convSupport_ ; i++ ) {
-    Double hwhm = convSampling_ * convSupport_ * 0.25 ;
+  // HWHM of the Gaussian is convSupport_ / 4
+  // To take into account Gaussian tail, kernel cutoff is set to 4 * HWHM
+  Int len = convSampling_ * convSupport_ ;
+  Double hwhm = len * 0.25 ;
+  for ( Int i = 0 ; i < len ; i++ ) {
     Double val = Double(i) / hwhm ;
     convFunc(i) = exp( -log(2)*val*val ) ;
   }
@@ -652,8 +655,12 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
     spheroidalFunc( convFunc ) ;
   }
   else if ( convType_ == "GAUSS" ) {
+    // to take into account Gaussian tail
     if ( convSupport_ < 0 )
-      convSupport_ = 3 ;
+      convSupport_ = 12 ; // 3 * 4
+    else {
+      convSupport_ = userSupport_ * 4 ;
+    }
     Int convSize = convSampling_ * ( 2 * convSupport_ + 2 ) ;
     convFunc.resize( convSize ) ;
     gaussFunc( convFunc ) ;

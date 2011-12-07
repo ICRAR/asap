@@ -21,8 +21,8 @@ class asapgrid:
     def defineImage( self, nx=-1, ny=-1, cellx='', celly='', center='' ):
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
-    def setOption( self, convType='box', convSupport=-1 ):
-        self.gridder._setoption( convType, convSupport )
+    def setOption( self, convType='box', width=-1 ):
+        self.gridder._setoption( convType, width )
 
     def setWeight( self, weightType='uniform' ):
         self.gridder._setweight( weightType ) 
