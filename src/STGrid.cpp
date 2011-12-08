@@ -437,8 +437,8 @@ void STGrid::selectData( Table &tab )
   if ( tab.nrow() == 0 ) {
     LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
     os << LogIO::SEVERE
-       << "No corresponding rows for given selection: IFNO" << ifno 
-       << "SCANNO " << scanlist_ 
+       << "No corresponding rows for given selection: IFNO " << ifno 
+       << " SCANNO " << scanlist_ 
        << LogIO::EXCEPTION ;
   }
 }

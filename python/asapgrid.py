@@ -122,8 +122,8 @@ class _SDGridPlotter:
         title = 'Gridded Image (%s)'%(opt)
         pl.figure(10)
         pl.clf()
-        pl.plot(self.grid[0],self.grid[1],'.',color='blue')
-        pl.plot(self.pointing[0],self.pointing[1],'.',color='red')
+        pl.plot(self.grid[0],self.grid[1],',',color='blue')
+        pl.plot(self.pointing[0],self.pointing[1],',',color='green')
         extent=[self.grid[0].min()-0.5*self.cellx,
                 self.grid[0].max()+0.5*self.cellx,
                 self.grid[1].min()-0.5*self.celly,
