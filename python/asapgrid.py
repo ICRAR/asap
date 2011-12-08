@@ -18,11 +18,14 @@ class asapgrid:
     def setPolList( self, pollist ):
         self.gridder._setpollist( pollist )
 
+    def setScanList( self, scanlist ):
+        self.gridder._setscanlist( scanlist )
+
     def defineImage( self, nx=-1, ny=-1, cellx='', celly='', center='' ):
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
-    def setOption( self, convType='box', width=-1 ):
-        self.gridder._setoption( convType, width )
+    def setFunc( self, func='box', width=-1 ):
+        self.gridder._setfunc( func, width )
 
     def setWeight( self, weightType='uniform' ):
         self.gridder._setweight( weightType ) 

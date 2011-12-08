@@ -52,13 +52,15 @@ public:
 
   void setPolList( vector<unsigned int> pols ) ;
 
+  void setScanList( vector<unsigned int> scans ) ;
+
   void defineImage( int nx=-1,
                     int ny=-1,
                     string scellx="",
                     string scelly="",
                     string scenter="" ) ;
-  void setOption( string convtype="box",
-                  int convsupport=-1 ) ;
+  void setFunc( string convtype="box",
+                int convsupport=-1 ) ;
 
   void setWeight( const string wType="uniform" ) ;
 
@@ -117,6 +119,7 @@ private:
   Int convSampling_ ;
   Array<Float> data_ ;
   Vector<uInt> pollist_ ;
+  Vector<uInt> scanlist_ ;
   String wtype_ ;
 
   Table tab_ ;

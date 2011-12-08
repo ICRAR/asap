@@ -21,6 +21,8 @@
 #include <measures/Measures/MDirection.h>
 
 #include <Scantable.h>
+#include <MathUtils.h>
+
 #include "STGrid.h"
 
 using namespace std ;
@@ -71,9 +73,14 @@ void STGrid::setFileIn( const string infile )
 
 void STGrid::setPolList( vector<unsigned int> pols )
 {
-  //pollist_ = Vector<uInt>( pols ) ;
   pollist_.assign( Vector<uInt>( pols ) ) ;
   cout << "pollist_ = " << pollist_ << endl ;
+}
+
+void STGrid::setScanList( vector<unsigned int> scans )
+{
+  scanlist_.assign( Vector<uInt>( scans ) ) ;
+  cout << "scanlist_ = " << scanlist_ << endl ;
 }
 
 void STGrid::setWeight( const string wType )
@@ -107,8 +114,8 @@ void STGrid::defineImage( int nx,
              center ) ;
 }
   
-void STGrid::setOption( string convType,
-                        int convSupport ) 
+void STGrid::setFunc( string convType,
+                      int convSupport ) 
 {
   convType_ = String( convType ) ;
   convType_.upcase() ;
@@ -153,7 +160,11 @@ void STGrid::grid()
   Cube<uChar> flagtra ;
   Matrix<uInt> rflag ;
   Matrix<Float> weight ;
+  double t0, t1 ;
+  t0 = mathutil::gettimeofday_sec() ;
   getData( spectra, direction, flagtra, rflag, weight ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "getData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   IPosition sshape = spectra.shape() ;
   //os << "spectra.shape()=" << spectra.shape() << LogIO::POST ;
   //os << "max(spectra) = " << max(spectra) << LogIO::POST ;
@@ -163,8 +174,11 @@ void STGrid::grid()
   // rflag: uInt -> Int
   Cube<Int> flagI ;
   Matrix<Int> rflagI ;
+  t0 = mathutil::gettimeofday_sec() ;
   toInt( &flagtra, &flagI ) ;
   toInt( &rflag, &rflagI ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "toInt: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   
   // grid parameter
   os << LogIO::DEBUGGING ;
@@ -178,13 +192,19 @@ void STGrid::grid()
 
   // convolution kernel
   Vector<Float> convFunc ;
+  t0 = mathutil::gettimeofday_sec() ;
   setConvFunc( convFunc ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "setConvFunc: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   //cout << "convSupport=" << convSupport_ << endl ;
   //cout << "convFunc=" << convFunc << endl ;
 
   // world -> pixel
   Matrix<Double> xypos( direction.shape(), 0.0 ) ;
+  t0 = mathutil::gettimeofday_sec() ;
   toPixel( direction, xypos ) ;  
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "toPixel: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   
   // call ggridsd
   Bool deletePos, deleteData, deleteWgt, deleteFlag, deleteFlagR, deleteConv, deleteDataG, deleteWgtG ;
@@ -197,16 +217,16 @@ void STGrid::grid()
   const Int *rflag_p = rflagI.getStorage( deleteFlagR ) ;
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
   // Extend grid plane with convSupport_
-  //IPosition gshape( 4, nx_, ny_, npol, nchan ) ;
-  Int gnx = nx_+convSupport_*2 ;
-  Int gny = ny_+convSupport_*2 ;
+  Int gnx = nx_ ;
+  Int gny = ny_ ;
+//   Int gnx = nx_+convSupport_*2 ;
+//   Int gny = ny_+convSupport_*2 ;
   IPosition gshape( 4, gnx, gny, npol_, nchan_ ) ;
   Array<Complex> gdataArrC( gshape, 0.0 ) ;
   Array<Float> gwgtArr( gshape, 0.0 ) ;
   Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
   Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
   Int idopsf = 0 ;
-  Int irow = -1 ;
   Int *chanMap = new Int[nchan_] ;
   {
     Int *work_p = chanMap ;
@@ -231,6 +251,8 @@ void STGrid::grid()
       work_p++ ;
     }
   }
+  t0 = mathutil::gettimeofday_sec() ;
+  Int irow = -1 ;
   ggridsd( xypos_p,
            data_p,
            &npol_,
@@ -253,6 +275,8 @@ void STGrid::grid()
            chanMap,
            polMap,
            sumw_p ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "ggridsd: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   xypos.putStorage( xypos_p, deletePos ) ;
   dataC.freeStorage( data_p, deleteData ) ;
   weight.freeStorage( wgt_p, deleteWgt ) ;
@@ -264,6 +288,7 @@ void STGrid::grid()
   gdataArrC.putStorage( gdata_p, deleteDataG ) ;
   gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
   Array<Float> gdataArr = real( gdataArrC ) ;
+  t0 = mathutil::gettimeofday_sec() ;
   data_.resize( gdataArr.shape() ) ;
   data_ = 0.0 ;
   for ( Int ix = 0 ; ix < nx_ ; ix++ ) {
@@ -271,19 +296,22 @@ void STGrid::grid()
       for ( Int ip = 0 ; ip < npol_ ; ip++ ) {
         for ( Int ic = 0 ; ic < nchan_ ; ic++ ) {
           IPosition pos( 4, ix, iy, ip, ic ) ;
-          IPosition gpos( 4, ix+convSupport_, iy+convSupport_, ip, ic ) ;
+          IPosition gpos( 4, ix, iy, ip, ic ) ;
+//           IPosition gpos( 4, ix+convSupport_, iy+convSupport_, ip, ic ) ;
           if ( gwgtArr( gpos ) > 0.0 ) 
             data_( pos ) = gdataArr( gpos ) / gwgtArr( gpos ) ;
         }
       }
     }
   }
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "set data: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   //Matrix<Double> sumWeight( IPosition( 2, npol_, nchan_ ), sumw_p, TAKE_OVER ) ;
   delete sumw_p ;
   //cout << "sumWeight = " << sumWeight << endl ;
-  //cout << "gdataArr = " << gdataArr << endl ;
-  //cout << "gwgtArr = " << gwgtArr << endl ;
-  //cout << "data_ " << data_ << endl ;
+//   os << "gdataArr = " << gdataArr << LogIO::POST ;
+//   os << "gwgtArr = " << gwgtArr << LogIO::POST ;
+//   os << "data_ " << data_ << LogIO::POST ;
 }
 
 void STGrid::setupGrid( Int &nx, 
@@ -399,11 +427,18 @@ void STGrid::selectData( Table &tab )
     os << LogIO::WARN
        << "IFNO is not given. Using default IFNO: " << ifno << LogIO::POST ;
   }
-  tab = taborg( taborg.col("IFNO") == ifno ) ;
+//   tab = taborg( taborg.col("IFNO") == ifno ) ;
+  TableExprNode node ;
+  node = taborg.col("IFNO") == ifno ;
+  if ( scanlist_.size() > 0 ) {
+    node = node && taborg.col("SCANNO").in( scanlist_ ) ;
+  }
+  tab = taborg( node ) ;
   if ( tab.nrow() == 0 ) {
     LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
     os << LogIO::SEVERE
-       << "No corresponding rows for given IFNO: " << ifno 
+       << "No corresponding rows for given selection: IFNO" << ifno 
+       << "SCANNO " << scanlist_ 
        << LogIO::EXCEPTION ;
   }
 }
@@ -574,24 +609,31 @@ void STGrid::toPixel( Matrix<Double> &world, Matrix<Double> &pixel )
   // gridding will be done on (nx_+2*convSupport_) x (ny_+2*convSupport_) 
   // grid plane to avoid unexpected behavior on grid edge
   Vector<Double> pixc( 2 ) ;
-  //pixc(0) = Double( nx_-1 ) * 0.5 ;
-  //pixc(1) = Double( ny_-1 ) * 0.5 ;
-  pixc(0) = Double( nx_+2*convSupport_-1 ) * 0.5 ;
-  pixc(1) = Double( ny_+2*convSupport_-1 ) * 0.5 ;
+  pixc(0) = Double( nx_-1 ) * 0.5 ;
+  pixc(1) = Double( ny_-1 ) * 0.5 ;
+//   pixc(0) = Double( nx_+2*convSupport_-1 ) * 0.5 ;
+//   pixc(1) = Double( ny_+2*convSupport_-1 ) * 0.5 ;
   uInt nrow = world.shape()[1] ;
   Vector<Double> cell( 2 ) ;
   cell(0) = cellx_ ;
   cell(1) = celly_ ;
-  //ofstream ofs( "grid.dat", ios::out ) ; 
   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-    //ofs << irow ;
     for ( uInt i = 0 ; i < 2 ; i++ ) {
       pixel( i, irow ) = pixc(i) + ( world(i, irow) - center_(i) ) / cell(i) ;
-      //ofs << " " << world(i, irow) << " " << pixel(i, irow) ;
     }
-    //ofs << endl ;
   }
-  //ofs.close() ;
+//   String gridfile = "grid."+convType_+"."+String::toString(convSupport_)+".dat" ; 
+//   ofstream ofs( gridfile.c_str(), ios::out ) ; 
+//   ofs << "center " << center_(0) << " " << pixc(0) 
+//       << " " << center_(1) << " " << pixc(1) << endl ;
+//   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
+//     ofs << irow ;
+//     for ( uInt i = 0 ; i < 2 ; i++ ) {
+//       ofs << " " << world(i, irow) << " " << pixel(i, irow) ;
+//     }
+//     ofs << endl ;
+//   }
+//   ofs.close() ;
 }
 
 void STGrid::boxFunc( Vector<Float> &convFunc, Int &convSize ) 
