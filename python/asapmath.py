@@ -987,7 +987,8 @@ def splitant(filename, outprefix='',overwrite=False):
     outfiles=[]
     tb.open(tablename=filename,nomodify=True)
     ant1=tb.getcol('ANTENNA1',0,-1,1)
-    anttab=tb.getkeyword('ANTENNA').split()[-1]
+    #anttab=tb.getkeyword('ANTENNA').split()[-1]
+    anttab=tb.getkeyword('ANTENNA').lstrip('Table: ')
     tb.close()
     #tb.open(tablename=filename+'/ANTENNA',nomodify=True)
     tb.open(tablename=anttab,nomodify=True)
