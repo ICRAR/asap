@@ -288,30 +288,44 @@ void STGrid::grid()
   gdataArrC.putStorage( gdata_p, deleteDataG ) ;
   gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
   Array<Float> gdataArr = real( gdataArrC ) ;
-  t0 = mathutil::gettimeofday_sec() ;
-  data_.resize( gdataArr.shape() ) ;
-  data_ = 0.0 ;
-  for ( Int ix = 0 ; ix < nx_ ; ix++ ) {
-    for ( Int iy = 0 ; iy < ny_ ; iy++ ) {
-      for ( Int ip = 0 ; ip < npol_ ; ip++ ) {
-        for ( Int ic = 0 ; ic < nchan_ ; ic++ ) {
-          IPosition pos( 4, ix, iy, ip, ic ) ;
-          IPosition gpos( 4, ix, iy, ip, ic ) ;
-//           IPosition gpos( 4, ix+convSupport_, iy+convSupport_, ip, ic ) ;
-          if ( gwgtArr( gpos ) > 0.0 ) 
-            data_( pos ) = gdataArr( gpos ) / gwgtArr( gpos ) ;
-        }
-      }
-    }
-  }
-  t1 = mathutil::gettimeofday_sec() ;
-  os << "set data: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+  setData( data_, gdataArr, gwgtArr ) ;
   //Matrix<Double> sumWeight( IPosition( 2, npol_, nchan_ ), sumw_p, TAKE_OVER ) ;
   delete sumw_p ;
   //cout << "sumWeight = " << sumWeight << endl ;
 //   os << "gdataArr = " << gdataArr << LogIO::POST ;
 //   os << "gwgtArr = " << gwgtArr << LogIO::POST ;
 //   os << "data_ " << data_ << LogIO::POST ;
+}
+
+void STGrid::setData( Array<Float> &data,
+                      Array<Float> &gdata,
+                      Array<Float> &gwgt )
+{
+  LogIO os( LogOrigin("STGrid","setData",WHERE) ) ;
+  double t0, t1 ;
+  t0 = mathutil::gettimeofday_sec() ;
+  data.resize( gdata.shape() ) ;  //data = 0.0 ;
+  uInt len = data.nelements() ;
+  Float *w0_p ;
+  const Float *w1_p, *w2_p ;
+  Bool b0, b1, b2 ;
+  Float *data_p = data.getStorage( b0 ) ;
+  const Float *gdata_p = gdata.getStorage( b1 ) ;
+  const Float *gwgt_p = gwgt.getStorage( b2 ) ;
+  w0_p = data_p ;
+  w1_p = gdata_p ;
+  w2_p = gwgt_p ;
+  for ( uInt i = 0 ; i < len ; i++ ) {
+    *w0_p = (*w2_p > 0.0) ? (*w1_p / *w2_p) : 0.0 ;
+    w0_p++ ;
+    w1_p++ ;
+    w2_p++ ;
+  }
+  data.putStorage( data_p, b0 ) ;
+  gdata.freeStorage( gdata_p, b1 ) ;
+  gwgt.freeStorage( gwgt_p, b2 ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "setData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
 }
 
 void STGrid::setupGrid( Int &nx, 
@@ -418,7 +432,7 @@ void STGrid::selectData( Table &tab )
   Int ifno = ifno_ ;
   Table taborg( infile_ ) ;
   if ( ifno == -1 ) {
-    LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
 //     os << LogIO::SEVERE
 //        << "Please set IFNO before actual gridding" 
 //        << LogIO::EXCEPTION ;
@@ -435,7 +449,7 @@ void STGrid::selectData( Table &tab )
   }
   tab = taborg( node ) ;
   if ( tab.nrow() == 0 ) {
-    LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
     os << LogIO::SEVERE
        << "No corresponding rows for given selection: IFNO " << ifno 
        << " SCANNO " << scanlist_ 
@@ -522,20 +536,22 @@ void STGrid::getWeight( Matrix<Float> &w,
                         Cube<Float> &tsys,
                         Matrix<Double> &tint ) 
 {
+  LogIO os( LogOrigin("STGrid","getWeight",WHERE) ) ;
+  double t0, t1 ;
+  t0 = mathutil::gettimeofday_sec() ;
   // resize
   w.resize( nchan_, nrow_ ) ;
 
   // set weight
-  w = 1.0 ;
   Bool warn = False ;
   if ( wtype_.compare( "UNIFORM" ) == 0 ) {
-    // do nothing
+    w = 1.0 ;
   }
   else if ( wtype_.compare( "TINT" ) == 0 ) {
     if ( npol_ > 1 ) warn = True ;
     for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
       Float val = mean( tint.column( irow ) ) ;
-      w.column( irow ) = w.column( irow ) *  val ;
+      w.column( irow ) = val ;
     }
   }
   else if ( wtype_.compare( "TSYS" ) == 0 ) {
@@ -544,7 +560,7 @@ void STGrid::getWeight( Matrix<Float> &w,
       Matrix<Float> arr = tsys.xyPlane( irow ) ;
       for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
         Float val = mean( arr.column( ichan ) ) ;
-        w(ichan,irow) = w(ichan,irow) / ( val * val ) ;
+        w(ichan,irow) = 1.0 / ( val * val ) ;
       }
     }
   }
@@ -555,19 +571,22 @@ void STGrid::getWeight( Matrix<Float> &w,
       Matrix<Float> arr = tsys.xyPlane( irow ) ;
       for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
         Float temp = mean( arr.column( ichan ) ) ;
-        w(ichan,irow) = w(ichan,irow) * interval / ( temp * temp ) ;
+        w(ichan,irow) = interval / ( temp * temp ) ;
       }
     }
   }
   else {
-    LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
-    os << LogIO::WARN << "Unsupported weight type '" << wtype_ << "', apply UNIFORM weight" << LogIO::POST ; 
+    //LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
+    os << LogIO::WARN << "Unsupported weight type '" << wtype_ << "', apply UNIFORM weight" << LogIO::POST ;
+    w = 1.0 ;
   }
 
   if ( npol_ > 1 ) {
-    LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
+    //LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
     os << LogIO::WARN << "STGrid doesn't support assigning polarization-dependent weight. Use averaged weight over polarization." << LogIO::POST ;
   }
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "getWeight: elapsed time is " << t1-t0 << " sec" << LogIO::POST ;
 }
 
 void STGrid::toInt( Array<uChar> *u, Array<Int> *v ) 
@@ -719,6 +738,10 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
 
 string STGrid::saveData( string outfile )
 {
+  LogIO os( LogOrigin("STGrid", "saveData", WHERE) ) ;
+  double t0, t1 ;
+  t0 = mathutil::gettimeofday_sec() ;
+
   //Int polno = 0 ;
   string outfile_ ;
   if ( outfile.size() == 0 ) {
@@ -733,7 +756,7 @@ string STGrid::saveData( string outfile )
   else {
     outfile_ = outfile ;
   }
-  CountedPtr<Scantable> ref( new Scantable( infile_, Table::Memory ) ) ;
+  CountedPtr<Scantable> ref( new Scantable( infile_, Table::Plain ) ) ;
   //cout << "ref->nchan()=" << ref->nchan() << endl ;
   CountedPtr<Scantable> out( new Scantable( *ref, True ) ) ;
   Table tab = out->table() ;
@@ -767,6 +790,9 @@ string STGrid::saveData( string outfile )
   }
   //cout << "outfile_=" << outfile_ << endl ;
   out->makePersistent( outfile_ ) ;
+
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "saveData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   
   return outfile_ ;
 }

@@ -80,6 +80,10 @@ private:
                   Double &ymin,
                   Double &ymax,
                   String &center ) ;
+
+  void setData( Array<Float> &data,
+                Array<Float> &gdata,
+                Array<Float> &gwgt ) ;
   
   void getData( Cube<Float> &spectra,
                 Matrix<Double> &direction,
