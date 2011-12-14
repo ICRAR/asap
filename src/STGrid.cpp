@@ -549,31 +549,58 @@ void STGrid::getWeight( Matrix<Float> &w,
   }
   else if ( wtype_.compare( "TINT" ) == 0 ) {
     if ( npol_ > 1 ) warn = True ;
+    Bool b0, b1 ;
+    Float *w_p = w.getStorage( b0 ) ;
+    Float *w0_p = w_p ;
+    const Double *ti_p = tint.getStorage( b1 ) ;
+    const Double *w1_p = ti_p ;
     for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
-      Float val = mean( tint.column( irow ) ) ;
-      w.column( irow ) = val ;
+      Float val = (Float)(polMean( w1_p )) ;
+      for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
+        *w0_p = val ;
+        w0_p++ ;
+      }
     }
+    w.putStorage( w_p, b0 ) ;
+    tint.freeStorage( ti_p, b1 ) ;
   }
   else if ( wtype_.compare( "TSYS" ) == 0 ) {
     if ( npol_ > 1 ) warn = True ;
+    Bool b0, b1 ;
+    Float *w_p = w.getStorage( b0 ) ;
+    Float *w0_p = w_p ;
+    const Float *ts_p = tsys.getStorage( b1 ) ;
+    const Float *w1_p = ts_p ;
     for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
-      Matrix<Float> arr = tsys.xyPlane( irow ) ;
       for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
-        Float val = mean( arr.column( ichan ) ) ;
-        w(ichan,irow) = 1.0 / ( val * val ) ;
+        Float val = polMean( w1_p ) ;
+        *w0_p = 1.0 / ( val * val ) ;
+        w0_p++ ;
       }
     }
+    w.putStorage( w_p, b0 ) ;
+    tsys.freeStorage( ts_p, b1 ) ;
   }
   else if ( wtype_.compare( "TINTSYS" ) == 0 ) {
     if ( npol_ > 1 ) warn = True ;
+    Bool b0, b1, b2 ;
+    Float *w_p = w.getStorage( b0 ) ;
+    Float *w0_p = w_p ;
+    const Double *ti_p = tint.getStorage( b1 ) ;
+    const Double *w1_p = ti_p ;
+    const Float *ts_p = tsys.getStorage( b2 ) ;
+    const Float *w2_p = ts_p ;
     for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
-      Float interval = mean( tint.column( irow ) ) ;
-      Matrix<Float> arr = tsys.xyPlane( irow ) ;
+      Float interval = (Float)(polMean( w1_p )) ;
       for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
-        Float temp = mean( arr.column( ichan ) ) ;
-        w(ichan,irow) = interval / ( temp * temp ) ;
+        Float temp = polMean( w2_p ) ;
+        *w0_p = interval / ( temp * temp ) ;
+        w0_p++ ;
       }
     }
+    w.putStorage( w_p, b0 ) ;
+    tint.freeStorage( ti_p, b1 ) ;
+    tsys.freeStorage( ts_p, b2 ) ;
   }
   else {
     //LogIO os( LogOrigin("STGrid", "getWeight", WHERE) ) ;
@@ -587,6 +614,28 @@ void STGrid::getWeight( Matrix<Float> &w,
   }
   t1 = mathutil::gettimeofday_sec() ;
   os << "getWeight: elapsed time is " << t1-t0 << " sec" << LogIO::POST ;
+}
+
+Float STGrid::polMean( const Float *p ) 
+{
+  Float v = 0.0 ;
+  for ( Int i = 0 ; i < npol_ ; i++ ) {
+    v += *p ;
+    p++ ;
+  }
+  v /= npol_ ;
+  return v ;
+}
+
+Double STGrid::polMean( const Double *p ) 
+{
+  Double v = 0.0 ;
+  for ( Int i = 0 ; i < npol_ ; i++ ) {
+    v += *p ;
+    p++ ;
+  }
+  v /= npol_ ;
+  return v ;
 }
 
 void STGrid::toInt( Array<uChar> *u, Array<Int> *v ) 

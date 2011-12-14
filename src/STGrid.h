@@ -107,6 +107,9 @@ private:
   void setConvFunc( Vector<Float> &convFunc ) ;
   void selectData( Table &tab ) ;
 
+  Float polMean( const Float *p ) ;
+  Double polMean( const Double *p ) ;
+
   String infile_ ;
   Int ifno_ ;
   Int nx_ ;
