@@ -1,19 +1,24 @@
 import numpy
+from asap import rcParams
 from asap.scantable import scantable
+from asap.selector import selector
 from asap._asap import stgrid
 import pylab as pl
+from logging import asaplog
 
 class asapgrid:
     def __init__( self, infile ):
         self.infile = infile
         self.outfile = None
         self.gridder = stgrid( self.infile )
+        self.ifno = None
 
     def setData( self, infile ):
         self.gridder._setin( infile )
 
     def setIF( self, ifno ):
-        self.gridder._setif( ifno )
+        self.ifno = ifno
+        self.gridder._setif( self.ifno )
 
     def setPolList( self, pollist ):
         self.gridder._setpollist( pollist )
@@ -37,18 +42,27 @@ class asapgrid:
         self.outfile = self.gridder._save( outfile ) 
 
     def plot( self, plotchan=-1, plotpol=-1 ):
-        plotter = _SDGridPlotter( self.infile, self.outfile )
+        import time
+        t0=time.time()
+        # to load scantable on disk
+        storg = rcParams['scantable.storage']
+        rcParams['scantable.storage'] = 'disk'
+        plotter = _SDGridPlotter( self.infile, self.outfile, self.ifno )
         plotter.plot( chan=plotchan, pol=plotpol )
+        # back to original setup
+        rcParams['scantable.storage'] = storg
+        t1=time.time()
+        asaplog.push('plot: elapsed time %s sec'%(t1-t0))
+        asaplog.post('DEBUG','asapgrid.plot')
         
 class _SDGridPlotter:
-    def __init__( self, infile, outfile=None ):
+    def __init__( self, infile, outfile=None, ifno=0 ):
         self.infile = infile
         self.outfile = outfile
         if self.outfile is None:
             self.outfile = self.infile.rstrip('/')+'.grid'
         self.grid = None
         self.pointing = None
-        self.data = None
         self.nx = -1
         self.ny = -1
         self.nchan = 0
@@ -58,17 +72,19 @@ class _SDGridPlotter:
         self.celly = 0.0
         self.center = [0.0,0.0]
         self.nonzero = [[0.0],[0.0]]
+        self.ifno = ifno
         self.get()
 
     def get( self ):
         s = scantable( self.infile, average=False )
+        sel = selector()
+        sel.set_ifs( self.ifno )
+        s.set_selection( sel ) 
         self.pointing = numpy.array( s.get_directionval() ).transpose()
-        spectra = []
-        for i in xrange(s.nrow()):
-            spectra.append( s._getspectrum( i ) )
-        spectra = numpy.array( spectra ).transpose()
-        self.nchan = spectra.shape[0]
+        self.nchan = len(s._getspectrum(0))
+        s.set_selection()
         del s
+        del sel
 
         s = scantable( self.outfile, average=False )
         nrow = s.nrow()
@@ -83,17 +99,12 @@ class _SDGridPlotter:
         #print 'nrow=',nrow
         dirstring = numpy.array(s.get_direction()).take(range(0,nrow,self.npol))
         self.grid = numpy.array( s.get_directionval() ).take(range(0,nrow,self.npol),axis=0).transpose()
-        spectra = numpy.zeros( (self.npol,self.nchan,nrow/self.npol), dtype=float )
-        irow = 0 
-        for i in xrange(nrow/self.npol):
-            for ip in xrange(self.npol):
-                spectra[ip,:,i] = s._getspectrum( irow )
-                irow += 1
 
         idx = 0
         d0 = dirstring[0].split()[-1]
         while ( dirstring[idx].split()[-1] == d0 ):  
             idx += 1
+        
         self.ny = idx
         self.nx = nrow / (self.npol * idx )
         #print 'nx,ny=',self.nx,self.ny
@@ -102,23 +113,16 @@ class _SDGridPlotter:
         self.celly = abs( self.grid[1][0] - self.grid[1][self.ny] )
         #print 'cellx,celly=',self.cellx,self.celly
 
-        self.data = spectra.reshape( (self.npol,self.nchan,self.nx,self.ny) )
-
     def plot( self, chan=-1, pol=-1 ):
         if pol < 0:
-            data = self.data.mean(axis=0)
             opt = 'averaged over pol'
         else:
-            idx = self.pollist.tolist().index( pol )
-            #print 'idx=',idx
-            data = self.data[idx]
             opt = 'pol %s'%(pol)
         if chan < 0:
-            data = data.mean(axis=0)
             opt += ', averaged over channel'
         else:
-            data = data[chan]
             opt += ', channel %s'%(chan)
+        data = self.getData( chan, pol ) 
         title = 'Gridded Image (%s)'%(opt)
         pl.figure(10)
         pl.clf()
@@ -133,3 +137,43 @@ class _SDGridPlotter:
         pl.xlabel('R.A. [rad]')
         pl.ylabel('Dec. [rad]')
         pl.title( title )
+
+    def getData( self, chan=-1, pol=-1 ):
+        if chan == -1:
+            spectra = self.__chanAverage()
+        else:
+            spectra = self.__chanIndex( chan )
+        data = spectra.reshape( (self.npol,self.nx,self.ny) )
+        if pol == -1:
+            retval = data.mean(axis=0)
+        else:
+            retval = data[pol]
+        return retval
+
+    def __chanAverage( self ):
+        s = scantable( self.outfile, average=False )
+        nrow = self.nx * self.ny
+        spectra = numpy.zeros( (self.npol,nrow/self.npol), dtype=float )
+        irow = 0
+        sp = [0 for i in xrange(self.nchan)]
+        for i in xrange(nrow/self.npol):
+            for ip in xrange(self.npol):
+                sp = s._getspectrum( irow )
+                spectra[ip,i] = numpy.mean( sp )
+                irow += 1
+        return spectra
+
+    def __chanIndex( self, idx ):
+        s = scantable( self.outfile, average=False )
+        nrow = self.nx * self.ny
+        spectra = numpy.zeros( (self.npol,nrow/self.npol), dtype=float )
+        irow = 0
+        sp = [0 for i in xrange(self.nchan)]
+        for i in xrange(nrow/self.npol):
+            for ip in xrange(self.npol):
+                sp = s._getspectrum( irow )
+                spectra[ip,i] = sp[idx]
+                irow += 1
+        return spectra
+        
+            
