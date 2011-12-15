@@ -101,3 +101,8 @@ add_dependencies( inst ${ASAPLIB} )
 # install directory
 install( TARGETS ${ASAPLIB}
          LIBRARY DESTINATION ${PYTHON_INSTALL_DIR} )
+if( NOT STANDALONE )
+  execute_process(
+    COMMAND ln -Fs ../${PYTHON_INSTALL_DIR}/_asap.so ${CMAKE_INSTALL_PREFIX}/lib/_asap.so
+    OUTPUT_VARIABLE stuff)
+endif()
