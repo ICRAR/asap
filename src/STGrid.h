@@ -110,6 +110,10 @@ private:
   Float polMean( const Float *p ) ;
   Double polMean( const Double *p ) ;
 
+  void updatePolList( Table &tab ) ;
+
+  void prepareTable( Table &tab, String &name ) ;
+
   String infile_ ;
   Int ifno_ ;
   Int nx_ ;

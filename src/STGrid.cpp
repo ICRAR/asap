@@ -20,7 +20,6 @@
 
 #include <measures/Measures/MDirection.h>
 
-#include <Scantable.h>
 #include <MathUtils.h>
 
 #include "STGrid.h"
@@ -304,7 +303,7 @@ void STGrid::setData( Array<Float> &data,
   LogIO os( LogOrigin("STGrid","setData",WHERE) ) ;
   double t0, t1 ;
   t0 = mathutil::gettimeofday_sec() ;
-  data.resize( gdata.shape() ) ;  //data = 0.0 ;
+  data.resize( gdata.shape() ) ;
   uInt len = data.nelements() ;
   Float *w0_p ;
   const Float *w1_p, *w2_p ;
@@ -465,14 +464,87 @@ void STGrid::getData( Cube<Float> &spectra,
 {
   Table tab ;
   selectData( tab ) ;
+  updatePolList( tab ) ;
+//   cout << "npol_ = " << npol_ << endl ;
+//   cout << "nchan_ = " << nchan_ << endl ;
+//   cout << "nrow_ = " << nrow_ << endl ;
+  spectra.resize( npol_, nchan_, nrow_ ) ;
+  flagtra.resize( npol_, nchan_, nrow_ ) ;
+  rflag.resize( npol_, nrow_ ) ;
+  Cube<Float> tsys( npol_, nchan_, nrow_ ) ;
+  Matrix<Double> tint( npol_, nrow_ ) ;
+  // boolean for pointer access
+  Bool bsp, bfl, bfr, bts, bti ;
+  // pointer to the data
+  Float *sp_p = spectra.getStorage( bsp ) ;
+  uChar *fl_p = flagtra.getStorage( bfl ) ;
+  uInt *fr_p = rflag.getStorage( bfr ) ;
+  Float *ts_p = tsys.getStorage( bts ) ;
+  Double *ti_p = tint.getStorage( bti ) ;
+  // working pointer
+  Float *wsp_p = sp_p ;
+  uChar *wfl_p = fl_p ;
+  uInt *wfr_p = fr_p ;
+  Float *wts_p = ts_p ;
+  Double *wti_p = ti_p ;
+  uInt len = nchan_ * nrow_ ;
+  IPosition mshape( 2, nchan_, nrow_ ) ;
+  IPosition vshape( 1, nrow_ ) ;
+  for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
+    Table subt = tab( tab.col("POLNO") == pollist_[ipol] ) ;
+    ROArrayColumn<Float> spectraCol( subt, "SPECTRA" ) ;
+    ROArrayColumn<Double> directionCol( subt, "DIRECTION" ) ;
+    ROArrayColumn<uChar> flagtraCol( subt, "FLAGTRA" ) ;
+    ROScalarColumn<uInt> rflagCol( subt, "FLAGROW" ) ;
+    ROArrayColumn<Float> tsysCol( subt, "TSYS" ) ;
+    ROScalarColumn<Double> tintCol( subt, "INTERVAL" ) ;
+    Matrix<Float> spSlice( mshape, wsp_p, SHARE ) ; 
+    Matrix<uChar> flSlice( mshape, wfl_p, SHARE ) ;
+    Vector<uInt> frSlice( vshape, wfr_p, SHARE ) ;
+    spectraCol.getColumn( spSlice ) ;
+    flagtraCol.getColumn( flSlice ) ;
+    rflagCol.getColumn( frSlice ) ;
+    if ( ipol == 0 )
+      directionCol.getColumn( direction ) ;
+    Vector<Float> tmpF = tsysCol( 0 ) ;
+    Vector<Double> tmpD( vshape, wti_p, SHARE ) ;
+    Matrix<Float> tsSlice( mshape, wts_p, SHARE ) ;
+    if ( tmpF.nelements() == (uInt)nchan_ ) {
+      tsysCol.getColumn( tsSlice ) ;
+    }
+    else {
+      tsSlice = tmpF( 0 ) ;
+    }
+    tintCol.getColumn( tmpD ) ;
+
+    wsp_p += len ;
+    wfl_p += len ;
+    wfr_p += nrow_ ;
+    wts_p += len ;
+    wti_p += nrow_ ;
+  }
+  spectra.putStorage( sp_p, bsp ) ;
+  flagtra.putStorage( fl_p, bfl ) ;
+  rflag.putStorage( fr_p, bfr ) ;
+  tsys.putStorage( ts_p, bts ) ;
+  tint.putStorage( ti_p, bti ) ;
+
+  getWeight( weight, tsys, tint ) ;
+}
+
+void STGrid::updatePolList( Table &tab ) 
+{
   ROScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
   Vector<uInt> pols = polnoCol.getColumn() ;
   Vector<uInt> pollistOrg ;
   uInt npolOrg = 0 ;
-  for ( uInt i = 0 ; i < pols.size() ; i++ ) {
-    if ( allNE( pollistOrg, pols[i] ) ) {
+  uInt polno ;
+  for ( uInt i = 0 ; i < polnoCol.nrow() ; i++ ) {
+    //polno = polnoCol( i ) ; 
+    polno = pols( i ) ; 
+    if ( allNE( pollistOrg, polno ) ) {
       pollistOrg.resize( npolOrg+1, True ) ;
-      pollistOrg[npolOrg] = pols[i] ;
+      pollistOrg[npolOrg] = polno ;
       npolOrg++ ;
     }
   }
@@ -482,54 +554,26 @@ void STGrid::getData( Cube<Float> &spectra,
     Vector<uInt> newlist ;
     uInt newsize = 0 ;
     for ( uInt i = 0 ; i < pollist_.size() ; i++ ) {
-      if ( anyEQ( pols, pollist_[i] ) ) {
+      if ( anyEQ( pollistOrg, pollist_[i] ) ) {
         newlist.resize( newsize+1, True ) ;
         newlist[newsize] = pollist_[i] ;
         newsize++ ;
       }
     }
-    pollist_ = newlist ;
+    pollist_.assign( newlist ) ;
   }
   npol_ = pollist_.size() ;
+  if ( npol_ == 0 ) {
+    LogIO os( LogOrigin("STGrid","updatePolList",WHERE) ) ;
+    os << LogIO::SEVERE << "Empty pollist" << LogIO::EXCEPTION ;
+  }
+  nrow_ = tab.nrow() / npolOrg ;
   ROArrayColumn<uChar> tmpCol( tab, "FLAGTRA" ) ;
   nchan_ = tmpCol( 0 ).nelements() ;
-  nrow_ = tab.nrow() / npolOrg ;
-//   cout << "npol_ = " << npol_ << endl ;
-//   cout << "nchan_ = " << nchan_ << endl ;
-//   cout << "nrow_ = " << nrow_ << endl ;
-  spectra.resize( npol_, nchan_, nrow_ ) ;
-  flagtra.resize( npol_, nchan_, nrow_ ) ;
-  rflag.resize( npol_, nrow_ ) ;
-  Cube<Float> tsys( npol_, nchan_, nrow_ ) ;
-  Matrix<Double> tint( npol_, nrow_ ) ;
-  for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
-    Table subt = tab( tab.col("POLNO") == pollist_[ipol] ) ;
-    ROArrayColumn<Float> spectraCol( subt, "SPECTRA" ) ;
-    ROArrayColumn<Double> directionCol( subt, "DIRECTION" ) ;
-    ROArrayColumn<uChar> flagtraCol( subt, "FLAGTRA" ) ;
-    ROScalarColumn<uInt> rflagCol( subt, "FLAGROW" ) ;
-    ROArrayColumn<Float> tsysCol( subt, "TSYS" ) ;
-    ROScalarColumn<Double> tintCol( subt, "INTERVAL" ) ;
-    Matrix<Float> tmpF = spectra.yzPlane( ipol ) ;
-    Matrix<uChar> tmpUC = flagtra.yzPlane( ipol ) ;
-    Vector<uInt> tmpUI = rflag.row( ipol ) ;
-    spectraCol.getColumn( tmpF ) ;
-    flagtraCol.getColumn( tmpUC ) ;
-    rflagCol.getColumn( tmpUI ) ;
-    if ( ipol == 0 )
-      directionCol.getColumn( direction ) ;
-    Matrix<Float> tmpF2 = tsysCol.getColumn() ;
-    Vector<Double> tmpD = tint.row( ipol ) ;
-    if ( tmpF2.shape()(0) == nchan_ ) {
-      tsys.yzPlane( ipol ) = tmpF2 ;
-    }
-    else {
-      tsys.yzPlane( ipol ) = tmpF2(0,0) ;
-    }
-    tintCol.getColumn( tmpD ) ;
-  }
-
-  getWeight( weight, tsys, tint ) ;
+//   LogIO os( LogOrigin("STGrid","updatePolList",WHERE) ) ;
+//   os << "npol_ = " << npol_ << "(" << pollist_ << ")" << endl 
+//      << "nchan_ = " << nchan_ << endl 
+//      << "nrow_ = " << nrow_ << LogIO::POST ;
 }
 
 void STGrid::getWeight( Matrix<Float> &w,
@@ -792,7 +836,7 @@ string STGrid::saveData( string outfile )
   t0 = mathutil::gettimeofday_sec() ;
 
   //Int polno = 0 ;
-  string outfile_ ;
+  String outfile_ ;
   if ( outfile.size() == 0 ) {
     if ( infile_.lastchar() == '/' ) {
       outfile_ = infile_.substr( 0, infile_.size()-1 ) ;
@@ -805,10 +849,8 @@ string STGrid::saveData( string outfile )
   else {
     outfile_ = outfile ;
   }
-  CountedPtr<Scantable> ref( new Scantable( infile_, Table::Plain ) ) ;
-  //cout << "ref->nchan()=" << ref->nchan() << endl ;
-  CountedPtr<Scantable> out( new Scantable( *ref, True ) ) ;
-  Table tab = out->table() ;
+  Table tab ;
+  prepareTable( tab, outfile_ ) ;
   IPosition dshape = data_.shape() ;
   Int nrow = nx_ * ny_ * npol_ ;
   tab.rwKeywordSet().define( "nPol", npol_ ) ;
@@ -821,15 +863,29 @@ string STGrid::saveData( string outfile )
   ArrayColumn<Float> spectraCol( tab, "SPECTRA" ) ;
   ScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
   Int irow = 0 ;
+  Vector<Float> sp( nchan_ ) ;
+  Bool bsp, bdata ;
+  const Float *data_p = data_.getStorage( bdata ) ;
+  Float *wsp_p, *sp_p ;
+  const Float *wdata_p = data_p ;
+  long step = nx_ * ny_ * npol_ ;
+  long offset ;
   for ( Int iy = 0 ; iy < ny_ ; iy++ ) {
+    dir(1) = center_(1) - ( cpix(1) - (Double)iy ) * celly_ ;
     for ( Int ix = 0 ; ix < nx_ ; ix++ ) {
+      dir(0) = center_(0) - ( cpix(0) - (Double)ix ) * cellx_ ;
       for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
-        IPosition start( 4, ix, iy, ipol, 0 ) ;
-        IPosition end( 4, ix, iy, ipol, nchan_-1 ) ;
-        IPosition inc( 4, 1, 1, 1, 1 ) ;
-        Vector<Float> sp = data_( start, end, inc ) ;
-        dir(0) = center_(0) - ( cpix(0) - (Double)ix ) * cellx_ ;
-        dir(1) = center_(1) - ( cpix(1) - (Double)iy ) * celly_ ;
+        offset = ix + iy * nx_ + ipol * nx_ * ny_ ;
+        //os << "offset = " << offset << LogIO::POST ;
+        sp_p = sp.getStorage( bsp ) ;
+        wsp_p = sp_p ;
+        wdata_p = data_p + offset ;
+        for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
+          *wsp_p = *wdata_p ;
+          wsp_p++ ;
+          wdata_p += step ;
+        }
+        sp.putStorage( sp_p, bsp ) ;
         spectraCol.put( irow, sp ) ;
         directionCol.put( irow, dir ) ;
         polnoCol.put( irow, pollist_[ipol] ) ;
@@ -837,8 +893,7 @@ string STGrid::saveData( string outfile )
       }
     }
   }
-  //cout << "outfile_=" << outfile_ << endl ;
-  out->makePersistent( outfile_ ) ;
+  data_.freeStorage( data_p, bdata ) ;
 
   t1 = mathutil::gettimeofday_sec() ;
   os << "saveData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
@@ -846,4 +901,10 @@ string STGrid::saveData( string outfile )
   return outfile_ ;
 }
 
+void STGrid::prepareTable( Table &tab, String &name ) 
+{
+  Table t( infile_, Table::Old ) ;
+  t.deepCopy( name, Table::New, False, t.endianFormat(), True ) ;
+  tab = Table( name, Table::Update ) ;
+}
 }
