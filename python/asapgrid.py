@@ -56,7 +56,7 @@ class asapgrid:
         asaplog.post('DEBUG','asapgrid.plot')
         
 class _SDGridPlotter:
-    def __init__( self, infile, outfile=None, ifno=0 ):
+    def __init__( self, infile, outfile=None, ifno=-1 ):
         self.infile = infile
         self.outfile = outfile
         if self.outfile is None:
@@ -79,8 +79,13 @@ class _SDGridPlotter:
 
     def get( self ):
         self.tablein = scantable( self.infile, average=False )
+        if self.ifno < 0:
+            ifno = self.tablein.getif(0)
+            print 'ifno=',ifno
+        else:
+            ifno = self.ifno
         sel = selector()
-        sel.set_ifs( self.ifno )
+        sel.set_ifs( ifno )
         self.tablein.set_selection( sel ) 
         self.nchan = len(self.tablein._getspectrum(0))
         self.nrow = self.tablein.nrow() 
@@ -134,7 +139,7 @@ class _SDGridPlotter:
         x = numpy.arange(self.blc[0],self.trc[0]+0.5*self.cellx,self.cellx,dtype=float)
         #print 'len(x)=',len(x)
         #print 'x=',x
-        ybase = numpy.ones(self.ny,dtype=float)*self.blc[1]
+        ybase = numpy.ones(self.nx,dtype=float)*self.blc[1]
         #print 'len(ybase)=',len(ybase)
         incr = self.celly 
         for iy in xrange(self.ny):
