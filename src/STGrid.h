@@ -82,10 +82,10 @@ private:
                   String &center ) ;
 
   void setData( Array<Float> &data,
-                Array<Float> &gdata,
+                Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
   
-  void getData( Cube<Float> &spectra,
+  void getData( Cube<Complex> &spectra,
                 Matrix<Double> &direction,
                 Cube<uChar> &flagtra,
                 Matrix<uInt> &rflag,
