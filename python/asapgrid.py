@@ -61,8 +61,6 @@ class _SDGridPlotter:
         self.outfile = outfile
         if self.outfile is None:
             self.outfile = self.infile.rstrip('/')+'.grid'
-        self.grid = None
-        self.pointing = None
         self.nx = -1
         self.ny = -1
         self.nchan = 0
@@ -73,17 +71,19 @@ class _SDGridPlotter:
         self.center = [0.0,0.0]
         self.nonzero = [[0.0],[0.0]]
         self.ifno = ifno
+        self.tablein = None
+        self.nrow = 0
+        self.blc = None
+        self.trc = None
         self.get()
 
     def get( self ):
-        s = scantable( self.infile, average=False )
+        self.tablein = scantable( self.infile, average=False )
         sel = selector()
         sel.set_ifs( self.ifno )
-        s.set_selection( sel ) 
-        self.pointing = numpy.array( s.get_directionval() ).transpose()
-        self.nchan = len(s._getspectrum(0))
-        s.set_selection()
-        del s
+        self.tablein.set_selection( sel ) 
+        self.nchan = len(self.tablein._getspectrum(0))
+        self.nrow = self.tablein.nrow() 
         del sel
 
         s = scantable( self.outfile, average=False )
@@ -97,20 +97,24 @@ class _SDGridPlotter:
         #print 'pollist=',self.pollist
         #print 'npol=',self.npol
         #print 'nrow=',nrow
-        dirstring = numpy.array(s.get_direction()).take(range(0,nrow,self.npol))
-        self.grid = numpy.array( s.get_directionval() ).take(range(0,nrow,self.npol),axis=0).transpose()
 
         idx = 0
-        d0 = dirstring[0].split()[-1]
-        while ( dirstring[idx].split()[-1] == d0 ):  
+        d0 = s.get_direction( 0 ).split()[-1]
+        while ( s.get_direction(self.npol*idx).split()[-1] == d0 ):  
             idx += 1
         
-        self.ny = idx
-        self.nx = nrow / (self.npol * idx )
+        self.nx = idx
+        self.ny = nrow / (self.npol * idx )
         #print 'nx,ny=',self.nx,self.ny
-        
-        self.cellx = abs( self.grid[0][0] - self.grid[0][1] )
-        self.celly = abs( self.grid[1][0] - self.grid[1][self.ny] )
+
+        self.blc = s.get_directionval( 0 )
+        self.trc = s.get_directionval( nrow-self.npol )
+        #print self.blc
+        #print self.trc
+        incrx = s.get_directionval( self.npol )
+        incry = s.get_directionval( self.nx*self.npol ) 
+        self.cellx = abs( self.blc[0] - incrx[0] )
+        self.celly = abs( self.blc[1] - incry[1] )
         #print 'cellx,celly=',self.cellx,self.celly
 
     def plot( self, chan=-1, pol=-1 ):
@@ -126,33 +130,65 @@ class _SDGridPlotter:
         title = 'Gridded Image (%s)'%(opt)
         pl.figure(10)
         pl.clf()
-        pl.plot(self.grid[0],self.grid[1],',',color='blue')
-        pl.plot(self.pointing[0],self.pointing[1],',',color='green')
-        extent=[self.grid[0].min()-0.5*self.cellx,
-                self.grid[0].max()+0.5*self.cellx,
-                self.grid[1].min()-0.5*self.celly,
-                self.grid[1].max()+0.5*self.celly]
+        # plot grid position
+        x = numpy.arange(self.blc[0],self.trc[0]+0.5*self.cellx,self.cellx,dtype=float)
+        #print 'len(x)=',len(x)
+        #print 'x=',x
+        ybase = numpy.ones(self.ny,dtype=float)*self.blc[1]
+        #print 'len(ybase)=',len(ybase)
+        incr = self.celly 
+        for iy in xrange(self.ny):
+            y = ybase + iy * incr
+            #print y
+            pl.plot(x,y,',',color='blue')
+        # plot observed position
+        irow = 0 
+        while ( irow < self.nrow ):
+            chunk = self.getPointingChunk( irow )
+            #print chunk
+            pl.plot(chunk[0],chunk[1],',',color='green')
+            irow += chunk.shape[1]
+            #print irow
+        # show image
+        extent=[self.blc[0]-0.5*self.cellx,
+                self.trc[0]+0.5*self.cellx,
+                self.blc[1]-0.5*self.celly,
+                self.trc[1]+0.5*self.celly]
         pl.imshow(data,extent=extent,origin='lower',interpolation='nearest')
         pl.colorbar()
         pl.xlabel('R.A. [rad]')
         pl.ylabel('Dec. [rad]')
         pl.title( title )
 
+    def getPointingChunk( self, irow ):
+        numchunk = 1000
+        nrow = min( self.nrow-irow, numchunk )
+        #print 'nrow=',nrow
+        v = numpy.zeros( (2,nrow), dtype=float )
+        idx = 0
+        for i in xrange(irow,irow+nrow):
+            d = self.tablein.get_directionval( i )
+            v[0,idx] = d[0]
+            v[1,idx] = d[1]
+            idx += 1
+        return v
+
     def getData( self, chan=-1, pol=-1 ):
         if chan == -1:
             spectra = self.__chanAverage()
         else:
             spectra = self.__chanIndex( chan )
-        data = spectra.reshape( (self.npol,self.nx,self.ny) )
+        data = spectra.reshape( (self.npol,self.ny,self.nx) )
         if pol == -1:
             retval = data.mean(axis=0)
         else:
             retval = data[pol]
+        #retval[0][self.nx-1] = -1.0
         return retval
 
     def __chanAverage( self ):
         s = scantable( self.outfile, average=False )
-        nrow = self.nx * self.ny
+        nrow = s.nrow() 
         spectra = numpy.zeros( (self.npol,nrow/self.npol), dtype=float )
         irow = 0
         sp = [0 for i in xrange(self.nchan)]
@@ -165,7 +201,7 @@ class _SDGridPlotter:
 
     def __chanIndex( self, idx ):
         s = scantable( self.outfile, average=False )
-        nrow = self.nx * self.ny
+        nrow = s.nrow()
         spectra = numpy.zeros( (self.npol,nrow/self.npol), dtype=float )
         irow = 0
         sp = [0 for i in xrange(self.nchan)]
