@@ -6,7 +6,7 @@
 #include <casa/Arrays/Matrix.h>
 #include <casa/Arrays/Cube.h>
 #include <casa/Arrays/ArrayMath.h>
-#include <casa/Arrays/ArrayPartMath.h>
+#include <casa/Arrays/ArrayIter.h>
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/QuantumHolder.h>
 #include <casa/Utilities/CountedPtr.h>
@@ -154,11 +154,11 @@ void STGrid::grid()
   LogIO os( LogOrigin("STGrid", "grid", WHERE) ) ;
 
   // retrieve data
-  Cube<Complex> spectra ;
-  Matrix<Double> direction ;
-  Cube<uChar> flagtra ;
-  Matrix<uInt> rflag ;
-  Matrix<Float> weight ;
+  Array<Complex> spectra ;
+  Array<Double> direction ;
+  Array<Int> flagtra ;
+  Array<Int> rflag ;
+  Array<Float> weight ;
   double t0, t1 ;
   t0 = mathutil::gettimeofday_sec() ;
   getData( spectra, direction, flagtra, rflag, weight ) ;
@@ -169,16 +169,6 @@ void STGrid::grid()
   //os << "max(spectra) = " << max(spectra) << LogIO::POST ;
   //os << "weight = " << weight << LogIO::POST ;
 
-  // flagtra: uChar -> Int
-  // rflag: uInt -> Int
-  Cube<Int> flagI ;
-  Matrix<Int> rflagI ;
-  t0 = mathutil::gettimeofday_sec() ;
-  toInt( &flagtra, &flagI ) ;
-  toInt( &rflag, &rflagI ) ;
-  t1 = mathutil::gettimeofday_sec() ;
-  os << "toInt: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
-  
   // grid parameter
   os << LogIO::DEBUGGING ;
   os << "----------" << endl ;
@@ -199,10 +189,11 @@ void STGrid::grid()
   //cout << "convFunc=" << convFunc << endl ;
 
   // world -> pixel
-  Matrix<Double> xypos( direction.shape(), 0.0 ) ;
+  Array<Double> xypos( direction.shape(), 0.0 ) ;
   t0 = mathutil::gettimeofday_sec() ;
   toPixel( direction, xypos ) ;  
   t1 = mathutil::gettimeofday_sec() ;
+  //os << "xypos=" << xypos << LogIO::POST ;
   os << "toPixel: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   
   // call ggridsd
@@ -210,8 +201,10 @@ void STGrid::grid()
   Double *xypos_p = xypos.getStorage( deletePos ) ;
   const Complex *data_p = spectra.getStorage( deleteData ) ;
   const Float *wgt_p = weight.getStorage( deleteWgt ) ;
-  const Int *flag_p = flagI.getStorage( deleteFlag ) ;
-  const Int *rflag_p = rflagI.getStorage( deleteFlagR ) ;
+  //const Int *flag_p = flagI.getStorage( deleteFlag ) ;
+  //const Int *rflag_p = rflagI.getStorage( deleteFlagR ) ;
+  const Int *flag_p = flagtra.getStorage( deleteFlag ) ;
+  const Int *rflag_p = rflag.getStorage( deleteFlagR ) ;
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
   // Extend grid plane with convSupport_
   Int gnx = nx_ ;
@@ -277,8 +270,8 @@ void STGrid::grid()
   xypos.putStorage( xypos_p, deletePos ) ;
   spectra.freeStorage( data_p, deleteData ) ;
   weight.freeStorage( wgt_p, deleteWgt ) ;
-  flagI.freeStorage( flag_p, deleteFlag ) ;
-  rflagI.freeStorage( rflag_p, deleteFlagR ) ;
+  flagtra.freeStorage( flag_p, deleteFlag ) ;
+  rflag.freeStorage( rflag_p, deleteFlagR ) ;
   convFunc.putStorage( conv_p, deleteConv ) ;
   delete polMap ;
   delete chanMap ;
@@ -335,6 +328,7 @@ void STGrid::setupGrid( Int &nx,
                         Double &ymax,
                         String &center )
 {
+  LogIO os( LogOrigin("STGrid","setupGrid",WHERE) ) ;
   //cout << "nx=" << nx << ", ny=" << ny << endl ;
 
   // center position
@@ -371,15 +365,6 @@ void STGrid::setupGrid( Int &nx,
   }
 
 
-  //Double wx = xmax - xmin ;
-  //Double wy = ymax - ymin ;
-  Double wx = max( abs(xmax-center_(0)), abs(xmin-center_(0)) ) * 2 ;
-  Double wy = max( abs(ymax-center_(1)), abs(ymin-center_(1)) ) * 2 ;
-  // take 10% margin
-  wx *= 1.10 ;
-  wy *= 1.10 ;
-  Quantum<Double> qcellx ;
-  Quantum<Double> qcelly ;
   nx_ = nx ;
   ny_ = ny ;
   if ( nx < 0 && ny > 0 ) {
@@ -390,28 +375,47 @@ void STGrid::setupGrid( Int &nx,
     nx_ = nx ;
     ny_ = nx ;
   }
+
+  //Double wx = xmax - xmin ;
+  //Double wy = ymax - ymin ;
+  Double wx = max( abs(xmax-center_(0)), abs(xmin-center_(0)) ) * 2 ;
+  Double wy = max( abs(ymax-center_(1)), abs(ymin-center_(1)) ) * 2 ;
+  // take 10% margin
+  wx *= 1.10 ;
+  wy *= 1.10 ;
+
+  Quantum<Double> qcellx ;
+  Quantum<Double> qcelly ;
   //cout << "nx_ = " << nx_ << ",  ny_ = " << ny_ << endl ;
   if ( cellx.size() != 0 && celly.size() != 0 ) {
     readQuantity( qcellx, cellx ) ;
     readQuantity( qcelly, celly ) ;
   }
   else if ( celly.size() != 0 ) {
-    cout << "Using celly to x-axis..." << endl ;
+    os << "Using celly to x-axis..." << LogIO::POST ;
     readQuantity( qcelly, celly ) ;
     qcellx = qcelly ;
   }
   else if ( cellx.size() != 0 ) {
-    cout << "Using cellx to y-axis..." << endl ;
+    os << "Using cellx to y-axis..." << LogIO::POST ;
     readQuantity( qcellx, cellx ) ;
     qcelly = qcellx ;
   }
   else {
     if ( nx_ < 0 ) {
-      cout << "No user preference in grid setting. Using default..." << endl ;
+      os << "No user preference in grid setting. Using default..." << LogIO::POST ;
       readQuantity( qcellx, "1.0arcmin" ) ;
       qcelly = qcellx ;
     }
     else {
+      if ( wx == 0.0 ) {
+        os << "Using default spatial extent (10arcmin) in x" << LogIO::POST ;
+        wx = 0.00290888 ;
+      }
+      if ( wy == 0.0 ) {
+        os << "Using default spatial extent (10arcmin) in y" << LogIO::POST ;
+        wy = 0.00290888 ;
+      }
       qcellx = Quantum<Double>( wx/nx_, "rad" ) ;
       qcelly = Quantum<Double>( wy/ny_, "rad" ) ;
     }
@@ -419,6 +423,14 @@ void STGrid::setupGrid( Int &nx,
   cellx_ = qcellx.getValue( "rad" ) ;
   celly_ = qcelly.getValue( "rad" ) ;
   if ( nx_ < 0 ) {
+    if ( wx == 0.0 ) {
+      os << "Using default spatial extent (10arcmin) in x" << LogIO::POST ;
+      wx = 0.00290888 ;
+    }
+    if ( wy == 0.0 ) {
+      os << "Using default spatial extent (10arcmin) in y" << LogIO::POST ;
+      wy = 0.00290888 ;
+    }
     nx_ = Int( ceil( wx/cellx_ ) ) ;
     ny_ = Int( ceil( wy/celly_ ) ) ;
   }
@@ -454,41 +466,42 @@ void STGrid::selectData( Table &tab )
   }
 }
 
-void STGrid::getData( Cube<Complex> &spectra,
-                      Matrix<Double> &direction,
-                      Cube<uChar> &flagtra,
-                      Matrix<uInt> &rflag,
-                      Matrix<Float> &weight ) 
+void STGrid::getData( Array<Complex> &spectra,
+                      Array<Double> &direction,
+                      Array<uChar> &flagtra,
+                      Array<uInt> &rflag,
+                      Array<Float> &weight ) 
 {
-//   LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+  LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
 //   os << "start" << LogIO::POST ;
   Table tab ;
   selectData( tab ) ;
-  updatePolList( tab ) ;
+  setupArray( tab ) ;
 //   os << "npol_ = " << npol_ << LogIO::POST ;
 //   os << "nchan_ = " << nchan_ << LogIO::POST ;
 //   os << "nrow_ = " << nrow_ << LogIO::POST ;
-  spectra.resize( npol_, nchan_, nrow_ ) ;
-  flagtra.resize( npol_, nchan_, nrow_ ) ;
-  rflag.resize( npol_, nrow_ ) ;
-  Cube<Float> tsys( npol_, nchan_, nrow_ ) ;
-  Matrix<Double> tint( npol_, nrow_ ) ;
+  IPosition cshape( 3, npol_, nchan_, nrow_ ) ;
+  IPosition mshape( 2, npol_, nrow_ ) ;
+  spectra.resize( cshape ) ;
+  flagtra.resize( cshape ) ;
+  rflag.resize( mshape ) ;
+  direction.resize( IPosition(2,2,nrow_) ) ;
+  Array<Float> tsys( cshape ) ;
+  Array<Double> tint( mshape ) ;
+
+  ArrayIterator<uChar> fli( flagtra, IPosition(2,1,2) ) ;
+  ArrayIterator<uInt> fri( rflag, IPosition(1,1) ) ;
+  ArrayIterator<Float> tsi( tsys, IPosition(2,1,2) ) ;
+  ArrayIterator<Double> tii( tint, IPosition(1,1) ) ;
+  
   // boolean for pointer access
-  Bool bsp, bfl, bfr, bts, bti, bsps ;
+  Bool bsp, bsps ;
   // pointer to the data
   Complex *sp_p = spectra.getStorage( bsp ) ;
-  uChar *fl_p = flagtra.getStorage( bfl ) ;
-  uInt *fr_p = rflag.getStorage( bfr ) ;
-  Float *ts_p = tsys.getStorage( bts ) ;
-  Double *ti_p = tint.getStorage( bti ) ;
   // working pointer
   Complex *wsp_p = sp_p ;
-  uChar *wfl_p = fl_p ;
-  uInt *wfr_p = fr_p ;
-  Float *wts_p = ts_p ;
-  Double *wti_p = ti_p ;
   uInt len = nchan_ * nrow_ ;
-  IPosition mshape( 2, nchan_, nrow_ ) ;
+  IPosition mshape2( 2, nchan_, nrow_ ) ;
   IPosition vshape( 1, nrow_ ) ;
   Vector<Float> spSlice( nchan_ ) ;
   const Float *sps_p = spSlice.getStorage( bsps ) ;
@@ -512,40 +525,62 @@ void STGrid::getData( Cube<Complex> &spectra,
         wsp_p += cincr ;
       }
     }
-    Matrix<uChar> flSlice( mshape, wfl_p, SHARE ) ;
-    Vector<uInt> frSlice( vshape, wfr_p, SHARE ) ;
+    Array<uChar> flSlice = fli.array() ;
+    Vector<uInt> frSlice = fri.array() ;
     flagtraCol.getColumn( flSlice ) ;
     rflagCol.getColumn( frSlice ) ;
     if ( ipol == 0 )
       directionCol.getColumn( direction ) ;
     Vector<Float> tmpF = tsysCol( 0 ) ;
-    Vector<Double> tmpD( vshape, wti_p, SHARE ) ;
-    Matrix<Float> tsSlice( mshape, wts_p, SHARE ) ;
+    Array<Float> tsSlice = tsi.array() ;
     if ( tmpF.nelements() == (uInt)nchan_ ) {
       tsysCol.getColumn( tsSlice ) ;
     }
     else {
       tsSlice = tmpF( 0 ) ;
     }
+    Vector<Double> tmpD = tii.array() ;
     tintCol.getColumn( tmpD ) ;
 
     wsp_p += len ;
-    wfl_p += len ;
-    wfr_p += nrow_ ;
-    wts_p += len ;
-    wti_p += nrow_ ;
+
+    fli.next() ;
+    fri.next() ;
+    tsi.next() ;
+    tii.next() ;
   }
   spSlice.freeStorage( sps_p, bsps ) ;
   spectra.putStorage( sp_p, bsp ) ;
-  flagtra.putStorage( fl_p, bfl ) ;
-  rflag.putStorage( fr_p, bfr ) ;
-  tsys.putStorage( ts_p, bts ) ;
-  tint.putStorage( ti_p, bti ) ;
+
+//   os << "spectra=" << spectra << LogIO::POST ;
+//   os << "flagtra=" << flagtra << LogIO::POST ;
+//   os << "rflag=" << rflag << LogIO::POST ;
+//   os << "direction=" << direction << LogIO::POST ;
 
   getWeight( weight, tsys, tint ) ;
 }
 
-void STGrid::updatePolList( Table &tab ) 
+void STGrid::getData( Array<Complex> &spectra,
+                      Array<Double> &direction,
+                      Array<Int> &flagtra,
+                      Array<Int> &rflag,
+                      Array<Float> &weight ) 
+{
+  LogIO os( LogOrigin("STGrid","getData",WHERE) ) ;
+  double t0, t1 ;
+
+  Array<uChar> flagUC ;
+  Array<uInt> rflagUI ;
+  getData( spectra, direction, flagUC, rflagUI, weight ) ;
+
+  t0 = mathutil::gettimeofday_sec() ;
+  toInt( flagUC, flagtra ) ;
+  toInt( rflagUI, rflag ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "toInt: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+}
+
+void STGrid::setupArray( Table &tab ) 
 {
   ROScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
   Vector<uInt> pols = polnoCol.getColumn() ;
@@ -577,27 +612,30 @@ void STGrid::updatePolList( Table &tab )
   }
   npol_ = pollist_.size() ;
   if ( npol_ == 0 ) {
-    LogIO os( LogOrigin("STGrid","updatePolList",WHERE) ) ;
+    LogIO os( LogOrigin("STGrid","setupArray",WHERE) ) ;
     os << LogIO::SEVERE << "Empty pollist" << LogIO::EXCEPTION ;
   }
   nrow_ = tab.nrow() / npolOrg ;
   ROArrayColumn<uChar> tmpCol( tab, "FLAGTRA" ) ;
   nchan_ = tmpCol( 0 ).nelements() ;
-//   LogIO os( LogOrigin("STGrid","updatePolList",WHERE) ) ;
+//   LogIO os( LogOrigin("STGrid","setupArray",WHERE) ) ;
 //   os << "npol_ = " << npol_ << "(" << pollist_ << ")" << endl 
 //      << "nchan_ = " << nchan_ << endl 
 //      << "nrow_ = " << nrow_ << LogIO::POST ;
 }
 
-void STGrid::getWeight( Matrix<Float> &w,
-                        Cube<Float> &tsys,
-                        Matrix<Double> &tint ) 
+void STGrid::getWeight( Array<Float> &w,
+                        Array<Float> &tsys,
+                        Array<Double> &tint ) 
 {
   LogIO os( LogOrigin("STGrid","getWeight",WHERE) ) ;
   double t0, t1 ;
   t0 = mathutil::gettimeofday_sec() ;
   // resize
-  w.resize( nchan_, nrow_ ) ;
+  IPosition refShape = tsys.shape() ;
+  Int nchan = refShape[1] ;
+  Int nrow = refShape[2] ;
+  w.resize( IPosition(2,nchan,nrow) ) ;
 
   // set weight
   Bool warn = False ;
@@ -611,9 +649,9 @@ void STGrid::getWeight( Matrix<Float> &w,
     Float *w0_p = w_p ;
     const Double *ti_p = tint.getStorage( b1 ) ;
     const Double *w1_p = ti_p ;
-    for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
+    for ( Int irow = 0 ; irow < nrow ; irow++ ) {
       Float val = (Float)(polMean( w1_p )) ;
-      for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
+      for ( Int ichan = 0 ; ichan < nchan ; ichan++ ) {
         *w0_p = val ;
         w0_p++ ;
       }
@@ -628,8 +666,8 @@ void STGrid::getWeight( Matrix<Float> &w,
     Float *w0_p = w_p ;
     const Float *ts_p = tsys.getStorage( b1 ) ;
     const Float *w1_p = ts_p ;
-    for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
-      for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
+    for ( Int irow = 0 ; irow < nrow ; irow++ ) {
+      for ( Int ichan = 0 ; ichan < nchan ; ichan++ ) {
         Float val = polMean( w1_p ) ;
         *w0_p = 1.0 / ( val * val ) ;
         w0_p++ ;
@@ -647,9 +685,9 @@ void STGrid::getWeight( Matrix<Float> &w,
     const Double *w1_p = ti_p ;
     const Float *ts_p = tsys.getStorage( b2 ) ;
     const Float *w2_p = ts_p ;
-    for ( Int irow = 0 ; irow < nrow_ ; irow++ ) {
+    for ( Int irow = 0 ; irow < nrow ; irow++ ) {
       Float interval = (Float)(polMean( w1_p )) ;
-      for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
+      for ( Int ichan = 0 ; ichan < nchan ; ichan++ ) {
         Float temp = polMean( w2_p ) ;
         *w0_p = interval / ( temp * temp ) ;
         w0_p++ ;
@@ -695,12 +733,12 @@ Double STGrid::polMean( const Double *p )
   return v ;
 }
 
-void STGrid::toInt( Array<uChar> *u, Array<Int> *v ) 
+void STGrid::toInt( Array<uChar> &u, Array<Int> &v ) 
 {
-  uInt len = u->nelements() ;
+  uInt len = u.nelements() ;
   Int *int_p = new Int[len] ;
   Bool deleteIt ;
-  const uChar *data_p = u->getStorage( deleteIt ) ;
+  const uChar *data_p = u.getStorage( deleteIt ) ;
   Int *i_p = int_p ;
   const uChar *u_p = data_p ;
   for ( uInt i = 0 ; i < len ; i++ ) {
@@ -708,16 +746,16 @@ void STGrid::toInt( Array<uChar> *u, Array<Int> *v )
     i_p++ ;
     u_p++ ;
   }
-  u->freeStorage( data_p, deleteIt ) ;
-  v->takeStorage( u->shape(), int_p, TAKE_OVER ) ;
+  u.freeStorage( data_p, deleteIt ) ;
+  v.takeStorage( u.shape(), int_p, TAKE_OVER ) ;
 }
 
-void STGrid::toInt( Array<uInt> *u, Array<Int> *v ) 
+void STGrid::toInt( Array<uInt> &u, Array<Int> &v ) 
 {
-  uInt len = u->nelements() ;
+  uInt len = u.nelements() ;
   Int *int_p = new Int[len] ;
   Bool deleteIt ;
-  const uInt *data_p = u->getStorage( deleteIt ) ;
+  const uInt *data_p = u.getStorage( deleteIt ) ;
   Int *i_p = int_p ;
   const uInt *u_p = data_p ;
   for ( uInt i = 0 ; i < len ; i++ ) {
@@ -725,28 +763,35 @@ void STGrid::toInt( Array<uInt> *u, Array<Int> *v )
     i_p++ ;
     u_p++ ;
   }
-  u->freeStorage( data_p, deleteIt ) ;
-  v->takeStorage( u->shape(), int_p, TAKE_OVER ) ;
+  u.freeStorage( data_p, deleteIt ) ;
+  v.takeStorage( u.shape(), int_p, TAKE_OVER ) ;
 }
 
-void STGrid::toPixel( Matrix<Double> &world, Matrix<Double> &pixel )
+void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
 {
   // gridding will be done on (nx_+2*convSupport_) x (ny_+2*convSupport_) 
   // grid plane to avoid unexpected behavior on grid edge
-  Vector<Double> pixc( 2 ) ;
-  pixc(0) = Double( nx_-1 ) * 0.5 ;
-  pixc(1) = Double( ny_-1 ) * 0.5 ;
-//   pixc(0) = Double( nx_+2*convSupport_-1 ) * 0.5 ;
-//   pixc(1) = Double( ny_+2*convSupport_-1 ) * 0.5 ;
+  Block<Double> pixc( 2 ) ;
+  pixc[0] = Double( nx_-1 ) * 0.5 ;
+  pixc[1] = Double( ny_-1 ) * 0.5 ;
+//   pixc[0] = Double( nx_+2*convSupport_-1 ) * 0.5 ;
+//   pixc[1] = Double( ny_+2*convSupport_-1 ) * 0.5 ;
   uInt nrow = world.shape()[1] ;
-  Vector<Double> cell( 2 ) ;
-  cell(0) = cellx_ ;
-  cell(1) = celly_ ;
-  for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-    for ( uInt i = 0 ; i < 2 ; i++ ) {
-      pixel( i, irow ) = pixc(i) + ( world(i, irow) - center_(i) ) / cell(i) ;
-    }
+  Bool bw, bp ;
+  const Double *w_p = world.getStorage( bw ) ;
+  Double *p_p = pixel.getStorage( bp ) ;
+  const Double *ww_p = w_p ;
+  Double *wp_p = p_p ;
+  for ( uInt i = 0 ; i < nrow ; i++ ) {
+    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cellx_ ;
+    wp_p++ ;
+    ww_p++ ;
+    *wp_p = pixc[1] + ( *ww_p - center_[1] ) / celly_ ;
+    wp_p++ ;
+    ww_p++ ;
   }
+  world.freeStorage( w_p, bw ) ;
+  pixel.putStorage( p_p, bp ) ;  
 //   String gridfile = "grid."+convType_+"."+String::toString(convSupport_)+".dat" ; 
 //   ofstream ofs( gridfile.c_str(), ios::out ) ; 
 //   ofs << "center " << center_(0) << " " << pixc(0) 

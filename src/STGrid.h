@@ -85,20 +85,25 @@ private:
                 Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
   
-  void getData( Cube<Complex> &spectra,
-                Matrix<Double> &direction,
-                Cube<uChar> &flagtra,
-                Matrix<uInt> &rflag,
-                Matrix<Float> &weight ) ;
+  void getData( Array<Complex> &spectra,
+                Array<Double> &direction,
+                Array<uChar> &flagtra,
+                Array<uInt> &rflag,
+                Array<Float> &weight ) ;
+  void getData( Array<Complex> &spectra,
+                Array<Double> &direction,
+                Array<Int> &flagtra,
+                Array<Int> &rflag,
+                Array<Float> &weight ) ;
 
-  void getWeight( Matrix<Float> &w,
-                  Cube<Float> &tsys,
-                  Matrix<Double> &tint ) ;
+  void getWeight( Array<Float> &w,
+                  Array<Float> &tsys,
+                  Array<Double> &tint ) ;
 
-  void toInt( Array<uChar> *u, Array<Int> *v ) ;
-  void toInt( Array<uInt> *u, Array<Int> *v ) ;
+  void toInt( Array<uChar> &u, Array<Int> &v ) ;
+  void toInt( Array<uInt> &u, Array<Int> &v ) ;
 
-  void toPixel( Matrix<Double> &world, Matrix<Double> &pixel ) ;
+  void toPixel( Array<Double> &world, Array<Double> &pixel ) ;
   
   void boxFunc( Vector<Float> &convFunc, Int &convSize ) ;
   void spheroidalFunc( Vector<Float> &convFunc ) ;
@@ -110,7 +115,7 @@ private:
   Float polMean( const Float *p ) ;
   Double polMean( const Double *p ) ;
 
-  void updatePolList( Table &tab ) ;
+  void setupArray( Table &tab ) ;
 
   void prepareTable( Table &tab, String &name ) ;
 

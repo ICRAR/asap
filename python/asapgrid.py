@@ -41,14 +41,14 @@ class asapgrid:
     def save( self, outfile='' ):
         self.outfile = self.gridder._save( outfile ) 
 
-    def plot( self, plotchan=-1, plotpol=-1 ):
+    def plot( self, plotchan=-1, plotpol=-1, plotobs=False, plotgrid=False ):
         import time
         t0=time.time()
         # to load scantable on disk
         storg = rcParams['scantable.storage']
         rcParams['scantable.storage'] = 'disk'
         plotter = _SDGridPlotter( self.infile, self.outfile, self.ifno )
-        plotter.plot( chan=plotchan, pol=plotpol )
+        plotter.plot( chan=plotchan, pol=plotpol, plotobs=plotobs, plotgrid=plotgrid )
         # back to original setup
         rcParams['scantable.storage'] = storg
         t1=time.time()
@@ -122,7 +122,7 @@ class _SDGridPlotter:
         self.celly = abs( self.blc[1] - incry[1] )
         #print 'cellx,celly=',self.cellx,self.celly
 
-    def plot( self, chan=-1, pol=-1 ):
+    def plot( self, chan=-1, pol=-1, plotobs=False, plotgrid=False ):
         if pol < 0:
             opt = 'averaged over pol'
         else:
@@ -136,24 +136,26 @@ class _SDGridPlotter:
         pl.figure(10)
         pl.clf()
         # plot grid position
-        x = numpy.arange(self.blc[0],self.trc[0]+0.5*self.cellx,self.cellx,dtype=float)
-        #print 'len(x)=',len(x)
-        #print 'x=',x
-        ybase = numpy.ones(self.nx,dtype=float)*self.blc[1]
-        #print 'len(ybase)=',len(ybase)
-        incr = self.celly 
-        for iy in xrange(self.ny):
-            y = ybase + iy * incr
-            #print y
-            pl.plot(x,y,',',color='blue')
+        if plotgrid:
+            x = numpy.arange(self.blc[0],self.trc[0]+0.5*self.cellx,self.cellx,dtype=float)
+            #print 'len(x)=',len(x)
+            #print 'x=',x
+            ybase = numpy.ones(self.nx,dtype=float)*self.blc[1]
+            #print 'len(ybase)=',len(ybase)
+            incr = self.celly 
+            for iy in xrange(self.ny):
+                y = ybase + iy * incr
+                #print y
+                pl.plot(x,y,',',color='blue')
         # plot observed position
-        irow = 0 
-        while ( irow < self.nrow ):
-            chunk = self.getPointingChunk( irow )
-            #print chunk
-            pl.plot(chunk[0],chunk[1],',',color='green')
-            irow += chunk.shape[1]
-            #print irow
+        if plotobs:
+            irow = 0 
+            while ( irow < self.nrow ):
+                chunk = self.getPointingChunk( irow )
+                #print chunk
+                pl.plot(chunk[0],chunk[1],',',color='green')
+                irow += chunk.shape[1]
+                #print irow
         # show image
         extent=[self.blc[0]-0.5*self.cellx,
                 self.trc[0]+0.5*self.cellx,
