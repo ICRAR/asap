@@ -456,13 +456,19 @@ void STGrid::selectData( Table &tab )
   if ( scanlist_.size() > 0 ) {
     node = node && taborg.col("SCANNO").in( scanlist_ ) ;
   }
-  tab = taborg( node ) ;
+  Block<String> cols( 3 ) ;
+  cols[0] = "TIME" ;
+  cols[1] = "BEAMNO" ;
+  cols[2] = "POLNO" ;
+  Block<Int> order( 3, Sort::Ascending ) ;
+  tab = taborg( node ).sort( cols, order ) ;
   if ( tab.nrow() == 0 ) {
     LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
     os << LogIO::SEVERE
-       << "No corresponding rows for given selection: IFNO " << ifno 
-       << " SCANNO " << scanlist_ 
-       << LogIO::EXCEPTION ;
+       << "No corresponding rows for given selection: IFNO " << ifno ;
+    if ( scanlist_.size() > 0 )
+      os << " SCANNO " << scanlist_ ;
+    os << LogIO::EXCEPTION ;
   }
 }
 
@@ -582,8 +588,10 @@ void STGrid::getData( Array<Complex> &spectra,
 
 void STGrid::setupArray( Table &tab ) 
 {
+  LogIO os( LogOrigin("STGrid","setupArray",WHERE) ) ;
   ROScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
   Vector<uInt> pols = polnoCol.getColumn() ;
+  //os << pols << LogIO::POST ;
   Vector<uInt> pollistOrg ;
   uInt npolOrg = 0 ;
   uInt polno ;
@@ -612,13 +620,11 @@ void STGrid::setupArray( Table &tab )
   }
   npol_ = pollist_.size() ;
   if ( npol_ == 0 ) {
-    LogIO os( LogOrigin("STGrid","setupArray",WHERE) ) ;
     os << LogIO::SEVERE << "Empty pollist" << LogIO::EXCEPTION ;
   }
   nrow_ = tab.nrow() / npolOrg ;
   ROArrayColumn<uChar> tmpCol( tab, "FLAGTRA" ) ;
   nchan_ = tmpCol( 0 ).nelements() ;
-//   LogIO os( LogOrigin("STGrid","setupArray",WHERE) ) ;
 //   os << "npol_ = " << npol_ << "(" << pollist_ << ")" << endl 
 //      << "nchan_ = " << nchan_ << endl 
 //      << "nrow_ = " << nrow_ << LogIO::POST ;
