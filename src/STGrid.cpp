@@ -456,12 +456,13 @@ void STGrid::selectData( Table &tab )
   if ( scanlist_.size() > 0 ) {
     node = node && taborg.col("SCANNO").in( scanlist_ ) ;
   }
-  Block<String> cols( 3 ) ;
-  cols[0] = "TIME" ;
-  cols[1] = "BEAMNO" ;
-  cols[2] = "POLNO" ;
-  Block<Int> order( 3, Sort::Ascending ) ;
-  tab = taborg( node ).sort( cols, order ) ;
+//   Block<String> cols( 3 ) ;
+//   cols[0] = "TIME" ;
+//   cols[1] = "BEAMNO" ;
+//   cols[2] = "POLNO" ;
+//   Block<Int> order( 3, Sort::Ascending ) ;
+//   tab = taborg( node ).sort( cols, order ) ;
+  tab = taborg( node ) ;
   if ( tab.nrow() == 0 ) {
     LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
     os << LogIO::SEVERE
