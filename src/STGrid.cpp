@@ -59,6 +59,7 @@ void  STGrid::init()
   convSupport_ = -1 ;
   userSupport_ = -1 ;
   convSampling_ = 100 ;
+  irow_ = 0 ;
 }
 
 void STGrid::setFileIn( const string infile )
@@ -149,6 +150,85 @@ extern "C" {
 		Int*,
 		Double*);
 }
+void STGrid::gridPerRow()
+{
+  LogIO os( LogOrigin("STGrid", "gridPerRow", WHERE) ) ;
+  double t0, t1 ;
+
+  // grid parameter
+  os << LogIO::DEBUGGING ;
+  os << "----------" << endl ;
+  os << "Grid parameter summary" << endl ;
+  os << "   (nx,ny) = (" << nx_ << "," << ny_ << ")" << endl ;
+  os << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
+  os << "   center = " << center_ << endl ;
+  os << "----------" << LogIO::POST ;
+  os << LogIO::NORMAL ;
+
+  // boolean for getStorage
+  Bool deletePos, deleteData, deleteWgt, deleteFlag, deleteFlagR, deleteConv, deleteDataG, deleteWgtG ;
+
+  // convolution kernel
+  Vector<Float> convFunc ;
+  t0 = mathutil::gettimeofday_sec() ;
+  setConvFunc( convFunc ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "setConvFunc: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+  //cout << "convSupport=" << convSupport_ << endl ;
+  //cout << "convFunc=" << convFunc << endl ;
+  Float *conv_p = convFunc.getStorage( deleteConv ) ;
+
+  // Extend grid plane with convSupport_
+  Int gnx = nx_ ;
+  Int gny = ny_ ;
+//   Int gnx = nx_+convSupport_*2 ;
+//   Int gny = ny_+convSupport_*2 ;
+  IPosition gshape( 4, gnx, gny, npol_, nchan_ ) ;
+  Array<Complex> gdataArrC( gshape, 0.0 ) ;
+  // 2011/12/20 TN
+  // data_ and gwgtArr share storage
+  data_.resize( gshape ) ;
+  data_ = 0.0 ;
+  Array<Float> gwgtArr( data_ ) ;
+  //Array<Float> gwgtArr( gshape, 0.0 ) ;
+  Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
+  Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
+
+  // data selection
+  selectData( tab_ ) ;
+  setupArray( tab_ ) ;
+
+  // data storage
+  IPosition mshape( 3, npol_, nchan_, 1 ) ;
+  IPosition vshape( 2, npol_, 1 ) ;
+  IPosition dshape( 2, 2, 1 ) ;
+  Array<Complex> spectra( mshape ) ;
+  Array<Double> direction( dshape ) ;
+  Array<Int> flagtra( mshape ) ;
+  Array<Int> rflag( vshape ) ;
+  Array<Float> weight( vshape ) ;
+  Array<Double> xypos( dshape ) ;
+
+  while( !pastEnd() ) {
+    // retrieve data
+    getDataChunk( spectra, direction, flagtra, rflag, weight ) ;
+    
+    // world -> pixel
+    toPixel( direction, xypos ) ;
+    
+    // call ggridsd
+  }
+  
+  // set data
+  setData( gdataArrC, gwgtArr ) ;
+}
+
+Bool STGrid::pastEnd()
+{
+  Bool b = irow_ >= nrow_ ;
+  return b ;
+}
+
 void STGrid::grid() 
 {
   LogIO os( LogOrigin("STGrid", "grid", WHERE) ) ;
@@ -213,7 +293,12 @@ void STGrid::grid()
 //   Int gny = ny_+convSupport_*2 ;
   IPosition gshape( 4, gnx, gny, npol_, nchan_ ) ;
   Array<Complex> gdataArrC( gshape, 0.0 ) ;
-  Array<Float> gwgtArr( gshape, 0.0 ) ;
+  //Array<Float> gwgtArr( gshape, 0.0 ) ;
+  // 2011/12/20 TN
+  // data_ and weight array shares storage
+  data_.resize( gshape ) ;
+  data_ = 0.0 ;
+  Array<Float> gwgtArr( data_ ) ;
   Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
   Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
   Int idopsf = 0 ;
@@ -277,7 +362,7 @@ void STGrid::grid()
   delete chanMap ;
   gdataArrC.putStorage( gdata_p, deleteDataG ) ;
   gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
-  setData( data_, gdataArrC, gwgtArr ) ;
+  setData( gdataArrC, gwgtArr ) ;
   //Matrix<Double> sumWeight( IPosition( 2, npol_, nchan_ ), sumw_p, TAKE_OVER ) ;
   delete sumw_p ;
   //cout << "sumWeight = " << sumWeight << endl ;
@@ -286,34 +371,31 @@ void STGrid::grid()
 //   os << "data_ " << data_ << LogIO::POST ;
 }
 
-void STGrid::setData( Array<Float> &data,
-                      Array<Complex> &gdata,
+void STGrid::setData( Array<Complex> &gdata,
                       Array<Float> &gwgt )
 {
+  // 2011/12/20 TN
+  // gwgt and data_ share storage
   LogIO os( LogOrigin("STGrid","setData",WHERE) ) ;
   double t0, t1 ;
   t0 = mathutil::gettimeofday_sec() ;
-  data.resize( gdata.shape() ) ;
-  uInt len = data.nelements() ;
-  Float *w0_p ;
+  //data.resize( gdata.shape() ) ;
+  uInt len = data_.nelements() ;
   const Complex *w1_p ;
-  const Float *w2_p ;
+  Float *w2_p ;
   Bool b0, b1, b2 ;
-  Float *data_p = data.getStorage( b0 ) ;
   const Complex *gdata_p = gdata.getStorage( b1 ) ;
-  const Float *gwgt_p = gwgt.getStorage( b2 ) ;
-  w0_p = data_p ;
+  Float *gwgt_p = data_.getStorage( b2 ) ;
   w1_p = gdata_p ;
   w2_p = gwgt_p ;
   for ( uInt i = 0 ; i < len ; i++ ) {
-    *w0_p = (*w2_p > 0.0) ? ((*w1_p).real() / *w2_p) : 0.0 ;
-    w0_p++ ;
+    //*w2_p = (*w2_p > 0.0) ? ((*w1_p).real() / *w2_p) : 0.0 ;
+    if ( *w2_p > 0.0 ) *w2_p = (*w1_p).real() / *w2_p ;
     w1_p++ ;
     w2_p++ ;
   }
-  data.putStorage( data_p, b0 ) ;
   gdata.freeStorage( gdata_p, b1 ) ;
-  gwgt.freeStorage( gwgt_p, b2 ) ;
+  data_.putStorage( gwgt_p, b2 ) ;
   t1 = mathutil::gettimeofday_sec() ;
   os << "setData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
 }
@@ -585,6 +667,14 @@ void STGrid::getData( Array<Complex> &spectra,
   toInt( rflagUI, rflag ) ;
   t1 = mathutil::gettimeofday_sec() ;
   os << "toInt: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+}
+
+void STGrid::getDataChunk( Array<Complex> &spectra,
+                           Array<Double> &direction,
+                           Array<Int> &flagtra,
+                           Array<Int> &rflag,
+                           Array<Float> &weight ) 
+{
 }
 
 void STGrid::setupArray( Table &tab ) 

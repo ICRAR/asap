@@ -65,6 +65,7 @@ public:
   void setWeight( const string wType="uniform" ) ;
 
   void grid() ;
+  void gridPerRow() ;
   
   string saveData( string outfile="" ) ;
 
@@ -81,20 +82,24 @@ private:
                   Double &ymax,
                   String &center ) ;
 
-  void setData( Array<Float> &data,
-                Array<Complex> &gdata,
+  void setData( Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
   
-  void getData( Array<Complex> &spectra,
-                Array<Double> &direction,
-                Array<uChar> &flagtra,
-                Array<uInt> &rflag,
-                Array<Float> &weight ) ;
   void getData( Array<Complex> &spectra,
                 Array<Double> &direction,
                 Array<Int> &flagtra,
                 Array<Int> &rflag,
                 Array<Float> &weight ) ;
+  void getData( Array<Complex> &spectra,
+                Array<Double> &direction,
+                Array<uChar> &flagtra,
+                Array<uInt> &rflag,
+                Array<Float> &weight ) ;
+  void getDataChunk( Array<Complex> &spectra,
+                     Array<Double> &direction,
+                     Array<Int> &flagtra,
+                     Array<Int> &rflag,
+                     Array<Float> &weight ) ;
 
   void getWeight( Array<Float> &w,
                   Array<Float> &tsys,
@@ -119,6 +124,9 @@ private:
 
   void prepareTable( Table &tab, String &name ) ;
 
+  Bool pastEnd() ;
+
+
   String infile_ ;
   Int ifno_ ;
   Int nx_ ;
@@ -139,6 +147,7 @@ private:
   String wtype_ ;
 
   Table tab_ ;
+  Int irow_ ;
 };
 }
 #endif
