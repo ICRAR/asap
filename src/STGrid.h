@@ -28,8 +28,8 @@
 // #include <casa/Utilities/CountedPtr.h>
 
 #include <tables/Tables/Table.h>
-// #include <tables/Tables/ScalarColumn.h>
-// #include <tables/Tables/ArrayColumn.h>
+#include <tables/Tables/ScalarColumn.h>
+#include <tables/Tables/ArrayColumn.h>
 
 // #include <measures/Measures/MDirection.h>
 
@@ -65,6 +65,7 @@ public:
   void setWeight( const string wType="uniform" ) ;
 
   void grid() ;
+  void gridAll() ;
   void gridPerRow() ;
   
   string saveData( string outfile="" ) ;
@@ -95,11 +96,16 @@ private:
                 Array<uChar> &flagtra,
                 Array<uInt> &rflag,
                 Array<Float> &weight ) ;
-  void getDataChunk( Array<Complex> &spectra,
-                     Array<Double> &direction,
-                     Array<Int> &flagtra,
-                     Array<Int> &rflag,
-                     Array<Float> &weight ) ;
+  Int getDataChunk( Array<Complex> &spectra,
+                    Array<Double> &direction,
+                    Array<Int> &flagtra,
+                    Array<Int> &rflag,
+                    Array<Float> &weight ) ;
+  Int getDataChunk( Array<Float> &spectra,
+                    Array<Double> &direction,
+                    Array<uChar> &flagtra,
+                    Array<uInt> &rflag,
+                    Array<Float> &weight ) ;
 
   void getWeight( Array<Float> &w,
                   Array<Float> &tsys,
@@ -115,16 +121,20 @@ private:
   void gaussFunc( Vector<Float> &convFunc ) ;
   void pbFunc( Vector<Float> &convFunc ) ;
   void setConvFunc( Vector<Float> &convFunc ) ;
-  void selectData( Table &tab ) ;
 
   Float polMean( const Float *p ) ;
   Double polMean( const Double *p ) ;
 
-  void setupArray( Table &tab ) ;
-
   void prepareTable( Table &tab, String &name ) ;
 
   Bool pastEnd() ;
+
+  void selectData() ;
+  void setupArray() ;
+  void sortData() ;
+
+  Bool examine() ;
+  void attach() ;
 
 
   String infile_ ;
@@ -147,7 +157,15 @@ private:
   String wtype_ ;
 
   Table tab_ ;
-  Int irow_ ;
+  ROArrayColumn<Float> spectraCol_ ;
+  ROArrayColumn<uChar> flagtraCol_ ;
+  ROArrayColumn<Double> directionCol_ ;
+  ROScalarColumn<uInt> flagRowCol_ ;
+  ROArrayColumn<Float> tsysCol_ ;
+  ROScalarColumn<Double> intervalCol_ ;
+  Int nprocessed_ ;
+  Vector<uInt> rows_ ;
+  Int nchunk_ ;
 };
 }
 #endif
