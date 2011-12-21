@@ -195,14 +195,17 @@ void STGrid::gridPerRow()
 
   // data storage
   Int irow = -1 ;
-  IPosition mshape( 3, npol_, nchan_, nchunk_ ) ;
-  IPosition vshape( 2, npol_, nchunk_ ) ;
+  IPosition cshape( 3, npol_, nchan_, nchunk_ ) ;
+  IPosition mshape( 2, npol_, nchunk_ ) ;
+  IPosition vshape( 1, nchunk_ ) ;
   IPosition dshape( 2, 2, nchunk_ ) ;
-  Array<Complex> spectra( mshape ) ;
+  IPosition wshape( 2, nchan_, nchunk_ ) ;
+  Array<Complex> spectra( cshape ) ;
   Array<Double> direction( dshape ) ;
-  Array<Int> flagtra( mshape ) ;
+  Array<Int> flagtra( cshape ) ;
+  //Array<Int> rflag( mshape ) ;
   Array<Int> rflag( vshape ) ;
-  Array<Float> weight( vshape ) ;
+  Array<Float> weight( wshape ) ;
   Array<Double> xypos( dshape ) ;
 
   // parameters for gridding
@@ -237,6 +240,16 @@ void STGrid::gridPerRow()
   double eToPixel = 0.0 ;
   double eGGridSD = 0.0 ;
 
+  // prepare pointer
+  Float *conv_p = convFunc.getStorage( deleteConv ) ;
+  Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
+  Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
+  const Complex *data_p = spectra.getStorage( deleteData ) ;
+  const Float *wgt_p = weight.getStorage( deleteWgt ) ;
+  const Int *flag_p = flagtra.getStorage( deleteFlag ) ;
+  const Int *rflag_p = rflag.getStorage( deleteFlagR ) ;
+  Double *xypos_p = xypos.getStorage( deletePos ) ;
+
   while( !pastEnd() ) {
     // retrieve data
     t0 = mathutil::gettimeofday_sec() ;
@@ -251,16 +264,6 @@ void STGrid::gridPerRow()
     t1 = mathutil::gettimeofday_sec() ;
     eToPixel += t1-t0 ;
    
-    // prepare pointer
-    Float *conv_p = convFunc.getStorage( deleteConv ) ;
-    Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
-    Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
-    const Complex *data_p = spectra.getStorage( deleteData ) ;
-    const Float *wgt_p = weight.getStorage( deleteWgt ) ;
-    const Int *flag_p = flagtra.getStorage( deleteFlag ) ;
-    const Int *rflag_p = rflag.getStorage( deleteFlagR ) ;
-    Double *xypos_p = xypos.getStorage( deletePos ) ;
-
     // call ggridsd
     irow = -1 ;
     t0 = mathutil::gettimeofday_sec() ;
@@ -289,15 +292,6 @@ void STGrid::gridPerRow()
     t1 = mathutil::gettimeofday_sec() ;
     eGGridSD += t1-t0 ;
 
-    // finalization
-    convFunc.putStorage( conv_p, deleteConv ) ;
-    gdataArrC.putStorage( gdata_p, deleteDataG ) ;
-    gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
-    xypos.putStorage( xypos_p, deletePos ) ;
-    spectra.freeStorage( data_p, deleteData ) ;
-    weight.freeStorage( wgt_p, deleteWgt ) ;
-    flagtra.freeStorage( flag_p, deleteFlag ) ;
-    rflag.freeStorage( rflag_p, deleteFlagR ) ;
   }
   os << "getDataChunk: elapsed time is " << eGetDataChunk << " sec." << LogIO::POST ; 
   os << "toPixel: elapsed time is " << eToPixel << " sec." << LogIO::POST ; 
@@ -305,6 +299,14 @@ void STGrid::gridPerRow()
 
 
   // finalization
+  convFunc.putStorage( conv_p, deleteConv ) ;
+  gdataArrC.putStorage( gdata_p, deleteDataG ) ;
+  gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
+  xypos.putStorage( xypos_p, deletePos ) ;
+  spectra.freeStorage( data_p, deleteData ) ;
+  weight.freeStorage( wgt_p, deleteWgt ) ;
+  flagtra.freeStorage( flag_p, deleteFlag ) ;
+  rflag.freeStorage( rflag_p, deleteFlagR ) ;
   delete polMap ;
   delete chanMap ;
   delete sumw_p ;
@@ -701,15 +703,16 @@ void STGrid::getData( Array<Complex> &spectra,
 //   os << "nrow_ = " << nrow_ << LogIO::POST ;
   IPosition cshape( 3, npol_, nchan_, nrow_ ) ;
   IPosition mshape( 2, npol_, nrow_ ) ;
+  IPosition vshape( 1, nrow_ ) ;
   spectra.resize( cshape ) ;
   flagtra.resize( cshape ) ;
-  rflag.resize( mshape ) ;
+  rflag.resize( vshape ) ;
+  Vector<uInt> rflagPerPol( rflag ) ;
   direction.resize( IPosition(2,2,nrow_) ) ;
   Array<Float> tsys( cshape ) ;
   Array<Double> tint( mshape ) ;
 
   ArrayIterator<uChar> fli( flagtra, IPosition(2,1,2) ) ;
-  ArrayIterator<uInt> fri( rflag, IPosition(1,1) ) ;
   ArrayIterator<Float> tsi( tsys, IPosition(2,1,2) ) ;
   ArrayIterator<Double> tii( tint, IPosition(1,1) ) ;
   
@@ -721,7 +724,6 @@ void STGrid::getData( Array<Complex> &spectra,
   Complex *wsp_p = sp_p ;
   uInt len = nchan_ * nrow_ ;
   IPosition mshape2( 2, nchan_, nrow_ ) ;
-  IPosition vshape( 1, nrow_ ) ;
   Vector<Float> spSlice( nchan_ ) ;
   const Float *sps_p = spSlice.getStorage( bsps ) ;
   long cincr = npol_ ;
@@ -745,11 +747,14 @@ void STGrid::getData( Array<Complex> &spectra,
       }
     }
     Array<uChar> flSlice = fli.array() ;
-    Vector<uInt> frSlice = fri.array() ;
     flagtraCol.getColumn( flSlice ) ;
-    rflagCol.getColumn( frSlice ) ;
-    if ( ipol == 0 )
+    if ( ipol == 0 ) {
       directionCol.getColumn( direction ) ;
+      rflagCol.getColumn( rflagPerPol ) ;
+    }
+    else {
+      rflagPerPol += rflagCol.getColumn() ;
+    }
     Vector<Float> tmpF = tsysCol( 0 ) ;
     Array<Float> tsSlice = tsi.array() ;
     if ( tmpF.nelements() == (uInt)nchan_ ) {
@@ -764,7 +769,6 @@ void STGrid::getData( Array<Complex> &spectra,
     wsp_p += len ;
 
     fli.next() ;
-    fri.next() ;
     tsi.next() ;
     tii.next() ;
   }
@@ -776,6 +780,7 @@ void STGrid::getData( Array<Complex> &spectra,
 //   os << "rflag=" << rflag << LogIO::POST ;
 //   os << "direction=" << direction << LogIO::POST ;
 
+  weight.resize( IPosition(2,nchan_,nrow_) ) ;
   getWeight( weight, tsys, tint ) ;
 }
 
@@ -825,13 +830,14 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   LogIO os( LogOrigin("STGrid","getDataChunk",WHERE) ) ;
   Int nrow = min( spectra.shape()[2], nrow_-nprocessed_ ) ;
   Array<Float> tsys( spectra.shape() ) ;
-  Array<Double> tint( rflag.shape() ) ;
+  //Array<Double> tint( rflag.shape() ) ;
+  Array<Double> tint( IPosition(2,spectra.shape()[0],spectra.shape()[2]) ) ;
   IPosition m( 2, 0, 2 ) ;
   IPosition v( 1, 0 ) ;
   ArrayIterator<Float> spi( spectra, m, False ) ;
   ArrayIterator<uChar> fli( flagtra, m, False ) ;
   ArrayIterator<Float> tsi( tsys, m, False ) ;
-  ArrayIterator<Double> di( direction, v ) ; 
+  ArrayIterator<Double> di( direction, v ) ;
   Bool bfr, bti ;
   uInt *fr_p = rflag.getStorage( bfr ) ;
   Double *ti_p = tint.getStorage( bti ) ;
@@ -854,23 +860,27 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
     else {
       tsSlice = tmpF[0] ;
     }
-    *wfr_p = flagRowCol_( idx ) ;
     *wti_p = intervalCol_( idx ) ;
 
     spi.next() ;
     fli.next() ;
     tsi.next() ;
-    wfr_p++ ;
     wti_p++ ;
   }
-  rflag.putStorage( fr_p, bfr ) ;
   tint.putStorage( ti_p, bti ) ;
 
   for ( Int irow = 0 ; irow < nrow ; irow += npol_ ) {
     uInt idx = rows_[offset+irow] ;
     directionCol_.get( idx, di.array() ) ;
     di.next() ;
+
+    *wfr_p = flagRowCol_( idx ) ;
+    for ( Int ipol = 1 ; ipol < npol_ ; ipol++ ) {
+      *wfr_p = max( *wfr_p, flagRowCol_( rows_[offset+irow+ipol] ) ) ;
+    }
+    wfr_p++ ;
   }
+  rflag.putStorage( fr_p, bfr ) ;
 
   getWeight( weight, tsys, tint ) ;
 
@@ -934,15 +944,12 @@ void STGrid::getWeight( Array<Float> &w,
   IPosition refShape = tsys.shape() ;
   Int nchan = refShape[1] ;
   Int nrow = refShape[2] ;
-  w.resize( IPosition(2,nchan,nrow) ) ;
 
   // set weight
-  Bool warn = False ;
   if ( wtype_.compare( "UNIFORM" ) == 0 ) {
     w = 1.0 ;
   }
   else if ( wtype_.compare( "TINT" ) == 0 ) {
-    if ( npol_ > 1 ) warn = True ;
     Bool b0, b1 ;
     Float *w_p = w.getStorage( b0 ) ;
     Float *w0_p = w_p ;
@@ -959,7 +966,6 @@ void STGrid::getWeight( Array<Float> &w,
     tint.freeStorage( ti_p, b1 ) ;
   }
   else if ( wtype_.compare( "TSYS" ) == 0 ) {
-    if ( npol_ > 1 ) warn = True ;
     Bool b0, b1 ;
     Float *w_p = w.getStorage( b0 ) ;
     Float *w0_p = w_p ;
@@ -976,7 +982,6 @@ void STGrid::getWeight( Array<Float> &w,
     tsys.freeStorage( ts_p, b1 ) ;
   }
   else if ( wtype_.compare( "TINTSYS" ) == 0 ) {
-    if ( npol_ > 1 ) warn = True ;
     Bool b0, b1, b2 ;
     Float *w_p = w.getStorage( b0 ) ;
     Float *w0_p = w_p ;
