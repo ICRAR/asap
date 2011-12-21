@@ -152,6 +152,67 @@ extern "C" {
 		Int*,
 		Double*);
 }
+void STGrid::call_ggridsd( Double* xy,
+                           const Complex* values,
+                           Int* nvispol,
+                           Int* nvischan,
+                           const Int* flag,
+                           const Int* rflag,
+                           const Float* weight,
+                           Int* nrow,
+                           Int* irow,
+                           Complex* grid,
+                           Float* wgrid,
+                           Int* nx,
+                           Int* ny,
+                           Int * npol,
+                           Int * nchan,
+                           Int* support,
+                           Int* sampling,
+                           Float* convFunc,
+                           Int *chanMap,
+                           Int *polMap ) 
+{
+  // parameters for gridding
+  Int idopsf = 0 ;
+  Int len = (*npol)*(*nchan) ;
+  Double *sumw_p = new Double[len] ;
+  {
+    Double *work_p = sumw_p ;
+    for ( Int i = 0 ; i < len ; i++ ) {
+      *work_p = 0.0 ;
+      work_p++ ;
+    }
+  }
+
+  // call ggridsd
+  ggridsd( xy,
+           values,
+           nvispol,
+           nvischan,
+           &idopsf,
+           flag,
+           rflag,
+           weight,
+           nrow,
+           irow,
+           grid,
+           wgrid,
+           nx,
+           ny,
+           npol,
+           nchan,
+           support,
+           sampling,
+           convFunc,
+           chanMap,
+           polMap,
+           sumw_p ) ;
+
+  // finalization
+  delete sumw_p ;
+}
+
 void STGrid::gridPerRow()
 {
   LogIO os( LogOrigin("STGrid", "gridPerRow", WHERE) ) ;
@@ -203,13 +264,15 @@ void STGrid::gridPerRow()
   Array<Complex> spectra( cshape ) ;
   Array<Double> direction( dshape ) ;
   Array<Int> flagtra( cshape ) ;
-  //Array<Int> rflag( mshape ) ;
   Array<Int> rflag( vshape ) ;
   Array<Float> weight( wshape ) ;
   Array<Double> xypos( dshape ) ;
 
+  spectraF_.resize( cshape ) ;
+  flagtraUC_.resize( cshape ) ;
+  rflagUI_.resize( vshape ) ;
+
   // parameters for gridding
-  Int idopsf = 0 ;
   Int *chanMap = new Int[nchan_] ;
   {
     Int *work_p = chanMap ;
@@ -226,19 +289,12 @@ void STGrid::gridPerRow()
       work_p++ ;
     }
   }
-  Double *sumw_p = new Double[npol_*nchan_] ;
-  {
-    Double *work_p = sumw_p ;
-    for ( Int i = 0 ; i < npol_*nchan_ ; i++ ) {
-      *work_p = 0.0 ;
-      work_p++ ;
-    }
-  }
 
   // for performance check
   double eGetDataChunk = 0.0 ;
   double eToPixel = 0.0 ;
   double eGGridSD = 0.0 ;
+  double eToInt = 0.0 ;
 
   // prepare pointer
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
@@ -257,6 +313,7 @@ void STGrid::gridPerRow()
     //os << "nrow = " << nrow << LogIO::POST ;
     t1 = mathutil::gettimeofday_sec() ;
     eGetDataChunk += t1-t0 ;
+    eToInt += subtime_ ;
     
     // world -> pixel
     t0 = mathutil::gettimeofday_sec() ;
@@ -267,28 +324,26 @@ void STGrid::gridPerRow()
     // call ggridsd
     irow = -1 ;
     t0 = mathutil::gettimeofday_sec() ;
-    ggridsd( xypos_p,
-             data_p,
-             &npol_,
-             &nchan_,
-             &idopsf,
-             flag_p,
-             rflag_p,
-             wgt_p,
-             &nrow,
-             &irow,
-             gdata_p,
-             wdata_p, 
-             &gnx,
-             &gny,
-             &npol_,
-             &nchan_,
-             &convSupport_,
-             &convSampling_,
-             conv_p,
-             chanMap,
-             polMap,
-             sumw_p ) ;
+    call_ggridsd( xypos_p,
+                  data_p,
+                  &npol_,
+                  &nchan_,
+                  flag_p,
+                  rflag_p,
+                  wgt_p,
+                  &nrow,
+                  &irow,
+                  gdata_p,
+                  wdata_p,
+                  &gnx,
+                  &gny,
+                  &npol_,
+                  &nchan_,
+                  &convSupport_,
+                  &convSampling_,
+                  conv_p,
+                  chanMap,
+                  polMap ) ;
     t1 = mathutil::gettimeofday_sec() ;
     eGGridSD += t1-t0 ;
 
@@ -296,7 +351,7 @@ void STGrid::gridPerRow()
   os << "getDataChunk: elapsed time is " << eGetDataChunk << " sec." << LogIO::POST ; 
   os << "toPixel: elapsed time is " << eToPixel << " sec." << LogIO::POST ; 
   os << "ggridsd: elapsed time is " << eGGridSD << " sec." << LogIO::POST ; 
-
+  os << "toInt: elapsed time is " << eToInt << " sec." << LogIO::POST ;
 
   // finalization
   convFunc.putStorage( conv_p, deleteConv ) ;
@@ -309,7 +364,6 @@ void STGrid::gridPerRow()
   rflag.freeStorage( rflag_p, deleteFlagR ) ;
   delete polMap ;
   delete chanMap ;
-  delete sumw_p ;
 
   // set data
   setData( gdataArrC, gwgtArr ) ;
@@ -357,12 +411,13 @@ Bool STGrid::examine()
   //       by considering data size to be allocated for ggridsd input/output
   nchunk_ = 100 ;
   Bool b = nchunk_ >= nrow_ ;
+  nchunk_ = min( nchunk_, nrow_ ) ;
   return b ;
 }
 
 void STGrid::gridAll() 
 {
-  LogIO os( LogOrigin("STGrid", "grid", WHERE) ) ;
+  LogIO os( LogOrigin("STGrid", "gridAll", WHERE) ) ;
 
   // retrieve data
   Array<Complex> spectra ;
@@ -432,7 +487,6 @@ void STGrid::gridAll()
   Array<Float> gwgtArr( data_ ) ;
   Complex *gdata_p = gdataArrC.getStorage( deleteDataG ) ;
   Float *wdata_p = gwgtArr.getStorage( deleteWgtG ) ;
-  Int idopsf = 0 ;
   Int *chanMap = new Int[nchan_] ;
   {
     Int *work_p = chanMap ;
@@ -449,38 +503,28 @@ void STGrid::gridAll()
       work_p++ ;
     }
   }
-  Double *sumw_p = new Double[npol_*nchan_] ;
-  {
-    Double *work_p = sumw_p ;
-    for ( Int i = 0 ; i < npol_*nchan_ ; i++ ) {
-      *work_p = 0.0 ;
-      work_p++ ;
-    }
-  }
   t0 = mathutil::gettimeofday_sec() ;
   Int irow = -1 ;
-  ggridsd( xypos_p,
-           data_p,
-           &npol_,
-           &nchan_,
-           &idopsf,
-           flag_p,
-           rflag_p,
-           wgt_p,
-           &nrow_,
-           &irow,
-           gdata_p,
-           wdata_p, 
-           &gnx,
-           &gny,
-           &npol_,
-           &nchan_,
-           &convSupport_,
-           &convSampling_,
-           conv_p,
-           chanMap,
-           polMap,
-           sumw_p ) ;
+  call_ggridsd( xypos_p,
+                data_p,
+                &npol_,
+                &nchan_,
+                flag_p,
+                rflag_p,
+                wgt_p,
+                &nrow_,
+                &irow,
+                gdata_p,
+                wdata_p,
+                &gnx,
+                &gny,
+                &npol_,
+                &nchan_,
+                &convSupport_,
+                &convSampling_,
+                conv_p,
+                chanMap,
+                polMap ) ;
   t1 = mathutil::gettimeofday_sec() ;
   os << "ggridsd: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
   xypos.putStorage( xypos_p, deletePos ) ;
@@ -495,7 +539,6 @@ void STGrid::gridAll()
   gwgtArr.putStorage( wdata_p, deleteWgtG ) ;
   setData( gdataArrC, gwgtArr ) ;
   //Matrix<Double> sumWeight( IPosition( 2, npol_, nchan_ ), sumw_p, TAKE_OVER ) ;
-  delete sumw_p ;
   //cout << "sumWeight = " << sumWeight << endl ;
 //   os << "gdataArr = " << gdataArr << LogIO::POST ;
 //   os << "gwgtArr = " << gwgtArr << LogIO::POST ;
@@ -688,6 +731,21 @@ void STGrid::attach()
   flagRowCol_.attach( tab_, "FLAGROW" ) ;
   tsysCol_.attach( tab_, "TSYS" ) ;
   intervalCol_.attach( tab_, "INTERVAL" ) ;
+//   Vector<String> colnames( 6 ) ;
+//   colnames[0] = "SPECTRA" ;
+//   colnames[1] = "FLAGTRA" ;
+//   colnames[2] = "DIRECTION" ;
+//   colnames[3] = "FLAGROW" ;
+//   colnames[4] = "TSYS" ;
+//   colnames[5] = "INTERVAL" ;
+//   row_ = ROTableRow( tab_, colnames ) ;
+//   const TableRecord &rec = row_.record() ;
+//   spectraRF_.attachToRecord( rec, colnames[0] ) ;
+//   flagtraRF_.attachToRecord( rec, colnames[1] ) ;
+//   directionRF_.attachToRecord( rec, colnames[2] ) ;
+//   flagRowRF_.attachToRecord( rec, colnames[3] ) ;
+//   tsysRF_.attachToRecord( rec, colnames[4] ) ;
+//   intervalRF_.attachToRecord( rec, colnames[5] ) ;
 }
 
 void STGrid::getData( Array<Complex> &spectra,
@@ -810,14 +868,15 @@ Int STGrid::getDataChunk( Array<Complex> &spectra,
                           Array<Int> &rflag,
                           Array<Float> &weight ) 
 {
-  Array<Float> spFloat( spectra.shape() ) ;
-  Array<uChar> fluChar( flagtra.shape() ) ;
-  Array<uInt> fruInt( rflag.shape() ) ;
-  Int nrow = getDataChunk( spFloat, direction, fluChar, fruInt, weight ) ;
-  convertArray( spectra, spFloat ) ;
-  convertArray( flagtra, fluChar ) ;
-  convertArray( rflag, fruInt ) ;
-
+  Int nrow = getDataChunk( spectraF_, direction, flagtraUC_, rflagUI_, weight ) ;
+  double t0, t1 ;
+  t0 = mathutil::gettimeofday_sec() ;
+  convertArray( spectra, spectraF_ ) ;
+  convertArray( flagtra, flagtraUC_ ) ;
+  convertArray( rflag, rflagUI_ ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  subtime_ = t1 - t0 ;
+  
   return nrow ;
 }
 
@@ -830,7 +889,6 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   LogIO os( LogOrigin("STGrid","getDataChunk",WHERE) ) ;
   Int nrow = min( spectra.shape()[2], nrow_-nprocessed_ ) ;
   Array<Float> tsys( spectra.shape() ) ;
-  //Array<Double> tint( rflag.shape() ) ;
   Array<Double> tint( IPosition(2,spectra.shape()[0],spectra.shape()[2]) ) ;
   IPosition m( 2, 0, 2 ) ;
   IPosition v( 1, 0 ) ;
@@ -844,6 +902,8 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   uInt *wfr_p = fr_p ;
   Double *wti_p = ti_p ;
   Int offset = nprocessed_ * npol_ ;
+  Int start = offset ;
+  Int end = start + nrow * npol_ ;
   for ( Int irow = 0 ; irow < npol_ * nrow ; irow++ ) {
     Array<Float> spSlice = spi.array() ;
     Array<uChar> flSlice = fli.array() ;
@@ -868,7 +928,6 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
     wti_p++ ;
   }
   tint.putStorage( ti_p, bti ) ;
-
   for ( Int irow = 0 ; irow < nrow ; irow += npol_ ) {
     uInt idx = rows_[offset+irow] ;
     directionCol_.get( idx, di.array() ) ;
@@ -881,6 +940,58 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
     wfr_p++ ;
   }
   rflag.putStorage( fr_p, bfr ) ;
+//   Bool bti, bfr ;
+//   Double *ti_p = tint.getStorage( bti ) ;
+//   Double *wti_p = ti_p ;
+//   uInt *fr_p = rflag.getStorage( bfr ) ;
+//   uInt *wfr_p = fr_p - 1 ;
+//   Int start = nprocessed_ * npol_ ;
+//   Int end = start + nrow * npol_ ;
+//   for ( Int irow = start ; irow < end ; irow++ ) {
+//     uInt idx = rows_[irow] ;
+//     row_.get( idx ) ;
+//     // SPECTRA
+// //     os << "spi.array().shape()=" << spi.array().shape() << LogIO::POST ;
+// //     os << "(*spectraRF_).shape()=" << (*spectraRF_).shape() << LogIO::POST ;
+//     spi.array() = *spectraRF_ ;
+   
+//     // FLAGTRA
+//     fli.array() = *flagtraRF_ ;
+
+//     // INTERVAL 
+//     *wti_p = *intervalRF_ ;
+
+//     // TSYS
+// //     os << "tsi.array().shape()=" << tsi.array().shape() << LogIO::POST ;
+// //     os << "(*tsysRF_).shape()=" << (*tsysRF_).shape() << LogIO::POST ;
+// //     os << "(*tsysRF_).nelements()=" << (*tsysRF_).nelements() << LogIO::POST ;
+//     if ( (*tsysRF_).nelements() == (uInt)nchan_ )
+//       tsi.array() = *tsysRF_ ;
+//     else
+//       tsi.array() = *((*tsysRF_).data()) ;
+
+//     // DIRECTION and FLAGROW
+//     Int mod = irow % npol_ ;
+//     if ( mod == 0 ) {
+// //       os << "di.array().shape()=" << di.array().shape() << LogIO::POST ;
+// //       os << "(*directionRF_).shape()=" << (*directionRF_).shape() << LogIO::POST ;
+//       di.array() = *directionRF_ ;
+//       wfr_p++ ;
+//       *wfr_p = *flagRowRF_ ;
+//     }
+//     else {
+//       *wfr_p += *flagRowRF_ ;
+//     }
+    
+//     // increment
+//     spi.next() ;
+//     fli.next() ;
+//     tsi.next() ;
+//     di.next() ;
+//     *wti_p++ ;
+//   }
+//   tint.putStorage( ti_p, bti ) ;
+//   rflag.putStorage( fr_p, bfr ) ;
 
   getWeight( weight, tsys, tint ) ;
 

@@ -18,18 +18,14 @@
 #include <vector>
 
 #include <casa/BasicSL/String.h>
+#include <casa/Arrays/Array.h>
 #include <casa/Arrays/Vector.h>
-#include <casa/Arrays/Matrix.h>
-#include <casa/Arrays/Cube.h>
-// #include <casa/Arrays/ArrayMath.h>
-// #include <casa/Inputs/Input.h>
-// #include <casa/Quanta/Quantum.h>
-// #include <casa/Quanta/QuantumHolder.h>
-// #include <casa/Utilities/CountedPtr.h>
+#include <casa/Containers/RecordField.h>
 
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
+//#include <tables/Tables/TableRow.h>
 
 // #include <measures/Measures/MDirection.h>
 
@@ -136,6 +132,27 @@ private:
   Bool examine() ;
   void attach() ;
 
+  void call_ggridsd( Double* xy,
+                     const Complex* values,
+                     Int* nvispol,
+                     Int* nvischan,
+                     const Int* flag,
+                     const Int* rflag,
+                     const Float* weight,
+                     Int* nrow,
+                     Int* irow,
+                     Complex* grid,
+                     Float* wgrid,
+                     Int* nx,
+                     Int* ny,
+                     Int * npol,
+                     Int * nchan,
+                     Int* support,
+                     Int* sampling,
+                     Float* convFunc,
+                     Int *chanMap,
+                     Int *polMap ) ;
+
 
   String infile_ ;
   Int ifno_ ;
@@ -163,9 +180,22 @@ private:
   ROScalarColumn<uInt> flagRowCol_ ;
   ROArrayColumn<Float> tsysCol_ ;
   ROScalarColumn<Double> intervalCol_ ;
+//   ROTableRow row_ ;
+//   RORecordFieldPtr< Array<Float> > spectraRF_ ;
+//   RORecordFieldPtr< Array<uChar> > flagtraRF_ ;
+//   RORecordFieldPtr< Array<Double> > directionRF_ ;
+//   RORecordFieldPtr<uInt> flagRowRF_ ;
+//   RORecordFieldPtr< Array<Float> > tsysRF_ ;
+//   RORecordFieldPtr<Double> intervalRF_ ;
   Int nprocessed_ ;
   Vector<uInt> rows_ ;
   Int nchunk_ ;
+
+  Array<Float> spectraF_ ;
+  Array<uChar> flagtraUC_ ;
+  Array<uInt> rflagUI_ ;
+
+  double subtime_ ;
 };
 }
 #endif
