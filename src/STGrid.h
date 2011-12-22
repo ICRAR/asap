@@ -108,9 +108,6 @@ private:
   void getWeight( Array<Float> &w,
                   Array<Float> &tsys,
                   Array<Double> &tint ) ;
-  void getWeightPerPol( Array<Float> &w,
-                        Array<Float> &tsys,
-                        Array<Double> &tint ) ;
   
   void toInt( Array<uChar> &u, Array<Int> &v ) ;
   void toInt( Array<uInt> &u, Array<Int> &v ) ;
@@ -123,16 +120,12 @@ private:
   void pbFunc( Vector<Float> &convFunc ) ;
   void setConvFunc( Vector<Float> &convFunc ) ;
 
-  Float polMean( const Float *p ) ;
-  Double polMean( const Double *p ) ;
-
   void prepareTable( Table &tab, String &name ) ;
 
   Bool pastEnd() ;
 
   void selectData() ;
   void setupArray() ;
-  void sortData() ;
 
   Bool examine() ;
   void attach( Table &tab ) ;
@@ -188,13 +181,6 @@ private:
   ROScalarColumn<uInt> flagRowCol_ ;
   ROArrayColumn<Float> tsysCol_ ;
   ROScalarColumn<Double> intervalCol_ ;
-//   ROTableRow row_ ;
-//   RORecordFieldPtr< Array<Float> > spectraRF_ ;
-//   RORecordFieldPtr< Array<uChar> > flagtraRF_ ;
-//   RORecordFieldPtr< Array<Double> > directionRF_ ;
-//   RORecordFieldPtr<uInt> flagRowRF_ ;
-//   RORecordFieldPtr< Array<Float> > tsysRF_ ;
-//   RORecordFieldPtr<Double> intervalRF_ ;
   Int nprocessed_ ;
   Vector<uInt> rows_ ;
   Int nchunk_ ;
