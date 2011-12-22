@@ -196,6 +196,9 @@ void STGrid::call_ggridsd( Array<Double> &xypos,
   Complex *grid_p = gdata.getStorage( deleteDataG ) ;
   Float *wgrid_p = gwgt.getStorage( deleteWgtG ) ;
   Float *conv_p = convFunc.getStorage( deleteConv ) ;
+
+  // pass copy of irow to ggridsd since it will be modified in theroutine
+  Int irowCopy = irow ;
       
   // call ggridsd
   ggridsd( xy_p,
@@ -207,7 +210,7 @@ void STGrid::call_ggridsd( Array<Double> &xypos,
            rflag_p,
            wgt_p,
            &nrow,
-           &irow,
+           &irowCopy,
            grid_p,
            wgrid_p,
            &nx,
@@ -243,9 +246,14 @@ Bool STGrid::pastEnd()
 void STGrid::grid()
 {
   LogIO os( LogOrigin("STGrid", "grid", WHERE) ) ;
+  double t0,t1 ;
 
   // data selection
+  t0 = mathutil::gettimeofday_sec() ;
   selectData() ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "selectData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ;
+
   setupArray() ;
 
   if ( wtype_.compare("UNIFORM") != 0 &&
@@ -286,7 +294,7 @@ Bool STGrid::examine()
 {
   // TODO: nchunk_ must be determined from nchan_, npol_, and (nx_,ny_) 
   //       by considering data size to be allocated for ggridsd input/output
-  nchunk_ = 100 ;
+  nchunk_ = 400 ;
   Bool b = nchunk_ >= nrow_ ;
   nchunk_ = min( nchunk_, nrow_ ) ;
   return b ;
@@ -368,7 +376,6 @@ void STGrid::gridPerRow()
       // retrieve data
       t0 = mathutil::gettimeofday_sec() ;
       Int nrow = getDataChunk( spectra, direction, flagtra, rflag, weight ) ;
-      //os << "nrow = " << nrow << LogIO::POST ;
       t1 = mathutil::gettimeofday_sec() ;
       eGetData += t1-t0 ;
       
@@ -497,8 +504,7 @@ void STGrid::gridPerPol()
     t0 = mathutil::gettimeofday_sec() ;
     toPixel( direction, xypos ) ;  
     t1 = mathutil::gettimeofday_sec() ;
-    //os << "xypos=" << xypos << LogIO::POST ;
-    os << "toPixel: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+    eToPixel += t1-t0 ;
     
     // call ggridsd
     polMap[0] = ipol ;
@@ -545,7 +551,10 @@ void STGrid::gridPerPol()
 
 void STGrid::initPol( Int ipol ) 
 {
-  ptab_ = tab_( tab_.col("POLNO") == (uInt)ipol ) ;
+  if ( npol_ == 1 )
+    ptab_ = tab_ ;
+  else 
+    ptab_ = tab_( tab_.col("POLNO") == (uInt)ipol ) ;
 
   attach( ptab_ ) ;
 }
@@ -700,7 +709,7 @@ void STGrid::selectData()
   Int ifno = ifno_ ;
   Table taborg( infile_ ) ;
   if ( ifno == -1 ) {
-    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
+    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;    
 //     os << LogIO::SEVERE
 //        << "Please set IFNO before actual gridding" 
 //        << LogIO::EXCEPTION ;
@@ -818,6 +827,7 @@ Int STGrid::getDataChunk( Array<Complex> &spectra,
                           Array<Int> &rflag,
                           Array<Float> &weight ) 
 {
+  LogIO os( LogOrigin("STGrid","getDataChunk",WHERE) ) ;
   Int nrow = getDataChunk( spectraF_, direction, flagtraUC_, rflagUI_, weight ) ;
   if ( nrow < nchunk_ ) {
     spectra.resize( spectraF_.shape() ) ;
@@ -863,7 +873,7 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   Vector<Double> tintVec( tint ) ;
 
   RefRows rows( nprocessed_, nprocessed_+nrow-1, 1 ) ;
-  os << "rows.nrows()=" << rows.nrows() << LogIO::POST ;
+  os<<LogIO::DEBUGGING<<"nprocessed_="<<nprocessed_<<": rows.nrows()="<<rows.nrows()<<LogIO::POST ;
   spectraCol_.getColumnCells( rows, spectra ) ;
   flagtraCol_.getColumnCells( rows, flagtra ) ;
   directionCol_.getColumnCells( rows, direction ) ;
@@ -874,7 +884,7 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
     tsysCol_.getColumnCells( rows, tsys ) ;
   else
     tsys = tsysTemp[0] ;
-  
+
   double t0,t1 ;
   t0 = mathutil::gettimeofday_sec() ;
   getWeight( weight, tsys, tint ) ;
