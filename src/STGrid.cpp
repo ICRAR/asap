@@ -278,7 +278,7 @@ void STGrid::grid()
   os << "   (cellx,celly) = (" << cellx_ << "," << celly_ << ")" << endl ;
   os << "   center = " << center_ << endl ;
   os << "   weighting = " << wtype_ << endl ;
-  os << "   convfunc = " << convType_ << "with support " << convSupport_ << endl ; 
+  os << "   convfunc = " << convType_ << " with support " << convSupport_ << endl ; 
   os << "----------" << LogIO::POST ;
   os << LogIO::NORMAL ;
 
@@ -353,7 +353,7 @@ void STGrid::gridPerRow()
     
     polMap[0] = ipol ;
 
-    os << "start pol" << ipol << LogIO::POST ;
+    os << "start pol " << ipol << LogIO::POST ;
 
     while( !pastEnd() ) {
       // data storage
@@ -411,6 +411,8 @@ void STGrid::gridPerRow()
       eGGridSD += t1-t0 ;
 
     }
+
+    os << "end pol " << ipol << LogIO::POST ;
 
     nprocessed_ = 0 ;
   }
@@ -551,8 +553,11 @@ void STGrid::gridPerPol()
 
 void STGrid::initPol( Int ipol ) 
 {
-  if ( npol_ == 1 )
+  LogIO os( LogOrigin("STGrid","initPol",WHERE) ) ;
+  if ( npolOrg_ == 1 ) {
+    os << "single polarization data." << LogIO::POST ;
     ptab_ = tab_ ;
+  }
   else 
     ptab_ = tab_( tab_.col("POLNO") == (uInt)ipol ) ;
 
@@ -706,34 +711,44 @@ void STGrid::setupGrid( Int &nx,
 
 void STGrid::selectData()
 {
+  LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;    
   Int ifno = ifno_ ;
   Table taborg( infile_ ) ;
   if ( ifno == -1 ) {
-    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;    
-//     os << LogIO::SEVERE
-//        << "Please set IFNO before actual gridding" 
-//        << LogIO::EXCEPTION ;
     ROScalarColumn<uInt> ifnoCol( taborg, "IFNO" ) ;
     ifno = ifnoCol( 0 ) ;
     os << LogIO::WARN
        << "IFNO is not given. Using default IFNO: " << ifno << LogIO::POST ;
   }
-//   tab = taborg( taborg.col("IFNO") == ifno ) ;
   TableExprNode node ;
-  node = taborg.col("IFNO") == ifno ;
+  if ( isMultiIF( taborg ) ) {
+    os << "apply selection on IFNO" << LogIO::POST ;
+    node = taborg.col("IFNO") == ifno ;
+  }
   if ( scanlist_.size() > 0 ) {
+    os << "apply selection on SCANNO" << LogIO::POST ;
     node = node && taborg.col("SCANNO").in( scanlist_ ) ;
   }
-  tab_ = taborg( node ) ;
+  if ( node.isNull() ) {
+    tab_ = taborg ;
+  }
+  else {
+    tab_ = taborg( node ) ;
+  }
   if ( tab_.nrow() == 0 ) {
-    LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;
     os << LogIO::SEVERE
        << "No corresponding rows for given selection: IFNO " << ifno ;
     if ( scanlist_.size() > 0 )
       os << " SCANNO " << scanlist_ ;
     os << LogIO::EXCEPTION ;
   }
-  //attach( tab_ ) ;
+}
+
+Bool STGrid::isMultiIF( Table &tab ) 
+{
+  ROScalarColumn<uInt> ifnoCol( tab, "IFNO" ) ;
+  Vector<uInt> ifnos = ifnoCol.getColumn() ;
+  return anyNE( ifnos, ifnos[0] ) ;
 }
 
 void STGrid::attach( Table &tab )
@@ -873,7 +888,7 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   Vector<Double> tintVec( tint ) ;
 
   RefRows rows( nprocessed_, nprocessed_+nrow-1, 1 ) ;
-  os<<LogIO::DEBUGGING<<"nprocessed_="<<nprocessed_<<": rows.nrows()="<<rows.nrows()<<LogIO::POST ;
+  //os<<LogIO::DEBUGGING<<"nprocessed_="<<nprocessed_<<": rows.nrows()="<<rows.nrows()<<LogIO::POST ;
   spectraCol_.getColumnCells( rows, spectra ) ;
   flagtraCol_.getColumnCells( rows, flagtra ) ;
   directionCol_.getColumnCells( rows, direction ) ;
@@ -903,15 +918,15 @@ void STGrid::setupArray()
   Vector<uInt> pols = polnoCol.getColumn() ;
   //os << pols << LogIO::POST ;
   Vector<uInt> pollistOrg ;
-  uInt npolOrg = 0 ;
+  npolOrg_ = 0 ;
   uInt polno ;
   for ( uInt i = 0 ; i < polnoCol.nrow() ; i++ ) {
     //polno = polnoCol( i ) ; 
     polno = pols( i ) ; 
     if ( allNE( pollistOrg, polno ) ) {
-      pollistOrg.resize( npolOrg+1, True ) ;
-      pollistOrg[npolOrg] = polno ;
-      npolOrg++ ;
+      pollistOrg.resize( npolOrg_+1, True ) ;
+      pollistOrg[npolOrg_] = polno ;
+      npolOrg_++ ;
     }
   }
   if ( pollist_.size() == 0 )
@@ -932,7 +947,7 @@ void STGrid::setupArray()
   if ( npol_ == 0 ) {
     os << LogIO::SEVERE << "Empty pollist" << LogIO::EXCEPTION ;
   }
-  nrow_ = tab_.nrow() / npolOrg ;
+  nrow_ = tab_.nrow() / npolOrg_ ;
   ROArrayColumn<uChar> tmpCol( tab_, "FLAGTRA" ) ;
   nchan_ = tmpCol( 0 ).nelements() ;
 //   os << "npol_ = " << npol_ << "(" << pollist_ << ")" << endl 

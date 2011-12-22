@@ -152,6 +152,7 @@ private:
                      Int *polMap ) ;
 
   void initPol( Int ipol ) ;
+  Bool isMultiIF( Table &tab ) ;
 
 
   String infile_ ;
@@ -159,6 +160,7 @@ private:
   Int nx_ ;
   Int ny_ ;
   Int npol_ ;
+  Int npolOrg_ ;
   Int nchan_ ;
   Int nrow_ ;
   Double cellx_ ;
