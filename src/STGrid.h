@@ -130,24 +130,24 @@ private:
   Bool examine() ;
   void attach( Table &tab ) ;
 
-  void call_ggridsd( Double* xy,
-                     const Complex* values,
-                     Int* nvispol,
-                     Int* nvischan,
-                     const Int* flag,
-                     const Int* rflag,
-                     const Float* weight,
-                     Int* nrow,
-                     Int* irow,
-                     Complex* grid,
-                     Float* wgrid,
-                     Int* nx,
-                     Int* ny,
-                     Int * npol,
-                     Int * nchan,
-                     Int* support,
-                     Int* sampling,
-                     Float* convFunc,
+  void call_ggridsd( Array<Double> &xy,
+                     Array<Complex> &values,
+                     Int &nvispol,
+                     Int &nvischan,
+                     Array<Int> &flag,
+                     Array<Int> &rflag,
+                     Array<Float> &weight,
+                     Int &nrow,
+                     Int &irow,
+                     Array<Complex> &grid,
+                     Array<Float> &wgrid,
+                     Int &nx,
+                     Int &ny,
+                     Int &npol,
+                     Int &nchan,
+                     Int &support,
+                     Int &sampling,
+                     Vector<Float> &convFunc,
                      Int *chanMap,
                      Int *polMap ) ;
 
@@ -189,7 +189,6 @@ private:
   Array<uChar> flagtraUC_ ;
   Array<uInt> rflagUI_ ;
 
-  double subtime_ ;
 };
 }
 #endif
