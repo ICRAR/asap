@@ -61,13 +61,15 @@ public:
   void setWeight( const string wType="uniform" ) ;
 
   void grid() ;
-  void gridAll() ;
-  void gridPerRow() ;
   
   string saveData( string outfile="" ) ;
 
 private:
   void init() ;
+
+  // actual gridding
+  void gridPerRow() ;
+  void gridPerPol() ;
 
   void setupGrid( Int &nx, 
                   Int &ny, 
@@ -82,16 +84,16 @@ private:
   void setData( Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
   
-  void getData( Array<Complex> &spectra,
-                Array<Double> &direction,
-                Array<Int> &flagtra,
-                Array<Int> &rflag,
-                Array<Float> &weight ) ;
-  void getData( Array<Complex> &spectra,
-                Array<Double> &direction,
-                Array<uChar> &flagtra,
-                Array<uInt> &rflag,
-                Array<Float> &weight ) ;
+  void getDataPerPol( Array<Complex> &spectra,
+                      Array<Double> &direction,
+                      Array<Int> &flagtra,
+                      Array<Int> &rflag,
+                      Array<Float> &weight ) ;
+  void getDataPerPol( Array<Float> &spectra,
+                      Array<Double> &direction,
+                      Array<uChar> &flagtra,
+                      Array<uInt> &rflag,
+                      Array<Float> &weight ) ;
   Int getDataChunk( Array<Complex> &spectra,
                     Array<Double> &direction,
                     Array<Int> &flagtra,
@@ -106,7 +108,10 @@ private:
   void getWeight( Array<Float> &w,
                   Array<Float> &tsys,
                   Array<Double> &tint ) ;
-
+  void getWeightPerPol( Array<Float> &w,
+                        Array<Float> &tsys,
+                        Array<Double> &tint ) ;
+  
   void toInt( Array<uChar> &u, Array<Int> &v ) ;
   void toInt( Array<uInt> &u, Array<Int> &v ) ;
 
@@ -130,7 +135,7 @@ private:
   void sortData() ;
 
   Bool examine() ;
-  void attach() ;
+  void attach( Table &tab ) ;
 
   void call_ggridsd( Double* xy,
                      const Complex* values,
@@ -153,6 +158,8 @@ private:
                      Int *chanMap,
                      Int *polMap ) ;
 
+  void initPol( Int ipol ) ;
+
 
   String infile_ ;
   Int ifno_ ;
@@ -174,6 +181,7 @@ private:
   String wtype_ ;
 
   Table tab_ ;
+  Table ptab_ ;
   ROArrayColumn<Float> spectraCol_ ;
   ROArrayColumn<uChar> flagtraCol_ ;
   ROArrayColumn<Double> directionCol_ ;
