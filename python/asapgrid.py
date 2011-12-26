@@ -78,20 +78,8 @@ class _SDGridPlotter:
         self.get()
 
     def get( self ):
-        self.tablein = scantable( self.infile, average=False )
-        if self.ifno < 0:
-            ifno = self.tablein.getif(0)
-            print 'ifno=',ifno
-        else:
-            ifno = self.ifno
-        sel = selector()
-        sel.set_ifs( ifno )
-        self.tablein.set_selection( sel ) 
-        self.nchan = len(self.tablein._getspectrum(0))
-        self.nrow = self.tablein.nrow() 
-        del sel
-
         s = scantable( self.outfile, average=False )
+        self.nchan = len(s._getspectrum(0))
         nrow = s.nrow()
         pols = numpy.ones( nrow, dtype=int )
         for i in xrange(nrow):
@@ -149,6 +137,7 @@ class _SDGridPlotter:
                 pl.plot(x,y,',',color='blue')
         # plot observed position
         if plotobs:
+            self.createTableIn()
             irow = 0 
             while ( irow < self.nrow ):
                 chunk = self.getPointingChunk( irow )
@@ -166,6 +155,21 @@ class _SDGridPlotter:
         pl.xlabel('R.A. [rad]')
         pl.ylabel('Dec. [rad]')
         pl.title( title )
+
+    def createTableIn( self ):
+        self.tablein = scantable( self.infile, average=False )
+        if self.ifno < 0:
+            ifno = self.tablein.getif(0)
+            print 'ifno=',ifno
+        else:
+            ifno = self.ifno
+        sel = selector()
+        sel.set_ifs( ifno )
+        self.tablein.set_selection( sel ) 
+        self.nchan = len(self.tablein._getspectrum(0))
+        self.nrow = self.tablein.nrow() 
+        del sel
+        
 
     def getPointingChunk( self, irow ):
         numchunk = 1000
