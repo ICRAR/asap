@@ -71,6 +71,7 @@ private:
   void gridPerRow() ;
   void gridPerPol() ;
 
+  void setupGrid() ;
   void setupGrid( Int &nx, 
                   Int &ny, 
                   String &cellx, 
@@ -80,6 +81,8 @@ private:
                   Double &ymin,
                   Double &ymax,
                   String &center ) ;
+  void mapExtent( Double &xmin, Double &xmax,
+                  Double &ymin, Double &ymax ) ;
 
   void setData( Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
@@ -154,6 +157,13 @@ private:
   void initPol( Int ipol ) ;
   Bool isMultiIF( Table &tab ) ;
 
+
+  // user input
+  Int nxUI_ ;
+  Int nyUI_ ;
+  String cellxUI_ ;
+  String cellyUI_ ;
+  String centerUI_ ;
 
   String infile_ ;
   Int ifno_ ;

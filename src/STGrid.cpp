@@ -66,6 +66,13 @@ void  STGrid::init()
   convSampling_ = 100 ;
   nprocessed_ = 0 ;
   nchunk_ = 0 ;
+
+  // initialize user input 
+  nxUI_ = -1 ;
+  nyUI_ = -1 ;
+  cellxUI_ = "" ;
+  cellyUI_ = "" ;
+  centerUI_ = "" ;
 }
 
 void STGrid::setFileIn( const string infile )
@@ -73,7 +80,6 @@ void STGrid::setFileIn( const string infile )
   String name( infile ) ;
   if ( infile_.compare( name ) != 0 ) {
     infile_ = String( infile ) ;
-    tab_ = Table( infile_ ) ;
   }
 }
 
@@ -99,22 +105,11 @@ void STGrid::defineImage( int nx,
                           string scelly,
                           string scenter ) 
 {
-  ROArrayColumn<Double> dirCol( tab_, "DIRECTION" ) ;
-  Matrix<Double> direction = dirCol.getColumn() ;
-  Double rmax, rmin, dmax, dmin ;
-  minMax( rmin, rmax, direction.row( 0 ) ) ;
-  minMax( dmin, dmax, direction.row( 1 ) ) ;
-
-  Int npx = (Int)nx ;
-  Int npy = (Int)ny ;
-  String cellx( scellx ) ;
-  String celly( scelly ) ;
-  String center( scenter ) ;
-  setupGrid( npx, npy, 
-             cellx, celly, 
-             rmin, rmax, 
-             dmin, dmax, 
-             center ) ;
+  nxUI_ = (Int)nx ;
+  nyUI_ = (Int)ny ;
+  cellxUI_ = String( scellx ) ;
+  cellyUI_ = String( scelly ) ;
+  centerUI_ = String( scenter ) ;
 }
   
 void STGrid::setFunc( string convType,
@@ -254,6 +249,7 @@ void STGrid::grid()
   t1 = mathutil::gettimeofday_sec() ;
   os << "selectData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ;
 
+  setupGrid() ;
   setupArray() ;
 
   if ( wtype_.compare("UNIFORM") != 0 &&
@@ -591,6 +587,15 @@ void STGrid::setData( Array<Complex> &gdata,
   os << "setData: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
 }
 
+void STGrid::setupGrid() 
+{
+  Double xmin,xmax,ymin,ymax ;
+  mapExtent( xmin, xmax, ymin, ymax ) ;
+  
+  setupGrid( nxUI_, nyUI_, cellxUI_, cellyUI_, 
+             xmin, xmax, ymin, ymax, centerUI_ ) ;
+}
+
 void STGrid::setupGrid( Int &nx, 
                         Int &ny, 
                         String &cellx, 
@@ -707,6 +712,19 @@ void STGrid::setupGrid( Int &nx,
     nx_ = Int( ceil( wx/cellx_ ) ) ;
     ny_ = Int( ceil( wy/celly_ ) ) ;
   }
+}
+
+void STGrid::mapExtent( Double &xmin, Double &xmax, 
+                        Double &ymin, Double &ymax ) 
+{
+  //LogIO os( LogOrigin("STGrid","mapExtent",WHERE) ) ;
+  ROArrayColumn<Double> dirCol( tab_, "DIRECTION" ) ;
+  Matrix<Double> direction = dirCol.getColumn() ;
+  //os << "dirCol.nrow() = " << dirCol.nrow() << LogIO::POST ;
+  minMax( xmin, xmax, direction.row( 0 ) ) ;
+  minMax( ymin, ymax, direction.row( 1 ) ) ;
+  //os << "(xmin,xmax)=(" << xmin << "," << xmax << ")" << LogIO::POST ; 
+  //os << "(ymin,ymax)=(" << ymin << "," << ymax << ")" << LogIO::POST ; 
 }
 
 void STGrid::selectData()
