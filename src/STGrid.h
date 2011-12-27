@@ -165,7 +165,7 @@ private:
   String cellyUI_ ;
   String centerUI_ ;
 
-  String infile_ ;
+  Block<String> infileList_ ;
   Int ifno_ ;
   Int nx_ ;
   Int ny_ ;
@@ -186,6 +186,7 @@ private:
   String wtype_ ;
 
   Table tab_ ;
+  Block<Table> tableList_ ;
   Table ptab_ ;
   ROArrayColumn<Float> spectraCol_ ;
   ROArrayColumn<uChar> flagtraCol_ ;

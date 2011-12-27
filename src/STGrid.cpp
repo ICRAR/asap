@@ -78,8 +78,9 @@ void  STGrid::init()
 void STGrid::setFileIn( const string infile )
 {
   String name( infile ) ;
-  if ( infile_.compare( name ) != 0 ) {
-    infile_ = String( infile ) ;
+  if ( infileList_.size() == 0 || infileList_[0].compare( name ) != 0 ) {
+    infileList_.resize( 1 ) ;
+    infileList_[0] = String(infile) ;
   }
 }
 
@@ -731,35 +732,40 @@ void STGrid::selectData()
 {
   LogIO os( LogOrigin("STGrid","selectData",WHERE) ) ;    
   Int ifno = ifno_ ;
-  Table taborg( infile_ ) ;
-  if ( ifno == -1 ) {
-    ROScalarColumn<uInt> ifnoCol( taborg, "IFNO" ) ;
-    ifno = ifnoCol( 0 ) ;
-    os << LogIO::WARN
+  uInt nfile = infileList_.size() ;
+  tableList_.resize( nfile ) ;
+  for ( uInt i = 0 ; i < nfile ; i++ ) {
+    Table taborg( infileList_[i] ) ;
+    if ( ifno == -1 ) {
+      ROScalarColumn<uInt> ifnoCol( taborg, "IFNO" ) ;
+      ifno = ifnoCol( 0 ) ;
+      os << LogIO::WARN
        << "IFNO is not given. Using default IFNO: " << ifno << LogIO::POST ;
+    }
+    TableExprNode node ;
+    if ( isMultiIF( taborg ) ) {
+      os << "apply selection on IFNO" << LogIO::POST ;
+      node = taborg.col("IFNO") == ifno ;
+    }
+    if ( scanlist_.size() > 0 ) {
+      os << "apply selection on SCANNO" << LogIO::POST ;
+      node = node && taborg.col("SCANNO").in( scanlist_ ) ;
+    }
+    if ( node.isNull() ) {
+      tableList_[i] = taborg ;
+    }
+    else {
+      tableList_[i] = taborg( node ) ;
+    }
+    if ( tableList_[i].nrow() == 0 ) {
+      os << LogIO::SEVERE
+         << "No corresponding rows for given selection: IFNO " << ifno ;
+      if ( scanlist_.size() > 0 )
+        os << " SCANNO " << scanlist_ ;
+      os << LogIO::EXCEPTION ;
+    }
   }
-  TableExprNode node ;
-  if ( isMultiIF( taborg ) ) {
-    os << "apply selection on IFNO" << LogIO::POST ;
-    node = taborg.col("IFNO") == ifno ;
-  }
-  if ( scanlist_.size() > 0 ) {
-    os << "apply selection on SCANNO" << LogIO::POST ;
-    node = node && taborg.col("SCANNO").in( scanlist_ ) ;
-  }
-  if ( node.isNull() ) {
-    tab_ = taborg ;
-  }
-  else {
-    tab_ = taborg( node ) ;
-  }
-  if ( tab_.nrow() == 0 ) {
-    os << LogIO::SEVERE
-       << "No corresponding rows for given selection: IFNO " << ifno ;
-    if ( scanlist_.size() > 0 )
-      os << " SCANNO " << scanlist_ ;
-    os << LogIO::EXCEPTION ;
-  }
+  tab_ = tableList_[0] ;
 }
 
 Bool STGrid::isMultiIF( Table &tab ) 
@@ -1210,11 +1216,11 @@ string STGrid::saveData( string outfile )
   //Int polno = 0 ;
   String outfile_ ;
   if ( outfile.size() == 0 ) {
-    if ( infile_.lastchar() == '/' ) {
-      outfile_ = infile_.substr( 0, infile_.size()-1 ) ;
+    if ( infileList_[0].lastchar() == '/' ) {
+      outfile_ = infileList_[0].substr( 0, infileList_[0].size()-1 ) ;
     }
     else {
-      outfile_ = infile_ ;
+      outfile_ = infileList_[0] ;
     }
     outfile_ += ".grid" ;
   }
@@ -1275,7 +1281,7 @@ string STGrid::saveData( string outfile )
 
 void STGrid::prepareTable( Table &tab, String &name ) 
 {
-  Table t( infile_, Table::Old ) ;
+  Table t( infileList_[0], Table::Old ) ;
   t.deepCopy( name, Table::New, False, t.endianFormat(), True ) ;
   tab = Table( name, Table::Update ) ;
 }
