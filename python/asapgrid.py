@@ -8,13 +8,17 @@ from logging import asaplog
 
 class asapgrid:
     def __init__( self, infile ):
-        self.infile = infile
         self.outfile = None
-        self.gridder = stgrid( self.infile )
         self.ifno = None
+        self.gridder = stgrid()
+        self.setData( infile )
 
     def setData( self, infile ):
-        self.gridder._setin( infile )
+        if isinstance( infile, str ):
+            self.gridder._setin( infile )
+        else:
+            self.gridder._setfiles( infile )
+        self.infile = infile 
 
     def setIF( self, ifno ):
         self.ifno = ifno
@@ -57,10 +61,13 @@ class asapgrid:
         
 class _SDGridPlotter:
     def __init__( self, infile, outfile=None, ifno=-1 ):
-        self.infile = infile
+        if isinstance( infile, str ):
+            self.infile = [infile]
+        else:
+            self.infile = infile
         self.outfile = outfile
         if self.outfile is None:
-            self.outfile = self.infile.rstrip('/')+'.grid'
+            self.outfile = self.infile[0].rstrip('/')+'.grid'
         self.nx = -1
         self.ny = -1
         self.nchan = 0
@@ -137,14 +144,15 @@ class _SDGridPlotter:
                 pl.plot(x,y,',',color='blue')
         # plot observed position
         if plotobs:
-            self.createTableIn()
-            irow = 0 
-            while ( irow < self.nrow ):
-                chunk = self.getPointingChunk( irow )
-                #print chunk
-                pl.plot(chunk[0],chunk[1],',',color='green')
-                irow += chunk.shape[1]
-                #print irow
+            for i in xrange(len(self.infile)):
+                self.createTableIn( self.infile[i] )
+                irow = 0 
+                while ( irow < self.nrow ):
+                    chunk = self.getPointingChunk( irow )
+                    #print chunk
+                    pl.plot(chunk[0],chunk[1],',',color='green')
+                    irow += chunk.shape[1]
+                    #print irow
         # show image
         extent=[self.blc[0]-0.5*self.cellx,
                 self.trc[0]+0.5*self.cellx,
@@ -156,8 +164,9 @@ class _SDGridPlotter:
         pl.ylabel('Dec. [rad]')
         pl.title( title )
 
-    def createTableIn( self ):
-        self.tablein = scantable( self.infile, average=False )
+    def createTableIn( self, tab ):
+        del self.tablein
+        self.tablein = scantable( tab, average=False )
         if self.ifno < 0:
             ifno = self.tablein.getif(0)
             print 'ifno=',ifno
@@ -165,9 +174,9 @@ class _SDGridPlotter:
             ifno = self.ifno
         sel = selector()
         sel.set_ifs( ifno )
-        self.tablein.set_selection( sel ) 
+        self.tablein.set_selection( sel )
         self.nchan = len(self.tablein._getspectrum(0))
-        self.nrow = self.tablein.nrow() 
+        self.nrow = self.tablein.nrow()
         del sel
         
 
@@ -194,7 +203,6 @@ class _SDGridPlotter:
             retval = data.mean(axis=0)
         else:
             retval = data[pol]
-        #retval[0][self.nx-1] = -1.0
         return retval
 
     def __chanAverage( self ):

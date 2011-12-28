@@ -20,6 +20,7 @@ void python_STGrid() {
   class_<STGrid>("stgrid")
     .def( init <> () )
     .def( init < const std::string > () )
+    .def( init < const std::vector<std::string> > () )
     .def("_setif", &STGrid::setIF)
     .def("_setpollist", &STGrid::setPolList)
     .def("_setscanlist", &STGrid::setScanList)
@@ -27,6 +28,7 @@ void python_STGrid() {
     .def("_setfunc", &STGrid::setFunc)
     .def("_grid", &STGrid::grid)
     .def("_setin", &STGrid::setFileIn)
+    .def("_setfiles", &STGrid::setFileList)
     .def("_setweight", &STGrid::setWeight)
     .def("_save", &STGrid::saveData)
     ;

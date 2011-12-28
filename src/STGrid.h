@@ -40,9 +40,11 @@ class STGrid
 public:
   STGrid() ;
   STGrid( const string infile ) ;
+  STGrid( const vector<string> infile ) ;
   virtual ~STGrid() {} ;
 
   void setFileIn( const string infile ) ;
+  void setFileList( const vector<string> infile ) ;
 
   void setIF( unsigned int ifno ) { ifno_ = ifno ; } ;
 
@@ -155,6 +157,7 @@ private:
                      Int *polMap ) ;
 
   void initPol( Int ipol ) ;
+  void initTable( uInt idx ) ;
   Bool isMultiIF( Table &tab ) ;
 
 
@@ -166,6 +169,7 @@ private:
   String centerUI_ ;
 
   Block<String> infileList_ ;
+  uInt nfile_ ;
   Int ifno_ ;
   Int nx_ ;
   Int ny_ ;
@@ -173,6 +177,7 @@ private:
   Int npolOrg_ ;
   Int nchan_ ;
   Int nrow_ ;
+  Block<Int> rows_ ;
   Double cellx_ ;
   Double celly_ ;
   Vector<Double> center_ ;
@@ -195,7 +200,6 @@ private:
   ROArrayColumn<Float> tsysCol_ ;
   ROScalarColumn<Double> intervalCol_ ;
   Int nprocessed_ ;
-  Vector<uInt> rows_ ;
   Int nchunk_ ;
 
   Array<Float> spectraF_ ;
