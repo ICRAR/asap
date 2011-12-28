@@ -7,13 +7,50 @@ import pylab as pl
 from logging import asaplog
 
 class asapgrid:
+    """
+    The asapgrid class is defined to convolve data onto regular
+    spatial grid. Typical usage is as follows:
+
+       # create asapgrid instance with two input data
+       g = asapgrid( ['testimage1.asap','testimage2.asap'] )
+       # set IFNO if necessary
+       g.setIF( 0 )
+       # set POLNOs if necessary
+       g.setPolList( [0,1] )
+       # set SCANNOs if necessary
+       g.setScanList( [22,23,24] )
+       # define image with full specification
+       # you can skip some parameters (see help for defineImage)
+       g.defineImage( nx=12, ny=12, cellx='10arcsec', celly='10arcsec',
+                      center='J2000 10h10m10s -5d05m05s' )
+       # set convolution function
+       g.setFunc( func='sf', width=3 )
+       # actual gridding
+       g.grid()
+       # save result
+       g.save( outfile='grid.asap' )
+       # plot result
+       g.plot( plotchan=1246, plotpol=-1, plotgrid=True, plotobs=True )
+    """
     def __init__( self, infile ):
+        """
+        Create asapgrid instance.
+
+        infile -- input data as a string or string list if you want
+                  to grid more than one data at once.  
+        """
         self.outfile = None
         self.ifno = None
         self.gridder = stgrid()
         self.setData( infile )
 
     def setData( self, infile ):
+        """
+        Set data to be processed.
+
+        infile -- input data as a string or string list if you want
+                  to grid more than one data at once.  
+        """
         if isinstance( infile, str ):
             self.gridder._setin( infile )
         else:
@@ -21,31 +58,138 @@ class asapgrid:
         self.infile = infile 
 
     def setIF( self, ifno ):
+        """
+        Set IFNO to be processed. Currently, asapgrid allows to process
+        only one IFNO for one gridding run even if the data contains
+        multiple IFs. If you didn't specify IFNO, default value, which
+        is IFNO in the first spectrum, will be processed.
+
+        ifno -- IFNO to be processed.
+        """
         self.ifno = ifno
         self.gridder._setif( self.ifno )
 
     def setPolList( self, pollist ):
+        """
+        Set list of polarization components you want to process.
+        If not specified, all POLNOs will be processed.
+
+        pollist -- list of POLNOs.
+        """
         self.gridder._setpollist( pollist )
 
     def setScanList( self, scanlist ):
+        """
+        Set list of scans you want to process. If not specified, all
+        scans will be processed.
+
+        scanlist -- list of SCANNOs.
+        """
         self.gridder._setscanlist( scanlist )
 
     def defineImage( self, nx=-1, ny=-1, cellx='', celly='', center='' ):
+        """
+        Define spatial grid.
+
+        First two parameters, nx and ny, define number of pixels of
+        the grid. If which of those is not specified, it will be set
+        to the same value as the other. If none of them are specified,
+        it will be determined from map extent and cell size.
+
+        Next two parameters, cellx and celly, define size of pixel.
+        You should set those parameters as string, which is constructed
+        numerical value and unit, e.g. '0.5arcmin', or numerical value.
+        If those values are specified as numerical value, their units
+        will be assumed to 'arcmin'. If which of those is not specified,
+        it will be set to the same value as the other. If none of them
+        are specified, it will be determined from map extent and number
+        of pixels, or set to '1arcmin' if neither nx nor ny is set.
+
+        The last parameter, center, define the central coordinate of
+        the grid. You should specify its value as a string, like,
+
+           'J2000 05h08m50s -16d23m30s'
+
+        or 
+
+           'J2000 05:08:50 -16.23.30'
+
+        You can omit equinox when you specify center coordinate. In that
+        case, J2000 is assumed. If center is not specified, it will be
+        determined from the observed positions of input data.
+
+        nx -- number of pixels along x (R.A.) direction.
+        ny -- number of pixels along y (Dec.) direction.
+        cellx -- size of pixel in x (R.A.) direction.
+        celly -- size of pixel in y (Dec.) direction.
+        center -- central position of the grid.
+        """
+        if not isinstance( cellx, str ):
+            cellx = '%sarcmin'%(cellx)
+        if not isinstance( celly, str ):
+            celly = '%sarcmin'%(celly)
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
     def setFunc( self, func='box', width=-1 ):
+        """
+        Set convolution function. Possible options are 'box' (Box-car,
+        default), 'sf' (prolate spheroidal), and 'gauss' (Gaussian).
+        Width of convolution function can be set using width parameter.
+        By default (-1), width is automatically set depending on each
+        convolution function. Default values for width are:
+
+           'box': 1 pixel
+           'sf': 3 pixels
+           'gauss': 3 pixels (width is used as HWHM)
+
+        func -- Function type ('box', 'sf', 'gauss').
+        width -- Width of convolution function. Default (-1) is to
+                 choose pre-defined value for each convolution function.
+        """
         self.gridder._setfunc( func, width )
 
     def setWeight( self, weightType='uniform' ):
+        """
+        Set weight type. Possible options are 'uniform' (default),
+        'tint' (weight by integration time), 'tsys' (weight by
+        Tsys: 1/Tsys**2), and 'tintsys' (weight by integration time
+        as well as Tsys: tint/Tsys**2).
+
+        weightType -- weight type ('uniform', 'tint', 'tsys', 'tintsys')
+        """
         self.gridder._setweight( weightType ) 
 
     def grid( self ):
+        """
+        Actual gridding which will be done based on several user inputs. 
+        """
         self.gridder._grid()
 
     def save( self, outfile='' ):
+        """
+        Save result. By default, output data name will be constructed
+        from first element of input data name list (e.g. 'input.asap.grid').
+
+        outfile -- output data name. 
+        """
         self.outfile = self.gridder._save( outfile ) 
 
     def plot( self, plotchan=-1, plotpol=-1, plotobs=False, plotgrid=False ):
+        """
+        Plot gridded data.
+
+        plotchan -- Which channel you want to plot. Default (-1) is
+                    to average all the channels.
+        plotpol -- Which polarization component you want to plot.
+                   Default (-1) is to average all the polarization
+                   components.
+        plotobs -- Also plot observed position if True. Default
+                   is False. Setting True for large amount of spectra
+                   might be time consuming.
+        plotgrid -- Also plot grid center if True. Default is False.
+                    Setting True for large number of grids might be
+                    time consuming.
+        """
         import time
         t0=time.time()
         # to load scantable on disk
