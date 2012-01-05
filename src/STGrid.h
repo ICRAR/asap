@@ -25,6 +25,8 @@
 #include <tables/Tables/Table.h>
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/ArrayColumn.h>
+
+#include "concurrent.h"
 //#include <tables/Tables/TableRow.h>
 
 // #include <measures/Measures/MDirection.h>
@@ -99,6 +101,14 @@ private:
                       Array<uChar> &flagtra,
                       Array<uInt> &rflag,
                       Array<Float> &weight ) ;
+  Int getDataChunk( IPosition const &wshape,
+		    IPosition const &vshape,
+		    IPosition const &dshape,
+		    Array<Complex> &spectra,
+		    Array<Double> &direction,
+		    Array<Int> &flagtra,
+		    Array<Int> &rflag,
+		    Array<Float> &weight ) ;
   Int getDataChunk( Array<Complex> &spectra,
                     Array<Double> &direction,
                     Array<Int> &flagtra,
@@ -127,7 +137,7 @@ private:
 
   void prepareTable( Table &tab, String &name ) ;
 
-  Bool pastEnd() ;
+//   Bool pastEnd() ;
 
   void selectData() ;
   void setupArray() ;
@@ -159,6 +169,8 @@ private:
   void initPol( Int ipol ) ;
   void initTable( uInt idx ) ;
   Bool isMultiIF( Table &tab ) ;
+  static bool produceChunk(void *ctx) throw(concurrent::PCException);
+  static void consumeChunk(void *ctx) throw(concurrent::PCException);
 
 
   // user input
@@ -171,13 +183,12 @@ private:
   Block<String> infileList_ ;
   uInt nfile_ ;
   Int ifno_ ;
+
   Int nx_ ;
   Int ny_ ;
   Int npol_ ;
   Int npolOrg_ ;
   Int nchan_ ;
-  Int nrow_ ;
-  Block<Int> rows_ ;
   Double cellx_ ;
   Double celly_ ;
   Vector<Double> center_ ;
@@ -185,13 +196,23 @@ private:
   Int convSupport_ ;
   Int userSupport_ ;
   Int convSampling_ ;
-  Array<Float> data_ ;
   Vector<uInt> pollist_ ;
   Vector<uInt> scanlist_ ;
   String wtype_ ;
+  Block<Table> tableList_ ;
+  Vector<uInt> rows_ ;
+  Int nchunk_ ;
+
+  /////////////// gridPerRow variable
+  IPosition vshape_;
+  IPosition wshape_;
+  IPosition dshape_;
+  // loop variable
+  Int nrow_ ;
+  Array<Float> data_ ;
 
   Table tab_ ;
-  Block<Table> tableList_ ;
+  // per pol
   Table ptab_ ;
   ROArrayColumn<Float> spectraCol_ ;
   ROArrayColumn<uChar> flagtraCol_ ;
@@ -199,13 +220,13 @@ private:
   ROScalarColumn<uInt> flagRowCol_ ;
   ROArrayColumn<Float> tsysCol_ ;
   ROScalarColumn<Double> intervalCol_ ;
+
   Int nprocessed_ ;
-  Int nchunk_ ;
 
-  Array<Float> spectraF_ ;
-  Array<uChar> flagtraUC_ ;
-  Array<uInt> rflagUI_ ;
 
+  double eGetData_;
+  double eToPixel_;
+  double eGGridSD_;
 };
 }
 #endif
