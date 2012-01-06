@@ -32,7 +32,7 @@ namespace concurrent {
 		virtual ~Mutex();
 		void lock() throw(int);
 		/**
-		 * Returns true if locked.
+		 * Returns true if this thread could lock.
 		 * Returns false if already locked.
 		 */
 		bool try_lock() throw(int);
@@ -104,7 +104,7 @@ namespace concurrent {
 		}
 
 		/**
-		 * Returns true if locked.
+		 * Returns true if this thread could lock.
 		 * Returns false if already locked.
 		 */
 		virtual bool try_lock() {
