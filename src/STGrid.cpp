@@ -844,7 +844,7 @@ void STGrid::gridPerRowWithClipping()
   os << "initPol: elapsed time is " << eInitPol << " sec." << LogIO::POST ; 
   os << "getData: elapsed time is " << eGetData_-eToInt-eGetWeight << " sec." << LogIO::POST ; 
   os << "toPixel: elapsed time is " << eToPixel_ << " sec." << LogIO::POST ; 
-  os << "ggridsd: elapsed time is " << eGGridSD_ << " sec." << LogIO::POST ; 
+  os << "ggridsd2: elapsed time is " << eGGridSD_ << " sec." << LogIO::POST ; 
   os << "toInt: elapsed time is " << eToInt << " sec." << LogIO::POST ;
   os << "getWeight: elapsed time is " << eGetWeight << " sec." << LogIO::POST ;
   

@@ -25,6 +25,10 @@ class asapgrid:
                       center='J2000 10h10m10s -5d05m05s' )
        # set convolution function
        g.setFunc( func='sf', width=3 )
+       # enable min/max clipping
+       g.enableClip()
+       # or, disable min/max clipping
+       #g.disableClip()
        # actual gridding
        g.grid()
        # save result
