@@ -27,11 +27,6 @@
 #include <tables/Tables/ArrayColumn.h>
 
 #include "concurrent.h"
-//#include <tables/Tables/TableRow.h>
-
-// #include <measures/Measures/MDirection.h>
-
-// #include "Scantable.h"
 
 using namespace std ;
 using namespace casa ;
@@ -77,7 +72,6 @@ private:
   // actual gridding
   void gridPerRow() ;
   void gridPerRowWithClipping() ;
-  void gridPerPol() ;
 
   // clipping
   void clipMinMax( Array<Complex> &data,
@@ -107,16 +101,6 @@ private:
   void setData( Array<Complex> &gdata,
                 Array<Float> &gwgt ) ;
   
-  void getDataPerPol( Array<Complex> &spectra,
-                      Array<Double> &direction,
-                      Array<Int> &flagtra,
-                      Array<Int> &rflag,
-                      Array<Float> &weight ) ;
-  void getDataPerPol( Array<Float> &spectra,
-                      Array<Double> &direction,
-                      Array<uChar> &flagtra,
-                      Array<uInt> &rflag,
-                      Array<Float> &weight ) ;
   Int getDataChunk( IPosition const &wshape,
 		    IPosition const &vshape,
 		    IPosition const &dshape,
@@ -153,12 +137,10 @@ private:
 
   void prepareTable( Table &tab, String &name ) ;
 
-//   Bool pastEnd() ;
-
   void selectData() ;
   void setupArray() ;
 
-  Bool examine() ;
+  void updateChunkShape() ;
   void attach( Table &tab ) ;
 
   void call_ggridsd( Array<Double> &xy,

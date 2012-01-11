@@ -438,28 +438,21 @@ void STGrid::grid()
   os << "----------" << LogIO::POST ;
   os << LogIO::NORMAL ;
 
-  Bool doAll = examine() ;
-
-  if ( doAll )
-    gridPerPol() ;
-  else if ( doclip_ )
+  if ( doclip_ )
     gridPerRowWithClipping() ;
   else 
     gridPerRow() ;
-
 }
 
-Bool STGrid::examine()
+void STGrid::updateChunkShape()
 {
   // TODO: nchunk_ must be determined from nchan_, npol_, and (nx_,ny_) 
   //       by considering data size to be allocated for ggridsd input/output
   nchunk_ = 400 ;
-  Bool b = nchunk_ >= nrow_ ;
   nchunk_ = min( nchunk_, nrow_ ) ;
   vshape_ = IPosition( 1, nchunk_ ) ;
   wshape_ = IPosition( 2, nchan_, nchunk_ ) ;
   dshape_ = IPosition( 2, 2, nchunk_ ) ;
-  return b ;
 }
 
 struct STGChunk {
@@ -654,11 +647,11 @@ void STGrid::gridPerRow()
   eGGridSD_ = 0.0 ;
   double eInitPol = 0.0 ;
 
-  Broker broker = Broker(produceChunk, consumeChunk);
   for ( uInt ifile = 0 ; ifile < nfile_ ; ifile++ ) {
     initTable( ifile ) ;
 
     os << "start table " << ifile << ": " << infileList_[ifile] << LogIO::POST ;   
+    Broker broker = Broker(produceChunk, consumeChunk);
     for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
       t0 = mathutil::gettimeofday_sec() ;
       initPol( ipol ) ; // set ptab_ and attach()
@@ -779,7 +772,6 @@ void STGrid::gridPerRowWithClipping()
   // data_ and gwgtArr share storage
   data_.resize( gshape ) ;
   data_ = 0.0 ;
-  //STCommonData common = STCommonData(gshape, data_);
   STCommonDataWithClipping common = STCommonDataWithClipping( gshape,
                                                               pshape, 
                                                               data_ ) ;
@@ -805,19 +797,17 @@ void STGrid::gridPerRowWithClipping()
   eGGridSD_ = 0.0 ;
   double eInitPol = 0.0 ;
 
-  //Broker broker = Broker(produceChunk, consumeChunk);
-  Broker broker = Broker(produceChunk, consumeChunkWithClipping);
   for ( uInt ifile = 0 ; ifile < nfile_ ; ifile++ ) {
     initTable( ifile ) ;
 
     os << "start table " << ifile << ": " << infileList_[ifile] << LogIO::POST ;   
+    Broker broker = Broker(produceChunk, consumeChunkWithClipping);
     for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
       t0 = mathutil::gettimeofday_sec() ;
       initPol( ipol ) ; // set ptab_ and attach()
       t1 = mathutil::gettimeofday_sec() ;
       eInitPol += t1-t0 ;
       
-      //STContext context(this, common, ipol);
       STContextWithClipping context(this, common, ipol);
       
       os << "start pol " << ipol << LogIO::POST ;
@@ -831,7 +821,6 @@ void STGrid::gridPerRowWithClipping()
         if (! produced) {
           break;
         }
-        //consumeChunk(&context);
         consumeChunkWithClipping(&context);
       }
 #endif
@@ -962,136 +951,6 @@ void STGrid::clipMinMax( Array<Complex> &grid,
   clipcmax.freeStorage( ccmax_p, delCCMax ) ;
 }
 
-void STGrid::gridPerPol() 
-{
-  LogIO os( LogOrigin("STGrid", "gridPerPol", WHERE) ) ;
-  double t0, t1 ;
-
-  // convolution kernel
-  Vector<Float> convFunc ;
-  t0 = mathutil::gettimeofday_sec() ;
-  setConvFunc( convFunc ) ;
-  t1 = mathutil::gettimeofday_sec() ;
-  os << "setConvFunc: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
-
-  // prepare grid data storage
-  Int gnx = nx_ ;
-  Int gny = ny_ ;
-//   // Extend grid plane with convSupport_
-//   Int gnx = nx_+convSupport_*2 ;
-//   Int gny = ny_+convSupport_*2 ;
-  IPosition gshape( 4, gnx, gny, npol_, nchan_ ) ;
-  Array<Complex> gdataArrC( gshape, 0.0 ) ;
-  //Array<Float> gwgtArr( gshape, 0.0 ) ;
-  // 2011/12/20 TN
-  // data_ and weight array shares storage
-  data_.resize( gshape ) ;
-  data_ = 0.0 ;
-  Array<Float> gwgtArr( data_ ) ;
-
-  // maps
-  Int *chanMap = new Int[nchan_] ;
-  {
-    Int *work_p = chanMap ;
-    for ( Int i = 0 ; i < nchan_ ; i++ ) {
-      *work_p = i ;
-      work_p++ ;
-    }
-  }
-  Int polMap[1] ;
-
-  // some parameters for ggridsd
-  Int nvispol = 1 ;
-  Int irow = -1 ;
-  
-  // for performance check
-  double eInitPol = 0.0 ;
-  double eGetData = 0.0 ;
-  double eToPixel = 0.0 ;
-  double eGGridSD = 0.0 ;
-  double eToInt = 0.0 ;
-
-  for ( uInt ifile = 0 ; ifile < nfile_ ; ifile++ ) {
-    initTable( ifile ) ;
-
-    os << "start table " << ifile << ": " << infileList_[ifile] << LogIO::POST ;   
-    // to read data from the table
-    IPosition mshape( 2, nchan_, nrow_ ) ;
-    IPosition dshape( 2, 2, nrow_ ) ;
-    Array<Complex> spectra( mshape ) ;
-    Array<Double> direction( dshape ) ;
-    Array<Int> flagtra( mshape ) ;
-    Array<Int> rflag( IPosition(1,nrow_) ) ;
-    Array<Float> weight( mshape ) ;
-    Array<Double> xypos( dshape ) ;
-
-    for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
-      t0 = mathutil::gettimeofday_sec() ;
-      initPol( ipol ) ;
-      t1 = mathutil::gettimeofday_sec() ;
-      eInitPol += t1-t0 ;
-      
-      os << "start pol " << ipol << LogIO::POST ;
-      
-      // retrieve data
-      t0 = mathutil::gettimeofday_sec() ;
-      getDataPerPol( spectra, direction, flagtra, rflag, weight ) ;
-      t1 = mathutil::gettimeofday_sec() ;
-      eGetData += t1-t0 ;
-      
-      // world -> pixel
-      t0 = mathutil::gettimeofday_sec() ;
-      toPixel( direction, xypos ) ;  
-      t1 = mathutil::gettimeofday_sec() ;
-      eToPixel += t1-t0 ;
-      
-      // call ggridsd
-      polMap[0] = ipol ;
-      t0 = mathutil::gettimeofday_sec() ;
-      call_ggridsd( xypos,
-                    spectra,
-                    nvispol,
-                    nchan_,
-                    flagtra,
-                    rflag,
-                    weight,
-                    nrow_,
-                    irow,
-                    gdataArrC,
-                    gwgtArr,
-                    gnx,
-                    gny,
-                    npol_,
-                    nchan_,
-                    convSupport_,
-                    convSampling_,
-                    convFunc,
-                    chanMap,
-                    polMap ) ;
-      t1 = mathutil::gettimeofday_sec() ;
-      eGGridSD += t1-t0 ;
-
-      os << "end pol " << ipol << LogIO::POST ;
-
-    }
-    os << "end table " << ifile << LogIO::POST ;   
-  }
-  os << "initPol: elapsed time is " << eInitPol << " sec." << LogIO::POST ; 
-  os << "getData: elapsed time is " << eGetData-eToInt-eGetWeight << " sec." << LogIO::POST ; 
-  os << "toPixel: elapsed time is " << eToPixel << " sec." << LogIO::POST ; 
-  os << "ggridsd: elapsed time is " << eGGridSD << " sec." << LogIO::POST ; 
-  os << "toInt: elapsed time is " << eToInt << " sec." << LogIO::POST ;
-  os << "getWeight: elapsed time is " << eGetWeight << " sec." << LogIO::POST ;
-
-  // delete maps
-  delete chanMap ;
-
-  setData( gdataArrC, gwgtArr ) ;
-//   os << "gdataArr = " << gdataArr << LogIO::POST ;
-//   os << "gwgtArr = " << gwgtArr << LogIO::POST ;
-//   os << "data_ " << data_ << LogIO::POST ;
-}
-
 void STGrid::initPol( Int ipol ) 
 {
   LogIO os( LogOrigin("STGrid","initPol",WHERE) ) ;
@@ -1109,6 +968,7 @@ void STGrid::initTable( uInt idx )
 {
   tab_ = tableList_[idx] ;
   nrow_ = rows_[idx] ;
+  updateChunkShape() ;
 }
 
 void STGrid::setData( Array<Complex> &gdata,
@@ -1348,65 +1208,6 @@ void STGrid::attach( Table &tab )
   intervalCol_.attach( tab, "INTERVAL" ) ;
 }
 
-void STGrid::getDataPerPol( Array<Float> &spectra,
-                            Array<Double> &direction,
-                            Array<uChar> &flagtra,
-                            Array<uInt> &rflag,
-                            Array<Float> &weight ) 
-{
-  LogIO os( LogOrigin("STGrid","getDataPerPol",WHERE) ) ;
-
-  // 2011/12/22 TN
-  // weight and tsys shares its storage
-  Array<Float> tsys( weight ) ;
-  Array<Double> tint( rflag.shape() ) ;
-
-  Vector<uInt> rflagVec( rflag ) ;
-  Vector<Double> tintVec( tint ) ;
-
-  spectraCol_.getColumn( spectra ) ;
-  flagtraCol_.getColumn( flagtra ) ;
-  flagRowCol_.getColumn( rflagVec ) ;
-  directionCol_.getColumn( direction ) ;
-  intervalCol_.getColumn( tintVec ) ;
-  Vector<Float> tsysTemp = tsysCol_( 0 ) ;
-  if ( tsysTemp.nelements() == (uInt)nchan_ ) {
-    tsysCol_.getColumn( tsys ) ;
-  }
-  else {
-    tsys = tsysTemp[0] ;
-  }
-  
-  double t0,t1 ;
-  t0 = mathutil::gettimeofday_sec() ;
-  getWeight( weight, tsys, tint ) ;
-  t1 = mathutil::gettimeofday_sec() ;
-  eGetWeight += t1-t0 ;
-}
-
-void STGrid::getDataPerPol( Array<Complex> &spectra,
-                            Array<Double> &direction,
-                            Array<Int> &flagtra,
-                            Array<Int> &rflag,
-                            Array<Float> &weight ) 
-{
-  LogIO os( LogOrigin("STGrid","getDataPerPol",WHERE) ) ;
-  double t0, t1 ;
-
-  Array<uChar> flagUC( flagtra.shape() ) ;
-  Array<uInt> rflagUI( rflag.shape() ) ;
-  Array<Float> spectraF( spectra.shape() ) ;
-  getDataPerPol( spectraF, direction, flagUC, rflagUI, weight ) ;
-
-  convertArray( spectra, spectraF ) ;
-  t0 = mathutil::gettimeofday_sec() ;
-  toInt( flagUC, flagtra ) ;
-  toInt( rflagUI, rflag ) ;
-  t1 = mathutil::gettimeofday_sec() ;
-  eToInt += t1-t0 ;
-  //os << "toInt: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
-}
-
 Int STGrid::getDataChunk(
 			 IPosition const &wshape,
 			 IPosition const &vshape,
@@ -1555,8 +1356,8 @@ void STGrid::setupArray()
   rows_.resize( nfile_ ) ;
   for ( uInt i = 0 ; i < nfile_ ; i++ ) {
     rows_[i] = tableList_[i].nrow() / npolOrg_ ;
-    if ( nrow_ < rows_[i] ) 
-      nrow_ = rows_[i] ;
+    //if ( nrow_ < rows_[i] ) 
+    //  nrow_ = rows_[i] ;
   }
   flagtraCol_.attach( tableList_[0], "FLAGTRA" ) ;
   nchan_ = flagtraCol_( 0 ).nelements() ;
@@ -1698,18 +1499,6 @@ void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
   }
   world.freeStorage( w_p, bw ) ;
   pixel.putStorage( p_p, bp ) ;  
-//   String gridfile = "grid."+convType_+"."+String::toString(convSupport_)+".dat" ; 
-//   ofstream ofs( gridfile.c_str(), ios::out ) ; 
-//   ofs << "center " << center_(0) << " " << pixc(0) 
-//       << " " << center_(1) << " " << pixc(1) << endl ;
-//   for ( uInt irow = 0 ; irow < nrow ; irow++ ) {
-//     ofs << irow ;
-//     for ( uInt i = 0 ; i < 2 ; i++ ) {
-//       ofs << " " << world(i, irow) << " " << pixel(i, irow) ;
-//     }
-//     ofs << endl ;
-//   }
-//   ofs.close() ;
 }
 
 void STGrid::boxFunc( Vector<Float> &convFunc, Int &convSize ) 
