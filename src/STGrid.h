@@ -64,6 +64,9 @@ public:
 
   void setWeight( const string wType="uniform" ) ;
 
+  void enableClip() { doclip_ = True ; } ;
+  void disableClip() { doclip_ = False ; } ;
+
   void grid() ;
   
   string saveData( string outfile="" ) ;
@@ -73,7 +76,20 @@ private:
 
   // actual gridding
   void gridPerRow() ;
+  void gridPerRowWithClipping() ;
   void gridPerPol() ;
+
+  // clipping
+  void clipMinMax( Array<Complex> &data,
+                   Array<Float> &weight,
+                   Array<Int> &npoints,
+                   Array<Complex> &clipmin,
+                   Array<Float> &clipwmin,
+                   Array<Float> &clipcmin,
+                   Array<Complex> &clipmax,
+                   Array<Float> &clipwmax,
+                   Array<Float> &clipcmax ) ;
+                   
 
   void setupGrid() ;
   void setupGrid( Int &nx, 
@@ -165,12 +181,40 @@ private:
                      Vector<Float> &convFunc,
                      Int *chanMap,
                      Int *polMap ) ;
+  void call_ggridsd2( Array<Double> &xy,
+                      Array<Complex> &values,
+                      Int &nvispol,
+                      Int &nvischan,
+                      Array<Int> &flag,
+                      Array<Int> &rflag,
+                      Array<Float> &weight,
+                      Int &nrow,
+                      Int &irow,
+                      Array<Complex> &grid,
+                      Array<Float> &wgrid,
+                      Array<Int> &npoints,
+                      Array<Complex> &clipmin,
+                      Array<Float> &clipwmin,
+                      Array<Float> &clipcmin,
+                      Array<Complex> &clipmax,
+                      Array<Float> &clipwmax,
+                      Array<Float> &clipcmax,
+                      Int &nx,
+                      Int &ny,
+                      Int &npol,
+                      Int &nchan,
+                      Int &support,
+                      Int &sampling,
+                      Vector<Float> &convFunc,
+                      Int *chanMap,
+                      Int *polMap ) ;
 
   void initPol( Int ipol ) ;
   void initTable( uInt idx ) ;
   Bool isMultiIF( Table &tab ) ;
   static bool produceChunk(void *ctx) throw(concurrent::PCException);
   static void consumeChunk(void *ctx) throw(concurrent::PCException);
+  static void consumeChunkWithClipping(void *ctx) throw(concurrent::PCException);
 
 
   // user input
@@ -183,6 +227,7 @@ private:
   Block<String> infileList_ ;
   uInt nfile_ ;
   Int ifno_ ;
+  Bool doclip_ ;
 
   Int nx_ ;
   Int ny_ ;

@@ -157,7 +157,23 @@ class asapgrid:
 
         weightType -- weight type ('uniform', 'tint', 'tsys', 'tintsys')
         """
-        self.gridder._setweight( weightType ) 
+        self.gridder._setweight( weightType )
+
+    def enableClip( self ):
+        """
+        Enable min/max clipping.
+
+        By default, min/max clipping is disabled so that you should
+        call this method before actual gridding if you want to do
+        clipping.
+        """
+        self.gridder._enableclip()
+
+    def disableClip( self ):
+        """
+        Disable min/max clipping.
+        """
+        self.gridder._disableclip()
 
     def grid( self ):
         """

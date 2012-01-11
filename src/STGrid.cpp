@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cfloat>
 
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/Vector.h>
@@ -83,6 +84,7 @@ void  STGrid::init()
   cellxUI_ = "" ;
   cellyUI_ = "" ;
   centerUI_ = "" ;
+  doclip_ = False ;
 }
 
 void STGrid::setFileIn( const string infile )
@@ -250,6 +252,150 @@ void STGrid::call_ggridsd( Array<Double> &xypos,
   delete sumw_p ;
 }
 
+#define NEED_UNDERSCORES
+#if defined(NEED_UNDERSCORES)
+#define ggridsd2 ggridsd2_
+#endif
+extern "C" { 
+   void ggridsd2(Double*,
+                 const Complex*,
+                 Int*,
+                 Int*,
+                 Int*,
+                 const Int*,
+                 const Int*,
+                 const Float*,
+                 Int*,
+                 Int*,
+                 Complex*,
+                 Float*,
+                 Int*,
+                 Complex*,
+                 Float*,
+                 Float*,
+                 Complex*,
+                 Float*,
+                 Float*,
+                 Int*,
+                 Int*,
+                 Int *,
+                 Int *,
+                 Int*,
+                 Int*,
+                 Float*,
+                 Int*,
+                 Int*,
+                 Double*);
+}
+void STGrid::call_ggridsd2( Array<Double> &xypos,
+                            Array<Complex> &spectra,
+                            Int &nvispol,
+                            Int &nvischan,
+                            Array<Int> &flagtra,
+                            Array<Int> &flagrow,
+                            Array<Float> &weight,
+                            Int &nrow,
+                            Int &irow,
+                            Array<Complex> &gdata,
+                            Array<Float> &gwgt,
+                            Array<Int> &npoints,
+                            Array<Complex> &clipmin,
+                            Array<Float> &clipwmin,
+                            Array<Float> &clipcmin,
+                            Array<Complex> &clipmax,
+                            Array<Float> &clipwmax,
+                            Array<Float> &clipcmax,
+                            Int &nx,
+                            Int &ny,
+                            Int &npol,
+                            Int &nchan,
+                            Int &support,
+                            Int &sampling,
+                            Vector<Float> &convFunc,
+                            Int *chanMap,
+                            Int *polMap ) 
+{
+  // parameters for gridding
+  Int idopsf = 0 ;
+  Int len = npol*nchan ;
+  Double *sumw_p = new Double[len] ;
+  {
+    Double *work_p = sumw_p ;
+    for ( Int i = 0 ; i < len ; i++ ) {
+      *work_p = 0.0 ;
+      work_p++ ;
+    }
+  }
+
+  // prepare pointer
+  Bool deletePos, deleteData, deleteWgt, deleteFlag, deleteFlagR, deleteConv, deleteDataG, deleteWgtG, deleteNpts, deleteCMin, deleteCWMin, deleteCCMin, deleteCMax, deleteCWMax, deleteCCMax ;
+  Double *xy_p = xypos.getStorage( deletePos ) ;
+  const Complex *values_p = spectra.getStorage( deleteData ) ;
+  const Int *flag_p = flagtra.getStorage( deleteFlag ) ;
+  const Int *rflag_p = flagrow.getStorage( deleteFlagR ) ;
+  const Float *wgt_p = weight.getStorage( deleteWgt ) ;
+  Complex *grid_p = gdata.getStorage( deleteDataG ) ;
+  Float *wgrid_p = gwgt.getStorage( deleteWgtG ) ;
+  Float *conv_p = convFunc.getStorage( deleteConv ) ;
+  Int *npts_p = npoints.getStorage( deleteNpts ) ;
+  Complex *cmin_p = clipmin.getStorage( deleteCMin ) ;
+  Float *cwmin_p = clipwmin.getStorage( deleteCWMin ) ;
+  Float *ccmin_p = clipcmin.getStorage( deleteCCMin ) ;
+  Complex *cmax_p = clipmax.getStorage( deleteCMax ) ;
+  Float *cwmax_p = clipwmax.getStorage( deleteCWMax ) ;
+  Float *ccmax_p = clipcmax.getStorage( deleteCCMax ) ;
+
+  // pass copy of irow to ggridsd since it will be modified in theroutine
+  Int irowCopy = irow ;
+      
+  // call ggridsd
+  ggridsd2( xy_p,
+            values_p,
+            &nvispol,
+            &nvischan,
+            &idopsf,
+            flag_p,
+            rflag_p,
+            wgt_p,
+            &nrow,
+            &irowCopy,
+            grid_p,
+            wgrid_p,
+            npts_p,
+            cmin_p,
+            cwmin_p,
+            ccmin_p,
+            cmax_p,
+            cwmax_p,
+            ccmax_p,
+            &nx,
+            &ny,
+            &npol,
+            &nchan,
+            &support,
+            &sampling,
+            conv_p,
+            chanMap,
+            polMap,
+            sumw_p ) ;
+
+  // finalization
+  xypos.putStorage( xy_p, deletePos ) ;
+  spectra.freeStorage( values_p, deleteData ) ;
+  flagtra.freeStorage( flag_p, deleteFlag ) ;
+  flagrow.freeStorage( rflag_p, deleteFlagR ) ;
+  weight.freeStorage( wgt_p, deleteWgt ) ;
+  gdata.putStorage( grid_p, deleteDataG ) ;
+  gwgt.putStorage( wgrid_p, deleteWgtG ) ;
+  convFunc.putStorage( conv_p, deleteConv ) ;
+  clipmin.putStorage( cmin_p, deleteCMin ) ;
+  clipwmin.putStorage( cwmin_p, deleteCWMin ) ;
+  clipcmin.putStorage( ccmin_p, deleteCCMin ) ;
+  clipmax.putStorage( cmax_p, deleteCMax ) ;
+  clipwmax.putStorage( cwmax_p, deleteCWMax ) ;
+  clipcmax.putStorage( ccmax_p, deleteCCMax ) ;
+  delete sumw_p ;
+}
 
 void STGrid::grid()
 {
@@ -288,6 +434,7 @@ void STGrid::grid()
   os << "   center = " << center_ << endl ;
   os << "   weighting = " << wtype_ << endl ;
   os << "   convfunc = " << convType_ << " with support " << convSupport_ << endl ; 
+  os << "   doclip = " << (doclip_?"True":"False") << endl ;
   os << "----------" << LogIO::POST ;
   os << LogIO::NORMAL ;
 
@@ -295,8 +442,11 @@ void STGrid::grid()
 
   if ( doAll )
     gridPerPol() ;
+  else if ( doclip_ )
+    gridPerRowWithClipping() ;
   else 
     gridPerRow() ;
+
 }
 
 Bool STGrid::examine()
@@ -337,6 +487,35 @@ struct STCommonData {
     : gdataArrC(gshape, 0.0), gwgtArr(data) {}
 };
 
+struct STCommonDataWithClipping {
+  Int gnx;
+  Int gny;
+  Int *chanMap;
+  Vector<Float> convFunc ;
+  Array<Complex> gdataArrC;
+  Array<Float> gwgtArr;
+  Array<Int> npoints ;
+  Array<Complex> clipMin ;
+  Array<Float> clipWMin ;
+  Array<Float> clipCMin ;
+  Array<Complex> clipMax ;
+  Array<Float> clipWMax ;
+  Array<Float> clipCMax ;  
+  STCommonDataWithClipping(IPosition const &gshape, 
+                           IPosition const &pshape, 
+                           Array<Float> const &data)
+    : gdataArrC(gshape, 0.0), 
+      gwgtArr(data), 
+      npoints(pshape, 0),
+      clipMin(gshape, Complex(FLT_MAX,0.0)),
+      clipWMin(gshape, 0.0),
+      clipCMin(gshape, 0.0),
+      clipMax(gshape, Complex(-FLT_MAX,0.0)),
+      clipWMax(gshape, 0.0),
+      clipCMax(gshape, 0.0)
+  {}
+};
+
 #define DO_AHEAD 3
 
 struct STContext {
@@ -345,6 +524,15 @@ struct STContext {
   STGrid *const self;
   const Int pol;
   STContext(STGrid *obj, STCommonData &common, Int pol)
+    : self(obj), common(common), pol(pol) {}
+};
+
+struct STContextWithClipping {
+  STCommonDataWithClipping &common;
+  FIFO<STGChunk *, DO_AHEAD> queue;
+  STGrid *const self;
+  const Int pol;
+  STContextWithClipping(STGrid *obj, STCommonDataWithClipping &common, Int pol)
     : self(obj), common(common), pol(pol) {}
 };
 
@@ -511,6 +699,267 @@ void STGrid::gridPerRow()
   // set data
   setData( common.gdataArrC, common.gwgtArr ) ;
 
+}
+
+void STGrid::consumeChunkWithClipping(void *ctx) throw(PCException)
+{
+  STContextWithClipping &context = *(STContextWithClipping *)ctx;
+  STGChunk *chunk = NULL;
+  try {
+    context.queue.lock();
+    chunk = context.queue.get();
+    context.queue.unlock();
+  } catch (FullException &e) {
+    context.queue.unlock();
+    // TODO: log error
+    throw PCException();
+  }
+
+  double t0, t1 ;
+  // world -> pixel
+  Array<Double> xypos( context.self->dshape_ ) ;
+  t0 = mathutil::gettimeofday_sec() ;
+  context.self->toPixel( chunk->direction, xypos ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  context.self->eToPixel_ += t1-t0 ;
+   
+  // call ggridsd
+  Int nvispol = 1 ;
+  Int irow = -1 ;
+  t0 = mathutil::gettimeofday_sec() ;
+  context.self->call_ggridsd2( xypos,
+		chunk->spectra,
+		nvispol,
+		context.self->nchan_,
+		chunk->flagtra,
+		chunk->rflag,
+		chunk->weight,
+		chunk->nrow,
+		irow,
+		context.common.gdataArrC,
+		context.common.gwgtArr,
+                context.common.npoints,
+                context.common.clipMin,
+                context.common.clipWMin,
+                context.common.clipCMin,
+                context.common.clipMax,
+                context.common.clipWMax,
+                context.common.clipCMax,
+		context.common.gnx,
+		context.common.gny,
+		context.self->npol_,
+		context.self->nchan_,
+		context.self->convSupport_,
+		context.self->convSampling_,
+		context.common.convFunc,
+		context.common.chanMap,
+		(Int*)&context.pol ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  context.self->eGGridSD_ += t1-t0 ;
+  
+  delete chunk;
+}
+
+void STGrid::gridPerRowWithClipping()
+{
+  LogIO os( LogOrigin("STGrid", "gridPerRowWithClipping", WHERE) ) ;
+  double t0, t1 ;
+
+
+  // grid data
+  // Extend grid plane with convSupport_
+  //   Int gnx = nx_+convSupport_*2 ;
+  //   Int gny = ny_+convSupport_*2 ;
+  Int gnx = nx_;
+  Int gny = ny_;
+
+  IPosition gshape( 4, gnx, gny, npol_, nchan_ ) ;
+  IPosition pshape( 3, gnx, gny, npol_ ) ;
+  // 2011/12/20 TN
+  // data_ and gwgtArr share storage
+  data_.resize( gshape ) ;
+  data_ = 0.0 ;
+  //STCommonData common = STCommonData(gshape, data_);
+  STCommonDataWithClipping common = STCommonDataWithClipping( gshape,
+                                                              pshape, 
+                                                              data_ ) ;
+  common.gnx = gnx ;
+  common.gny = gny ;
+
+  // parameters for gridding
+  Int *chanMap = new Int[nchan_] ;
+  for ( Int i = 0 ; i < nchan_ ; i++ ) {
+    chanMap[i] = i ;
+  }
+  common.chanMap = chanMap;
+
+  // convolution kernel
+  t0 = mathutil::gettimeofday_sec() ;
+  setConvFunc( common.convFunc ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "setConvFunc: elapsed time is " << t1-t0 << " sec." << LogIO::POST ; 
+
+  // for performance check
+  eGetData_ = 0.0 ;
+  eToPixel_ = 0.0 ;
+  eGGridSD_ = 0.0 ;
+  double eInitPol = 0.0 ;
+
+  //Broker broker = Broker(produceChunk, consumeChunk);
+  Broker broker = Broker(produceChunk, consumeChunkWithClipping);
+  for ( uInt ifile = 0 ; ifile < nfile_ ; ifile++ ) {
+    initTable( ifile ) ;
+
+    os << "start table " << ifile << ": " << infileList_[ifile] << LogIO::POST ;   
+    for ( Int ipol = 0 ; ipol < npol_ ; ipol++ ) {
+      t0 = mathutil::gettimeofday_sec() ;
+      initPol( ipol ) ; // set ptab_ and attach()
+      t1 = mathutil::gettimeofday_sec() ;
+      eInitPol += t1-t0 ;
+      
+      //STContext context(this, common, ipol);
+      STContextWithClipping context(this, common, ipol);
+      
+      os << "start pol " << ipol << LogIO::POST ;
+      
+      nprocessed_ = 0 ;
+#if 1
+      broker.runProducerAsMasterThread(&context, DO_AHEAD);
+#else
+      for (;;) {
+        bool produced = produceChunk(&context);
+        if (! produced) {
+          break;
+        }
+        //consumeChunk(&context);
+        consumeChunkWithClipping(&context);
+      }
+#endif
+
+      os << "end pol " << ipol << LogIO::POST ;
+
+    }
+    os << "end table " << ifile << LogIO::POST ;   
+  }
+  os << "initPol: elapsed time is " << eInitPol << " sec." << LogIO::POST ; 
+  os << "getData: elapsed time is " << eGetData_-eToInt-eGetWeight << " sec." << LogIO::POST ; 
+  os << "toPixel: elapsed time is " << eToPixel_ << " sec." << LogIO::POST ; 
+  os << "ggridsd: elapsed time is " << eGGridSD_ << " sec." << LogIO::POST ; 
+  os << "toInt: elapsed time is " << eToInt << " sec." << LogIO::POST ;
+  os << "getWeight: elapsed time is " << eGetWeight << " sec." << LogIO::POST ;
+  
+  delete chanMap ;
+
+  // clip min and max in each grid
+//   os << "BEFORE CLIPPING" << LogIO::POST ;
+//   os << "gdataArrC=" << common.gdataArrC << LogIO::POST ;
+//   os << "gwgtArr=" << common.gwgtArr << LogIO::POST ;
+  t0 = mathutil::gettimeofday_sec() ;
+  clipMinMax( common.gdataArrC, 
+              common.gwgtArr,
+              common.npoints,
+              common.clipMin,
+              common.clipWMin,
+              common.clipCMin,
+              common.clipMax,
+              common.clipWMax,
+              common.clipCMax ) ;
+  t1 = mathutil::gettimeofday_sec() ;
+  os << "clipMinMax: elapsed time is " << t1-t0 << " sec." << LogIO::POST ;
+//   os << "AFTER CLIPPING" << LogIO::POST ;
+//   os << "gdataArrC=" << common.gdataArrC << LogIO::POST ;
+//   os << "gwgtArr=" << common.gwgtArr << LogIO::POST ;
+
+  // set data
+  setData( common.gdataArrC, common.gwgtArr ) ;
+
+}
+
+void STGrid::clipMinMax( Array<Complex> &grid,
+                         Array<Float> &weight,
+                         Array<Int> &npoints,
+                         Array<Complex> &clipmin,
+                         Array<Float> &clipwmin,
+                         Array<Float> &clipcmin,
+                         Array<Complex> &clipmax,
+                         Array<Float> &clipwmax,
+                         Array<Float> &clipcmax )
+{
+  //LogIO os( LogOrigin("STGrid","clipMinMax",WHERE) ) ;
+
+  // prepare pointers
+  Bool delG, delW, delNP, delCMin, delCWMin, delCCMin, delCMax, delCWMax, delCCMax ;
+  Complex *grid_p = grid.getStorage( delG ) ;
+  Float *wgt_p = weight.getStorage( delW ) ;
+  const Int *npts_p = npoints.getStorage( delNP ) ;
+  const Complex *cmin_p = clipmin.getStorage( delCMin ) ;
+  const Float *cwmin_p = clipwmin.getStorage( delCWMin ) ;
+  const Float *ccmin_p = clipcmin.getStorage( delCCMin ) ;
+  const Complex *cmax_p = clipmax.getStorage( delCMax ) ;
+  const Float *cwmax_p = clipwmax.getStorage( delCWMax ) ;
+  const Float *ccmax_p = clipcmax.getStorage( delCCMax ) ;
+
+  const IPosition &gshape = grid.shape() ;
+  long offset = gshape[0] * gshape[1] * gshape[2] ; // nx * ny * npol
+  Int nchan = gshape[3] ;
+  long origin = nchan * offset ;
+  for ( long i = 0 ; i < offset ; i++ ) {
+    if ( *npts_p > 2 ) {
+      for ( Int ichan = 0 ; ichan < nchan ; ichan++ ) {
+        // clip minimum and maximum
+        *grid_p -= (*cmin_p)*(*cwmin_p)*(*ccmin_p)
+          + (*cmax_p)*(*cwmax_p)*(*ccmax_p) ;
+        *wgt_p -= (*cwmin_p)*(*ccmin_p)
+          + (*cwmax_p)*(*ccmax_p) ;
+        
+        grid_p += offset ;
+        wgt_p += offset ;
+        cmin_p += offset ;
+        cwmin_p += offset ;
+        ccmin_p += offset ;
+        cmax_p += offset ;
+        cwmax_p += offset ;
+        ccmax_p += offset ;
+      }
+      grid_p -= origin ;
+      wgt_p -= origin ;
+      cmin_p -= origin ;
+      cwmin_p -= origin ;
+      ccmin_p -= origin ;
+      cmax_p -= origin ;
+      cwmax_p -= origin ;
+      ccmax_p -= origin ;
+    }
+    grid_p++ ;
+    wgt_p++ ;
+    npts_p++ ;
+    cmin_p++ ;
+    cwmin_p++ ;
+    ccmin_p++ ;
+    cmax_p++ ;
+    cwmax_p++ ;
+    ccmax_p++ ;
+  }
+  grid_p -= offset ;
+  wgt_p -= offset ;
+  npts_p -= offset ;
+  cmin_p -= offset ;
+  cwmin_p -= offset ;
+  ccmin_p -= offset ;
+  cmax_p -= offset ;
+  cwmax_p -= offset ;
+  ccmax_p -= offset ;  
+
+  // finalization
+  grid.putStorage( grid_p, delG ) ;
+  weight.putStorage( wgt_p, delW ) ;
+  npoints.freeStorage( npts_p, delNP ) ;
+  clipmin.freeStorage( cmin_p, delCMin ) ;
+  clipwmin.freeStorage( cwmin_p, delCWMin ) ;
+  clipcmin.freeStorage( ccmin_p, delCCMin ) ;
+  clipmax.freeStorage( cmax_p, delCMax ) ;
+  clipwmax.freeStorage( cwmax_p, delCWMax ) ;
+  clipcmax.freeStorage( ccmax_p, delCCMax ) ;
 }
 
 void STGrid::gridPerPol() 

@@ -30,6 +30,8 @@ void python_STGrid() {
     .def("_setin", &STGrid::setFileIn)
     .def("_setfiles", &STGrid::setFileList)
     .def("_setweight", &STGrid::setWeight)
+    .def("_enableclip", &STGrid::enableClip) 
+    .def("_disableclip", &STGrid::disableClip) 
     .def("_save", &STGrid::saveData)
     ;
 };
