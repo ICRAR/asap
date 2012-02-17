@@ -3188,11 +3188,13 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vecto
 {
   std::vector<bool> mask = getMask(whichrow);
   uInt maskSize = mask.size();
-  if (maskSize != inMask.size()) {
-    throw(AipsError("mask sizes are not the same."));
-  }
-  for (uInt i = 0; i < maskSize; ++i) {
-    mask[i] = mask[i] && inMask[i];
+  if (inMask.size() != 0) {
+    if (maskSize != inMask.size()) {
+      throw(AipsError("mask sizes are not the same."));
+    }
+    for (uInt i = 0; i < maskSize; ++i) {
+      mask[i] = mask[i] && inMask[i];
+    }
   }
 
   return mask;

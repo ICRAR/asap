@@ -2414,7 +2414,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask          is None: mask          = [True for i in xrange(workscan.nchan())]
+            #if mask          is None: mask          = [True for i in xrange(workscan.nchan())]
+            if mask          is None: mask          = []
             if applyfft      is None: applyfft      = True
             if fftmethod     is None: fftmethod     = 'fft'
             if fftthresh     is None: fftthresh     = 3.0
@@ -2554,7 +2555,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            #if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = []
             if applyfft       is None: applyfft       = True
             if fftmethod      is None: fftmethod      = 'fft'
             if fftthresh      is None: fftthresh      = 3.0
@@ -2649,7 +2651,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
+            #if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
+            if mask         is None: mask         = []
             if npiece       is None: npiece       = 2
             if clipthresh   is None: clipthresh   = 3.0
             if clipniter    is None: clipniter    = 0
@@ -2751,7 +2754,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            #if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = []
             if npiece         is None: npiece         = 2
             if clipthresh     is None: clipthresh     = 3.0
             if clipniter      is None: clipniter      = 0
@@ -2827,8 +2831,9 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask         is None: mask         = [True for i in \
-                                                       xrange(workscan.nchan())]
+            #if mask         is None: mask         = [True for i in \
+            #                                           xrange(workscan.nchan())]
+            if mask         is None: mask         = []
             if order        is None: order        = 0
             if plot         is None: plot         = False
             if getresidual  is None: getresidual  = True
@@ -2966,7 +2971,8 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            #if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
+            if mask           is None: mask           = []
             if order          is None: order          = 0
             if edge           is None: edge           = (0, 0)
             if threshold      is None: threshold      = 3
