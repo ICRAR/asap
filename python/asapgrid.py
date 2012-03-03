@@ -324,10 +324,13 @@ class _SDGridPlotter:
                 self.trc[0]+0.5*self.cellx,
                 self.blc[1]-0.5*self.celly,
                 self.trc[1]+0.5*self.celly]
+        deccorr = 1.0/numpy.cos(0.5*(self.blc[1]+self.trc[1]))
         pl.imshow(data,extent=extent,origin='lower',interpolation='nearest')
         pl.colorbar()
         pl.xlabel('R.A. [rad]')
         pl.ylabel('Dec. [rad]')
+        ax = pl.axes()
+        ax.set_aspect(deccorr)
         pl.title( title )
 
     def createTableIn( self, tab ):
