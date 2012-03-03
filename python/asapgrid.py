@@ -104,7 +104,7 @@ class asapgrid:
         You should set those parameters as string, which is constructed
         numerical value and unit, e.g. '0.5arcmin', or numerical value.
         If those values are specified as numerical value, their units
-        will be assumed to 'arcmin'. If which of those is not specified,
+        will be assumed to 'arcsec'. If which of those is not specified,
         it will be set to the same value as the other. If none of them
         are specified, it will be determined from map extent and number
         of pixels, or set to '1arcmin' if neither nx nor ny is set.
@@ -129,9 +129,9 @@ class asapgrid:
         center -- central position of the grid.
         """
         if not isinstance( cellx, str ):
-            cellx = '%sarcmin'%(cellx)
+            cellx = '%sarcsec'%(cellx)
         if not isinstance( celly, str ):
-            celly = '%sarcmin'%(celly)
+            celly = '%sarcsec'%(celly)
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
     def setFunc( self, func='box', width=-1 ):
@@ -264,7 +264,8 @@ class _SDGridPlotter:
 
         idx = 0
         d0 = s.get_direction( 0 ).split()[-1]
-        while ( s.get_direction(self.npol*idx).split()[-1] == d0 ):  
+        while ( s.get_direction(self.npol*idx) is not None \
+                and s.get_direction(self.npol*idx).split()[-1] == d0 ):
             idx += 1
         
         self.nx = idx
@@ -275,8 +276,12 @@ class _SDGridPlotter:
         self.trc = s.get_directionval( nrow-self.npol )
         #print self.blc
         #print self.trc
-        incrx = s.get_directionval( self.npol )
-        incry = s.get_directionval( self.nx*self.npol ) 
+        if nrow > 1:
+            incrx = s.get_directionval( self.npol )
+            incry = s.get_directionval( self.nx*self.npol )
+        else:
+            incrx = [0.0,0.0]
+            incry = [0.0,0.0]
         self.cellx = abs( self.blc[0] - incrx[0] )
         self.celly = abs( self.blc[1] - incry[1] )
         #print 'cellx,celly=',self.cellx,self.celly
