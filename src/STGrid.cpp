@@ -1115,7 +1115,10 @@ void STGrid::setupGrid( Int &nx,
     }
   }
   cellx_ = qcellx.getValue( "rad" ) ;
+  // DEC correction
+  cellx_ /= cos( center_[1] ) ;
   celly_ = qcelly.getValue( "rad" ) ;
+  //os << "cellx_=" << cellx_ << ", celly_=" << celly_ << ", cos("<<center_(1)<<")=" << cos(center_(1)) << LogIO::POST ;
   if ( nx_ < 0 ) {
     if ( wx == 0.0 ) {
       os << "Using default spatial extent (10arcmin) in x" << LogIO::POST ;
