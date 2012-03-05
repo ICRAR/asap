@@ -965,7 +965,7 @@ void STGrid::initPol( Int ipol )
     ptab_ = tab_ ;
   }
   else 
-    ptab_ = tab_( tab_.col("POLNO") == (uInt)ipol ) ;
+    ptab_ = tab_( tab_.col("POLNO") == pollist_[ipol] ) ;
 
   attach( ptab_ ) ;
 }
