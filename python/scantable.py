@@ -2055,11 +2055,13 @@ class scantable(Scantable):
 
         """
         if insitu is None: insitu = rcParams["insitu"]
+        oldInsitu = self._math._insitu()
         self._math._setinsitu(insitu)
         varlist = vars()
         reftime = reftime or ""
         s = scantable(self._math._freq_align(self, reftime, method))
         s._add_history("freq_align", varlist)
+        self._math._setinsitu(oldInsitu)
         if insitu: 
             self._assign(s)
         else: 
