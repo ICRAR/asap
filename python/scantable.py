@@ -274,7 +274,7 @@ class scantable(Scantable):
 
         Parameters:
 
-            name:        the name of the outputfile. For format "ASCII"
+            name:        the name of the outputfile. For format 'ASCII'
                          this is the root file name (data in 'name'.txt
                          and header in 'name'_header.txt)
 
@@ -532,8 +532,8 @@ class scantable(Scantable):
         Parameters:
 
             selection:    a selector object (default unset the selection), or
-                          any combination of "pols", "ifs", "beams", "scans",
-                          "cycles", "name", "query"
+                          any combination of 'pols', 'ifs', 'beams', 'scans',
+                          'cycles', 'name', 'query'
 
         Examples::
 
@@ -1201,7 +1201,7 @@ class scantable(Scantable):
 
             end:      the end frequency or period to remove
 
-            unit:     the frequency unit (default "MHz") or "" for
+            unit:     the frequency unit (default 'MHz') or '' for
                       explicit lag channels
 
         *Notes*:
@@ -1753,7 +1753,7 @@ class scantable(Scantable):
 
                 # provided your scantable is called scan
                 selection = selector()
-                selection.set_name("ORION*")
+                selection.set_name('ORION*')
                 selection.set_ifs([1])
                 scan.set_selection(selection)
                 scan.set_restfreqs(freqs=86.6e9)
@@ -1994,7 +1994,7 @@ class scantable(Scantable):
             filename:    The name of an ascii file holding correction factors.
                          The first row of the ascii file must give the column
                          names and these MUST include columns
-                         "ELEVATION" (degrees) and "FACTOR" (multiply data
+                         'ELEVATION' (degrees) and 'FACTOR' (multiply data
                          by this) somewhere.
                          The second row must give the data type of the
                          column. Use 'R' for Real and 'I' for Integer.
@@ -2011,8 +2011,8 @@ class scantable(Scantable):
                          0.6 90 0.75
 
             method:      Interpolation method when correcting from a table.
-                         Values are  "nearest", "linear" (default), "cubic"
-                         and "spline"
+                         Values are  'nearest', 'linear' (default), 'cubic'
+                         and 'spline'
 
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
@@ -2046,8 +2046,8 @@ class scantable(Scantable):
                          the first row of data is used.
 
             method:      Interpolation method for regridding the spectra.
-                         Choose from "nearest", "linear", "cubic" (default)
-                         and "spline"
+                         Choose from 'nearest', 'linear', 'cubic' (default)
+                         and 'spline'
 
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
@@ -2137,8 +2137,8 @@ class scantable(Scantable):
             width:       The bin width (default=5) in pixels
 
             method:      Interpolation method when correcting from a table.
-                         Values are  "nearest", "linear", "cubic" (default)
-                         and "spline"
+                         Values are  'nearest', 'linear', 'cubic' (default)
+                         and 'spline'
 
             insitu:      if False a new scantable is returned.
                          Otherwise, the scaling is done in-situ
@@ -2221,7 +2221,7 @@ class scantable(Scantable):
         Parameters:
 
             poltype:    The new polarisation type. Valid types are:
-                        "linear", "circular", "stokes" and "linpol"
+                        'linear', 'circular', 'stokes' and 'linpol'
 
         """
         varlist = vars()
