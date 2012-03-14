@@ -1884,6 +1884,7 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax, int irow )
   return ;
 }
 
+
 void asap::Scantable::regridChannel( int nChan, double dnu )
 {
   LogIO os( LogOrigin( "Scantable", "regridChannel()", WHERE ) ) ;
@@ -1904,9 +1905,7 @@ void asap::Scantable::regridChannel( int nChan, double dnu )
     return ;
   }
 
-  // change channel number for specCol_ and flagCol_
-  //Vector<Float> newspec( nChan, 0 ) ;
-  //Vector<uChar> newflag( nChan, false ) ;
+  // change channel number for specCol_, flagCol_, and tsysCol_ (if necessary)
   vector<string> coordinfo = getCoordInfo() ;
   string oldinfo = coordinfo[0] ;
   coordinfo[0] = "Hz" ;
@@ -1954,8 +1953,8 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
   //double pile = 0.0 ;
   int ichan = 0 ;
   double wsum = 0.0 ;
-  Vector<Float> zi( nChan+1 ) ;
-  Vector<Float> yi( oldsize + 1 ) ;
+  Vector<double> zi( nChan+1 ) ;
+  Vector<double> yi( oldsize + 1 ) ;
   zi[0] = abcissa[0] - 0.5 * olddnu ;
   //zi[1] = zi[1] + dnu ;
   for ( int ii = 1 ; ii < nChan ; ii++ )
@@ -1965,8 +1964,9 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
   //yi[1] = abcissa[1] + 0.5 * olddnu ;
   for ( int ii = 1 ; ii < oldsize ; ii++ )
     //yi[ii] = abcissa[ii-1] + olddnu ;
-    yi[ii] = yi[0] + olddnu * ii ;
-  yi[oldsize] = abcissa[oldsize-1] + 0.5 * olddnu ;
+    yi[ii] = 0.5* (abcissa[ii-1] + abcissa[ii]) ;
+  yi[oldsize] = abcissa[oldsize-1] \
+    + 0.5 * (abcissa[oldsize-1] - abcissa[oldsize-2]) ;
   if ( dnu > 0.0 ) {
     for ( int ii = 0 ; ii < nChan ; ii++ ) {
       double zl = zi[ii] ;
