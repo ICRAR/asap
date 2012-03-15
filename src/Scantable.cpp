@@ -1884,6 +1884,46 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax, int irow )
   return ;
 }
 
+void asap::Scantable::regridSpecChannel( double dnu, int nChan )
+{
+  LogIO os( LogOrigin( "Scantable", "regridChannel()", WHERE ) ) ;
+  os << "Regrid abcissa with spectral resoultion " << dnu << " " << freqTable_.getUnitString() << " with channel number " << ((nChan>0)? String(nChan) : "covering band width")<< LogIO::POST ;
+  int freqnrow = freqTable_.table().nrow() ;
+  Vector<bool> firstTime( freqnrow, true ) ;
+  double oldincr, factor;
+  uInt currId;
+  Double refpix ;
+  Double refval ;
+  Double increment ;
+  for ( int irow = 0 ; irow < nrow() ; irow++ ) {
+    currId = mfreqidCol_(irow);
+    vector<double> abcissa = getAbcissa( irow ) ;
+    if (nChan < 0) {
+      int oldsize = abcissa.size() ;
+      double bw = (abcissa[oldsize-1]-abcissa[0]) +			\
+	0.5 * (abcissa[1]-abcissa[0] + abcissa[oldsize-1]-abcissa[oldsize-2]) ;
+      nChan = int( ceil( abs(bw/dnu) ) ) ;
+    }
+    // actual regridding
+    regridChannel( nChan, dnu, irow ) ;
+
+    // update FREQUENCIES subtable
+    if (firstTime[currId]) {
+      oldincr = abcissa[1]-abcissa[0] ;
+      factor = dnu/oldincr ;
+      firstTime[currId] = false ;
+      freqTable_.getEntry( refpix, refval, increment, currId ) ;
+      /***
+       * need to shift refpix to 0
+       ***/
+      refval = refval - ( refpix + 0.5 * (1 - factor) ) * increment ;
+      refpix = 0 ;
+      freqTable_.setEntry( refpix, refval, increment*factor, currId ) ;
+      os << "ID" << currId << ": channel width (Orig) = " << oldincr << " [" << freqTable_.getUnitString() << "], scale factor = " << factor << LogIO::POST ;
+      os << "     frequency increment (Orig) = " << increment << "-> (New) " << increment*factor << LogIO::POST ;
+    }
+  }
+}
 
 void asap::Scantable::regridChannel( int nChan, double dnu )
 {

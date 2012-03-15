@@ -2308,6 +2308,77 @@ class scantable(Scantable):
         else: return s
 
     @asaplog_post_dec
+    def regrid_channel(self, width=5, plot=False, insitu=None):
+        """\
+        Regrid the spectra by the specified channel width
+
+        Parameters:
+
+            width:      The channel width (float) of regridded spectra
+                        in the current spectral unit.
+
+            plot:       [NOT IMPLEMENTED YET]
+                        plot the original and the regridded spectra.
+                        In this each indivual fit has to be approved, by
+                        typing 'y' or 'n'
+
+            insitu:     if False a new scantable is returned.
+                        Otherwise, the scaling is done in-situ
+                        The default is taken from .asaprc (False)
+
+        """
+        if insitu is None: insitu = rcParams['insitu']
+        varlist = vars()
+
+        if plot:
+           asaplog.post()
+           asaplog.push("Verification plot is not implemtnetd yet.")
+           asaplog.post("WARN")
+
+        s = self.copy()
+        s._regrid_specchan(width)
+
+        s._add_history("regrid_channel", varlist)
+
+#         if plot:
+#             from asap.asapplotter import new_asaplot
+#             theplot = new_asaplot(rcParams['plotter.gui'])
+#             theplot.set_panels()
+#             ylab=s._get_ordinate_label()
+#             #theplot.palette(0,["#777777","red"])
+#             for r in xrange(s.nrow()):
+#                 xsm=s._getabcissa(r)
+#                 ysm=s._getspectrum(r)
+#                 xorg=orgscan._getabcissa(r)
+#                 yorg=orgscan._getspectrum(r)
+#                 theplot.clear()
+#                 theplot.hold()
+#                 theplot.set_axes('ylabel',ylab)
+#                 theplot.set_axes('xlabel',s._getabcissalabel(r))
+#                 theplot.set_axes('title',s._getsourcename(r))
+#                 theplot.set_line(label='Original',color="#777777")
+#                 theplot.plot(xorg,yorg)
+#                 theplot.set_line(label='Smoothed',color="red")
+#                 theplot.plot(xsm,ysm)
+#                 ### Ugly part for legend
+#                 for i in [0,1]:
+#                     theplot.subplots[0]['lines'].append(
+#                         [theplot.subplots[0]['axes'].lines[i]]
+#                         )
+#                 theplot.release()
+#                 ### Ugly part for legend
+#                 theplot.subplots[0]['lines']=[]
+#                 res = raw_input("Accept smoothing ([y]/n): ")
+#                 if res.upper() == 'N':
+#                     s._setspectrum(yorg, r)
+#             theplot.quit()
+#             del theplot
+#             del orgscan
+
+        if insitu: self._assign(s)
+        else: return s
+
+    @asaplog_post_dec
     def _parse_wn(self, wn):
         if isinstance(wn, list) or isinstance(wn, tuple):
             return wn
