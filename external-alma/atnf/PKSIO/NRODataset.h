@@ -199,6 +199,7 @@ class NRODataset
   virtual vector<bool> getIFs() ;
   virtual vector<double> getFrequencies( int i ) ;
   virtual uInt getArrayId( string type ) ;
+  virtual uInt getPolNo( int irow ) ;
 
  protected:
   // fill header information
@@ -236,6 +237,9 @@ class NRODataset
 
   // convert frequency frame
   virtual double toLSR( double v, double t, double x, double y ) ;
+
+  // POLNO from RX
+  uInt polNoFromRX( const char *rx ) ;
 
   // Type of file record
   string LOFIL ;

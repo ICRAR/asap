@@ -733,14 +733,14 @@ int NROFITSDataset::fillHeader( int sameEndian )
   // DEBUG
 //   for ( int i = 0 ; i < ARYNM ; i++ ) {
 //     if ( i == 0 ) {
-//       //cout << "HORN    " ;
+//       cout << "HORN    " ;
 //     }
 //     else if ( ( i % 5 ) == 0 ) {
-//       //cout << endl << "        " ;
+//       cout << endl << "        " ;
 //     }
-//     //cout << "\'" << HORN[i] << "\' " ;
+//     cout << "\'" << HORN[i] << "\' " ;
 //   }
-//   //cout << endl ;
+//   cout << endl ;
   //
   if ( readColumn( POLTP, "POLTP" ) != 0 ) {
     os << LogIO::WARN << "Error while reading data POLTP." << LogIO::POST ;
@@ -2739,6 +2739,15 @@ double NROFITSDataset::getScanTime( int i )
   double interval = getIPTIM() ;
   interval /= 86400.0 ;
   return startTime+0.5*interval ;
+}
+
+uInt NROFITSDataset::getPolNo( int irow ) 
+{
+  char rx[9] ;
+  readTable( rx, "RX", 8, irow ) ;
+  rx[8] = '\0' ;
+  //cout << rx << endl ;
+  return polNoFromRX( rx ) ;
 }
 
 // double NROFITSDataset::toLSR( double v, double t, double x, double y ) 
