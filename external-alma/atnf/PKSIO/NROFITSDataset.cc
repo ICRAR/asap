@@ -2358,9 +2358,6 @@ uInt NROFITSDataset::getPolNo( int irow )
 
 int NROFITSDataset::movePointer( char *name, int idx ) 
 {
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
   // find offset
   int offset = getOffset( name ) ;
   if ( offset == -1 ) {
@@ -2371,7 +2368,7 @@ int NROFITSDataset::movePointer( char *name, int idx )
   offset += idx * scanLen_ ;
 
   //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  fseek( fp_, FITS_HEADER_SIZE+offset, SEEK_SET ) ;
 
   return 0 ;
 }
