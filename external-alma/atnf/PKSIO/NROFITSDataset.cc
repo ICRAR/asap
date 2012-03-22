@@ -1929,17 +1929,6 @@ int NROFITSDataset::readHeader( double &v, char *name, int b )
   return status ;
 }
 
-int NROFITSDataset::readTable( char *v, char *name ) 
-{
-  //
-  // Read 'name' attribute defined as char from the 0-th row 
-  // of the FITS Scan Record
-  //
-  int status = readTable( v, name, (int)strlen( v ), 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readTable( char *v, char *name, int clen, int idx ) 
 {
   //
@@ -1975,17 +1964,6 @@ int NROFITSDataset::readTable( char *v, char *name, int clen, int idx )
   return status ;
 }
 
-int NROFITSDataset::readTable( int &v, char *name, int b ) 
-{
-  //
-  // Read 'name' attribute defined as int from the 0-th row 
-  // of the FITS Scan Record
-  //
-  int status = readTable( v, name, b, 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readTable( int &v, char *name, int b, int idx ) 
 {
   //
@@ -2004,17 +1982,6 @@ int NROFITSDataset::readTable( int &v, char *name, int b, int idx )
   return status ;
 }
 
-int NROFITSDataset::readTable( float &v, char *name, int b ) 
-{
-  //
-  // Read 'name' attribute defined as float from the 0-th row 
-  // of the FITS Scan Record
-  //
-  int status = readTable( v, name, b, 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readTable( float &v, char *name, int b, int idx ) 
 {
   //
@@ -2029,17 +1996,6 @@ int NROFITSDataset::readTable( float &v, char *name, int b, int idx )
   fread( &v, sizeof(float), 1, fp_ ) ;
   if ( b == 0 ) 
     convertEndian( v ) ;
-
-  return status ;
-}
-
-int NROFITSDataset::readTable( double &v, char *name, int b ) 
-{
-  //
-  // Read 'name' attribute defined as double from the 0-th row 
-  // of the FITS Scan Record
-  //
-  int status = readTable( v, name, b, 0 ) ;
 
   return status ;
 }
@@ -2156,17 +2112,6 @@ int NROFITSDataset::readTable( vector<double> &v, char *name, int b, int idx )
   return status ;
 }
 
-int NROFITSDataset::readColumn( vector<string> &v, char *name )
-{
-  // 
-  // Read 0-th column of ARRYTP-dependent 'name' attributes 
-  // defined as char array from the FITS Scan Record 
-  //
-  int status = readColumn( v, name, 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readColumn( vector<string> &v, char *name, int idx )
 {
   // 
@@ -2212,17 +2157,6 @@ int NROFITSDataset::readColumn( vector<string> &v, char *name, int idx )
   return status ;
 }
 
-int NROFITSDataset::readColumn( vector<int> &v, char *name, int b ) 
-{
-  // 
-  // Read 0-th column of ARRYTP-dependent 'name' attributes 
-  // defined as int array from the FITS Scan Record 
-  //
-  int status = readColumn( v, name, b, 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readColumn( vector<int> &v, char *name, int b, int idx )
 {
   // 
@@ -2246,17 +2180,6 @@ int NROFITSDataset::readColumn( vector<int> &v, char *name, int b, int idx )
   return status ;
 }
 
-int NROFITSDataset::readColumn( vector<float> &v, char *name, int b ) 
-{
-  // 
-  // Read 0-th column of ARRYTP-dependent 'name' attributes 
-  // defined as float array from the FITS Scan Record 
-  //
-  int status = readColumn( v, name, b, 0 ) ;
-
-  return status ;
-}
-
 int NROFITSDataset::readColumn( vector<float> &v, char *name, int b, int idx ) 
 {
   // 
@@ -2276,17 +2199,6 @@ int NROFITSDataset::readColumn( vector<float> &v, char *name, int b, int idx )
     //cout << "v[" << i << "] = " << v[i] << endl ;
     fseek( fp_, -sizeof(float)-offset, SEEK_CUR ) ;
   }
-
-  return status ;
-}
-
-int NROFITSDataset::readColumn( vector<double> &v, char *name, int b ) 
-{
-  // 
-  // Read 0-th column of ARRYTP-dependent 'name' attributes 
-  // defined as double array from the FITS Scan Record 
-  //
-  int status = readColumn( v, name, b, 0 ) ;
 
   return status ;
 }
