@@ -155,6 +155,9 @@ class NROFITSDataset : public NRODataset
   // get offset bytes for attributes
   int getOffset( char *name ) ;
 
+  // move pointer to target position
+  int movePointer( char *name, int idx=0 ) ;
+
   // convert frequency frame
 //   virtual double toLSR( double v, double t, double x, double y ) ;
 

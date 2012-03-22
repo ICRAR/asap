@@ -1946,20 +1946,9 @@ int NROFITSDataset::readTable( char *v, char *name, int clen, int idx )
   // Read 'name' attribute defined as char from the idx-th row 
   // of the FITS Scan Record
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   // get length of char
   int index = -1 ;
@@ -2003,19 +1992,9 @@ int NROFITSDataset::readTable( int &v, char *name, int b, int idx )
   // Read 'name' attribute defined as int from the idx-th row 
   // of the FITS Scan Record
   //
-  int status = 0 ;
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   // read data
   fread( &v, sizeof(int), 1, fp_ ) ;
@@ -2042,20 +2021,9 @@ int NROFITSDataset::readTable( float &v, char *name, int b, int idx )
   // Read 'name' attribute defined as float from the idx-th row 
   // of the FITS Scan Record
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   // read data
   fread( &v, sizeof(float), 1, fp_ ) ;
@@ -2082,20 +2050,9 @@ int NROFITSDataset::readTable( double &v, char *name, int b, int idx )
   // Read 'name' attribute defined as double from the idx-th row 
   // of the FITS Scan Record
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   // read data
   fread( &v, sizeof(double), 1, fp_ ) ;
@@ -2110,20 +2067,9 @@ int NROFITSDataset::readTable( vector<char *> &v, char *name, int idx )
   //
   // Read 'name' attribute defined as char array from the FITS Scan Record
   //
-  int status = 0 ;
-  
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   // get length of char
   int index = -1 ;
@@ -2158,20 +2104,9 @@ int NROFITSDataset::readTable( vector<int> &v, char *name, int b, int idx )
   //
   // Read 'name' attribute defined as int array from the FITS Scan Record
   //
-  int status = 0 ;
-  
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     fread( &v[i], 1, sizeof(int), fp_ ) ;
@@ -2188,20 +2123,9 @@ int NROFITSDataset::readTable( vector<float> &v, char *name, int b, int idx )
   //
   // Read 'name' attribute defined as float array from the FITS Scan Record
   //
-  int status = 0 ;
-  
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     fread( &v[i], 1, sizeof(float), fp_ ) ;
@@ -2218,20 +2142,9 @@ int NROFITSDataset::readTable( vector<double> &v, char *name, int b, int idx )
   //
   // Read 'name' attribute defined as double array from the FITS Scan Record
   //
-  int status = 0 ;
-  
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  offset += idx * scanLen_ ;
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name, idx ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     fread( &v[i], 1, sizeof(double), fp_ ) ;
@@ -2260,19 +2173,9 @@ int NROFITSDataset::readColumn( vector<string> &v, char *name, int idx )
   // Read idx-th column of ARRYTP-dependent 'name' attributes 
   // defined as char array from the FITS Scan Record 
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name ) ;
+  if ( status < 0 )
+    return status ;
 
   // get length of char
   int index = -1 ;
@@ -2287,7 +2190,7 @@ int NROFITSDataset::readColumn( vector<string> &v, char *name, int idx )
   //cout << "xsize = " << xsize << endl ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    offset = scanLen_ * arrayid_[i] + xsize * idx ;
+    int offset = scanLen_ * arrayid_[i] + xsize * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
 //     int clen = (int)strlen( v[i] ) ;
 //     if ( clen > xsize ) {
@@ -2326,22 +2229,12 @@ int NROFITSDataset::readColumn( vector<int> &v, char *name, int b, int idx )
   // Read idx-th column of ARRYTP-dependent 'name' attributes 
   // defined as int array from the FITS Scan Record 
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    offset = scanLen_ * arrayid_[i] + sizeof(int) * idx ;
+    int offset = scanLen_ * arrayid_[i] + sizeof(int) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
     fread( &v[i], 1, sizeof(int), fp_ ) ;
     if ( b == 0 ) 
@@ -2370,22 +2263,12 @@ int NROFITSDataset::readColumn( vector<float> &v, char *name, int b, int idx )
   // Read idx-th column of ARRYTP-dependent 'name' attributes 
   // defined as float array from the FITS Scan Record 
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    offset = scanLen_ * arrayid_[i] + sizeof(float) * idx ;
+    int offset = scanLen_ * arrayid_[i] + sizeof(float) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
     fread( &v[i], 1, sizeof(float), fp_ ) ;
     if ( b == 0 ) 
@@ -2414,22 +2297,12 @@ int NROFITSDataset::readColumn( vector<double> &v, char *name, int b, int idx )
   // Read idx-th column of ARRYTP-dependent 'name' attributes 
   // defined as double array from the FITS Scan Record 
   //
-  int status = 0 ;
-
-  // skip header 
-  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
-
-  // find offset
-  int offset = getOffset( name ) ;
-  if ( offset == -1 ) {
-    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
-    return -1 ;
-  }
-  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
-  fseek( fp_, offset, SEEK_CUR ) ;
+  int status = movePointer( name ) ;
+  if ( status < 0 )
+    return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    offset = scanLen_ * arrayid_[i] + sizeof(double) * idx ;
+    int offset = scanLen_ * arrayid_[i] + sizeof(double) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
     fread( &v[i], 1, sizeof(double), fp_ ) ;
     if ( b == 0 ) 
@@ -2481,6 +2354,26 @@ uInt NROFITSDataset::getPolNo( int irow )
   rx[8] = '\0' ;
   //cout << rx << endl ;
   return polNoFromRX( rx ) ;
+}
+
+int NROFITSDataset::movePointer( char *name, int idx ) 
+{
+  // skip header 
+  fseek( fp_, FITS_HEADER_SIZE, SEEK_SET ) ;
+
+  // find offset
+  int offset = getOffset( name ) ;
+  if ( offset == -1 ) {
+    //cerr << "Error, " << name << " is not found in the name list." << endl ; 
+    return -1 ;
+  }
+
+  offset += idx * scanLen_ ;
+
+  //cout << "offset for " << name << " is " << offset << " bytes." << endl ;
+  fseek( fp_, offset, SEEK_CUR ) ;
+
+  return 0 ;
 }
 
 // double NROFITSDataset::toLSR( double v, double t, double x, double y ) 
