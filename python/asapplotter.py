@@ -87,7 +87,9 @@ class asapplotter:
 
     def _reload_plotter(self):
         if self._plotter is not None:
-            self._plotter.clear()
+            if  not self._plotter.is_dead:
+                # clear lines and axes
+                self._plotter.clear()
             if self.casabar_exists():
                 del self._plotter.figmgr.casabar
             self._plotter.quit()
