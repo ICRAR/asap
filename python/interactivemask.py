@@ -162,7 +162,7 @@ class interactivemask:
             from asap.asapplotter import asapplotter
             self.p = asapplotter()
             self.newplot = True
-        self.p._assert_plotter(mode='reload')
+        self.p._assert_plotter(action='reload')
         
         # Plot selected spectra if needed
         if self.scan != self.p._data:

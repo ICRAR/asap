@@ -120,17 +120,18 @@ class asapplotter:
             return True
         return False
 
-    def _assert_plotter(self,mode="status",errmsg=None):
+    def _assert_plotter(self,action="status",errmsg=None):
         """
-        Check asaplot status. Returns True if plot window is alive.
+        Check plot window status. Returns True if plot window is alive.
         Parameters
-            mode:      Mode of operation. ['status'|'reload'|'halt']
-                       The mode 'status' simply returns if asaplot is
-                       alive (True/False). When asaplot is not alive,
-                       asaplot is reloaded when mode='reload', while
-                       an error raised when mode='halt' 
+            action:    An action to take if the plotter window is not alive.
+                       ['status'|'reload'|'halt']
+                       The action 'status' simply returns False if asaplot
+                       is not alive. When action='reload', plot window is
+                       reloaded and the method returns True. Finally, an
+                       error is raised when action='halt'.
             errmsg:    An error (warning) message to send to the logger,
-                       when asaplot is dead.        
+                       when plot window is not alive.
         """
         if self._plotter and not self._plotter.is_dead:
             return True
@@ -139,11 +140,11 @@ class asapplotter:
         if type(errmsg)==str and len(errmsg) > 0:
             haltmsg = errmsg
         
-        if mode.upper().startswith("R"):
+        if action.upper().startswith("R"):
             # reload plotter
             self._reload_plotter()
             return True
-        elif mode.upper().startswith("H"):
+        elif action.upper().startswith("H"):
             # halt
             asaplog.push(haltmsg)
             asaplog.post("ERROR")
@@ -175,7 +176,7 @@ class asapplotter:
         self._reset_header()
         self._panelrows = []
 
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
 
@@ -198,14 +199,14 @@ class asapplotter:
 
     def gca(self):
         errmsg = "No axis to retun. Need to plot first."
-        if not self._assert_plotter(mode="status",errmsg=errmsg):
+        if not self._assert_plotter(action="status",errmsg=errmsg):
             return None
         return self._plotter.figure.gca()
 
     def refresh(self):
         """Do a soft refresh"""
         errmsg = "No figure to re-plot. Need to plot first."
-        self._assert_plotter(mode="halt",errmsg=errmsg)
+        self._assert_plotter(action="halt",errmsg=errmsg)
 
         self._plotter.figure.show()
 
@@ -220,7 +221,7 @@ class asapplotter:
                         if different IFs are spread over panels (default 0)
         """
         ## this method relies on already plotted figure
-        if not self._assert_plotter(mode="status") or (self._data is None):
+        if not self._assert_plotter(action="status") or (self._data is None):
             msg = "Cannot create mask interactively on plot. Can only create mask after plotting."
             asaplog.push( msg )
             asaplog.post( "ERROR" )
@@ -270,7 +271,7 @@ class asapplotter:
 
     # forwards to matplotlib axes
     def text(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_point()
@@ -280,7 +281,7 @@ class asapplotter:
     text.__doc__ = matplotlib.axes.Axes.text.__doc__
 
     def arrow(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_region()
@@ -293,7 +294,7 @@ class asapplotter:
     arrow.__doc__ = matplotlib.axes.Axes.arrow.__doc__
 
     def annotate(self, text, xy=None, xytext=None, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 xy = self._plotter.get_point()
@@ -305,7 +306,7 @@ class asapplotter:
     annotate.__doc__ = matplotlib.axes.Axes.annotate.__doc__
 
     def axvline(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_point()
@@ -315,7 +316,7 @@ class asapplotter:
     axvline.__doc__ = matplotlib.axes.Axes.axvline.__doc__
 
     def axhline(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_point()
@@ -325,7 +326,7 @@ class asapplotter:
     axhline.__doc__ = matplotlib.axes.Axes.axhline.__doc__
 
     def axvspan(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_region()
@@ -340,7 +341,7 @@ class asapplotter:
     axvspan.__doc__ = matplotlib.axes.Axes.axvspan.__doc__
 
     def axhspan(self, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
             if kwargs.pop("interactive"):
                 pos = self._plotter.get_region()
@@ -355,7 +356,7 @@ class asapplotter:
     axhspan.__doc__ = matplotlib.axes.Axes.axhspan.__doc__
 
     def _axes_callback(self, axesfunc, *args, **kwargs):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         panel = 0
         if kwargs.has_key("panel"):
             panel = kwargs.pop("panel")
@@ -785,7 +786,7 @@ class asapplotter:
         If the spectrum is flagged no line will be drawn in that location.
         """
         errmsg = "Cannot plot spectral lines. Need to plot scantable first."
-        self._assert_plotter(mode="halt",errmsg=errmsg)
+        self._assert_plotter(action="halt",errmsg=errmsg)
         if not self._data:
             raise RuntimeError("No scantable has been plotted yet.")
         from asap._asap import linecatalog
@@ -864,7 +865,7 @@ class asapplotter:
              dpi:         The dpi of the output non-ps plot
         """
         errmsg = "Cannot save figure. Need to plot first."
-        self._assert_plotter(mode="halt",errmsg=errmsg)
+        self._assert_plotter(action="halt",errmsg=errmsg)
         
         self._plotter.save(filename,orientation,dpi)
         return
@@ -1387,7 +1388,7 @@ class asapplotter:
     # plotting in time is not yet implemented..
     @asaplog_post_dec
     def plottp(self, scan=None, outfile=None):
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         self._plotter.hold()
         self._plotter.clear()
         from asap import scantable
@@ -1477,7 +1478,7 @@ class asapplotter:
         matplotlib.Figure.text.
         See the method help for detailed information.
         """
-        self._assert_plotter(mode="reload")
+        self._assert_plotter(action="reload")
         self._plotter.text(*args, **kwargs)
     # end matplotlib.Figure.text forwarding function
 
@@ -1517,7 +1518,7 @@ class asapplotter:
 
         if plot:
             errmsg = "Can plot header only after the first call to plot()."
-            self._assert_plotter(mode="halt",errmsg=errmsg)
+            self._assert_plotter(action="halt",errmsg=errmsg)
             self._plotter.hold()
             self._header_plot(headstr,fontsize=fontsize)
             import time
@@ -1550,7 +1551,7 @@ class asapplotter:
         if not self._headtext['textobj']:
             asaplog.push("No header has been plotted. Exit without any operation")
             asaplog.post("WARN")
-        elif self._assert_plotter(mode="status"):
+        elif self._assert_plotter(action="status"):
             self._plotter.hold()
             for textobj in self._headtext['textobj']:
                 #if textobj.get_text() in self._headstring:
