@@ -1915,18 +1915,16 @@ void asap::Scantable::regridSpecChannel( double dnu, int nChan )
       factor = dnu/oldincr ;
       firstTime[currId] = false ;
       freqTable_.getEntry( refpix, refval, increment, currId ) ;
-      /***
-       * need to shift refpix to 0
-       ***/
+
       //refval = refval - ( refpix + 0.5 * (1 - factor) ) * increment ;
-      if (factor >= 0 ) {
+      if (factor > 0 ) {
 	refpix = (refpix + 0.5)/factor - 0.5;
       } else {
-	refpix = (abcissa.size() + 0.5 - refpix)/abs(factor) - 0.5;
+	refpix = (abcissa.size() - 0.5 - refpix)/abs(factor) - 0.5;
       }
       freqTable_.setEntry( refpix, refval, increment*factor, currId ) ;
-      os << "ID" << currId << ": channel width (Orig) = " << oldincr << " [" << freqTable_.getUnitString() << "], scale factor = " << factor << LogIO::POST ;
-      os << "     frequency increment (Orig) = " << increment << "-> (New) " << increment*factor << LogIO::POST ;
+      //os << "ID" << currId << ": channel width (Orig) = " << oldincr << " [" << freqTable_.getUnitString() << "], scale factor = " << factor << LogIO::POST ;
+      //os << "     frequency increment (Orig) = " << increment << "-> (New) " << increment*factor << LogIO::POST ;
     }
   }
 }
