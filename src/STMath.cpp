@@ -3165,7 +3165,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       }
       freqrange = ifgfreq[2*i+1] ;
     }
-	
+
 
     // print IF groups
     ostringstream oss ;
@@ -3354,17 +3354,11 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     }
 
     // save column values in the vector
-    vector< vector<uInt> > freqTableIdVec( insize ) ;
     vector< vector<uInt> > freqIdVec( insize ) ;
     vector< vector<uInt> > ifNoVec( insize ) ;
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      ScalarColumn<uInt> freqIDs ;
-      freqIDs.attach( newin[itable]->frequencies().table(), "ID" ) ;
       ifnoCol.attach( newin[itable]->table(), "IFNO" ) ;
       freqIDCol.attach( newin[itable]->table(), "FREQ_ID" ) ;
-      for ( uInt irow = 0 ; irow < newin[itable]->frequencies().table().nrow() ; irow++ ) {
-	freqTableIdVec[itable].push_back( freqIDs( irow ) ) ;
-      }
       for ( uInt irow = 0 ; irow < newin[itable]->table().nrow() ; irow++ ) {
 	freqIdVec[itable].push_back( freqIDCol( irow ) ) ;
 	ifNoVec[itable].push_back( ifnoCol( irow ) ) ;
@@ -3379,7 +3373,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       int nmaxchan = -1 ;
       vector<uInt> freqIdUpdate ; 
       for ( uInt irow = 0 ; irow < rows ; irow++ ) {
-	uInt ifno = ifNoVec[itable][irow] ;  // IFNO is reset by group index
+	uInt ifno = ifNoVec[itable][irow] ;  // IFNO is reset by group index (IF group index)
 	double minfreq = ifgfreq[2*ifno] ;
 	double maxfreq = ifgfreq[2*ifno+1] ;
 	//os << "frequency range: [" << minfreq << "," << maxfreq << "]" << LogIO::POST ;
@@ -3413,7 +3407,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
 	  double cfreq = ( abcissa[imax] - maxfreq + 0.5 * resol ) / resol ;
 	  nmaxchan = imax - sigres * (int(cfreq) +( ( cfreq - int(cfreq) >= 0.5 ) ? 1 : 0 )) ;
 	}
-	//os << "freqrange = [" << abcissa[nminchan] << ", " << abcissa[nmaxchan] << "]"<< LogIO::POST; 
+	//os << "channel range (" << irow << "): [" << nminchan << "," << nmaxchan << "]" << LogIO::POST ;
 	if ( nmaxchan < nminchan ) {
 	  int tmp = nmaxchan ;
 	  nmaxchan = nminchan ;
@@ -3569,8 +3563,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
 
     // combine frequency group
     os << "Combine spectra based on frequency grouping" << LogIO::POST ;
-    //os << "IFNO is renumbered as frequency group ID (see above)" << LogIO::POST ;
-    os << "IFNO is renumbered as IF group ID (see above)" << LogIO::POST ;
+    os << "IFNO is renumbered as frequency group ID (see above)" << LogIO::POST ;
     vector<string> coordinfo = tmpout->getCoordInfo() ;
     oldinfo[0] = coordinfo[0] ;
     coordinfo[0] = "Hz" ;
