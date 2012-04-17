@@ -30,7 +30,6 @@ class asaplotgui(asaplotbase):
         asaplotbase.__init__(self, **v)
         #matplotlib.rcParams["interactive"] = True
 
-        _pylab_helpers.Gcf.destroy(0)
         self.window = Tk.Tk()
         self.window.protocol("WM_DELETE_WINDOW", self.quit)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.window)
