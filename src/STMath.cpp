@@ -2199,6 +2199,7 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tab = in->table();
+  Table& outtab = out->table();
   Unit fluxUnit(tab.keywordSet().asString("FluxUnit"));
   Unit K(String("K"));
   Unit JY(String("Jy"));
@@ -2235,8 +2236,8 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
     ostringstream oss;
     oss << "Jy/K = " << jyperk;
     pushLog(String(oss));
-    Vector<Float> factors(tab.nrow(), factor);
-    scaleByVector(tab,factors, false);
+    Vector<Float> factors(outtab.nrow(), factor);
+    scaleByVector(outtab,factors, false);
   } else if ( etaap > 0.0) {
     if (d < 0) {
       Instrument inst =
@@ -2253,8 +2254,8 @@ CountedPtr< Scantable > STMath::convertFlux( const CountedPtr< Scantable >& in,
     if ( tokelvin ) {
       factor = 1.0 / factor;
     }
-    Vector<Float> factors(tab.nrow(), factor);
-    scaleByVector(tab, factors, False);
+    Vector<Float> factors(outtab.nrow(), factor);
+    scaleByVector(outtab, factors, False);
   } else {
 
     // OK now we must deal with automatic look up of values.
