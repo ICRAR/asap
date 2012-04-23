@@ -3100,7 +3100,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     string groupmode = "OR" ;
     uInt sizecr = 0 ;
     if ( groupmode == "AND" ) 
-      sizecr = 2 ;
+      sizecr = 1 ;
     else if ( groupmode == "OR" ) 
       sizecr = 0 ;
 
