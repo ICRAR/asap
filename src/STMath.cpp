@@ -3221,18 +3221,18 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     }
 
     // print membership
-    //oss.str("") ;
-    //for ( uInt i = 0 ; i < insize ; i++ ) {
-    //oss << "Table " << i << endl ;
-    //for ( uInt j = 0 ; j < groups[i].size() ; j++ ) {
-    //oss << "   FREQ_ID " <<  setw( 2 ) << freqid[i][j] << ": " ;
-    //for ( uInt k = 0 ; k < groups[i][j].size() ; k++ ) {
-    //oss << setw( 2 ) << groups[i][j][k] << " " ;
-    //}
-    //oss << endl ;
-    //}
-    //}
-    //os << oss.str() << LogIO::POST ;
+//     oss.str("") ;
+//     for ( uInt i = 0 ; i < insize ; i++ ) {
+//       oss << "Table " << i << endl ;
+//       for ( uInt j = 0 ; j < groups[i].size() ; j++ ) {
+//         oss << "   FREQ_ID " <<  setw( 2 ) << freqid[i][j] << ": " ;
+//         for ( uInt k = 0 ; k < groups[i][j].size() ; k++ ) {
+//           oss << setw( 2 ) << groups[i][j][k] << " " ;
+//         }
+//         oss << endl ;
+//       }
+//     }
+//     os << oss.str() << LogIO::POST ;
 
     // set back coordinfo
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
@@ -3292,34 +3292,36 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     }
 
     // udpate ifgrp
+    uInt offset = insize ;
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
       for ( uInt iadd = 0 ; iadd < addtable[itable] ; iadd++ ) {
 	for ( uInt ifrow = 0 ; ifrow < groups[itable].size() ; ifrow++ ) {
 	  if ( groups[itable][ifrow].size() > iadd + 1 ) {
 	    uInt igrp = groups[itable][ifrow][iadd+1] ;
 	    for ( uInt imem = 0 ; imem < ifgrp[igrp].size()/2 ; imem++ ) {
-	      if ( ifgrp[igrp][2*imem] == newtableids[iadd+insize] && ifgrp[igrp][2*imem+1] == freqid[newtableids[iadd+insize]][ifrow] ) {
-		ifgrp[igrp][2*imem] = insize + iadd ;
+	      if ( ifgrp[igrp][2*imem] == newtableids[offset+iadd] && ifgrp[igrp][2*imem+1] == freqid[newtableids[offset+iadd]][ifrow] ) {
+		ifgrp[igrp][2*imem] = offset + iadd ;
 	      }
 	    }
 	  }
 	}
       }
+      offset += addtable[itable] ;
     }
 
     // print IF groups again for debug
-    //oss.str( "" ) ;
-    //oss << "IF Group summary: " << endl ;
-    //oss << "   GROUP_ID [FREQ_MIN, FREQ_MAX]: (TABLE_ID, FREQ_ID)" << endl ;
-    //for ( uInt i = 0 ; i < ifgrp.size() ; i++ ) {
-    //oss << "   GROUP " << setw( 2 ) << i << " [" << ifgfreq[2*i] << "," << ifgfreq[2*i+1] << "]: " ;
-    //for ( uInt j = 0 ; j < ifgrp[i].size()/2 ; j++ ) {
-    //oss << "(" << ifgrp[i][2*j] << "," << ifgrp[i][2*j+1] << ") " ; 
-    //}
-    //oss << endl ;
-    //}
-    //oss << endl ;
-    //os << oss.str() << LogIO::POST ;
+//     oss.str( "" ) ;
+//     oss << "IF Group summary: " << endl ;
+//     oss << "   GROUP_ID [FREQ_MIN, FREQ_MAX]: (TABLE_ID, FREQ_ID)" << endl ;
+//     for ( uInt i = 0 ; i < ifgrp.size() ; i++ ) {
+//       oss << "   GROUP " << setw( 2 ) << i << " [" << ifgfreq[2*i] << "," << ifgfreq[2*i+1] << "]: " ;
+//       for ( uInt j = 0 ; j < ifgrp[i].size()/2 ; j++ ) {
+//         oss << "(" << ifgrp[i][2*j] << "," << ifgrp[i][2*j+1] << ") " ; 
+//       }
+//       oss << endl ;
+//     }
+//     oss << endl ;
+//     os << oss.str() << LogIO::POST ;
 
     // reset SCANNO and IFNO/FREQ_ID: IF is reset by the result of sortation 
     os << "All scan number is set to 0" << LogIO::POST ;
