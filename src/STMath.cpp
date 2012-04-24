@@ -3324,17 +3324,25 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
 //     os << oss.str() << LogIO::POST ;
 
     // reset SCANNO and IFNO/FREQ_ID: IF is reset by the result of sortation 
-    os << "All scan number is set to 0" << LogIO::POST ;
     //os << "All IF number is set to IF group index" << LogIO::POST ;
     insize = newin.size() ;
+    // reset SCANNO only when avmode != "SCAN"
+    if ( avmode != "SCAN" ) {
+      os << "All scan number is set to 0" << LogIO::POST ;
+      for ( uInt itable = 0 ; itable < insize ; itable++ ) {
+        uInt nrow = newin[itable]->nrow() ;
+        Table &tmpt = newin[itable]->table() ;
+        scannoCol.attach( tmpt, "SCANNO" ) ;
+        for ( uInt irow = 0 ; irow < nrow ; irow++ )
+          scannoCol.put( irow, 0 ) ;
+      }
+    }
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
       uInt rows = newin[itable]->nrow() ;
       Table &tmpt = newin[itable]->table() ;
       freqIDCol.attach( tmpt, "FREQ_ID" ) ;
-      scannoCol.attach( tmpt, "SCANNO" ) ;
       ifnoCol.attach( tmpt, "IFNO" ) ;
       for ( uInt irow=0 ; irow < rows ; irow++ ) {
-	scannoCol.put( irow, 0 ) ;
 	uInt freqID = freqIDCol( irow ) ;
 	vector<uInt>::iterator iter = find( freqid[newtableids[itable]].begin(), freqid[newtableids[itable]].end(), freqID ) ;
 	if ( iter != freqid[newtableids[itable]].end() ) {
@@ -3616,8 +3624,12 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
 //     MDirection::ScalarColumn dirColOut ;
 //     dirColOut.attach( out->table(), "DIRECTION" ) ;
     Table &tab = tmpout->table() ;
-    Block<String> cols(1);
+//     Block<String> cols(1);
+//     cols[0] = String("POLNO") ;
+    Block<String> cols(3);
     cols[0] = String("POLNO") ;
+    cols[1] = String("SCANNO") ;
+    cols[2] = String("BEAMNO") ;
     TableIterator iter( tab, cols ) ;
     vector< vector<uInt> > sizes( freqgrp.size() ) ;
     vector<uInt> totalsizes( freqgrp.size(), 0 ) ;
