@@ -214,8 +214,9 @@ def test_str(target, source, env):
 taction = Action(test_module, test_str)
 env.AddPostAction(so, taction)
 
-setup_py = None
-env.Alias('install', setup_py)
+# Need this to make makedits work
+dummy = env.Install()
+env.Alias('install', dummy)
 
 # make binary distribution
 if len(env["makedist"]):
