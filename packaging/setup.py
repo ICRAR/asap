@@ -1,8 +1,14 @@
 from setuptools import setup
 from setuptools import find_packages
+import distutils.util
+
+# Use this dummy to make distutils aware that this is a platform-specific
+# package.
+from distutils.extension import Extension
+ext = Extension('_dummy',[],[])
 
 setup(name = 'asap',
-      version = '4.0.0-trunk',
+      version = '4.1.0-trunk',
       description = 'ATNF Spectral-Line Analysis Package',
       author = 'Malte Marquarding',
       author_email = 'Malte.Marquarding@csiro.au',
@@ -19,5 +25,6 @@ spectral-line data.
       scripts = ["bin/asap", "bin/asap2to3", "bin/asap_update_data"],
       license = 'GPL',
       zip_safe = 0,
+      ext_modules = [ ext ], # dummy (see above)
       #test_suite = "nose.collector",
 )
