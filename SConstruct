@@ -89,9 +89,6 @@ opts.AddVariables(
 
                 EnumVariable("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
-                ("makedist",
-                 "Make a binary archive giving a suffix, e.g. sarge or fc5",
-                 ""),
                 EnumVariable("makedoc", "Build the userguide in specified format",
                            "none",
                            ["none", "pdf", "html"], ignorecase=1),
@@ -214,21 +211,18 @@ def test_str(target, source, env):
 taction = Action(test_module, test_str)
 env.AddPostAction(so, taction)
 
-# Need this to make makedits work
+# Need this to make makedist work
 dummy = env.Install()
 env.Alias('install', dummy)
 
 # make binary distribution
-if len(env["makedist"]):
-    env["stagedir"] = "asap-%s" % (env["version"])
-    env.Command('Staging distribution for archive in %s' % env["stagedir"],
-                '', env.MessageAction)
-    env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
-    env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
-    env.QInstall("$stagedir", ["packaging/setup.py"])
-    env.QInstall("$stagedir/debian", env.SGlob("packaging/debian/*") )
-    env.QInstall("$stagedir/asap/data", "share/ipythonrc-asap")
-    env.QInstall("$stagedir/asap/data", "share/ipy_user_conf.py")
+env["stagedir"] = "asap-%s" % (env["version"])
+env.Command('Staging distribution for archive in %s' % env["stagedir"],
+            '', env.MessageAction)
+env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
+env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
+env.QInstall("$stagedir", ["packaging/setup.py"])
+env.QInstall("$stagedir/debian", env.SGlob("packaging/debian/*") )
 
 if env["apps"]:
     env.SConscript("apps/SConscript")
