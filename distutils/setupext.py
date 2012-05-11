@@ -123,12 +123,17 @@ class casacorebuild_ext(build_ext.build_ext):
 
 
     def build_extensions(self):
-        delargs = ["-Wstrict-prototypes", "-Wshorten-64-to-32", 
-                   "-fwrapv"]
-        for comp in [self.compiler.compiler, self.compiler.compiler_so,
-                     self.compiler.compiler_cxx]:
-            for arg in comp:
-                if arg in delargs:
-                    comp.remove(arg)
+        def remove_args(args):
+            out = []
+            delargs = ["-Wstrict-prototypes", "-Wshorten-64-to-32", 
+                       "-fwrapv", ]
+            for arg in args:
+                if arg not in delargs and arg not in out:
+                    out.append(arg)
+            return out
 
+        self.compiler.compiler = remove_args(self.compiler.compiler)
+        self.compiler.compiler_so = remove_args(self.compiler.compiler_so)
+        self.compiler.compiler_cxx = remove_args(self.compiler.compiler_cxx)
+    
         build_ext.build_ext.build_extensions(self)
