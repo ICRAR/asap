@@ -10,6 +10,13 @@ def get_libdir():
 
 ARCHLIBDIR = get_libdir()
 
+
+def get_numpy():
+    if sys.platform != "darwin":
+        return 
+    import numpy
+    return os.path.join(numpy.__path__[0], "core", "include")
+
 class casacorebuild_ext(build_ext.build_ext):
     """
     """
@@ -85,6 +92,10 @@ class casacorebuild_ext(build_ext.build_ext):
 
 	if cclibdir not in self.library_dirs:
 	    self.library_dirs += [cclibdir]
+
+        numpyinc = get_numpy()
+        if numpyinc:
+            self.include_dirs += [numpyinc]
 
 	if ccincdir not in self.include_dirs:
 	    self.include_dirs += [ccincdir]
