@@ -11,10 +11,9 @@ PKGNAME = "asap"
 EXTNAME = "_asap"
 
 sources = glob.glob('src/*.cpp')
-sources = glob.glob("external-alma/atnf/pks/pks_maths.cc")
+sources += glob.glob("external-alma/atnf/pks/pks_maths.cc")
 sources += glob.glob("external-alma/atnf/PKSIO/*.cc")
-
-sources = glob.glob("external/libpyrap/pyrap-0.3.2/pyrap/Converters/*.cc")
+sources += glob.glob("external/libpyrap/pyrap-0.3.2/pyrap/Converters/*.cc")
 
 headers = glob.glob('src/*.h')
 headers += glob.glob("external-alma/atnf/PKSIO/*.h")

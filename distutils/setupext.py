@@ -32,6 +32,7 @@ class casacorebuild_ext(build_ext.build_ext):
               ' e.g. $HOME, to add $HOME/lib etc to the build.'),
 	     ]
 
+
     def initialize_options(self):
         """
 	Overload to enable custom settings to be picked up
@@ -121,5 +122,13 @@ class casacorebuild_ext(build_ext.build_ext):
                 break
 
 
-    def run(self):
-        build_ext.build_ext.run(self)
+    def build_extensions(self):
+        delargs = ["-Wstrict-prototypes", "-Wshorten-64-to-32", 
+                   "-fwrapv"]
+        for comp in [self.compiler.compiler, self.compiler.compiler_so,
+                     self.compiler.compiler_cxx]:
+            for arg in comp:
+                if arg in delargs:
+                    comp.remove(arg)
+
+        build_ext.build_ext.build_extensions(self)
