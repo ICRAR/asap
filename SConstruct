@@ -25,6 +25,7 @@ EnsureSConsVersion(1,0,0)
 
 opts = Variables("options.cache")
 opts.AddVariables(
+		("extraroot", "Addition tree to look for packages", None),
                 ("FORTRAN", "The fortran compiler", None),
                 ("f2clib", "The fortran to c library", None),
 		PathVariable("casacoreroot", "The location of casacore",
@@ -84,8 +85,7 @@ opts.AddVariables(
                 )
 
 env = Environment( toolpath = ['./scons'],
-                   tools = ["default", "utils",
-                            "casaoptions", "casa"],
+                   tools = ["default", "utils", "casa"],
                    ENV = { 'PATH' : os.environ[ 'PATH' ],
                           'HOME' : os.environ[ 'HOME' ] },
                    options = opts)
@@ -95,7 +95,7 @@ env.SConsignFile()
 if not ( env.GetOption('clean') or env.GetOption('help') ):
 
     conf = Configure(env)
-
+    conf.env.AddCustomPackage('extra')
     conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
 					       "lib"))
     conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
