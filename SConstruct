@@ -98,7 +98,7 @@ env.SConsignFile()
 if not ( env.GetOption('clean') or env.GetOption('help') ):
 
     conf = Configure(env)
-    if conf.env["extraroot"]:
+    if conf.env.get("extraroot", None):
         conf.env.AddCustomPackage('extra')
     conf.env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()])
     if not conf.CheckHeader("Python.h", language='c'):
