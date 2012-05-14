@@ -20,6 +20,9 @@ class scons_ext(build_ext.build_ext):
 	     ('wcslib=', None, 'Name of the wcs library'),
 	     ('rpfitsroot=', None, 'Prefix for rpfits installation location'),
 	     ('rpfitslib=', None, 'Name of the rpfits library'),
+	     ('blaslib=', None, 'Name of the blas library'),
+	     ('lapacklib=', None, 'Name of the lapack library'),
+	     ('f2clib=', None, 'Name of the fortran-to-c library'),
 	     ('jobs=','j', 'Number of processes'),
              ('extraroot=', None, 
               'Extra root directory where muiltple packages could be found,'
@@ -46,6 +49,9 @@ class scons_ext(build_ext.build_ext):
 	self.wcslib = None
 	self.rpfitsroot = None
 	self.rpfitslib = None
+	self.blaslib = None
+	self.lapacklib = None
+	self.f2clib = None
 
     def finalize_options(self):
         build_ext.build_ext.finalize_options(self)
@@ -59,12 +65,17 @@ class scons_ext(build_ext.build_ext):
                     self._scons_options.append(" ".join(["-"+opt[1], v]))
 
     def build_extensions(self):
-        ext = self.extensions[0]
-        ext_path = self.get_ext_fullpath(ext.name)
-        extdir = os.path.dirname(ext_path)
+        ext = self.extensions[0]        
+        try:
+            ext_path = self.get_ext_fullpath(ext.name)
+            extdir = os.path.dirname(ext_path)
+        except AttributeError:
+            # hack for pyhton 2.5
+            extdir = os.path.join(self.build_lib, ext.name.split(".")[0])
         if not os.path.exists(extdir):
             os.makedirs(extdir)
-        cmd = ['scons', '--quiet'] + self._scons_options
+        cmd = ['scons'] + self._scons_options
         subprocess.call(cmd)
+        # copy extension into distutils build directory
         if os.path.exists("build/_asap.so"):
-            shutil.copy("build/_asap.so", ext_path)
+            shutil.copy("build/_asap.so", extdir)
