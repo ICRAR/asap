@@ -21,28 +21,12 @@ def get_numpy_incdir():
             pass
     return ""
 
-def get_moduledir(prefix="/usr/local"):
-    moduledir = distutils.sysconfig.get_python_lib(1,0, prefix)
-    if sys.platform.startswith('linux') \
-            and platform.architecture()[0] == '64bit' \
-            and platform.dist()[0].lower() not in ['debian', 'ubuntu']:
-        # hack to install into /usr/lib64 if scons is in the 32bit /usr/lib/
-    	if moduledir.startswith("/usr"):
-           moduledir = moduledir.replace("lib", "lib64")
-    return moduledir
-
 EnsureSConsVersion(1,0,0)
 
-opts = Variables("options.cfg")
+opts = Variables("options.cache")
 opts.AddVariables(
                 ("FORTRAN", "The fortran compiler", None),
                 ("f2clib", "The fortran to c library", None),
-                PathVariable("prefix",
-	        "The root installation path",
-                           distutils.sysconfig.PREFIX),
-                ("moduledir",
-                 "The python module path (site-packages))",
-                 None),
 		PathVariable("casacoreroot", "The location of casacore",
                              "/usr/local"),
 		("boostroot", "The root dir where boost is installed", None),
@@ -75,39 +59,41 @@ opts.AddVariables(
 		("rpfitsroot", 
 		 "The root directory where rpfits is installed", None),
 		("rpfitslibdir", "The rpfits library location", None),
+
                 ("pyraproot", "The root directory where libpyrap is installed",
                  None),
                 ("numpyincdir", "numpy header file directory",
                  get_numpy_incdir()),
+                BoolVariable("enable_pyrap", 
+                             "Use pyrap conversion library from system", 
+                             False),
                 ("pyraplib", "The name of the pyrap library", "pyrap"),
                 ("pyraplibdir", "The directory where libpyrap is installed",
                  None),
                 ("pyrapincdir", "The pyrap include location",
                  None),
-                BoolVariable("enable_pyrap", "Use pyrap conversion library", 
-                             False),
-
                 EnumVariable("mode", "The type of build.", "release",
                            ["release","debug"], ignorecase=1),
-                EnumVariable("makedoc", "Build the userguide in specified format",
-                           "none",
-                           ["none", "pdf", "html"], ignorecase=1),
+                EnumVariable("makedoc", 
+                             "Build the userguide in specified format",
+                             "none",
+                             ["none", "pdf", "html"], ignorecase=1),
                 BoolVariable("apps", "Build cpp apps", True),
                 BoolVariable("alma", "Enable alma specific functionality", 
                              False),
                 )
 
 env = Environment( toolpath = ['./scons'],
-                   tools = ["default", "archiver", "utils",
-                            "quietinstall", "casaoptions", "casa"],
+                   tools = ["default", "utils",
+                            "casaoptions", "casa"],
                    ENV = { 'PATH' : os.environ[ 'PATH' ],
                           'HOME' : os.environ[ 'HOME' ] },
                    options = opts)
 
-Help(opts.GenerateHelpText(env))
+env.Help(opts.GenerateHelpText(env))
 env.SConsignFile()
+if not ( env.GetOption('clean') or env.GetOption('help') ):
 
-if not env.GetOption('clean'):
     conf = Configure(env)
 
     conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
@@ -134,21 +120,23 @@ if not env.GetOption('clean'):
                                    'boost/python.hpp', language='c++'): 
         Exit(1)
 
-#    conf.env.AddCustomPackage('pyrap')
-    if False and conf.CheckLib(conf.env["pyraplib"], language='c++', autoadd=0): 
-        conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
-#        conf.env.PrependUnique(LIBS=env['pyraplib'])
+    if env["enable_pyrap"]:
+        conf.env.AddCustomPackage('pyrap')
+        if conf.CheckLib(conf.env["pyraplib"], language='c++', autoadd=0):
+            conf.env.PrependUnique(LIBS=env['pyraplib'])
+        else:
+            Exit(1)
     else:
         conf.env.AppendUnique(CPPPATH=[conf.env["numpyincdir"]])
         # numpy 1.0 uses config.h; numpy >= 1.1 uses numpyconfig.h
-        if conf.CheckHeader("numpy/config.h") or \
-               conf.CheckHeader("numpy/numpyconfig.h"):
+        if conf.CheckHeader("numpy/numpyconfig.h"):
             conf.env.Append(CPPDEFINES=["-DAIPS_USENUMPY"])
         else:
             conf.env.Exit(1)
-        conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
-        # compile in pyrap here...
+        # compile in pyrap from here...
         conf.env["pyrapint"] = "#/external/libpyrap/pyrap-0.3.2"
+    conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
+
     # test for cfitsio
     if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
@@ -174,12 +162,9 @@ if not env.GetOption('clean'):
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_CASAPY'])
-    if not conf.env.get("moduledir"):
-        mdir = get_moduledir(conf.env.get("prefix"))
-        if env["PLATFORM"] == "darwin":
-            mdir = distutils.sysconfig.get_python_lib(1,0)            
-        conf.env["moduledir"] =  mdir
     env = conf.Finish()
+
+opts.Save('options.cache', env)
 
 env["version"] = "4.1.x"
 
@@ -194,9 +179,13 @@ else:
 Export("env")
 
 # build externals
-env.SConscript("external-alma/SConscript")
+ext = env.SConscript("external-alma/SConscript")
+
 # build library
 so = env.SConscript("src/SConscript", variant_dir="build", duplicate=0)
+
+apps = env.SConscript("apps/SConscript")
+
 # test module import, to see if there are unresolved symbols
 def test_module(target,source,env):
     pth = str(target[0])
@@ -205,30 +194,16 @@ def test_module(target,source,env):
     __import__(os.path.split(mod)[1])
     print "ok"
     return 0
+
 def test_str(target, source, env):
     return "Testing module..."
 
 taction = Action(test_module, test_str)
 env.AddPostAction(so, taction)
 
-# Need this to make makedist work
-dummy = env.Install()
-env.Alias('install', dummy)
-
-# make binary distribution
-env["stagedir"] = "asap-%s" % (env["version"])
-env.Command('Staging distribution for archive in %s' % env["stagedir"],
-            '', env.MessageAction)
-env.QInstall("$stagedir/asap", [so,  env.SGlob("python/*.py")] )
-env.QInstall("$stagedir/bin", ["bin/asap", "bin/asap_update_data"])
-env.QInstall("$stagedir", ["packaging/setup.py"])
-env.QInstall("$stagedir/debian", env.SGlob("packaging/debian/*") )
-
-if env["apps"]:
-    env.SConscript("apps/SConscript")
-
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
+    Execute(Delete("options.cache"))
 
 if env["makedoc"].lower() != "none":
     env.SConscript("doc/SConscript")
