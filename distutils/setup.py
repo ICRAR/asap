@@ -4,7 +4,7 @@ try:
 except ImportError, ex:
     from distutils.core import setup
 from distutils.core import Extension
-from scons_ect import scons_ext
+from scons_ext import scons_ext
 from distutils import ccompiler
 
 PKGNAME = "asap"
