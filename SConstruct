@@ -159,7 +159,7 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
 	Exit(1)
     
     libpath = ""
-    for p in [conf.env["casacoreroot"], conf.env["extraroot"]]:
+    for p in [conf.env["casacoreroot"], conf.env.get("extraroot", "")]:
         pth = os.path.join(p, "include", "casacore")        
 	if os.path.exists(pth):
             libpth = os.path.join(p, "lib")
