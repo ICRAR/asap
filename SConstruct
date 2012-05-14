@@ -30,6 +30,9 @@ opts.AddVariables(
                 ("f2clib", "The fortran to c library", None),
 		PathVariable("casacoreroot", "The location of casacore",
                              "/usr/local"),
+		BoolVariable("casacorestatic", 
+                             "Link statically against casacore",
+                             False),
 		("boostroot", "The root dir where boost is installed", None),
 		("boostlib", "The name of the boost python library", 
 		 "boost_python"),
@@ -95,17 +98,8 @@ env.SConsignFile()
 if not ( env.GetOption('clean') or env.GetOption('help') ):
 
     conf = Configure(env)
-    conf.env.AddCustomPackage('extra')
-    conf.env.AppendUnique(LIBPATH=os.path.join(conf.env["casacoreroot"], 
-					       "lib"))
-    conf.env.AppendUnique(CPPPATH=os.path.join(conf.env["casacoreroot"], 
-					       "include", "casacore"))
-    if not conf.CheckLib("casa_casa", language='c++'): Exit(1)
-    conf.env.PrependUnique(LIBS=["casa_images", "casa_ms", "casa_components", 
-                                 "casa_coordinates", "casa_lattices", 
-                                 "casa_fits", "casa_measures", "casa_scimath",
-                                 "casa_scimath_f", "casa_tables", 
-                                 "casa_mirlib"])
+    if conf.env["extraroot"]:
+        conf.env.AddCustomPackage('extra')
     conf.env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()])
     if not conf.CheckHeader("Python.h", language='c'):
         Exit(1)
@@ -116,9 +110,13 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
         if not conf.CheckLib(library=pylib, language='c'): Exit(1)
 
     conf.env.AddCustomPackage('boost')
-    if not conf.CheckLibWithHeader(conf.env["boostlib"], 
-                                   'boost/python.hpp', language='c++'): 
-        Exit(1)
+    libname = conf.env["boostlib"]
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        if not conf.CheckLibWithHeader(libname,
+                                       'boost/python.hpp', language='c++'): 
+            Exit(1)
 
     if env["enable_pyrap"]:
         conf.env.AddCustomPackage('pyrap')
@@ -140,25 +138,67 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
     # test for cfitsio
     if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
-    if not conf.CheckLibWithHeader(conf.env["cfitsiolib"], 
-				   'fitsio.h', language='c'):
-        Exit(1)
+    libname = conf.env["cfitsiolib"]
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        if not conf.CheckLibWithHeader(libname,
+                                       'fitsio.h', language='c'):
+            Exit(1)
     conf.env.AddCustomPackage('wcs')
-    if not conf.CheckLibWithHeader(conf.env["wcslib"], 
-                                   'wcslib/wcs.h', language='c'):
-        Exit(1)
+    libname = conf.env["wcslib"]
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        if not conf.CheckLibWithHeader(libname, 
+                                       'wcslib/wcs.h', language='c'):
+            Exit(1)
+
     conf.env.AddCustomPackage('rpfits')
     if not conf.CheckLib(conf.env["rpfitslib"], language="c"):
 	Exit(1)
+    
+    libpath = ""
+    for p in [conf.env["casacoreroot"], conf.env["extraroot"]]:
+        pth = os.path.join(p, "include", "casacore")        
+	if os.path.exists(pth):
+            libpth = os.path.join(p, "lib")
+            conf.env.AppendUnique(CPPPATH=[pth])
+	    break
+    cclibs = ["casa_images", "casa_ms", "casa_components", 
+              "casa_coordinates", "casa_lattices", 
+              "casa_fits", "casa_measures", "casa_scimath",
+              "casa_scimath_f", "casa_tables", 
+              "casa_mirlib", "casa_casa"]
+    if conf.env["casacorestatic"]:
+        libs = [ env.File(os.path.join(libpth, "lib"+lib+".a")) \
+                 for lib in cclibs ]
+    else:
+        conf.env.AppendUnique(LIBPATH=libpth)
+        if not conf.CheckLibWithHeader("casa_casa", "casa/aips.h",
+                                       language='c++', autoadd=0): 
+            Exit(1)
+        libs = cclibs
+    conf.env.PrependUnique(LIBS=libs)
 
     # test for blas/lapack
-    lapackname = conf.env.get("lapacklib", "lapack")
     conf.env.AddCustomPackage("lapack")
-    if not conf.CheckLib(lapackname): Exit(1)
-    blasname = conf.env.get("blaslib", "blas")
-    conf.env.AddCustomPackage("blas")
-    if not conf.CheckLib(blasname): Exit(1)
-    conf.env.CheckFortran(conf)
+    libname = conf.env.get("lapacklib", "lapack")
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        if not conf.CheckLib(libname): Exit(1)
+    libname = conf.env.get("blaslib", "blas")
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        if not conf.CheckLib(libname): Exit(1)
+
+    libname = conf.env.get("f2clib", "gfortran")
+    if libname.find(".") > -1 and os.path.exists(libname):
+        conf.env.AppendUnique(LIBS=[env.File(libname)])
+    else:
+        conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_CASAPY'])
