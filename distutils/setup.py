@@ -4,41 +4,11 @@ try:
 except ImportError, ex:
     from distutils.core import setup
 from distutils.core import Extension
-from setupext import casacorebuild_ext
+from scons_ect import scons_ext
 from distutils import ccompiler
 
 PKGNAME = "asap"
-EXTNAME = "_asap"
-
-sources = glob.glob('src/*.cpp')
-sources += glob.glob("external-alma/atnf/pks/pks_maths.cc")
-sources += glob.glob("external-alma/atnf/PKSIO/*.cc")
-sources += glob.glob("external/libpyrap/pyrap-0.3.2/pyrap/Converters/*.cc")
-
-headers = glob.glob('src/*.h')
-headers += glob.glob("external-alma/atnf/PKSIO/*.h")
-headers += glob.glob("external-alma/atnf/pks/pks_maths.h")
-headers += glob.glob("external/libpyrap/pyrap-0.3.2/pyrap/Converters/*.h")
-
-incdirs = ["external-alma"]
-incdirs += ["external/libpyrap/pyrap-0.3.2"]
-
-defines = [('HAVE_LIBPYRAP', None), ("AIPS_USENUMPY", None),
-           ('WCSLIB_GETWCSTAB', None)]
-
-casalibs = ['casa_images', 'casa_ms', 'casa_components', 'casa_coordinates',
-            'casa_fits', 'casa_lattices', 'casa_measures',
-            'casa_scimath', 'casa_scimath_f', 'casa_tables', 'casa_mirlib'] 
-
-# casa_casa is added by default
-
-asapextension = Extension(name="%s.%s" % (PKGNAME, EXTNAME), 
-                          sources = sources,
-                          depends = headers,
-                          libraries= casalibs,
-                          define_macros = defines,
-                          include_dirs = incdirs)
-
+asapso = Extension(name="%s._%s" % (PKGNAME, PKGNAME), sources=[])
 
 setup(name = PKGNAME,
       version = '4.1.x-trunk',
@@ -50,11 +20,13 @@ setup(name = PKGNAME,
       long_description = '''A package to process and analyse spectral-line
 data from (ATNF) single-dish telescopes.
 ''',
-      package_dir = {'asap': 'python'},
-      packages = ['asap'],
-      package_data = {"": ["data/ipy*"], },
+      package_dir = { PKGNAME: 'python' },
+      packages = [ PKGNAME ],
       scripts = ["bin/asap", "bin/asap_update_data",],
       license = 'GPL',
-      ext_modules =[ asapextension ],
-      cmdclass={'build_ext': casacorebuild_ext})
-      
+      install_requires = ["ipython>=0.11", "matplotlib>=0.99", "numpy>=1.3"],
+      setup_requires = [ "scons>=1.0" ],
+      ext_modules =[ asapso ],
+      cmdclass={'build_ext': scons_ext}
+
+      )
