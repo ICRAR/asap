@@ -31,6 +31,7 @@ EnsureSConsVersion(1,0,0)
 opts = Variables("options.cache")
 opts.AddVariables(
 		("extraroot", "Addition tree to look for packages", None),
+		("extraflags", "Additional build flags", None),
                 ("FORTRAN", "The fortran compiler", None),
                 ("f2clib", "The fortran to c library", None),
 		PathVariable("casacoreroot", "The location of casacore",
@@ -211,6 +212,9 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_CASAPY'])
+    if conf.env.get("extraflags"):
+        flags = conf.env.ParseFlags(conf.env["extraflags"])
+        conf.env.MergeFlags(flags)
     env = conf.Finish()
 
 opts.Save('options.cache', env)

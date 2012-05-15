@@ -1,7 +1,26 @@
 import os, sys, platform
 import subprocess
+import glob
 import shutil
 from distutils.command import build_ext
+
+try:
+    from setuptools import setup as _setup
+    from setuptools import Extension
+except ImportError, ex:
+    from distutils.core import setup as _setup
+    from distutils.core import Extension
+
+def setup(*args, **kwargs):
+    asapso = Extension(name="%s._%s".format(kwargs['name'],kwargs['name']),
+                                            sources=[])
+    d = {'ext_modules': [ asapso ],
+         'cmdclass': {'build_ext': scons_ext}
+         }
+    kwargs.update(d)
+    print kwargs
+    _setup(*args, **kwargs)
+    
 
 class scons_ext(build_ext.build_ext):
     """Build extensions using scons instead of distutils.
@@ -27,6 +46,8 @@ class scons_ext(build_ext.build_ext):
 	     ('lapacklib=', None, 'Name of the lapack library'),
 	     ('f2clib=', None, 'Name of the fortran-to-c library'),
 	     ('jobs=','j', 'Number of processes'),
+	     ('extraflags=', None, 
+              'Extra build flags e.g. static libs, defines etc.'),
              ('extraroot=', None, 
               'Extra root directory where muiltple packages could be found,'
               ' e.g. $HOME, to add $HOME/lib etc to the build.'),
@@ -43,6 +64,7 @@ class scons_ext(build_ext.build_ext):
         # command line option
         self.jobs = None
         self.extraroot = None
+        self.extraflags = None
 	self.casacoreroot = None
 	self.casacorestatic = None
 	self.boostroot = None
