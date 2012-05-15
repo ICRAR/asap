@@ -21,6 +21,11 @@ def get_numpy_incdir():
             pass
     return ""
 
+def get_libdir():
+    return os.path.basename(distutils.sysconfig.get_config_var('LIBDIR'))
+
+LIBDIR = "lib' #get_libdir()
+
 EnsureSConsVersion(1,0,0)
 
 opts = Variables("options.cache")
@@ -126,7 +131,6 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
             Exit(1)
     else:
         conf.env.AppendUnique(CPPPATH=[conf.env["numpyincdir"]])
-        # numpy 1.0 uses config.h; numpy >= 1.1 uses numpyconfig.h
         if conf.CheckHeader("numpy/numpyconfig.h"):
             conf.env.Append(CPPDEFINES=["-DAIPS_USENUMPY"])
         else:
@@ -135,15 +139,20 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
         conf.env["pyrapint"] = "#/external/libpyrap/pyrap-0.3.2"
     conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
 
+    if not conf.CheckLib("m"): 
+        Exit(1)
     # test for cfitsio
-    if not conf.CheckLib("m"): Exit(1)
     conf.env.AddCustomPackage('cfitsio')
     libname = conf.env["cfitsiolib"]
+    if not conf.CheckHeader("fitsio.h"):
+        #SuSE is being special
+        conf.env.AppendUnique(CPPPATH=['/usr/include/libcfitsio0'])
+        if not conf.CheckHeader("fitsio.h"):
+            Exit(1)
     if libname.find(".") > -1 and os.path.exists(libname):
         conf.env.AppendUnique(LIBS=[env.File(libname)])
     else:
-        if not conf.CheckLibWithHeader(libname,
-                                       'fitsio.h', language='c'):
+        if not conf.CheckLib(libname, language='c'):
             Exit(1)
     conf.env.AddCustomPackage('wcs')
     libname = conf.env["wcslib"]
@@ -155,21 +164,21 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
             Exit(1)
 
     conf.env.AddCustomPackage('rpfits')
-    if not conf.CheckLib(conf.env["rpfitslib"], language="c"):
+    if not conf.CheckLibWithHeader(conf.env["rpfitslib"], "RPFITS.h",
+                                   language="c"):
 	Exit(1)
     
     libpath = ""
     for p in [conf.env["casacoreroot"], conf.env.get("extraroot", "")]:
         pth = os.path.join(p, "include", "casacore")        
 	if os.path.exists(pth):
-            libpth = os.path.join(p, "lib")
+            libpth = os.path.join(p, LIBDIR)
             conf.env.AppendUnique(CPPPATH=[pth])
 	    break
     cclibs = ["casa_images", "casa_ms", "casa_components", 
               "casa_coordinates", "casa_lattices", 
               "casa_fits", "casa_measures", "casa_scimath",
-              "casa_scimath_f", "casa_tables", 
-              "casa_mirlib", "casa_casa"]
+              "casa_scimath_f", "casa_tables", "casa_casa"]
     if conf.env["casacorestatic"]:
         libs = [ env.File(os.path.join(libpth, "lib"+lib+".a")) \
                  for lib in cclibs ]

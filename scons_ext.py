@@ -18,6 +18,7 @@ class scons_ext(build_ext.build_ext):
 	     ('cfitsioroot=', None, 
               'Prefix for cfitsio installation location'),
 	     ('cfitsiolib=', None, 'Name of the cfitsio library'),
+	     ('cfitsioincdir=', None, 'The custom cfitsio include dir'),
 	     ('wcsroot=', None, 'Prefix for wcslib installation location'),
 	     ('wcslib=', None, 'Name of the wcs library'),
 	     ('rpfitsroot=', None, 'Prefix for rpfits installation location'),
@@ -48,6 +49,7 @@ class scons_ext(build_ext.build_ext):
 	self.boostlib = None
         self.cfitsioroot = None
         self.cfitsiolib = None
+        self.cfitsioincdir = None
 	self.wcsroot = None
 	self.wcslib = None
 	self.rpfitsroot = None
@@ -59,11 +61,11 @@ class scons_ext(build_ext.build_ext):
     def finalize_options(self):
         build_ext.build_ext.finalize_options(self)
         for opt in self.user_options:
-            atr = opt[0].strip("=")
-            v = getattr(self, atr)
+            attr = opt[0].strip("=")
+            v = getattr(self, attr)
             if v is not None:
                 if opt[1] is None:
-                    self._scons_options.append("=".join([atr, v]))
+                    self._scons_options.append("=".join([attr, v]))
                 else:
                     self._scons_options.append(" ".join(["-"+opt[1], v]))
 
@@ -78,7 +80,9 @@ class scons_ext(build_ext.build_ext):
         if not os.path.exists(extdir):
             os.makedirs(extdir)
         cmd = ['scons'] + self._scons_options
-        subprocess.call(cmd)
+        retcode = subprocess.call(cmd)
+        if retcode != 0:
+            raise RuntimeError('scons failed')
         # copy extension into distutils build directory
         if os.path.exists("build/_asap.so"):
             shutil.copy("build/_asap.so", extdir)
