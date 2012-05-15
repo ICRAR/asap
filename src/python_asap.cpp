@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# python_asap.cc: python module for single dish package asap
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2004
+//# Copyright (C) 2004-2012
 //# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#include <string>
-#include <vector>
 
 #include <boost/python.hpp>
 #include <boost/python/exception_translator.hpp>
+
+#include <string>
+#include <vector>
 
 #include <casa/aips.h>
 #include <casa/Exceptions/Error.h>

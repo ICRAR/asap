@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# python_Scantable.cc: python exposure of c++ Scantable class
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2004
+//# Copyright (C) 2004-2012
 //# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#include <vector>
 
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
+#include <vector>
 
 #include "ScantableWrapper.h"
 

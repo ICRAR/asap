@@ -1,7 +1,7 @@
 //#---------------------------------------------------------------------------
 //# python_STMathWrapper.cc: python exposure of c++ STMath class
 //#---------------------------------------------------------------------------
-//# Copyright (C) 2004
+//# Copyright (C) 2004-2012
 //# ATNF
 //#
 //# This program is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
 //#
 //# $Id$
 //#---------------------------------------------------------------------------
-#include <vector>
 #include <boost/python.hpp>
+
+#include <vector>
 
 #include "STMathWrapper.h"
 
