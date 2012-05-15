@@ -10,6 +10,8 @@ class scons_ext(build_ext.build_ext):
     user_options = \
             [('casacoreroot=', None, 
               'Prefix for casacore installation location'),
+             ('casacorestatic=', None,
+              'use static casacore libraries'),
 	     ('boostroot=', None, 
               'Prefix for boost_python installation location'),
 	     ('boostlib=', None, 'Name of the boost_python library'),
@@ -41,6 +43,7 @@ class scons_ext(build_ext.build_ext):
         self.jobs = None
         self.extraroot = None
 	self.casacoreroot = None
+	self.casacorestatic = None
 	self.boostroot = None
 	self.boostlib = None
         self.cfitsioroot = None
