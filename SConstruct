@@ -24,7 +24,7 @@ def get_numpy_incdir():
 def get_libdir():
     return os.path.basename(distutils.sysconfig.get_config_var('LIBDIR'))
 
-LIBDIR = "lib' #get_libdir()
+LIBDIR = 'lib' #get_libdir()
 
 EnsureSConsVersion(1,0,0)
 
