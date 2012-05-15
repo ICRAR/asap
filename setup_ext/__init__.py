@@ -18,7 +18,6 @@ def setup(*args, **kwargs):
          'cmdclass': {'build_ext': scons_ext}
          }
     kwargs.update(d)
-    print kwargs
     _setup(*args, **kwargs)
     
 
