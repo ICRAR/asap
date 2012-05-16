@@ -12,8 +12,8 @@ except ImportError, ex:
     from distutils.core import Extension
 
 def setup(*args, **kwargs):
-    asapso = Extension(name="%s._%s".format(kwargs['name'],kwargs['name']),
-                                            sources=[])
+    asapso = Extension(name="%s._%s" % (kwargs['name'],kwargs['name']),
+                       sources=[])
     d = {'ext_modules': [ asapso ],
          'cmdclass': {'build_ext': scons_ext}
          }
