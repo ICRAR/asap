@@ -2264,6 +2264,8 @@ class scantable(Scantable):
         if plot:
             from asap.asapplotter import new_asaplot
             theplot = new_asaplot(rcParams['plotter.gui'])
+            from matplotlib import rc as rcp
+            rcp('lines', linewidth=1)
             theplot.set_panels()
             ylab=s._get_ordinate_label()
             #theplot.palette(0,["#777777","red"])
@@ -2335,6 +2337,8 @@ class scantable(Scantable):
 #         if plot:
 #             from asap.asapplotter import new_asaplot
 #             theplot = new_asaplot(rcParams['plotter.gui'])
+#             from matplotlib import rc as rcp
+#             rcp('lines', linewidth=1)
 #             theplot.set_panels()
 #             ylab=s._get_ordinate_label()
 #             #theplot.palette(0,["#777777","red"])

@@ -311,6 +311,7 @@ def calps(scantab, scannos, smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, veri
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
         p=new_asaplot()
+        rcp('lines', linewidth=1)
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
         titles=[]
@@ -530,6 +531,7 @@ def calnod(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, 
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
         p=new_asaplot()
+        rcp('lines', linewidth=1)
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)*len(polnos)
         titles=[]
@@ -740,6 +742,7 @@ def calfs(scantab, scannos=[], smooth=1, tsysval=0.0, tauval=0.0, tcalval=0.0, v
         asaplog.push('Plot only first spectrum for each [if,pol] pairs to verify calibration.')
         asaplog.post('WARN')
         p=new_asaplot()
+        rcp('lines', linewidth=1)
         #nr=min(6,len(ifnos)*len(polnos))
         nr=len(ifnos)/2*len(polnos)
         titles=[]

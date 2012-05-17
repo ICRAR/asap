@@ -548,6 +548,7 @@ class fitter:
             self._p = new_asaplot(rcParams['plotter.gui'])
         self._p.hold()
         self._p.clear()
+        rcp('lines', linewidth=1)
         self._p.set_panels()
         self._p.palette(0)
         tlab = 'Spectrum'
