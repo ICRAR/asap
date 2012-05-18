@@ -2,8 +2,8 @@ from asap.scantable import scantable
 from asap.parameters import rcParams
 from asap.logging import asaplog, asaplog_post_dec
 from asap.selector import selector
-#from asap import asaplotgui
 from asap.asapplotter import new_asaplot
+from matplotlib import rc as rcp
 
 @asaplog_post_dec
 def average_time(*args, **kwargs):

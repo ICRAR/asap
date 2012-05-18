@@ -540,6 +540,7 @@ class fitter:
             plotparms:   Inidicates if the parameter values should be present
                          on the plot
         """
+        from matplotlib import rc as rcp
         if not self.fitted:
             return
         if not self._p or self._p.is_dead:

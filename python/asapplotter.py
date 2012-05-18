@@ -139,20 +139,20 @@ class asapplotter:
             errmsg:    An error (warning) message to send to the logger,
                        when plot window is not alive.
         """
-        isAlive = (self._plotter != None and not self._plotter.is_dead)
+        isAlive = (self._plotter is not None) and self._plotter._alive()
         # More tests
-        if isAlive:
-            if self._plotter.figmgr:
-                figmgr = self._plotter.figmgr
-                figid = figmgr.num
-                # Make sure figid=0 is what asapplotter expects.
-                # It might be already destroied/overridden by matplotlib
-                # commands or other plotting methods using asaplot.
-                isAlive = _pylab_helpers.Gcf.has_fignum(figid) and \
-                          (figmgr == \
-                           _pylab_helpers.Gcf.get_fig_manager(figid))
-            else:
-                isAlive = False
+        #if isAlive:
+        #    if self._plotter.figmgr:
+        #        figmgr = self._plotter.figmgr
+        #        figid = figmgr.num
+        #        # Make sure figid=0 is what asapplotter expects.
+        #        # It might be already destroied/overridden by matplotlib
+        #        # commands or other plotting methods using asaplot.
+        #        isAlive = _pylab_helpers.Gcf.has_fignum(figid) and \
+        #                  (figmgr == \
+        #                   _pylab_helpers.Gcf.get_fig_manager(figid))
+        #    else:
+        #        isAlive = False
             
         if isAlive:
             return True
