@@ -543,7 +543,8 @@ class fitter:
         from matplotlib import rc as rcp
         if not self.fitted:
             return
-        if not self._p or self._p.is_dead:
+        #if not self._p or self._p.is_dead:
+        if not (self._p and self._p._alive()):
             from asap.asapplotter import new_asaplot
             del self._p
             self._p = new_asaplot(rcParams['plotter.gui'])
