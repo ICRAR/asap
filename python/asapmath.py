@@ -1021,6 +1021,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
     insitu:  if False, a new scantable is returned.
              Otherwise, the array operation is done in-sitsu.
     """
+    if insitu is None: insitu = rcParams['insitu']
     nrow = scan.nrow()
     s = None
     from asap._asap import stmath
