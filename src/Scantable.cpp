@@ -477,6 +477,7 @@ std::string Scantable::formatDirection(const MDirection& md) const
   Vector<Double> t = md.getAngle(Unit(String("rad"))).getValue();
   Int prec = 7;
 
+  String ref = md.getRefString();
   MVAngle mvLon(t[0]);
   String sLon = mvLon.string(MVAngle::TIME,prec);
   uInt tp = md.getRef().getType();
@@ -486,7 +487,7 @@ std::string Scantable::formatDirection(const MDirection& md) const
   }
   MVAngle mvLat(t[1]);
   String sLat = mvLat.string(MVAngle::ANGLE+MVAngle::DIG2,prec);
-  return sLon + String(" ") + sLat;
+  return  ref + String(" ") + sLon + String(" ") + sLat;
 }
 
 
