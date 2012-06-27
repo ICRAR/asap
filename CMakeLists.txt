@@ -12,8 +12,12 @@ option( USE_LIBCASACORE
 option( STANDALONE 
         "set ON to build standalone mode"
         OFF )
+option( PKSMS
+        "set ON to diable to build PKSMS2reader/writer"
+        OFF )
 message( STATUS "USE_LIBCASACORE = " ${USE_LIBCASACORE} )
 message( STATUS "STANDALONE = " ${STANDALONE} )
+message( STATUS "PKSMS = " ${PKSMS} )
 
 # Use casapy's fork of casacore  
 if ( NOT STANDALONE )
@@ -150,7 +154,6 @@ if( CMAKE_SYSTEM_NAME STREQUAL Linux )
 endif()
 
 add_definitions( ${CASACORE_DEFINITIONS} )
-
 
 #
 # mode specific settings
@@ -600,7 +603,12 @@ set( CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib )
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set( CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib )
 
-
+#
+# PKSMS
+#
+if ( NOT PKSMS )
+   add_definitions( -DNOPKSMS )
+endif()
 
 #
 # libraries and executables
