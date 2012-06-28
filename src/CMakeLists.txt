@@ -59,6 +59,7 @@ set( ASAP_SRCS
      ${SRCDIR}/AsapLogSink.cpp
      ${SRCDIR}/STUpgrade.cpp 
      ${SRCDIR}/STGrid.cpp
+     ${SRCDIR}/STIdxIter.cpp
      ${SRCDIR}/Templates.cpp )
 
 set( ASAP_PYSRCS
@@ -80,6 +81,7 @@ set( ASAP_PYSRCS
      ${SRCDIR}/python_MSWriter.cpp
      ${SRCDIR}/python_LogSink.cpp
      ${SRCDIR}/python_STGrid.cpp
+     ${SRCDIR}/python_Iterator.cpp
      ${SRCDIR}/python_asap.cpp )
 
 add_library( ${ASAPLIB} SHARED ${ASAP_SRCS} )

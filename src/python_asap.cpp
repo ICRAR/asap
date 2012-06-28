@@ -85,6 +85,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STAtmosphere();
   asap::python::python_SrcType();
   asap::python::python_STGrid();
+  asap::python::python_Iterator();
 
 #ifndef HAVE_LIBPYRAP
   // Use built-in pyconversions.h
