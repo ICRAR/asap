@@ -1266,7 +1266,8 @@ class asapplotter:
         """
         visible = rcParams['plotter.gui']
         from matplotlib import pylab as PL
-        from matplotlib.dates import DateFormatter, timezone
+        from matplotlib.dates import DateFormatter
+        from pytz import timezone
         from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
         from numpy import array, pi
