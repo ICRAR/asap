@@ -6,9 +6,13 @@
 set( ASAPROOT ${ASAP_SOURCE_DIR} )
 set( SRCDIR ${ASAPROOT}/src )
 
+# include QT_USE_FILE
+include( ${QT_USE_FILE} )
+
 # include path
 include_directories( ${SRCDIR} 
                      ${Boost_INCLUDE_DIR}
+                     ${QT4_INCLUDE_DIRS}
                      ${ASAPROOT}/external-alma 
                      ${ASAPROOT}/external/libpyrap/pyrap-0.3.2 )
 
@@ -20,6 +24,7 @@ add_definitions( -DHAVE_LIBPYRAP )
 
 # source files for libpyrap
 set( ASAP_SRCS
+#     ${SRCDIR}/Plotter2.cpp
      ${SRCDIR}/concurrent.cpp
      ${SRCDIR}/MathUtils.cpp
      ${SRCDIR}/TableTraverse.cpp
@@ -63,6 +68,7 @@ set( ASAP_SRCS
      ${SRCDIR}/Templates.cpp )
 
 set( ASAP_PYSRCS
+#     ${SRCDIR}/python_Plotter2.cpp
      ${SRCDIR}/python_Scantable.cpp
      ${SRCDIR}/python_STFiller.cpp
      ${SRCDIR}/python_STSelector.cpp
@@ -95,6 +101,7 @@ set_target_properties( ${ASAPPYLIB}
 
 target_link_libraries( ${ASAPLIB} 
                        #${Boost_LIBRARIES}
+                       ${QT4_LIBRARIES} 
                        ${PYRAPLIB} 
                        ${ATNFLIB} 
                        #${CASACORE_LIBRARIES} 

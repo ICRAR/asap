@@ -420,6 +420,27 @@ message( STATUS "BOOST_LIBRARIES = " ${Boost_LIBRARIES} )
 
 
 #
+# Qt4	4.3.4 or later
+#
+find_package( Qt4 4.3.4 
+	      COMPONENTS QtCore QtGui )
+if( NOT QT4_FOUND )
+  message( FATAL_ERROR "Qt4 could not be found. Please check!" )
+endif()
+set( QT4_INCLUDE_DIRS ${QT_INCLUDES} CACHE PATH "QT4 include directories" FORCE )
+set( QT4_DEFINITIONS ${QT_DEFINITIONS} -DQT_NO_DEBUG CACHE STRING "QT4 preprocessor flags" FORCE )
+set( QT4_LIBRARIES 
+  ${QT_QTCORE_LIBRARY} 
+  ${QT_QTGUI_LIBRARY} 
+  CACHE FILEPATH "QT4 libraries" FORCE )
+list( REMOVE_ITEM QT4_LIBRARIES "optimized" )
+list( REMOVE_ITEM QT4_LIBRARIES "debug" )
+message( STATUS "QT4_INCLUDE_DIRS = " ${QT4_INCLUDE_DIRS} )
+message( STATUS "QT4_DEFINITIONS = " ${QT4_DEFINITIONS} )
+message( STATUS "QT4_LIBRARIES = " ${QT4_LIBRARIES} )
+
+
+#
 # cfitsio
 #
 if( STANDALONE )
@@ -571,6 +592,7 @@ message( STATUS "WCSLIB_INCLUDE_DIR = " ${WCSLIB_INCLUDE_DIR} )
 #
 include_directories( ${CASACORE_INCLUDE_DIR} 
                      ${Boost_INCLUDE_DIR} 
+                     ${QT4_INCLUDE_DIRS} 
                      ${PYTHON_INCLUDE_DIRS} 
                      ${WCSLIB_INCLUDE_DIR} 
                      ${CFITSIO_INCLUDE_DIRS} 

@@ -52,6 +52,7 @@ from asapfitter import fitter
 from opacity import skydip
 from opacity import model as opacity_model
 from asapgrid import asapgrid
+#from plotter2 import plotter2
 from _asap import srctype
 
 __date__ = '$Date$'.split()[1]

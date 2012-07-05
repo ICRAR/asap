@@ -12,15 +12,17 @@
 #ifndef ASAPSCANTABLEWRAPPER_H
 #define ASAPSCANTABLEWRAPPER_H
 
-#include <vector>
+#include <iostream>
 #include <string>
+#include <vector>
+
 #include <casa/Arrays/Vector.h>
 
 #include "MathUtils.h"
-#include "STFit.h"
-#include "STFitEntry.h"
 #include "Scantable.h"
 #include "STCoordinate.h"
+#include "STFit.h"
+#include "STFitEntry.h"
 
 namespace asap {
 /**
@@ -56,6 +58,10 @@ public:
 
   ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
+
+  ~ScantableWrapper()
+  {
+  }
 
   void assign(const ScantableWrapper& mt)
     { table_= mt.getCP(); }
@@ -311,4 +317,3 @@ private:
 
 } // namespace
 #endif
-
