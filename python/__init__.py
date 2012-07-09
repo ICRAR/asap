@@ -51,7 +51,7 @@ from interactivemask import interactivemask
 from asapfitter import fitter
 from opacity import skydip
 from opacity import model as opacity_model
-from asapgrid import asapgrid
+from asapgrid import asapgrid, asapgrid2
 #from plotter2 import plotter2
 from _asap import srctype
 
