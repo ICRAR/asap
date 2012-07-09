@@ -612,16 +612,22 @@ int NROReader::getScanInfo( int irow,
   vector<double> spec = dataset_->getSpectrum( irow ) ;
   spectra.resize( spec.size() ) ;
   int index = 0 ;
-  for ( Vector<Float>::iterator itr = spectra.begin() ; itr != spectra.end() ; itr++ ) {
-    *itr = spec[index++] ;
+  Bool b ;
+  Float *fp = spectra.getStorage( b ) ;
+  Float *wp = fp ;
+  for ( vector<double>::iterator i = spec.begin() ;
+        i != spec.end() ; i++ ) {
+    *wp = *i ;
+    wp++ ;
   }
+  spectra.putStorage( fp, b ) ;
   //cout << "spec.size() = " << spec.size() << endl ;
   
   // flagtra
   bool setValue = !( flagtra.nelements() == spectra.nelements() ) ; 
-  flagtra.resize( spectra.nelements() ) ;
   if ( setValue ) {
     //cout << "flagtra resized. reset values..." << endl ;
+    flagtra.resize( spectra.nelements() ) ;
     flagtra.set( 0 ) ;
   }
   //cout << "flag.size() = " << flag.size() << endl ;
