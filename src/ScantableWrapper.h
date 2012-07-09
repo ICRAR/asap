@@ -309,6 +309,10 @@ public:
   std::vector<float> execFFT(int whichrow, const std::vector<bool>& mask, bool getRealImag=false, bool getAmplitudeOnly=false)
   { return table_->execFFT(whichrow, mask, getRealImag, getAmplitudeOnly); }
 
+  std::vector<uint> getMoleculeIdColumnData() const
+  { return table_->getMoleculeIdColumnData(); }
+  void setMoleculeIdColumnData(const std::vector<uint>& molids)
+  { table_->setMoleculeIdColumnData(molids); }
 
 
 private:

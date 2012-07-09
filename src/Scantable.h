@@ -589,6 +589,8 @@ public:
 					    const std::string& masklist, 
 					    int whichrow, 
 					    bool verbose=false) const;
+  std::vector<uint> getMoleculeIdColumnData() const;
+  void setMoleculeIdColumnData(const std::vector<uint>& molids);
 
 
 private:
@@ -764,7 +766,6 @@ private:
   void showProgressOnTerminal(const int nProcessed, const int nTotal, const bool showProgress=true, const int nTotalThreshold=1000);
 
   void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
-
 
 };
 

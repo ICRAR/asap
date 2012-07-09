@@ -19,18 +19,6 @@ from asap.coordinate import coordinate
 from asap.utils import _n_bools, mask_not, mask_and, mask_or, page
 from asap.asapfitter import fitter
 
-###############################################################
-### WK temporarily added these lines for testing 2011/11/28 ###
-###############################################################
-#from asap._asap import TestClass
-
-#class testclass(TestClass):
-#    def __init__(self, nelem):
-#        TestClass.__init__(self, nelem)
-
-###############################################################
-
-
 def preserve_selection(func):
     @wraps_dec(func)
     def wrap(obj, *args, **kw):

@@ -10,6 +10,7 @@
 //
 //
 #include <map>
+#include <sys/time.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
@@ -2443,6 +2444,19 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
 
 void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
+  /*************/
+  //clock_t totTimeStart, totTimeEnd, blTimeStart, blTimeEnd, ioTimeStart, ioTimeEnd;
+  double totTimeStart, totTimeEnd, blTimeStart, blTimeEnd, ioTimeStart, ioTimeEnd, msTimeStart, msTimeEnd, seTimeStart, seTimeEnd, otTimeStart, otTimeEnd, prTimeStart, prTimeEnd;
+  double elapseMs = 0.0;
+  double elapseSe = 0.0;
+  double elapseOt = 0.0;
+  double elapsePr = 0.0;
+  double elapseBl = 0.0;
+  double elapseIo = 0.0;
+  //totTimeStart = clock();
+  totTimeStart = mathutil::gettimeofday_sec();
+  /*************/
+
   try {
     ofstream ofs;
     String coordInfo = "";
@@ -2473,18 +2487,66 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
 
     //--------------------------------
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+      /******************/
+      //ioTimeStart = clock();
+      ioTimeStart = mathutil::gettimeofday_sec();
+      /**/
+      std::vector<float> sp = getSpectrum(whichrow);
+      /**/
+      //ioTimeEnd = clock();
+      ioTimeEnd = mathutil::gettimeofday_sec();
+      elapseIo += (double)(ioTimeEnd - ioTimeStart);
+
+      //blTimeStart = clock();
+      msTimeStart = mathutil::gettimeofday_sec();
+      /******************/
+
       chanMask = getCompositeChanMask(whichrow, mask);
+
+      /**/
+      msTimeEnd = mathutil::gettimeofday_sec();
+      elapseMs += (double)(msTimeEnd - msTimeStart);
+      blTimeStart = mathutil::gettimeofday_sec();
+      /**/
+
       //fitBaseline(chanMask, whichrow, fitter);
       //setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
       std::vector<int> pieceEdges(nPiece+1);
       std::vector<float> params(nPiece*4);
       int nClipped = 0;
-      std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
+      std::vector<float> res = doCubicSplineFitting(sp, chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
+
+      /**/
+      blTimeEnd = mathutil::gettimeofday_sec();
+      elapseBl += (double)(blTimeEnd - blTimeStart);
+      seTimeStart = mathutil::gettimeofday_sec();
+      /**/
+
+
       setSpectrum(res, whichrow);
       //
 
+      /**/
+      seTimeEnd = mathutil::gettimeofday_sec();
+      elapseSe += (double)(seTimeEnd - seTimeStart);
+      otTimeStart = mathutil::gettimeofday_sec();
+      /**/
+
       outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params, nClipped);
+
+      /**/
+      otTimeEnd = mathutil::gettimeofday_sec();
+      elapseOt += (double)(otTimeEnd - otTimeStart);
+      prTimeStart = mathutil::gettimeofday_sec();
+      /**/
+
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+
+      /******************/
+      //blTimeEnd = clock();
+      prTimeEnd = mathutil::gettimeofday_sec();
+      elapsePr += (double)(prTimeEnd - prTimeStart);
+      /******************/
     }
     //--------------------------------
     
@@ -2493,10 +2555,31 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
   } catch (...) {
     throw;
   }
+  /***************/
+  //totTimeEnd = clock();
+  totTimeEnd = mathutil::gettimeofday_sec();
+  //std::cout << "io    : " << elapseIo/CLOCKS_PER_SEC << " (sec.)" << endl;
+  //std::cout << "bl    : " << elapseBl/CLOCKS_PER_SEC << " (sec.)" << endl;
+  //std::cout << "total : " << (double)(totTimeEnd - totTimeStart)/CLOCKS_PER_SEC << " (sec.)" << endl;
+  std::cout << "io    : " << elapseIo << " (sec.)" << endl;
+  std::cout << "ms    : " << elapseMs << " (sec.)" << endl;
+  std::cout << "bl    : " << elapseBl << " (sec.)" << endl;
+  std::cout << "se    : " << elapseSe << " (sec.)" << endl;
+  std::cout << "ot    : " << elapseOt << " (sec.)" << endl;
+  std::cout << "pr    : " << elapsePr << " (sec.)" << endl;
+  std::cout << "total : " << (double)(totTimeEnd - totTimeStart) << " (sec.)" << endl;
+  /***************/
 }
 
 void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, float thresClip, int nIterClip, const std::vector<int>& edge, float threshold, int chanAvgLimit, bool getResidual, const std::string& progressInfo, const bool outLogger, const std::string& blfile)
 {
+  /*************
+  clock_t totTimeStart, totTimeEnd, blTimeStart, blTimeEnd, ioTimeStart, ioTimeEnd;
+  double elapseBl = 0.0;
+  double elapseIo = 0.0;
+  totTimeStart = clock();
+  *************/
+
   try {
     ofstream ofs;
     String coordInfo = "";
@@ -2529,6 +2612,16 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     parseProgressInfo(progressInfo, showProgress, minNRow);
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
+      /******************
+      ioTimeStart = clock();
+      */
+      std::vector<float> sp = getSpectrum(whichrow);
+      /*
+      ioTimeEnd = clock();
+      elapseIo += (double)(ioTimeEnd - ioTimeStart);
+
+      blTimeStart = clock();
+      ******************/
 
       //-------------------------------------------------------
       //chanMask = getCompositeChanMask(whichrow, mask, edge, minEdgeSize, lineFinder);
@@ -2559,12 +2652,18 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
       std::vector<int> pieceEdges(nPiece+1);
       std::vector<float> params(nPiece*4);
       int nClipped = 0;
-      std::vector<float> res = doCubicSplineFitting(getSpectrum(whichrow), chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
+      std::vector<float> res = doCubicSplineFitting(sp, chanMask, nPiece, pieceEdges, params, nClipped, thresClip, nIterClip, getResidual);
       setSpectrum(res, whichrow);
       //
 
       outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
+
+      /******************
+      blTimeEnd = clock();
+      elapseBl += (double)(blTimeEnd - blTimeStart);
+      ******************/
+
     }
 
     if (outTextFile) ofs.close();
@@ -2572,6 +2671,13 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
   } catch (...) {
     throw;
   }
+
+  /***************
+  totTimeEnd = clock();
+  std::cout << "io    : " << elapseIo/CLOCKS_PER_SEC << " (sec.)" << endl;
+  std::cout << "bl    : " << elapseBl/CLOCKS_PER_SEC << " (sec.)" << endl;
+  std::cout << "total : " << (double)(totTimeEnd - totTimeStart)/CLOCKS_PER_SEC << " (sec.)" << endl;
+  ***************/
 }
 
 std::vector<float> Scantable::doCubicSplineFitting(const std::vector<float>& data, const std::vector<bool>& mask, int nPiece, std::vector<int>& idxEdge, std::vector<float>& params, int& nClipped, float thresClip, int nIterClip, bool getResidual)
@@ -3380,7 +3486,23 @@ void Scantable::fitBaseline(const std::vector<bool>& mask, int whichrow, Fitter&
 
 std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vector<bool>& inMask)
 {
+  /****
+  double ms1TimeStart, ms1TimeEnd, ms2TimeStart, ms2TimeEnd;
+  double elapse1 = 0.0;
+  double elapse2 = 0.0;
+
+  ms1TimeStart = mathutil::gettimeofday_sec();
+  ****/
+
   std::vector<bool> mask = getMask(whichrow);
+
+  /****
+  ms1TimeEnd = mathutil::gettimeofday_sec();
+  elapse1 = ms1TimeEnd - ms1TimeStart;
+  std::cout << "ms1   : " << elapse1 << " (sec.)" << endl;
+  ms2TimeStart = mathutil::gettimeofday_sec();
+  ****/
+
   uInt maskSize = mask.size();
   if (inMask.size() != 0) {
     if (maskSize != inMask.size()) {
@@ -3390,6 +3512,12 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vecto
       mask[i] = mask[i] && inMask[i];
     }
   }
+
+  /****
+  ms2TimeEnd = mathutil::gettimeofday_sec();
+  elapse2 = ms2TimeEnd - ms2TimeStart;
+  std::cout << "ms2   : " << elapse2 << " (sec.)" << endl;
+  ****/
 
   return mask;
 }
@@ -3443,7 +3571,23 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped)
 {
   if (outLogger || outTextFile) {
+  /****
+  double ms1TimeStart, ms1TimeEnd, ms2TimeStart, ms2TimeEnd;
+  double elapse1 = 0.0;
+  double elapse2 = 0.0;
+
+  ms1TimeStart = mathutil::gettimeofday_sec();
+  ****/
+
     float rms = getRms(chanMask, whichrow);
+
+  /****
+  ms1TimeEnd = mathutil::gettimeofday_sec();
+  elapse1 = ms1TimeEnd - ms1TimeStart;
+  std::cout << "ot1   : " << elapse1 << " (sec.)" << endl;
+  ms2TimeStart = mathutil::gettimeofday_sec();
+  ****/
+
     String masklist = getMaskRangeList(chanMask, whichrow, coordInfo, hasSameNchan);
     std::vector<bool> fixed;
     fixed.clear();
@@ -3453,8 +3597,15 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
       ols << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, false) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, true) << flush;
+      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, true);// << flush;
     }
+
+  /****
+  ms2TimeEnd = mathutil::gettimeofday_sec();
+  elapse2 = ms2TimeEnd - ms2TimeStart;
+  std::cout << "ot2   : " << elapse2 << " (sec.)" << endl;
+  ****/
+
   }
 }
 
@@ -3552,8 +3703,24 @@ std::vector<float> Scantable::execFFT(const int whichrow, const std::vector<bool
 
 float Scantable::getRms(const std::vector<bool>& mask, int whichrow)
 {
+  /****
+  double ms1TimeStart, ms1TimeEnd, ms2TimeStart, ms2TimeEnd;
+  double elapse1 = 0.0;
+  double elapse2 = 0.0;
+
+  ms1TimeStart = mathutil::gettimeofday_sec();
+  ****/
+
   Vector<Float> spec;
+
   specCol_.get(whichrow, spec);
+
+  /****
+  ms1TimeEnd = mathutil::gettimeofday_sec();
+  elapse1 = ms1TimeEnd - ms1TimeStart;
+  std::cout << "rm1   : " << elapse1 << " (sec.)" << endl;
+  ms2TimeStart = mathutil::gettimeofday_sec();
+  ****/
 
   float mean = 0.0;
   float smean = 0.0;
@@ -3568,6 +3735,12 @@ float Scantable::getRms(const std::vector<bool>& mask, int whichrow)
 
   mean /= (float)n;
   smean /= (float)n;
+
+  /****
+  ms2TimeEnd = mathutil::gettimeofday_sec();
+  elapse2 = ms2TimeEnd - ms2TimeStart;
+  std::cout << "rm2   : " << elapse2 << " (sec.)" << endl;
+  ****/
 
   return sqrt(smean - mean*mean);
 }
@@ -3792,6 +3965,23 @@ vector<float> Scantable::getTsysSpectrum( int whichrow ) const
   vector<float> stlTsys ;
   tsys.tovector( stlTsys ) ;
   return stlTsys ;
+}
+
+vector<uint> Scantable::getMoleculeIdColumnData() const
+{
+  Vector<uInt> molIds(mmolidCol_.getColumn());
+  vector<uint> res;
+  molIds.tovector(res);
+  return res;
+}
+
+void Scantable::setMoleculeIdColumnData(const std::vector<uint>& molids)
+{
+  Vector<uInt> molIds(molids);
+  Vector<uInt> arr(mmolidCol_.getColumn());
+  if ( molIds.nelements() != arr.nelements() )
+    throw AipsError("The input data size must be the number of rows.");
+  mmolidCol_.putColumn(molIds);
 }
 
 
