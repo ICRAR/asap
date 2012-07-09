@@ -1049,6 +1049,9 @@ private:
       }
       processedFreqId[fid] = True ;
     }
+    else {
+      return ;
+    }
 
     Double rp = refpix[fid] ;
     Double rv = refval[fid] ;
@@ -2049,6 +2052,8 @@ bool MSWriter::write(const string& filename, const Record& rec)
 
   //double endSec = mathutil::gettimeofday_sec() ;
   //os_ << "end MSWriter::write() endSec=" << endSec << " (" << endSec-startSec << "sec)" << LogIO::POST ;
+
+  os_ << "Exported data as MS" << LogIO::POST ;
 
   return True ;
 }
