@@ -948,7 +948,7 @@ private:
   void addPointing( Double &tSec, Double &interval, Matrix<Double> &dir ) 
   {
     uInt nrow = potab.nrow() ;
-    potab.addRow( 1, True ) ;
+    potab.addRow() ;
 
     *poNumPolyRF = dir.ncolumn() - 1 ;
     *poTimeRF = tSec ;
