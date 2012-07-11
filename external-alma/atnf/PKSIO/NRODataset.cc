@@ -57,8 +57,6 @@ using namespace std ;
 // constructor 
 NRODataset::NRODataset( string name ) 
 {
-  LogIO os( LogOrigin( "NRODataset", "NRODataset()", WHERE ) ) ;
-
   // memory allocation
   initialize() ;
 
@@ -242,12 +240,11 @@ void NRODataset::releaseRecord()
 // Get specified scan
 NRODataRecord *NRODataset::getRecord( int i )
 {
-  LogIO os( LogOrigin( "NRODataset", "getRecord()", WHERE ) ) ;
-
   // DEBUG
   //cout << "NRODataset::getRecord()  Start " << i << endl ;
   //
   if ( i < 0 || i >= rowNum_ ) {
+    LogIO os( LogOrigin( "NRODataset", "getRecord()", WHERE ) ) ;
     //cerr << "NRODataset::getRecord()  data index out of range." << endl ;
     os << LogIO::SEVERE << "data index " << i << " out of range. return NULL." << LogIO::POST ;
     return NULL ;
@@ -266,6 +263,7 @@ NRODataRecord *NRODataset::getRecord( int i )
     dataid_ = i ;
   }
   else {
+    LogIO os( LogOrigin( "NRODataset", "getRecord()", WHERE ) ) ;
     //cerr << "NRODataset::getRecord()  error while reading data " << i << endl ;
     os << LogIO::SEVERE << "error while reading data " << i << ". return NULL." << LogIO::POST ;
     dataid_ = -1 ;
@@ -277,8 +275,6 @@ NRODataRecord *NRODataset::getRecord( int i )
 
 int NRODataset::fillRecord( int i ) 
 {
-  LogIO os( LogOrigin( "NRODataset", "fillRecord()", WHERE ) ) ;
-
   int status = 0 ;
 
   status = open() ;
@@ -294,11 +290,13 @@ int NRODataset::fillRecord( int i )
   fseek( fp_, offset, SEEK_SET ) ;
   if ( (int)fread( record_, 1, SCAN_HEADER_SIZE, fp_ ) != SCAN_HEADER_SIZE ) {
     //cerr << "Failed to read scan header: " << i << endl ;
+    LogIO os( LogOrigin( "NRODataset", "fillRecord()", WHERE ) ) ;
     os << LogIO::SEVERE << "Failed to read scan header for " << i << "th row." << LogIO::POST ;
     return -1 ;
   }
   if ( (int)fread( record_->LDATA, 1, dataLen_, fp_ ) != dataLen_ ) {
     //cerr << "Failed to read spectral data: " << i << endl ;
+    LogIO os( LogOrigin( "NRODataset", "fillRecord()", WHERE ) ) ;
     os << LogIO::SEVERE << "Failed to read spectral data for " << i << "th row." << LogIO::POST ;
     return -1 ;
   }
@@ -353,8 +351,6 @@ vector< vector<double> > NRODataset::getSpectrum()
 
 vector<double> NRODataset::getSpectrum( int i )
 {
-  LogIO os( LogOrigin( "NRODataset", "getSpectrum", WHERE ) ) ;
-  
   // DEBUG
   //cout << "NRODataset::getSpectrum() start process (" << i << ")" << endl ;
   //
@@ -412,6 +408,7 @@ vector<double> NRODataset::getSpectrum( int i )
 
     if ( ( ivalue < 0 ) || ( ivalue > 4096 ) ) {
       //cerr << "NRODataset::getSpectrum()  ispec[" << i << "] is out of range" << endl ;
+      LogIO os( LogOrigin( "NRODataset", "getSpectrum", WHERE ) ) ;
       os << LogIO::SEVERE << "ispec[" << i << "] is out of range" << LogIO::EXCEPTION ;
       delete ispec ;
       return bspec ;

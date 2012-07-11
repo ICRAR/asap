@@ -299,8 +299,6 @@ vector<Bool> NROReader::getBeams()
 // Get SRCDIRECTION in RADEC(J2000)
 Vector<Double> NROReader::getSourceDirection()
 {
-  LogIO os( LogOrigin( "NROReader", "getSourceDirection()", WHERE ) ) ;
-
   if ( msrcdir_.nelements() == 2 )
     return msrcdir_ ;
 
@@ -322,6 +320,7 @@ Vector<Double> NROReader::getSourceDirection()
     //cout << "NROReader::getSourceDirection()  SRCDIRECTION convert from (" 
     //<< srcra << "," << srcdec << ") B1950 to (" 
     //<< v( 0 ) << ","<< v( 1 ) << ") J2000" << endl ;
+    //LogIO os( LogOrigin( "NROReader", "getSourceDirection()", WHERE ) ) ;
     //os << LogIO::NORMAL << "SRCDIRECTION convert from (" 
     //   << srcra << "," << srcdec << ") B1950 to (" 
     //   << v( 0 ) << ","<< v( 1 ) << ") J2000" << LogIO::POST ;
@@ -336,8 +335,6 @@ Vector<Double> NROReader::getSourceDirection()
 // Get DIRECTION in RADEC(J2000)
 Vector<Double> NROReader::getDirection( int i )
 {
-  LogIO os( LogOrigin( "NROReader", "getDirection()", WHERE ) ) ;
-
   Vector<Double> v( 2 ) ;
   NRODataRecord *record = dataset_->getRecord( i ) ;
   char epoch[5] ;
