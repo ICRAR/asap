@@ -3071,31 +3071,19 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     throw(AipsError("Can't perform 'SCAN' averaging on multiple tables.\n"
                     "Use merge first."));
   
-  // 2012/02/17 TN
-  // Since STGrid is implemented, average doesn't consider direction 
-  // when accumulating
-  // check if OTF observation
-//   String obstype = in[0]->getHeader().obstype ;
-//   Double tol = 0.0 ;
-//   if ( obstype.find( "OTF" ) != String::npos ) {
-//     tol = TOL_OTF ;
-//   }
-//   else {
-//     tol = TOL_POINT ;
-//   }
-
   CountedPtr<Scantable> out ;     // processed result 
   if ( compel ) {
     std::vector< CountedPtr<Scantable> > newin ; // input for average process
     uInt insize = in.size() ;    // number of input scantables 
 
-    // TEST: do normal average in each table before IF grouping
-    os << "Do preliminary averaging" << LogIO::POST ;
-    vector< CountedPtr<Scantable> > tmpin( insize ) ;
+    // setup newin
+    bool oldInsitu = insitu_ ;
+    setInsitu( false ) ;
+    newin.resize( insize ) ;
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      vector< CountedPtr<Scantable> > v( 1, in[itable] ) ;
-      tmpin[itable] = average( v, mask, weight, avmode ) ;
+      newin[itable] = getScantable( in[itable], false ) ;
     }
+    setInsitu( oldInsitu ) ;
 
     // warning
     os << "Average spectra with different spectral resolution" << LogIO::POST ;
@@ -3106,14 +3094,10 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       vector<string> coordinfo = in[itable]->getCoordInfo() ;
       oldinfo[itable] = coordinfo[0] ;
       coordinfo[0] = "Hz" ;
-      tmpin[itable]->setCoordInfo( coordinfo ) ;
+      newin[itable]->setCoordInfo( coordinfo ) ;
     }
 
-    // columns
-    ScalarColumn<uInt> freqIDCol ;
-    ScalarColumn<uInt> ifnoCol ;
-    ScalarColumn<uInt> scannoCol ;
-
+    ostringstream oss ;
 
     // check IF frequency coverage
     // freqid: list of FREQ_ID, which is used, in each table  
@@ -3133,54 +3117,38 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     vector< vector<uInt> > freqid( insize );
     vector< vector<double> > iffreq( insize ) ;
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      uInt rows = tmpin[itable]->nrow() ;
-      uInt freqnrows = tmpin[itable]->frequencies().table().nrow() ;
-      freqIDCol.attach( tmpin[itable]->table(), "FREQ_ID" ) ;
-      //ifnoCol.attach( tmpin[itable]->table(), "IFNO" ) ;
-      for ( uInt irow = 0 ; irow < rows ; irow++ ) {
-	if ( freqid[itable].size() == freqnrows ) {
-	  break ;
-	}
-	else {
-	  uInt id = freqIDCol( irow ) ;
-	  if ( freqid[itable].size() == 0 || count( freqid[itable].begin(), freqid[itable].end(), id ) == 0 ) {
-	    //os << "itable = " << itable << ": IF " << id << " is included in the list" << LogIO::POST ;
-	    vector<double> abcissa = tmpin[itable]->getAbcissa( irow ) ;
-	    double lbedge, rbedge;
-	    freqid[itable].push_back( id ) ;
-	    lbedge = abcissa[0] - 0.5 * ( abcissa[1] - abcissa[0] );
-	    rbedge = abcissa[abcissa.size()-1] + 0.5 * ( abcissa[1] - abcissa[0] );
-	    iffreq[itable].push_back( min(lbedge, rbedge) ) ;
-	    iffreq[itable].push_back( max(lbedge, rbedge) ) ;
-	  }
-	}
+      Vector<uInt> freqIds = newin[itable]->mfreqidCol_.getColumn() ;
+      vector<uInt> uniqueFreqId = newin[itable]->getNumbers(newin[itable]->mfreqidCol_) ;
+      for ( vector<uInt>::iterator i = uniqueFreqId.begin() ;
+            i != uniqueFreqId.end() ; i++ ) {
+        //os << "itable = " << itable << ": IF " << id << " is included in the list" << LogIO::POST ;
+        uInt target = 0 ;
+        while ( freqIds[target] != *i )
+          target++ ;
+        vector<double> abcissa = newin[itable]->getAbcissa( target ) ;
+        freqid[itable].push_back( *i ) ;
+        double incr = abs( abcissa[1] - abcissa[0] ) ;
+        iffreq[itable].push_back( (*min_element(abcissa.begin(),abcissa.end()))-0.5*incr ) ;
+        iffreq[itable].push_back( (*max_element(abcissa.begin(),abcissa.end()))+0.5*incr ) ;
       }
     }
 
     // debug
-    //os << "IF settings summary:" << endl ;
-    //for ( uInt i = 0 ; i < freqid.size() ; i++ ) {
-    //os << "   Table" << i << endl ;
-    //for ( uInt j = 0 ; j < freqid[i].size() ; j++ ) {
-    //os << "      id = " << freqid[i][j] << " (min,max) = (" << iffreq[i][2*j] << "," << iffreq[i][2*j+1] << ")" << endl ;
-    //}
-    //}
-    //os << endl ;
-    //os.post() ;
+//     os << "IF settings summary:" << endl ;
+//     for ( uInt i = 0 ; i < freqid.size() ; i++ ) {
+//       os << "   Table" << i << endl ;
+//       for ( uInt j = 0 ; j < freqid[i].size() ; j++ ) {
+//         os << "      id = " << freqid[i][j] << " (min,max) = (" << iffreq[i][2*j] << "," << iffreq[i][2*j+1] << ")" << endl ;
+//       }
+//     }
+//     os << endl ;
+//     os.post() ;
 
     // IF grouping based on their frequency coverage
-    // ifgrp: list of table index and FREQ_ID for all members in each IF group
-    // ifgfreq: list of minimum and maximum frequency in each IF group
-    // ifgrp[numgrp][nummember*2]
-    // ifgrp: [[table00, freqrow00, table01, freqrow01, ...],
-    //         [table10, freqrow10, table11, freqrow11, ...],
-    //         ...
-    //         [tablen0, freqrown0, tablen1, freqrown1, ...]]
-    // ifgfreq[numgrp*2] 
-    // ifgfreq: [min0_grp0, max0_grp0, min1_grp1, max1_grp1, ...]
+    // ifgrp: number of member in each IF group
+    // ifgrp[numgrp]
+    // ifgrp: [n0, n1, ...]
     //os << "IF grouping based on their frequency coverage" << LogIO::POST ;
-    vector< vector<uInt> > ifgrp ;
-    vector<double> ifgfreq ;
 
     // parameter for IF grouping
     // groupmode = OR    retrieve all region 
@@ -3201,36 +3169,18 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       }
     }
     sort( sortedfreq.begin(), sortedfreq.end() ) ;
-    for ( vector<double>::iterator i = sortedfreq.begin() ; i != sortedfreq.end()-1 ; i++ ) {
-      ifgfreq.push_back( *i ) ;
-      ifgfreq.push_back( *(i+1) ) ;
-    }
-    ifgrp.resize( ifgfreq.size()/2 ) ;
+    vector<uInt> ifgrp( sortedfreq.size()-1, 0 ) ;
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
       for ( uInt iif = 0 ; iif < freqid[itable].size() ; iif++ ) {
 	double range0 = iffreq[itable][2*iif] ;
 	double range1 = iffreq[itable][2*iif+1] ;
-	for ( uInt j = 0 ; j < ifgrp.size() ; j++ ) {
-	  double fmin = max( range0, ifgfreq[2*j] ) ;
-	  double fmax = min( range1, ifgfreq[2*j+1] ) ;
-	  if ( fmin < fmax ) {
-	    ifgrp[j].push_back( itable ) ;
-	    ifgrp[j].push_back( freqid[itable][iif] ) ;
-	  }
-	}
-      }
-    }
-    vector< vector<uInt> >::iterator fiter = ifgrp.begin() ; 
-    vector<double>::iterator giter = ifgfreq.begin() ;
-    while( fiter != ifgrp.end() ) {
-      if ( fiter->size() <= sizecr ) {
-	fiter = ifgrp.erase( fiter ) ;
-	giter = ifgfreq.erase( giter ) ;
-	giter = ifgfreq.erase( giter ) ;
-      }
-      else {
-	fiter++ ;
-	advance( giter, 2 ) ;
+        for ( uInt j = 0 ; j < sortedfreq.size()-1 ; j++ ) {
+          double fmin = max( range0, sortedfreq[j] ) ;
+          double fmax = min( range1, sortedfreq[j+1] ) ;
+          if ( fmin < fmax ) {
+            ifgrp[j]++ ;
+          }
+        }
       }
     }
 
@@ -3241,402 +3191,152 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     //           [ifgrp10, ifgrp11, ifgrp12, ...],
     //           ...
     //           [ifgrpn0, ifgrpn1, ifgrpn2, ...]]
+    // grprange[2*numgrp]
+    // grprange: [fmin0,fmax0,fmin1,fmax1,...]
     vector< vector<uInt> > freqgrp ;
-    double freqrange = 0.0 ;
-    uInt grpnum = 0 ;
-    for ( uInt i = 0 ; i < ifgrp.size() ; i++ ) {
-      // Assumed that ifgfreq was sorted
-      if ( grpnum != 0 && freqrange == ifgfreq[2*i] ) {
-	freqgrp[grpnum-1].push_back( i ) ;
+    vector<double> grprange ;
+    vector<uInt> grpedge ;
+    for ( uInt igrp = 0 ; igrp < ifgrp.size() ; igrp++ ) {
+      if ( ifgrp[igrp] <= sizecr ) {
+        grpedge.push_back( igrp ) ;
       }
-      else {
-	vector<uInt> grp0( 1, i ) ;
-	freqgrp.push_back( grp0 ) ;
-	grpnum++ ;
+    }
+    grpedge.push_back( ifgrp.size() ) ;
+    uInt itmp = 0 ;
+    for ( uInt i = 0 ; i < grpedge.size() ; i++ ) {
+      int n = grpedge[i] - itmp ;
+      if ( n > 0 ) {
+        vector<uInt> members( n ) ;
+        for ( int j = 0 ; j < n ; j++ ) {
+          members[j] = itmp+j ;
+        }
+        freqgrp.push_back( members ) ;
+        grprange.push_back( sortedfreq[itmp] ) ;
+        grprange.push_back( sortedfreq[grpedge[i]] ) ;
       }
-      freqrange = ifgfreq[2*i+1] ;
+      itmp += n + 1 ;
     }
 
-
-    // print IF groups
-    ostringstream oss ;
-    oss << "IF Group summary: " << endl ;
-    oss << "   GROUP_ID [FREQ_MIN, FREQ_MAX]: (TABLE_ID, FREQ_ID)" << endl ;
-    for ( uInt i = 0 ; i < ifgrp.size() ; i++ ) {
-      oss << "   GROUP " << setw( 2 ) << i << " [" << ifgfreq[2*i] << "," << ifgfreq[2*i+1] << "]: " ;
-      for ( uInt j = 0 ; j < ifgrp[i].size()/2 ; j++ ) {
-	oss << "(" << ifgrp[i][2*j] << "," << ifgrp[i][2*j+1] << ") " ; 
-      }
-      oss << endl ;
-    }
-    oss << endl ;
-    os << oss.str() << LogIO::POST ;
-    
     // print frequency group
     oss.str("") ;
     oss << "Frequency Group summary: " << endl ;
-    oss << "   GROUP_ID [FREQ_MIN, FREQ_MAX]: IF_GROUP_ID" << endl ;
+    oss << "   GROUP_ID: [FREQ_MIN, FREQ_MAX]" << endl ;
     for ( uInt i = 0 ; i < freqgrp.size() ; i++ ) {
-      oss << "   GROUP " << setw( 2 ) << i << " [" << ifgfreq[2*freqgrp[i][0]] << "," << ifgfreq[2*freqgrp[i][freqgrp[i].size()-1]+1] << "]: " ;
-      for ( uInt j = 0 ; j < freqgrp[i].size() ; j++ ) {
-	oss << freqgrp[i][j] << " " ;
-      }
+      oss << "   GROUP " << setw( 2 ) << i << ": [" << grprange[2*i] << "," << grprange[2*i+1] << "]" ;
       oss << endl ;
     }
     oss << endl ;
     os << oss.str() << LogIO::POST ;
 
-    // membership check
-    // groups: list of IF group indexes whose frequency range overlaps with 
-    //         that of each table and IF
-    // groups[numtable][numIF][nummembership]
-    // groups: [[[grp, grp,...], [grp, grp,...],...],
-    //          [[grp, grp,...], [grp, grp,...],...],
+    // groups: list of frequency group index whose frequency range overlaps 
+    //         with that of each table and IF 
+    // groups[numtable][numIF]
+    // groups: [[grpx, grpy,...],
+    //          [grpa, grpb,...],
     //          ...
-    //          [[grp, grp,...], [grp, grp,...],...]] 
-    vector< vector< vector<uInt> > > groups( insize ) ;
+    //          [grpk, grpm,...]]
+    vector< vector<uInt> > groups( insize ) ;
     for ( uInt i = 0 ; i < insize ; i++ ) {
       groups[i].resize( freqid[i].size() ) ;
     }
-    for ( uInt igrp = 0 ; igrp < ifgrp.size() ; igrp++ ) {
-      for ( uInt imem = 0 ; imem < ifgrp[igrp].size()/2 ; imem++ ) {
-	uInt tableid = ifgrp[igrp][2*imem] ;
-	vector<uInt>::iterator iter = find( freqid[tableid].begin(), freqid[tableid].end(), ifgrp[igrp][2*imem+1] ) ;
-	if ( iter != freqid[tableid].end() ) {
-	  uInt rowid = distance( freqid[tableid].begin(), iter ) ;
-	  groups[tableid][rowid].push_back( igrp ) ;
-	}
+    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
+      for ( uInt ifreq = 0 ; ifreq < freqid[itable].size() ; ifreq++ ) {
+        double minf = iffreq[itable][2*ifreq] ;
+        uInt groupid ;
+        for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
+          vector<uInt> memberlist = freqgrp[igrp] ;
+          if ( (minf >= grprange[2*igrp]) && (minf <= grprange[2*igrp+1]) ) {
+            groupid = igrp ;
+            break ;
+          }
+        }
+        groups[itable][ifreq] = groupid ;
       }
     }
+                                                          
 
     // print membership
-//     oss.str("") ;
-//     for ( uInt i = 0 ; i < insize ; i++ ) {
-//       oss << "Table " << i << endl ;
-//       for ( uInt j = 0 ; j < groups[i].size() ; j++ ) {
-//         oss << "   FREQ_ID " <<  setw( 2 ) << freqid[i][j] << ": " ;
-//         for ( uInt k = 0 ; k < groups[i][j].size() ; k++ ) {
-//           oss << setw( 2 ) << groups[i][j][k] << " " ;
-//         }
-//         oss << endl ;
-//       }
-//     }
-//     os << oss.str() << LogIO::POST ;
-
-    // set back coordinfo
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      vector<string> coordinfo = tmpin[itable]->getCoordInfo() ;
-      coordinfo[0] = oldinfo[itable] ;
-      tmpin[itable]->setCoordInfo( coordinfo ) ;
-    }
-
-    // Create additional table if needed
-    bool oldInsitu = insitu_ ;
-    setInsitu( false ) ;
-    vector< vector<uInt> > addrow( insize ) ;
-    vector<uInt> addtable( insize, 0 ) ;
-    vector<uInt> newtableids( insize ) ;
-    vector<uInt> newifids( insize, 0 ) ;
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      //os << "Table " << itable << ": " ;
-      for ( uInt ifrow = 0 ; ifrow < groups[itable].size() ; ifrow++ ) {
-	addrow[itable].push_back( groups[itable][ifrow].size()-1 ) ;
-	//os << addrow[itable][ifrow] << " " ;
-      }
-      addtable[itable] = *max_element( addrow[itable].begin(), addrow[itable].end() ) ;
-      //os << "(" << addtable[itable] << ")" << LogIO::POST ;
-    }
-    newin.resize( insize ) ;
-    copy( tmpin.begin(), tmpin.end(), newin.begin() ) ;
+    oss.str("") ;
     for ( uInt i = 0 ; i < insize ; i++ ) {
-      newtableids[i] = i ;
-    }
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      for ( uInt iadd = 0 ; iadd < addtable[itable] ; iadd++ ) {
-	CountedPtr<Scantable> add = getScantable( newin[itable], false ) ;
-	vector<int> freqidlist ;
-	for ( uInt i = 0 ; i < groups[itable].size() ; i++ ) {
-	  if ( groups[itable][i].size() > iadd + 1 ) {
-	    freqidlist.push_back( freqid[itable][i] ) ;
-	  }
-	}
-	stringstream taqlstream ;
-	taqlstream << "SELECT FROM $1 WHERE FREQ_ID IN [" ;
-	for ( uInt i = 0 ; i < freqidlist.size() ; i++ ) {
-	  taqlstream << freqidlist[i] ;
-	  if ( i < freqidlist.size() - 1 )
-	    taqlstream << "," ;
-	  else
-	    taqlstream << "]" ;
-	}
-	string taql = taqlstream.str() ;
-	//os << "taql = " << taql << LogIO::POST ;
-	STSelector selector = STSelector() ;
-	selector.setTaQL( taql ) ;
-	add->setSelection( selector ) ;
-	newin.push_back( add ) ;
-	newtableids.push_back( itable ) ;
-	newifids.push_back( iadd + 1 ) ;
+      oss << "Table " << i << endl ;
+      for ( uInt j = 0 ; j < groups[i].size() ; j++ ) {
+        oss << "   FREQ_ID " <<  setw( 2 ) << freqid[i][j] << ": " ;
+        oss << setw( 2 ) << groups[i][j] ;
+        oss << endl ;
       }
     }
-
-    // udpate ifgrp
-    uInt offset = insize ;
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      for ( uInt iadd = 0 ; iadd < addtable[itable] ; iadd++ ) {
-	for ( uInt ifrow = 0 ; ifrow < groups[itable].size() ; ifrow++ ) {
-	  if ( groups[itable][ifrow].size() > iadd + 1 ) {
-	    uInt igrp = groups[itable][ifrow][iadd+1] ;
-	    for ( uInt imem = 0 ; imem < ifgrp[igrp].size()/2 ; imem++ ) {
-	      if ( ifgrp[igrp][2*imem] == newtableids[offset+iadd] && ifgrp[igrp][2*imem+1] == freqid[newtableids[offset+iadd]][ifrow] ) {
-		ifgrp[igrp][2*imem] = offset + iadd ;
-	      }
-	    }
-	  }
-	}
-      }
-      offset += addtable[itable] ;
-    }
-
-    // print IF groups again for debug
-//     oss.str( "" ) ;
-//     oss << "IF Group summary: " << endl ;
-//     oss << "   GROUP_ID [FREQ_MIN, FREQ_MAX]: (TABLE_ID, FREQ_ID)" << endl ;
-//     for ( uInt i = 0 ; i < ifgrp.size() ; i++ ) {
-//       oss << "   GROUP " << setw( 2 ) << i << " [" << ifgfreq[2*i] << "," << ifgfreq[2*i+1] << "]: " ;
-//       for ( uInt j = 0 ; j < ifgrp[i].size()/2 ; j++ ) {
-//         oss << "(" << ifgrp[i][2*j] << "," << ifgrp[i][2*j+1] << ") " ; 
-//       }
-//       oss << endl ;
-//     }
-//     oss << endl ;
-//     os << oss.str() << LogIO::POST ;
+    os << oss.str() << LogIO::POST ;
 
     // reset SCANNO and IFNO/FREQ_ID: IF is reset by the result of sortation 
     //os << "All IF number is set to IF group index" << LogIO::POST ;
-    insize = newin.size() ;
     // reset SCANNO only when avmode != "SCAN"
     if ( avmode != "SCAN" ) {
       os << "All scan number is set to 0" << LogIO::POST ;
       for ( uInt itable = 0 ; itable < insize ; itable++ ) {
         uInt nrow = newin[itable]->nrow() ;
-        Table &tmpt = newin[itable]->table() ;
-        scannoCol.attach( tmpt, "SCANNO" ) ;
-        for ( uInt irow = 0 ; irow < nrow ; irow++ )
-          scannoCol.put( irow, 0 ) ;
-      }
-    }
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      uInt rows = newin[itable]->nrow() ;
-      Table &tmpt = newin[itable]->table() ;
-      freqIDCol.attach( tmpt, "FREQ_ID" ) ;
-      ifnoCol.attach( tmpt, "IFNO" ) ;
-      for ( uInt irow=0 ; irow < rows ; irow++ ) {
-	uInt freqID = freqIDCol( irow ) ;
-	vector<uInt>::iterator iter = find( freqid[newtableids[itable]].begin(), freqid[newtableids[itable]].end(), freqID ) ;
-	if ( iter != freqid[newtableids[itable]].end() ) {
-	  uInt index = distance( freqid[newtableids[itable]].begin(), iter ) ;
-	  ifnoCol.put( irow, groups[newtableids[itable]][index][newifids[itable]] ) ;
-	}
-	else {
-	  throw(AipsError("IF grouping was wrong in additional tables.")) ;
-	} 
-      }
-    }
-    oldinfo.resize( insize ) ;
-    setInsitu( oldInsitu ) ;
-
-    // temporarily set coordinfo
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      vector<string> coordinfo = newin[itable]->getCoordInfo() ;
-      oldinfo[itable] = coordinfo[0] ;
-      coordinfo[0] = "Hz" ;
-      newin[itable]->setCoordInfo( coordinfo ) ;
-    }
-
-    // save column values in the vector
-    vector< vector<uInt> > freqIdVec( insize ) ;
-    vector< vector<uInt> > ifNoVec( insize ) ;
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      ifnoCol.attach( newin[itable]->table(), "IFNO" ) ;
-      freqIDCol.attach( newin[itable]->table(), "FREQ_ID" ) ;
-      for ( uInt irow = 0 ; irow < newin[itable]->table().nrow() ; irow++ ) {
-	freqIdVec[itable].push_back( freqIDCol( irow ) ) ;
-	ifNoVec[itable].push_back( ifnoCol( irow ) ) ;
+        Vector<uInt> resetScan( nrow, 0 ) ;
+        newin[itable]->scanCol_.putColumn( resetScan ) ;
       }
     }
 
-    // reset spectra and flagtra: pick up common part of frequency coverage
-    //os << "Pick common frequency range and align resolution" << LogIO::POST ;
-    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
-      uInt rows = newin[itable]->nrow() ;
-      int nminchan = -1 ;
-      int nmaxchan = -1 ;
-      vector<uInt> freqIdUpdate ; 
-      for ( uInt irow = 0 ; irow < rows ; irow++ ) {
-	uInt ifno = ifNoVec[itable][irow] ;  // IFNO is reset by group index (IF group index)
-	double minfreq = ifgfreq[2*ifno] ;
-	double maxfreq = ifgfreq[2*ifno+1] ;
-	//os << "frequency range: [" << minfreq << "," << maxfreq << "]" << LogIO::POST ;
-	vector<double> abcissa = newin[itable]->getAbcissa( irow ) ;
-	int nchan = abcissa.size() ;
-	double resol = abcissa[1] - abcissa[0] ;
-	//os << "abcissa range  : [" << abcissa[0] << "," << abcissa[nchan-1] << "]" << LogIO::POST ;
-	uInt imin, imax;
-	int sigres;
-	if ( resol >= 0. ) {
-	  imin = 0;
-	  imax = nchan - 1 ;
-	  sigres = 1 ;
-	} else {
-	  imin = nchan - 1 ;
-	  imax = 0 ;
-	  sigres = -1 ;
-	  resol = abs(resol) ;
-	}
-	if ( minfreq <= abcissa[imin] ) 
-	  nminchan = imin ;
-	else {
-	  //double cfreq = ( minfreq - abcissa[0] ) / resol ;
-	  double cfreq = ( minfreq - abcissa[imin] + 0.5 * resol ) / resol ;
-	  nminchan = imin + sigres * (int(cfreq) + ( ( cfreq - int(cfreq) <= 0.5 ) ? 0 : 1 )) ;
-	}
-	if ( maxfreq >= abcissa[imax] )
-	  nmaxchan = imax;
-	else {
-	  //double cfreq = ( abcissa[abcissa.size()-1] - maxfreq ) / resol ;
-	  double cfreq = ( abcissa[imax] - maxfreq + 0.5 * resol ) / resol ;
-	  nmaxchan = imax - sigres * (int(cfreq) +( ( cfreq - int(cfreq) >= 0.5 ) ? 1 : 0 )) ;
-	}
-	//os << "channel range (" << irow << "): [" << nminchan << "," << nmaxchan << "]" << LogIO::POST ;
-	if ( nmaxchan < nminchan ) {
-	  int tmp = nmaxchan ;
-	  nmaxchan = nminchan ;
-	  nminchan = tmp ;
-	}
-	if ( nmaxchan > nminchan ) {
-	  newin[itable]->reshapeSpectrum( nminchan, nmaxchan, irow ) ;
-	  int newchan = nmaxchan - nminchan + 1 ;
-	  if ( count( freqIdUpdate.begin(), freqIdUpdate.end(), freqIdVec[itable][irow] ) == 0 && newchan < nchan ) {
-	    freqIdUpdate.push_back( freqIdVec[itable][irow] ) ;
-
-	    // Update before nminchan is lost
-	    uInt freqId = freqIdVec[itable][irow] ;
-	    Double refpix ;
-	    Double refval ;
-	    Double increment ;
-	    newin[itable]->frequencies().getEntry( refpix, refval, increment, freqId ) ; 
-	    //refval = refval - ( refpix - nminchan ) * increment ;
-	    refval = abcissa[nminchan] ;
-	    refpix = 0 ;
-	    newin[itable]->frequencies().setEntry( refpix, refval, increment, freqId ) ;
-	  }
-	}
-	else {
-	  throw(AipsError("Failed to pick up common part of frequency range.")) ;
-	}
-      }
-//       for ( uInt i = 0 ; i < freqIdUpdate.size() ; i++ ) {
-// 	uInt freqId = freqIdUpdate[i] ;
-// 	Double refpix ;
-// 	Double refval ;
-// 	Double increment ;
-	
-// 	// update row
-// 	newin[itable]->frequencies().getEntry( refpix, refval, increment, freqId ) ; 
-// 	refval = refval - ( refpix - nminchan ) * increment ;
-// 	refpix = 0 ;
-// 	newin[itable]->frequencies().setEntry( refpix, refval, increment, freqId ) ;
-//       }    
-    }
-
-    
     // reset spectra and flagtra: align spectral resolution
     //os << "Align spectral resolution" << LogIO::POST ;
     // gmaxdnu: the coarsest frequency resolution in the frequency group
-    // gmemid: member index that have a resolution equal to gmaxdnu
-    // gmaxdnu[numfreqgrp]
-    // gmaxdnu: [dnu0, dnu1, ...]
-    // gmemid[numfreqgrp]
-    // gmemid: [id0, id1, ...]
+    // gminfreq: lower frequency edge of the frequency group
+    // gnchan: number of channels for the frequency group
     vector<double> gmaxdnu( freqgrp.size(), 0.0 ) ;
-    vector<uInt> gmemid( freqgrp.size(), 0 ) ;
-    for ( uInt igrp = 0 ; igrp < ifgrp.size() ; igrp++ ) {
-      double maxdnu = 0.0 ;       // maximum (coarsest) frequency resolution 
-      int minchan = INT_MAX ;     // minimum channel number
-      Double refpixref = -1 ;     // reference of 'reference pixel'
-      Double refvalref = -1 ;     // reference of 'reference frequency'
-      Double refinc = -1 ;        // reference frequency resolution 
-      uInt refreqid ;
-      uInt reftable = INT_MAX;
-      // process only if group member > 1
-      if ( ifgrp[igrp].size() > 2 ) {
-	// find minchan and maxdnu in each group
-	for ( uInt imem = 0 ; imem < ifgrp[igrp].size()/2 ; imem++ ) {
-	  uInt tableid = ifgrp[igrp][2*imem] ;
-	  uInt rowid = ifgrp[igrp][2*imem+1] ;
-	  vector<uInt>::iterator iter = find( freqIdVec[tableid].begin(), freqIdVec[tableid].end(), rowid ) ;
-	  if ( iter != freqIdVec[tableid].end() ) {
-	    uInt index = distance( freqIdVec[tableid].begin(), iter ) ;
-	    vector<double> abcissa = newin[tableid]->getAbcissa( index ) ;
-	    int nchan = abcissa.size() ;
-	    double dnu = abcissa[1] - abcissa[0] ;
-	    //os << "GROUP " << igrp << " (" << tableid << "," << rowid << "): nchan = " << nchan << " (minchan = " << minchan << ")" << LogIO::POST ; 
-	    if ( nchan < minchan ) {
-	      minchan = nchan ;
-	      maxdnu = abs(dnu) ;
-	      newin[tableid]->frequencies().getEntry( refpixref, refvalref, refinc, rowid ) ;
-	      refreqid = rowid ;
-	      reftable = tableid ;
-	      // Spectra are reversed when dnu < 0
-	      if (dnu < 0)
-		refpixref = minchan - 1 -refpixref ;
-	    }
-	  }
-	}
-	// regrid spectra in each group
-	os << "GROUP " << igrp << endl ;
-	os << "   Channel number is adjusted to " << minchan << endl ;
-	os << "   Corresponding frequency resolution is " << maxdnu << "Hz" << LogIO::POST ;
-	for ( uInt imem = 0 ; imem < ifgrp[igrp].size()/2 ; imem++ ) {
-	  uInt tableid = ifgrp[igrp][2*imem] ;
-	  uInt rowid = ifgrp[igrp][2*imem+1] ;
-	  freqIDCol.attach( newin[tableid]->table(), "FREQ_ID" ) ;
-	  //os << "tableid = " << tableid << " rowid = " << rowid << ": " << LogIO::POST ;
-	  //os << "   regridChannel applied to " ;
-	  //if ( tableid != reftable ) 
-          refreqid = newin[tableid]->frequencies().addEntry( refpixref, refvalref, maxdnu ) ;
-	  for ( uInt irow = 0 ; irow < newin[tableid]->table().nrow() ; irow++ ) {
-	    uInt tfreqid = freqIdVec[tableid][irow] ;
-	    if ( tfreqid == rowid ) {	  
-	      //os << irow << " " ;
-	      newin[tableid]->regridChannel( minchan, maxdnu, irow ) ;
-	      freqIDCol.put( irow, refreqid ) ;
-	      freqIdVec[tableid][irow] = refreqid ;
-	    }
-	  }
-	  //os << LogIO::POST ;
-	} 
+    vector<double> gminfreq( freqgrp.size() ) ;
+    vector<double> gnchan( freqgrp.size() ) ;
+    for ( uInt i = 0 ; i < insize ; i++ ) {
+      vector<uInt> members = groups[i] ;
+      for ( uInt j = 0 ; j < members.size() ; j++ ) {
+        uInt groupid = members[j] ;
+        Double rp,rv,ic ;
+        newin[i]->frequencies().getEntry( rp, rv, ic, j ) ;
+        if ( abs(ic) > abs(gmaxdnu[groupid]) ) 
+          gmaxdnu[groupid] = ic ;
       }
-      else {
-	uInt tableid = ifgrp[igrp][0] ;
-	uInt rowid = ifgrp[igrp][1] ;
-	vector<uInt>::iterator iter = find( freqIdVec[tableid].begin(), freqIdVec[tableid].end(), rowid ) ;
-	if ( iter != freqIdVec[tableid].end() ) {
-	  uInt index = distance( freqIdVec[tableid].begin(), iter ) ;
-	  vector<double> abcissa = newin[tableid]->getAbcissa( index ) ;
-	  minchan = abcissa.size() ;
-	  maxdnu = abs( abcissa[1] - abcissa[0]) ;
-	}
+    }
+    for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
+      gminfreq[igrp] = grprange[2*igrp] ;
+      double maxfreq = grprange[2*igrp+1] ;
+      gnchan[igrp] = (int)(abs((maxfreq-gminfreq[igrp])/gmaxdnu[igrp])+0.9) ;
+    }
+      
+    // regrid spectral data and update frequency info
+    for ( uInt itable = 0 ; itable < insize ; itable++ ) {
+      Vector<uInt> oldFreqId = newin[itable]->mfreqidCol_.getColumn() ;
+      Vector<uInt> newFreqId( oldFreqId.nelements() ) ;
+
+      // update MAIN
+      for ( uInt irow = 0 ; irow < newin[itable]->nrow() ; irow++ ) {
+        uInt groupid = groups[itable][oldFreqId[irow]] ;
+        newFreqId[irow] = groupid ;
+        newin[itable]->regridChannel( gnchan[groupid], 
+                                      gmaxdnu[groupid], 
+                                      gminfreq[groupid], 
+                                      irow ) ;
       }
-      for ( uInt i = 0 ; i < freqgrp.size() ; i++ ) {
-	if ( count( freqgrp[i].begin(), freqgrp[i].end(), igrp ) > 0 ) {
-	  if ( maxdnu > gmaxdnu[i] ) {
-	    gmaxdnu[i] = maxdnu ;
-	    gmemid[i] = igrp ;
-	  }
-	  break ;
-	}
+      newin[itable]->mfreqidCol_.putColumn( newFreqId ) ;
+      newin[itable]->ifCol_.putColumn( newFreqId ) ;
+
+      // update FREQUENCIES
+      Table tab = newin[itable]->frequencies().table() ;
+      ScalarColumn<uInt> fIdCol( tab, "ID" ) ;
+      ScalarColumn<Double> fRefPixCol( tab, "REFPIX" ) ;
+      ScalarColumn<Double> fRefValCol( tab, "REFVAL" ) ;
+      ScalarColumn<Double> fIncrCol( tab, "INCREMENT" ) ;
+      if ( freqgrp.size() > tab.nrow() ) {
+        tab.addRow( freqgrp.size()-tab.nrow() ) ;
+      }
+      for ( uInt irow = 0 ; irow < freqgrp.size() ; irow++ ) {
+        Double refval = gminfreq[irow] + 0.5 * abs(gmaxdnu[irow]) ;
+        Double refpix = (gmaxdnu[irow] > 0.0) ? 0 : gnchan[irow]-1 ;
+        Double increment = gmaxdnu[irow] ;
+        fIdCol.put( irow, irow ) ;
+        fRefPixCol.put( irow, refpix ) ;
+        fRefValCol.put( irow, refval ) ;
+        fIncrCol.put( irow, increment ) ;
       }
     }
 
@@ -3645,244 +3345,10 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       vector<string> coordinfo = newin[itable]->getCoordInfo() ;
       coordinfo[0] = oldinfo[itable] ;
       newin[itable]->setCoordInfo( coordinfo ) ;
-    }      
-
-    // accumulate all rows into the first table 
-    // NOTE: assumed in.size() = 1
-    vector< CountedPtr<Scantable> > tmp( 1 ) ;
-    if ( newin.size() == 1 )
-      tmp[0] = newin[0] ;
-    else 
-      tmp[0] = merge( newin ) ;
-
-    //return tmp[0] ;
+    }
 
     // average
-    CountedPtr<Scantable> tmpout = average( tmp, mask, weight, avmode ) ;
-
-    //return tmpout ;
-
-    // combine frequency group
-    os << "Combine spectra based on frequency grouping" << LogIO::POST ;
-    os << "IFNO is renumbered as frequency group ID (see above)" << LogIO::POST ;
-    vector<string> coordinfo = tmpout->getCoordInfo() ;
-    oldinfo[0] = coordinfo[0] ;
-    coordinfo[0] = "Hz" ;
-    tmpout->setCoordInfo( coordinfo ) ;
-    // create proformas of output table
-    stringstream taqlstream ;
-    taqlstream << "SELECT FROM $1 WHERE IFNO IN [" ;
-    for ( uInt i = 0 ; i < gmemid.size() ; i++ ) {
-      taqlstream << gmemid[i] ;
-      if ( i < gmemid.size() - 1 )
-	taqlstream << "," ;
-      else
-	taqlstream << "]" ;
-    }
-    string taql = taqlstream.str() ;
-    //os << "taql = " << taql << LogIO::POST ;
-    STSelector selector = STSelector() ;
-    selector.setTaQL( taql ) ;
-    oldInsitu = insitu_ ;
-    setInsitu( false ) ;
-    out = getScantable( tmpout, false ) ;
-    setInsitu( oldInsitu ) ;
-    out->setSelection( selector ) ;
-    // regrid rows
-    ifnoCol.attach( tmpout->table(), "IFNO" ) ;
-    for ( uInt irow = 0 ; irow < tmpout->table().nrow() ; irow++ ) {
-      uInt ifno = ifnoCol( irow ) ;
-      for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
-	if ( count( freqgrp[igrp].begin(), freqgrp[igrp].end(), ifno ) > 0 ) {
-	  vector<double> abcissa = tmpout->getAbcissa( irow ) ;
-	  double bw = ( abcissa[1] - abcissa[0] ) * abcissa.size() ;
-	  int nchan = (int) abs( bw / gmaxdnu[igrp] ) ;
-	  // All spectra will have positive frequency increments
-	  tmpout->regridChannel( nchan, gmaxdnu[igrp], irow ) ;
-	  break ;
-	}
-      }
-    }
-    // combine spectra
-    ArrayColumn<Float> specColOut( out->table(), "SPECTRA" ) ;
-    ArrayColumn<uChar> flagColOut( out->table(), "FLAGTRA" ) ;
-    ArrayColumn<Float> tsysColOut( out->table(), "TSYS" ) ;
-    ScalarColumn<uInt> ifnoColOut( out->table(), "IFNO" ) ;
-    ScalarColumn<uInt> polnoColOut( out->table(), "POLNO" ) ;
-    ScalarColumn<uInt> freqidColOut( out->table(), "FREQ_ID" ) ;
-//     MDirection::ScalarColumn dirColOut ;
-//     dirColOut.attach( out->table(), "DIRECTION" ) ;
-    Table &tab = tmpout->table() ;
-//     Block<String> cols(1);
-//     cols[0] = String("POLNO") ;
-    Block<String> cols(3);
-    cols[0] = String("POLNO") ;
-    cols[1] = String("SCANNO") ;
-    cols[2] = String("BEAMNO") ;
-    TableIterator iter( tab, cols ) ;
-    vector< vector<uInt> > sizes( freqgrp.size() ) ;
-    vector<uInt> totalsizes( freqgrp.size(), 0 ) ;
-    ArrayColumn<Float> specCols ;
-    ArrayColumn<uChar> flagCols ;
-    ArrayColumn<Float> tsysCols ;
-    ScalarColumn<uInt> polnos ;
-    vector< Vector<Float> > specout( freqgrp.size() ) ;
-    vector< Vector<uChar> > flagout( freqgrp.size() ) ;
-    vector< Vector<Float> > tsysout( freqgrp.size() ) ;
-    while( !iter.pastEnd() ) {
-      specCols.attach( iter.table(), "SPECTRA" ) ;
-      flagCols.attach( iter.table(), "FLAGTRA" ) ;
-      tsysCols.attach( iter.table(), "TSYS" ) ;
-      ifnoCol.attach( iter.table(), "IFNO" ) ;
-      polnos.attach( iter.table(), "POLNO" ) ;
-//       MDirection::ScalarColumn dircol ;
-//       dircol.attach( iter.table(), "DIRECTION" ) ;
-      uInt polno = polnos( 0 ) ;
-      //os << "POLNO iteration: " << polno << LogIO::POST ;
-//       for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
-// 	sizes[igrp].resize( freqgrp[igrp].size() ) ;
-// 	for ( uInt imem = 0 ; imem < freqgrp[igrp].size() ; imem++ ) {
-// 	  for ( uInt irow = 0 ; irow < iter.table().nrow() ; irow++ ) {
-// 	    uInt ifno = ifnoCol( irow ) ;
-// 	    if ( ifno == freqgrp[igrp][imem] ) {
-// 	      Vector<Float> spec = specCols( irow ) ;
-// 	      Vector<uChar> flag = flagCols( irow ) ;
-// 	      vector<Float> svec ;
-// 	      spec.tovector( svec ) ;
-// 	      vector<uChar> fvec ;
-// 	      flag.tovector( fvec ) ;
-// 	      //os << "spec.size() = " << svec.size() << " fvec.size() = " << fvec.size() << LogIO::POST ;
-// 	      specout[igrp].insert( specout[igrp].end(), svec.begin(), svec.end() ) ;
-// 	      flagout[igrp].insert( flagout[igrp].end(), fvec.begin(), fvec.end() ) ;
-// 	      //os << "specout[" << igrp << "].size() = " << specout[igrp].size() << LogIO::POST ;
-// 	      sizes[igrp][imem] = spec.nelements() ;
-// 	    }
-// 	  }
-// 	}
-// 	for ( uInt irow = 0 ; irow < out->table().nrow() ; irow++ ) {
-// 	  uInt ifout = ifnoColOut( irow ) ;
-// 	  uInt polout = polnoColOut( irow ) ;
-// 	  if ( ifout == gmemid[igrp] && polout == polno ) {
-// 	    // set SPECTRA and FRAGTRA
-// 	    Vector<Float> newspec( specout[igrp] ) ;
-// 	    Vector<uChar> newflag( flagout[igrp] ) ;
-// 	    specColOut.put( irow, newspec ) ;
-// 	    flagColOut.put( irow, newflag ) ;
-// 	    // IFNO renumbering
-// 	    ifnoColOut.put( irow, igrp ) ;
-// 	  }
-// 	} 
-//       }
-      // get a list of number of channels for each frequency group member
-      if ( totalsizes[0] == 0 ) {
-        for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
-          sizes[igrp].resize( freqgrp[igrp].size() ) ;
-          for ( uInt imem = 0 ; imem < freqgrp[igrp].size() ; imem++ ) {
-            for ( uInt irow = 0 ; irow < iter.table().nrow() ; irow++ ) {
-              uInt ifno = ifnoCol( irow ) ;
-              if ( ifno == freqgrp[igrp][imem] ) {
-                Vector<Float> spec = specCols( irow ) ;
-                sizes[igrp][imem] = spec.nelements() ;
-                totalsizes[igrp] += sizes[igrp][imem] ;
-                break ;
-              }
-            }
-          }
-          specout[igrp].resize( totalsizes[igrp] ) ;
-          flagout[igrp].resize( totalsizes[igrp] ) ;
-          tsysout[igrp].resize( totalsizes[igrp] ) ;
-        }
-      }
-
-      // combine spectra
-      for ( uInt irow = 0 ; irow < out->table().nrow() ; irow++ ) {
-        uInt polout = polnoColOut( irow ) ;
-        if ( polout == polno ) {
-          uInt ifout = ifnoColOut( irow ) ;
-//           Vector<Double> direction = dirColOut(irow).getAngle(Unit(String("rad"))).getValue() ;
-          uInt igrp ;
-          for ( uInt jgrp = 0 ; jgrp < freqgrp.size() ; jgrp++ ) {
-            if ( ifout == gmemid[jgrp] ) {
-              igrp = jgrp ;
-              break ;
-            }
-          }
-          IPosition startpos( 1, 0 ) ;
-          IPosition endpos( 1, 0 ) ;
-          for ( uInt imem = 0 ; imem < freqgrp[igrp].size() ; imem++ ) {
-            for ( uInt jrow = 0 ; jrow < iter.table().nrow() ; jrow++ ) {
-              uInt ifno = ifnoCol( jrow ) ;
-              // 2012/02/17 TN
-              // Since STGrid is implemented, average doesn't consider direction 
-              // when accumulating
-//               Vector<Double> tdir = dircol(jrow).getAngle(Unit(String("rad"))).getValue() ;
-//               //if ( ifno == freqgrp[igrp][imem] && allTrue( tdir == direction  ) ) {
-//               Double dx = tdir[0] - direction[0] ;
-//               Double dy = tdir[1] - direction[1] ;
-//               Double dd = sqrt( dx * dx + dy * dy ) ;
-              //if ( ifno == freqgrp[igrp][imem] && allNearAbs( tdir, direction, tol ) ) {
-//               if ( ifno == freqgrp[igrp][imem] && dd <= tol ) {
-              if ( ifno == freqgrp[igrp][imem] ) {
-                endpos[0] = startpos[0] + sizes[igrp][imem] - 1 ;
-                Vector<Float> spec = specCols( jrow ) ;
-                Vector<uChar> flag = flagCols( jrow ) ;
-                Vector<Float> tsys = tsysCols( jrow ) ;
-                //os << "spec.size() = " << svec.size() << " fvec.size() = " << fvec.size() << LogIO::POST ;
-                specout[igrp]( startpos, endpos ) = spec ;
-                flagout[igrp]( startpos, endpos ) = flag ;
-                if ( spec.size() == tsys.size() ) {
-                  tsysout[igrp]( startpos, endpos ) = tsys ;
-                }
-                else {
-                  tsysout[igrp]( startpos, endpos ) = tsys[0] ;
-                }
-                //os << "specout[" << igrp << "].size() = " << specout[igrp].size() << LogIO::POST ;
-                startpos[0] += sizes[igrp][imem] ;
-              }
-            }
-          }
-          // set SPECTRA and FRAGTRA
-          specColOut.put( irow, specout[igrp] ) ;
-          flagColOut.put( irow, flagout[igrp] ) ;
-          tsysColOut.put( irow, tsysout[igrp] ) ;
-          // IFNO renumbering (renumbered as frequency group ID)
-          ifnoColOut.put( irow, igrp ) ; 
-        }
-      }
-      iter++ ;
-    }
-    // update FREQUENCIES subtable
-    vector<bool> updated( freqgrp.size(), false ) ;
-    for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
-      uInt index = 0 ;
-      uInt pixShift = 0 ;
-
-      while ( freqgrp[igrp][index] != gmemid[igrp] ) {
-	pixShift += sizes[igrp][index++] ;
-      }
-      for ( uInt irow = 0 ; irow < out->table().nrow() ; irow++ ) {
-	//if ( ifnoColOut( irow ) == gmemid[igrp] && !updated[igrp] ) {
-	if ( ifnoColOut( irow ) == igrp && !updated[igrp] ) {
-	  uInt freqidOut = freqidColOut( irow ) ;
-	  //os << "freqgrp " << igrp << " freqidOut = " << freqidOut << LogIO::POST ;
-	  double refpix ;
-	  double refval ;
-	  double increm ;
-	  out->frequencies().getEntry( refpix, refval, increm, freqidOut ) ;
-	  if (increm < 0)
-	    refpix = sizes[igrp][index] - 1 - refpix ; // reversed
-	  refpix += pixShift ;
-	  out->frequencies().setEntry( refpix, refval, gmaxdnu[igrp], freqidOut ) ;
-	  updated[igrp] = true ;
-	}
-      }
-    }
-
-    //out = tmpout ;
-
-    coordinfo = tmpout->getCoordInfo() ;
-    coordinfo[0] = oldinfo[0] ;
-    tmpout->setCoordInfo( coordinfo ) ;
+    out = average( newin, mask, weight, avmode ) ;
   }
   else {
     // simple average

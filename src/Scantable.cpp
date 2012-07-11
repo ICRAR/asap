@@ -2303,6 +2303,161 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
   return ;
 }
 
+void Scantable::regridChannel( int nChan, double dnu, double fmin, int irow ) 
+{
+  Vector<Float> oldspec = specCol_( irow ) ;
+  Vector<uChar> oldflag = flagsCol_( irow ) ;
+  Vector<Float> oldtsys = tsysCol_( irow ) ;
+  Vector<Float> newspec( nChan, 0 ) ;
+  Vector<uChar> newflag( nChan, true ) ;
+  Vector<Float> newtsys ;
+  bool regridTsys = false ;
+  if (oldtsys.size() == oldspec.size()) {
+    regridTsys = true ;
+    newtsys.resize(nChan,false) ;
+    newtsys = 0 ;
+  }
+  
+  // regrid
+  vector<double> abcissa = getAbcissa( irow ) ;
+  int oldsize = abcissa.size() ;
+  double olddnu = abcissa[1] - abcissa[0] ;
+  //int ichan = 0 ;
+  double wsum = 0.0 ;
+  Vector<double> zi( nChan+1 ) ;
+  Vector<double> yi( oldsize + 1 ) ;
+  Block<uInt> count( nChan, 0 ) ;
+  yi[0] = abcissa[0] - 0.5 * olddnu ;
+  for ( int ii = 1 ; ii < oldsize ; ii++ )
+    yi[ii] = 0.5* (abcissa[ii-1] + abcissa[ii]) ;
+  yi[oldsize] = abcissa[oldsize-1] \
+    + 0.5 * (abcissa[oldsize-1] - abcissa[oldsize-2]) ;
+//   cout << "olddnu=" << olddnu << ", dnu=" << dnu << " (diff=" << olddnu-dnu << ")" << endl ;
+//   cout << "yi[0]=" << yi[0] << ", fmin=" << fmin << " (diff=" << yi[0]-fmin << ")" << endl ;
+//   cout << "oldsize=" << oldsize << ", nChan=" << nChan << endl ;
+
+  // do not regrid if input parameters are almost same as current 
+  // spectral setup
+  double dnuDiff = abs( ( dnu - olddnu ) / olddnu ) ;
+  double oldfmin = min( yi[0], yi[oldsize] ) ;
+  double fminDiff = abs( ( fmin - oldfmin ) / oldfmin ) ;
+  double nChanDiff = nChan - oldsize ;
+  double eps = 1.0e-8 ;
+  if ( nChanDiff == 0 && dnuDiff < eps && fminDiff < eps )
+    return ;
+
+  //zi[0] = abcissa[0] - 0.5 * olddnu ;
+  //zi[0] = ((olddnu*dnu > 0) ? yi[0] : yi[oldsize]) ;
+  if ( dnu > 0 )
+    zi[0] = fmin - 0.5 * dnu ;
+  else
+    zi[0] = fmin + nChan * abs(dnu) ;
+  for ( int ii = 1 ; ii < nChan ; ii++ )
+    zi[ii] = zi[0] + dnu * ii ;
+  zi[nChan] = zi[nChan-1] + dnu ;
+  // Access zi and yi in ascending order
+  int izs = ((dnu > 0) ? 0 : nChan ) ;
+  int ize = ((dnu > 0) ? nChan : 0 ) ;
+  int izincr = ((dnu > 0) ? 1 : -1 ) ;
+  int ichan =  ((olddnu > 0) ? 0 : oldsize ) ;
+  int iye = ((olddnu > 0) ? oldsize : 0 ) ;
+  int iyincr = ((olddnu > 0) ? 1 : -1 ) ;
+  //for ( int ii = izs ; ii != ize ; ii+=izincr ){
+  int ii = izs ;
+  while (ii != ize) {
+    // always zl < zr
+    double zl = zi[ii] ;
+    double zr = zi[ii+izincr] ;
+    // Need to access smaller index for the new spec, flag, and tsys.
+    // Values between zi[k] and zi[k+1] should be stored in newspec[k], etc.
+    int i = min(ii, ii+izincr) ;
+    //for ( int jj = ichan ; jj != iye ; jj+=iyincr ) {
+    int jj = ichan ;
+    while (jj != iye) {
+      // always yl < yr
+      double yl = yi[jj] ;
+      double yr = yi[jj+iyincr] ;
+      // Need to access smaller index for the original spec, flag, and tsys.
+      // Values between yi[k] and yi[k+1] are stored in oldspec[k], etc.
+      int j = min(jj, jj+iyincr) ;
+      if ( yr <= zl ) {
+	jj += iyincr ;
+	continue ;
+      }
+      else if ( yl <= zl ) {
+	if ( yr < zr ) {
+	  if (!oldflag[j]) {
+	    newspec[i] += oldspec[j] * ( yr - zl ) ;
+	    if (regridTsys) newtsys[i] += oldtsys[j] * ( yr - zl ) ;
+	    wsum += ( yr - zl ) ;
+            count[i]++ ;
+	  }
+	  newflag[i] = newflag[i] && oldflag[j] ;
+	}
+	else {
+	  if (!oldflag[j]) {
+	    newspec[i] += oldspec[j] * abs(dnu) ;
+	    if (regridTsys) newtsys[i] += oldtsys[j] * abs(dnu) ;
+	    wsum += abs(dnu) ;
+            count[i]++ ;
+	  }
+	  newflag[i] = newflag[i] && oldflag[j] ;
+	  ichan = jj ;
+	  break ;
+	}
+      }
+      else if ( yl < zr ) {
+	if ( yr <= zr ) {
+	  if (!oldflag[j]) {
+	    newspec[i] += oldspec[j] * ( yr - yl ) ;
+	    if (regridTsys) newtsys[i] += oldtsys[j] * ( yr - yl ) ;
+	    wsum += ( yr - yl ) ;
+            count[i]++ ;
+	  }
+	  newflag[i] = newflag[i] && oldflag[j] ;
+	}
+	else {
+	  if (!oldflag[j]) {
+	    newspec[i] += oldspec[j] * ( zr - yl ) ;
+	    if (regridTsys) newtsys[i] += oldtsys[j] * ( zr - yl ) ;
+	    wsum += ( zr - yl ) ;
+            count[i]++ ;
+	  }
+	  newflag[i] = newflag[i] && oldflag[j] ;
+	  ichan = jj ;
+	  break ;
+	}
+      }
+      else {
+	//ichan = jj - iyincr ;
+	break ;
+      }
+      jj += iyincr ;
+    }
+    if ( wsum != 0.0 ) {
+      newspec[i] /= wsum ;
+      if (regridTsys) newtsys[i] /= wsum ;
+    }
+    wsum = 0.0 ;
+    ii += izincr ;
+  }
+
+  // flag out channels without data
+  // this is tentative since there is no specific definition 
+  // on bit flag...
+  uChar noData = 1 << 7 ; 
+  for ( Int i = 0 ; i < nChan ; i++ ) {
+    if ( count[i] == 0 ) 
+      newflag[i] = noData ;
+  }
+
+  specCol_.put( irow, newspec ) ;
+  flagsCol_.put( irow, newflag ) ;
+  if (regridTsys) tsysCol_.put( irow, newtsys );
+
+  return ;
+}
+
 std::vector<float> Scantable::getWeather(int whichrow) const
 {
   std::vector<float> out(5);

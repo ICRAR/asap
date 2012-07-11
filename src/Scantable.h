@@ -500,6 +500,7 @@ public:
    **/
   void regridChannel( int nchan, double dnu ) ;
   void regridChannel( int nchan, double dnu, int irow ) ;
+  void regridChannel( int nchan, double dnu, double fmin, int irow ) ;
 
   void regridSpecChannel( double dnu, int nchan=-1 ) ;
 
