@@ -405,7 +405,8 @@ class asapgrid2:
         """
         Return gridded data as a scantable.
         """
-        return scantable( self.gridder._get(), average=False )
+        tp = 0 if rcParams['scantable.storage']=='memory' else 1
+        return scantable( self.gridder._get( tp ), average=False )
 
 class _SDGridPlotter:
     def __init__( self, infile, outfile=None, ifno=-1 ):

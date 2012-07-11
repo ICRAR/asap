@@ -1723,7 +1723,9 @@ void STGrid::fillTable( Table &tab )
 void STGrid::fillMainColumns( Table &tab ) 
 {
   // values for fill
-  Table t( infileList_[0], Table::Old ) ;
+  //Table t( infileList_[0], Table::Old ) ;
+  Table t ;
+  table( t, 0 ) ;
   Table tsel = t( t.col( "IFNO" ) == (uInt)ifno_, 1 ) ;
   ROTableRow row( tsel ) ;
   row.get( 0 ) ;
@@ -1831,9 +1833,11 @@ void STGrid2::setScantableList( const vector<ScantableWrapper> &v )
   }
 }
 
-ScantableWrapper STGrid2::getResultAsScantable()
+ScantableWrapper STGrid2::getResultAsScantable( int tp )
 {
-  CountedPtr<Scantable> s = new Scantable( Table::Plain ) ;
+  Table::TableType ttype = (tp==0) ? Table::Memory : Table::Plain ;
+  ScantableWrapper sw( ttype ) ;
+  CountedPtr<Scantable> s = sw.getCP() ;
   s->setHeader( dataList_[0].getCP()->getHeader() ) ;
   Table tout, tin ;
   String subt[] = { "FREQUENCIES", "FOCUS", "WEATHER", 
@@ -1844,7 +1848,6 @@ ScantableWrapper STGrid2::getResultAsScantable()
     TableCopy::copyRows( tout, tin ) ;
   }
   fillTable( s->table() ) ;
-  ScantableWrapper sw( s ) ;
   return sw ;
 }
 

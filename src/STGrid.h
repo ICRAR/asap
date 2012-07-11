@@ -272,7 +272,7 @@ public:
   void setScantableList( const vector<ScantableWrapper> &v ) ;
   void selectData() ;
   virtual void table( Table &tab, uInt i ) ;
-  ScantableWrapper getResultAsScantable() ;
+  ScantableWrapper getResultAsScantable( int tp ) ;
 
 private:
   Block<ScantableWrapper> dataList_ ;
