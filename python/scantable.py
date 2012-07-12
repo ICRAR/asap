@@ -1752,8 +1752,8 @@ class scantable(Scantable):
                     self._setrestfreqs(freqs, [""], unit)
                 else:
                     # allow the 'old' mode of setting mulitple IFs
-                    sel = selector()
                     savesel = self._getselection()
+                    sel = self.get_selection()
                     iflist = self.getifnos()
                     if len(freqs)>len(iflist):
                         raise ValueError("number of elements in list of list "
@@ -1774,8 +1774,8 @@ class scantable(Scantable):
                     names.append(d["name"])
                 self._setrestfreqs(values, names, unit)
             elif isinstance(freqs[-1], list) or isinstance(freqs[-1], tuple):
-                sel = selector()
                 savesel = self._getselection()
+                sel = self.get_selection()
                 iflist = self.getifnos()
                 if len(freqs)>len(iflist):
                     raise ValueError("number of elements in list of list exeeds"
@@ -1787,8 +1787,8 @@ class scantable(Scantable):
                 self._setselection(savesel)
         # freqs are to be taken from a linecatalog
         elif isinstance(freqs, linecatalog):
-            sel = selector()
             savesel = self._getselection()
+            sel = self.get_selection()
             for i in xrange(freqs.nrow()):
                 sel.set_ifs(iflist[i])
                 self._setselection(sel)
