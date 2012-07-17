@@ -1623,7 +1623,9 @@ class asapplotter:
             else:
                 self._data = scan
                 self._reset()
-        elif not self._data:
+        elif self._data:
+            scan = self._data
+        else:
             msg = "Input is not a scantable"
             raise TypeError(msg)
         
@@ -1835,8 +1837,6 @@ class asapplotter:
             if npl >= ntotpl:
                 break
             
-        #self._plottp(self._data)
-
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
