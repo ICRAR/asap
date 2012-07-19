@@ -1686,8 +1686,8 @@ class asapplotter:
             wy *= 1.01
             xgrid = wx/self._cols
             ygrid = wy/self._rows
-            print "Pointing range: (x, y) = (%f - %f, %f - %f)" %\
-              (dirarr[0].min(),dirarr[0].max(),dirarr[1].min(),dirarr[1].max())
+            #print "Pointing range: (x, y) = (%f - %f, %f - %f)" %\
+            #  (dirarr[0].min(),dirarr[0].max(),dirarr[1].min(),dirarr[1].max())
             # identical R.A. and/or Dec. for all spectra.
             if xgrid == 0:
                 xgrid = 1.
@@ -1699,9 +1699,12 @@ class asapplotter:
         #elif isinstance(spacing, str):
         #    # spacing is a quantity
         elif isinstance(spacing,list) and len(spacing) > 1:
-            for val in spacing[0:2]:
-                if not isinstance(val, str):
+            for i in xrange(2):
+                val = spacing[i]
+                if not isinstance(val, float):
                     raise TypeError("spacing should be a list of float")
+                if val > 0.:
+                    spacing[i] = -val
             spacing = spacing[0:2]
         else:
             msg = "Invalid spacing."
@@ -1715,10 +1718,10 @@ class asapplotter:
         #          center[0]+spacing[0]*self._cols/2.]
         #ybound = [center[1]-spacing[1]*self._rows/2.,
         #          center[1]+spacing[1]*self._rows/2.]
-        print "Plot range: (x, y) = (%f - %f, %f - %f)" %\
-              (minpos[0],minpos[0]+spacing[0]*self._cols,
-               minpos[1],minpos[1]+spacing[1]*self._rows)
-        #      (xbound[0],xbound[1],ybound[0],ybound[1])
+        #print "Plot range: (x, y) = (%f - %f, %f - %f)" %\
+        #      (minpos[0],minpos[0]+spacing[0]*self._cols,
+        #       minpos[1],minpos[1]+spacing[1]*self._rows)
+        ##      (xbound[0],xbound[1],ybound[0],ybound[1])
         ifs = self._data.getifnos()
         if len(ifs) > 1:
             msg = "Found multiple IFs in scantable. Only the first IF (IFNO=%d) will be plotted." % ifs[0]
@@ -1762,25 +1765,26 @@ class asapplotter:
             ix = int((pos[0] - minpos[0])/spacing[0])
             #if pos[0] < xbound[0] or pos[0] > xbound[1]:
             if ix < 0 or ix >= self._cols:
-                print "Row %d : Out of X-range (x = %f) ... skipped" % (irow, pos[0])
+                #print "Row %d : Out of X-range (x = %f) ... skipped" % (irow, pos[0])
                 continue
             #ix = min(int((pos[0] - xbound[0])/spacing[0]),self._cols)
             iy = int((pos[1]- minpos[1])/spacing[1])
             #if pos[1] < ybound[0] or pos[1] > ybound[1]:
             if iy < 0 or iy >= self._cols:
-                print "Row %d : Out of Y-range (y = %f) ... skipped" % (irow,pos[1])
+                #print "Row %d : Out of Y-range (y = %f) ... skipped" % (irow,pos[1])
                 continue
             #iy = min(int((pos[1]- ybound[0])/spacing[1]),self._rows)
             ipanel = ix + iy*self._cols
             if len(self._plotter.subplots[ipanel]['lines']) > 0:
-                print "Row %d : panel %d lready plotted ... skipped" % (irow,ipanel)
+                #print "Row %d : panel %d lready plotted ... skipped" % (irow,ipanel)
                 # a spectrum already plotted in the panel
                 continue
             # Plotting this row
-            print "PLOTTING row %d (panel=%d)" % (irow, ipanel)
+            #print "PLOTTING row %d (panel=%d)" % (irow, ipanel)
             npl += 1
             self._plotter.subplot(ipanel)
-            self._plotter.palette(0)
+            self._plotter.palette(0,colormap=self._colormap, \
+                                  linestyle=0,linestyles=self._linestyles)
             xlab = self._abcissa and self._abcissa[ipanel] \
                    or scan._getabcissalabel(irow)
             if self._offset and not self._abcissa:
