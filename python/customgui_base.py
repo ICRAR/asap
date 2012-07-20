@@ -1166,7 +1166,7 @@ class CustomFlagToolbarCommon:
             goback = False
 
         self.plotter._plotter.hold()
-        self.plotter._plotter.legend(1)
+        #self.plotter._plotter.legend(1)
         self._set_plot_counter(pagemode)
         self.plotter._plot(self.plotter._data)
         self.set_pagecounter(self._get_pagenum())
