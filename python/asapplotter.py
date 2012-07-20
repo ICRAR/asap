@@ -1623,9 +1623,7 @@ class asapplotter:
             else:
                 self._data = scan
                 self._reset()
-        elif self._data:
-            scan = self._data
-        else:
+        elif not self._data:
             msg = "Input is not a scantable"
             raise TypeError(msg)
         
@@ -1757,7 +1755,10 @@ class asapplotter:
             self.set_margin(refresh=False)
         self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                  nplots=ntotpl,margin=self._margins,ganged=True)
-        if self.casabar_exists(): self._plotter.figmgr.casabar.disable_button()
+        if self.casabar_exists():
+            #self._plotter.figmgr.casabar.disable_button()
+            self._plotter.figmgr.casabar.set_pagecounter(1)
+            self._plotter.figmgr.casabar.enable_button()
         # Actual plot
         npl = 0
         for irow in range(self._data.nrow()):
@@ -1786,11 +1787,11 @@ class asapplotter:
             self._plotter.palette(0,colormap=self._colormap, \
                                   linestyle=0,linestyles=self._linestyles)
             xlab = self._abcissa and self._abcissa[ipanel] \
-                   or scan._getabcissalabel(irow)
+                   or self._data._getabcissalabel(irow)
             if self._offset and not self._abcissa:
                 xlab += " (relative)"
             ylab = self._ordinate and self._ordinate[ipanel] \
-                   or scan._get_ordinate_label()
+                   or self._data._get_ordinate_label()
             self._plotter.set_axes('xlabel', xlab)
             self._plotter.set_axes('ylabel', ylab)
             #from numpy import pi
@@ -1798,13 +1799,13 @@ class asapplotter:
             lbl = self._data.get_direction(irow)
             self._plotter.set_axes('title',lbl)
 
-            y = scan._getspectrum(irow)
+            y = self._data._getspectrum(irow)
             # flag application
-            mr = scan._getflagrow(irow)
+            mr = self._data._getflagrow(irow)
             if mr:  # FLAGROW=True
                 y = ma.masked_array(y,mask=mr)
             else:
-                m = scan._getmask(irow)
+                m = self._data._getmask(irow)
                 from numpy import logical_not, logical_and
                 ### user mask is not available so far
                 #if self._maskselection and len(self._usermask) == len(m):
@@ -1812,7 +1813,7 @@ class asapplotter:
                 #            m = logical_and(m, self._usermask)
                 y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
 
-            x = array(scan._getabcissa(irow))
+            x = array(self._data._getabcissa(irow))
             if self._offset:
                 x += self._offset
             if self._minmaxx is not None:

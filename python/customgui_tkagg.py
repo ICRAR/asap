@@ -116,12 +116,15 @@ class CustomToolbarTkAgg(CustomToolbarCommon, Tk.Frame):
 
     def modify_note(self):
         if not self.figmgr.toolbar.mode == '': return
-        self.figmgr.toolbar.set_message('text: select a position/text')
         if self.mode == 'note':
             self.bNote.config(relief='raised')
             self.mode = 'none'
             self.spec_show()
+            if not self.button:
+                self.notewin.close_widgets()
+                self.__disconnect_event()
             return
+        self.figmgr.toolbar.set_message('text: select a position/text')
         #self.bSpec.config(relief='raised')
         self.bStat.config(relief='raised')
         self.bNote.config(relief='sunken')
@@ -602,6 +605,9 @@ class CustomFlagToolbarTkAgg(CustomFlagToolbarCommon, Tk.Frame):
             self.bNote.config(relief='raised')
             self.mode = 'none'
             self.spec_show()
+            if not self.button:
+                self.notewin.close_widgets()
+                self.__disconnect_event()
             return
         self.figmgr.toolbar.set_message('text: select a position/text')
         self.bNote.config(relief='sunken')
