@@ -78,6 +78,11 @@ class asapplotter:
         self._linestyles = None
         self._legendloc = None
 
+    def __del__(self):
+        print "Destructor of sd.plotter"
+        del self._data
+        if self._plotter: self._plotter.quit()
+
     def _translate(self, instr):
         keys = "s b i p t r".split()
         if isinstance(instr, str):
@@ -411,18 +416,14 @@ class asapplotter:
         """
         from asap import scantable
         if isinstance(scan, scantable):
-            if self._data is not None:
-                if scan != self._data:
-                    del self._data
-                    self._data = scan
-                    # reset
-                    self._reset()
-                    msg = "A new scantable is set to the plotter. "\
-                          "The masks and data selections are reset."
-                    asaplog.push( msg )
-            else:
-                self._data = scan
-                self._reset()
+            if (self._data is not None) and (scan != self._data):
+                del self._data
+                msg = "A new scantable is set to the plotter. "\
+                      "The masks and data selections are reset."
+                asaplog.push( msg )
+            self._data = scan
+            # reset
+            self._reset()
         else:
             msg = "Input is not a scantable"
             raise TypeError(msg)
@@ -1614,19 +1615,10 @@ class asapplotter:
         if not self._data and not scan:
             msg = "No scantable is specified to plot"
             raise TypeError(msg)
-        if isinstance(scan, scantable):
-            if self._data is not None:
-                if scan != self._data:
-                    self._data = scan
-                    # reset
-                    self._reset()
-            else:
-                self._data = scan
-                self._reset()
-        elif not self._data:
-            msg = "Input is not a scantable"
-            raise TypeError(msg)
-        
+        if scan: 
+            self.set_data(scan, refresh=False)
+            del scan
+
         # Rows and cols
         if rows:
             self._rows = int(rows)
@@ -1749,6 +1741,7 @@ class asapplotter:
         self._assert_plotter(action="reload")
         self._plotter.hold()
         self._plotter.clear()
+        self._plotter.legend()
         
         # Adjust subplot margins
         if not self._margins or len(self._margins) !=6:
