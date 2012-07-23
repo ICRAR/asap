@@ -31,7 +31,7 @@ class flagplotter(asapplotter):
         self._panelling = 'r'
         self.set_stacking('scan')
         self._ismodified = False
-        self._showflag = True #False
+        self._showflagged = False
         self.set_colors("blue gray",False)
 
     def _new_custombar(self):
@@ -50,10 +50,13 @@ class flagplotter(asapplotter):
             asaplog.push("Unsupported backend for interactive flagging. Use either TkAgg or PyQt4Agg")
             asaplog.post("ERROR")
 
-    def set_showflag(self, show):
+    def set_showflagged(self, show):
         """ Whether or not plotting flagged data"""
         if type(show) == bool:
-            self._showflag = show
+            self._showflagged = show
+            print "self._showflagged =", str(show)
+        else:
+            raise TypeError, "Input parameter should be a bool."
 
     @asaplog_post_dec
     def _invalid_func(self, name):
@@ -129,7 +132,7 @@ class flagplotter(asapplotter):
     def plot(self, scan=None):
         if self._is_new_scan(scan):
             self._ismodified = False
-        if not self._showflag:
+        if not self._showflagged:
             self.set_legend(mode=None,refresh=False)
         elif not self._legendloc:
             self.set_legend(mode=1,refresh=False)
@@ -138,7 +141,8 @@ class flagplotter(asapplotter):
 
     @asaplog_post_dec
     def _plot(self, scan):
-        self._plot_with_flag(scan,self._showflag)
+        self._plot_with_flag(scan,self._showflagged)
+        #asapplotter._plot(self,scan)
         # rescale x-range of subplots 5% margins
         ganged = (self._plotter.axes._sharex != None)
         if ganged:
@@ -155,7 +159,7 @@ class flagplotter(asapplotter):
 
 
     @asaplog_post_dec
-    def _plot_with_flag(self, scan, showflag=True):
+    def _plot_with_flag(self, scan, showflag=False):
         # total number of panles to plot as a whole
         nptot = scan.nrow()
         # remaining panels to plot
@@ -179,7 +183,9 @@ class flagplotter(asapplotter):
         # total row number of scantable
         nr = scan.nrow()
         panelcount = 0
-
+        allylim = []
+        allxlim = []
+        
         while r < nr:
             # always plot to new panel
             self._plotter.subplot(panelcount)
@@ -204,7 +210,7 @@ class flagplotter(asapplotter):
             panelcount += 1
             # Now get data to plot
             y = scan._getspectrum(r)
-            #flag row
+            # Check for FLAGROW column
             mr = scan._getflagrow(r)
             from numpy import ma, array
             if mr:
@@ -224,20 +230,42 @@ class flagplotter(asapplotter):
             x = array(scan._getabcissa(r))
             if self._offset:
                 x += self._offset
-            llbl = self._get_label(scan, r, mode='legend', userlabel=self._lmap)
-            if type(llbl) in (list, tuple):
-                        llbl = llbl[0]
-            self._plotter.set_line(label=llbl)
-            plotit = self._plotter.plot
-            if self._hist: plotit = self._plotter.hist
-            plotit(x,ys)
+            #llbl = self._get_label(scan, r, mode='legend', userlabel=self._lmap)
+            #if type(llbl) in (list, tuple):
+            #    llbl = llbl[0]
+            #self._plotter.set_line(label=llbl)
+            self._plotter.set_line(label="data")
+            #plotit = self._plotter.plot
+            #if self._hist: plotit = self._plotter.hist
+            self._plotter.plot(x,ys)
             if showflag:
                 self._plotter.set_line(label="flagged")
-                plotit(x,yf)
+                self._plotter.plot(x,yf)
+                ylim = self._minmaxy or [min(y),max(y)]
+                xlim= self._minmaxx or [min(x),max(x)]
+            elif mr or ys.mask.all():
+                ylim = self._minmaxy or []
+                xlim = self._minmaxx or []
+            else:
+                ylim = self._minmaxy or [ma.minimum(ys),ma.maximum(ys)]
+                xlim= self._minmaxx or [min(x),max(x)]
+            allylim += ylim
+            allxlim += xlim
             if (panelcount == n) or (r == nr-1):
                 break
             r+=1 # next row
-        
+
+        # Set x- and y- limts of subplots
+        if ganged:
+            xlim = None
+            ylim = None
+            if len(allylim) > 0:
+                allylim.sort()
+                ylim = allylim[0],allylim[-1]
+            if len(allxlim) > 0:
+                allxlim.sort()
+                xlim = allxlim[0],allxlim[-1]
+            self._plotter.set_limits(xlim=xlim,ylim=ylim)
 
         # save the current counter for multi-page plotting
         self._startrow = r+1
