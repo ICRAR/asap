@@ -1611,7 +1611,7 @@ class asapplotter:
         spectra which belong to a grid.
         """
         from asap import scantable
-        from numpy import array, ma
+        from numpy import array, ma, cos
         if not self._data and not scan:
             msg = "No scantable is specified to plot"
             raise TypeError(msg)
@@ -1648,34 +1648,39 @@ class asapplotter:
                 asaplog.post("WARN")
 
         # Center and spacing
-        if type(center) == list and len(center) > 1:
-            center = center[0:2]
-        else:
-            asaplog.post()
+        if center is None:
+            #asaplog.post()
             asaplog.push("Grid center is not specified. Automatically calculated from pointing center.")
-            asaplog.post("WARN")
+            #asaplog.post("WARN")
             dirarr = array(self._data.get_directionval()).transpose()
             #center = [dirarr[0].mean(), dirarr[1].mean()]
             center = [0.5*(dirarr[0].max() + dirarr[0].min()),
                       0.5*(dirarr[1].max() + dirarr[1].min())]
             del dirarr
+        elif (type(center) in (list, tuple)) and len(center) > 1:
+            center = center[0:2]
+        else:
+            msg = "Direction of grid center should be a list of float (R.A., Dec.)"
+            raise ValueError, msg
         asaplog.push("Grid center: (%f, %f) " % (center[0],center[1]))
 
         if spacing is None:
-            asaplog.post()
+            #asaplog.post()
             asaplog.push("Grid spacing not specified. Automatically calculated from map coverage")
-            asaplog.post("WARN")
+            #asaplog.post("WARN")
             # automatically get spacing
             dirarr = array(self._data.get_directionval()).transpose()
             wx = 2. * max(abs(dirarr[0].max()-center[0]),
                           abs(dirarr[0].min()-center[0]))
             wy = 2. * max(abs(dirarr[1].max()-center[1]),
                           abs(dirarr[1].min()-center[1]))
-            # slightly expand area to plot the edges
-            wx *= 1.01
-            wy *= 1.01
-            xgrid = wx/self._cols
-            ygrid = wy/self._rows
+            ## slightly expand area to plot the edges
+            #wx *= 1.01
+            #wy *= 1.01
+            #xgrid = wx/self._cols
+            #ygrid = wy/self._rows
+            xgrid = wx/max(self._cols-1.,1.)
+            ygrid = wy/max(self._rows-1.,1.)
             #print "Pointing range: (x, y) = (%f - %f, %f - %f)" %\
             #  (dirarr[0].min(),dirarr[0].max(),dirarr[1].min(),dirarr[1].max())
             # identical R.A. and/or Dec. for all spectra.
@@ -1688,7 +1693,7 @@ class asapplotter:
             del dirarr, xgrid, ygrid
         #elif isinstance(spacing, str):
         #    # spacing is a quantity
-        elif isinstance(spacing,list) and len(spacing) > 1:
+        elif (type(spacing) in (list, tuple)) and len(spacing) > 1:
             for i in xrange(2):
                 val = spacing[i]
                 if not isinstance(val, float):
@@ -1696,22 +1701,19 @@ class asapplotter:
                 if val > 0.:
                     spacing[i] = -val
             spacing = spacing[0:2]
+            # Correction of Dec. effect
+            spacing[0] /= cos(center[1])
         else:
             msg = "Invalid spacing."
             raise TypeError(msg)
-        asaplog.push("Spacing: (%f, %f) " % (spacing[0],spacing[1]))
+        asaplog.push("Spacing: (%f, %f) (projected)" % (spacing[0],spacing[1]))
 
         ntotpl = self._rows * self._cols
         minpos = [center[0]-spacing[0]*self._cols/2.,
                   center[1]-spacing[1]*self._rows/2.]
-        #xbound = [center[0]-spacing[0]*self._cols/2.,
-        #          center[0]+spacing[0]*self._cols/2.]
-        #ybound = [center[1]-spacing[1]*self._rows/2.,
-        #          center[1]+spacing[1]*self._rows/2.]
         #print "Plot range: (x, y) = (%f - %f, %f - %f)" %\
         #      (minpos[0],minpos[0]+spacing[0]*self._cols,
         #       minpos[1],minpos[1]+spacing[1]*self._rows)
-        ##      (xbound[0],xbound[1],ybound[0],ybound[1])
         ifs = self._data.getifnos()
         if len(ifs) > 1:
             msg = "Found multiple IFs in scantable. Only the first IF (IFNO=%d) will be plotted." % ifs[0]
@@ -1749,7 +1751,6 @@ class asapplotter:
         self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                  nplots=ntotpl,margin=self._margins,ganged=True)
         if self.casabar_exists():
-            #self._plotter.figmgr.casabar.disable_button()
             self._plotter.figmgr.casabar.set_pagecounter(1)
             self._plotter.figmgr.casabar.enable_button()
         # Actual plot
@@ -1757,17 +1758,13 @@ class asapplotter:
         for irow in range(self._data.nrow()):
             pos = self._data.get_directionval(irow)
             ix = int((pos[0] - minpos[0])/spacing[0])
-            #if pos[0] < xbound[0] or pos[0] > xbound[1]:
             if ix < 0 or ix >= self._cols:
                 #print "Row %d : Out of X-range (x = %f) ... skipped" % (irow, pos[0])
                 continue
-            #ix = min(int((pos[0] - xbound[0])/spacing[0]),self._cols)
             iy = int((pos[1]- minpos[1])/spacing[1])
-            #if pos[1] < ybound[0] or pos[1] > ybound[1]:
             if iy < 0 or iy >= self._cols:
                 #print "Row %d : Out of Y-range (y = %f) ... skipped" % (irow,pos[1])
                 continue
-            #iy = min(int((pos[1]- ybound[0])/spacing[1]),self._rows)
             ipanel = ix + iy*self._cols
             if len(self._plotter.subplots[ipanel]['lines']) > 0:
                 #print "Row %d : panel %d lready plotted ... skipped" % (irow,ipanel)
