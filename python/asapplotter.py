@@ -78,11 +78,6 @@ class asapplotter:
         self._linestyles = None
         self._legendloc = None
 
-    def __del__(self):
-        print "Destructor of sd.plotter"
-        del self._data
-        if self._plotter: self._plotter.quit()
-
     def _translate(self, instr):
         keys = "s b i p t r".split()
         if isinstance(instr, str):

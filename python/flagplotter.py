@@ -54,7 +54,6 @@ class flagplotter(asapplotter):
         """ Whether or not plotting flagged data"""
         if type(show) == bool:
             self._showflagged = show
-            print "self._showflagged =", str(show)
         else:
             raise TypeError, "Input parameter should be a bool."
 
