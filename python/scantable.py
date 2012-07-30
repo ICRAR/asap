@@ -2249,6 +2249,7 @@ class scantable(Scantable):
         s = scantable(self._math._smooth(self, kernel.lower(), width, order))
         s._add_history("smooth", varlist)
 
+        action = 'H'
         if plot:
             from asap.asapplotter import new_asaplot
             theplot = new_asaplot(rcParams['plotter.gui'])
@@ -2262,26 +2263,38 @@ class scantable(Scantable):
                 ysm=s._getspectrum(r)
                 xorg=orgscan._getabcissa(r)
                 yorg=orgscan._getspectrum(r)
-                theplot.clear()
-                theplot.hold()
-                theplot.set_axes('ylabel',ylab)
-                theplot.set_axes('xlabel',s._getabcissalabel(r))
-                theplot.set_axes('title',s._getsourcename(r))
-                theplot.set_line(label='Original',color="#777777")
-                theplot.plot(xorg,yorg)
-                theplot.set_line(label='Smoothed',color="red")
-                theplot.plot(xsm,ysm)
-                ### Ugly part for legend
-                for i in [0,1]:
-                    theplot.subplots[0]['lines'].append(
-                        [theplot.subplots[0]['axes'].lines[i]]
-                        )
-                theplot.release()
-                ### Ugly part for legend
-                theplot.subplots[0]['lines']=[]
-                res = raw_input("Accept smoothing ([y]/n): ")
+                if action != "N": #skip plotting if rejecting all
+                    theplot.clear()
+                    theplot.hold()
+                    theplot.set_axes('ylabel',ylab)
+                    theplot.set_axes('xlabel',s._getabcissalabel(r))
+                    theplot.set_axes('title',s._getsourcename(r))
+                    theplot.set_line(label='Original',color="#777777")
+                    theplot.plot(xorg,yorg)
+                    theplot.set_line(label='Smoothed',color="red")
+                    theplot.plot(xsm,ysm)
+                    ### Ugly part for legend
+                    for i in [0,1]:
+                        theplot.subplots[0]['lines'].append(
+                            [theplot.subplots[0]['axes'].lines[i]]
+                            )
+                    theplot.release()
+                    ### Ugly part for legend
+                    theplot.subplots[0]['lines']=[]
+                res = self._get_verify_action("Accept smoothing?",action)
+                #print "IF%d, POL%d: got result = %s" %(s.getif(r),s.getpol(r),res)
+                if r == 0: action = None
+                #res = raw_input("Accept smoothing ([y]/n): ")
                 if res.upper() == 'N':
+                    # reject for the current rows
                     s._setspectrum(yorg, r)
+                elif res.upper() == 'R':
+                    # reject all the following rows
+                    action = "N"
+                    s._setspectrum(yorg, r)
+                elif res.upper() == 'A':
+                    # accept all the following rows
+                    break
             theplot.quit()
             del theplot
             del orgscan
@@ -2947,7 +2960,8 @@ class scantable(Scantable):
                 
                 rows = xrange(workscan.nrow())
                 #if len(rows) > 0: workscan._init_blinfo()
-                
+
+                action = "H"
                 for r in rows:
                     f.x = workscan._getabcissa(r)
                     f.y = workscan._getspectrum(r)
@@ -2959,11 +2973,20 @@ class scantable(Scantable):
                     f.data = None
                     f.fit()
 
-                    f.plot(residual=True)
-                    accept_fit = raw_input("Accept fit ( [y]/n ): ")
+                    if action != "Y": # skip plotting when accepting all
+                        f.plot(residual=True)
+                    #accept_fit = raw_input("Accept fit ( [y]/n ): ")
+                    #if accept_fit.upper() == "N":
+                    #    #workscan._append_blinfo(None, None, None)
+                    #    continue
+                    accept_fit = self._get_verify_action("Accept fit?",action)
+                    if r == 0: action = None
                     if accept_fit.upper() == "N":
-                        #workscan._append_blinfo(None, None, None)
                         continue
+                    elif accept_fit.upper() == "R":
+                        break
+                    elif accept_fit.upper() == "A":
+                        action = "Y"
                     
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
@@ -3097,7 +3120,8 @@ class scantable(Scantable):
 
                 rows = xrange(workscan.nrow())
                 #if len(rows) > 0: workscan._init_blinfo()
-                
+
+                action = "H"
                 for r in rows:
                     idx = 2*workscan.getif(r)
                     if mask:
@@ -3112,11 +3136,18 @@ class scantable(Scantable):
                     f.data = None
                     f.fit()
 
-                    f.plot(residual=True)
-                    accept_fit = raw_input("Accept fit ( [y]/n ): ")
+                    if action != "Y": # skip plotting when accepting all
+                        f.plot(residual=True)
+                    #accept_fit = raw_input("Accept fit ( [y]/n ): ")
+                    accept_fit = self._get_verify_action("Accept fit?",action)
+                    if r == 0: action = None
                     if accept_fit.upper() == "N":
                         #workscan._append_blinfo(None, None, None)
                         continue
+                    elif accept_fit.upper() == "R":
+                        break
+                    elif accept_fit.upper() == "A":
+                        action = "Y"
 
                     blpars = f.get_parameters()
                     masklist = workscan.get_masklist(f.mask, row=r, silent=True)
@@ -3665,6 +3696,24 @@ class scantable(Scantable):
         if not is_casapy():
             self.set_freqframe(rcParams['scantable.freqframe'])
 
+    def _get_verify_action( self, msg, action=None ):
+        valid_act = ['Y', 'N', 'A', 'R']
+        if not action or not isinstance(action, str):
+            action = raw_input("%s [Y/n/a/r] (h for help): " % msg)
+        if action == '':
+            return "Y"
+        elif (action.upper()[0] in valid_act):
+            return action.upper()[0]
+        elif (action.upper()[0] in ['H','?']):
+            print "Available actions of verification [Y|n|a|r]"
+            print " Y : Yes for current data (default)"
+            print " N : No for current data"
+            print " A : Accept all in the following and exit from verification"
+            print " R : Reject all in the following and exit from verification"
+            print " H or ?: help (show this message)"
+            return self._get_verify_action(msg)
+        else:
+            return 'Y'
 
     def __getitem__(self, key):
         if key < 0:
