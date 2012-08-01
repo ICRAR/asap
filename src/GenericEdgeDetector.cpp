@@ -214,7 +214,7 @@ void GenericEdgeDetector::labeling()
   uInt niter = 0 ;
   const uInt maxiter = 100 ;
   while ( n > 0 && niter < maxiter ) {
-    n = _labeling( apix_ ) ;
+    n = _labeling() ;
     os_ << LogIO::DEBUGGING
         << "cycle " << niter << ": labeled " << n << " pixels" << LogIO::POST ;
     niter++ ;
@@ -225,16 +225,16 @@ void GenericEdgeDetector::labeling()
   }
 }
 
-uInt GenericEdgeDetector::_labeling( Matrix<uInt> &a )
+uInt GenericEdgeDetector::_labeling()
 {
   uInt n = 0 ;
   for ( uInt ix = 0 ; ix < nx_ ; ix++ ) {
-    Vector<uInt> v( a.row( ix ) ) ;
+    Vector<uInt> v( apix_.row( ix ) ) ;
     uInt nx = __labeling( v ) ;
     n += nx ;
   }
   for ( uInt iy = 0 ; iy < ny_ ; iy++ ) {
-    Vector<uInt> v( a.column( iy ) ) ;
+    Vector<uInt> v( apix_.column( iy ) ) ;
     uInt ny = __labeling( v ) ;
     n += ny ;
   }
@@ -289,7 +289,7 @@ void GenericEdgeDetector::trimming()
   const uInt maxiter = 100 ;
   if ( !elongated_ ) {
     while ( n < nTrim && niter < maxiter ) {
-      uInt m = _trimming( apix_ ) ;
+      uInt m = _trimming() ;
       os_ << LogIO::DEBUGGING
           << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
@@ -299,7 +299,7 @@ void GenericEdgeDetector::trimming()
   else if ( nx_ > ny_ ) {
     os_ << "1D triming along x-axis" << LogIO::POST ;
     while ( n < nTrim && niter < maxiter ) {
-      uInt m = _trimming1DX( apix_ ) ;
+      uInt m = _trimming1DX() ;
       os_ << LogIO::DEBUGGING
           << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
@@ -309,7 +309,7 @@ void GenericEdgeDetector::trimming()
   else { // nx_ < ny_
     os_ << "1D triming along y-axis" << LogIO::POST ;
     while ( n < nTrim && niter < maxiter ) {
-      uInt m = _trimming1DY( apix_ ) ;
+      uInt m = _trimming1DY() ;
       os_ << LogIO::DEBUGGING
           << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
@@ -325,36 +325,34 @@ void GenericEdgeDetector::trimming()
   }
 }
 
-uInt GenericEdgeDetector::_trimming( Matrix<uInt> &a ) 
+uInt GenericEdgeDetector::_trimming() 
 {
   uInt n = 0 ;
-  const uInt nx = a.nrow() ;
-  const uInt ny = a.ncolumn() ;
-  Block<uInt> flatIdxList( a.nelements() ) ;
+  Block<uInt> flatIdxList( apix_.nelements() ) ;
   uInt start ;
   uInt end ;
   uInt flatIdx ;
-  for ( uInt ix = 0 ; ix < nx ; ix++ ) {
-    Vector<uInt> v( a.row( ix ) ) ;
+  for ( uInt ix = 0 ; ix < nx_ ; ix++ ) {
+    Vector<uInt> v( apix_.row( ix ) ) ;
     if ( allEQ( v, (uInt)0 ) ) {
       continue ;
     }
     _search( start, end, v ) ;
-    uInt offset = start * nx ;
+    uInt offset = start * nx_ ;
     flatIdx = offset + ix ;
     flatIdxList[n++] = flatIdx ;
     if ( start != end ) {
-      offset = end * nx ;
+      offset = end * nx_ ;
       flatIdx = offset + ix ;
       flatIdxList[n++] = flatIdx ;
     }
   }
-  for ( uInt iy = 0 ; iy < ny ; iy++ ) {
-    Vector<uInt> v( a.column( iy ) ) ;
+  for ( uInt iy = 0 ; iy < ny_ ; iy++ ) {
+    Vector<uInt> v( apix_.column( iy ) ) ;
     if ( allEQ( v, (uInt)0 ) ) {
       continue ;
     }
-    uInt offset = iy * nx ;
+    uInt offset = iy * nx_ ;
     _search( start, end, v ) ;
     flatIdx = offset + start ;
     flatIdxList[n++] = flatIdx ;
@@ -367,7 +365,7 @@ uInt GenericEdgeDetector::_trimming( Matrix<uInt> &a )
                n,
                Sort::Ascending,
                Sort::QuickSort | Sort::NoDuplicates ) ;
-  Vector<uInt> v( IPosition(1,nx*ny), a.data(), SHARE ) ; 
+  Vector<uInt> v( IPosition(1,apix_.nelements()), apix_.data(), SHARE ) ; 
   const uInt *idx_p = flatIdxList.storage() ;
   for ( uInt i = 0 ; i < n ; i++ ) {
     v[*idx_p] = 0 ;
@@ -377,18 +375,18 @@ uInt GenericEdgeDetector::_trimming( Matrix<uInt> &a )
   return n ;
 }
 
-uInt GenericEdgeDetector::_trimming1DX( Matrix<uInt> &a )
+uInt GenericEdgeDetector::_trimming1DX()
 {
   uInt n = 0 ;
-  const uInt nx = a.nrow() ;
+  const uInt nx = apix_.nrow() ;
   Vector<uInt> v1, v2 ;
   uInt ix, jx ;
-  for ( ix = 0 ; ix < nx ; ix++ ) {
-    v1.reference( a.row( ix ) ) ;
+  for ( ix = 0 ; ix < nx_ ; ix++ ) {
+    v1.reference( apix_.row( ix ) ) ;
     if ( anyNE( v1, n ) ) break ;
   }
   for ( jx = nx-1 ; jx > ix ; jx-- ) {
-    v2.reference( a.row( jx ) ) ;
+    v2.reference( apix_.row( jx ) ) ;
     if ( anyNE( v2, n ) ) break ;
   }
   n += _trimming1D( v1 ) ;
@@ -398,18 +396,18 @@ uInt GenericEdgeDetector::_trimming1DX( Matrix<uInt> &a )
   return n ;
 }
 
-uInt GenericEdgeDetector::_trimming1DY( Matrix<uInt> &a )
+uInt GenericEdgeDetector::_trimming1DY()
 {
   uInt n = 0 ;
-  const uInt ny = a.ncolumn() ;
+  const uInt ny = apix_.ncolumn() ;
   Vector<uInt> v1, v2 ;
   uInt iy, jy ;
-  for ( iy = 0 ; iy < ny ; iy++ ) {
-    v1.reference( a.column( iy ) ) ;
+  for ( iy = 0 ; iy < ny_ ; iy++ ) {
+    v1.reference( apix_.column( iy ) ) ;
     if ( anyNE( v1, n ) ) break ;
   }
   for ( jy = ny-1 ; jy > iy ; jy-- ) {
-    v2.reference( a.column( jy ) ) ;
+    v2.reference( apix_.column( jy ) ) ;
     if ( anyNE( v2, n ) ) break ;
   }
   n += _trimming1D( v1 ) ;
@@ -461,7 +459,7 @@ void GenericEdgeDetector::tuning()
   if ( len == 0 ) 
     return ;
 
-  Vector<uInt> diff( len-1 ) ;
+  Block<uInt> diff( len-1 ) ;
   for ( uInt i = 0 ; i < len-1 ; i++ ) {
     diff[i] = off_[i+1] - off_[i] ;
   }

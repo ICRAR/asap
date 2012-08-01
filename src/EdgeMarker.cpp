@@ -71,7 +71,8 @@ void EdgeMarker::examine()
   os_.origin(LogOrigin( "EdgeMarker", "examine", WHERE )) ;
 
   // exclude WVR
-  vector<uInt> wvr ;
+  Block<uInt> wvr( st_->getIFNos().size() ) ;
+  uInt n = 0 ;
   {
     ROArrayColumn<uChar> flagCol( st_->table(), "FLAGTRA" ) ;
     vector<string> cols( 1, "IFNO" ) ;
@@ -81,11 +82,11 @@ void EdgeMarker::examine()
       uInt firstRow = iter.getRows()[0] ;
       uInt nchan = flagCol( firstRow ).nelements() ;
       if ( nchan == 4 ) 
-        wvr.push_back( current ) ;
+        wvr[n++] = current ;
       iter.next() ;
     }
   }
-  wvr_ = Vector<uInt>( wvr ) ;
+  wvr_.takeStorage( IPosition(1,n), wvr.storage(), COPY ) ;
 
   if ( wvr_.nelements() > 0 ) {
     os_ << LogIO::DEBUGGING

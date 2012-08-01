@@ -42,11 +42,11 @@ private:
 
   // internal methods
   void setup() ;
-  casa::uInt _labeling( casa::Matrix<casa::uInt> &a ) ;
+  casa::uInt _labeling() ;
   casa::uInt __labeling( casa::Vector<casa::uInt> &a ) ;
-  casa::uInt _trimming( casa::Matrix<casa::uInt> &a ) ;
-  casa::uInt _trimming1DX( casa::Matrix<casa::uInt> &a ) ;
-  casa::uInt _trimming1DY( casa::Matrix<casa::uInt> &a ) ;
+  casa::uInt _trimming() ;
+  casa::uInt _trimming1DX() ;
+  casa::uInt _trimming1DY() ;
   casa::uInt _trimming1D( casa::Vector<casa::uInt> &a ) ;
   void _search( casa::uInt &start, 
                 casa::uInt &end, 
