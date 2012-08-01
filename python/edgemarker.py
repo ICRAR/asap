@@ -17,7 +17,7 @@ class edgemarker:
     Current limitation of this class is that it cannot handle some
     complicated observed area. Typical case is that the area has
     clear 'dent' (e.g. a composite area consisting of two diamond-
-    shaped areas that partially overlap). In such case, the class
+    shaped areas that slightly overlap). In such case, the class
     will fail to detect such feature.
 
     Note that the class takes a copy of input data so that input
@@ -63,9 +63,10 @@ class edgemarker:
     def setoption( self, *args, **kwargs ):
         """
         Set options for edge detection. Valid options depend on
-        whether scan pattern is raster or not.
+        whether scan pattern is raster or not (i.e. constructor
+        is called with israster=True or False).
 
-        FOR RASTER:
+        === for raster (israster=True) ===
         fraction -- Fraction of OFF integration in each raster
                     row. Either numerical value (<1.0) or string
                     is accepted. For string, its value should be
@@ -85,20 +86,19 @@ class edgemarker:
         Note also that, if both fraction and npts are specified,
         specification by npts will come before. 
 
-        FOR NON-RASTER:
+        === for non-raster (israster=False) ===
         fraction -- Fraction of edge area with respect to whole
                     observed area. Either numerical value (<1.0)
                     or string is accepted. For string, its value
                     should be in 'xx%' format. For example, '10%'
                     is same as 0.1. Default is 0.1.
         width -- Pixel width for edge detection. It should be given
-                 as a fraction with respect to the median spatial
-                 separation between neighboring integrations in time.
-                 Default is 0.5. In the most case, default value
-                 will be fine. Larger value will cause worse result.
-                 Smaller value may improve result. However, if too
-                 small value is set (e.g. 1.0e-5), the algorithm may
-                 not work.
+                 as a fraction of the median spatial separation
+                 between neighboring integrations in time. Default
+                 is 0.5. In the most case, default value will be fine.
+                 Larger value will cause worse result. Smaller value
+                 may improve result. However, if too small value is
+                 set (e.g. 1.0e-5), the algorithm may not work.
         elongated -- Set True only if observed area is extremely
                      elongated in one direction. Default is False.
                      In most cases, default value will be fine.
