@@ -76,7 +76,7 @@ void GenericEdgeDetector::parseOption( const Record &option )
 
   name = "elongated" ;
   if ( option.isDefined( name ) ) {
-    elongated_ = !(option.asBool( name )) ;
+    elongated_ = option.asBool( name ) ;
   }
   else {
     elongated_ = False ; // default is two-dimensional processing
@@ -371,14 +371,13 @@ uInt GenericEdgeDetector::_trimming1DX( Matrix<uInt> &a )
 {
   uInt n = 0 ;
   const uInt nx = a.nrow() ;
-  //const uInt ny = a.ncolumn() ;
   Vector<uInt> v1, v2 ;
   uInt ix, jx ;
   for ( ix = 0 ; ix < nx ; ix++ ) {
     v1.reference( a.row( ix ) ) ;
     if ( anyNE( v1, n ) ) break ;
   }
-  for ( jx = nx-1 ; jx > ix ; jx++ ) {
+  for ( jx = nx-1 ; jx > ix ; jx-- ) {
     v2.reference( a.row( jx ) ) ;
     if ( anyNE( v2, n ) ) break ;
   }
@@ -392,7 +391,6 @@ uInt GenericEdgeDetector::_trimming1DX( Matrix<uInt> &a )
 uInt GenericEdgeDetector::_trimming1DY( Matrix<uInt> &a )
 {
   uInt n = 0 ;
-  //const uInt nx = a.nrow() ;
   const uInt ny = a.ncolumn() ;
   Vector<uInt> v1, v2 ;
   uInt iy, jy ;
@@ -400,7 +398,7 @@ uInt GenericEdgeDetector::_trimming1DY( Matrix<uInt> &a )
     v1.reference( a.column( iy ) ) ;
     if ( anyNE( v1, n ) ) break ;
   }
-  for ( jy = ny-1 ; jy > iy ; jy++ ) {
+  for ( jy = ny-1 ; jy > iy ; jy-- ) {
     v2.reference( a.column( jy ) ) ;
     if ( anyNE( v2, n ) ) break ;
   }
