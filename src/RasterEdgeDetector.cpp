@@ -31,11 +31,16 @@ RasterEdgeDetector::~RasterEdgeDetector()
 
 Vector<uInt> RasterEdgeDetector::detect() 
 {
+  os_.origin(LogOrigin( "RasterEdgeDetector", "detect", WHERE )) ;
+
   initDetect() ;
 
   detectGap() ;
   selection() ;
   
+  os_ << LogIO::DEBUGGING
+      << "Detected " << off_.nelements() << " integrations as OFF" << LogIO::POST ;
+
   return off_ ;
 }
 
@@ -98,11 +103,14 @@ void RasterEdgeDetector::detectGap()
     tempuInt_[idx++] = n ;
   }
   gaplist_ = vectorFromTempStorage( idx ) ;
+  
+  os_ << LogIO::DEBUGGING
+      << "Detected " << gaplist_.nelements() << " time gaps." << LogIO::POST ;
 }
 
 void RasterEdgeDetector::selection()
 {
-  os_.origin(LogOrigin( "RasterEdgeDetector", "selection", WHERE )) ;
+//   os_.origin(LogOrigin( "RasterEdgeDetector", "selection", WHERE )) ;
 
   uInt n = gaplist_.nelements() - 1 ;
   uInt idx = 0 ;
@@ -119,7 +127,7 @@ void RasterEdgeDetector::selectionPerRow( uInt &idx,
                                           const uInt &start,
                                           const uint &end ) 
 {
-  os_.origin(LogOrigin( "RasterEdgeDetector", "selectionPerRow", WHERE )) ;
+//   os_.origin(LogOrigin( "RasterEdgeDetector", "selectionPerRow", WHERE )) ;
 
   uInt len = end - start ;
   uInt noff = numOff( len ) ;

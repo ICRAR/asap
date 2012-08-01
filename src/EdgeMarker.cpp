@@ -29,15 +29,21 @@ using namespace casa ;
 namespace asap {
 EdgeMarker::EdgeMarker()
 {
-  detector_ = new GenericEdgeDetector() ;
+  EdgeMarker( false ) ;
 }
 
 EdgeMarker::EdgeMarker( bool israster )
 {
-  if ( israster )
+  os_.origin(LogOrigin( "EdgeMarker", "EdgeMarker", WHERE )) ;
+
+  if ( israster ) {
+    os_ << "edge detection by RasterEdgeDetector" << LogIO::POST ;
     detector_ = new RasterEdgeDetector() ;
-  else
+  }
+  else {
+    os_ << "edge detection by GenericEdgeDetector" << LogIO::POST ;
     detector_ = new GenericEdgeDetector() ;
+  }
 }
 
 EdgeMarker::~EdgeMarker()
@@ -62,6 +68,8 @@ void EdgeMarker::initDetect()
 
 void EdgeMarker::examine()
 {
+  os_.origin(LogOrigin( "EdgeMarker", "examine", WHERE )) ;
+
   // exclude WVR
   vector<uInt> wvr ;
   {
@@ -78,8 +86,11 @@ void EdgeMarker::examine()
     }
   }
   wvr_ = Vector<uInt>( wvr ) ;
-  os_.origin(LogOrigin( "EdgeMarker", "examine", WHERE )) ;
-  os_ << "IFNO for WVR scan: " << wvr_ << LogIO::POST ;
+
+  if ( wvr_.nelements() > 0 ) {
+    os_ << LogIO::DEBUGGING
+        << "IFNO for WVR scan: " << wvr_ << LogIO::POST ;
+  }
 }
 
 void EdgeMarker::setoption( const Record &option ) 
@@ -103,10 +114,11 @@ void EdgeMarker::detect()
   while( !iter.pastEnd() ) {
     Vector<uInt> current = iter.current() ;
     Int srcType = iter.getSrcType() ;
-    os_ << "BEAMNO=" << current[0] 
-        << ",POLNO=" << current[1]
-        << ",IFNO=" << current[2]
-        << ",SRCTYPE=" << srcType << LogIO::POST ;
+    os_ << LogIO::DEBUGGING
+        << "BEAMNO=" << current[0] 
+        << " POLNO=" << current[1]
+        << " IFNO=" << current[2]
+        << " SRCTYPE=" << srcType << LogIO::POST ;
     // only process ON position and no WVR
     Vector<uInt> rows = iter.getRows( SHARE ) ;
     uInt nrow = rows.nelements() ;
@@ -128,10 +140,15 @@ void EdgeMarker::detect()
     }
     iter.next() ;
   }
+
+  os_ << "detected " << noff_ << " integrations near edge" << LogIO::POST ;
 }
 
 void EdgeMarker::mark()
 {
+  os_.origin(LogOrigin( "EdgeMarker", "mark", WHERE )) ;
+
+  os_ << "marked " << noff_ << " points as OFF" << LogIO::POST ;
   ScalarColumn<Int> srcTypeCol( st_->table(), "SRCTYPE" ) ;
   Int psoff = Int(SrcType::PSOFF) ;
   Vector<Int> srcType = srcTypeCol.getColumn() ;

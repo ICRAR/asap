@@ -33,6 +33,8 @@ GenericEdgeDetector::~GenericEdgeDetector()
 
 Vector<uInt> GenericEdgeDetector::detect() 
 {
+  os_.origin(LogOrigin( "GenericEdgeDetector", "detect", WHERE )) ;
+
   initDetect() ;
 
   topixel() ;
@@ -42,6 +44,9 @@ Vector<uInt> GenericEdgeDetector::detect()
   trimming() ;
   selection() ;
   tuning() ;
+
+  os_ << LogIO::DEBUGGING
+      << "Detected " << off_.nelements() << " integrations as OFF" << LogIO::POST ;  
 
   return off_ ;
 }
@@ -90,7 +95,7 @@ void GenericEdgeDetector::parseOption( const Record &option )
 
 void GenericEdgeDetector::topixel() 
 {
-  os_.origin(LogOrigin( "GenericEdgeDetector", "setup", WHERE )) ;
+//   os_.origin(LogOrigin( "GenericEdgeDetector", "topixel", WHERE )) ;
 
   setup() ;
   Double *pdir_p = new Double[dir_.nelements()] ;
@@ -111,8 +116,6 @@ void GenericEdgeDetector::topixel()
     y_p += 2 ;
   }
   dir_.freeStorage( dir_p, b ) ;
-
-  os_ << "end topixel" << LogIO::POST ;
 }
 
 void GenericEdgeDetector::setup() 
@@ -140,8 +143,6 @@ void GenericEdgeDetector::setup()
   dx_ = med * width_ ;
   dy_ = dx_ ;
 
-  os_ << "dx=" << dx_ << ", dy=" << dy_ << LogIO::POST ;
-
   Double xmax, xmin, ymax, ymin ;
   minMax( xmin, xmax, dir_.row( 0 ) ) ;
   minMax( ymin, ymax, dir_.row( 1 ) ) ;
@@ -157,12 +158,13 @@ void GenericEdgeDetector::setup()
   pcenx_ = 0.5 * Double( nx_ - 1 ) ;
   pceny_ = 0.5 * Double( ny_ - 1 ) ;
 
-  os_ << "rangex=(" << xmin << "," << xmax << ")" << LogIO::POST ;
-  os_ << "rangey=(" << ymin << "," << ymax << ")" << LogIO::POST ;
-  os_ << "median separation between pointings: " << med << LogIO::POST ;
-  os_ << "dx=" << dx_ << ", dy=" << dy_ << LogIO::POST ;
-  os_ << "wx=" << wx << ", wy=" << wy << LogIO::POST ;
-  os_ << "nx=" << nx_ << ", ny=" << ny_ << LogIO::POST ;
+  os_ << LogIO::DEBUGGING 
+      << "rangex=(" << xmin << "," << xmax << ")" << endl
+      << "rangey=(" << ymin << "," << ymax << ")" << endl 
+      << "median separation between pointings: " << med << endl 
+      << "dx=" << dx_ << ", dy=" << dy_ << endl
+      << "wx=" << wx << ", wy=" << wy << endl
+      << "nx=" << nx_ << ", ny=" << ny_ << LogIO::POST ;
 }
 
 void GenericEdgeDetector::countup() 
@@ -190,7 +192,8 @@ void GenericEdgeDetector::countup()
     py_p += 2 ;
   }
 
-  os_ << "a.max()=" << max(apix_) << ",a.min()=" << min(apix_) << LogIO::POST ;
+  os_ << LogIO::DEBUGGING 
+      << "a.max()=" << max(apix_) << ",a.min()=" << min(apix_) << LogIO::POST ;
 }
 
 void GenericEdgeDetector::thresholding() 
@@ -209,10 +212,11 @@ void GenericEdgeDetector::labeling()
 
   uInt n = 1 ;
   uInt niter = 0 ;
-  const uInt maxiter = 10 ;
+  const uInt maxiter = 100 ;
   while ( n > 0 && niter < maxiter ) {
     n = _labeling( apix_ ) ;
-    os_ << "labeled " << n << " pixels in this cycle" << LogIO::POST ;
+    os_ << LogIO::DEBUGGING
+        << "cycle " << niter << ": labeled " << n << " pixels" << LogIO::POST ;
     niter++ ;
   }
   if ( niter == maxiter ) {
@@ -277,16 +281,17 @@ void GenericEdgeDetector::trimming()
 
   const uInt n1 = sum( apix_ ) ;
   const uInt nTrim = uInt(ceil( n1 * fraction_ )) ;
-  os_ << "number of nonzero pixel: " << n1 << LogIO::POST ;
-  os_ << "fraction: " << fraction_ << LogIO::POST ;
-  os_ << "number of pixels to be trimmed: " << nTrim << LogIO::POST ;
+  os_ << LogIO::DEBUGGING
+      << "number of nonzero pixel: " << n1 << endl
+      << "number of pixels to be trimmed: " << nTrim << LogIO::POST ;
   uInt n = 0 ;
   uInt niter = 0 ;
   const uInt maxiter = 100 ;
   if ( !elongated_ ) {
     while ( n < nTrim && niter < maxiter ) {
       uInt m = _trimming( apix_ ) ;
-      os_ << "trimmed " << m << " pixels" << LogIO::POST ;
+      os_ << LogIO::DEBUGGING
+          << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
       niter++ ;
     }
@@ -295,6 +300,8 @@ void GenericEdgeDetector::trimming()
     os_ << "1D triming along x-axis" << LogIO::POST ;
     while ( n < nTrim && niter < maxiter ) {
       uInt m = _trimming1DX( apix_ ) ;
+      os_ << LogIO::DEBUGGING
+          << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
       niter++ ;
     }
@@ -303,11 +310,14 @@ void GenericEdgeDetector::trimming()
     os_ << "1D triming along y-axis" << LogIO::POST ;
     while ( n < nTrim && niter < maxiter ) {
       uInt m = _trimming1DY( apix_ ) ;
+      os_ << LogIO::DEBUGGING
+          << "cycle " << niter << ": trimmed " << m << " pixels" << LogIO::POST ;
       n += m ;
       niter++ ;
     }
   }
-  os_ << "number of pixels actually trimmed: " << n << LogIO::POST ;
+  os_ << LogIO::DEBUGGING
+      << "number of pixels actually trimmed: " << n << LogIO::POST ;
 
   if ( niter == maxiter ) {
     // WARN
@@ -425,10 +435,9 @@ uInt GenericEdgeDetector::_trimming1D( Vector<uInt> &a )
 
 void GenericEdgeDetector::selection() 
 {
-  os_.origin(LogOrigin( "GenericEdgeDetector", "selection", WHERE )) ;
+//   os_.origin(LogOrigin( "GenericEdgeDetector", "selection", WHERE )) ;
 
   uInt nrow = pdir_.shape()[1] ;
-  os_ << "nrow=" << nrow << LogIO::POST ;
   const Double *px_p = pdir_.data() ;
   const Double *py_p = px_p + 1 ;
   Vector<uInt> v( IPosition(1,apix_.nelements()), apix_.data(), SHARE ) ;
@@ -441,24 +450,20 @@ void GenericEdgeDetector::selection()
     px_p += 2 ;
     py_p += 2 ;
   }
-  os_ << "off_.nelements()=" << off_.nelements() << LogIO::POST ;
   off_ = vectorFromTempStorage( n ) ;
-  os_ << "off_.nelements()=" << off_.nelements() << LogIO::POST ;
 }
 
 void GenericEdgeDetector::tuning() 
 {
   os_.origin(LogOrigin( "GenericEdgeDetector", "tuning", WHERE )) ;
 
-  os_ << "start" << LogIO::POST ;
   const uInt len = off_.nelements() ;
-  os_ << "len=" << len << LogIO::POST ;
   if ( len == 0 ) 
     return ;
 
-  Vector<uInt> diff = off_.copy() ;
-  for ( uInt i = len-1 ; i > 0 ; i-- ) {
-    diff[i] -= diff[i-1] ;
+  Vector<uInt> diff( len-1 ) ;
+  for ( uInt i = 0 ; i < len-1 ; i++ ) {
+    diff[i] = off_[i+1] - off_[i] ;
   }
   const uInt threshold = 3 ;
   uInt n = 0 ;
@@ -466,11 +471,13 @@ void GenericEdgeDetector::tuning()
     tempuInt_[n++] = off_[i] ;
   }
   for ( uInt i = 1 ; i < len ; i++ ) {
-    if ( diff[i] != 1 && diff[i] < threshold ) {
-      uInt t = off_[i-1]+1 ;
+    uInt ii = i - 1 ;
+    if ( diff[ii] != 1 && diff[ii] < threshold ) {
+      uInt t = off_[ii]+1 ;
       uInt u = off_[i] ;
       for ( uInt j = t ; j < u ; j++ ) {
-        os_ << "move " << j << " from ON to OFF" << LogIO::POST ;
+        os_ << LogIO::DEBUGGING
+            << "move " << j << " from ON to OFF" << LogIO::POST ;
         tempuInt_[n++] = j ;
       }
     }
