@@ -11,6 +11,7 @@
 //
 
 #include "EdgeDetector.h"
+#include "MathUtils.h"
 
 using namespace std ;
 using namespace casa ;
@@ -27,7 +28,10 @@ EdgeDetector::~EdgeDetector()
 
 void EdgeDetector::setDirection( const Matrix<Double> &dir ) 
 {
-  dir_.reference( dir ) ;
+  //dir_.reference( dir ) ;
+  dir_ = dir.copy() ;
+  Vector<Double> ra( dir_.row(0) ) ;
+  mathutil::rotateRA( ra ) ;
   resizeTempArea( dir.nrow() ) ;
 }
 
