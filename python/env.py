@@ -52,26 +52,36 @@ def setup_env():
         os.environ["CASAPATH"] = "%s %s somwhere" % ( asapdata, plf)
 
     # set up user space
-#     userdir = os.environ["HOME"]+"/.asap"
-#     if not os.path.exists(userdir):
-#         print 'First time ASAP use. Setting up ~/.asap'
-#         os.makedirs(os.path.join(userdir, "profile_default"))
-#         if not is_casapy():
-#             shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
-#                             userdir+"/ipy_user_conf.py")
-#             shutil.copyfile(asapdata+"/data/ipython_config.py",
-#                             userdir+"/profile_default/ipython_config.py")
-#         f = file(userdir+"/asapuserfuncs.py", "w")
-#         f.close()
-#         f = file(userdir+"/ipythonrc", "w")
-#         f.close()
-#     else:
-#         if not is_casapy():
-#             # upgrade to support later ipython versions
+    if os.environ["USER"] == 'root':
+        return
+    try:
+        import IPython
+          # 0.11+ doesn't use user dir
+        if int(IPython.__version__.split(".")[1]) >= 11:
+            return
+    except:
+        # no ipython so we don't need user dir
+        return
+    userdir = os.environ["HOME"]+"/.asap"
+    if not os.path.exists(userdir):
+        print 'First time ASAP use. Setting up ~/.asap'
+#        os.makedirs(os.path.join(userdir, "profile_default"))
+        if not is_casapy():
+            shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
+                            userdir+"/ipy_user_conf.py")
+#            shutil.copyfile(asapdata+"/data/ipython_config.py",
+#                            userdir+"/profile_default/ipython_config.py")
+        f = file(userdir+"/asapuserfuncs.py", "w")
+        f.close()
+        f = file(userdir+"/ipythonrc", "w")
+        f.close()
+    else:
+        if not is_casapy():
+            # upgrade to support later ipython versions
             
-#             if not os.path.exists(userdir+"/ipy_user_conf.py"):
-#                shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
-#                                userdir+"/ipy_user_conf.py")
+             if not os.path.exists(userdir+"/ipy_user_conf.py"):
+                shutil.copyfile(asapdata+"/data/ipy_user_conf.py",
+                                userdir+"/ipy_user_conf.py")
 #             if not os.path.exists(userdir+"/profile_default/ipython_config.py"):
 #                shutil.copyfile(asapdata+"/data/ipython_config.py",
 #                                userdir+"/profile_default/ipython_config.py")

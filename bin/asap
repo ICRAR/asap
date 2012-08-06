@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 import os
 
-def main():
+def main10():
+    from IPython.Shell import IPShellEmbed
+
+    banner = "HELLO"
+    exit_msg = "bye"
+    
+    ipshell = IPShellEmbed(sys.argv[1:],banner,exit_msg)
+    return ipshell
+
+
+def main11():
     from IPython.config.loader import Config
     cfg = Config()
     prompt_config = cfg.PromptManager
@@ -18,13 +28,21 @@ def main():
     ipshell = InteractiveShellEmbed(config=cfg,
                                     banner1 = welcome(),
                                     exit_msg = '')
-    ipshell()
+    return ipshell
 
 try: 
     os.system('clear')
     import IPython
     from asap import *
-    main()
+    vers = int(IPython.__version__.split(".")[1])
+    if vers >= 11:
+        ipshell = main11()
+    else:
+        ipshell = main10()
+
 except ImportError:
-    print "No ipython found. Running standard python"
+    banner =  "No ipython found. Running standard python"
+    import code
     from asap import *
+    del main
+    code.interact(banner, local=locals())
