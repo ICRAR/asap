@@ -257,6 +257,6 @@ env.AddPostAction(so, taction)
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
     Execute(Delete("options.cache"))
-
+    Execute(Delete(".sconsign.dblite"))
 if env["makedoc"].lower() != "none":
     env.SConscript("doc/SConscript")
