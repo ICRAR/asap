@@ -1173,6 +1173,9 @@ void STGrid::mapExtent( Double &xmin, Double &xmax,
     directionCol_.attach( tableList_[i], "DIRECTION" ) ;
     direction.assign( directionCol_.getColumn() ) ;
     //os << "dirCol.nrow() = " << dirCol.nrow() << LogIO::POST ;
+    // to make contiguous RA distribution (no 2pi jump)
+    Vector<Double> ra( direction.row(0) ) ;
+    mathutil::rotateRA( ra ) ;
     minMax( amin, amax, direction.row( 0 ) ) ;
     minMax( bmin, bmax, direction.row( 1 ) ) ;
     xmin = min( xmin, amin ) ;
@@ -1342,6 +1345,9 @@ Int STGrid::getDataChunk( Array<Float> &spectra,
   spectraCol_.getColumnCells( rows, spectra ) ;
   flagtraCol_.getColumnCells( rows, flagtra ) ;
   directionCol_.getColumnCells( rows, direction ) ;
+  // to make contiguous RA distribution (no 2pi jump)
+  Vector<Double> v( Matrix<Double>(direction).row(0) ) ;
+  mathutil::rotateRA( v ) ;
   flagRowCol_.getColumnCells( rows, rflagVec ) ;
   intervalCol_.getColumnCells( rows, tintVec ) ;
   Vector<Float> tsysTemp = tsysCol_( nprocessed_ ) ;
@@ -1534,7 +1540,7 @@ void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
   const Double *ww_p = w_p ;
   Double *wp_p = p_p ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
-    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cellx_ ;
+    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cos( center_[1] ) / cellx_ ;
     wp_p++ ;
     ww_p++ ;
     *wp_p = pixc[1] + ( *ww_p - center_[1] ) / celly_ ;
