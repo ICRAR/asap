@@ -4,9 +4,11 @@ import os
 def main10():
     from IPython.Shell import IPShellEmbed
 
-    banner = "HELLO"
-    exit_msg = "bye"
-    
+    banner = welcome()
+    exit_msg = ''
+    args = ['-colors','Linux','-noconfirm_exit', '-readline', 
+            '-xmode', 'Plain', '-autocall', '2', '-auto_indent',
+            '-pi1', 'ASAP> ', '-po', 'asap>: ', '-pprint']
     ipshell = IPShellEmbed(sys.argv[1:],banner,exit_msg)
     return ipshell
 
@@ -39,6 +41,7 @@ try:
         ipshell = main11()
     else:
         ipshell = main10()
+    ipshell()
 
 except ImportError:
     banner =  "No ipython found. Running standard python"
