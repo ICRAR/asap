@@ -61,6 +61,7 @@ private:
   casa::uInt ny_ ;
   casa::Double dx_ ;
   casa::Double dy_ ;
+  casa::Double decCorr_ ;
   
   // storage for detection
   casa::Matrix<casa::Double> pdir_ ;

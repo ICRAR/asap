@@ -108,7 +108,7 @@ void GenericEdgeDetector::topixel()
   const Double *x_p = dir_p ;
   const Double *y_p = dir_p + 1 ;
   for ( uInt i = 0 ; i < len ; i++ ) {
-    *px_p = pcenx_ + ( *x_p - cenx_ ) / dx_ ;
+    *px_p = pcenx_ + ( *x_p - cenx_ ) * decCorr_ / dx_ ;
     *py_p = pceny_ + ( *y_p - ceny_ ) / dy_ ;
     px_p += 2 ;
     py_p += 2 ;
@@ -122,10 +122,20 @@ void GenericEdgeDetector::setup()
 {
   os_.origin(LogOrigin( "GenericEdgeDetector", "setup", WHERE )) ;
 
+  Double xmax, xmin, ymax, ymin ;
+  minMax( xmin, xmax, dir_.row( 0 ) ) ;
+  minMax( ymin, ymax, dir_.row( 1 ) ) ;
+  Double wx = ( xmax - xmin ) * 1.1 ;
+  Double wy = ( ymax - ymin ) * 1.1 ;
+
+  cenx_ = 0.5 * ( xmin + xmax ) ;
+  ceny_ = 0.5 * ( ymin + ymax ) ;
+  decCorr_ = 1.0 / cos( ceny_ ) ;
+
   uInt len = time_.nelements() ;
   Matrix<Double> dd = dir_.copy() ;
   for ( uInt i = len-1 ; i > 0 ; i-- ) {
-    dd(0,i) = dd(0,i) - dd(0,i-1) ;
+    dd(0,i) = ( dd(0,i) - dd(0,i-1) ) * decCorr_ ;
     dd(1,i) = dd(1,i) - dd(1,i-1) ;
   }
   Vector<Double> dr( len-1 ) ;
@@ -140,17 +150,8 @@ void GenericEdgeDetector::setup()
   }
   dir_.freeStorage( dir_p, b ) ;
   Double med = median( dr, False, True, True ) ;
-  dx_ = med * width_ ;
-  dy_ = dx_ ;
-
-  Double xmax, xmin, ymax, ymin ;
-  minMax( xmin, xmax, dir_.row( 0 ) ) ;
-  minMax( ymin, ymax, dir_.row( 1 ) ) ;
-  Double wx = ( xmax - xmin ) * 1.1 ;
-  Double wy = ( ymax - ymin ) * 1.1 ;
-
-  cenx_ = 0.5 * ( xmin + xmax ) ;
-  ceny_ = 0.5 * ( ymin + ymax ) ;
+  dy_ = med * width_ ;
+  dx_ = dy_ * decCorr_ ;
 
   nx_ = uInt( ceil( wx / dx_ ) ) ;
   ny_ = uInt( ceil( wy / dy_ ) ) ;
