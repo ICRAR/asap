@@ -64,6 +64,7 @@ def setup_env():
         return
     userdir = os.environ["HOME"]+"/.asap"
     if not os.path.exists(userdir):
+        os.mkdir(userdir)
         print 'First time ASAP use. Setting up ~/.asap'
 #        os.makedirs(os.path.join(userdir, "profile_default"))
         if not is_casapy():
