@@ -1083,7 +1083,7 @@ void STGrid::setupGrid( Int &nx,
   }
 //   os << "xmin=" << xmin << LogIO::POST ;
 //   os << "center_=" << center_ << LogIO::POST ;
-
+  decCorr_ = 1.0 / cos( center_[1] ) ;
 
   nx_ = nx ;
   ny_ = ny ;
@@ -1142,7 +1142,7 @@ void STGrid::setupGrid( Int &nx,
   }
   cellx_ = qcellx.getValue( "rad" ) ;
   // DEC correction
-  cellx_ /= cos( center_[1] ) ;
+  cellx_ *= decCorr_ ;
   celly_ = qcelly.getValue( "rad" ) ;
   //os << "cellx_=" << cellx_ << ", celly_=" << celly_ << ", cos("<<center_(1)<<")=" << cos(center_(1)) << LogIO::POST ;
   if ( nx_ < 0 ) {
@@ -1540,7 +1540,7 @@ void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
   const Double *ww_p = w_p ;
   Double *wp_p = p_p ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
-    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cos( center_[1] ) / cellx_ ;
+    *wp_p = pixc[0] + ( *ww_p - center_[0] ) * decCorr_ / cellx_ ;
     wp_p++ ;
     ww_p++ ;
     *wp_p = pixc[1] + ( *ww_p - center_[1] ) / celly_ ;
