@@ -60,7 +60,7 @@ void GenericEdgeDetector::parseOption( const Record &option )
     if ( option.dataType( name ) == TpString ) {
       // should be "xx%" format
       String fstr = option.asString( name ) ;
-      fstr.rtrim( '%' ) ;
+      fstr = fstr.substr(0,fstr.size()-1) ;
       fraction_ = String::toFloat( fstr ) * 0.01 ;
     }
     else {

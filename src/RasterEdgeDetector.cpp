@@ -57,7 +57,7 @@ void RasterEdgeDetector::parseOption( const Record &option )
       }
       else {
         // should be "xx%" format
-        fstr.rtrim( '%' ) ;
+        fstr.substr(0,fstr.size()-1) ;
         fraction_ = String::toFloat( fstr ) * 0.01 ;
       }
     }
