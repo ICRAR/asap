@@ -1,6 +1,8 @@
 from asap.scantable import scantable
 from asap._asap import _edgemarker
-
+import numpy
+import math
+        
 class edgemarker:
     """
     The edgemarker is a helper tool to calibrate OTF observation
@@ -142,3 +144,88 @@ class edgemarker:
         """
         s = self.getresult()
         s.save( name, overwrite=overwrite )
+
+    def plot( self ):
+        """
+        """
+        from matplotlib import pylab as pl
+        from asap import selector
+        from asap._asap import srctype as st
+        pl.clf()
+
+        # result as a scantable
+        s = self.getresult()
+
+        # ON scan
+        sel = selector()
+        sel.set_types( int(st.pson) )
+        s.set_selection( sel )
+        diron = numpy.array( s.get_directionval() ).transpose()
+        diron[0] = rotate( diron[0] )
+        s.set_selection()
+        sel.reset()
+
+        # OFF scan
+        sel.set_types( int(st.psoff) )
+        s.set_selection( sel )
+        diroff = numpy.array( s.get_directionval() ).transpose()
+        diroff[0] = rotate( diroff[0] )
+        s.set_selection()
+        sel.reset()
+        del s
+        del sel
+
+        # plot
+        pl.ioff()
+        ax=pl.axes()
+        ax.set_aspect(1.0)
+        pl.plot( diron[0], diron[1], '.', color='blue', label='ON' )
+        pl.plot( diroff[0], diroff[1], '.', color='green', label='OFF' )
+        [xmin,xmax,ymin,ymax] = pl.axis()
+        pl.axis([xmax,xmin,ymin,ymax])
+        pl.legend(loc='best',prop={'size':'small'},numpoints=1)
+        pl.xlabel( 'R.A. [rad]' )
+        pl.ylabel( 'Declination [rad]' )
+        pl.title( 'edgemarker result' )
+        pl.ion()
+        pl.draw()
+
+def _0to2pi( v ):
+    return v % (2.0*math.pi)
+
+def quadrant( v ):
+    vl = _0to2pi( v )
+    base = 0.5 * math.pi
+    return int( vl / base )
+
+def quadrantList( a ):
+    n = len(a)
+    nquad = numpy.zeros( 4, dtype=int )
+    for i in xrange(n):
+        v = quadrant( a[i] )
+        nquad[v] += 1
+    #print nquad
+    return nquad
+
+def rotate( v ):
+    a = numpy.zeros( len(v), dtype=float )
+    for i in xrange(len(v)):
+        a[i] = _0to2pi( v[i] )
+    nquad = quadrantList( a )
+    quadList = [[],[],[],[]]
+    rot = numpy.zeros( 4, dtype=bool )
+    if all( nquad==0 ):
+        print 'no data'
+    elif all( nquad>0 ):
+        #print 'extends in all quadrants'
+        pass
+    elif nquad[0]>0 and nquad[3]>0:
+        #print 'need rotation'
+        rot[3] = True
+        rot[2] = nquad[1]==0 and nquad[2]>0
+    #print rot
+
+    for i in xrange(len(a)):
+        if rot[quadrant(a[i])]:
+            a[i] -= 2*math.pi
+    return a
