@@ -108,7 +108,7 @@ void GenericEdgeDetector::topixel()
   const Double *x_p = dir_p ;
   const Double *y_p = dir_p + 1 ;
   for ( uInt i = 0 ; i < len ; i++ ) {
-    *px_p = pcenx_ + ( *x_p - cenx_ ) * decCorr_ / dx_ ;
+    *px_p = pcenx_ + ( *x_p - cenx_ ) / dx_ ;
     *py_p = pceny_ + ( *y_p - ceny_ ) / dy_ ;
     px_p += 2 ;
     py_p += 2 ;
