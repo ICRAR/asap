@@ -225,7 +225,6 @@ protected:
   Double cellx_ ;
   Double celly_ ;
   Vector<Double> center_ ;
-  Double decCorr_ ;
   String convType_ ;
   Int convSupport_ ;
   Int userSupport_ ;

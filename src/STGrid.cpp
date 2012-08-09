@@ -17,6 +17,8 @@
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Logging/LogIO.h>
 
+#include <coordinates/Coordinates/DirectionCoordinate.h>
+
 #include <tables/Tables/Table.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/TableRow.h>
@@ -1083,7 +1085,6 @@ void STGrid::setupGrid( Int &nx,
   }
 //   os << "xmin=" << xmin << LogIO::POST ;
 //   os << "center_=" << center_ << LogIO::POST ;
-  decCorr_ = 1.0 / cos( center_[1] ) ;
 
   nx_ = nx ;
   ny_ = ny ;
@@ -1142,7 +1143,7 @@ void STGrid::setupGrid( Int &nx,
   }
   cellx_ = qcellx.getValue( "rad" ) ;
   // DEC correction
-  cellx_ *= decCorr_ ;
+  cellx_ /= cos( center_[1] ) ;
   celly_ = qcelly.getValue( "rad" ) ;
   //os << "cellx_=" << cellx_ << ", celly_=" << celly_ << ", cos("<<center_(1)<<")=" << cos(center_(1)) << LogIO::POST ;
   if ( nx_ < 0 ) {
@@ -1526,29 +1527,34 @@ void STGrid::toInt( Array<uInt> &u, Array<Int> &v )
 
 void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
 {
-  // gridding will be done on (nx_+2*convSupport_) x (ny_+2*convSupport_) 
-  // grid plane to avoid unexpected behavior on grid edge
-  Block<Double> pixc( 2 ) ;
-  pixc[0] = Double( nx_-1 ) * 0.5 ;
-  pixc[1] = Double( ny_-1 ) * 0.5 ;
-//   pixc[0] = Double( nx_+2*convSupport_-1 ) * 0.5 ;
-//   pixc[1] = Double( ny_+2*convSupport_-1 ) * 0.5 ;
+  // using DirectionCoordinate
+  Matrix<Double> xform(2,2) ;
+  xform = 0.0 ;
+  xform.diagonal() = 1.0 ;
+  DirectionCoordinate coord( MDirection::J2000,
+                             Projection( Projection::SIN ),
+                             center_[0], center_[1],
+                             cellx_, celly_,
+                             xform,
+                             0.5*Double(nx_-1), 
+                             0.5*Double(ny_-1) ) ;
   uInt nrow = world.shape()[1] ;
   Bool bw, bp ;
-  const Double *w_p = world.getStorage( bw ) ;
+  Double *w_p = world.getStorage( bw ) ;
   Double *p_p = pixel.getStorage( bp ) ;
-  const Double *ww_p = w_p ;
+  Double *ww_p = w_p ;
   Double *wp_p = p_p ;
+  IPosition vshape( 1, 2 ) ;
+  Vector<Double> _world, _pixel ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
-    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cellx_ ;
-    wp_p++ ;
-    ww_p++ ;
-    *wp_p = pixc[1] + ( *ww_p - center_[1] ) / celly_ ;
-    wp_p++ ;
-    ww_p++ ;
+    _world.takeStorage( vshape, ww_p, SHARE ) ;
+    _pixel.takeStorage( vshape, wp_p, SHARE ) ;
+    coord.toPixel( _pixel, _world ) ;
+    ww_p += 2 ;
+    wp_p += 2 ;
   }
-  world.freeStorage( w_p, bw ) ;
-  pixel.putStorage( p_p, bp ) ;  
+  world.putStorage( w_p, bw ) ;
+  pixel.putStorage( p_p, bp ) ;
 }
 
 void STGrid::boxFunc( Vector<Float> &convFunc, Int &convSize ) 
