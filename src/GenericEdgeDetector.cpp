@@ -17,6 +17,8 @@
 #include <casa/Arrays/ArrayIO.h>
 #include <casa/Utilities/GenSort.h>
 
+#include <coordinates/Coordinates/DirectionCoordinate.h>
+
 #include "GenericEdgeDetector.h"
 
 using namespace std ;
@@ -98,24 +100,34 @@ void GenericEdgeDetector::topixel()
 //   os_.origin(LogOrigin( "GenericEdgeDetector", "topixel", WHERE )) ;
 
   setup() ;
+  // using DirectionCoordinate
+  Matrix<Double> xform(2,2) ;
+  xform = 0.0 ;
+  xform.diagonal() = 1.0 ;
+  DirectionCoordinate coord( MDirection::J2000,
+                             Projection( Projection::SIN ),
+                             cenx_, ceny_,
+                             dx_, dy_,
+                             xform,
+                             0.5*Double(nx_-1), 
+                             0.5*Double(ny_-1) ) ;
   Double *pdir_p = new Double[dir_.nelements()] ;
   pdir_.takeStorage( dir_.shape(), pdir_p, TAKE_OVER ) ;
   uInt len = time_.nelements() ;
   Bool b ;
-  Double *px_p = pdir_p ;
-  Double *py_p = pdir_p + 1 ;
-  const Double *dir_p = dir_.getStorage( b ) ;
-  const Double *x_p = dir_p ;
-  const Double *y_p = dir_p + 1 ;
+  Double *dir_p = dir_.getStorage( b ) ;
+  Double *wdir_p = dir_p ;
+  Vector<Double> world ;
+  Vector<Double> pixel ;
+  IPosition vshape( 1, 2 ) ;
   for ( uInt i = 0 ; i < len ; i++ ) {
-    *px_p = pcenx_ + ( *x_p - cenx_ ) / dx_ ;
-    *py_p = pceny_ + ( *y_p - ceny_ ) / dy_ ;
-    px_p += 2 ;
-    py_p += 2 ;
-    x_p += 2 ;
-    y_p += 2 ;
+    world.takeStorage( vshape, wdir_p, SHARE ) ;
+    pixel.takeStorage( vshape, pdir_p, SHARE ) ;
+    coord.toPixel( pixel, world ) ;
+    pdir_p += 2 ;
+    wdir_p += 2 ;
   }
-  dir_.freeStorage( dir_p, b ) ;
+  dir_.putStorage( dir_p, b ) ;
 }
 
 void GenericEdgeDetector::setup() 
@@ -130,12 +142,13 @@ void GenericEdgeDetector::setup()
 
   cenx_ = 0.5 * ( xmin + xmax ) ;
   ceny_ = 0.5 * ( ymin + ymax ) ;
-  decCorr_ = 1.0 / cos( ceny_ ) ;
+  Double decCorr = cos( ceny_ ) ;
 
   uInt len = time_.nelements() ;
   Matrix<Double> dd = dir_.copy() ;
   for ( uInt i = len-1 ; i > 0 ; i-- ) {
-    dd(0,i) = ( dd(0,i) - dd(0,i-1) ) * decCorr_ ;
+    //dd(0,i) = ( dd(0,i) - dd(0,i-1) ) * decCorr ;
+    dd(0,i) = ( dd(0,i) - dd(0,i-1) ) * cos( 0.5*(dd(1,i-1)+dd(1,i)) ) ;
     dd(1,i) = dd(1,i) - dd(1,i-1) ;
   }
   Vector<Double> dr( len-1 ) ;
@@ -151,7 +164,7 @@ void GenericEdgeDetector::setup()
   dir_.freeStorage( dir_p, b ) ;
   Double med = median( dr, False, True, True ) ;
   dy_ = med * width_ ;
-  dx_ = dy_ * decCorr_ ;
+  dx_ = dy_ / decCorr ;
 
   nx_ = uInt( ceil( wx / dx_ ) ) ;
   ny_ = uInt( ceil( wy / dy_ ) ) ;
