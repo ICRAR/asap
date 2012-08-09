@@ -1540,7 +1540,7 @@ void STGrid::toPixel( Array<Double> &world, Array<Double> &pixel )
   const Double *ww_p = w_p ;
   Double *wp_p = p_p ;
   for ( uInt i = 0 ; i < nrow ; i++ ) {
-    *wp_p = pixc[0] + ( *ww_p - center_[0] ) * decCorr_ / cellx_ ;
+    *wp_p = pixc[0] + ( *ww_p - center_[0] ) / cellx_ ;
     wp_p++ ;
     ww_p++ ;
     *wp_p = pixc[1] + ( *ww_p - center_[1] ) / celly_ ;
