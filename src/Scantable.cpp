@@ -2332,9 +2332,11 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getR
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -2358,7 +2360,7 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order, bool getR
       chanMask = getCompositeChanMask(whichrow, mask);
       fitBaseline(chanMask, whichrow, fitter);
       setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "polyBaseline()", fitter);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -2376,9 +2378,11 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -2430,7 +2434,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, const
       fitBaseline(chanMask, whichrow, fitter);
       setSpectrum((getResidual ? fitter.getResidual() : fitter.getFit()), whichrow);
 
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", fitter);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -2448,9 +2452,11 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -2483,7 +2489,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, f
       setSpectrum(res, whichrow);
       //
 
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params, nClipped);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
     //--------------------------------
@@ -2502,9 +2508,11 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -2563,7 +2571,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
       setSpectrum(res, whichrow);
       //
 
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params, nClipped);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3006,9 +3014,11 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool apply
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -3058,7 +3068,7 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const bool apply
       setSpectrum(res, whichrow);
       //
 
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params, nClipped);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3076,9 +3086,11 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool a
     String coordInfo = "";
     bool hasSameNchan = true;
     bool outTextFile = false;
+    bool csvFormat = false;
 
     if (blfile != "") {
-      ofs.open(blfile.c_str(), ios::out | ios::app);
+      csvFormat = (blfile.substr(0, 1) == "T");
+      ofs.open(blfile.substr(1).c_str(), ios::out | ios::app);
       if (ofs) outTextFile = true;
     }
 
@@ -3139,7 +3151,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const bool a
       setSpectrum(res, whichrow);
       //
 
-      outputFittingResult(outLogger, outTextFile, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params, nClipped);
+      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3421,7 +3433,7 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow, const std::vecto
 */
 
 /* for poly. the variations of outputFittingResult() should be merged into one eventually (2011/3/10 WK)  */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, Fitter& fitter)
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, Fitter& fitter)
 {
   if (outLogger || outTextFile) {
     std::vector<float> params = fitter.getParameters();
@@ -3431,16 +3443,16 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, false, csvFormat) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, true) << flush;
+      ofs << formatBaselineParams(params, fixed, rms, -1, masklist, whichrow, true, csvFormat) << flush;
     }
   }
 }
 
 /* for cspline. will be merged once cspline is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped)
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped)
 {
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
@@ -3450,16 +3462,16 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, false, csvFormat) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, true) << flush;
+      ofs << formatPiecewiseBaselineParams(edge, params, fixed, rms, nClipped, masklist, whichrow, true, csvFormat) << flush;
     }
   }
 }
 
 /* for sinusoid. will be merged once sinusoid is available in fitter (2011/3/10 WK) */
-void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const int nClipped)
+void Scantable::outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const int nClipped)
 {
   if (outLogger || outTextFile) {
     float rms = getRms(chanMask, whichrow);
@@ -3469,10 +3481,10 @@ void Scantable::outputFittingResult(bool outLogger, bool outTextFile, const std:
 
     if (outLogger) {
       LogIO ols(LogOrigin("Scantable", funcName, WHERE));
-      ols << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, false) << LogIO::POST ;
+      ols << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, false, csvFormat) << LogIO::POST ;
     }
     if (outTextFile) {
-      ofs << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, true) << flush;
+      ofs << formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, true, csvFormat) << flush;
     }
   }
 }
@@ -3573,42 +3585,69 @@ float Scantable::getRms(const std::vector<bool>& mask, int whichrow)
 }
 
 
-std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::string& masklist, bool verbose) const
+std::string Scantable::formatBaselineParamsHeader(int whichrow, const std::string& masklist, bool verbose, bool csvformat) const
 {
-  ostringstream oss;
-
   if (verbose) {
-    oss <<  " Scan[" << getScan(whichrow)  << "]";
-    oss <<  " Beam[" << getBeam(whichrow)  << "]";
-    oss <<    " IF[" << getIF(whichrow)    << "]";
-    oss <<   " Pol[" << getPol(whichrow)   << "]";
-    oss << " Cycle[" << getCycle(whichrow) << "]: " << endl;
-    oss << "Fitter range = " << masklist << endl;
-    oss << "Baseline parameters" << endl;
+    ostringstream oss;
+
+    if (csvformat) {
+      oss << getScan(whichrow)  << ",";
+      oss << getBeam(whichrow)  << ",";
+      oss << getIF(whichrow)    << ",";
+      oss << getPol(whichrow)   << ",";
+      oss << getCycle(whichrow) << ",";
+      String commaReplacedMasklist = masklist;
+      string::size_type pos = 0;
+      while (pos = commaReplacedMasklist.find(","), pos != string::npos) {
+	commaReplacedMasklist.replace(pos, 1, ";");
+	pos++;
+      }
+      oss << commaReplacedMasklist << ",";
+    } else {
+      oss <<  " Scan[" << getScan(whichrow)  << "]";
+      oss <<  " Beam[" << getBeam(whichrow)  << "]";
+      oss <<    " IF[" << getIF(whichrow)    << "]";
+      oss <<   " Pol[" << getPol(whichrow)   << "]";
+      oss << " Cycle[" << getCycle(whichrow) << "]: " << endl;
+      oss << "Fitter range = " << masklist << endl;
+      oss << "Baseline parameters" << endl;
+    }
     oss << flush;
+
+    return String(oss);
   }
 
-  return String(oss);
+  return "";
 }
 
-std::string Scantable::formatBaselineParamsFooter(float rms, int nClipped, bool verbose) const
+std::string Scantable::formatBaselineParamsFooter(float rms, int nClipped, bool verbose, bool csvformat) const
 {
-  ostringstream oss;
-
   if (verbose) {
-    oss << "Results of baseline fit" << endl;
-    oss << "  rms = " << setprecision(6) << rms << endl;
-    if (nClipped >= 0) {
-      oss << "  Number of clipped channels = " << nClipped << endl;
-    }
-    for (int i = 0; i < 60; ++i) {
-      oss << "-";
+    ostringstream oss;
+
+    if (csvformat) {
+      oss << rms << ",";
+      if (nClipped >= 0) {
+	oss << nClipped;
+      }
+    } else {
+      oss << endl;
+      oss << "Results of baseline fit" << endl;
+      oss << "  rms = " << setprecision(6) << rms << endl;
+      if (nClipped >= 0) {
+	oss << "  Number of clipped channels = " << nClipped << endl;
+      }
+      for (int i = 0; i < 60; ++i) {
+	oss << "-";
+      }
     }
     oss << endl;
     oss << flush;
+
+    return String(oss);
   }
 
-  return String(oss);
+  return "";
 }
 
 std::string Scantable::formatBaselineParams(const std::vector<float>& params, 
@@ -3618,6 +3657,7 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
 					    const std::string& masklist, 
 					    int whichrow, 
 					    bool verbose, 
+					    bool csvformat, 
 					    int start, int count,
 					    bool resetparamid) const
 {
@@ -3628,7 +3668,7 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
   } else {
 
     ostringstream oss;
-    oss << formatBaselineParamsHeader(whichrow, masklist, verbose);
+    oss << formatBaselineParamsHeader(whichrow, masklist, verbose, csvformat);
 
     if (start < 0) start = 0;
     if (count < 0) count = nParam;
@@ -3641,18 +3681,24 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
 	oss << ",";
       }
       std::string sFix = ((fixed.size() > 0) && (fixed[i]) && verbose) ? "(fixed)" : "";
-      oss << "  p" << (i+paramidoffset) << sFix << "= " << right << setw(13) << setprecision(6) << params[i];
+      if (csvformat) {
+	oss << params[i] << sFix;
+      } else {
+	oss << "  p" << (i+paramidoffset) << sFix << "= " << right << setw(13) << setprecision(6) << params[i];
+      }
     }
 
-    oss << endl;
-    oss << formatBaselineParamsFooter(rms, nClipped, verbose);
+    if (csvformat) {
+      oss << ",";
+    }
+    oss << formatBaselineParamsFooter(rms, nClipped, verbose, csvformat);
 
     return String(oss);
   }
 
 }
 
-  std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ranges, const std::vector<float>& params, const std::vector<bool>& fixed, float rms, int nClipped, const std::string& masklist, int whichrow, bool verbose) const
+std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ranges, const std::vector<float>& params, const std::vector<bool>& fixed, float rms, int nClipped, const std::string& masklist, int whichrow, bool verbose, bool csvformat) const
 {
   int nOutParam = (int)(params.size());
   int nPiece = (int)(ranges.size()) - 1;
@@ -3660,7 +3706,7 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
   if (nOutParam < 1) {
     return("  Not fitted");
   } else if (nPiece < 0) {
-    return formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, verbose);
+    return formatBaselineParams(params, fixed, rms, nClipped, masklist, whichrow, verbose, csvformat);
   } else if (nPiece < 1) {
     return("  Bad count of the piece edge info");
   } else if (nOutParam % nPiece != 0) {
@@ -3670,20 +3716,28 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
     int nParam = nOutParam / nPiece;
 
     ostringstream oss;
-    oss << formatBaselineParamsHeader(whichrow, masklist, verbose);
+    oss << formatBaselineParamsHeader(whichrow, masklist, verbose, csvformat);
 
-    stringstream ss;
-    ss << ranges[nPiece] << flush;
-    int wRange = ss.str().size() * 2 + 5;
+    if (csvformat) {
+      for (int i = 0; i < nPiece; ++i) {
+	oss << ranges[i] << "," << (ranges[i+1]-1) << ","; 
+	oss << formatBaselineParams(params, fixed, rms, 0, masklist, whichrow, false, csvformat, i*nParam, nParam, true);
+      }
+    } else {
+      stringstream ss;
+      ss << ranges[nPiece] << flush;
+      int wRange = ss.str().size() * 2 + 5;
 
-    for (int i = 0; i < nPiece; ++i) {
-      ss.str("");
-      ss << "  [" << ranges[i] << "," << (ranges[i+1]-1) << "]";
-      oss << left << setw(wRange) << ss.str();
-      oss << formatBaselineParams(params, fixed, rms, 0, masklist, whichrow, false, i*nParam, nParam, true);
+      for (int i = 0; i < nPiece; ++i) {
+	ss.str("");
+	ss << "  [" << ranges[i] << "," << (ranges[i+1]-1) << "]";
+	oss << left << setw(wRange) << ss.str();
+	oss << formatBaselineParams(params, fixed, rms, 0, masklist, whichrow, false, csvformat, i*nParam, nParam, true);
+	oss << endl;
+      }
     }
 
-    oss << formatBaselineParamsFooter(rms, nClipped, verbose);
+    oss << formatBaselineParamsFooter(rms, nClipped, verbose, csvformat);
 
     return String(oss);
   }

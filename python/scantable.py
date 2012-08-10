@@ -2439,7 +2439,7 @@ class scantable(Scantable):
                           addwn=None, rejwn=None, clipthresh=None,
                           clipniter=None, plot=None,
                           getresidual=None, showprogress=None, 
-                          minnrow=None, outlog=None, blfile=None):
+                          minnrow=None, outlog=None, blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal 
         functions.
@@ -2497,6 +2497,7 @@ class scantable(Scantable):
             blfile:        Name of a text file in which the best-fit
                            parameter values to be written
                            (default is '': no file/logger output)
+            csvformat:     if True blfile is csv-formatted, default is False.
 
         Example:
             # return a scan baselined by a combination of sinusoidal curves 
@@ -2533,16 +2534,23 @@ class scantable(Scantable):
             if minnrow       is None: minnrow       = 1000
             if outlog        is None: outlog        = False
             if blfile        is None: blfile        = ''
+            if csvformat     is None: csvformat     = False
 
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
+            
             #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
             workscan._sinusoid_baseline(mask, applyfft, fftmethod.lower(), 
                                         str(fftthresh).lower(), 
                                         workscan._parse_wn(addwn), 
-                                        workscan._parse_wn(rejwn), clipthresh,
-                                        clipniter, getresidual, 
+                                        workscan._parse_wn(rejwn),
+                                        clipthresh, clipniter,
+                                        getresidual, 
                                         pack_progress_params(showprogress, 
-                                                             minnrow), outlog,
-                                        blfile)
+                                                             minnrow), 
+                                        outlog, scsvformat+blfile)
             workscan._add_history('sinusoid_baseline', varlist)
             
             if insitu:
@@ -2561,7 +2569,7 @@ class scantable(Scantable):
                                clipniter=None, edge=None, threshold=None,
                                chan_avg_limit=None, plot=None,
                                getresidual=None, showprogress=None, 
-                               minnrow=None, outlog=None, blfile=None):
+                               minnrow=None, outlog=None, blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) with sinusoidal 
         functions.
@@ -2641,6 +2649,7 @@ class scantable(Scantable):
             blfile:         Name of a text file in which the best-fit
                             parameter values to be written
                             (default is "": no file/logger output)
+            csvformat:      if True blfile is csv-formatted, default is False.
 
         Example:
             bscan = scan.auto_sinusoid_baseline(addwn='<=10', insitu=False)
@@ -2677,6 +2686,12 @@ class scantable(Scantable):
             if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
+            if csvformat      is None: csvformat      = False
+
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
 
             #CURRENTLY, PLOT=true is UNAVAILABLE UNTIL sinusoidal fitting is implemented as a fitter method. 
             workscan._auto_sinusoid_baseline(mask, applyfft, 
@@ -2690,7 +2705,7 @@ class scantable(Scantable):
                                              getresidual, 
                                              pack_progress_params(showprogress,
                                                                   minnrow), 
-                                             outlog, blfile)
+                                             outlog, scsvformat+blfile)
             workscan._add_history("auto_sinusoid_baseline", varlist)
             
             if insitu:
@@ -2705,7 +2720,7 @@ class scantable(Scantable):
     def cspline_baseline(self, insitu=None, mask=None, npiece=None, 
                          clipthresh=None, clipniter=None, plot=None, 
                          getresidual=None, showprogress=None, minnrow=None, 
-                         outlog=None, blfile=None):
+                         outlog=None, blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline 
         function (piecewise cubic polynomial).
@@ -2734,6 +2749,7 @@ class scantable(Scantable):
             blfile:       Name of a text file in which the best-fit
                           parameter values to be written
                           (default is "": no file/logger output)
+            csvformat:    if True blfile is csv-formatted, default is False.
 
         Example:
             # return a scan baselined by a cubic spline consisting of 2 pieces 
@@ -2766,13 +2782,19 @@ class scantable(Scantable):
             if minnrow      is None: minnrow      = 1000
             if outlog       is None: outlog       = False
             if blfile       is None: blfile       = ''
+            if csvformat     is None: csvformat     = False
+
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method. 
             workscan._cspline_baseline(mask, npiece, clipthresh, clipniter, 
                                        getresidual, 
                                        pack_progress_params(showprogress, 
-                                                            minnrow), outlog, 
-                                       blfile)
+                                                            minnrow),
+                                       outlog, scsvformat+blfile)
             workscan._add_history("cspline_baseline", varlist)
             
             if insitu:
@@ -2789,7 +2811,7 @@ class scantable(Scantable):
                               edge=None, threshold=None, chan_avg_limit=None, 
                               getresidual=None, plot=None,
                               showprogress=None, minnrow=None, outlog=None,
-                              blfile=None):
+                              blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) by cubic spline
         function (piecewise cubic polynomial).
@@ -2840,6 +2862,7 @@ class scantable(Scantable):
             blfile:         Name of a text file in which the best-fit
                             parameter values to be written
                             (default is "": no file/logger output)
+            csvformat:      if True blfile is csv-formatted, default is False.
 
         Example:
             bscan = scan.auto_cspline_baseline(npiece=3, insitu=False)
@@ -2872,6 +2895,12 @@ class scantable(Scantable):
             if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
+            if csvformat      is None: csvformat      = False
+
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
 
             #CURRENTLY, PLOT=true UNAVAILABLE UNTIL cubic spline fitting is implemented as a fitter method.
             workscan._auto_cspline_baseline(mask, npiece, clipthresh, 
@@ -2881,7 +2910,7 @@ class scantable(Scantable):
                                             chan_avg_limit, getresidual, 
                                             pack_progress_params(showprogress, 
                                                                  minnrow), 
-                                            outlog, blfile)
+                                            outlog, scsvformat+blfile)
             workscan._add_history("auto_cspline_baseline", varlist)
             
             if insitu:
@@ -2895,7 +2924,7 @@ class scantable(Scantable):
     @asaplog_post_dec
     def poly_baseline(self, mask=None, order=None, insitu=None, plot=None, 
                       getresidual=None, showprogress=None, minnrow=None, 
-                      outlog=None, blfile=None):
+                      outlog=None, blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
@@ -2918,6 +2947,7 @@ class scantable(Scantable):
             blfile:       Name of a text file in which the best-fit
                           parameter values to be written
                           (default is "": no file/logger output)
+            csvformat:    if True blfile is csv-formatted, default is False.
 
         Example:
             # return a scan baselined by a third order polynomial,
@@ -2945,6 +2975,12 @@ class scantable(Scantable):
             if minnrow      is None: minnrow      = 1000
             if outlog       is None: outlog       = False
             if blfile       is None: blfile       = ""
+            if csvformat    is None: csvformat    = False
+
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
 
             if plot:
                 outblfile = (blfile != "") and \
@@ -2989,7 +3025,7 @@ class scantable(Scantable):
                             workscan.format_blparams_row(blpars["params"], 
                                                          blpars["fixed"], 
                                                          rms, str(masklist), 
-                                                         r, True)
+                                                         r, True, csvformat)
                         blf.write(dataout)
 
                 f._p.unmap()
@@ -3001,7 +3037,7 @@ class scantable(Scantable):
                 workscan._poly_baseline(mask, order, getresidual, 
                                         pack_progress_params(showprogress, 
                                                              minnrow), 
-                                        outlog, blfile)
+                                        outlog, scsvformat+blfile)
             
             workscan._add_history("poly_baseline", varlist)
             
@@ -3018,7 +3054,7 @@ class scantable(Scantable):
                            threshold=None, chan_avg_limit=None,
                            plot=None, insitu=None,
                            getresidual=None, showprogress=None, 
-                           minnrow=None, outlog=None, blfile=None):
+                           minnrow=None, outlog=None, blfile=None, csvformat=None):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Spectral lines are detected first using linefinder and masked out
@@ -3064,6 +3100,7 @@ class scantable(Scantable):
             blfile:         Name of a text file in which the best-fit
                             parameter values to be written
                             (default is "": no file/logger output)
+            csvformat:      if True blfile is csv-formatted, default is False.
 
         Example:
             bscan = scan.auto_poly_baseline(order=7, insitu=False)
@@ -3091,6 +3128,12 @@ class scantable(Scantable):
             if minnrow        is None: minnrow        = 1000
             if outlog         is None: outlog         = False
             if blfile         is None: blfile         = ''
+            if csvformat      is None: csvformat      = False
+
+            if csvformat:
+                scsvformat = "T"
+            else:
+                scsvformat = "F"
 
             edge = normalise_edge_param(edge)
 
@@ -3144,7 +3187,7 @@ class scantable(Scantable):
                             workscan.format_blparams_row(blpars["params"], 
                                                          blpars["fixed"], 
                                                          rms, str(masklist), 
-                                                         r, True)
+                                                         r, True, csvformat)
                         blf.write(dataout)
                     
                 f._p.unmap()
@@ -3156,7 +3199,7 @@ class scantable(Scantable):
                                              chan_avg_limit, getresidual, 
                                              pack_progress_params(showprogress,
                                                                   minnrow), 
-                                             outlog, blfile)
+                                             outlog, scsvformat+blfile)
 
             workscan._add_history("auto_poly_baseline", varlist)
             

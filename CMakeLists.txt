@@ -5,6 +5,8 @@
 # minimum requirement for cmake version
 cmake_minimum_required( VERSION 2.8 )
 
+set( MY_OPT_FLAGS "-O3 -funroll-loops -m64 -march=native -msse4.1 -floop-interchange" )
+
 # options
 option( USE_LIBCASACORE 
         "set ON to use libcasacore.so instead of libcasa_*.so"
@@ -84,7 +86,7 @@ endif()
 
 # default flags
 set( DEFAULT_CXX_FLAGS
-     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
+     "${MY_OPT_FLAGS} -pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
 
 find_package( OpenMP )
 if( OPENMP_FOUND )
