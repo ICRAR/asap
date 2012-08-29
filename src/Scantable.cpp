@@ -3920,7 +3920,6 @@ std::string Scantable::formatBaselineParamsFooter(float rms, int nClipped, bool 
 	oss << nClipped;
       }
     } else {
-      oss << endl;
       oss << "Results of baseline fit" << endl;
       oss << "  rms = " << setprecision(6) << rms << endl;
       if (nClipped >= 0) {
@@ -3979,6 +3978,8 @@ std::string Scantable::formatBaselineParams(const std::vector<float>& params,
 
     if (csvformat) {
       oss << ",";
+    } else {
+      oss << endl;
     }
     oss << formatBaselineParamsFooter(rms, nClipped, verbose, csvformat);
 
@@ -4022,7 +4023,7 @@ std::string Scantable::formatPiecewiseBaselineParams(const std::vector<int>& ran
 	ss << "  [" << ranges[i] << "," << (ranges[i+1]-1) << "]";
 	oss << left << setw(wRange) << ss.str();
 	oss << formatBaselineParams(params, fixed, rms, 0, masklist, whichrow, false, csvformat, i*nParam, nParam, true);
-	oss << endl;
+	//oss << endl;
       }
     }
 
