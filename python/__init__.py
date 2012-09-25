@@ -54,6 +54,7 @@ from opacity import model as opacity_model
 from asapgrid import asapgrid, asapgrid2
 from edgemarker import edgemarker
 #from plotter2 import plotter2
+from sbseparator import sbseparator
 from _asap import srctype
 
 __date__ = '$Date$'.split()[1]
