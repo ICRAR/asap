@@ -160,9 +160,13 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   fluxUnit.upcase();
   nPol = 0;nChan = 0; havexpol = False;
   for (uint i=0;i<ifs.size();++i) {
-    nPol(ifs[i]) = inst->npol();
+    if ( inst->npol() > 2 ) {
+      havexpol(ifs[i]) = True;      
+      nPol(ifs[i]) = 2;
+    } else {
+      nPol(ifs[i]) = inst->npol();
+    }
     nChan(ifs[i]) = inst->nchan(ifs[i]);
-    havexpol(ifs[i]) = nPol(ifs[i]) > 2;
   }
 //   Vector<String> obstypes(2);
 //   obstypes(0) = "TR";//on
@@ -221,7 +225,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
         TableIterator typeit( ctable, "SRCTYPE" ) ;
         while(!typeit.pastEnd() ) {
           Table ttable = typeit.table() ;
-          TableIterator ifit(ttable, "IFNO", TableIterator::Ascending, TableIterator::HeapSort);
+          TableIterator ifit(ttable, "IFNO", 
+			     TableIterator::Ascending, TableIterator::HeapSort);
           MDirection::ScalarColumn dirCol(ctable, "DIRECTION");
           pksrec.direction = dirCol(0).getAngle("rad").getValue();
           pksrec.IFno = 1;
@@ -240,7 +245,8 @@ Int STWriter::write(const CountedPtr<Scantable> in,
             Vector<String> stmp0, stmp1;
             inst->frequencies().getEntry(crpix,crval, pksrec.freqInc,
                                          rec.asuInt("FREQ_ID"));
-            inst->focus().getEntry(pksrec.parAngle, pksrec.focusAxi, pksrec.focusTan,
+            inst->focus().getEntry(pksrec.parAngle, pksrec.focusAxi, 
+				   pksrec.focusTan,
                                    pksrec.focusRot, tmp0,tmp1,tmp2,tmp3,tmp4,
                                    rec.asuInt("FOCUS_ID"));
             inst->molecules().getEntry(pksrec.restFreq,stmp0,stmp1,
@@ -283,9 +289,6 @@ Int STWriter::write(const CountedPtr<Scantable> in,
                 pksrec.tcal[ipol] = mean( dummyA ) ;
               }
             }
-            //LogIO os ;
-            //os << "npol = " << npol << " pksrec.tcal = " << pksrec.tcal << LogIO::POST ;
-            
             pksrec.mjd       = rec.asDouble("TIME");
             pksrec.interval  = rec.asDouble("INTERVAL");
             pksrec.fieldName = rec.asString("FIELDNAME");
