@@ -137,7 +137,6 @@ void STFiller::open( const std::string& filename, const std::string& antenna, in
   nIF_ = ifs.nelements();
   // Get basic parameters.
   if ( anyEQ(haveXPol_, True) ) {
-    pushLog("Cross polarization present");
     for (uInt i=0; i< npols.nelements();++i) {
       if (npols[i] < 3) npols[i] += 2;// Convert Complex -> 2 Floats
     }
@@ -164,10 +163,12 @@ void STFiller::open( const std::string& filename, const std::string& antenna, in
     header_ = 0;
     throw(AipsError("Failed to get header."));
   }
+  LogIO os( casa::LogOrigin( "STFiller") );
+  
   if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp
-    pushLog("Header indicates frequency switched observation.\n"
-               "setting # of IFs = 1 ");
+    os << "Header indicates frequency switched observation.\n"
+       << "setting # of IFs = 1 " << LogIO::POST;
     nIF_ = 1;
     header_->obstype = String("fswitch");
   }

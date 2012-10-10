@@ -37,6 +37,7 @@
 #include <casa/BasicSL/Complex.h>
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Utilities/Assert.h>
+#include <casa/Logging/LogIO.h>
 
 #include <atnf/PKSIO/PKSrecord.h>
 #include <atnf/PKSIO/PKSSDwriter.h>
@@ -320,15 +321,12 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     ++pksrec.scanNo;
     ++scanit;
   }
-  ostringstream oss;
-  oss << "STWriter: wrote " << count << " rows to " << filename;
-  pushLog(String(oss));
-  
+  LogIO os( casa::LogOrigin("STWriter"));
+  os << "STWriter: wrote " << count << " rows to " << filename
+     << casa::LogIO::POST;
+
   writer_->close();
-  //if MS2 delete POINTING table exists and copy the one in the keyword
-  if ( format_ == "MS2" ) {
-    replacePtTab(table, filename);
-  }
+
   return 0;
 }
 
@@ -379,23 +377,6 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
   }
 }
 
-// For writing MS data, if there is the reference to
-// original pointing table it replace it by it.
-void STWriter::replacePtTab (const Table& tab, const std::string& fname)
-{
-  String oldPtTabName = fname;
-  oldPtTabName.append("/POINTING");
-  if ( tab.keywordSet().isDefined("POINTING") ) {
-    String PointingTab = tab.keywordSet().asString("POINTING");
-    if ( Table::isReadable(PointingTab) ) {
-      Table newPtTab(PointingTab, Table::Old);
-      newPtTab.copy(oldPtTabName, Table::New);
-      ostringstream oss;
-      oss << "STWriter: copied  " <<PointingTab  << " to " << fname;
-      pushLog(String(oss));
-    }
-  }
-}
 
 // get obsType string from SRCTYPE value
 String STWriter::getObsTypes( Int srctype )

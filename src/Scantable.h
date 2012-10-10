@@ -38,7 +38,7 @@
 #include <tables/Tables/ScalarColumn.h>
 #include <tables/Tables/Table.h>
 
-#include "Logger.h"
+
 #include "MathUtils.h"
 #include "STFit.h"
 #include "STFitEntry.h"
@@ -73,7 +73,7 @@ namespace asap {
   * @date
   * @version
 */
-class Scantable : private Logger
+class Scantable
 {
 
 friend class STMath;

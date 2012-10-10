@@ -80,7 +80,6 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STWriter();
   asap::python::python_MSWriter();
   asap::python::python_LineCatalog();
-  asap::python::python_Logger();
   asap::python::python_LogSink();
   asap::python::python_STCoordinate();
   asap::python::python_STAtmosphere();
