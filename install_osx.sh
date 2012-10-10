@@ -2,8 +2,10 @@
 
 FTPURL="ftp://ftp.atnf.csiro.au/pub/software/asap"
 
+#test -n $1 && export http_proxy=$1
+
 if [ `id -u` -ne 0 ]; then
-  echo "install_asap.sh: Must be executed by root (sudo)"
+  echo "$0: Must be executed by root (sudo)"
   exit 1
 fi
 ASAPVERS=4.1
