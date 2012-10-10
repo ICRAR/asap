@@ -39,9 +39,6 @@
 #include <casa/Utilities/Assert.h>
 
 #include <atnf/PKSIO/PKSrecord.h>
-#ifndef NOPKSMS
-#include <atnf/PKSIO/PKSMS2writer.h>
-#endif
 #include <atnf/PKSIO/PKSSDwriter.h>
 #include <atnf/PKSIO/SrcType.h>
 
@@ -49,6 +46,8 @@
 #include <tables/Tables/TableIter.h>
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/ArrayColumn.h>
+
+#include <fits/FITS/FITSSpectralUtil.h>
 
 #include "STFITSImageWriter.h"
 #include "STAsciiWriter.h"
@@ -67,11 +66,7 @@ STWriter::STWriter(const std::string &format)
   String t(format_);
   t.upcase();
   if (t == "MS2") {
-    #ifdef NOPKSMS
     throw (AipsError("MS2 OUTPUT FORMAT IS NO LONGER SUPPORTED"));
-    #else
-    writer_ = new PKSMS2writer();
-    #endif
   } else if (t == "SDFITS") {
     writer_ = new PKSSDwriter();
   } else if (t == "ASCII" || t == "FITS" || t == "CLASS") {
@@ -98,11 +93,7 @@ Int STWriter::setFormat(const std::string &format)
   String t(format_);
   t.upcase();
   if (t== "MS2") {
-    #ifdef NOPKSMS
     throw (AipsError("MS2 OUTPUT FORMAT IS NO LONGER SUPPORTED"));
-    #else
-    writer_ = new PKSMS2writer();
-    #endif
   } else if (t== "SDFITS") {
     writer_ = new PKSSDwriter();
   } else if (t == "ASCII" || t == "FITS" || t == "CLASS") {
@@ -120,8 +111,14 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // into the output frame, as we do everything related to SPectarlCoordinates
   // in asap on-the-fly.
 
+  String freqframe;
+  FITSSpectralUtil::specsysFromFrame(freqframe, 
+				     in->frequencies().getFrame(true));
   CountedPtr<Scantable> inst = in;
   if (in->frequencies().getFrame(true) != in->frequencies().getFrame(false)) {
+    FITSSpectralUtil::specsysFromFrame(freqframe, 
+				     in->frequencies().getFrame(false));
+  
     STMath stm(false);
     inst = stm.frequencyAlign(in);
   }
@@ -150,8 +147,6 @@ Int STWriter::write(const CountedPtr<Scantable> in,
   // this is a little different from what I have done
   // before. Need to check with the Offline User Test data
   STHeader hdr = inst->getHeader();
-  //const Int nPol  = hdr.npol;
-  //const Int nChan = hdr.nchan;
   std::vector<uint> ifs = inst->getIFNos();
   int nIF = inst->nif();//ifs.size();
   Vector<uInt> nPol(nIF),nChan(nIF);
@@ -176,15 +171,10 @@ Int STWriter::write(const CountedPtr<Scantable> in,
 
   // Create the output file and write static data.
   Int status;
-//   status = writer_->create(String(filename), hdr.observer, hdr.project,
-//                            hdr.antennaname, hdr.antennaposition,
-//                            hdr.obstype, hdr.fluxunit,
-//                            hdr.equinox, hdr.freqref,
-//                            nChan, nPol, havexpol, False);
   status = writer_->create(String(filename), hdr.observer, hdr.project,
                            inst->getAntennaName(), hdr.antennaposition,
                            hdr.obstype, hdr.fluxunit,
-                           hdr.equinox, hdr.freqref,
+                           hdr.equinox, freqframe,
                            nChan, nPol, havexpol, False);
   if ( status ) {
     throw(AipsError("Failed to create output file"));
