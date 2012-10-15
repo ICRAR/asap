@@ -42,7 +42,7 @@
 #include "MathUtils.h"
 #include "STFit.h"
 #include "STFitEntry.h"
-#include "STFitter.h"
+//#include "STFitter.h"
 #include "STFocus.h"
 #include "STFrequencies.h"
 #include "STHeader.h"
@@ -54,6 +54,8 @@
 #include "STWeather.h"
 
 namespace asap {
+
+class Fitter;
 
 /**
   * This class contains and wraps a casa::Table, which is used to store

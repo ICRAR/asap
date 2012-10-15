@@ -70,6 +70,7 @@
 #include "STPolLinear.h"
 #include "STPolStokes.h"
 #include "STUpgrade.h"
+#include "STFitter.h"
 #include "Scantable.h"
 
 #define debug 1
