@@ -75,7 +75,8 @@ void python_Scantable() {
     .def("_setInstrument", &ScantableWrapper::setInstrument)
     .def("_setfeedtype", &ScantableWrapper::setFeedType)
     .def("_getspectrum", &ScantableWrapper::getSpectrum,
-         (arg("whichrow")=0, arg("poltype")=std::string("")) )
+         (boost::python::arg("whichrow")=0, 
+	  boost::python::arg("poltype")=std::string("")) )
     .def("poltype", &ScantableWrapper::getPolType )
     .def("get_column_names", &ScantableWrapper::columnNames)
     .def("_getpollabel", &ScantableWrapper::getPolarizationLabel)
@@ -99,8 +100,6 @@ void python_Scantable() {
          (boost::python::arg("whichrow")=0) )
     .def("_getparangle", &ScantableWrapper::getParAngle,
          (boost::python::arg("whichrow")=0) )
-    //.def("_gettime", &ScantableWrapper::getTime,
-    //     (boost::python::arg("whichrow")=0) )
     .def("_gettime", &ScantableWrapper::getTime,
          (boost::python::arg("whichrow")=0,
           boost::python::arg("prec")=0) )
@@ -117,11 +116,9 @@ void python_Scantable() {
 	 (boost::python::arg("clipoutside")=true,
 	  boost::python::arg("unflag")=false) )
     .def("_save",  &ScantableWrapper::makePersistent)
-    //.def("_summary",  &ScantableWrapper::summary)
     .def("_summary",  &ScantableWrapper::summary,
 	 (boost::python::arg("filename")=""))
     .def("_list_header",  &ScantableWrapper::listHeader)
-    //.def("_getrestfreqs",  &ScantableWrapper::getRestFrequencies)
     .def("_getrestfreqs",  &ScantableWrapper::getRestFrequency)
     .def("_setrestfreqs",  &ScantableWrapper::setRestFrequencies)
     .def("shift_refpix", &ScantableWrapper::shift)
