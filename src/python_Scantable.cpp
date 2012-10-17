@@ -57,6 +57,7 @@ void python_Scantable() {
     .def("getscan", &ScantableWrapper::getScan)
     .def("getscannos", &ScantableWrapper::getScanNos)
     .def("getcycle", &ScantableWrapper::getCycle)
+    .def("getcyclenos", &ScantableWrapper::getCycleNos)
     .def("getmolnos", &ScantableWrapper::getMolNos)
     .def("nif", &ScantableWrapper::nif,
          (boost::python::arg("scanno")=-1) )

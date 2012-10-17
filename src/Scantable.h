@@ -319,6 +319,9 @@ public:
   std::vector<uint> getScanNos() const { return getNumbers(scanCol_); }
   int getScan(int whichrow) const { return scanCol_(whichrow); }
 
+  std::vector<uint> getCycleNos() const { return getNumbers(cycleCol_); }
+  int getCycle(int whichrow) const { return cycleCol_(whichrow); }
+
   //TT addition
   std::vector<uint> getMolNos() {return getNumbers(mmolidCol_); }
 
@@ -333,7 +336,7 @@ public:
   int getChannels(int whichrow) const;
 
   int ncycle(int scanno=-1) const;
-  int getCycle(int whichrow) const { return cycleCol_(whichrow); }
+
 
   double getInterval(int whichrow) const
     { return integrCol_(whichrow); }
