@@ -23,6 +23,10 @@ class TestNRO(object):
         sel.set_order(["SCANNO", "POLNO"])
         s.set_selection(sel)
         self.st = s.copy()
+        del s
+
+    def tearDown(self):
+        del self.st
 
     def test_init(self):
         assert_equal(self.st.nrow(), 36)
@@ -47,11 +51,10 @@ class TestNRO(object):
 
 
     def test_frequency(self):
-        raise SkipTest("Currently disabled")
         rf=self.st.get_restfreqs()
         assert_equal(len(rf),2)
         assert_equal(rf[0][0],85162157000.0)
         assert_equal(rf[1][0],86754330000.0)
         self.st.set_unit('GHz')
         abc=self.st._getabcissa(0)
-        assert_equal(abc[0],85.17337639557438)
+        assert_equal(abc[0],85.183349020848283)
