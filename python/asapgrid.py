@@ -134,7 +134,7 @@ class asapgrid:
             celly = '%sarcsec'%(celly)
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
-    def setFunc( self, func='box', width=-1 ):
+    def setFunc( self, func='box', width=-1, gwidth="", jwidth="" ):
         """
         Set convolution function. Possible options are 'box' (Box-car,
         default), 'sf' (prolate spheroidal), and 'gauss' (Gaussian).
@@ -150,7 +150,16 @@ class asapgrid:
         width -- Width of convolution function. Default (-1) is to
                  choose pre-defined value for each convolution function.
         """
-        self.gridder._setfunc( func, width )
+        fname = func.upper()
+        if fname == 'GAUSS' or fname == 'GJINC':
+            gw = str(gwidth)
+            jw = str(jwidth)
+            w = str(width)
+            if w[0] == '-': w = ''
+            #self.gridder._setfunc(fname, -1, w, gw, jw)
+            self.gridder._setfunc(fname,convsupport=-1,gwidth=gw,jwidth=jw,truncate=w)
+        else:
+            self.gridder._setfunc( func, convsupport=width )
 
     def setWeight( self, weightType='uniform' ):
         """
@@ -222,6 +231,22 @@ class asapgrid:
         t1=time.time()
         asaplog.push('plot: elapsed time %s sec'%(t1-t0))
         asaplog.post('DEBUG','asapgrid.plot')
+
+    def plotFunc(self, clear=True):
+        """
+        Support function to see the shape of current grid function.
+
+        clear -- clear panel if True. Default is True.
+        """
+        pl.figure(11)
+        if clear:
+            pl.clf()
+        f = self.gridder._getfunc()
+        convsampling = 100
+        a = numpy.arange(0,len(f)/convsampling,1./convsampling,dtype=float)
+        pl.plot(a,f,'.-')
+        pl.xlabel('pixel')
+        pl.ylabel('convFunc')
         
 class asapgrid2:
     """
@@ -366,7 +391,16 @@ class asapgrid2:
         width -- Width of convolution function. Default (-1) is to
                  choose pre-defined value for each convolution function.
         """
-        self.gridder._setfunc( func, width )
+        fname = func.upper()
+        if fname == 'GAUSS' or fname == 'GJINC':
+            gw = str(gwidth)
+            jw = str(jwidth)
+            w = str(width)
+            if w[0] == '-': w = ''
+            #self.gridder._setfunc(fname, -1, w, gw, jw)
+            self.gridder._setfunc(fname,convsupport=-1,gwidth=gw,jwidth=jw,truncate=w)
+        else:
+            self.gridder._setfunc( func, convsupport=width )
 
     def setWeight( self, weightType='uniform' ):
         """
@@ -407,6 +441,22 @@ class asapgrid2:
         """
         tp = 0 if rcParams['scantable.storage']=='memory' else 1
         return scantable( self.gridder._get( tp ), average=False )
+    
+    def plotFunc(self, clear=True):
+        """
+        Support function to see the shape of current grid function.
+
+        clear -- clear panel if True. Default is True.
+        """
+        pl.figure(11)
+        if clear:
+            pl.clf()
+        f = self.gridder._getfunc()
+        convsampling = 100
+        a = numpy.arange(0,len(f)/convsampling,1./convsampling,dtype=float)
+        pl.plot(a,f,'.-')
+        pl.xlabel('pixel')
+        pl.ylabel('convFunc')
 
 class _SDGridPlotter:
     def __init__( self, infile, outfile=None, ifno=-1 ):
