@@ -1597,11 +1597,67 @@ void STGrid::boxFunc( Vector<Float> &convFunc, Int &convSize )
 #define grdgauss grdgauss_
 #define grdjinc1 grdjinc1_
 #endif
+#if defined(USE_CASAPY)
 extern "C" { 
   void grdsf(Double*, Double*);
   void grdgauss(Double*, Double*, Double*); 
   void grdjinc1(Double*, Double*, Int*, Double*);
 }
+#else
+extern "C" {
+  void grdsf(Double*, Double*);
+}
+void grdgauss(Double *hwhm, Double *val, Double *out)
+{
+  *out = exp(-log(2.0) * (*val / *hwhm) * (*val / *hwhm));
+}
+void grdjinc1(Double *c, Double *val, Int *normalize, Double *out)
+{
+  LogIO os(LogOrigin("","grdjinc1",WHERE));
+  os << LogIO::SEVERE
+     << "Jinc gridding is not supported" << LogIO::POST;
+
+  // Calculate J_1(x) using approximate formula
+  Double x = C::pi * *val / *c;
+  Double ax = fabs(x);
+  Double ans;
+  if ( ax < 8.0 ) {
+    Double y = x * x;
+    Double ans1 = x * (72362614232.0 + y * (-7895059235.0 
+                       + y * (242396853.1 + y * (-2972611.439 
+                       + y * (15704.48260 + y * (-30.16036606))))));
+    Double ans2 = 144725228442.0 + y * (2300535178.0
+                       + y * (18583304.74 + y * (99447.43394
+                       + y * (376.9991397 + y * 1.0))));
+    ans = ans1 / ans2;
+  }
+  else {
+    Double z = 8.0 / ax;
+    Double y = z * z;
+    Double xx = ax - 2.356194491;
+    Double ans1 = 1.0 + y * (0.183105e-2 + y * (-0.3516396496e-4
+                      + y * (0.2457520174e-5 + y * (-0.240337019e-6))));
+    Double ans2 = 0.04687499995 + y * (-0.2002690873e-3
+                      + y * (0.8449199096e-5 + y * (-0.88228987e-6 
+                      + y * (0.105787412e-6))));
+    ans = sqrt(0.636619772 / ax) * (cos(xx) * ans1
+                                    - z * sin(xx) * ans2);
+    if (x < 0.0)
+      ans = -ans;
+  }
+  
+  // Then, calculate Jinc
+  if (x == 0.0) {
+    *out = 0.5;
+  }
+  else {
+    *out = ans / x;
+  }
+
+  if (*normalize == 1)
+    *out = *out / 0.5;  
+}
+#endif
 void STGrid::spheroidalFunc( Vector<Float> &convFunc ) 
 {
   convFunc = 0.0 ;
@@ -1766,7 +1822,7 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
     os << LogIO::DEBUGGING
        << "convType_ = " << convType_ << endl
        << "convSupport_ = " << convSupport_ << endl
-       << "truncate_ = " << truncate << endl
+       << "truncate_ = " << truncate << "pixel" << endl
        << "gwidth_ = " << pixelGW << "pixel" << LogIO::POST;
   }
   else if ( convType_ == "GJINC" ) {
@@ -1814,7 +1870,7 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
     os << LogIO::DEBUGGING
        << "convType_ = " << convType_ << endl
        << "convSupport_ = " << convSupport_ << endl
-       << "truncate_ = " << truncate << endl
+       << "truncate_ = " << truncate << "pixel" << endl
        << "gwidth_ = " << pixelGW << "pixel" << endl
        << "jwidth_ = " << pixelJW << "pixel" << LogIO::POST;
   }
