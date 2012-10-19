@@ -1613,10 +1613,6 @@ void grdgauss(Double *hwhm, Double *val, Double *out)
 }
 void grdjinc1(Double *c, Double *val, Int *normalize, Double *out)
 {
-  LogIO os(LogOrigin("","grdjinc1",WHERE));
-  os << LogIO::SEVERE
-     << "Jinc gridding is not supported" << LogIO::POST;
-
   // Calculate J_1(x) using approximate formula
   Double x = C::pi * *val / *c;
   Double ax = fabs(x);
