@@ -1811,7 +1811,9 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
         truncate = q.getValue("rad")/celly_;
       }
     }      
-    convSupport_ = (Int)(truncate+0.5);
+    //convSupport_ = (Int)(truncate+0.5);
+    convSupport_ = (Int)(truncate);
+    convSupport_ += (((truncate-(Double)convSupport_) > 0.0) ? 1 : 0);
     Int convSize = convSampling_ * ( 2*convSupport_ + 2 ) ;
     convFunc.resize( convSize ) ;
     gaussFunc( convFunc, pixelGW, truncate ) ;
@@ -1859,7 +1861,10 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
         truncate = q.getValue("rad")/celly_;
       }
     }      
-    convSupport_ = (truncate >= 0.0) ? (Int)(truncate+0.5) : (Int)(2*pixelJW+0.5);
+    //convSupport_ = (truncate >= 0.0) ? (Int)(truncate+0.5) : (Int)(2*pixelJW+0.5);
+    Double convSupportF = (truncate >= 0.0) ? truncate : (2*pixelJW);
+    convSupport_ = (Int)convSupportF;
+    convSupport_ += (((convSupportF-(Double)convSupport_) > 0.0) ? 1 : 0);
     Int convSize = convSampling_ * ( 2*convSupport_ + 2 ) ;
     convFunc.resize( convSize ) ;
     gjincFunc( convFunc, pixelGW, pixelJW, truncate ) ;
