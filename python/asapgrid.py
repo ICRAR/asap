@@ -134,7 +134,7 @@ class asapgrid:
             celly = '%sarcsec'%(celly)
         self.gridder._defineimage( nx, ny, cellx, celly, center )
 
-    def setFunc( self, func='box', width=-1, gwidth="", jwidth="" ):
+    def setFunc( self, func='box', convsupport=-1, truncate="-1", gwidth="-1", jwidth="-1" ):
         """
         Set convolution function. Possible options are 'box' (Box-car,
         default), 'sf' (prolate spheroidal), and 'gauss' (Gaussian).
@@ -150,16 +150,26 @@ class asapgrid:
         width -- Width of convolution function. Default (-1) is to
                  choose pre-defined value for each convolution function.
         """
-        fname = func.upper()
-        if fname == 'GAUSS' or fname == 'GJINC':
-            gw = str(gwidth)
-            jw = str(jwidth)
-            w = str(width)
-            if w[0] == '-': w = ''
-            #self.gridder._setfunc(fname, -1, w, gw, jw)
-            self.gridder._setfunc(fname,convsupport=-1,gwidth=gw,jwidth=jw,truncate=w)
-        else:
-            self.gridder._setfunc( func, convsupport=width )
+        self.gridder._setfunc(func,
+                              convsupport=convsupport,
+                              truncate=truncate,
+                              gwidth=gwidth,
+                              jwidth=jwidth)
+##         fname = func.upper()
+##         if fname == 'GAUSS' or fname == 'GJINC':
+##             gw = str(gwidth)
+##             jw = str(jwidth)
+##             w = str(width)
+##             #if len(w) > 0 and w[0] == '-':
+##             #    w = ''
+##             #self.gridder._setfunc(fname, -1, w, gw, jw)
+##             self.gridder._setfunc(fname,convsupport=-1,gwidth=gw,jwidth=jw,truncate=w)
+##         else:
+##             #if isinstance(width,str):
+##             #    w = -1
+##             #else:
+##             #    w = width
+##             self.gridder._setfunc( func, convsupport=width )
 
     def setWeight( self, weightType='uniform' ):
         """

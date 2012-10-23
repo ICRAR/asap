@@ -468,7 +468,7 @@ void STGrid::grid()
     os << "      truncate = " << truncate_ << endl;
   }
   else {
-    os << "      support = " << convSupport_ << endl;
+    os << "      support = " << userSupport_ << endl;
   }
   os << "   doclip = " << (doclip_?"True":"False") << endl ;
   os << "----------" << LogIO::POST ;
@@ -1788,7 +1788,7 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
   else if ( convType_ == "GAUSS" ) {
     // determine pixel gwidth
     // default is HWHM corresponding to b = 1.0 (Mangum et al. 2007)
-    Double pixelGW = sqrt(log(2.0)); 
+    Double pixelGW;
     Quantum<Double> q ;
     if (!gwidth_.empty()) {
       readQuantity( q, gwidth_ );
@@ -1799,9 +1799,14 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
         pixelGW = q.getValue("rad")/celly_;
       }
     }
+    pixelGW = (pixelGW >= 0.0) ? pixelGW : sqrt(log(2.0)); 
+    if (pixelGW < 0.0) {
+      os << LogIO::SEVERE
+         << "Negative width is specified for gaussian" << LogIO::EXCEPTION;
+    }
     // determine truncation radius
     // default is 3 * HWHM
-    Double truncate = 3.0 * pixelGW; 
+    Double truncate;
     if (!truncate_.empty()) {
       readQuantity( q, truncate_ );
       if ( q.getUnit().empty() || q.getUnit()=="pixel" ) {
@@ -1812,7 +1817,8 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
       }
     }      
     //convSupport_ = (Int)(truncate+0.5);
-    convSupport_ = (Int)(truncate);
+    truncate = (truncate >= 0.0) ? truncate : 3.0 * pixelGW;
+    convSupport_ = Int(truncate);
     convSupport_ += (((truncate-(Double)convSupport_) > 0.0) ? 1 : 0);
     Int convSize = convSampling_ * ( 2*convSupport_ + 2 ) ;
     convFunc.resize( convSize ) ;
@@ -1826,7 +1832,7 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
   else if ( convType_ == "GJINC" ) {
     // determine pixel gwidth
     // default is HWHM corresponding to b = 2.52 (Mangum et al. 2007)
-    Double pixelGW = sqrt(log(2.0)) * 2.52; 
+    Double pixelGW;
     Quantum<Double> q ;
     if (!gwidth_.empty()) {
       readQuantity( q, gwidth_ );
@@ -1837,9 +1843,14 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
         pixelGW = q.getValue("rad")/celly_;
       }
     }
+    pixelGW = (pixelGW >= 0.0) ? pixelGW : sqrt(log(2.0)) * 2.52; 
+    if (pixelGW < 0.0) {
+      os << LogIO::SEVERE
+         << "Negative width is specified for gaussian" << LogIO::EXCEPTION;
+    }
     // determine pixel c
     // default is c = 1.55 (Mangum et al. 2007)
-    Double pixelJW = 1.55;
+    Double pixelJW;
     if (!jwidth_.empty()) {
       readQuantity( q, jwidth_ );
       if ( q.getUnit().empty() || q.getUnit()=="pixel" ) {
@@ -1848,7 +1859,12 @@ void STGrid::setConvFunc( Vector<Float> &convFunc )
       else {
         pixelJW = q.getValue("rad")/celly_;
       }
-    }      
+    }
+    pixelJW = (pixelJW >= 0.0) ? pixelJW : 1.55; 
+    if (pixelJW < 0.0) {
+      os << LogIO::SEVERE
+         << "Negative width is specified for jinc" << LogIO::EXCEPTION;
+    }
     // determine truncation radius
     // default is -1.0 (truncate at first null)
     Double truncate = -1.0;
