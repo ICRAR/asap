@@ -24,7 +24,7 @@ class asapgrid:
        g.defineImage( nx=12, ny=12, cellx='10arcsec', celly='10arcsec',
                       center='J2000 10h10m10s -5d05m05s' )
        # set convolution function
-       g.setFunc( func='sf', width=3 )
+       g.setFunc( func='sf', convsupport=3 )
        # enable min/max clipping
        g.enableClip()
        # or, disable min/max clipping
@@ -137,39 +137,74 @@ class asapgrid:
     def setFunc( self, func='box', convsupport=-1, truncate="-1", gwidth="-1", jwidth="-1" ):
         """
         Set convolution function. Possible options are 'box' (Box-car,
-        default), 'sf' (prolate spheroidal), and 'gauss' (Gaussian).
-        Width of convolution function can be set using width parameter.
-        By default (-1), width is automatically set depending on each
-        convolution function. Default values for width are:
+        default), 'sf' (prolate spheroidal), 'gauss' (Gaussian), and 
+        'gjinc' (Gaussian * Jinc).
+        Width of convolution function can be set using several parameters.
+        For 'box' and 'sf', we have one parameter, convsupport, that
+        specifies a cut-off radius of the convlolution function. By default
+        (-1), convsupport is automatically set depending on each convolution
+        function. Default values for convsupport are:
 
            'box': 1 pixel
            'sf': 3 pixels
-           'gauss': 1 pixel (width is used as HWHM)
 
-        func -- Function type ('box', 'sf', 'gauss').
-        width -- Width of convolution function. Default (-1) is to
-                 choose pre-defined value for each convolution function.
+        For 'gauss', we have two parameters for convolution function,
+        truncate and gwidth. The truncate is similar to convsupport
+        except that truncate allows to specify its value as float or
+        string consisting of numeric and unit (e.g. '10arcsec' or
+        '3pixel'). Available units are angular units ('arcsec', 'arcmin',
+        'deg', etc.) and 'pixel'. Default unit is 'pixel' so that if
+        you specify numerical value or string without unit to gwidth,
+        the value will be interpreted as 'pixel'. gwidth is an HWHM of
+        gaussian. It also allows string value. Interpretation of the
+        value for gwidth is same as truncate. Default value for 'gauss'
+        is
+
+              gwidth: '-1' ---> sqrt(log(2.0)) pixel
+            truncate: '-1' ---> 3*gwidth pixel
+
+        For 'gjinc', there is an additional parameter jwidth that
+        specifies a width of the jinc function whose functional form is
+
+            jinc(x) = J_1(pi*x/jwidth) / (pi*x/jwidth)
+
+        Default values for 'gjinc' is
+
+              gwidth: '-1' ---> 2.52*sqrt(log(2.0)) pixel
+              jwidth: '-1' ---> 1.55
+            truncate: '-1' ---> automatically truncate at first null
+
+        Default values for gwidth and jwidth are taken from Mangum et al.
+        (2007).
+
+        func -- Function type ('box', 'sf', 'gauss', 'gjinc').
+        convsupport -- Width of convolution function. Default (-1) is
+                       to choose pre-defined value for each convolution
+                       function. Effective only for 'box' and 'sf'.
+        truncate -- Truncation radius of the convolution function.
+                    Acceptable value is an integer or a float in units of
+                    pixel, or a string consisting of numeric plus unit.
+                    Default unit for the string is 'pixel'. Default (-1)
+                    is to choose pre-defined value for each convolution
+                    function. Effective only for 'gauss' and 'gjinc'.
+        gwidth -- The HWHM of the gaussian. Acceptable value is an integer
+                  or a float in units of pixel, or a string consisting of
+                  numeric plus unit. Default unit for the string is 'pixel'.
+                  Default (-1) is to choose pre-defined value for each
+                  convolution function. Effective only for 'gauss' and
+                  'gjinc'.
+        jwidth -- The width of the jinc function. Acceptable value is an
+                  integer or a float in units of pixel, or a string
+                  consisting of numeric plus unit. Default unit for the
+                  string is 'pixel'. Default (-1) is to choose pre-defined
+                  value for each convolution function. Effective only for
+                  'gjinc'.
         """
         self.gridder._setfunc(func,
                               convsupport=convsupport,
                               truncate=truncate,
                               gwidth=gwidth,
                               jwidth=jwidth)
-##         fname = func.upper()
-##         if fname == 'GAUSS' or fname == 'GJINC':
-##             gw = str(gwidth)
-##             jw = str(jwidth)
-##             w = str(width)
-##             #if len(w) > 0 and w[0] == '-':
-##             #    w = ''
-##             #self.gridder._setfunc(fname, -1, w, gw, jw)
-##             self.gridder._setfunc(fname,convsupport=-1,gwidth=gw,jwidth=jw,truncate=w)
-##         else:
-##             #if isinstance(width,str):
-##             #    w = -1
-##             #else:
-##             #    w = width
-##             self.gridder._setfunc( func, convsupport=width )
 
     def setWeight( self, weightType='uniform' ):
         """
