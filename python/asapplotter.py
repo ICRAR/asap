@@ -1362,6 +1362,121 @@ class asapplotter:
         if (outfile is not None):
            PL.savefig(outfile)
 
+
+    def plotpointing2(self, scan=None, colorby='', showline=False, projection=''):
+        """
+        plot telescope pointings
+        Parameters:
+            infile  : input filename or scantable instance
+            colorby : change color by either
+                      'type'(source type)|'scan'|'if'|'pol'|'beam'
+            showline : show dotted line
+            projection : projection type either
+                         ''(no projection [deg])|'coord'(not implemented)
+        """
+        from numpy import array, pi
+        from asap import scantable
+        # check for scantable
+        if isinstance(scan, scantable):
+            if self._data is not None:
+                if scan != self._data:
+                    self._data = scan
+                    # reset
+                    self._reset()
+            else:
+                self._data = scan
+                self._reset()
+        if not self._data:
+            msg = "Input is not a scantable"
+            raise TypeError(msg)
+        # check for color mode
+        validtypes=['type','scan','if','pol', 'beam']
+        stype = None
+        if (colorby in validtypes):
+            stype = colorby[0]
+        elif len(colorby) > 0:
+            msg = "Invalid choice of 'colorby' (choices: %s)" % str(validtypes)
+            raise ValueError(msg)
+        self._assert_plotter(action="reload")
+        self._plotter.hold()
+        if self.casabar_exists(): self._plotter.figmgr.casabar.disable_button()
+        # for now, only one plot
+        self._plotter.set_panels(rows=1,cols=1)
+        # first panel
+        self._plotter.subplot(0)
+        # first color and linestyles
+        self._plotter.palette(0)
+        self.gca().set_aspect('equal')
+        basesel = scan.get_selection()
+        marker = "+"
+        if showline:
+            basesel.set_order(["TIME"])
+            scan.set_selection(basesel)
+            if not (stype in ["t", "s"]):
+                marker = "+:"
+        if not stype:
+            selIds = [""] # cheating
+            sellab = "all points"
+        elif stype == 't':
+            selIds = range(15)
+            sellab = "src type "
+        else:
+            selIds = getattr(self._data,'get'+colorby+'nos')()
+            sellab = colorby.upper()
+        selFunc = "set_"+colorby+"s"
+        for idx in selIds:
+            sel = selector() + basesel
+            if stype:
+                bid = getattr(basesel,'get_'+colorby+"s")()
+                if (len(bid) > 0) and (not idx in bid):
+                    # base selection doesn't contain idx
+                    # Note summation of selector is logical sum if 
+                    continue
+                getattr(sel, selFunc)([idx])
+            if not sel.is_empty():
+                try:
+                    self._data.set_selection(sel)
+                except RuntimeError, instance:
+                    if stype == 't' and str(instance).startswith("Selection contains no data."):
+                        continue
+                    else:
+                        self._data.set_selection(basesel)
+                        raise RuntimeError, instance
+            if self._data.nrow() == 0:
+                self._data.set_selection(basesel)
+                continue
+            print "Plotting direction of %s = %s" % (colorby, str(idx))
+            dir = array(self._data.get_directionval()).transpose()
+            ra = dir[0]*180./pi
+            dec = dir[1]*180./pi
+            self._plotter.set_line(label=(sellab+str(idx)))
+            self._plotter.plot(ra,dec,marker)
+
+        # restore original selection
+        self._data.set_selection(basesel)
+        # need to plot scan pattern explicitly
+        if showline and (stype in ["t", "s"]):
+            dir = array(self._data.get_directionval()).transpose()
+            ra = dir[0]*180./pi
+            dec = dir[1]*180./pi
+            self._plotter.set_line(label="scan pattern")
+            self._plotter.plot(ra,dec,":")
+            
+        xlab = 'RA [deg.]'
+        ylab = 'Declination [deg.]'
+        self._plotter.set_axes('xlabel', xlab)
+        self._plotter.set_axes('ylabel', ylab)
+        self._plotter.set_axes('title', 'Telescope pointings')
+        if stype: self._plotter.legend(self._legendloc)
+        else: self._plotter.legend(None)
+        # reverse x-axis
+        xmin, xmax = self.gca().get_xlim()
+        self._plotter.set_limits(xlim=[xmax,xmin])
+
+        self._plotter.release()
+        self._plotter.show(hardrefresh=False)
+        return
+
     def plotpointing(self, scan=None, outfile=None):
         """
         plot telescope pointings
@@ -1406,9 +1521,6 @@ class asapplotter:
     # plotting in time is not yet implemented..
     @asaplog_post_dec
     def plottp(self, scan=None):
-        self._assert_plotter(action="reload")
-        self._plotter.hold()
-        self._plotter.clear()
         from asap import scantable
         if not self._data and not scan:
             msg = "Input is not a scantable"
@@ -1429,6 +1541,9 @@ class asapplotter:
         #    self._abcunit = self._data.get_unit()
         #    self._datamask = None
 
+        self._assert_plotter(action="reload")
+        self._plotter.hold()
+        self._plotter.clear()
         # Adjust subplot margins
         if not self._margins or len(self._margins) !=6:
             self.set_margin(refresh=False)
@@ -1740,14 +1855,14 @@ class asapplotter:
         
         self._assert_plotter(action="reload")
         self._plotter.hold()
-        self._plotter.clear()
+        #self._plotter.clear() #all artists are cleared at set_panels
         self._plotter.legend()
 
         # Adjust subplot margins
         if not self._margins or len(self._margins) !=6:
             self.set_margin(refresh=False)
         self._plotter.set_panels(rows=self._rows,cols=self._cols,
-                                 nplots=ntotpl,margin=self._margins,ganged=True)
+                                 nplots=ntotpl,margin=self._margins,ganged=True)        
         if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
             self._plotter.figmgr.casabar.enable_button()

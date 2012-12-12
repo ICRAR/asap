@@ -56,10 +56,10 @@ class asaplotbase:
         if isinstance(c,str) and len(c) > 0:
             self.colormap = c.split()
 
-        self.lsalias = {"line":  [1,0],
-                        "dashdot": [4,2,1,2],
-                        "dashed" : [4,2,4,2],
-                        "dotted" : [1,2],
+        self.lsalias = {"line":  '-', #[1,0],
+                        "dashdot": '-.',  #[4,2,1,2],
+                        "dashed" : '--',  #[4,2,4,2],
+                        "dotted" : ':',  #[1,2],
                         "dashdotdot": [4,2,1,2,1,2],
                         "dashdashdot": [4,2,4,2,1,2]
                         }
@@ -89,7 +89,8 @@ class asaplotbase:
 
     def clear(self):
         """
-        Delete all lines from the plot.  Line numbering will restart from 0.
+        Delete all lines from the current subplot.
+        Line numbering will restart from 0.
         """
 
         for i in range(len(self.lines)):
