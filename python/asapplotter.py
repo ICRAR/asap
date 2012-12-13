@@ -1399,7 +1399,9 @@ class asapplotter:
             raise ValueError(msg)
         self._assert_plotter(action="reload")
         self._plotter.hold()
-        if self.casabar_exists(): self._plotter.figmgr.casabar.disable_button()
+        if self.casabar_exists():
+            self._plotter.figmgr.casabar.set_pagecounter(1)
+            self._plotter.figmgr.casabar.disable_button()
         # for now, only one plot
         self._plotter.set_panels(rows=1,cols=1)
         # first panel
@@ -1408,12 +1410,15 @@ class asapplotter:
         self._plotter.palette(0)
         self.gca().set_aspect('equal')
         basesel = scan.get_selection()
-        marker = "+"
+        attrback = self._plotter.get_line()
+        marker = "o"
         if showline:
             basesel.set_order(["TIME"])
             scan.set_selection(basesel)
             if not (stype in ["t", "s"]):
-                marker = "+:"
+                marker += ":"
+        self._plotter.set_line(markersize=3, markeredgewidth=0)
+
         if not stype:
             selIds = [""] # cheating
             sellab = "all points"
@@ -1446,9 +1451,11 @@ class asapplotter:
                 self._data.set_selection(basesel)
                 continue
             print "Plotting direction of %s = %s" % (colorby, str(idx))
+            # getting data to plot
             dir = array(self._data.get_directionval()).transpose()
             ra = dir[0]*180./pi
             dec = dir[1]*180./pi
+            # actual plot
             self._plotter.set_line(label=(sellab+str(idx)))
             self._plotter.plot(ra,dec,marker)
 
@@ -1461,7 +1468,9 @@ class asapplotter:
             dec = dir[1]*180./pi
             self._plotter.set_line(label="scan pattern")
             self._plotter.plot(ra,dec,":")
-            
+            # set color for only this line
+            self._plotter.lines[-1][0].set_color("gray")
+
         xlab = 'RA [deg.]'
         ylab = 'Declination [deg.]'
         self._plotter.set_axes('xlabel', xlab)
@@ -1475,6 +1484,8 @@ class asapplotter:
 
         self._plotter.release()
         self._plotter.show(hardrefresh=False)
+        # reset line settings
+        self._plotter.set_line(**attrback)
         return
 
     def plotpointing(self, scan=None, outfile=None):
