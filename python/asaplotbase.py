@@ -93,11 +93,12 @@ class asaplotbase:
         Line numbering will restart from 0.
         """
 
-        for i in range(len(self.lines)):
-           self.delete(i)
+        #for i in range(len(self.lines)):
+        #   self.delete(i)
         self.axes.clear()
         self.color = 0
         self.lines = []
+        self.subplots[self.i]['lines'] = self.lines
 
     def palette(self, color, colormap=None, linestyle=0, linestyles=None):
         if colormap:

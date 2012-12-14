@@ -192,16 +192,10 @@ class asapplotter:
         if not self._data and not scan:
             msg = "Input is not a scantable"
             raise TypeError(msg)
-        self._startrow = 0
-        self._ipanel = -1
-        self._reset_header()
-        self._panelrows = []
 
         self._assert_plotter(action="reload")
-        if self.casabar_exists():
-            self._plotter.figmgr.casabar.set_pagecounter(1)
-
         self._plotter.hold()
+        self._reset_counter()
         #self._plotter.clear()
         if scan: 
             self.set_data(scan, refresh=False)
@@ -968,6 +962,14 @@ class asapplotter:
     def _reset_header(self):
         self._headtext={'string': None, 'textobj': None}
 
+    def _reset_counter(self):
+        self._startrow = 0
+        self._ipanel = -1
+        self._reset_header()
+        self._panelrows = []
+        if self.casabar_exists():
+            self._plotter.figmgr.casabar.set_pagecounter(1)
+
     def _plot(self, scan):
         savesel = scan.get_selection()
         sel = savesel +  self._selection
@@ -1003,23 +1005,41 @@ class asapplotter:
             nstack = min(nstack,maxstack)
         #n = min(n-self._ipanel-1,maxpanel)
         n = n-self._ipanel-1
+        # the number of panels in this page
+        if self._rows and self._cols:
+            n = min(n,self._rows*self._cols)
+        else:
+            n = min(n,maxpanel)
 
-        ganged = False
-        if n > 1:
-            ganged = rcParams['plotter.ganged']
-            if self._panelling == 'i':
-                ganged = False
-            if self._rows and self._cols:
-                n = min(n,self._rows*self._cols)
+        firstpage = (self._ipanel < 0)
+        #ganged = False
+        ganged = rcParams['plotter.ganged']
+        if self._panelling == 'i':
+            ganged = False
+        if not firstpage:
+            # not the first page just clear the axis
+            nx = self._plotter.cols
+            ipaxx = n - nx - 1 #the max panel id to supress x-label
+            for ip in xrange(len(self._plotter.subplots)):
+                self._plotter.subplot(ip)
+                self._plotter.clear()
+                self._plotter.axes.set_visible((ip<n))
+                if ganged:
+                    self._plotter.axes.xaxis.label.set_visible((ip > ipaxx))
+                    if ip <= ipaxx:
+                        map(lambda x: x.set_visible(False), \
+                            self._plotter.axes.get_xticklabels())
+                    self._plotter.axes.yaxis.label.set_visible((ip % nx)==0)
+                    if ip % nx:
+                        map(lambda y: y.set_visible(False), \
+                            self._plotter.axes.get_yticklabels())
+        elif (n > 1 and self._rows and self._cols):
                 self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                          nplots=n,margin=self._margins,
                                          ganged=ganged)
-            else:
-                n = min(n,maxpanel)
-                self._plotter.set_panels(rows=n,cols=0,nplots=n,
-                                         margin=self._margins,ganged=ganged)
         else:
-            self._plotter.set_panels(margin=self._margins)
+            self._plotter.set_panels(rows=n,cols=0,nplots=n,
+                                     margin=self._margins,ganged=ganged)
         #r = 0
         r = self._startrow
         nr = scan.nrow()
@@ -1171,7 +1191,9 @@ class asapplotter:
         #if self._fp is not None:
         if self._fp is not None and getattr(self._plotter.figure,'findobj',False):
             for o in self._plotter.figure.findobj(Text):
-                o.set_fontproperties(self._fp)
+                if not self._headtext['textobj'] or \
+                   not (o in self._headtext['textobj']):
+                    o.set_fontproperties(self._fp)
 
     def _get_sortstring(self, lorders):
         d0 = {'s': 'SCANNO', 'b': 'BEAMNO', 'i':'IFNO',
@@ -1399,8 +1421,8 @@ class asapplotter:
             raise ValueError(msg)
         self._assert_plotter(action="reload")
         self._plotter.hold()
+        self._reset_counter()
         if self.casabar_exists():
-            self._plotter.figmgr.casabar.set_pagecounter(1)
             self._plotter.figmgr.casabar.disable_button()
         # for now, only one plot
         self._plotter.set_panels(rows=1,cols=1)
@@ -1666,11 +1688,11 @@ class asapplotter:
             self._assert_plotter(action="halt",errmsg=errmsg)
             self._plotter.hold()
             self._header_plot(headstr,fontsize=fontsize)
-            import time
-            self._plotter.figure.text(0.99,0.01,
-                            time.strftime("%a %d %b %Y  %H:%M:%S %Z"),
-                            horizontalalignment='right',
-                            verticalalignment='bottom',fontsize=8)
+            #import time
+            #self._plotter.figure.text(0.99,0.01,
+            #                time.strftime("%a %d %b %Y  %H:%M:%S %Z"),
+            #                horizontalalignment='right',
+            #                verticalalignment='bottom',fontsize=8)
             self._plotter.release()
         if logger:
             selstr = "Selections:    "+ssel
@@ -1866,7 +1888,7 @@ class asapplotter:
         
         self._assert_plotter(action="reload")
         self._plotter.hold()
-        #self._plotter.clear() #all artists are cleared at set_panels
+        self._reset_counter()
         self._plotter.legend()
 
         # Adjust subplot margins
@@ -1875,7 +1897,6 @@ class asapplotter:
         self._plotter.set_panels(rows=self._rows,cols=self._cols,
                                  nplots=ntotpl,margin=self._margins,ganged=True)        
         if self.casabar_exists():
-            self._plotter.figmgr.casabar.set_pagecounter(1)
             self._plotter.figmgr.casabar.enable_button()
         # Plot helper
         from asap._asap import plothelper as plhelper
