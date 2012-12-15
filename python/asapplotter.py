@@ -48,35 +48,38 @@ class asapplotter:
         self._plotter = None
         self._inikwg = kwargs
 
-        self._panelling = None
-        self._stacking = None
-        self.set_panelling()
-        self.set_stacking()
+        # plot settings
+        self._colormap = None
+        self._linestyles = None
+        self._fp = FontProperties()
         self._rows = None
         self._cols = None
         self._minmaxx = None
         self._minmaxy = None
-        self._datamask = None
+        self._margins = self.set_margin(refresh=False)
+        self._legendloc = None
+        # scantable plot settings
+        self._panelling = None
+        self._stacking = None
+        self.set_panelling()
+        self.set_stacking()
+        self._hist = rcParams['plotter.histogram']
+        # scantable dependent settings
         self._data = None
+        self._abcunit = None
+        self._headtext = {'string': None, 'textobj': None}
+        self._selection = selector()
+        self._usermask = []
+        self._maskselection = None
+        self._offset = None
         self._lmap = None
         self._title = None
         self._ordinate = None
         self._abcissa = None
-        self._abcunit = None
-        self._usermask = []
-        self._maskselection = None
-        self._selection = selector()
-        self._hist = rcParams['plotter.histogram']
-        self._fp = FontProperties()
-        self._margins = self.set_margin(refresh=False)
-        self._offset = None
+        # cursors for page iteration
         self._startrow = 0
         self._ipanel = -1
         self._panelrows = []
-        self._headtext={'string': None, 'textobj': None}
-        self._colormap = None
-        self._linestyles = None
-        self._legendloc = None
 
     def _translate(self, instr):
         keys = "s b i p t r".split()
@@ -177,40 +180,6 @@ class asapplotter:
             return False
 
 
-    @asaplog_post_dec
-    def plot(self, scan=None):
-        """
-        Plot a scantable.
-        Parameters:
-            scan:   a scantable
-        Note:
-            If a scantable was specified in a previous call
-            to plot, no argument has to be given to 'replot'
-            NO checking is done that the abcissas of the scantable
-            are consistent e.g. all 'channel' or all 'velocity' etc.
-        """
-        if not self._data and not scan:
-            msg = "Input is not a scantable"
-            raise TypeError(msg)
-
-        self._assert_plotter(action="reload")
-        self._plotter.hold()
-        self._reset_counter()
-        #self._plotter.clear()
-        if scan: 
-            self.set_data(scan, refresh=False)
-        self._plotter.palette(color=0,colormap=self._colormap,
-                              linestyle=0,linestyles=self._linestyles)
-        self._plotter.legend(self._legendloc)
-        self._plot(self._data)
-        if self._minmaxy is not None:
-            self._plotter.set_limits(ylim=self._minmaxy)
-        if self.casabar_exists(): self._plotter.figmgr.casabar.enable_button()
-        self._plotter.release()
-        self._plotter.tidy()
-        self._plotter.show(hardrefresh=False)
-        return
-
     def gca(self):
         errmsg = "No axis to retun. Need to plot first."
         if not self._assert_plotter(action="status",errmsg=errmsg):
@@ -223,6 +192,27 @@ class asapplotter:
         self._assert_plotter(action="halt",errmsg=errmsg)
 
         self._plotter.figure.show()
+
+    def save(self, filename=None, orientation=None, dpi=None):
+        """
+        Save the plot to a file. The known formats are 'png', 'ps', 'eps'.
+        Parameters:
+             filename:    The name of the output file. This is optional
+                          and autodetects the image format from the file
+                          suffix. If non filename is specified a file
+                          called 'yyyymmdd_hhmmss.png' is created in the
+                          current directory.
+             orientation: optional parameter for postscript only (not eps).
+                          'landscape', 'portrait' or None (default) are valid.
+                          If None is choosen for 'ps' output, the plot is
+                          automatically oriented to fill the page.
+             dpi:         The dpi of the output non-ps plot
+        """
+        errmsg = "Cannot save figure. Need to plot first."
+        self._assert_plotter(action="halt",errmsg=errmsg)
+        
+        self._plotter.save(filename,orientation,dpi)
+        return
 
     def create_mask(self, nwin=1, panel=0, color=None):
         """
@@ -388,6 +378,19 @@ class asapplotter:
         self._plotter.axes.set_autoscale_on(True)
     # end matplotlib.axes fowarding functions
 
+    # forwards to matplotlib.Figure.text
+    def figtext(self, *args, **kwargs):
+        """
+        Add text to figure at location x,y (relative 0-1 coords).
+        This method forwards *args and **kwargs to a Matplotlib method,
+        matplotlib.Figure.text.
+        See the method help for detailed information.
+        """
+        self._assert_plotter(action="reload")
+        self._plotter.text(*args, **kwargs)
+    # end matplotlib.Figure.text forwarding function
+
+    # plot setttings
     @asaplog_post_dec
     def set_data(self, scan, refresh=True):
         """
@@ -421,7 +424,6 @@ class asapplotter:
             self._minmaxx = None
             self._minmaxy = None
             self._abcunit = self._data.get_unit()
-            self._datamask = None
         if refresh: self.plot()
 
     @asaplog_post_dec
@@ -458,6 +460,22 @@ class asapplotter:
         if refresh and self._data: self.plot(self._data)
         return
 
+    def set_stacking(self, what=None):
+        """Set the 'stacking' mode i.e. which type of spectra should be
+        overlayed.
+        """
+        mode = what
+        if mode is None:
+             mode = rcParams['plotter.stacking']
+        md = self._translate(mode)
+        if md:
+            self._stacking = md
+            self._lmap = None
+            # new mode is set. need to reset counters for multi page plotting
+            self._reset_counters()
+            return True
+        return False
+
     def set_panelling(self, what=None):
         """Set the 'panelling' mode i.e. which type of spectra should be
         spread across different panels.
@@ -470,9 +488,7 @@ class asapplotter:
         if md:
             self._panelling = md
             self._title = None
-            #if md == 'r':
-            #    self._stacking = '_r'
-            # you need to reset counters for multi page plotting
+            # new mode is set. need to reset counters for multi page plotting
             self._reset_counters()
             return True
         return False
@@ -495,29 +511,6 @@ class asapplotter:
         self._cols = cols
         if refresh and self._data: self.plot(self._data)
         return
-
-    def set_stacking(self, what=None):
-        """Set the 'stacking' mode i.e. which type of spectra should be
-        overlayed.
-        """
-        mode = what
-        if mode is None:
-             mode = rcParams['plotter.stacking']
-        md = self._translate(mode)
-        if md:
-            self._stacking = md
-            self._lmap = None
-            #if md == 'r':
-            #    self._panelling = '_r'
-            # you need to reset counters for multi page plotting
-            self._reset_counters()
-            return True
-        return False
-
-    def _reset_counters(self):
-        self._startrow = 0
-        self._ipanel = -1
-        self._panelrows = []
 
     def set_range(self,xstart=None,xend=None,ystart=None,yend=None,refresh=True, offset=None):
         """
@@ -859,26 +852,34 @@ class asapplotter:
         self._plotter.show(hardrefresh=False)
 
 
-    def save(self, filename=None, orientation=None, dpi=None):
+    def set_selection(self, selection=None, refresh=True, **kw):
         """
-        Save the plot to a file. The known formats are 'png', 'ps', 'eps'.
         Parameters:
-             filename:    The name of the output file. This is optional
-                          and autodetects the image format from the file
-                          suffix. If non filename is specified a file
-                          called 'yyyymmdd_hhmmss.png' is created in the
-                          current directory.
-             orientation: optional parameter for postscript only (not eps).
-                          'landscape', 'portrait' or None (default) are valid.
-                          If None is choosen for 'ps' output, the plot is
-                          automatically oriented to fill the page.
-             dpi:         The dpi of the output non-ps plot
+            selection:  a selector object (default unset the selection)
+            refresh:    True (default) or False. If True, the plot is
+                        replotted based on the new parameter setting(s).
+                        Otherwise,the parameter(s) are set without replotting.
         """
-        errmsg = "Cannot save figure. Need to plot first."
-        self._assert_plotter(action="halt",errmsg=errmsg)
-        
-        self._plotter.save(filename,orientation,dpi)
-        return
+        if selection is None:
+            # reset
+            if len(kw) == 0:
+                self._selection = selector()
+            else:
+                # try keywords
+                for k in kw:
+                    if k not in selector.fields:
+                        raise KeyError("Invalid selection key '%s', valid keys are %s" % (k, selector.fields))
+                self._selection = selector(**kw)
+        elif isinstance(selection, selector):
+            self._selection = selection
+        else:
+            raise TypeError("'selection' is not of type selector")
+
+        order = self._get_sortstring([self._panelling,self._stacking])
+        if order:
+            self._selection.set_order(order)
+        if refresh and self._data: 
+            self.plot()
 
     @asaplog_post_dec
     def set_mask(self, mask=None, selection=None, refresh=True):
@@ -952,6 +953,7 @@ class asapplotter:
         else:
             return start,end
 
+    # reset methods
     def _reset(self):
         self._usermask = []
         self._usermaskspectra = None
@@ -969,6 +971,46 @@ class asapplotter:
         self._panelrows = []
         if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
+
+    def _reset_counters(self):
+        self._startrow = 0
+        self._ipanel = -1
+        self._panelrows = []
+
+    # scantable plot methods
+    @asaplog_post_dec
+    def plot(self, scan=None):
+        """
+        Plot a scantable.
+        Parameters:
+            scan:   a scantable
+        Note:
+            If a scantable was specified in a previous call
+            to plot, no argument has to be given to 'replot'
+            NO checking is done that the abcissas of the scantable
+            are consistent e.g. all 'channel' or all 'velocity' etc.
+        """
+        if not self._data and not scan:
+            msg = "Input is not a scantable"
+            raise TypeError(msg)
+
+        self._assert_plotter(action="reload")
+        self._plotter.hold()
+        self._reset_counter()
+        #self._plotter.clear()
+        if scan: 
+            self.set_data(scan, refresh=False)
+        self._plotter.palette(color=0,colormap=self._colormap,
+                              linestyle=0,linestyles=self._linestyles)
+        self._plotter.legend(self._legendloc)
+        self._plot(self._data)
+        if self._minmaxy is not None:
+            self._plotter.set_limits(ylim=self._minmaxy)
+        if self.casabar_exists(): self._plotter.figmgr.casabar.enable_button()
+        self._plotter.release()
+        self._plotter.tidy()
+        self._plotter.show(hardrefresh=False)
+        return
 
     def _plot(self, scan):
         savesel = scan.get_selection()
@@ -1189,7 +1231,8 @@ class asapplotter:
 
         #temporary switch-off for older matplotlib
         #if self._fp is not None:
-        if self._fp is not None and getattr(self._plotter.figure,'findobj',False):
+        if self._fp is not None and \
+               getattr(self._plotter.figure,'findobj',False):
             for o in self._plotter.figure.findobj(Text):
                 if not self._headtext['textobj'] or \
                    not (o in self._headtext['textobj']):
@@ -1211,35 +1254,6 @@ class asapplotter:
                     lsorts.append(ssort)
             return lsorts
         return None
-
-    def set_selection(self, selection=None, refresh=True, **kw):
-        """
-        Parameters:
-            selection:  a selector object (default unset the selection)
-            refresh:    True (default) or False. If True, the plot is
-                        replotted based on the new parameter setting(s).
-                        Otherwise,the parameter(s) are set without replotting.
-        """
-        if selection is None:
-            # reset
-            if len(kw) == 0:
-                self._selection = selector()
-            else:
-                # try keywords
-                for k in kw:
-                    if k not in selector.fields:
-                        raise KeyError("Invalid selection key '%s', valid keys are %s" % (k, selector.fields))
-                self._selection = selector(**kw)
-        elif isinstance(selection, selector):
-            self._selection = selection
-        else:
-            raise TypeError("'selection' is not of type selector")
-
-        order = self._get_sortstring([self._panelling,self._stacking])
-        if order:
-            self._selection.set_order(order)
-        if refresh and self._data: 
-            self.plot()
 
     def _get_selected_n(self, scan):
         d1 = {'b': scan.getbeamnos, 's': scan.getscannos,
@@ -1572,7 +1586,6 @@ class asapplotter:
         #    self._minmaxx = None
         #    self._minmaxy = None
         #    self._abcunit = self._data.get_unit()
-        #    self._datamask = None
 
         self._assert_plotter(action="reload")
         self._plotter.hold()
@@ -1635,19 +1648,6 @@ class asapplotter:
         self._plotter.set_line(label=llbl)
         if len(x) > 0:
             plotit(x,y)
-
-
-    # forwards to matplotlib.Figure.text
-    def figtext(self, *args, **kwargs):
-        """
-        Add text to figure at location x,y (relative 0-1 coords).
-        This method forwards *args and **kwargs to a Matplotlib method,
-        matplotlib.Figure.text.
-        See the method help for detailed information.
-        """
-        self._assert_plotter(action="reload")
-        self._plotter.text(*args, **kwargs)
-    # end matplotlib.Figure.text forwarding function
 
 
     # printing header information
