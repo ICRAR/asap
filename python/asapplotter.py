@@ -654,6 +654,24 @@ class asapplotter:
         if refresh and self._data: self.plot(self._data)
         return
 
+    def set_histogram(self, hist=True, linewidth=None, refresh=True):
+        """
+        Enable/Disable histogram-like plotting.
+        Parameters:
+            hist:        True (default) or False. The fisrt default
+                         is taken from the .asaprc setting
+                         plotter.histogram
+            linewidth:   a line width
+            refresh:     True (default) or False. If True, the plot is
+                         replotted based on the new parameter setting(s).
+                         Otherwise,the parameter(s) are set without replotting.
+        """
+        self._hist = hist
+        if isinstance(linewidth, float) or isinstance(linewidth, int):
+            from matplotlib import rc as rcp
+            rcp('lines', linewidth=linewidth)
+        if refresh and self._data: self.plot(self._data)
+
     def set_colors(self, colmap, refresh=True):
         """
         Set the colours to be used. The plotter will cycle through
@@ -677,24 +695,6 @@ class asapplotter:
 
     # alias for english speakers
     set_colours = set_colors
-
-    def set_histogram(self, hist=True, linewidth=None, refresh=True):
-        """
-        Enable/Disable histogram-like plotting.
-        Parameters:
-            hist:        True (default) or False. The fisrt default
-                         is taken from the .asaprc setting
-                         plotter.histogram
-            linewidth:   a line width
-            refresh:     True (default) or False. If True, the plot is
-                         replotted based on the new parameter setting(s).
-                         Otherwise,the parameter(s) are set without replotting.
-        """
-        self._hist = hist
-        if isinstance(linewidth, float) or isinstance(linewidth, int):
-            from matplotlib import rc as rcp
-            rcp('lines', linewidth=linewidth)
-        if refresh and self._data: self.plot(self._data)
 
     def set_linestyles(self, linestyles=None, linewidth=None, refresh=True):
         """
@@ -920,41 +920,6 @@ class asapplotter:
         else:
             self._maskselection = None
         if refresh: self.plot(self._data)
-
-    def _slice_indeces(self, data):
-        mn = self._minmaxx[0]
-        mx = self._minmaxx[1]
-        asc = data[0] < data[-1]
-        start=0
-        end = len(data)-1
-        inc = 1
-        if not asc:
-            start = len(data)-1
-            end = 0
-            inc = -1
-        # find min index
-        #while start > 0 and data[start] < mn:
-        #    start+= inc
-        minind=start
-        for ind in xrange(start,end+inc,inc):
-            if data[ind] > mn: break
-            minind=ind
-        # find max index
-        #while end > 0 and data[end] > mx:
-        #    end-=inc
-        #if end > 0: end +=1
-        maxind=end
-        for ind in xrange(end,start-inc,-inc):
-            if data[ind] < mx: break
-            maxind=ind
-        start=minind
-        end=maxind
-        if start > end:
-            return end,start+1
-        elif start < end:
-            return start,end+1
-        else:
-            return start,end
 
 
     ### Reset methods ###
@@ -1298,6 +1263,41 @@ class asapplotter:
              #'_r': str(scan.get_time(row))+",\nIF"+str(scan.getif(row))+", "+poleval+", Beam"+str(scan.getbeam(row)) }
              '_r': "" }
         return userlabel or d[mode]
+
+    def _slice_indeces(self, data):
+        mn = self._minmaxx[0]
+        mx = self._minmaxx[1]
+        asc = data[0] < data[-1]
+        start=0
+        end = len(data)-1
+        inc = 1
+        if not asc:
+            start = len(data)-1
+            end = 0
+            inc = -1
+        # find min index
+        #while start > 0 and data[start] < mn:
+        #    start+= inc
+        minind=start
+        for ind in xrange(start,end+inc,inc):
+            if data[ind] > mn: break
+            minind=ind
+        # find max index
+        #while end > 0 and data[end] > mx:
+        #    end-=inc
+        #if end > 0: end +=1
+        maxind=end
+        for ind in xrange(end,start-inc,-inc):
+            if data[ind] < mx: break
+            maxind=ind
+        start=minind
+        end=maxind
+        if start > end:
+            return end,start+1
+        elif start < end:
+            return start,end+1
+        else:
+            return start,end
 
     def plotazel(self, scan=None, outfile=None):
         """
