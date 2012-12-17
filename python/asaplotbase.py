@@ -55,11 +55,11 @@ class asaplotbase:
         c = asaprcParams['plotter.colours']
         if isinstance(c,str) and len(c) > 0:
             self.colormap = c.split()
-
-        self.lsalias = {"line":  '-', #[1,0],
-                        "dashdot": '-.',  #[4,2,1,2],
-                        "dashed" : '--',  #[4,2,4,2],
-                        "dotted" : ':',  #[1,2],
+        # line styles need to be set as a list of numbers to use set_dashes
+        self.lsalias = {"line":  [1,0],
+                        "dashdot": [4,2,1,2],
+                        "dashed" : [4,2,4,2],
+                        "dotted" : [1,2],
                         "dashdotdot": [4,2,1,2,1,2],
                         "dashdashdot": [4,2,4,2,1,2]
                         }
@@ -97,6 +97,7 @@ class asaplotbase:
         #   self.delete(i)
         self.axes.clear()
         self.color = 0
+        self.linestyle = 0
         self.lines = []
         self.subplots[self.i]['lines'] = self.lines
 

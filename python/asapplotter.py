@@ -48,7 +48,7 @@ class asapplotter:
         self._plotter = None
         self._inikwg = kwargs
 
-        # plot settings
+        ### plot settings
         self._colormap = None
         self._linestyles = None
         self._fp = FontProperties()
@@ -58,13 +58,13 @@ class asapplotter:
         self._minmaxy = None
         self._margins = self.set_margin(refresh=False)
         self._legendloc = None
-        # scantable plot settings
+        ### scantable plot settings
         self._panelling = None
         self._stacking = None
         self.set_panelling()
         self.set_stacking()
         self._hist = rcParams['plotter.histogram']
-        # scantable dependent settings
+        ### scantable dependent settings
         self._data = None
         self._abcunit = None
         self._headtext = {'string': None, 'textobj': None}
@@ -76,7 +76,7 @@ class asapplotter:
         self._title = None
         self._ordinate = None
         self._abcissa = None
-        # cursors for page iteration
+        ### cursors for page iteration
         self._startrow = 0
         self._ipanel = -1
         self._panelrows = []
@@ -273,7 +273,8 @@ class asapplotter:
             return self._data.create_mask(*outmask)
         return []
 
-    # forwards to matplotlib axes
+
+    ### Forwards to matplotlib axes ###
     def text(self, *args, **kwargs):
         self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
@@ -378,7 +379,8 @@ class asapplotter:
         self._plotter.axes.set_autoscale_on(True)
     # end matplotlib.axes fowarding functions
 
-    # forwards to matplotlib.Figure.text
+
+    ### Forwards to matplotlib.Figure.text ###
     def figtext(self, *args, **kwargs):
         """
         Add text to figure at location x,y (relative 0-1 coords).
@@ -390,7 +392,8 @@ class asapplotter:
         self._plotter.text(*args, **kwargs)
     # end matplotlib.Figure.text forwarding function
 
-    # plot setttings
+
+    ### Set Plot parameters ###
     @asaplog_post_dec
     def set_data(self, scan, refresh=True):
         """
@@ -953,7 +956,8 @@ class asapplotter:
         else:
             return start,end
 
-    # reset methods
+
+    ### Reset methods ###
     def _reset(self):
         self._usermask = []
         self._usermaskspectra = None
@@ -977,7 +981,8 @@ class asapplotter:
         self._ipanel = -1
         self._panelrows = []
 
-    # scantable plot methods
+
+    ### Actual scantable plot methods ###
     @asaplog_post_dec
     def plot(self, scan=None):
         """
@@ -1305,6 +1310,13 @@ class asapplotter:
         from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
         from numpy import array, pi
+        if PL.gcf() == self._plotter.figure:
+            # the current figure is ASAP plotter. Use mpl plotter
+            figids = PL.get_fignums()
+            if figids[-1] > 0:
+                PL.figure(figids[-1])
+            else:
+                PL.figure(1)
         if not visible or not self._visible:
             PL.ioff()
             from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -1531,6 +1543,13 @@ class asapplotter:
         visible = rcParams['plotter.gui']
         from matplotlib import pylab as PL
         from numpy import array, pi
+        if PL.gcf() == self._plotter.figure:
+            # the current figure is ASAP plotter. Use mpl plotter
+            figids = PL.get_fignums()
+            if figids[-1] > 0:
+                PL.figure(figids[-1])
+            else:
+                PL.figure(1)
         if not visible or not self._visible:
             PL.ioff()
             from matplotlib.backends.backend_agg import FigureCanvasAgg
