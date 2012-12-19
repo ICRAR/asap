@@ -71,8 +71,7 @@ set( ASAP_SRCS
      ${SRCDIR}/PlotHelper.cpp
      ${SRCDIR}/STApplyTable.cpp
      ${SRCDIR}/STCalTsys.cpp
-     ${SRCDIR}/STCalSky.cpp
-     ${SRCDIR}/Templates.cpp )
+     ${SRCDIR}/STCalSky.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp
