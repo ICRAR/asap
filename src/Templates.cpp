@@ -57,18 +57,24 @@ template class casa::CountedPtr<asap::STPol>;
 #include <tables/Tables/TVecTemp.h>
 //#include <tables/Tables/TVecMath.h>
 
+#ifndef USE_CASAPY
 template class ROTableVector<uInt>;
+#endif
 template class TableVector<uInt>;
 template class TabVecScaCol<uInt>;
 template class TabVecTemp<uInt>;
 template class TabVecRep<uInt>;
 
+#ifndef USE_CASAPY
 template class ROTableVector<Float>;
+#endif
 template class TabVecScaCol<Float>;
 template class TabVecTemp<Float>;
 template class TabVecRep<Float>;
 
+#ifndef USE_CASAPY
 template class ROTableVector<uChar>;
+#endif
 template class TableVector<uChar>;
 template class TabVecScaCol<uChar>;
 template class TabVecTemp<uChar>;
