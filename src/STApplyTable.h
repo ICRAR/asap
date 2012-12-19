@@ -5,13 +5,13 @@
 //
 // Base class for application tables.
 //
-// Author: Takeshi Nakazato 
+// Author: Takeshi Nakazato <takeshi.nakazato@nao.ac.jp> (C) 2012
 //
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#ifndef ASAPAPPLYTABLE_H
-#define ASAPAPPLYTABLE_H
+#ifndef ASAP_APPLY_TABLE_H
+#define ASAP_APPLY_TABLE_H
 
 #include <casa/Arrays/Vector.h>
 #include <casa/Logging/LogIO.h>
@@ -65,6 +65,8 @@ public:
 
   void setSelection(STSelector &sel);
   void unsetSelection();
+
+  void save(const casa::String &name);
 
 protected:
   void setbasedata(casa::uInt irow, casa::uInt scanno, casa::uInt cycleno,

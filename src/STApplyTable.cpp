@@ -4,7 +4,7 @@
 // Description:
 //
 //
-// Author: Takeshi Nakazato
+// Author: Takeshi Nakazato <takeshi.nakazato@nao.ac.jp> (C) 2012
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -101,6 +101,11 @@ void STApplyTable::setbasedata(uInt irow, uInt scanno, uInt cycleno,
   ifCol_.put(irow, ifno);
   polCol_.put(irow, polno);
   timeCol_.put(irow, time);
+}
+
+void STApplyTable::save(const String &name)
+{
+  table_.deepCopy(name, Table::New);
 }
 
 }

@@ -70,8 +70,11 @@ set( ASAP_SRCS
      ${SRCDIR}/GenericEdgeDetector.cpp
      ${SRCDIR}/PlotHelper.cpp
      ${SRCDIR}/STApplyTable.cpp
-     ${SRCDIR}/STCalTsys.cpp
-     ${SRCDIR}/STCalSky.cpp )
+     ${SRCDIR}/STCalTsysTable.cpp
+     ${SRCDIR}/STCalSkyTable.cpp
+     ${SRCDIR}/STCalibration.cpp
+     ${SRCDIR}/STCalSkyPSAlma.cpp
+     ${SRCDIR}/STCalTsys.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp
