@@ -59,6 +59,7 @@ class asapplotter:
         self._margins = self.set_margin(refresh=False)
         self._legendloc = None
         ### scantable plot settings
+        self._plotmode = "spectra"
         self._panelling = None
         self._stacking = None
         self.set_panelling()
@@ -960,6 +961,7 @@ class asapplotter:
             NO checking is done that the abcissas of the scantable
             are consistent e.g. all 'channel' or all 'velocity' etc.
         """
+        self._plotmode = "spectra"
         if not self._data and not scan:
             msg = "Input is not a scantable"
             raise TypeError(msg)
@@ -1303,6 +1305,7 @@ class asapplotter:
         """
         plot azimuth and elevation versus time of a scantable
         """
+        self._plotmode = "azel"
         visible = rcParams['plotter.gui']
         from matplotlib import pylab as PL
         from matplotlib.dates import DateFormatter
@@ -1310,13 +1313,11 @@ class asapplotter:
         from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
         from numpy import array, pi
-        if PL.gcf() == self._plotter.figure:
+        if self._plotter and (PL.gcf() == self._plotter.figure):
             # the current figure is ASAP plotter. Use mpl plotter
             figids = PL.get_fignums()
-            if figids[-1] > 0:
-                PL.figure(figids[-1])
-            else:
-                PL.figure(1)
+            PL.figure(max(figids[-1],1))
+
         if not visible or not self._visible:
             PL.ioff()
             from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -1422,6 +1423,7 @@ class asapplotter:
             projection : projection type either
                          ''(no projection [deg])|'coord'(not implemented)
         """
+        self._plotmode = "pointing"
         from numpy import array, pi
         from asap import scantable
         # check for scantable
@@ -1543,13 +1545,11 @@ class asapplotter:
         visible = rcParams['plotter.gui']
         from matplotlib import pylab as PL
         from numpy import array, pi
-        if PL.gcf() == self._plotter.figure:
+        if self._plotter and (PL.gcf() == self._plotter.figure):
             # the current figure is ASAP plotter. Use mpl plotter
             figids = PL.get_fignums()
-            if figids[-1] > 0:
-                PL.figure(figids[-1])
-            else:
-                PL.figure(1)
+            PL.figure(max(figids[-1],1))
+
         if not visible or not self._visible:
             PL.ioff()
             from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -1587,6 +1587,7 @@ class asapplotter:
     # plotting in time is not yet implemented..
     @asaplog_post_dec
     def plottp(self, scan=None):
+        self._plotmode = "totalpower"
         from asap import scantable
         if not self._data and not scan:
             msg = "Input is not a scantable"
@@ -1774,6 +1775,7 @@ class asapplotter:
         Only the first spectrum is plotted in case there are multiple
         spectra which belong to a grid.
         """
+        self._plotmode = "grid"
         from asap import scantable
         from numpy import array, ma, cos
         if not self._data and not scan:
