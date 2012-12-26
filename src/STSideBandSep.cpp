@@ -244,7 +244,7 @@ void STSideBandSep::solveImageFreqency()
   // update freq_ID in table.
   freqIdVec = fIDnew;
   // Summary (Image side band)
-  os << "[Signal side band]" << LogIO::POST;
+  os << "[Image side band]" << LogIO::POST;
   os << "- IFNO: " << imgTab_p->getIF(0) << " (FREQ_ID = " << freqIdVec(0)
      << ")" << LogIO::POST;
   os << "- Reference value: " << imgrefval << " [Hz] ("
