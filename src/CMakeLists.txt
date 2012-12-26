@@ -69,6 +69,7 @@ set( ASAP_SRCS
      ${SRCDIR}/RasterEdgeDetector.cpp
      ${SRCDIR}/GenericEdgeDetector.cpp
      ${SRCDIR}/PlotHelper.cpp
+     ${SRCDIR}/STSideBandSep.cpp
      ${SRCDIR}/STApplyTable.cpp
      ${SRCDIR}/STCalTsysTable.cpp
      ${SRCDIR}/STCalSkyTable.cpp
@@ -98,6 +99,7 @@ set( ASAP_PYSRCS
      ${SRCDIR}/python_Iterator.cpp
      ${SRCDIR}/python_EdgeMarker.cpp
      ${SRCDIR}/python_PlotHelper.cpp
+     ${SRCDIR}/python_STSideBandSep.cpp
      ${SRCDIR}/python_asap.cpp )
 
 add_library( ${ASAPLIB} SHARED ${ASAP_SRCS} )
