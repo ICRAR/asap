@@ -213,8 +213,8 @@ void STSideBandSep::solveImageFreqency()
      << "] (" << md.getRefString() << ") " << LogIO::POST;
   //
   MeasFrame mframe( me, mp, md );
-  MFrequency::Convert toloframe(loFrame_, MFrequency::Ref(tabframe, mframe));
-  MFrequency::Convert tobframe(tabframe, MFrequency::Ref(loFrame_, mframe));
+  MFrequency::Convert tobframe(loFrame_, MFrequency::Ref(tabframe, mframe));
+  MFrequency::Convert toloframe(tabframe, MFrequency::Ref(loFrame_, mframe));
   // convert refval to loFrame_
   double sigrefval;
   if (tabframe == loFrame_)
