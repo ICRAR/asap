@@ -48,7 +48,7 @@ class sbseparator:
         self.freqframe = ""
         self.solveother = False
         self.dirtol = [1.e-5, 1.e-5] # direction tolerance in rad (2 arcsec)
-        self.lo1 = 0.
+        #self.lo1 = 0.
 
         self.tables = []
         self.nshift = -1
@@ -56,7 +56,7 @@ class sbseparator:
 
         self.set_data(infiles)
         
-        #self.separator = sidebandsep()
+        self.separator = SBSeparator()
 
     @asaplog_post_dec
     def set_data(self, infiles):
@@ -220,13 +220,27 @@ class sbseparator:
 
         lo1 : LO1 frequency in float
         """
+        lo1val = -1.
         if isinstance(lo1, dict) and lo1["unit"] == "Hz":
-            self.lo1 = lo1["value"]
+            lo1val = lo1["value"]
         else:
-            self.lo1 = float(lo1)
-        if self.lo1 <= 0.:
+            lo1val = float(lo1)
+        if lo1val <= 0.:
             asaplog.push("Got negative LO1 frequency. It will be ignored.")
             asaplog.post("WARN")
+        else:
+            self.separator.set_lo1(lo1val)
+
+
+    def set_lo1root(self, name):
+        """
+        Set MS name which stores LO1 frequency of signal side band.
+        It is used to calculate frequency of image sideband.
+
+        name : MS name which contains 'ASDM_SPECTRALWINDOW' and
+               'ASDM_RECEIVER' tables.
+        """
+        self.separator.set_lo1root(name)
 
 
     @asaplog_post_dec
@@ -288,9 +302,9 @@ class sbseparator:
             # Warnings
             asaplog.post()
             asaplog.push("Saving IMAGE sideband.")
-            asaplog.push("Note, frequency information of IMAGE sideband cannot be properly filled so far. (future development)")
-            asaplog.push("Storing frequency setting of SIGNAL sideband in FREQUENCIES table for now.")
-            asaplog.post("WARN")
+            #asaplog.push("Note, frequency information of IMAGE sideband cannot be properly filled so far. (future development)")
+            #asaplog.push("Storing frequency setting of SIGNAL sideband in FREQUENCIES table for now.")
+            #asaplog.post("WARN")
 
             imagename = outname + ".imageband"
             if os.path.exists(imagename):
@@ -299,13 +313,9 @@ class sbseparator:
                 else:
                     shutil.rmtree(imagename)
             # Update frequency information
-            sbsep = SBSeparator()
-            sbsep.set_imgtable(imagetab)
-            if self.lo1 > 0.:
-                sbsep.set_lo1(self.lo1)
-            sbsep.solve_imgfreq()
+            self.separator.set_imgtable(imagetab)
+            self.separator.solve_imgfreq()
             imagetab.save(imagename)
-            del sbsep
 
 
     def _solve_signal(self, data, tabidx=None):

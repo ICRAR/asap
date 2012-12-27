@@ -1,14 +1,16 @@
 //#---------------------------------------------------------------------------
-//# python_PlotHelper.cc: python exposure of c++ PlotHelper class
+//# python_PlotHelper.cpp: python exposure of c++ PlotHelper class
+//#---------------------------------------------------------------------------
+//# Author: Kanako Sugimoto, (C) 2012
+//#
+//# Copyright: See COPYING file that comes with this distribution
+//#
 //#---------------------------------------------------------------------------
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
 
-#include <string>
-#include <vector>
-
 #include "PlotHelper.h"
-#include "ScantableWrapper.h"
+//#include "ScantableWrapper.h"
 
 using namespace boost::python;
 

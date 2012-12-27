@@ -26,7 +26,7 @@ void python_STSideBandSep() {
 	  (boost::python::arg("frame")="TOPO",
 	   boost::python::arg("reftime")=-1,
 	   boost::python::arg("refdir")="") )
-    //.def( "set_asdm", &STSideBandSep::setLO1Asdm )
+    .def( "set_lo1root", &STSideBandSep::setLO1Root )
     // temporal methods
     .def( "set_imgtable", &STSideBandSep::setImageTable )
     .def( "solve_imgfreq", &STSideBandSep::solveImageFreqency )

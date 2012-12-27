@@ -20,6 +20,7 @@
 #include <measures/Measures/MFrequency.h>
 #include <measures/Measures/MCFrequency.h>
 
+#include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/TableVector.h>
 
@@ -97,20 +98,35 @@ void STSideBandSep::setLO1(const double lo1, string frame, double reftime, strin
 #endif
 };
 
-void STSideBandSep::setLO1Asdm(string asdmname)
+void STSideBandSep::setLO1Root(string name)
 {
-  // Check for existance of the asdm.
-  if (!checkFile(asdmname)) {
+   LogIO os(LogOrigin("STSideBandSep","setLO1Root()", WHERE));
+   os << "Searching for '" << name << "'..." << LogIO::POST;
+  // Check for existance of the file
+  if (!checkFile(name)) {
      throw(AipsError("File does not exist"));
   }
-  if (asdmname[(asdmname.size()-1)] == '/')
-    asdmname = asdmname.substr(0,(asdmname.size()-2));
+  if (name[(name.size()-1)] == '/')
+    name = name.substr(0,(name.size()-2));
 
-  asdmName_ = asdmname;
+  if (checkFile(name+"/Receiver.xml", "file") &&
+      checkFile(name+"/SpectralWindow.xml", "file")){
+    os << "Found '" << name << "/Receiver.xml' ... got an ASDM name." << LogIO::POST;
+    asdmName_ = name;
+  } else if (checkFile(name+"/ASDM_RECEIVER") &&
+	     checkFile(name+"/ASDM_SPECTRALWINDOW")){
+    os << "Found '" << name << "/ASDM_RECEIVER' ... got a Table name." << LogIO::POST;
+    asisName_ = name;
+  } else {
+    throw(AipsError("Invalid file name. Set an MS or ASDM name."));
+  }
 
 #ifdef KS_DEBUG
-  cout << "STSideBandSep::setLO1Asdm" << endl;
-  cout << "asdm name = " << asdmName_ << endl;
+  cout << "STSideBandSep::setLO1Root" << endl;
+  if (!asdmName_.empty())
+    cout << "asdm name = " << asdmName_ << endl;
+  if (!asisName_.empty())
+    cout << "MS name = " << asisName_ << endl;
 #endif
 };
 
@@ -125,27 +141,7 @@ void STSideBandSep::solveImageFreqency()
   if (imgTab_p.null())
     throw AipsError("STSideBandSep::solveImageFreqency - an image side band scantable should be set first");
 
-  // Check for the availability of LO1
-  os << "Looking for LO1. lo1Freq_ = " << lo1Freq_ << LogIO::POST; 
-  if (lo1Freq_ > 0.) {
-    os << "Using user defined LO1 frequency." << LogIO::POST;
-  } else if (!asdmName_.empty() > 0) {
-      // ASDM name is set.
-    os << "Using user defined ASDM: " << asdmName_ << LogIO::POST;
-    if (!getLo1FromAsdm(asdmName_)) {
-      throw AipsError("Failed to get LO1 frequency from ASDM");
-    }
-  } else {
-    // Try getting ASDM name from scantable header
-    os << "Try getting information from scantable header" << LogIO::POST;
-    if (!getLo1FromTab(imgTab_p)) {
-      throw AipsError("Failed to get LO1 frequency from asis table");
-    }
-  }
-  // LO1 should now be ready.
-  if (lo1Freq_ < 0.)
-    throw(AipsError("Got negative LO1 Frequency"));
-
+  // Convert frequency REFVAL to the value in frame of LO.
   // The code assumes that imgTab_p has only an IF and only a FREQ_ID
   // is associated to an IFNO
   // TODO: More complete Procedure would be
@@ -159,6 +155,7 @@ void STSideBandSep::solveImageFreqency()
   TableVector<uInt> freqIdVec( imgTab_p->table(), "FREQ_ID" );
   // assuming single freqID per IFNO
   uInt freqid = freqIdVec(0);
+  int nChan = imgTab_p->nchan(imgTab_p->getIF(0));
   double refpix, refval, increment ;
   freqTab_.getEntry(refpix, refval, increment, freqid);
   //MFrequency sigrefval = MFrequency(MVFrequency(refval),tabframe);
@@ -202,7 +199,48 @@ void STSideBandSep::solveImageFreqency()
     Quantum<Double> dec = qh.asQuantumDouble() ;
     md = MDirection(ra.getValue("rad"), dec.getValue("rad"),epoch);
   }
-  // Summary (LO1)
+  MeasFrame mframe( me, mp, md );
+  MFrequency::Convert tobframe(loFrame_, MFrequency::Ref(tabframe, mframe));
+  MFrequency::Convert toloframe(tabframe, MFrequency::Ref(loFrame_, mframe));
+  // Convert refval to loFrame_
+  double sigrefval;
+  if (tabframe == loFrame_)
+    sigrefval = refval;
+  else
+    sigrefval = toloframe(Quantum<Double>(refval, "Hz")).get("Hz").getValue();
+
+
+  // Check for the availability of LO1
+  if (lo1Freq_ > 0.) {
+    os << "Using user defined LO1 frequency." << LogIO::POST;
+  } else if (!asisName_.empty()) {
+      // MS name is set.
+    os << "Using user defined MS (asis): " << asisName_ << LogIO::POST;
+    if (!getLo1FromAsisTab(asisName_, sigrefval, refpix, increment, nChan)) {
+      throw AipsError("Failed to get LO1 frequency from MS");
+    }
+  } else if (!asdmName_.empty()) {
+      // ASDM name is set.
+    os << "Using user defined ASDM: " << asdmName_ << LogIO::POST;
+    if (!getLo1FromAsdm(asdmName_, sigrefval, refpix, increment, nChan)) {
+      throw AipsError("Failed to get LO1 frequency from ASDM");
+    }
+  } else {
+    // Try getting ASDM name from scantable header
+    os << "Try getting information from scantable header" << LogIO::POST;
+    if (!getLo1FromScanTab(imgTab_p, sigrefval, refpix, increment, nChan)) {
+      //throw AipsError("Failed to get LO1 frequency from asis table");
+      os << LogIO::WARN << "Failed to get LO1 frequency using information in scantable." << LogIO::POST;
+      os << LogIO::WARN << "Could not fill frequency information of IMAGE sideband properly." << LogIO::POST;
+      os << LogIO::WARN << "Storing values of SIGNAL sideband in FREQUENCIES table" << LogIO::POST;
+      return;
+    }
+  }
+  // LO1 should now be ready.
+  if (lo1Freq_ < 0.)
+    throw(AipsError("Got negative LO1 Frequency"));
+
+  // Print summary (LO1)
   Vector<Double> dirvec = md.getAngle(Unit(String("rad"))).getValue();
   os << "[LO1 settings]" << LogIO::POST;
   os << "- Frequency: " << lo1Freq_ << " [Hz] ("
@@ -211,18 +249,8 @@ void STSideBandSep::solveImageFreqency()
      << " [day]" << LogIO::POST;
   os << "- Reference direction: [" << dirvec[0] << ", " << dirvec[1]
      << "] (" << md.getRefString() << ") " << LogIO::POST;
-  //
-  MeasFrame mframe( me, mp, md );
-  MFrequency::Convert tobframe(loFrame_, MFrequency::Ref(tabframe, mframe));
-  MFrequency::Convert toloframe(tabframe, MFrequency::Ref(loFrame_, mframe));
-  // convert refval to loFrame_
-  double sigrefval;
-  if (tabframe == loFrame_)
-    sigrefval = refval;
-  else
-    sigrefval = toloframe(Quantum<Double>(refval, "Hz")).get("Hz").getValue();
 
-  //Summary (signal)
+  //Print summary (signal)
   os << "[Signal side band]" << LogIO::POST;
   os << "- IFNO: " << imgTab_p->getIF(0) << " (FREQ_ID = " << freqid << ")"
      << LogIO::POST;
@@ -232,18 +260,20 @@ void STSideBandSep::solveImageFreqency()
      << ")" << LogIO::POST;
   os << "- Reference pixel: " << refpix  << LogIO::POST;
   os << "- Increment: " << increment << " [Hz]" << LogIO::POST;
-  // calculate image band incr and refval in loFrame_
+
+  // Calculate image band incr and refval in loFrame_
   Double imgincr = -increment;
   Double imgrefval = 2 * lo1Freq_ - sigrefval;
   Double imgrefval_tab = imgrefval;
-  // convert imgrefval back to table base frame
+  // Convert imgrefval back to table base frame
   if (tabframe != loFrame_)
     imgrefval = tobframe(Quantum<Double>(imgrefval, "Hz")).get("Hz").getValue();
-  // set new frequencies table
+  // Set new frequencies table
   uInt fIDnew = freqTab_.addEntry(refpix, imgrefval, imgincr);
-  // update freq_ID in table.
+  // Update FREQ_ID in table.
   freqIdVec = fIDnew;
-  // Summary (Image side band)
+
+  // Print summary (Image side band)
   os << "[Image side band]" << LogIO::POST;
   os << "- IFNO: " << imgTab_p->getIF(0) << " (FREQ_ID = " << freqIdVec(0)
      << ")" << LogIO::POST;
@@ -277,7 +307,11 @@ Bool STSideBandSep::checkFile(const string name, string type)
   }
 };
 
-bool STSideBandSep::getLo1FromAsdm(const string asdmname)
+bool STSideBandSep::getLo1FromAsdm(const string asdmname,
+				   const double refval,
+				   const double refpix,
+				   const double increment,
+				   const int nChan)
 {
   // Check for relevant tables.
   string spwname = asdmname + "/SpectralWindow.xml";
@@ -291,20 +325,128 @@ bool STSideBandSep::getLo1FromAsdm(const string asdmname)
 };
 
 
-bool STSideBandSep::getLo1FromTab(CountedPtr< Scantable > &scantab)
+bool STSideBandSep::getLo1FromScanTab(CountedPtr< Scantable > &scantab, 
+				      const double refval,
+				      const double refpix,
+				      const double increment,
+				      const int nChan)
 {
+  LogIO os(LogOrigin("STSideBandSep","getLo1FromScanTab()", WHERE));
   Table& tab = scantab->table();
   // Check for relevant tables.
-  const String spwname = tab.keywordSet().asString("ASDM_SPECTRALWINDOW");
-  const String recname = tab.keywordSet().asString("ASDM_RECEIVER");
-  if (!checkFile(spwname,"directory") || !checkFile(recname,"directory")) {
-    throw(AipsError("Could not find subtables in MS"));
+  String spwname, recname;
+  try {
+    spwname = tab.keywordSet().asString("ASDM_SPECTRALWINDOW");
+    recname = tab.keywordSet().asString("ASDM_RECEIVER");
+  } catch (...) {
+    // keywords are not there
+    os << LogIO::WARN
+       << "Could not find necessary table names in scantable header."
+       << LogIO::POST;
+    return false;
   }
-  // get
+  if (!checkFile(spwname,"directory") || !checkFile(recname,"directory")) {
+    throw(AipsError("Could not find relevant subtables in MS"));
+  }
+  // Get root MS name
+  string msname;
+  const String recsuff = "/ASDM_RECEIVER";
+  String::size_type pos;
+  pos = recname.size()-recsuff.size()-1;
+  if (recname.substr(pos) == recsuff)
+    msname = recname.substr(0, pos-1);
+  else
+    throw(AipsError("Internal error in parsing table name from a scantable keyword."));
 
-  return false;
+  if (!checkFile(msname))
+    throw(AipsError("Internal error in parsing MS name from a scantable keyword."));
+
+  return getLo1FromAsisTab(msname, refval, refpix, increment, nChan);
 
 };
 
+bool STSideBandSep::getLo1FromAsisTab(const string msname,
+				      const double refval,
+				      const double refpix,
+				      const double increment,
+				      const int nChan)
+{
+  LogIO os(LogOrigin("STSideBandSep","getLo1FromAsisTab()", WHERE));
+  os << "Searching an LO1 frequency in '" << msname << "'" << LogIO::POST;
+  // Check for relevant tables.
+  const string spwname = msname + "/ASDM_SPECTRALWINDOW";
+  const string recname = msname + "/ASDM_RECEIVER";
+  if (!checkFile(spwname,"directory") || !checkFile(recname,"directory")) {
+    throw(AipsError("Could not find relevant tables in MS"));
+  }
+
+  Table spwtab_ = Table(spwname);
+  String asdmSpw;
+  ROTableRow spwrow(spwtab_);
+  const Double rtol = 0.01;
+  for (uInt idx = 0; idx < spwtab_.nrow(); idx++){
+    const TableRecord& rec = spwrow.get(idx);
+    // Compare nchan
+    if (rec.asInt("numChan") != (Int) nChan)
+      continue;
+    // Compare increment
+    Double asdminc;
+    Array<Double> incarr = rec.asArrayDouble("chanWidthArray");
+    if (incarr.size() > 0)
+      asdminc = incarr(IPosition(1, (uInt) refpix));
+    else
+      asdminc = rec.asDouble("chanWidth");
+    if (abs(asdminc - abs(increment)) > rtol * abs(increment))
+      continue;
+    // Compare refval
+    Double asdmrefv;
+    Array<Double> refvarr = rec.asArrayDouble("chanFreqArray");
+    if (refvarr.size() > 0){
+      const uInt iref = (uInt) refpix;
+      const Double ratio = refpix - (Double) iref;
+      asdmrefv = refvarr(IPosition(1, iref))*(1.-ratio)
+	+ refvarr(IPosition(1,iref+1))*ratio;
+    }
+    else {
+      const Double ch0 = rec.asDouble("chanFreqStart");
+      const Double chstep = rec.asDouble("chanFreqStep");
+      asdmrefv = ch0 + chstep * refpix;
+    }
+    if (abs(asdmrefv - refval) < 0.5*abs(asdminc)){
+      asdmSpw = rec.asString("spectralWindowId");
+      break;
+    }
+  }
+
+  if (asdmSpw.empty()){
+    os << LogIO::WARN << "Could not find relevant SPW ID in " << spwname << LogIO::POST;
+    return false;
+  }
+  else {
+    os << asdmSpw << " in " << spwname
+       << " matches the freqeuncies of signal side band." << LogIO::POST;
+  }
+
+  Table rectab_ = Table(recname);
+  ROTableRow recrow(rectab_);
+  for (uInt idx = 0; idx < rectab_.nrow(); idx++){
+    const TableRecord& rec = recrow.get(idx);
+    if (rec.asString("spectralWindowId") == asdmSpw){
+      const Array<Double> loarr = rec.asArrayDouble("freqLO");
+      lo1Freq_ = loarr(IPosition(1,0));
+      os << "Found LO1 Frequency in " << recname << ": "
+	 << lo1Freq_ << " [Hz]" << LogIO::POST;
+      return true;
+    }
+  }
+  os << LogIO::WARN << "Could not find " << asdmSpw << " in " << recname
+     << LogIO::POST;
+  return false;
+};
+
+// String STSideBandSep::()
+// {
+
+// };
 
 } //namespace asap

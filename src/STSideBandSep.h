@@ -53,7 +53,7 @@ public:
    * Set additional information to fill frequencies of image sideband
    **/
   void setLO1(const double lo1, string frame="TOPO", double reftime=-1, string refdir="");
-  void setLO1Asdm(const string asdmname);
+  void setLO1Root(const string name);
   /**
    * Actual calculation of frequencies of image sideband
    **/
@@ -61,8 +61,15 @@ public:
 
 private:
   Bool checkFile(const string name, string type="");
-  bool getLo1FromAsdm(string asdmname);
-  bool getLo1FromTab(casa::CountedPtr< Scantable > &scantab);
+  bool getLo1FromAsdm(const string asdmname,
+		      const double refval, const double refpix,
+		      const double increment, const int nChan);
+  bool getLo1FromAsisTab(const string msname,
+			 const double refval, const double refpix,
+			 const double increment, const int nChan);
+  bool getLo1FromScanTab(casa::CountedPtr< Scantable > &scantab,
+			 const double refval, const double refpix,
+			 const double increment, const int nChan);
 
   unsigned int sigIfno_;
   double ftol_;
@@ -70,7 +77,7 @@ private:
   MFrequency::Types loFrame_;
   double loTime_;
   string loDir_;
-  string asdmName_;
+  string asdmName_, asisName_;
 
   CountedPtr< Scantable > imgTab_p, sigTab_p;
 
