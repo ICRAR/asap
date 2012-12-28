@@ -130,6 +130,12 @@ void STSideBandSep::setLO1Root(string name)
 #endif
 };
 
+///// TEMPORAL FUNCTION!!! /////
+void STSideBandSep::setScanTb0(const ScantableWrapper &s){
+  st0_ = s.getCP();
+};
+////////////////////////////////
+
 void STSideBandSep::solveImageFreqency()
 {
 #ifdef KS_DEBUG
@@ -228,7 +234,7 @@ void STSideBandSep::solveImageFreqency()
   } else {
     // Try getting ASDM name from scantable header
     os << "Try getting information from scantable header" << LogIO::POST;
-    if (!getLo1FromScanTab(imgTab_p, sigrefval, refpix, increment, nChan)) {
+    if (!getLo1FromScanTab(st0_, sigrefval, refpix, increment, nChan)) {
       //throw AipsError("Failed to get LO1 frequency from asis table");
       os << LogIO::WARN << "Failed to get LO1 frequency using information in scantable." << LogIO::POST;
       os << LogIO::WARN << "Could not fill frequency information of IMAGE sideband properly." << LogIO::POST;
@@ -332,13 +338,14 @@ bool STSideBandSep::getLo1FromScanTab(CountedPtr< Scantable > &scantab,
 				      const int nChan)
 {
   LogIO os(LogOrigin("STSideBandSep","getLo1FromScanTab()", WHERE));
-  Table& tab = scantab->table();
   // Check for relevant tables.
+  const TableRecord &rec = scantab->table().keywordSet() ;
   String spwname, recname;
-  try {
-    spwname = tab.keywordSet().asString("ASDM_SPECTRALWINDOW");
-    recname = tab.keywordSet().asString("ASDM_RECEIVER");
-  } catch (...) {
+  if (rec.isDefined("ASDM_SPECTRALWINDOW") && rec.isDefined("ASDM_RECEIVER")){
+    spwname = rec.asString("ASDM_SPECTRALWINDOW");
+    recname = rec.asString("ASDM_RECEIVER");
+  }
+  else {
     // keywords are not there
     os << LogIO::WARN
        << "Could not find necessary table names in scantable header."
@@ -352,9 +359,9 @@ bool STSideBandSep::getLo1FromScanTab(CountedPtr< Scantable > &scantab,
   string msname;
   const String recsuff = "/ASDM_RECEIVER";
   String::size_type pos;
-  pos = recname.size()-recsuff.size()-1;
+  pos = recname.size()-recsuff.size();
   if (recname.substr(pos) == recsuff)
-    msname = recname.substr(0, pos-1);
+    msname = recname.substr(0, pos);
   else
     throw(AipsError("Internal error in parsing table name from a scantable keyword."));
 

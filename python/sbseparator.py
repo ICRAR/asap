@@ -56,7 +56,7 @@ class sbseparator:
 
         self.set_data(infiles)
         
-        self.separator = SBSeparator()
+        self._separator = SBSeparator()
 
     @asaplog_post_dec
     def set_data(self, infiles):
@@ -74,7 +74,7 @@ class sbseparator:
                     asaplog.post()
                     raise TypeError, "Input data is not a list of scantables."
 
-            #self.separator._setdata(infiles)
+            #self._separator._setdata(infiles)
             self._reset_data()
             self.intables = infiles
         else:
@@ -84,7 +84,7 @@ class sbseparator:
                     asaplog.post()
                     raise ValueError, "Could not find input file '%s'" % name
             
-            #self.separator._setdataname(infiles)
+            #self._separator._setdataname(infiles)
             self._reset_data()
             self.intables = infiles
 
@@ -199,7 +199,7 @@ class sbseparator:
         """
         Set rejection limit of solution.
         """
-        #self.separator._setlimit(abs(threshold))
+        #self._separator._setlimit(abs(threshold))
         self.rejlimit = threshold
         asaplog.push("The threshold of rejection is set to %f" % self.rejlimit)
 
@@ -229,7 +229,7 @@ class sbseparator:
             asaplog.push("Got negative LO1 frequency. It will be ignored.")
             asaplog.post("WARN")
         else:
-            self.separator.set_lo1(lo1val)
+            self._separator.set_lo1(lo1val)
 
 
     def set_lo1root(self, name):
@@ -240,7 +240,7 @@ class sbseparator:
         name : MS name which contains 'ASDM_SPECTRALWINDOW' and
                'ASDM_RECEIVER' tables.
         """
-        self.separator.set_lo1root(name)
+        self._separator.set_lo1root(name)
 
 
     @asaplog_post_dec
@@ -252,9 +252,13 @@ class sbseparator:
         overwrite : overwrite existing table
         """
         # List up valid scantables and IFNOs to convolve.
-        #self.separator._separate()
+        #self._separator._separate()
         self._setup_shift()
         #self._preprocess_tables()
+
+        ### TEMPORAL ###
+        self._separator._get_asistb_from_scantb(self.tables[0])
+        ################
 
         nshift = len(self.tables)
         signaltab = self._grid_outtable(self.tables[0])
@@ -313,8 +317,8 @@ class sbseparator:
                 else:
                     shutil.rmtree(imagename)
             # Update frequency information
-            self.separator.set_imgtable(imagetab)
-            self.separator.solve_imgfreq()
+            self._separator.set_imgtable(imagetab)
+            self._separator.solve_imgfreq()
             imagetab.save(imagename)
 
 
@@ -612,14 +616,14 @@ class sbseparator:
 #         if not overwrite and os.path.exists(outfile):
 #             raise RuntimeError, "Output file '%s' already exists" % outfile
 # 
-#         #self.separator._save(outfile, outform)
+#         #self._separator._save(outfile, outform)
 
 #     def done(self):
 #         self.close()
 
 #     def close(self):
 #         pass
-#         #del self.separator
+#         #del self._separator
     
 
 

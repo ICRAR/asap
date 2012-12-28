@@ -30,6 +30,7 @@ void python_STSideBandSep() {
     // temporal methods
     .def( "set_imgtable", &STSideBandSep::setImageTable )
     .def( "solve_imgfreq", &STSideBandSep::solveImageFreqency )
+    .def( "_get_asistb_from_scantb", &STSideBandSep::setScanTb0 )
   ;
 };
 

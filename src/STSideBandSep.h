@@ -46,9 +46,10 @@ public:
   void setFrequency(const unsigned int ifno, const double freqtol, string frame="");
 
   /**
-   * Set separated scantable to fill frequencies of image sideband (temporal)
+   * Set scantable to fill frequencies of image sideband (temporal)
    **/
   void setImageTable(const ScantableWrapper &s);
+  void setScanTb0(const ScantableWrapper &s);
   /**
    * Set additional information to fill frequencies of image sideband
    **/
@@ -79,7 +80,9 @@ private:
   string loDir_;
   string asdmName_, asisName_;
 
-  CountedPtr< Scantable > imgTab_p, sigTab_p;
+  CountedPtr<Scantable> imgTab_p, sigTab_p;
+  // TEMPORAL member
+  CountedPtr<Scantable> st0_;
 
 }; // class
 
