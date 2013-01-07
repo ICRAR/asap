@@ -111,6 +111,8 @@ class asapplotter:
                               linestyle=0,linestyles=self._linestyles)
         self._plotter.legend(self._legendloc)
 
+    ### TODO: it's probably better to define following two methods in
+    ###       backend dependent class.
     def _new_custombar(self):
         backend=matplotlib.get_backend()
         if not self._visible:
@@ -129,6 +131,7 @@ class asapplotter:
         elif self._plotter.figmgr.casabar:
             return True
         return False
+    ### end of TODO
 
     def _assert_plotter(self,action="status",errmsg=None):
         """
@@ -275,7 +278,7 @@ class asapplotter:
         return []
 
 
-    ### Forwards to matplotlib axes ###
+    ### Forwards to methods in matplotlib axes ###
     def text(self, *args, **kwargs):
         self._assert_plotter(action="reload")
         if kwargs.has_key("interactive"):
@@ -414,8 +417,8 @@ class asapplotter:
             if (self._data is not None) and (scan != self._data):
                 del self._data
                 msg = "A new scantable is set to the plotter. "\
-                      "The masks and data selections are reset."
-                asaplog.push( msg )
+                      "The masks, data selections, and labels are reset."
+                asaplog.push(msg)
             self._data = scan
             # reset
             self._reset()
@@ -904,7 +907,7 @@ class asapplotter:
         if not self._data:
             msg = "Can only set mask after a first call to plot()"
             raise RuntimeError(msg)
-        if len(mask):
+        if (mask is not None) and len(mask):
             if isinstance(mask, list) or isinstance(mask, tuple):
                 self._usermask = array(mask)
             else:
@@ -925,11 +928,19 @@ class asapplotter:
 
     ### Reset methods ###
     def _reset(self):
-        self._usermask = []
-        self._usermaskspectra = None
-        self._offset = None
+        """Reset method called when new data is set"""
+        # reset selections and masks
         self.set_selection(None, False)
+        self.set_mask(None, None, False)
+        # reset offset
+        self._offset = None
+        # reset header
         self._reset_header()
+        # reset labels
+        self._lmap = None # related to stack
+        self.set_title(None, None, False)
+        self.set_ordinate(None, None, False)
+        self.set_abcissa(None, None, False)
 
     def _reset_header(self):
         self._headtext={'string': None, 'textobj': None}
