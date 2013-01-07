@@ -516,6 +516,8 @@ class asapplotter:
         """
         self._rows = rows
         self._cols = cols
+        # new layout is set. need to reset counters for multi page plotting
+        self._reset_counters()
         if refresh and self._data: self.plot(self._data)
         return
 
@@ -948,8 +950,8 @@ class asapplotter:
     def _reset_counter(self):
         self._startrow = 0
         self._ipanel = -1
-        self._reset_header()
         self._panelrows = []
+        self._reset_header()
         if self.casabar_exists():
             self._plotter.figmgr.casabar.set_pagecounter(1)
 
@@ -1041,8 +1043,10 @@ class asapplotter:
         ganged = rcParams['plotter.ganged']
         if self._panelling == 'i':
             ganged = False
-        if not firstpage:
-            # not the first page just clear the axis
+        if (not firstpage) and \
+               self._plotter._subplotsOk(self._rows, self._cols, n):
+            # Not the first page and subplot number is ok.
+            # Just clear the axis
             nx = self._plotter.cols
             ipaxx = n - nx - 1 #the max panel id to supress x-label
             for ip in xrange(len(self._plotter.subplots)):
