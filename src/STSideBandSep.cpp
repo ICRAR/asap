@@ -203,7 +203,8 @@ void STSideBandSep::solveImageFreqency()
     Quantum<Double> ra = qh.asQuantumDouble() ;
     qh.fromString( err, sdec ) ;
     Quantum<Double> dec = qh.asQuantumDouble() ;
-    md = MDirection(ra.getValue("rad"), dec.getValue("rad"),epoch);
+    //md = MDirection(ra.getValue("rad"), dec.getValue("rad"),epoch);
+    md = MDirection(ra, dec, epoch);
   }
   MeasFrame mframe( me, mp, md );
   MFrequency::Convert tobframe(loFrame_, MFrequency::Ref(tabframe, mframe));
