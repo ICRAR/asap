@@ -25,10 +25,11 @@ void python_PlotHelper() {
     .def("set_gridval", &PlotHelper::setGridParamVal,
          (boost::python::arg("epoch")="J2000",
           boost::python::arg("projname")="SIN"))
-//     .def("set_gird", &PlotHelper::setGridParam,
-//          (boost::python::arg("scellx")="",
-//           boost::python::arg("scelly")="",
-//           boost::python::arg("scenter")=""))
+    .def("set_grid", &PlotHelper::setGridParam,
+         (boost::python::arg("cellx")="",
+          boost::python::arg("celly")="",
+          boost::python::arg("center")="",
+	  boost::python::arg("projname")="SIN") )
     .def("get_gpos", &PlotHelper::getGridPixel,
          (boost::python::arg("whichrow")=0) )
     /** TODO

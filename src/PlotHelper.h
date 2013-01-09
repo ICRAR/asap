@@ -22,6 +22,7 @@
 #include <coordinates/Coordinates/DirectionCoordinate.h>
 
 #include "ScantableWrapper.h"
+#include "Scantable.h"
 
 namespace asap {
 
@@ -51,18 +52,21 @@ public:
   /**
    * Set grid parameters for plot panel (by quantity)
    **/
-/*   void setGridParam(const int nx, const int ny,  */
-/* 		    const string cellx="", const string celly="", */
-/* 		    string center="", const string projname="SIN") ; */
+  void setGridParam(const int nx, const int ny,
+		    const string cellx="", const string celly="",
+		    string center="", const string projname="SIN") ;
 
   /**
    * Get Pixel position of a row
    **/
   vector<double> getGridPixel(const int whichrow=0);
 
- private:
+private:
+  casa::DirectionCoordinate getSTCoord(const int nx, const int ny,
+				       const casa::Projection::Type ptype);
+
   casa::DirectionCoordinate *dircoord_;
-  ScantableWrapper data_;
+  casa::CountedPtr<Scantable> data_p;
 
 };
 

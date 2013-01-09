@@ -1766,18 +1766,19 @@ class asapplotter:
 
     # plot spectra by pointing
     @asaplog_post_dec
-    def plotgrid(self, scan=None,center=None,spacing=None,rows=None,cols=None):
+    def plotgrid(self, scan=None,center="",spacing=[],rows=None,cols=None):
         """
         Plot spectra based on direction.
         
         Parameters:
             scan:      a scantable to plot
-            center:    the grid center direction (a list) of plots in the
-                       unit of DIRECTION column.
+            center:    the grid center direction (a string)
                        (default) the center of map region
+                       (example) 'J2000 19h30m00s -25d00m00s'
             spacing:   a list of horizontal (R.A.) and vertical (Dec.)
-                       spacing in the unit of DIRECTION column.
+                       spacing.
                        (default) Calculated by the extent of map region and
+                       (example) ['1arcmin', '1arcmin']
                        the number of rows and cols to cover
             rows:      number of panels (grid points) in horizontal direction
             cols:      number of panels (grid points) in vertical direction
@@ -1801,100 +1802,13 @@ class asapplotter:
             del scan
 
         # Rows and cols
-        if rows:
-            self._rows = int(rows)
-        else:
-            msg = "Number of rows to plot are not specified. "
-            if self._rows:
-                msg += "Using previous value = %d" % (self._rows)
-                asaplog.push(msg)
-            else:
-                self._rows = 1
-                msg += "Setting rows = %d" % (self._rows)
-                asaplog.post()
-                asaplog.push(msg)
-                asaplog.post("WARN")
-        if cols:
-            self._cols = int(cols)
-        else:
-            msg = "Number of cols to plot are not specified. "
-            if self._cols:
-                msg += "Using previous value = %d" % (self._cols)
-                asaplog.push(msg)
-            else:
-                self._cols = 1
-                msg += "Setting cols = %d" % (self._cols)
-                asaplog.post()
-                asaplog.push(msg)
-                asaplog.post("WARN")
+        if (self._rows is None):
+            rows = max(1, rows)
+        if (self._cols is None):
+            cols = max(1, cols)
+        self.set_layout(rows,cols,False)
 
-        # Center and spacing
-        dirarr = array(self._data.get_directionval()).transpose()
-        print "Pointing range: (x, y) = (%f - %f, %f - %f)" %\
-              (dirarr[0].min(),dirarr[0].max(),dirarr[1].min(),dirarr[1].max())
-        dircent = [0.5*(dirarr[0].max() + dirarr[0].min()),
-                   0.5*(dirarr[1].max() + dirarr[1].min())]
-        del dirarr
-        if center is None:
-            #asaplog.post()
-            asaplog.push("Grid center is not specified. Automatically calculated from pointing center.")
-            #asaplog.post("WARN")
-            #center = [dirarr[0].mean(), dirarr[1].mean()]
-            center = dircent
-        elif (type(center) in (list, tuple)) and len(center) > 1:
-            from numpy import pi
-            # make sure center_x is in +-pi of pointing center
-            # (assumes dirs are in rad)
-            rotnum = round(abs(center[0] - dircent[0])/(2*pi))
-            if center[0] < dircent[0]: rotnum *= -1
-            cenx = center[0] - rotnum*2*pi
-            center = [cenx, center[1]]
-        else:
-            msg = "Direction of grid center should be a list of float (R.A., Dec.)"
-            raise ValueError, msg
-        asaplog.push("Grid center: (%f, %f) " % (center[0],center[1]))
-
-        if spacing is None:
-            #asaplog.post()
-            asaplog.push("Grid spacing not specified. Automatically calculated from map coverage")
-            #asaplog.post("WARN")
-            # automatically get spacing
-            dirarr = array(self._data.get_directionval()).transpose()
-            wx = 2. * max(abs(dirarr[0].max()-center[0]),
-                          abs(dirarr[0].min()-center[0]))
-            wy = 2. * max(abs(dirarr[1].max()-center[1]),
-                          abs(dirarr[1].min()-center[1]))
-            ## slightly expand area to plot the edges
-            #wx *= 1.1
-            #wy *= 1.1
-            xgrid = wx/max(self._cols-1.,1.)
-            #xgrid = wx/float(max(self._cols,1.))
-            xgrid *= cos(center[1])
-            ygrid = wy/max(self._rows-1.,1.)
-            #ygrid = wy/float(max(self._rows,1.))
-            # single pointing (identical R.A. and/or Dec. for all spectra.)
-            if xgrid == 0:
-                xgrid = 1.
-            if ygrid == 0:
-                ygrid = 1.
-            # spacing should be negative to transpose plot
-            spacing = [- xgrid, - ygrid]
-            del dirarr, xgrid, ygrid
-        #elif isinstance(spacing, str):
-        #    # spacing is a quantity
-        elif (type(spacing) in (list, tuple)) and len(spacing) > 1:
-            for i in xrange(2):
-                val = spacing[i]
-                if not isinstance(val, float):
-                    raise TypeError("spacing should be a list of float")
-                if val > 0.:
-                    spacing[i] = -val
-            spacing = spacing[0:2]
-        else:
-            msg = "Invalid spacing."
-            raise TypeError(msg)
-        asaplog.push("Spacing: (%f, %f) (projected)" % (spacing[0],spacing[1]))
-
+        # Select the first IF, POL, and BEAM for plotting
         ntotpl = self._rows * self._cols
         ifs = self._data.getifnos()
         if len(ifs) > 1:
@@ -1921,7 +1835,75 @@ class asapplotter:
             asaplog.post()
             asaplog.push(msg)
             asaplog.post("WARN")
-        
+
+#         # Center and spacing
+#         dirarr = array(self._data.get_directionval()).transpose()
+#         print "Pointing range: (x, y) = (%f - %f, %f - %f)" %\
+#               (dirarr[0].min(),dirarr[0].max(),dirarr[1].min(),dirarr[1].max())
+#         dircent = [0.5*(dirarr[0].max() + dirarr[0].min()),
+#                    0.5*(dirarr[1].max() + dirarr[1].min())]
+#         del dirarr
+#         if center is None:
+#             #asaplog.post()
+#             asaplog.push("Grid center is not specified. Automatically calculated from pointing center.")
+#             #asaplog.post("WARN")
+#             #center = [dirarr[0].mean(), dirarr[1].mean()]
+#             center = dircent
+#         elif (type(center) in (list, tuple)) and len(center) > 1:
+#             from numpy import pi
+#             # make sure center_x is in +-pi of pointing center
+#             # (assumes dirs are in rad)
+#             rotnum = round(abs(center[0] - dircent[0])/(2*pi))
+#             if center[0] < dircent[0]: rotnum *= -1
+#             cenx = center[0] - rotnum*2*pi
+#             center = [cenx, center[1]]
+#         else:
+#             msg = "Direction of grid center should be a list of float (R.A., Dec.)"
+#             raise ValueError, msg
+#         asaplog.push("Grid center: (%f, %f) " % (center[0],center[1]))
+
+#         if spacing is None:
+#             #asaplog.post()
+#             asaplog.push("Grid spacing not specified. Automatically calculated from map coverage")
+#             #asaplog.post("WARN")
+#             # automatically get spacing
+#             dirarr = array(self._data.get_directionval()).transpose()
+#             wx = 2. * max(abs(dirarr[0].max()-center[0]),
+#                           abs(dirarr[0].min()-center[0]))
+#             wy = 2. * max(abs(dirarr[1].max()-center[1]),
+#                           abs(dirarr[1].min()-center[1]))
+#             ## slightly expand area to plot the edges
+#             #wx *= 1.1
+#             #wy *= 1.1
+#             xgrid = wx/max(self._cols-1.,1.)
+#             #xgrid = wx/float(max(self._cols,1.))
+#             xgrid *= cos(center[1])
+#             ygrid = wy/max(self._rows-1.,1.)
+#             #ygrid = wy/float(max(self._rows,1.))
+#             # single pointing (identical R.A. and/or Dec. for all spectra.)
+#             if xgrid == 0:
+#                 xgrid = 1.
+#             if ygrid == 0:
+#                 ygrid = 1.
+#             # spacing should be negative to transpose plot
+#             spacing = [- xgrid, - ygrid]
+#             del dirarr, xgrid, ygrid
+#         #elif isinstance(spacing, str):
+#         #    # spacing is a quantity
+#         elif (type(spacing) in (list, tuple)) and len(spacing) > 1:
+#             for i in xrange(2):
+#                 val = spacing[i]
+#                 if not isinstance(val, float):
+#                     raise TypeError("spacing should be a list of float")
+#                 if val > 0.:
+#                     spacing[i] = -val
+#             spacing = spacing[0:2]
+#         else:
+#             msg = "Invalid spacing."
+#             raise TypeError(msg)
+#         asaplog.push("Spacing: (%f, %f) (projected)" % (spacing[0],spacing[1]))
+
+        # Prepare plotter
         self._assert_plotter(action="reload")
         self._plotter.hold()
         self._reset_counter()
@@ -1937,8 +1919,18 @@ class asapplotter:
         # Plot helper
         from asap._asap import plothelper as plhelper
         ph = plhelper(self._data)
-        ph.set_gridval(self._cols, self._rows, spacing[0], spacing[1],
-                          center[0], center[1], epoch="J2000", projname="SIN")
+        #ph.set_gridval(self._cols, self._rows, spacing[0], spacing[1],
+        #                  center[0], center[1], epoch="J2000", projname="SIN")
+        if type(spacing) in (list, tuple, array):
+            if len(spacing) == 0:
+                spacing = ["", ""]
+            elif len(spacing) == 1:
+                spacing = [spacing[0], spacing[0]]
+        else:
+            spacing = [spacing, spacing]
+        ph.set_grid(self._cols, self._rows, spacing[0], spacing[1], \
+                    center, projname="SIN")
+
         # Actual plot
         npl = 0
         for irow in range(self._data.nrow()):
