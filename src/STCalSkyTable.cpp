@@ -37,6 +37,12 @@ STCalSkyTable::STCalSkyTable(const Scantable& parent, const String &caltype)
   setup();
 }
 
+STCalSkyTable::STCalSkyTable(const String &name)
+  : STApplyTable(name)
+{
+  attachOptionalColumns();
+}
+
 STCalSkyTable::~STCalSkyTable()
 {
 }
@@ -62,8 +68,8 @@ void STCalSkyTable::attachOptionalColumns()
 }
 
 void STCalSkyTable::setdata(uInt irow, uInt scanno, uInt cycleno, 
-                       uInt beamno, uInt ifno, uInt polno, 
-                       Double time, Float elevation, Vector<Float> spectra)
+                            uInt beamno, uInt ifno, uInt polno, uInt freqid,  
+                            Double time, Float elevation, Vector<Float> spectra)
 {
   if (irow >= (uInt)nrow()) {
     throw AipsError("row index out of range");
@@ -74,17 +80,41 @@ void STCalSkyTable::setdata(uInt irow, uInt scanno, uInt cycleno,
     os_ << LogIO::WARN << "Data selection is effective. Specified row index may be wrong." << LogIO::POST;
   }  
 
-  setbasedata(irow, scanno, cycleno, beamno, ifno, polno, time);
+  setbasedata(irow, scanno, cycleno, beamno, ifno, polno, freqid, time);
   elCol_.put(irow, elevation);
   spectraCol_.put(irow, spectra);
 }
 
 void STCalSkyTable::appenddata(uInt scanno, uInt cycleno, 
-                          uInt beamno, uInt ifno, uInt polno, 
-                          Double time, Float elevation, Vector<Float> spectra)
+                               uInt beamno, uInt ifno, uInt polno, uInt freqid,
+                               Double time, Float elevation, Vector<Float> spectra)
 {
   uInt irow = nrow();
   table_.addRow(1, True);
-  setdata(irow, scanno, cycleno, beamno, ifno, polno, time, elevation, spectra);
+  setdata(irow, scanno, cycleno, beamno, ifno, polno, freqid, time, elevation, spectra);
 }
+
+uInt STCalSkyTable::nchan(uInt ifno)
+{
+  STSelector org = sel_;
+  STSelector sel;
+  sel.setIFs(vector<int>(1,(int)ifno));
+  setSelection(sel);
+  uInt n = spectraCol_(0).nelements();
+  unsetSelection();
+  if (!org.empty())
+    setSelection(org);
+  return n;
+}
+
+// Vector<Double> STCalSkyTable::getBaseFrequency(uInt whichrow)
+// {
+//   assert(whichrow < nrow());
+//   uInt freqid = freqidCol_(whichrow);
+//   uInt nc = spectraCol_(whichrow).nelements();
+//   Block<Double> f = getFrequenciesRow(freqid);
+//   Vector<Double> freqs(nc);
+//   indgen(freqs, f[1]-f[0]*f[2], f[2]);
+//   return freqs;
+// }
 }

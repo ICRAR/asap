@@ -34,6 +34,7 @@ class STCalSkyTable : public STApplyTable {
 public:
   STCalSkyTable() {;}
   STCalSkyTable(const Scantable& parent, const casa::String &caltype);
+  STCalSkyTable(const casa::String &name);
 
   virtual ~STCalSkyTable();
 
@@ -43,17 +44,19 @@ public:
   const casa::String& name() const {return name_;}
 
   void setdata(casa::uInt irow, casa::uInt scannos, casa::uInt cycleno, 
-               casa::uInt beamno, casa::uInt ifno, 
-               casa::uInt polno, casa::Double time, casa::Float elevation, 
+               casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
+               casa::uInt freqid, casa::Double time, casa::Float elevation, 
                casa::Vector<casa::Float> spectra);
   void appenddata(casa::uInt scanno, casa::uInt cycleno, casa::uInt beamno, 
-                  casa::uInt ifno, casa::uInt polno, 
+                  casa::uInt ifno, casa::uInt polno, casa::uInt freqid,  
                   casa::Double time, casa::Float elevation, 
                   casa::Vector<casa::Float> spectra);
   
   casa::Vector<casa::Float> getElevation() {return elCol_.getColumn();}
   casa::Matrix<casa::Float> getSpectra() {return spectraCol_.getColumn();}
+  casa::uInt nchan(casa::uInt ifno);
 
+  //casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
 private:
   static const casa::String name_;
   const casa::String caltype_;

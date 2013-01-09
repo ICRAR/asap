@@ -64,6 +64,7 @@ void STCalTsys::fillCalTable()
 
   ROArrayColumn<Float> specCol(scantable_->table(), "TSYS");
   ROArrayColumn<uChar> flagCol(scantable_->table(), "FLAGTRA");
+  ROScalarColumn<uInt> freqidCol(scantable_->table(), "FREQ_ID");
 
   // dummy Tsys: the following process doesn't need Tsys but RowAccumulator 
   //             requires to set it with spectral data
@@ -125,7 +126,7 @@ void STCalTsys::fillCalTable()
           elCen /= (Float)count;
           STCalTsysTable *p = dynamic_cast<STCalTsysTable *>(&(*applytable_));
           p->appenddata(0, 0, current[2], current[0], current[1],
-                        timeCen, elCen, acc.getSpectrum());
+                        freqidCol(irow), timeCen, elCen, acc.getSpectrum());
         }
         acc.reset() ;
         timeCen = 0.0;

@@ -32,6 +32,7 @@ class STCalTsysTable : public STApplyTable {
 public:
   STCalTsysTable() {;}
   STCalTsysTable(const Scantable& parent);
+  STCalTsysTable(const casa::String &name);
 
   virtual ~STCalTsysTable();
 
@@ -41,16 +42,19 @@ public:
   void attachOptionalColumns();
 
   void setdata(casa::uInt irow, casa::uInt scanno, casa::uInt cycleno, 
-               casa::uInt beamno, casa::uInt ifno, 
-               casa::uInt polno, casa::Double time, casa::Float elevation, 
+               casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
+               casa::uInt freqid, casa::Double time, casa::Float elevation, 
                casa::Vector<casa::Float> tsys);
   void appenddata(casa::uInt scanno, casa::uInt cycleno, 
                   casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-                  casa::Double time, casa::Float elevation, 
+                  casa::uInt freqid, casa::Double time, casa::Float elevation, 
                   casa::Vector<casa::Float> tsys);
   
   casa::Vector<casa::Float> getElevation() {return elCol_.getColumn();}
   casa::Matrix<casa::Float> getTsys() {return tsysCol_.getColumn();}
+  casa::uInt nchan(casa::uInt ifno);
+
+  casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
 
 private:
   static const casa::String name_ ;

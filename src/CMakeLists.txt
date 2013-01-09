@@ -75,7 +75,14 @@ set( ASAP_SRCS
      ${SRCDIR}/STCalSkyTable.cpp
      ${SRCDIR}/STCalibration.cpp
      ${SRCDIR}/STCalSkyPSAlma.cpp
-     ${SRCDIR}/STCalTsys.cpp )
+     ${SRCDIR}/STCalTsys.cpp
+     ${SRCDIR}/STApplyCal.cpp
+     ${SRCDIR}/Calibrator.cpp
+     ${SRCDIR}/PSAlmaCalibrator.cpp
+     ${SRCDIR}/Locator.cpp
+     ${SRCDIR}/BisectionLocator.cpp
+     ${SRCDIR}/Interpolator1D.cpp
+     ${SRCDIR}/NearestInterpolator1D.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp
