@@ -73,7 +73,7 @@ DirectionCoordinate PlotHelper::getSTCoord(const int nx, const int ny,
 					   const Projection::Type ptype)
 {
   LogIO os(LogOrigin("PlotHelper","getSTCoord()", WHERE));
-  os << "Start getSTCoord()" << LogIO::POST;
+  os << "Getting pointing information of the scantable." << LogIO::POST;
   if (data_p->nrow() < 1)
     throw AipsError("Scantable is not set. Please set a scantable first.");
 
@@ -106,7 +106,7 @@ DirectionCoordinate PlotHelper::getSTCoord(const int nx, const int ny,
   coord.setWorldAxisUnits(udir);
 #ifdef KS_DEBUG
   {//Debug outputs
-    cout << "Generating a coordinate from DIRECTIONs in a scantable: " << endl;
+    cout << "Generated a temporal direction coordinate of a scantable: " << endl;
     Vector<String> units = coord.worldAxisUnits();
     Vector<Double> refv = coord.referenceValue();
     cout <<"- Reference: " << MDirection::showType(coord.directionType()) << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << endl;
@@ -125,7 +125,6 @@ void PlotHelper::setGridParam(const int nx, const int ny,
 			      string center, const string projname)
 {
   LogIO os(LogOrigin("PlotHelper","setGridParam()", WHERE));
-  os << "Start setGridParam()" << LogIO::POST;
   // Value check of nx and ny
   if (nx < 1)
     throw(AipsError("nx should be > 0"));
@@ -192,24 +191,22 @@ void PlotHelper::setGridParam(const int nx, const int ny,
 #endif
   }
 
+  os << "Setting grid parameters" << LogIO::POST;
   // Now, define direction coordinate from input parameters (in radian)
   Double incx, incy;
   Double centx, centy;
   MDirection::Types mdt;
   // center
   if (center.empty()){
+    os << "center is not specified. Using pointing center of the scantable." << LogIO::POST;
     if (!stset)
       throw AipsError("Scantable is not set. Could not resolve map center.");
-#ifdef KS_DEBUG
-    cout << "Using pointing center from DIRECTION column" << endl;
-#endif
+
     centx = stcent.getAngle("rad").getValue()[0];
     centy = stcent.getAngle("rad").getValue()[1];
     mdt = stdt;
   } else {
-#ifdef KS_DEBUG
-    cout << "Using user defined grid center" << endl;
-#endif
+    os << "Using user defined center" << LogIO::POST;
     // Parse center string
     string::size_type pos0 = center.find(" ");
     
@@ -229,7 +226,7 @@ void PlotHelper::setGridParam(const int nx, const int ny,
     }
     if (!MDirection::getType(mdt,sepoch))
       throw AipsError("Invalid direction reference in center");
-    if (stset && mdt != stdt)
+    if (stset && (mdt != stdt))
       throw AipsError("Direction reference of center should be the same as input scantable");
     QuantumHolder qh ;
     String err ;
@@ -247,17 +244,14 @@ void PlotHelper::setGridParam(const int nx, const int ny,
       centx -= (rotnum * C::_2pi);
     }
   }
-#ifdef KS_DEBUG
-  cout << "The center direction of plotting grids: [" << centx  << ", " << centy << "] (rad)" <<endl;
-#endif
+  os << "Grid center: ( "  << centx  << " rad , " << centy << " rad ) " << LogIO::POST;
 
   // cell
   if (cellx.empty() && celly.empty()){
+    os << "cell size is not specified. Using cell size to cover all pointings in the scantable." << LogIO::POST;
     if (!stset)
       throw AipsError("Scantable is not set. Could not resolve cell size.");
-#ifdef KS_DEBUG
-    cout << "Using cell size defined from DIRECTION column" << endl;
-#endif
+
     Vector<Double> centpix;
     MDirection centmd = MDirection(Quantum<Double>(centx, "rad"),
 				   Quantum<Double>(centy, "rad"), mdt);
@@ -272,9 +266,7 @@ void PlotHelper::setGridParam(const int nx, const int ny,
     incx = wx / max(nx - 1., 1.);
     incy = wy / max(ny - 1., 1.);
   } else {
-#ifdef KS_DEBUG
-    cout << "Using user defined cell size" << endl;
-#endif
+    os << "Using user defined cell size" << LogIO::POST;
     Quantum<Double> qcellx, qcelly;
     if (!cellx.empty() && !celly.empty()){
       readQuantity(qcellx, String(cellx));
@@ -289,9 +281,11 @@ void PlotHelper::setGridParam(const int nx, const int ny,
     incx = qcellx.getValue("rad");
     incy = qcelly.getValue("rad");
   }
-#ifdef KS_DEBUG
-  cout << "The cell size of plotting grids: [" << incx << ", " << incy << "] (rad)" <<endl;
-#endif
+  // inc should be negative to transpose plot
+  incx = -abs(incx);
+  incy = -abs(incy);
+
+  os << "Spacing: ( " << abs(incx) << " rad , " << abs(incy) << " rad )" <<endl;
 
   Matrix<Double> xform(2,2) ;
   xform = 0.0 ;
@@ -301,13 +295,25 @@ void PlotHelper::setGridParam(const int nx, const int ny,
 				      xform,
 				      0.5*Double(nx), 
 				      0.5*Double(ny)) ; // pixel at center
-  os << "Successfully finished generation of Direction Coordinate" << LogIO::POST;
+  {//Summary
+    os << "Successfully generated grid coordinate:" << LogIO::POST;
+    Vector<String> units = dircoord_->worldAxisUnits();
+    Vector<Double> refv = dircoord_->referenceValue();
+    os <<"- Reference Direction : " << MDirection::showType(dircoord_->directionType())
+       << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << LogIO::POST;
+    Vector<Double> refpix = dircoord_->referencePixel();
+    os <<"- Reference Pixel     : [" << refpix[0] << ", " << refpix[1] << "]" << LogIO::POST;
+    Vector<Double> inc = dircoord_->increment();
+    os <<"- Increments          : [" << inc[0] << ", " << inc[1] << "]" << LogIO::POST;
+    os <<"- Projection Type     : " << dircoord_->projection().name() << LogIO::POST;
+  }
 };
 
 void PlotHelper::setGridParamVal(const int nx, const int ny,
 				 const double cellx, const double celly,
 				 const double centx, const double centy,
 				 const string epoch, const string projname){
+  LogIO os(LogOrigin("PlotHelper","setGridParamVal()", WHERE));
   // Value check of nx and ny
   if (nx < 1)
     throw(AipsError("nx should be > 0"));
@@ -342,19 +348,18 @@ void PlotHelper::setGridParamVal(const int nx, const int ny,
 				      0.5*Double(ny)) ; // pixel at center
 // 				      0.5*Double(nx-1), 
 // 				      0.5*Double(ny-1)) ; // pixel at grid
-#ifdef KS_DEBUG
-  {//Debug outputs
-  cout << "Direction coordinate is set: " << endl;
-  Vector<String> units = dircoord_->worldAxisUnits();
-  Vector<Double> refv = dircoord_->referenceValue();
-  cout <<"Reference: " << MDirection::showType(dircoord_->directionType()) << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << endl;
-  Vector<Double> refpix = dircoord_->referencePixel();
-  cout <<"Reference Pixel: [" << refpix[0] << ", " << refpix[1] << "]" << endl;
-  Vector<Double> inc = dircoord_->increment();
-  cout <<"Increments: [" << inc[0] << ", " << inc[1] << "]" << endl;
-  cout <<"Projection: " << dircoord_->projection().name() << endl;
+  {//Summary
+    os << "Successfully generated grid coordinate:" << LogIO::POST;
+    Vector<String> units = dircoord_->worldAxisUnits();
+    Vector<Double> refv = dircoord_->referenceValue();
+    os <<"- Reference Direction : " << MDirection::showType(dircoord_->directionType())
+       << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << LogIO::POST;
+    Vector<Double> refpix = dircoord_->referencePixel();
+    os <<"- Reference Pixel     : [" << refpix[0] << ", " << refpix[1] << "]" << LogIO::POST;
+    Vector<Double> inc = dircoord_->increment();
+    os <<"- Increments          : [" << inc[0] << ", " << inc[1] << "]" << LogIO::POST;
+    os <<"- Projection Type     : " << dircoord_->projection().name() << LogIO::POST;
   }
-#endif
 };
 
 vector<double>  PlotHelper::getGridPixel(const int whichrow){
