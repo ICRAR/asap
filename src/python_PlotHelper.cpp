@@ -32,7 +32,11 @@ void python_PlotHelper() {
 	  boost::python::arg("projname")="SIN") )
     .def("get_gpos", &PlotHelper::getGridPixel,
          (boost::python::arg("whichrow")=0) )
+    //
+    .def("get_gref", &PlotHelper::getGridRef)
+    .def("get_gcellval", &PlotHelper::getGridCellVal)
     /** TODO
+    .def("get_gcell", &PlotHelper::getGridCell)
     .def("get_gdir", &PlotHelper::getGridDirection)
     .def("get_gdirval", &PlotHelper::getGridWorld)
     **/

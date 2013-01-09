@@ -14,6 +14,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/Quanta/Quantum.h>
 #include <casa/Quanta/QuantumHolder.h>
+#include <casa/Quanta/MVAngle.h>
 #include <casa/Logging/LogIO.h>
 
 #include <measures/Measures/MDirection.h>
@@ -32,14 +33,14 @@ using namespace asap ;
 
 namespace asap {
 
-PlotHelper::PlotHelper() : dircoord_(0) 
+PlotHelper::PlotHelper() : dircoord_p(0) 
 {
 #ifdef KS_DEBUG
   cout << "Default constructor nrow = " << data_p->nrow() << endl;
 #endif
 };
 
-PlotHelper::PlotHelper( const ScantableWrapper &s) : dircoord_(0)
+PlotHelper::PlotHelper( const ScantableWrapper &s) : dircoord_p(0)
 {
 #ifdef KS_DEBUG
   cout << "Constructing PlotHelper with scantable wrapper" << endl;
@@ -51,12 +52,12 @@ PlotHelper::~PlotHelper(){
 #ifdef KS_DEBUG
   cout << "Called PlotHelper destructor" << endl;
 #endif
-  if (dircoord_){
+  if (dircoord_p){
 #ifdef KS_DEBUG
-    cout << "Destructing dircoord_" << endl;
+    cout << "Destructing dircoord_p" << endl;
 #endif
-    delete dircoord_;
-    dircoord_ = 0;
+    delete dircoord_p;
+    dircoord_p = 0;
   }
 };
 
@@ -131,12 +132,12 @@ void PlotHelper::setGridParam(const int nx, const int ny,
   if (ny < 1)
     throw(AipsError("ny should be > 0"));
   // Destroy old coord
-  if (dircoord_){
+  if (dircoord_p){
 #ifdef KS_DEBUG
-    cout << "Destructing dircoord_" << endl;
+    cout << "Destructing old dircoord_p" << endl;
 #endif
-    delete dircoord_;
-    dircoord_ = 0;
+    delete dircoord_p;
+    dircoord_p = 0;
   }
 
   // Check for availability of data_p
@@ -226,8 +227,13 @@ void PlotHelper::setGridParam(const int nx, const int ny,
     }
     if (!MDirection::getType(mdt,sepoch))
       throw AipsError("Invalid direction reference in center");
-    if (stset && (mdt != stdt))
-      throw AipsError("Direction reference of center should be the same as input scantable");
+    if (stset){
+      if ( !needst &&
+	   !MDirection::getType( stdt, data_p->getDirectionRefString() ) )
+	throw AipsError("Failed to get direction reference from scantable.");
+      if (mdt != stdt)
+	throw AipsError("Direction reference of center should be the same as input scantable");
+    }
     QuantumHolder qh ;
     String err ;
     qh.fromString(err, sra);
@@ -287,26 +293,9 @@ void PlotHelper::setGridParam(const int nx, const int ny,
 
   os << "Spacing: ( " << abs(incx) << " rad , " << abs(incy) << " rad )" <<endl;
 
-  Matrix<Double> xform(2,2) ;
-  xform = 0.0 ;
-  xform.diagonal() = 1.0 ;
-  dircoord_ = new DirectionCoordinate(mdt, projtype,
-				      centx, centy, incx, incy,
-				      xform,
-				      0.5*Double(nx), 
-				      0.5*Double(ny)) ; // pixel at center
-  {//Summary
-    os << "Successfully generated grid coordinate:" << LogIO::POST;
-    Vector<String> units = dircoord_->worldAxisUnits();
-    Vector<Double> refv = dircoord_->referenceValue();
-    os <<"- Reference Direction : " << MDirection::showType(dircoord_->directionType())
-       << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << LogIO::POST;
-    Vector<Double> refpix = dircoord_->referencePixel();
-    os <<"- Reference Pixel     : [" << refpix[0] << ", " << refpix[1] << "]" << LogIO::POST;
-    Vector<Double> inc = dircoord_->increment();
-    os <<"- Increments          : [" << inc[0] << ", " << inc[1] << "]" << LogIO::POST;
-    os <<"- Projection Type     : " << dircoord_->projection().name() << LogIO::POST;
-  }
+  setupCoord(mdt, projtype, centx, centy, incx, incy,
+	     0.5*Double(nx), 0.5*Double(ny)) ; // pixel at center)
+
 };
 
 void PlotHelper::setGridParamVal(const int nx, const int ny,
@@ -320,12 +309,12 @@ void PlotHelper::setGridParamVal(const int nx, const int ny,
   if (ny < 1)
     throw(AipsError("ny should be > 0"));
   // Destroy old coord
-  if (dircoord_){
+  if (dircoord_p){
 #ifdef KS_DEBUG
-    cout << "Destructing dircoord_" << endl;
+    cout << "Destructing old dircoord_p" << endl;
 #endif
-    delete dircoord_;
-    dircoord_ = 0;
+    delete dircoord_p;
+    dircoord_p = 0;
   }
 
   // center (in rad)
@@ -338,36 +327,56 @@ void PlotHelper::setGridParamVal(const int nx, const int ny,
   // projection
   Projection::Type projType(Projection::type(String(projname)));
 
+  setupCoord(mdt, projType, centX, centY, incX, incY,
+	     0.5*Double(nx), 0.5*Double(ny)) ; // pixel at center
+// 	     0.5*Double(nx-1), 0.5*Double(ny-1)) ; // pixel at grid
+
+};
+
+
+void PlotHelper::setupCoord(const MDirection::Types mdt,
+			    const Projection::Type pjt,
+			    const Double centx, const Double centy,
+			    const Double incx, const Double incy,
+			    const Double refx, const Double refy)
+{
+  LogIO os(LogOrigin("PlotHelper","setupCoord()", WHERE));
+  // Destroy old coord
+  if (dircoord_p){
+#ifdef KS_DEBUG
+    cout << "Destructing old dircoord_p" << endl;
+#endif
+    delete dircoord_p;
+    dircoord_p = 0;
+  }
+
   Matrix<Double> xform(2,2) ;
   xform = 0.0 ;
   xform.diagonal() = 1.0 ;
-  dircoord_ = new DirectionCoordinate(mdt, projType,
-				      centX, centY, incX, incY,
-				      xform,
-				      0.5*Double(nx), 
-				      0.5*Double(ny)) ; // pixel at center
-// 				      0.5*Double(nx-1), 
-// 				      0.5*Double(ny-1)) ; // pixel at grid
+  dircoord_p = new DirectionCoordinate(mdt, pjt, centx, centy, incx, incy,
+				      xform, refx, refy);
   {//Summary
     os << "Successfully generated grid coordinate:" << LogIO::POST;
-    Vector<String> units = dircoord_->worldAxisUnits();
-    Vector<Double> refv = dircoord_->referenceValue();
-    os <<"- Reference Direction : " << MDirection::showType(dircoord_->directionType())
-       << " " << refv[0] << units[0] << " " << refv[1] << units[1]  << LogIO::POST;
-    Vector<Double> refpix = dircoord_->referencePixel();
+    Vector<String> units = dircoord_p->worldAxisUnits();
+    Vector<Double> refv = dircoord_p->referenceValue();
+    os <<"- Reference Direction : "
+       << MDirection::showType(dircoord_p->directionType())
+       << " " << refv[0] << units[0] << " " << refv[1] << units[1] << LogIO::POST;
+    Vector<Double> refpix = dircoord_p->referencePixel();
     os <<"- Reference Pixel     : [" << refpix[0] << ", " << refpix[1] << "]" << LogIO::POST;
-    Vector<Double> inc = dircoord_->increment();
+    Vector<Double> inc = dircoord_p->increment();
     os <<"- Increments          : [" << inc[0] << ", " << inc[1] << "]" << LogIO::POST;
-    os <<"- Projection Type     : " << dircoord_->projection().name() << LogIO::POST;
+    os <<"- Projection Type     : " << dircoord_p->projection().name() << LogIO::POST;
   }
 };
 
-vector<double>  PlotHelper::getGridPixel(const int whichrow){
+vector<double>  PlotHelper::getGridPixel(const int whichrow)
+{
   if (data_p->nrow() < 1)
     throw AipsError("Scantable is not set. Could not get direction.");
   else if (whichrow > int(data_p->nrow()) - 1)
     throw AipsError("Row index out of range.");
-  if (!dircoord_)
+  if (!dircoord_p)
     throw AipsError("Direction coordinate is not defined.");
 
   Vector<Double> pixel;
@@ -377,7 +386,7 @@ vector<double>  PlotHelper::getGridPixel(const int whichrow){
 #ifdef KS_DEBUG
   cout << "searching pixel position (world = " << data_p->getDirectionString(whichrow) << " = [" << world.getAngle("rad").getValue()[0] << ", " << world.getAngle("rad").getValue()[1] << "])" << endl;
 #endif
-  dircoord_->toPixel(pixel, world);
+  dircoord_p->toPixel(pixel, world);
 #ifdef KS_DEBUG
   cout << "got pixel = [" << pixel[0] << ", " << pixel[1] << "]" << endl;
 #endif
@@ -385,5 +394,40 @@ vector<double>  PlotHelper::getGridPixel(const int whichrow){
   pixel.tovector(outvec);
   return outvec;
 };
+
+string PlotHelper::getGridRef()
+{
+  if (!dircoord_p)
+    throw AipsError("Direction coordinate is not defined. Please set it first.");
+
+  string outref;
+
+  Vector<String> units = dircoord_p->worldAxisUnits();
+  Vector<Double> refv = dircoord_p->referenceValue();
+  MVAngle lon( Quantum<Double>(refv[0], units[0]) );
+  MVAngle lat ( Quantum<Double>(refv[1], units[1]) );
+  outref = MDirection::showType(dircoord_p->directionType()) + " "
+    + lon(0.0).string(MVAngle::TIME, 9) + " "
+    + lat.string(MVAngle::ANGLE+MVAngle::DIG2, 9);
+
+  return outref;
+};
+
+vector<double>  PlotHelper::getGridCellVal()
+{
+  if (!dircoord_p)
+    throw AipsError("Direction coordinate is not defined. Please set it first.");
+
+  vector<double> outinc(2);
+  Vector<Double> inc = dircoord_p->increment();
+  Vector<String> units = dircoord_p->worldAxisUnits();
+  MVAngle qincx( Quantum<Double>(inc[0], units[0]) );
+  MVAngle qincy( Quantum<Double>(inc[1], units[1]) );
+  outinc[0] = (double) abs(qincx.radian());
+  outinc[1] = (double) abs(qincy.radian());
+
+  return outinc;
+};
+
 
 } //namespace asap
