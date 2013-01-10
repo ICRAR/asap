@@ -31,22 +31,54 @@ using namespace std ;
 using namespace casa ;
 using namespace asap ;
 
-//#ifndef KS_DEBUG
-//#define KS_DEBUG
-//#endif
+#ifndef KS_DEBUG
+#define KS_DEBUG
+#endif
 
 namespace asap {
 
 // constructors
-STSideBandSep::STSideBandSep()
-  : sigIfno_(0), ftol_(-1), 
-    loTime_(-1), lo1Freq_(-1), loDir_("")
+STSideBandSep::STSideBandSep(const vector<string> &names)
 {
-#ifdef KS_DEBUG
-  cout << "Default constructor STSideBandSep()" << endl;
-#endif
-  // Default LO frame is TOPO
-  loFrame_ = MFrequency::TOPO;
+  LogIO os(LogOrigin("STSideBandSep","STSideBandSep()", WHERE));
+  os << "Setting scantable names to process." << LogIO::POST ;
+  // Set file names
+  ntable_ = names.size();
+  infileList_.resize(ntable_);
+  for (unsigned int i = 0; i < ntable_; i++){
+    if (!checkFile(names[i], "d"))
+      throw( AipsError("File does not exist") );
+    infileList_[i] = names[i];
+  }
+  intabList_.resize(0);
+
+  init();
+
+  {// Summary
+    os << ntable_ << " files are set: [";
+    for (unsigned int i = 0; i < ntable_; i++) {
+      os << " '" << infileList_[i] << "' ";
+      if (i != ntable_-1) os << ",";
+    }
+    os << "] " << LogIO::POST;
+  }
+};
+
+STSideBandSep::STSideBandSep(const vector<ScantableWrapper> &tables)
+{
+  LogIO os(LogOrigin("STSideBandSep","STSideBandSep()", WHERE));
+  os << "Setting list of scantables to process." << LogIO::POST ;
+  // Set file names
+  ntable_ = tables.size();
+  intabList_.resize(ntable_);
+  for (unsigned int i = 0; i < ntable_; i++){
+    intabList_[i] = tables[i].getCP();
+  }
+  infileList_.resize(0);
+
+  init();
+
+  os << ntable_ << " tables are set." << LogIO::POST;
 };
 
 STSideBandSep::~STSideBandSep()
@@ -56,15 +88,148 @@ STSideBandSep::~STSideBandSep()
 #endif
 };
 
-
-void STSideBandSep::setFrequency(const unsigned int ifno, const double freqtol, string frame)
+void STSideBandSep::init()
 {
-#ifdef KS_DEBUG
-  cout << "STSideBandSep::setFrequency" << endl;
-  cout << "IFNO = " << ifno << endl;
-  cout << "freq tol = " << freqtol << " [Hz]" << endl;
-  cout << "frame = " << frame << endl;
-#endif
+  // frequency setup
+  sigIfno_= 0;
+  ftol_ = -1;
+  solFrame_ = MFrequency::N_Types;
+  // shifts
+  initshift();
+  // direction tolerance
+  xtol_ = ytol_ = 9.69627e-6; // 2arcsec
+  // solution parameters
+  otherside_ = false;
+  doboth_ = false;
+  rejlimit_ = 0.2;
+  // LO1 values
+  lo1Freq_ = -1;
+  loTime_ = -1;
+  loDir_ = "";
+  // Default LO frame is TOPO
+  loFrame_ = MFrequency::TOPO;
+};
+
+void STSideBandSep::initshift()
+{
+  // shifts
+  nshift_ = 0;
+  nchan_ = 0;
+  sigShift_.resize(0);
+  imgShift_.resize(0);
+  tableList_.resize(0);
+};
+
+void STSideBandSep::setFrequency(const unsigned int ifno,
+				 const string freqtol,
+				 const string frame)
+{
+  LogIO os(LogOrigin("STSideBandSep","setFrequency()", WHERE));
+
+  initshift();
+
+  // IFNO
+  sigIfno_ = ifno;
+
+  // Frequency tolerance
+  Quantum<Double> qftol;
+  readQuantity(qftol, String(freqtol));
+  if (!qftol.getUnit().empty()){
+    // make sure the quantity is frequency
+    if (qftol.getFullUnit().getValue() != Unit("Hz").getValue())
+      throw( AipsError("Invalid quantity for frequency tolerance.") );
+    qftol.convert("Hz");
+  }
+  ftol_ = qftol;
+
+  // Frequency Frame
+  if (!frame.empty()){
+    MFrequency::Types mft;
+    if (!MFrequency::getType(mft, frame))
+      throw( AipsError("Invalid frame type.") );
+    solFrame_ = mft;
+  } else {
+    solFrame_ = MFrequency::N_Types;
+  }
+
+  {// Summary
+    const String sframe = ( (solFrame_ == MFrequency::N_Types) ?
+			    "table frame" :
+			    MFrequency::showType(solFrame_) );
+    os << "Frequency setup to search IF group: "
+       << "IFNO of table[0] = " << sigIfno_ 
+       << " , Freq tolerance = " << ftol_.getValue() << " [ "
+       << (ftol_.getUnit().empty() ? "channel" : ftol_.getUnit() )
+       << " ] (in " << sframe <<")" << LogIO::POST;
+  }
+};
+
+
+void STSideBandSep::setDirTolerance(const vector<string> dirtol)
+{
+  LogIO os(LogOrigin("STSideBandSep","setDirTolerance()", WHERE));
+  Quantum<Double> qcell;
+  if ( (dirtol.size() == 1) && !dirtol[0].empty() ) {
+    readQuantity(qcell, String(dirtol[0]));
+    if (qcell.getFullUnit().getValue() == Unit("rad").getValue())
+      xtol_ = ytol_ = qcell.getValue("rad");
+    else
+      throw( AipsError("Invalid unit for direction tolerance.") );
+  }
+  else if (dirtol.size() > 1) {
+    if ( dirtol[0].empty() && dirtol[1].empty() )
+      throw( AipsError("Direction tolerance is empty.") );
+    if ( !dirtol[0].empty() ) {
+      readQuantity(qcell, String(dirtol[0]));
+      if (qcell.getFullUnit().getValue() == Unit("rad").getValue())
+	xtol_ = qcell.getValue("rad");
+      else
+	throw( AipsError("Invalid unit for direction tolerance.") );
+    }
+    if ( !dirtol[1].empty() ) {
+      readQuantity(qcell, String(dirtol[1]));
+      if (qcell.getFullUnit().getValue() == Unit("rad").getValue())
+	ytol_ = qcell.getValue("rad");
+      else
+	throw( AipsError("Invalid unit for direction tolerance.") );
+    }
+    else {
+      ytol_ = xtol_;
+    }
+  }
+  else throw( AipsError("Invalid direction tolerance.") );
+
+  os << "Direction tolerance: ( "
+     << xtol_ << " , " << ytol_ << " ) [rad]" << LogIO::POST;
+};
+
+void STSideBandSep::setShift(const vector<double> &shift)
+{
+  LogIO os(LogOrigin("STSideBandSep","setShift()", WHERE));
+  imgShift_.resize(shift.size());
+  for (unsigned int i = 0; i < shift.size(); i++)
+    imgShift_[i] = shift[i];
+
+  if (imgShift_.size() == 0) {
+    os << "Channel shifts are cleared." << LogIO::POST;
+  } else {
+    os << "Channel shifts of image sideband are set: ( ";
+    for (unsigned int i = 0; i < imgShift_.size(); i++) {
+      os << imgShift_[i];
+      if (i != imgShift_.size()-1) os << " , ";
+    }
+    os << " ) [channel]" << LogIO::POST;
+  }
+};
+
+void STSideBandSep::setThreshold(const double limit)
+{
+  LogIO os(LogOrigin("STSideBandSep","setThreshold()", WHERE));
+  if (limit < 0)
+    throw( AipsError("Rejection limit should be positive number.") );
+
+  rejlimit_ = limit;
+  os << "Rejection limit is set to " << rejlimit_;
 };
 
 // Temporal function to set scantable of image sideband
@@ -80,7 +245,8 @@ void STSideBandSep::setImageTable(const ScantableWrapper &s)
 };
 
 //
-void STSideBandSep::setLO1(const double lo1, string frame, double reftime, string refdir)
+void STSideBandSep::setLO1(const double lo1, const string frame,
+			   const double reftime, const string refdir)
 {
   lo1Freq_ = lo1;
   MFrequency::getType(loFrame_, frame);

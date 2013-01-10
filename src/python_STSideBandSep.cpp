@@ -9,7 +9,6 @@
 #include <boost/python.hpp>
 #include <boost/python/args.hpp>
 
-
 #include "STSideBandSep.h"
 
 using namespace boost::python;
@@ -20,8 +19,15 @@ namespace asap {
 void python_STSideBandSep() {
   class_<STSideBandSep>("SBSeparator")
     .def( init <> () )
+    .def( init < const std::vector<std::string> > () )
+    .def( init < const std::vector<ScantableWrapper> > () )
     .def( "set_freq", &STSideBandSep::setFrequency,
 	  (boost::python::arg("frame")="") )
+    .def( "set_dirtol", &STSideBandSep::setDirTolerance )
+    .def( "set_shift", &STSideBandSep::setShift )
+    .def( "set_limit", &STSideBandSep::setThreshold )
+    .def( "solve_both", &STSideBandSep::solveBoth )
+    .def( "subtract_other", &STSideBandSep::solvefromOther )
     .def( "set_lo1", &STSideBandSep::setLO1,
 	  (boost::python::arg("frame")="TOPO",
 	   boost::python::arg("reftime")=-1,
