@@ -9,6 +9,7 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+#include <assert.h>
 
 #include <casa/Arrays/Array.h>
 #include <casa/Arrays/Vector.h>
