@@ -1,3 +1,15 @@
+
+       New Development: Yes/No
+            JIRA Issue: No/Yes List JIRA ticket.
+        Ready for Test: Yes/No
+     Interface Changes: Yes/No
+What Interface Changed: Please list interface changes
+         Test Programs: List test programs
+  Put in Release Notes: Yes/No
+             Module(s): Module Names change impacts.
+           Description: Describe your changes here...
+
+	
 ###
 # CMakeLists.txt for _asap.so
 ###
@@ -88,7 +100,8 @@ set( ASAP_SRCS
      ${SRCDIR}/LinearInterpolator1D.cpp
      ${SRCDIR}/BufferedLinearInterpolator1D.cpp
      ${SRCDIR}/CubicSplineInterpolator1D.cpp
-     ${SRCDIR}/PolynomialInterpolator1D.cpp )
+     ${SRCDIR}/PolynomialInterpolator1D.cpp
+     ${SRCDIR}/STBaselineParamTable.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp
