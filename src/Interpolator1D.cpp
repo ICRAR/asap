@@ -16,18 +16,19 @@
 
 #include "Interpolator1D.h"
 #include "BisectionLocator.h"
+#include "HuntLocator.h"
 
 using namespace casa;
 
 namespace asap {
 
 Interpolator1D::Interpolator1D()
-  : order_(0),
+  : order_(1),
     n_(0),
     x_(0),
-    y_(0)
+    y_(0),
+    locator_(0)
 {
-  locator_ = new BisectionLocator();
 }
 
 Interpolator1D::~Interpolator1D()
@@ -41,6 +42,7 @@ void Interpolator1D::setData(double *x, float *y, unsigned int n)
   x_ = x;
   y_ = y;
   n_ = n;
+  createLocator();
   locator_->set(x, n);
 }
 
@@ -49,6 +51,7 @@ void Interpolator1D::setX(double *x, unsigned int n)
   assert(n_ == 0 || n_ == n);
   x_ = x;
   n_ = n;
+  createLocator();
   locator_->set(x, n);
 }
 
@@ -64,6 +67,10 @@ void Interpolator1D::reset()
   n_ = 0;
   x_ = 0;
   y_ = 0;
+  if (locator_) {
+    delete locator_;
+    locator_ = 0;
+  }
 }
 
 bool Interpolator1D::isready()
@@ -74,6 +81,16 @@ bool Interpolator1D::isready()
 int Interpolator1D::locate(double x)
 {
   return locator_->locate(x);
+}
+
+void Interpolator1D::createLocator()
+{
+  if (!locator_) {
+    if (n_ > 1000)
+      locator_ = new HuntLocator();
+    else
+      locator_ = new BisectionLocator();
+  }
 }
 
 }

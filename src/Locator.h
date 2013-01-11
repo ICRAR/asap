@@ -12,15 +12,6 @@
 #ifndef ASAP_LOCATOR_H
 #define ASAP_LOCATOR_H
 
-#include <memory>
-#include <vector>
-
-#include <casa/aips.h>
-#include <casa/Arrays/Vector.h>
-#include <casa/Arrays/Matrix.h>
-#include <casa/BasicSL/String.h>
-#include <casa/Utilities/CountedPtr.h>
-
 namespace asap {
 
 /**

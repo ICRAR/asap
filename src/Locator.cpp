@@ -11,12 +11,7 @@
 //
 #include <assert.h>
 
-#include <casa/Arrays/Vector.h>
-#include <casa/Exceptions/Error.h>
-
 #include "Locator.h"
-
-using namespace casa;
 
 namespace asap {
 

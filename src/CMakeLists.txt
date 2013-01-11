@@ -81,8 +81,14 @@ set( ASAP_SRCS
      ${SRCDIR}/PSAlmaCalibrator.cpp
      ${SRCDIR}/Locator.cpp
      ${SRCDIR}/BisectionLocator.cpp
+     ${SRCDIR}/HuntLocator.cpp
+     ${SRCDIR}/BufferedBisectionLocator.cpp
      ${SRCDIR}/Interpolator1D.cpp
-     ${SRCDIR}/NearestInterpolator1D.cpp )
+     ${SRCDIR}/NearestInterpolator1D.cpp
+     ${SRCDIR}/LinearInterpolator1D.cpp
+     ${SRCDIR}/BufferedLinearInterpolator1D.cpp
+     ${SRCDIR}/CubicSplineInterpolator1D.cpp
+     ${SRCDIR}/PolynomialInterpolator1D.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp

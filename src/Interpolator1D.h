@@ -12,16 +12,6 @@
 #ifndef ASAP_INTERPOLATOR_1D_H
 #define ASAP_INTERPOLATOR_1D_H
 
-#include <memory>
-#include <vector>
-
-#include <casa/aips.h>
-#include <casa/Containers/Block.h>
-#include <casa/Arrays/Vector.h>
-#include <casa/Arrays/Matrix.h>
-#include <casa/BasicSL/String.h>
-#include <casa/Utilities/CountedPtr.h>
-
 #include "Locator.h"
 
 namespace asap {
@@ -40,6 +30,8 @@ public:
   void setX(double *x, unsigned int n);
   void setY(float *y, unsigned int n);
   void reset();
+
+  // currently only effective for polynomial interpolation
   void setOrder(unsigned int order) {order_ = order;}
 
   virtual float interpolate(double x) = 0;
@@ -47,6 +39,7 @@ public:
 protected:
   int locate(double x);
   bool isready();
+  void createLocator();
 
   unsigned int order_;
   unsigned int n_;

@@ -1,5 +1,5 @@
 //
-// C++ Implementation: BisectionLocator
+// C++ Implementation: BufferedBisectionLocator
 //
 // Description:
 //
@@ -11,18 +11,19 @@
 //
 #include <assert.h>
 
-#include "BisectionLocator.h"
+#include "BufferedBisectionLocator.h"
 
 namespace asap {
 
-BisectionLocator::BisectionLocator(double *v, unsigned int n)
-  : Locator(v, n)
+BufferedBisectionLocator::BufferedBisectionLocator(double *v, unsigned int n)
+  : Locator(v, n),
+    prev_(0)
 {}
 
-BisectionLocator::~BisectionLocator()
+BufferedBisectionLocator::~BufferedBisectionLocator()
 {}
 
-unsigned int BisectionLocator::locate(double x)
+unsigned int BufferedBisectionLocator::locate(double x)
 {
   if (n_ == 1)
     return 0;
@@ -36,6 +37,14 @@ unsigned int BisectionLocator::locate(double x)
     unsigned int jl = 0;
     unsigned int ju = n_;
     unsigned int jm;
+
+    if (x < x_[prev_]) {
+      ju = prev_;
+      prev_ = 0;
+    }
+    else 
+      jl = prev_;
+
     while (ju - jl > 1) {
       jm = (ju + jl) >> 1;
       if (x > x_[jm])
@@ -43,6 +52,7 @@ unsigned int BisectionLocator::locate(double x)
       else
         ju = jm;
     }
+    prev_ = jl;
     return ju;
   }
   else {
@@ -54,6 +64,14 @@ unsigned int BisectionLocator::locate(double x)
     unsigned int jl = 0;
     unsigned int ju = n_;
     unsigned int jm;
+
+    if (x > x_[prev_]) {
+      ju = prev_;
+      prev_ = 0;
+    }
+    else 
+      jl = prev_;
+
     while (ju - jl > 1) {
       jm = (ju + jl) >> 1;
       if (x < x_[jm])
@@ -61,6 +79,7 @@ unsigned int BisectionLocator::locate(double x)
       else
         ju = jm;
     }
+    prev_ = jl;
     return ju;
   }
 }

@@ -72,6 +72,9 @@ private:
   // initialization
   void init();
 
+  // setup interpolator
+  void initInterpolator();
+
   // single loop element in apply()
   void doapply(casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
                casa::Vector<casa::uInt> &rows,

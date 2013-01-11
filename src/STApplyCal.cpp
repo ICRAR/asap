@@ -33,6 +33,9 @@
 #include "Calibrator.h"
 #include "PSAlmaCalibrator.h"
 #include "NearestInterpolator1D.h"
+#include "BufferedLinearInterpolator1D.h"
+#include "PolynomialInterpolator1D.h"
+#include "CubicSplineInterpolator1D.h"
 #include <atnf/PKSIO/SrcType.h>
 
 
@@ -61,6 +64,10 @@ void STApplyCal::init()
   caltype_ = STCalEnum::NoType;
   doTsys_ = False;
   interp_.resize((int)STCalEnum::NumAxis);
+  // default is linear interpolation
+  for (unsigned int i = 0; i < interp_.size(); i++) {
+    interp_[i] = STCalEnum::LinearInterpolation;
+  }
 }
 
 void STApplyCal::setTarget(CountedPtr<Scantable> target)
@@ -124,9 +131,7 @@ void STApplyCal::apply(Bool insitu)
     calibrator_ = new PSAlmaCalibrator();
 
   // interpolator
-  interpolatorS_ = new NearestInterpolator1D();
-  interpolatorT_ = new NearestInterpolator1D();
-  interpolatorF_ = new NearestInterpolator1D();
+  initInterpolator();
 
   // select data
   sel_.reset();
@@ -449,4 +454,94 @@ Vector<Double> STApplyCal::getBaseFrequency(uInt whichrow)
   return r;
 }
 
+void STApplyCal::initInterpolator()
+{
+  int ta = (int)STCalEnum::TimeAxis;
+  int fa = (int)STCalEnum::FrequencyAxis;
+  int order = (order_ > 0) ? order_ : 1;
+  switch (interp_[ta]) {
+  case STCalEnum::NearestInterpolation:
+    {
+      os_ << "use NearestInterpolator in time axis" << LogIO::POST;
+      interpolatorS_ = new NearestInterpolator1D();
+      interpolatorT_ = new NearestInterpolator1D();
+      break;
+    }
+  case STCalEnum::LinearInterpolation:
+    {
+      os_ << "use BufferedLinearInterpolator in time axis" << LogIO::POST;
+      interpolatorS_ = new BufferedLinearInterpolator1D();
+      interpolatorT_ = new BufferedLinearInterpolator1D();
+      break;      
+    }
+  case STCalEnum::CubicSplineInterpolation:
+    {
+      os_ << "use CubicSplineInterpolator in time axis" << LogIO::POST;
+      interpolatorS_ = new CubicSplineInterpolator1D();
+      interpolatorT_ = new CubicSplineInterpolator1D();
+      break;
+    }
+  case STCalEnum::PolynomialInterpolation:
+    {
+      os_ << "use PolynomialInterpolator in time axis" << LogIO::POST;
+      if (order == 0) {
+        interpolatorS_ = new NearestInterpolator1D();
+        interpolatorT_ = new NearestInterpolator1D();
+      }
+      else {
+        interpolatorS_ = new PolynomialInterpolator1D();
+        interpolatorT_ = new PolynomialInterpolator1D();
+        interpolatorS_->setOrder(order);
+        interpolatorT_->setOrder(order);
+      }
+      break;
+    }
+  default:
+    {
+      os_ << "use BufferedLinearInterpolator in time axis" << LogIO::POST;
+      interpolatorS_ = new BufferedLinearInterpolator1D();
+      interpolatorT_ = new BufferedLinearInterpolator1D();
+      break;      
+    }
+  }
+   
+  switch (interp_[fa]) {
+  case STCalEnum::NearestInterpolation:
+    {
+      os_ << "use NearestInterpolator in frequency axis" << LogIO::POST;
+      interpolatorF_ = new NearestInterpolator1D();
+      break;
+    }
+  case STCalEnum::LinearInterpolation:
+    {
+      os_ << "use BufferedLinearInterpolator in frequency axis" << LogIO::POST;
+      interpolatorF_ = new BufferedLinearInterpolator1D();
+      break;      
+    }
+  case STCalEnum::CubicSplineInterpolation:
+    {
+      os_ << "use CubicSplineInterpolator in frequency axis" << LogIO::POST;
+      interpolatorF_ = new CubicSplineInterpolator1D();
+      break;
+    }
+  case STCalEnum::PolynomialInterpolation:
+    {
+      os_ << "use PolynomialInterpolator in frequency axis" << LogIO::POST;
+      if (order == 0) {
+        interpolatorF_ = new NearestInterpolator1D();
+      }
+      else {
+        interpolatorF_ = new PolynomialInterpolator1D();
+        interpolatorF_->setOrder(order);
+      }
+      break;
+    }
+  default:
+    {
+      os_ << "use LinearInterpolator in frequency axis" << LogIO::POST;
+      interpolatorF_ = new BufferedLinearInterpolator1D();
+      break;      
+    }
+  }
+}
 }

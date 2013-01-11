@@ -1,5 +1,5 @@
 //
-// C++ Interface: BisectionLocator
+// C++ Interface: HuntLocator
 //
 // Description:
 //
@@ -9,8 +9,8 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#ifndef ASAP_BISECTION_LOCATOR_H
-#define ASAP_BISECTION_LOCATOR_H
+#ifndef ASAP_HUNT_LOCATOR_H
+#define ASAP_HUNT_LOCATOR_H
 
 #include "Locator.h"
 
@@ -20,14 +20,16 @@ namespace asap {
  * Implementation of locate operation by bisection search 
  * @author TakeshiNakazato
  */
-class BisectionLocator : public Locator {
+class HuntLocator : public Locator {
 public:
-  BisectionLocator() {;}
-  BisectionLocator(double *v, unsigned int n);
+  HuntLocator() {;}
+  HuntLocator(double *v, unsigned int n);
 
-  virtual ~BisectionLocator();
+  virtual ~HuntLocator();
 
   unsigned int locate(double x);
+private:
+  unsigned int prev_;
 };
 
 }
