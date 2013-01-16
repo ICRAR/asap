@@ -15,6 +15,7 @@
 #include <casa/Exceptions/Error.h>
 
 #include "Interpolator1D.h"
+#include "Locator.h"
 #include "BisectionLocator.h"
 #include "HuntLocator.h"
 
@@ -87,9 +88,9 @@ void Interpolator1D::createLocator()
 {
   if (!locator_) {
     if (n_ > 1000)
-      locator_ = new HuntLocator();
+      locator_ = new HuntLocator<double>();
     else
-      locator_ = new BisectionLocator();
+      locator_ = new BisectionLocator<double>();
   }
 }
 

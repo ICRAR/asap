@@ -20,7 +20,7 @@ namespace asap {
  * Implementation of locate operation by bisection search 
  * @author TakeshiNakazato
  */
-class HuntLocator : public Locator {
+template <class T> class HuntLocator : public Locator<T> {
 public:
   // Default constructor.
   HuntLocator();
@@ -30,7 +30,7 @@ public:
   // @param[in] n length of the data.
   // @param[in] copystorage whether allocate internal memory or not.
   // @see Locator::set()
-  HuntLocator(double *v, unsigned int n, bool copystorage=true);
+  HuntLocator(T *v, unsigned int n, bool copystorage=true);
 
   // Destructor.
   virtual ~HuntLocator();
@@ -40,11 +40,21 @@ public:
   // @param[in] x input value to be located.
   // @return location as an index j.
   // @see Locator::locate()
-  unsigned int locate(double x);
+  unsigned int locate(T x);
 private:
+  // Hunt algorithm
+  // @param[in] x input value to be located.
+  // @param[in,out] left input: the starting point for hunt.
+  //                     output: the left index of hunted region.
+  // @param[out] right the right index of hunted region.
+  void hunt(T x, unsigned int &left, unsigned int &right);
+
   // Storage for previous result.
   unsigned int prev_;
 };
 
 }
+
+#include "HuntLocator.tcc"
+
 #endif

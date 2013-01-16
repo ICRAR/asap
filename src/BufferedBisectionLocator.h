@@ -21,7 +21,7 @@ namespace asap {
  * some buffer.
  * @author TakeshiNakazato
  */
-class BufferedBisectionLocator : public Locator {
+template <class T> class BufferedBisectionLocator : public Locator<T> {
 public:
   // Default constructor.
   BufferedBisectionLocator();
@@ -31,7 +31,7 @@ public:
   // @param[in] n length of the data.
   // @param[in] copystorage whether allocate internal memory or not.
   // @see Locator::set()
-  BufferedBisectionLocator(double *v, unsigned int n, bool copystorage=true);
+  BufferedBisectionLocator(T *v, unsigned int n, bool copystorage=true);
 
   // Destructor.
   virtual ~BufferedBisectionLocator();
@@ -40,7 +40,7 @@ public:
   // @param[in] x input value to be located.
   // @return location as an index j.
   // @see Locator::locate()
-  unsigned int locate(double x);
+  unsigned int locate(T x);
 private:
 
   // Previous location index.
@@ -48,4 +48,7 @@ private:
 };
 
 }
+
+#include "BufferedBisectionLocator.tcc"
+
 #endif

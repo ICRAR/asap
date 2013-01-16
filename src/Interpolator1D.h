@@ -86,7 +86,7 @@ protected:
   float *y_;
 
   // Pointer to the Locator object.
-  Locator *locator_;
+  Locator<double> *locator_;
 };
 
 }

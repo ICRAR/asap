@@ -20,7 +20,7 @@ namespace asap {
  * Implementation of locate operation by bisection search 
  * @author TakeshiNakazato
  */
-class BisectionLocator : public Locator {
+template <class T> class BisectionLocator : public Locator<T> {
 public:
   // Default constructor.
   BisectionLocator();
@@ -30,7 +30,7 @@ public:
   // @param[in] n length of the data.
   // @param[in] copystorage whether allocate internal memory or not.
   // @see Locator::set()
-  BisectionLocator(double *v, unsigned int n, bool copystorage=true);
+  BisectionLocator(T *v, unsigned int n, bool copystorage=true);
 
   // Destructor.
   virtual ~BisectionLocator();
@@ -39,8 +39,11 @@ public:
   // @param[in] x input value to be located.
   // @return location as an index j.
   // @see Locator::locate()
-  unsigned int locate(double x);
+  unsigned int locate(T x);
 };
 
 }
+
+#include "BisectionLocator.tcc"
+
 #endif

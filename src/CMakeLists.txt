@@ -79,10 +79,6 @@ set( ASAP_SRCS
      ${SRCDIR}/STApplyCal.cpp
      ${SRCDIR}/Calibrator.cpp
      ${SRCDIR}/PSAlmaCalibrator.cpp
-     ${SRCDIR}/Locator.cpp
-     ${SRCDIR}/BisectionLocator.cpp
-     ${SRCDIR}/HuntLocator.cpp
-     ${SRCDIR}/BufferedBisectionLocator.cpp
      ${SRCDIR}/Interpolator1D.cpp
      ${SRCDIR}/NearestInterpolator1D.cpp
      ${SRCDIR}/LinearInterpolator1D.cpp
