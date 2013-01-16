@@ -31,6 +31,12 @@ CubicSplineInterpolator1D::~CubicSplineInterpolator1D()
     delete[] y2_;
 }
 
+void CubicSplineInterpolator1D::setData(double *x, float *y, unsigned int n)
+{
+  Interpolator1D::setData(x, y, n);
+  reusable_ = false;
+}
+
 void CubicSplineInterpolator1D::setY(float *y, unsigned int n)
 {
   Interpolator1D::setY(y, n);
@@ -55,16 +61,16 @@ float CubicSplineInterpolator1D::interpolate(double x)
 
   // determine second derivative of each point
   if (!reusable_) {
-    spline();
+    evaly2();
     reusable_ = true;
   }
 
   // cubic spline interpolation
-  float y = splint(x, i);
+  float y = dospline(x, i);
   return y;
 }
 
-void CubicSplineInterpolator1D::spline()
+void CubicSplineInterpolator1D::evaly2()
 {
   if (n_ > ny2_) {
     if (y2_) 
@@ -74,27 +80,38 @@ void CubicSplineInterpolator1D::spline()
   }
 
   float *u = new float[ny2_-1];
+
+  // Natural cubic spline.
   y2_[0] = 0.0;
+  y2_[ny2_-1] = 0.0;
   u[0] = 0.0;
 
+  // Solve tridiagonal system.
+  // Here, tridiagonal matrix is decomposed to triangular matrix
+  // u stores upper triangular components while y2_ stores 
+  // right-hand side vector.
+  double a1 = x_[1] - x_[0];
+  double a2, bi;
   for (unsigned int i = 1; i < ny2_ - 1; i++) {
-    double sig = (x_[i] - x_[i-1]) / (x_[i+1] - x_[i-1]);
-    double p = sig * y2_[i-1] + 2.0;
-    y2_[i] = (sig - 1.0) / p;
-    u[i] = (y_[i+1] - y_[i]) / (x_[i+1] - x_[i]) 
-      - (y_[i] - y_[i-1]) / (x_[i] - x_[i-1]);
-    u[i] = (6.0 * u[i] / (x_[i+1] - x_[i-1]) - sig * u[i-1]) / p;
+    a2 = x_[i+1] - x_[i];
+    bi = 1.0 / (x_[i+1] - x_[i-1]);
+    y2_[i] = 3.0 * bi * ((y_[i+1] - y_[i]) / a2 - (y_[i] - y_[i-1]) / a1 
+                         - y2_[i-1] * 0.5 * a1);
+    a1 = 1.0 / (1.0 - u[i-1] * 0.5 * a1 * bi);
+    y2_[i] *= a1;
+    u[i] = 0.5 * a2 * bi * a1;
+    a1 = a2;
   }
-
-  y2_[ny2_-1] = 0.0;
-
+  
+  // Then, solve the system by backsubstitution and store solution 
+  // vector to y2_.
   for (int k = ny2_ - 2; k >= 0; k--)
-    y2_[k] = y2_[k] * y2_[k+1] + u[k];
+    y2_[k] -= u[k] * y2_[k+1];
 
   delete[] u;
 }
 
-float CubicSplineInterpolator1D::splint(double x, unsigned int i)
+float CubicSplineInterpolator1D::dospline(double x, unsigned int i)
 {
   unsigned int j = i - 1;
   double h = x_[i] - x_[j];

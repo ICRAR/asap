@@ -27,15 +27,22 @@
 namespace asap {
 
 /**
- * Base class for interpolation operation 
+ * Implementation of nearest interpolation.
  * @author TakeshiNakazato
  */
 class NearestInterpolator1D : public Interpolator1D {
 public:
+  // Default constructor.
   NearestInterpolator1D();
 
+  // Destructor.
   virtual ~NearestInterpolator1D();
 
+  // Perform interpolation.
+  // @param[in] x horizontal location where the value is evaluated 
+  //              by interpolation.
+  // @return interpolated value at x.
+  // @see Interpolator1D::interpolate()
   float interpolate(double x);
 };
 

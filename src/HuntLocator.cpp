@@ -15,8 +15,13 @@
 
 namespace asap {
 
-HuntLocator::HuntLocator(double *v, unsigned int n)
-  : Locator(v, n),
+HuntLocator::HuntLocator()
+  : Locator(),
+    prev_(0)
+{}
+
+HuntLocator::HuntLocator(double *v, unsigned int n, bool copystorage)
+  : Locator(v, n, copystorage),
     prev_(0)
 {}
 
@@ -27,8 +32,8 @@ unsigned int HuntLocator::locate(double x)
 {
   if (n_ == 1)
     return 0;
-  bool ascending = (x_[n_-1] >= x_[0]);
-  if (ascending) {
+
+  if (ascending_) {
     if (x <= x_[0])
       return 0;
     else if (x > x_[n_-1])
@@ -43,66 +48,17 @@ unsigned int HuntLocator::locate(double x)
 
   unsigned int jl = 0;
   unsigned int ju = n_;
+
+  // hunt phase
   if (prev_ > 0 && prev_ < n_) {
-    // do hunt
     jl = prev_;
-    unsigned int inc = 1;
-    if ((x >= x_[jl]) == ascending) {
-      // hunt up 
-      if (jl >= n_ - 1)
-        return jl;
-      ju = jl + inc;
-      while ((x >= x_[ju]) == ascending) {
-        jl = ju;
-        inc <<= 1;
-        ju = jl + inc;
-        if (ju > n_ - 1) {
-          ju = n_;
-          break;
-        }
-      }
-    }
-    else {
-      // hunt down
-      if (jl == 0) 
-        return jl;
-      ju = jl;
-      jl -= inc;
-      while ((x < x_[jl]) == ascending) {
-        ju = jl;
-        inc <<= 1;
-        if (inc >= ju) {
-          jl = 0;
-          break;
-        }
-        else
-          jl = ju - inc;
-      }
-    }
+    hunt(x, jl, ju);
   }
 
   // final bisection phase
-  unsigned int jm;
-  if (ascending) {
-    while (ju - jl > 1) {
-      jm = (ju + jl) >> 1;
-      if (x > x_[jm])
-        jl = jm;
-      else
-        ju = jm;
-    }
-  }
-  else {
-    while (ju - jl > 1) {
-      jm = (ju + jl) >> 1;
-      if (x < x_[jm])
-        jl = jm;
-      else
-        ju = jm;
-    }
-  }
-  prev_ = jl;
-  return ju;
+  unsigned int j = bisection(x, jl, ju);
+  prev_ = (j > 0) ? j - 1 : 0;
+  return j;
 }
 
 }

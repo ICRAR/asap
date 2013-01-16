@@ -22,11 +22,23 @@ namespace asap {
  */
 class BisectionLocator : public Locator {
 public:
-  BisectionLocator() {;}
-  BisectionLocator(double *v, unsigned int n);
+  // Default constructor.
+  BisectionLocator();
 
+  // Construct with data
+  // @param[in] v pointer to input data.
+  // @param[in] n length of the data.
+  // @param[in] copystorage whether allocate internal memory or not.
+  // @see Locator::set()
+  BisectionLocator(double *v, unsigned int n, bool copystorage=true);
+
+  // Destructor.
   virtual ~BisectionLocator();
 
+  // Return right hand side index of location using bisection search.
+  // @param[in] x input value to be located.
+  // @return location as an index j.
+  // @see Locator::locate()
   unsigned int locate(double x);
 };
 

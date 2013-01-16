@@ -14,9 +14,14 @@
 #include "BufferedBisectionLocator.h"
 
 namespace asap {
+BufferedBisectionLocator::BufferedBisectionLocator()
+  : Locator(),
+    prev_(0)
+{}
 
-BufferedBisectionLocator::BufferedBisectionLocator(double *v, unsigned int n)
-  : Locator(v, n),
+BufferedBisectionLocator::BufferedBisectionLocator(double *v, unsigned int n, 
+                                                   bool copystorage)
+  : Locator(v, n, copystorage),
     prev_(0)
 {}
 
@@ -27,61 +32,41 @@ unsigned int BufferedBisectionLocator::locate(double x)
 {
   if (n_ == 1)
     return 0;
-  bool ascending = (x_[n_-1] >= x_[0]);
-  if (ascending) {
+
+  unsigned int jl = 0;
+  unsigned int ju = n_;
+  if (ascending_) {
+    // ascending order
     if (x <= x_[0])
       return 0;
     else if (x > x_[n_-1])
       return n_;
 
-    unsigned int jl = 0;
-    unsigned int ju = n_;
-    unsigned int jm;
-
     if (x < x_[prev_]) {
-      ju = prev_;
-      prev_ = 0;
+      ju = bisection(x, jl, prev_);
     }
-    else 
-      jl = prev_;
+    else {
+      ju = bisection(x, prev_, ju);
+    }
 
-    while (ju - jl > 1) {
-      jm = (ju + jl) >> 1;
-      if (x > x_[jm])
-        jl = jm;
-      else
-        ju = jm;
-    }
-    prev_ = jl;
-    return ju;
   }
   else {
+    // descending order
     if (x >= x_[0])
       return 0;
     else if (x < x_[n_-1])
       return n_;
 
-    unsigned int jl = 0;
-    unsigned int ju = n_;
-    unsigned int jm;
-
     if (x > x_[prev_]) {
-      ju = prev_;
-      prev_ = 0;
+      ju = bisection(x, jl, prev_);
     }
-    else 
-      jl = prev_;
-
-    while (ju - jl > 1) {
-      jm = (ju + jl) >> 1;
-      if (x < x_[jm])
-        jl = jm;
-      else
-        ju = jm;
+    else {
+      ju = bisection(x, prev_, ju);
     }
-    prev_ = jl;
-    return ju;
   }
+
+  prev_ = (ju > 0) ? ju - 1 : 0;
+  return ju;    
 }
 
 }

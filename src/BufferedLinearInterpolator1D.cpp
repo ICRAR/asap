@@ -23,6 +23,12 @@ BufferedLinearInterpolator1D::BufferedLinearInterpolator1D()
 BufferedLinearInterpolator1D::~BufferedLinearInterpolator1D()
 {}
 
+void BufferedLinearInterpolator1D::setData(double *x, float *y, unsigned int n)
+{
+  Interpolator1D::setData(x, y, n);
+  reusable_ = false;
+}
+
 void BufferedLinearInterpolator1D::setX(double *x, unsigned int n)
 {
   Interpolator1D::setX(x, n);

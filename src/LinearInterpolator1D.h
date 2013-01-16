@@ -17,15 +17,22 @@
 namespace asap {
 
 /**
- * Linear interpolation
+ * Implementation of linear interpolation
  * @author TakeshiNakazato
  */
 class LinearInterpolator1D : public Interpolator1D {
 public:
+  // Default constructor.
   LinearInterpolator1D();
 
+  // Destructor.
   virtual ~LinearInterpolator1D();
 
+  // Perform interpolation.
+  // @param[in] x horizontal location where the value is evaluated 
+  //              by interpolation.
+  // @return interpolated value at x.
+  // @see Interpolator1D::interpolate()
   float interpolate(double x);
 };
 

@@ -78,7 +78,7 @@ bool Interpolator1D::isready()
   return (n_ > 0 && x_ != 0 && y_ != 0);
 }
 
-int Interpolator1D::locate(double x)
+unsigned int Interpolator1D::locate(double x)
 {
   return locator_->locate(x);
 }

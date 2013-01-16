@@ -22,13 +22,27 @@ namespace asap {
  */
 class HuntLocator : public Locator {
 public:
-  HuntLocator() {;}
-  HuntLocator(double *v, unsigned int n);
+  // Default constructor.
+  HuntLocator();
 
+  // Construct with data
+  // @param[in] v pointer to input data.
+  // @param[in] n length of the data.
+  // @param[in] copystorage whether allocate internal memory or not.
+  // @see Locator::set()
+  HuntLocator(double *v, unsigned int n, bool copystorage=true);
+
+  // Destructor.
   virtual ~HuntLocator();
 
+  // Return right hand side index of location using bisection search 
+  // plus hunt algorithm.
+  // @param[in] x input value to be located.
+  // @return location as an index j.
+  // @see Locator::locate()
   unsigned int locate(double x);
 private:
+  // Storage for previous result.
   unsigned int prev_;
 };
 

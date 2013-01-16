@@ -11,6 +11,10 @@
 //
 #include <assert.h>
 #include <math.h>
+#include <iostream>
+using namespace std;
+
+#include <casa/Exceptions/Error.h>
 
 #include "PolynomialInterpolator1D.h"
 
@@ -42,34 +46,28 @@ float PolynomialInterpolator1D::interpolate(double x)
   // polynomial interpolation 
   float y;
   if (order_ >= n_ - 1) {
-    y = polint(x, i, 0, n_);
+    // use full region
+    y = dopoly(x, 0, n_);
   }
   else {
+    // use partial region
     int j = i - 1 - order_ / 2;
     unsigned int m = n_ - 1 - order_;
     unsigned int k = (unsigned int)((j > 0) ? j : 0);
     k = ((k > m) ? m : k);
-    y = polint(x, i, k, order_ + 1);
+    y = dopoly(x, k, order_ + 1);
   }
 
   return y;
 }
 
-float PolynomialInterpolator1D::polint(double x, unsigned int loc, 
-                                       unsigned int left, unsigned int n)
+float PolynomialInterpolator1D::dopoly(double x, unsigned int left,
+                                       unsigned int n)
 {
-  int ns = loc - left;
-  if (fabs(x - x_[loc]) >= fabs(x - x_[loc-1])) {
-    ns--;
-  }
-
   double *xa = &x_[left];
   float *ya = &y_[left];
 
-  float y = ya[ns];
-  
-  // c stores C11, C21, C31, ..., C[n-1]1
-  // d stores D11, D21, D31, ..., D[n-1]1
+  // storage for C and D in Neville's algorithm
   float *c = new float[n];
   float *d = new float[n];
   for (unsigned int i = 0; i < n; i++) {
@@ -77,34 +75,33 @@ float PolynomialInterpolator1D::polint(double x, unsigned int loc,
     d[i] = ya[i];
   }
 
+  // Neville's algorithm
+  float y = c[0];
   for (unsigned int m = 1; m < n; m++) {
+    // Evaluate Cm1, Cm2, Cm3, ... Cm[n-m] and Dm1, Dm2, Dm3, ... Dm[n-m].
+    // Those are stored to c[0], c[1], ..., c[n-m-1] and d[0], d[1], ..., 
+    // d[n-m-1].
     for (unsigned int i = 0; i < n - m; i++) {
-      double ho = xa[i] - x;
-      double hp = xa[i+m] - x;
-      float w = c[i+1] - d[i];
-      double denom = ho - hp;
-      if (denom == 0.0) {
+      float cd = c[i+1] - d[i];
+      double dx = xa[i] - xa[i+m];
+      try {
+        cd /= dx;
+      }
+      catch (...) {
         delete[] c;
         delete[] d;
-        assert(denom != 0.0);
+        throw casa::AipsError("x_ has duplicate elements");
       }
-      denom = w / denom;
-      
-      d[i] = hp * denom;
-      c[i] = ho * denom;
+      c[i] = (xa[i] - x) * cd;
+      d[i] = (xa[i+m] - x) * cd;
     }
 
-    float dy;
-    if (2 * ns < (int)(n - m)) {
-      dy = c[ns];
-    }
-    else {
-      dy = d[ns-1];
-      ns--;
-    }
-    y += dy;
+    // In each step, c[0] holds Cm1 which is a correction between 
+    // P12...m and P12...[m+1]. Thus, the following repeated update 
+    // corresponds to the route P1 -> P12 -> P123 ->...-> P123...n.
+    y += c[0];
   }
-  
+
   delete[] c;
   delete[] d;
 

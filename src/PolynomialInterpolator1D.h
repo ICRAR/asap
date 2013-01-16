@@ -17,18 +17,33 @@
 namespace asap {
 
 /**
- * Polynomial interpolation
+ * Implementation of polynomial interpolation.
  * @author TakeshiNakazato
  */
 class PolynomialInterpolator1D : public Interpolator1D {
 public:
+  // Default constructor.
   PolynomialInterpolator1D();
 
+  // Destructor.
   virtual ~PolynomialInterpolator1D();
 
+  // Perform interpolation.
+  // @param[in] x horizontal location where the value is evaluated 
+  //              by interpolation.
+  // @return interpolated value at x.
   float interpolate(double x);
 private:
-  float polint(double x, unsigned int loc, unsigned int left, unsigned int n);
+  // Perform polynomial interpolation. 
+  // If (number of data points) >  (polynomial order + 1), polynomial 
+  // interpolation must be done in the sub-region that contains x. 
+  // This method takes arguments that specifies sub-region to be used. 
+  // @param[in] x horizontal location where the value is evaluated 
+  //              by interpolation.
+  // @param[in] left the leftmost index of sub-region.
+  // @param[in] n number of data points of sub-region.
+  // @return interpolated value at x.
+  float dopoly(double x, unsigned int left, unsigned int n);
 };
 
 }

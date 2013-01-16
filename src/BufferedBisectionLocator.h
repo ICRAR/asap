@@ -17,18 +17,33 @@
 namespace asap {
 
 /**
- * Implementation of locate operation by bisection search 
+ * Implementation of locate operation by bisection search with 
+ * some buffer.
  * @author TakeshiNakazato
  */
 class BufferedBisectionLocator : public Locator {
 public:
-  BufferedBisectionLocator() {;}
-  BufferedBisectionLocator(double *v, unsigned int n);
+  // Default constructor.
+  BufferedBisectionLocator();
 
+  // Construct with data
+  // @param[in] v pointer to input data.
+  // @param[in] n length of the data.
+  // @param[in] copystorage whether allocate internal memory or not.
+  // @see Locator::set()
+  BufferedBisectionLocator(double *v, unsigned int n, bool copystorage=true);
+
+  // Destructor.
   virtual ~BufferedBisectionLocator();
 
+  // Return right hand side index of location using bisection search.
+  // @param[in] x input value to be located.
+  // @return location as an index j.
+  // @see Locator::locate()
   unsigned int locate(double x);
 private:
+
+  // Previous location index.
   unsigned int prev_;
 };
 
