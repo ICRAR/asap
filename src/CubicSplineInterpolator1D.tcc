@@ -18,45 +18,50 @@ using namespace std;
 
 namespace asap {
 
-CubicSplineInterpolator1D::CubicSplineInterpolator1D()
-  : Interpolator1D(),
+template <class T, class U>
+CubicSplineInterpolator1D<T, U>::CubicSplineInterpolator1D()
+  : Interpolator1D<T, U>(),
     y2_(0),
     ny2_(0),
     reusable_(false)
 {}
 
-CubicSplineInterpolator1D::~CubicSplineInterpolator1D()
+template <class T, class U>
+CubicSplineInterpolator1D<T, U>::~CubicSplineInterpolator1D()
 {
   if (y2_) 
     delete[] y2_;
 }
 
-void CubicSplineInterpolator1D::setData(double *x, float *y, unsigned int n)
+template <class T, class U>
+void CubicSplineInterpolator1D<T, U>::setData(T *x, U *y, unsigned int n)
 {
-  Interpolator1D::setData(x, y, n);
+  Interpolator1D<T, U>::setData(x, y, n);
   reusable_ = false;
 }
 
-void CubicSplineInterpolator1D::setY(float *y, unsigned int n)
+template <class T, class U>
+void CubicSplineInterpolator1D<T, U>::setY(U *y, unsigned int n)
 {
-  Interpolator1D::setY(y, n);
+  Interpolator1D<T, U>::setY(y, n);
   reusable_ = false;
 }
 
-float CubicSplineInterpolator1D::interpolate(double x)
+template <class T, class U>
+U CubicSplineInterpolator1D<T, U>::interpolate(T x)
 {
-  assert(isready());
-  if (n_ == 1)
-    return y_[0];
+  assert(this->isready());
+  if (this->n_ == 1)
+    return this->y_[0];
 
-  unsigned int i = locator_->locate(x);
+  unsigned int i = this->locator_->locate(x);
 
   // do not perform extrapolation
   if (i == 0) {
-    return y_[i];
+    return this->y_[i];
   }
-  else if (i == n_) {
-    return y_[i-1];
+  else if (i == this->n_) {
+    return this->y_[i-1];
   }
 
   // determine second derivative of each point
@@ -70,16 +75,17 @@ float CubicSplineInterpolator1D::interpolate(double x)
   return y;
 }
 
-void CubicSplineInterpolator1D::evaly2()
+template <class T, class U>
+void CubicSplineInterpolator1D<T, U>::evaly2()
 {
-  if (n_ > ny2_) {
+  if (this->n_ > ny2_) {
     if (y2_) 
       delete[] y2_;
-    y2_ = new float[n_];
-    ny2_ = n_;
+    y2_ = new U[this->n_];
+    ny2_ = this->n_;
   }
 
-  float *u = new float[ny2_-1];
+  U *u = new U[ny2_-1];
 
   // Natural cubic spline.
   y2_[0] = 0.0;
@@ -90,12 +96,13 @@ void CubicSplineInterpolator1D::evaly2()
   // Here, tridiagonal matrix is decomposed to triangular matrix
   // u stores upper triangular components while y2_ stores 
   // right-hand side vector.
-  double a1 = x_[1] - x_[0];
-  double a2, bi;
+  T a1 = this->x_[1] - this->x_[0];
+  T a2, bi;
   for (unsigned int i = 1; i < ny2_ - 1; i++) {
-    a2 = x_[i+1] - x_[i];
-    bi = 1.0 / (x_[i+1] - x_[i-1]);
-    y2_[i] = 3.0 * bi * ((y_[i+1] - y_[i]) / a2 - (y_[i] - y_[i-1]) / a1 
+    a2 = this->x_[i+1] - this->x_[i];
+    bi = 1.0 / (this->x_[i+1] - this->x_[i-1]);
+    y2_[i] = 3.0 * bi * ((this->y_[i+1] - this->y_[i]) / a2 
+                         - (this->y_[i] - this->y_[i-1]) / a1 
                          - y2_[i-1] * 0.5 * a1);
     a1 = 1.0 / (1.0 - u[i-1] * 0.5 * a1 * bi);
     y2_[i] *= a1;
@@ -111,13 +118,14 @@ void CubicSplineInterpolator1D::evaly2()
   delete[] u;
 }
 
-float CubicSplineInterpolator1D::dospline(double x, unsigned int i)
+template <class T, class U>
+U CubicSplineInterpolator1D<T, U>::dospline(T x, unsigned int i)
 {
   unsigned int j = i - 1;
-  double h = x_[i] - x_[j];
-  double a = (x_[i] - x) / h;
-  double b = (x - x_[j]) / h;
-  float y = a * y_[j] + b * y_[i] + 
+  T h = this->x_[i] - this->x_[j];
+  T a = (this->x_[i] - x) / h;
+  T b = (x - this->x_[j]) / h;
+  U y = a * this->y_[j] + b * this->y_[i] + 
     ((a * a * a - a) * y2_[j] + (b * b * b - b) * y2_[i]) * (h * h) / 6.0;
   return y;
 }

@@ -79,12 +79,6 @@ set( ASAP_SRCS
      ${SRCDIR}/STApplyCal.cpp
      ${SRCDIR}/Calibrator.cpp
      ${SRCDIR}/PSAlmaCalibrator.cpp
-     ${SRCDIR}/Interpolator1D.cpp
-     ${SRCDIR}/NearestInterpolator1D.cpp
-     ${SRCDIR}/LinearInterpolator1D.cpp
-     ${SRCDIR}/BufferedLinearInterpolator1D.cpp
-     ${SRCDIR}/CubicSplineInterpolator1D.cpp
-     ${SRCDIR}/PolynomialInterpolator1D.cpp
      ${SRCDIR}/STBaselineParamTable.cpp )
 
 set( ASAP_PYSRCS

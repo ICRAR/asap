@@ -20,72 +20,76 @@ using namespace std;
 
 namespace asap {
 
-PolynomialInterpolator1D::PolynomialInterpolator1D()
-  : Interpolator1D()
+template <class T, class U>
+PolynomialInterpolator1D<T, U>::PolynomialInterpolator1D()
+  : Interpolator1D<T, U>()
 {}
 
-PolynomialInterpolator1D::~PolynomialInterpolator1D()
+template <class T, class U>
+PolynomialInterpolator1D<T, U>::~PolynomialInterpolator1D()
 {}
 
-float PolynomialInterpolator1D::interpolate(double x)
+template <class T, class U>
+U PolynomialInterpolator1D<T, U>::interpolate(T x)
 {
-  assert(isready());
-  if (n_ == 1)
-    return y_[0];
+  assert(this->isready());
+  if (this->n_ == 1)
+    return this->y_[0];
 
-  unsigned int i = locator_->locate(x);
+  unsigned int i = this->locator_->locate(x);
 
   // do not perform extrapolation
   if (i == 0) {
-    return y_[i];
+    return this->y_[i];
   }
-  else if (i == n_) {
-    return y_[i-1];
+  else if (i == this->n_) {
+    return this->y_[i-1];
   }
 
   // polynomial interpolation 
-  float y;
-  if (order_ >= n_ - 1) {
+  U y;
+  if (this->order_ >= this->n_ - 1) {
     // use full region
-    y = dopoly(x, 0, n_);
+    y = dopoly(x, 0, this->n_);
   }
   else {
-    // use partial region
-    int j = i - 1 - order_ / 2;
-    unsigned int m = n_ - 1 - order_;
+    // use sub-region
+    int j = i - 1 - this->order_ / 2;
+    unsigned int m = this->n_ - 1 - this->order_;
     unsigned int k = (unsigned int)((j > 0) ? j : 0);
     k = ((k > m) ? m : k);
-    y = dopoly(x, k, order_ + 1);
+    y = dopoly(x, k, this->order_ + 1);
   }
 
   return y;
 }
 
-float PolynomialInterpolator1D::dopoly(double x, unsigned int left,
-                                       unsigned int n)
+template <class T, class U>
+U PolynomialInterpolator1D<T, U>::dopoly(T x, unsigned int left,
+                                         unsigned int n)
 {
-  double *xa = &x_[left];
-  float *ya = &y_[left];
+  T *xa = &this->x_[left];
+  U *ya = &this->y_[left];
 
   // storage for C and D in Neville's algorithm
-  float *c = new float[n];
-  float *d = new float[n];
+  U *c = new U[n];
+  U *d = new U[n];
   for (unsigned int i = 0; i < n; i++) {
     c[i] = ya[i];
     d[i] = ya[i];
   }
 
   // Neville's algorithm
-  float y = c[0];
+  U y = c[0];
   for (unsigned int m = 1; m < n; m++) {
     // Evaluate Cm1, Cm2, Cm3, ... Cm[n-m] and Dm1, Dm2, Dm3, ... Dm[n-m].
     // Those are stored to c[0], c[1], ..., c[n-m-1] and d[0], d[1], ..., 
     // d[n-m-1].
     for (unsigned int i = 0; i < n - m; i++) {
-      float cd = c[i+1] - d[i];
-      double dx = xa[i] - xa[i+m];
+      U cd = c[i+1] - d[i];
+      T dx = xa[i] - xa[i+m];
       try {
-        cd /= dx;
+        cd /= (U)dx;
       }
       catch (...) {
         delete[] c;

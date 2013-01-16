@@ -20,7 +20,7 @@ namespace asap {
  * Base class for interpolation operation 
  * @author TakeshiNakazato
  */
-class Interpolator1D {
+template <class T, class U> class Interpolator1D {
 public:
   // Default constructor.
   Interpolator1D();
@@ -32,17 +32,17 @@ public:
   // @param[in] x pointer to horizontal data.
   // @param[in] y pointer to vertical data.
   // @param[in] n number of data.
-  void setData(double *x, float *y, unsigned int n);
+  void setData(T *x, U *y, unsigned int n);
 
   // Set horizontal data (x).
   // @param[in] x pointer to horizontal data.
   // @param[in] n number of data.
-  void setX(double *x, unsigned int n);
+  void setX(T *x, unsigned int n);
 
   // Set vertical data (y).
   // @param[in] y pointer to vertical data.
   // @param[in] n number of data.
-  void setY(float *y, unsigned int n);
+  void setY(U *y, unsigned int n);
 
   // Reset object.
   void reset();
@@ -57,14 +57,14 @@ public:
   // @param[in] x horizontal location where the value is evaluated 
   //              by interpolation.
   // @return interpolated value at x.
-  virtual float interpolate(double x) = 0;
+  virtual U interpolate(T x) = 0;
 
 protected:
   // Locate x.
   // @param[in] x horizontal location.
   // @return location as an index.
   // @see Locator::locate()
-  unsigned int locate(double x);
+  unsigned int locate(T x);
 
   // Query function whether the object is ready to interpolate.
   // @return true if object is ready else false.
@@ -80,14 +80,17 @@ protected:
   unsigned int n_;
 
   // Horizontal data.
-  double *x_;
+  T *x_;
 
   // Vertical data.
-  float *y_;
+  U *y_;
 
   // Pointer to the Locator object.
-  Locator<double> *locator_;
+  Locator<T> *locator_;
 };
 
 }
+
+#include "Interpolator1D.tcc"
+
 #endif

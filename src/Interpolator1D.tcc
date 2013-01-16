@@ -23,7 +23,7 @@ using namespace casa;
 
 namespace asap {
 
-Interpolator1D::Interpolator1D()
+template <class T, class U> Interpolator1D<T, U>::Interpolator1D()
   : order_(1),
     n_(0),
     x_(0),
@@ -32,13 +32,14 @@ Interpolator1D::Interpolator1D()
 {
 }
 
-Interpolator1D::~Interpolator1D()
+template <class T, class U> Interpolator1D<T, U>::~Interpolator1D()
 {
   if (locator_)
     delete locator_;
 }
 
-void Interpolator1D::setData(double *x, float *y, unsigned int n)
+template <class T, class U> 
+void Interpolator1D<T, U>::setData(T *x, U *y, unsigned int n)
 {
   x_ = x;
   y_ = y;
@@ -47,7 +48,8 @@ void Interpolator1D::setData(double *x, float *y, unsigned int n)
   locator_->set(x, n);
 }
 
-void Interpolator1D::setX(double *x, unsigned int n)
+template <class T, class U> 
+void Interpolator1D<T, U>::setX(T *x, unsigned int n)
 {
   assert(n_ == 0 || n_ == n);
   x_ = x;
@@ -56,14 +58,15 @@ void Interpolator1D::setX(double *x, unsigned int n)
   locator_->set(x, n);
 }
 
-void Interpolator1D::setY(float *y, unsigned int n)
+template <class T, class U> 
+void Interpolator1D<T, U>::setY(U *y, unsigned int n)
 {
   assert(n_ == 0 || n_ == n);
   y_ = y;
   n_ = n;
 }
 
-void Interpolator1D::reset()
+template <class T, class U> void Interpolator1D<T, U>::reset()
 {
   n_ = 0;
   x_ = 0;
@@ -74,23 +77,23 @@ void Interpolator1D::reset()
   }
 }
 
-bool Interpolator1D::isready()
+template <class T, class U> bool Interpolator1D<T, U>::isready()
 {
   return (n_ > 0 && x_ != 0 && y_ != 0);
 }
 
-unsigned int Interpolator1D::locate(double x)
+template <class T, class U> unsigned int Interpolator1D<T, U>::locate(T x)
 {
   return locator_->locate(x);
 }
 
-void Interpolator1D::createLocator()
+template <class T, class U> void Interpolator1D<T, U>::createLocator()
 {
   if (!locator_) {
     if (n_ > 1000)
-      locator_ = new HuntLocator<double>();
+      locator_ = new HuntLocator<T>();
     else
-      locator_ = new BisectionLocator<double>();
+      locator_ = new BisectionLocator<T>();
   }
 }
 

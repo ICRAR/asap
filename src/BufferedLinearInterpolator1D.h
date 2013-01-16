@@ -20,7 +20,8 @@ namespace asap {
  * Linear interpolation with some buffers for acceleration.
  * @author TakeshiNakazato
  */
-class BufferedLinearInterpolator1D : public Interpolator1D {
+template <class T, class U>
+class BufferedLinearInterpolator1D : public Interpolator1D<T, U> {
 public:
   // Default constructor.
   BufferedLinearInterpolator1D();
@@ -33,27 +34,27 @@ public:
   // @param[in] y pointer to vertical data.
   // @param[in] n number of data.
   // @see Interpolator1D::setData()
-  void setData(double *x, float *y, unsigned int n);
+  void setData(T *x, U *y, unsigned int n);
 
   // Set horizontal data (x).
   // @param[in] x pointer to horizontal data.
   // @param[in] n number of data.
   // @see Interpolator1D::setX()
-  void setX(double *x, unsigned int n);
+  void setX(T *x, unsigned int n);
 
   // Perform interpolation.
   // @param[in] x horizontal location where the value is evaluated 
   //              by interpolation.
   // @return interpolated value at x.
   // @see Interpolator1D::interpolate()
-  float interpolate(double x);
+  U interpolate(T x);
 
 private:
   // Numerical factor for linear interpolation.
-  double factor_;
+  T factor_;
 
   // Previous location.
-  double xold_;
+  T xold_;
 
   // Previous location as an index 
   unsigned int prev_;
@@ -63,4 +64,7 @@ private:
 };
 
 }
+
+#include "BufferedLinearInterpolator1D.tcc"
+
 #endif

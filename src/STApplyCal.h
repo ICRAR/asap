@@ -102,9 +102,9 @@ private:
   std::vector<STCalEnum::InterpolationType> interp_;
   casa::Bool is2d_;
   casa::Int order_;
-  casa::CountedPtr<Interpolator1D> interpolatorT_;
-  casa::CountedPtr<Interpolator1D> interpolatorF_;
-  casa::CountedPtr<Interpolator1D> interpolatorS_;
+  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorT_;
+  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorF_;
+  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorS_;
 
   // IF (spw) mapping for Tsys transfer
   map<casa::uInt, casa::Vector<casa::uInt> > spwmap_;

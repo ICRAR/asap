@@ -20,7 +20,8 @@ namespace asap {
  * Implementation of linear interpolation
  * @author TakeshiNakazato
  */
-class LinearInterpolator1D : public Interpolator1D {
+template <class T, class U> 
+class LinearInterpolator1D : public Interpolator1D<T, U> {
 public:
   // Default constructor.
   LinearInterpolator1D();
@@ -33,8 +34,11 @@ public:
   //              by interpolation.
   // @return interpolated value at x.
   // @see Interpolator1D::interpolate()
-  float interpolate(double x);
+  U interpolate(T x);
 };
 
 }
+
+#include "LinearInterpolator1D.tcc"
+
 #endif

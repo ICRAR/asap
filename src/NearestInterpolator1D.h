@@ -30,7 +30,8 @@ namespace asap {
  * Implementation of nearest interpolation.
  * @author TakeshiNakazato
  */
-class NearestInterpolator1D : public Interpolator1D {
+template <class T, class U> 
+class NearestInterpolator1D : public Interpolator1D<T, U> {
 public:
   // Default constructor.
   NearestInterpolator1D();
@@ -43,8 +44,11 @@ public:
   //              by interpolation.
   // @return interpolated value at x.
   // @see Interpolator1D::interpolate()
-  float interpolate(double x);
+  U interpolate(T x);
 };
 
 }
+
+#include "NearestInterpolator1D.tcc"
+
 #endif

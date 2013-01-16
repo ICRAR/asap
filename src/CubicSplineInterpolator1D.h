@@ -20,7 +20,8 @@ namespace asap {
  * Implementation of (natural) cubic spline interpolation.
  * @author TakeshiNakazato
  */
-class CubicSplineInterpolator1D : public Interpolator1D {
+template <class T, class U>
+class CubicSplineInterpolator1D : public Interpolator1D<T, U> {
 public:
   // Default constructor.
   CubicSplineInterpolator1D();
@@ -30,17 +31,17 @@ public:
 
   // Override Interpolator1D::setData.
   // @see Interpolator1D::setData
-  void setData(double *x, float *y, unsigned int n);
+  void setData(T *x, U *y, unsigned int n);
 
   // Override Interpolator1D::setY.
   // @see Interpolator1D::setY()
-  void setY(float *y, unsigned int n);
+  void setY(U *y, unsigned int n);
 
   // Perform interpolation.
   // @param[in] x horizontal location where the value is evaluated 
   //              by interpolation.
   // @return interpolated value at x.
-  float interpolate(double x);
+  U interpolate(T x);
 private:
   // Determine second derivatives of each point based on 
   // natural cubic spline condition (second derivative at each 
@@ -52,10 +53,10 @@ private:
   //              by interpolation.
   // @param[in] i location index for x.
   // @return interpolated value at x.
-  float dospline(double x, unsigned int i);
+  U dospline(T x, unsigned int i);
   
   // Array to store second derivatives on the data points.
-  float *y2_;
+  U *y2_;
 
   // number of data points for second derivatives
   unsigned int ny2_;
@@ -65,4 +66,7 @@ private:
 };
 
 }
+
+#include "CubicSplineInterpolator1D.tcc"
+
 #endif

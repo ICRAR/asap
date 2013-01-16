@@ -20,7 +20,8 @@ namespace asap {
  * Implementation of polynomial interpolation.
  * @author TakeshiNakazato
  */
-class PolynomialInterpolator1D : public Interpolator1D {
+template <class T, class U>
+class PolynomialInterpolator1D : public Interpolator1D<T, U> {
 public:
   // Default constructor.
   PolynomialInterpolator1D();
@@ -32,7 +33,7 @@ public:
   // @param[in] x horizontal location where the value is evaluated 
   //              by interpolation.
   // @return interpolated value at x.
-  float interpolate(double x);
+  U interpolate(T x);
 private:
   // Perform polynomial interpolation. 
   // If (number of data points) >  (polynomial order + 1), polynomial 
@@ -43,8 +44,11 @@ private:
   // @param[in] left the leftmost index of sub-region.
   // @param[in] n number of data points of sub-region.
   // @return interpolated value at x.
-  float dopoly(double x, unsigned int left, unsigned int n);
+  U dopoly(T x, unsigned int left, unsigned int n);
 };
 
 }
+
+#include "PolynomialInterpolator1D.tcc"
+
 #endif
