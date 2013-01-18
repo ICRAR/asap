@@ -79,7 +79,7 @@ set( ASAP_SRCS
      ${SRCDIR}/STApplyCal.cpp
      ${SRCDIR}/Calibrator.cpp
      ${SRCDIR}/PSAlmaCalibrator.cpp
-     ${SRCDIR}/STBaselineParamTable.cpp )
+     ${SRCDIR}/STBaselineTable.cpp )
 
 set( ASAP_PYSRCS
 #     ${SRCDIR}/python_Plotter2.cpp
