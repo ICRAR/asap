@@ -46,44 +46,47 @@ public:
                casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
                casa::uInt freqid, casa::Double time, 
                casa::uInt nchan, 
-               STBaselineFunc::FuncName func, casa::uInt order, 
-               casa::uInt clipiter, casa::Float clipthres,
-               casa::Vector<casa::Float> sect, 
-               casa::Vector<casa::Float> param,
-               casa::Vector<casa::Float> mask,
+               STBaselineFunc::FuncName ftype, 
+	       casa::Vector<casa::uInt> fpar, 
+	       casa::Vector<casa::Float> ffpar, 
+               casa::uInt citer, 
+	       casa::Float cthres,
+               casa::Vector<casa::uInt> mask,
+               casa::Vector<casa::Float> res,
                casa::Float rms);
   void appenddata(casa::uInt scanno, casa::uInt cycleno, 
                   casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
                   casa::uInt freqid, casa::Double time, 
 		  casa::uInt nchan, 
-                  STBaselineFunc::FuncName func, casa::uInt order, 
-                  casa::uInt clipiter, casa::Float clipthres,
-                  casa::Vector<casa::Float> sect, 
-                  casa::Vector<casa::Float> param, 
-                  casa::Vector<casa::Float> mask, 
-                  casa::Float rms);
-
+		  STBaselineFunc::FuncName ftype, 
+		  casa::Vector<casa::uInt> fpar, 
+		  casa::Vector<casa::Float> ffpar, 
+		  casa::uInt citer, 
+		  casa::Float cthres,
+		  casa::Vector<casa::uInt> mask,
+		  casa::Vector<casa::Float> res,
+		  casa::Float rms);
   casa::uInt nchan(casa::uInt ifno);
-  casa::Vector<casa::uInt> getFunction() {return funcCol_.getColumn();}
+  casa::Vector<casa::uInt> getFunction() {return ftypeCol_.getColumn();}
   casa::Vector<STBaselineFunc::FuncName> getFunctionAsString();
-  casa::Vector<casa::uInt> getOrder() {return orderCol_.getColumn();}
-  casa::Vector<casa::uInt> getClipIteration() {return clipiterCol_.getColumn();}
-  casa::Vector<casa::Float> getClipThreshold() {return clipthresCol_.getColumn();}
-  casa::Matrix<casa::Float> getSection() {return sectCol_.getColumn();}
-  casa::Matrix<casa::Float> getParameter() {return paramCol_.getColumn();}
-  casa::Matrix<casa::Float> getMaskList() {return maskCol_.getColumn();}
+  casa::Matrix<casa::uInt> getFuncParam() {return fparCol_.getColumn();}
+  casa::Matrix<casa::Float> getFuncFParam() {return ffparCol_.getColumn();}
+  casa::Vector<casa::uInt> getClipIteration() {return citerCol_.getColumn();}
+  casa::Vector<casa::Float> getClipThreshold() {return cthresCol_.getColumn();}
+  casa::Matrix<casa::uInt> getMaskList() {return maskCol_.getColumn();}
+  casa::Matrix<casa::Float> getResult() {return resCol_.getColumn();}
   casa::Vector<casa::Float> getRms() {return rmsCol_.getColumn();}
 
 private:
   static const casa::String name_ ;
   casa::ScalarColumn<casa::uInt> nchanCol_;
-  casa::ScalarColumn<casa::uInt> funcCol_;
-  casa::ScalarColumn<casa::uInt> orderCol_;
-  casa::ScalarColumn<casa::uInt> clipiterCol_;
-  casa::ScalarColumn<casa::Float> clipthresCol_;
-  casa::ArrayColumn<casa::Float> sectCol_;
-  casa::ArrayColumn<casa::Float> paramCol_;
-  casa::ArrayColumn<casa::Float> maskCol_;
+  casa::ScalarColumn<casa::uInt> ftypeCol_;
+  casa::ArrayColumn<casa::uInt> fparCol_;
+  casa::ArrayColumn<casa::Float> ffparCol_;
+  casa::ScalarColumn<casa::uInt> citerCol_;
+  casa::ScalarColumn<casa::Float> cthresCol_;
+  casa::ArrayColumn<casa::uInt> maskCol_;
+  casa::ArrayColumn<casa::Float> resCol_;
   casa::ScalarColumn<casa::Float> rmsCol_;
 };
 

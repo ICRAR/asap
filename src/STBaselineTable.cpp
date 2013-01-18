@@ -51,13 +51,13 @@ STBaselineTable::~STBaselineTable()
 void STBaselineTable::setup()
 {
   table_.addColumn(ScalarColumnDesc<uInt>("NCHAN"));
-  table_.addColumn(ScalarColumnDesc<uInt>("FUNCTION"));
-  table_.addColumn(ScalarColumnDesc<uInt>("ORDER"));
+  table_.addColumn(ScalarColumnDesc<uInt>("FUNC_TYPE"));
+  table_.addColumn(ArrayColumnDesc<uInt>("FUNC_PARAM"));
+  table_.addColumn(ArrayColumnDesc<Float>("FUNC_FPARAM"));
   table_.addColumn(ScalarColumnDesc<uInt>("CLIP_ITERATION"));
   table_.addColumn(ScalarColumnDesc<Float>("CLIP_THRESHOLD"));
-  table_.addColumn(ArrayColumnDesc<Float>("SECTION"));
-  table_.addColumn(ArrayColumnDesc<Float>("PARAMETER"));
-  table_.addColumn(ArrayColumnDesc<Float>("MASKLIST"));
+  table_.addColumn(ArrayColumnDesc<uInt>("MASKLIST"));
+  table_.addColumn(ArrayColumnDesc<Float>("RESULT"));
   table_.addColumn(ScalarColumnDesc<Float>("RMS"));
 
   table_.rwKeywordSet().define("ApplyType", "BASELINE");
@@ -68,13 +68,13 @@ void STBaselineTable::setup()
 void STBaselineTable::attachOptionalColumns()
 {
   nchanCol_.attach(table_, "NCHAN");
-  funcCol_.attach(table_, "FUNCTION");
-  orderCol_.attach(table_, "ORDER");
-  clipiterCol_.attach(table_, "CLIP_ITERATION");
-  clipthresCol_.attach(table_, "CLIP_THRESHOLD");
-  sectCol_.attach(table_, "SECTION");
-  paramCol_.attach(table_, "PARAMETER");
+  ftypeCol_.attach(table_, "FUNC_TYPE");
+  fparCol_.attach(table_, "FUNC_PARAM");
+  ffparCol_.attach(table_, "FUNC_FPARAM");
+  citerCol_.attach(table_, "CLIP_ITERATION");
+  cthresCol_.attach(table_, "CLIP_THRESHOLD");
   maskCol_.attach(table_, "MASKLIST");
+  resCol_.attach(table_, "RESULT");
   rmsCol_.attach(table_, "RMS");
 }
 
@@ -87,11 +87,17 @@ void STBaselineTable::save(const std::string &filename)
 }
 
 void STBaselineTable::setdata(uInt irow, uInt scanno, uInt cycleno, 
-                             uInt beamno, uInt ifno, uInt polno, uInt freqid,  
-				   Double time, uInt nchan, STBaselineFunc::FuncName func, uInt order, 
-                             uInt clipiter, Float clipthres,
-                             Vector<Float> sect, Vector<Float> param,
-                             Vector<Float> mask, Float rms)
+			      uInt beamno, uInt ifno, uInt polno, 
+			      uInt freqid, Double time, 
+			      uInt nchan, 
+			      STBaselineFunc::FuncName ftype, 
+			      Vector<uInt> fpar, 
+			      Vector<Float> ffpar, 
+			      uInt citer, 
+			      Float cthres,
+			      Vector<uInt> mask,
+			      Vector<Float> res,
+			      Float rms)
 {
   if (irow >= (uInt)nrow()) {
     throw AipsError("row index out of range");
@@ -104,32 +110,38 @@ void STBaselineTable::setdata(uInt irow, uInt scanno, uInt cycleno,
 
   setbasedata(irow, scanno, cycleno, beamno, ifno, polno, freqid, time);
   nchanCol_.put(irow, nchan);
-  funcCol_.put(irow, uInt(func));
-  orderCol_.put(irow, order);
-  clipiterCol_.put(irow, clipiter);
-  clipthresCol_.put(irow, clipthres);
-  sectCol_.put(irow, sect);
-  paramCol_.put(irow, param);
+  ftypeCol_.put(irow, uInt(ftype));
+  fparCol_.put(irow, fpar);
+  ffparCol_.put(irow, ffpar);
+  citerCol_.put(irow, citer);
+  cthresCol_.put(irow, cthres);
   maskCol_.put(irow, mask);
+  resCol_.put(irow, res);
   rmsCol_.put(irow, rms);
 }
 
 void STBaselineTable::appenddata(uInt scanno, uInt cycleno, 
-				      uInt beamno, uInt ifno, uInt polno, uInt freqid,
-				      Double time, uInt nchan, STBaselineFunc::FuncName func, uInt order, 
-				      uInt clipiter, Float clipthres, 
-				      Vector<Float> sect, Vector<Float> param,
-				      Vector<Float> mask, Float rms)
+				 uInt beamno, uInt ifno, uInt polno, 
+				 uInt freqid, Double time, 
+				 uInt nchan, 
+				 STBaselineFunc::FuncName ftype, 
+				 Vector<uInt> fpar, 
+				 Vector<Float> ffpar, 
+				 uInt citer, 
+				 Float cthres,
+				 Vector<uInt> mask,
+				 Vector<Float> res,
+				 Float rms)
 {
   uInt irow = nrow();
   table_.addRow(1, True);
   setdata(irow, scanno, cycleno, beamno, ifno, polno, freqid, time, 
-	  nchan, func, order, clipiter, clipthres, sect, param, mask, rms);
+	  nchan, ftype, fpar, ffpar, citer, cthres, mask, res, rms);
 }
 
 Vector<STBaselineFunc::FuncName> STBaselineTable::getFunctionAsString()
 {
-  Vector<uInt> rawBlfuncColumn = funcCol_.getColumn();
+  Vector<uInt> rawBlfuncColumn = ftypeCol_.getColumn();
   uInt n = rawBlfuncColumn.nelements();
   Vector<STBaselineFunc::FuncName> blfuncColumn(n);
   for (uInt i = 0; i < n; ++i) {

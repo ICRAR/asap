@@ -2636,13 +2636,11 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order, floa
 
     int nRow = nrow();
     std::vector<bool> chanMask;
-
-    std::vector<float> sect(0);
     std::vector<bool> finalChanMask;
     float rms;
 
     //---
-    bool outBaselineParamTable = true;
+    bool outBaselineParamTable = false;
     STBaselineTable* bt = new STBaselineTable(*this);
     //---
 
@@ -2658,9 +2656,14 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order, floa
 	bt->appenddata(uInt(getScan(whichrow)), uInt(getCycle(whichrow)), uInt(getBeam(whichrow)), uInt(getIF(whichrow)), uInt(getPol(whichrow)), 
 		       uInt(0), 
 		       Double(0.0), // <-- Double(getTime(whichrow, false)), 
-		       uInt(nchan(whichrow)), STBaselineFunc::Chebyshev, 
-		       uInt(order), uInt(nIterClip), Float(thresClip), Vector<Float>(sect), Vector<Float>(params), 
-		       Vector<Float>(params), // <-- Vector<Float>(finalChanMask), 
+		       uInt(nchan(whichrow)), 
+		       STBaselineFunc::Chebyshev, 
+		       Vector<uInt>(1), // ==> MUST BE Vector<uInt> containing 'order'.
+		       Vector<Float>(), // ==> for ffpar. ** dummy **
+		       uInt(nIterClip), 
+		       Float(thresClip), 
+		       Vector<uInt>(5), // <-- Vector<uInt>(finalChanMask), 
+		       Vector<Float>(params), 
 		       Float(rms));
       } else {
 	setSpectrum(res, whichrow);
