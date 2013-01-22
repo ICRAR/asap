@@ -31,16 +31,10 @@ namespace asap {
   applytable_ = new STCalTsysTable(*s);
 }
 
-void STCalTsys::calibrate()
+void STCalTsys::setupSelector()
 {
-  STSelector selOrg = scantable_->getSelection();
-  STSelector sel;
-  sel.setIFs(iflist_);
-  scantable_->setSelection(sel);
-  
-  fillCalTable();
-
-  scantable_->setSelection(selOrg);
+  sel_.reset();
+  sel_.setIFs(iflist_);
 }
 
 void STCalTsys::fillCalTable()

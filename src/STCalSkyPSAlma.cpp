@@ -28,17 +28,11 @@ STCalSkyPSAlma::STCalSkyPSAlma(CountedPtr<Scantable> &s)
   applytable_ = new STCalSkyTable(*s, "PSALMA");
 }
 
-void STCalSkyPSAlma::calibrate()
+void STCalSkyPSAlma::setupSelector()
 {
+  sel_.reset();
   vector<int> types(1,SrcType::PSOFF);
-  STSelector selOrg = scantable_->getSelection();
-  STSelector sel;
-  sel.setTypes(types);
-  scantable_->setSelection(sel);
-  
-  fillCalTable();
-
-  scantable_->setSelection(selOrg);
+  sel_.setTypes(types);
 }
 
 void STCalSkyPSAlma::fillCalTable()
