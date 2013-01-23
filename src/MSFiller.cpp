@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <iostream>
 #include <map>
+#include <set>
 
 #include <tables/Tables/ExprNode.h>
 #include <tables/Tables/TableIter.h>
