@@ -1685,14 +1685,14 @@ class BaseTcalProcessor
 {
 public:
   BaseTcalProcessor( ROArrayColumn<Float> &tcalCol )
-    : col( tcalCol )
+    : col_( tcalCol )
   {}
   virtual ~BaseTcalProcessor() {}
-  void setTcalId( Vector<uInt> &tcalId ) { id.assign( tcalId ) ; } 
+  void setTcalId( Vector<uInt> &tcalId ) { id_.assign( tcalId ) ; } 
   virtual Array<Float> getTcal() = 0 ;
 protected:
-  ROArrayColumn<Float> col ;
-  Vector<uInt> id ;
+  ROArrayColumn<Float> col_ ;
+  Vector<uInt> id_ ;
 };
 
 class TcalProcessor : public BaseTcalProcessor
@@ -1704,10 +1704,10 @@ public:
   virtual ~TcalProcessor() {}
   virtual Array<Float> getTcal()
   {
-    uInt npol = id.nelements() ;
+    uInt npol = id_.nelements() ;
     Vector<Float> tcal( npol ) ;
     for ( uInt ipol = 0 ; ipol < npol ; ipol++ )
-      tcal[ipol] = col( id[ipol] ).data()[0] ;
+      tcal[ipol] = col_( id_[ipol] ).data()[0] ;
     //cout << "TcalProcessor: tcal = " << tcal << endl ;
     return tcal ;
   }
@@ -1722,13 +1722,14 @@ public:
   virtual ~TcalSpectrumProcessor() {}
   virtual Array<Float> getTcal()
   {
-    uInt npol = id.nelements() ;
-    Vector<Float> tcal0 = col( 0 ) ;
+    uInt npol = id_.nelements() ;
+    //Vector<Float> tcal0 = col_( 0 ) ;
+    Vector<Float> tcal0 = col_( id_[0] ) ;
     uInt nchan = tcal0.nelements() ;
     Matrix<Float> tcal( npol, nchan ) ;
     tcal.row( 0 ) = tcal0 ;
     for ( uInt ipol = 1 ; ipol < npol ; ipol++ ) 
-      tcal.row( ipol ) = col( id[ipol] ) ;
+      tcal.row( ipol ) = col_( id_[ipol] ) ;
     return tcal ;
   }
 };

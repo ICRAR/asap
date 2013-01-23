@@ -580,9 +580,9 @@ public:
     if ( numSysCalRow > 0 ) {
       tcalids = getTcalId( syscalTime[scIdx] ) ;
     }
-//     else {
-//       tcalids = getDummyTcalId( spwId ) ;
-//     }
+    else {
+      tcalids = getDummyTcalId( spwId ) ;
+    }
 
     // put value
     *cycleNoRF = cycleNo ;
@@ -1264,7 +1264,6 @@ private:
       for (uInt j = 0 ; j < 4 ; j++) {
         idList[j] = tmp[0];
       }
-      cout << "tmp=" << tmp << endl;
     }
     return idList;
   }
