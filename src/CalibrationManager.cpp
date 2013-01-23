@@ -154,7 +154,7 @@ void CalibrationManager::calibrate()
     assert(spwlist_.size() > 0);
     STCalTsys cal(target_, spwlist_);
     cal.calibrate();
-    tsystables_.push_back(cal.applytable_);
+    tsystables_.push_back(cal.applytable());
   }
   else if (calmode_ == "PS") {
     // will match DV01-25, DA41-65, PM01-04, CM01-12
@@ -164,7 +164,7 @@ void CalibrationManager::calibrate()
       os_ << LogIO::DEBUGGING << "ALMA specific position-switch calibration." << LogIO::POST; 
       STCalSkyPSAlma cal(target_);
       cal.calibrate();
-      skytables_.push_back(cal.applytable_);
+      skytables_.push_back(cal.applytable());
     }
     else {
       String msg = "Calibration type " + calmode_ + " for antenna " + antname + " is not supported.";

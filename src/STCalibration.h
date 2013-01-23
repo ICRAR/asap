@@ -25,8 +25,6 @@
 #include "STDefs.h"
 #include "STApplyTable.h"
 
-class CalibrationManager;
-
 namespace asap {
 
 /**
@@ -34,9 +32,6 @@ namespace asap {
  * @author TakeshiNakazato
  */
 class STCalibration {
-
-  friend class CalibrationManager;
-
 public:
   STCalibration(casa::CountedPtr<Scantable> &s);
 
@@ -45,7 +40,8 @@ public:
   virtual ~STCalibration() {;}
 
   void save(casa::String name) {applytable_->save(name);}
-  const STApplyTable &applytable() {return *applytable_;}
+  //const STApplyTable &applytable() {return *applytable_;}
+  const casa::CountedPtr<STApplyTable> applytable() {return applytable_;}
 protected:
   virtual void setupSelector() = 0;
   virtual void fillCalTable() = 0;

@@ -28,8 +28,6 @@
 #include "STCalibration.h"
 #include "STCalSkyTable.h"
 
-class CalibrationManager;
-
 namespace asap {
 
 /**
@@ -37,9 +35,6 @@ namespace asap {
  * @author TakeshiNakazato
  */
 class STCalSkyPSAlma : public STCalibration {
-
-  friend class CalibrationManager;
-
 public:
   STCalSkyPSAlma(casa::CountedPtr<Scantable> &s);
 
