@@ -74,6 +74,14 @@ void STCalSkyPSAlma::fillCalTable()
       iter.next();
       continue;
     }
+    else if (len == 1) {
+      STCalSkyTable *p = dynamic_cast<STCalSkyTable *>(&(*applytable_));
+      uInt irow = rows[0];
+      p->appenddata(0, 0, current[2], current[0], current[1], 
+                    freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow));
+      iter.next();
+      continue;
+    }
     
     uInt nchan = scantable_->nchan(scantable_->getIF(rows[0]));
     Vector<uChar> flag(nchan);

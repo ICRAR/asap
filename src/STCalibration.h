@@ -18,6 +18,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/String.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <casa/Logging/LogIO.h>
 
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
@@ -49,6 +50,7 @@ protected:
   STSelector sel_;
   casa::CountedPtr<Scantable> scantable_;
   casa::CountedPtr<STApplyTable> applytable_; 
+  casa::LogIO os_;
 };
 
 }
