@@ -33,7 +33,9 @@ void python_CalibrationManager() {
     .def("set_tsys_spw", &CalibrationManager::setTsysSpw)
     .def("set_tsys_transfer", &CalibrationManager::setTsysTransfer)
     .def("calibrate", &CalibrationManager::calibrate)
-    .def("apply", &CalibrationManager::apply)
+    .def("apply", &CalibrationManager::apply,
+         (boost::python::arg("insitu")=false,
+          boost::python::arg("filltsys")=true))
     .def("save_caltable", &CalibrationManager::saveCaltable)
     .def("split", &CalibrationManager::split)
     ;

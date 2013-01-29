@@ -167,6 +167,9 @@ void STApplyCal::setTsysTransfer(uInt from, Vector<uInt> to)
 void STApplyCal::apply(Bool insitu, Bool filltsys)
 {
   os_.origin(LogOrigin("STApplyCal","apply",WHERE));
+  
+  assert(!target_.null());
+
   // calibrator
   if (caltype_ == STCalEnum::CalPSAlma)
     calibrator_ = new PSAlmaCalibrator();
@@ -185,10 +188,16 @@ void STApplyCal::apply(Bool insitu, Bool filltsys)
   //os_ << "sel_.print()=" << sel_.print() << LogIO::POST;
 
   // working data
-  if (insitu)
+  if (insitu) {
+    os_.origin(LogOrigin("STApplyCal","apply",WHERE));
+    os_ << "Overwrite input scantable" << LogIO::POST;
     work_ = target_;
-  else
+  }
+  else {
+    os_.origin(LogOrigin("STApplyCal","apply",WHERE));
+    os_ << "Create output scantable from input" << LogIO::POST;
     work_ = new Scantable(*target_, false);
+  }
 
   //os_ << "work_->nrow()=" << work_->nrow() << LogIO::POST;
 
@@ -218,7 +227,7 @@ void STApplyCal::apply(Bool insitu, Bool filltsys)
     Vector<uInt> ids = iter->current();
     Vector<uInt> rows = iter->getRows(SHARE);
     if (rows.nelements() > 0)
-      doapply(ids[0], ids[2], ids[1], rows, skycalList);
+      doapply(ids[0], ids[2], ids[1], rows, skycalList, filltsys);
     iter->next();
   }
 

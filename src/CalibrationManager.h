@@ -54,7 +54,7 @@ public:
   void reset();
   
   void calibrate();
-  void apply();
+  void apply(bool insitu=false, bool filltsys=true);
   void saveCaltable(const std::string &name);
   void split(const std::string &name);
 private:

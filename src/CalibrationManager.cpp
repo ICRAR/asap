@@ -181,7 +181,7 @@ void CalibrationManager::calibrate()
   }
 }
 
-void CalibrationManager::apply()
+void CalibrationManager::apply(bool insitu, bool filltsys)
 {
   os_.origin(LogOrigin("CalibrationManager","apply",WHERE));
   os_ << LogIO::DEBUGGING << "apply calibration to the data." << LogIO::POST;
@@ -190,17 +190,19 @@ void CalibrationManager::apply()
     applicator_->push(dynamic_cast<STCalTsysTable*>(&(*tsystables_[i])));
   for (size_t i = 0; i < skytables_.size(); i++) 
     applicator_->push(dynamic_cast<STCalSkyTable*>(&(*skytables_[i])));
-  applicator_->apply(false);
+  applicator_->apply(insitu, filltsys);
 }
 
 void CalibrationManager::saveCaltable(const string &name)
 {
   os_.origin(LogOrigin("CalibrationManager","saveCaltable",WHERE));
   if (calmode_ == "TSYS") {
+    assert(tsystables_.size() > 0);
     os_ << LogIO::DEBUGGING << "save latest STCalTsysTable as " << name << "." << LogIO::POST;
     tsystables_[tsystables_.size()-1]->save(name);
   }
   else {
+    assert(skytables_.size() > 0);
     os_ << LogIO::DEBUGGING << "save latest STCalSkyTable as " << name << "." << LogIO::POST;
     skytables_[skytables_.size()-1]->save(name);
   }

@@ -65,7 +65,7 @@ public:
   void setTsysTransfer(casa::uInt from, casa::Vector<casa::uInt> to);
 
   // apply tables
-  void apply(casa::Bool insitu=true, casa::Bool filltsys=false);
+  void apply(casa::Bool insitu=false, casa::Bool filltsys=true);
 
   // split target data and store it to disk
   void save(const casa::String &name);
@@ -87,7 +87,7 @@ private:
   void doapply(casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
                casa::Vector<casa::uInt> &rows,
                casa::Vector<casa::uInt> &skylist,
-               casa::Bool filltsys=false);
+               casa::Bool filltsys=true);
 
   // get frequency information from FREQUENCIES subtable
   casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
