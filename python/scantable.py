@@ -52,7 +52,7 @@ def is_scantable(filename):
             return True
         #elif ( l.find('Measurement Set') == -1 and
         #       l.find('Image') == -1):
-        elif re.match(unmatch_pattern,l) is None:
+        elif re.match(unmatch_pattern,l):
             return True
         else:
             return False
