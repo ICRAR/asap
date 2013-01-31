@@ -25,6 +25,7 @@
 #include "Scantable.h"
 #include "STCalTsys.h"
 #include "STCalSkyPSAlma.h"
+#include "STCalSkyOtfAlma.h"
 
 using namespace casa;
 using namespace std;
@@ -160,17 +161,34 @@ void CalibrationManager::calibrate()
     tsystables_.push_back(cal.applytable());
   }
   else if (calmode_ == "PS") {
-    // will match DV01-25, DA41-65, PM01-04, CM01-12
-    Regex reant("^(DV(0[1-9]|1[0-9]|2[0-5])|DA(4[1-9]|5[0-9]|6[0-5])|PM0[1-4]|CM(0[1-9]|1[1,2]))$");
-    const String antname = target_->getAntennaName();
-    if (reant.match(antname.c_str(), antname.size()) != String::npos) {
+//     // will match DV01-25, DA41-65, PM01-04, CM01-12
+//     Regex reant("^(DV(0[1-9]|1[0-9]|2[0-5])|DA(4[1-9]|5[0-9]|6[0-5])|PM0[1-4]|CM(0[1-9]|1[1,2]))$");
+//     const String antname = target_->getAntennaName();
+//     if (reant.match(antname.c_str(), antname.size()) != String::npos) {
+    if (isAlmaAntenna()) {
       os_ << LogIO::DEBUGGING << "ALMA specific position-switch calibration." << LogIO::POST; 
       STCalSkyPSAlma cal(target_);
       cal.calibrate();
       skytables_.push_back(cal.applytable());
     }
     else {
-      String msg = "Calibration type " + calmode_ + " for antenna " + antname + " is not supported.";
+      String msg = "Calibration type " + calmode_ + " for non-ALMA antenna " + target_->getAntennaName() + " is not supported.";
+      os_.origin(LogOrigin("CalibrationManager","calibrate",WHERE));
+      os_ << LogIO::SEVERE << msg << LogIO::POST;
+      throw AipsError(msg);
+    }      
+  }
+  else if (calmode_ == "OTF" || calmode_ == "OTFRASTER") {
+    if (isAlmaAntenna()) {
+      os_ << LogIO::DEBUGGING << "ALMA specific position-switch calibration." << LogIO::POST; 
+      STCalSkyOtfAlma cal(target_, (calmode_ == "OTFRASTER"));
+      if (!options_.empty())
+        cal.setOption(options_);
+      cal.calibrate();
+      skytables_.push_back(cal.applytable());
+    }
+    else {
+      String msg = "Calibration type " + calmode_ + " for non-ALMA antenna " + target_->getAntennaName() + " is not supported.";
       os_.origin(LogOrigin("CalibrationManager","calibrate",WHERE));
       os_ << LogIO::SEVERE << msg << LogIO::POST;
       throw AipsError(msg);
@@ -246,6 +264,15 @@ STCalEnum::InterpolationType CalibrationManager::stringToInterpolationEnum(const
   os_.origin(LogOrigin("CalibrationManager","stringToInterpolationEnum",WHERE));
   os_ << LogIO::WARN << "Interpolation type " << s << " is not available. Use default interpolation method." << LogIO::POST;
   return STCalEnum::DefaultInterpolation;
+}
+
+Bool CalibrationManager::isAlmaAntenna()
+{
+  assert_<AipsError>(!target_.null(), "You have to set target scantable first.");
+  // will match DV01-25, DA41-65, PM01-04, CM01-12
+  Regex reant("^(DV(0[1-9]|1[0-9]|2[0-5])|DA(4[1-9]|5[0-9]|6[0-5])|PM0[1-4]|CM(0[1-9]|1[1,2]))$");
+  const String antname = target_->getAntennaName();
+  return (reant.match(antname.c_str(), antname.size()) != String::npos);
 }
 
 }

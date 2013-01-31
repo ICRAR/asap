@@ -1,5 +1,5 @@
 //
-// C++ Interface: STCalSkyPSAlma
+// C++ Interface: STCalSkyOtfAlma
 //
 // Description:
 //
@@ -9,8 +9,8 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#ifndef ASAP_CALSKY_PS_ALMA_H
-#define ASAP_CALSKY_PS_ALMA_H
+#ifndef ASAP_CALSKY_OTF_ALMA_H
+#define ASAP_CALSKY_OTF_ALMA_H
 
 #include <memory>
 
@@ -25,8 +25,7 @@
 #include "Scantable.h"
 #include "STDefs.h"
 #include "STApplyTable.h"
-#include "STCalibration.h"
-#include "STCalSkyTable.h"
+#include "STCalSkyPSAlma.h"
 
 namespace asap {
 
@@ -34,15 +33,18 @@ namespace asap {
  * Calibration operations on Scantable objects
  * @author TakeshiNakazato
  */
-class STCalSkyPSAlma : public STCalibration {
+class STCalSkyOtfAlma : public STCalSkyPSAlma {
 public:
-  STCalSkyPSAlma(casa::CountedPtr<Scantable> &s);
+  STCalSkyOtfAlma(casa::CountedPtr<Scantable> &s, bool israster=false);
 
-  virtual ~STCalSkyPSAlma() {;}
+  virtual ~STCalSkyOtfAlma() {;}
   
 protected:
   virtual void setupSelector();
-  virtual void fillCalTable();
+  //virtual void fillCalTable();
+
+private:
+  bool israster_;
 };
 
 }

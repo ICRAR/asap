@@ -29,6 +29,7 @@ void python_CalibrationManager() {
     .def("set_freq_interpolation", &CalibrationManager::setFrequencyInterpolation,
          (boost::python::arg("interp"),
           boost::python::arg("order")=-1))
+    .def("set_calibration_options", &CalibrationManager::setCalibrationOptions)
     .def("reset", &CalibrationManager::reset)
     .def("set_tsys_spw", &CalibrationManager::setTsysSpw)
     .def("set_tsys_transfer", &CalibrationManager::setTsysTransfer)
