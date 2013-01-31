@@ -21,6 +21,7 @@
 #include <casa/Exceptions/Error.h>
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Utilities/Sort.h>
+#include <casa/Utilities/Assert.h>
 #include <tables/Tables/Table.h>
 
 #include "Scantable.h"
@@ -168,7 +169,8 @@ void STApplyCal::apply(Bool insitu, Bool filltsys)
 {
   os_.origin(LogOrigin("STApplyCal","apply",WHERE));
   
-  assert(!target_.null());
+  //assert(!target_.null());
+  assert_<AipsError>(!target_.null(),"You have to set target scantable first.");
 
   // calibrator
   if (caltype_ == STCalEnum::CalPSAlma)
@@ -457,7 +459,8 @@ uInt STApplyCal::getIFForTsys(uInt to)
 
 void STApplyCal::save(const String &name)
 {
-  assert(!work_.null());
+  //assert(!work_.null());
+  assert_<AipsError>(!work_.null(),"You have to execute apply method first.");
 
   work_->setSelection(sel_);
   work_->makePersistent(name);
@@ -466,7 +469,8 @@ void STApplyCal::save(const String &name)
 
 Vector<Double> STApplyCal::getBaseFrequency(uInt whichrow)
 {
-  assert(whichrow <= (uInt)work_->nrow());
+  //assert(whichrow <= (uInt)work_->nrow());
+  assert_<AipsError>(whichrow <= (uInt)work_->nrow(),"row index out of range.");
   ROTableColumn col(work_->table(), "IFNO");
   uInt ifno = col.asuInt(whichrow);
   col.attach(work_->table(), "FREQ_ID");

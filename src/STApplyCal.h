@@ -27,12 +27,15 @@
 #include "STSelector.h"
 #include "STApplyTable.h"
 #include "STCalEnum.h"
-#include "Calibrator.h"
-#include "Interpolator1D.h"
+//#include "Calibrator.h"
+//#include "Interpolator1D.h"
 #include "STCalSkyTable.h"
 #include "STCalTsysTable.h"
 
 namespace asap {
+
+template<class T, class U> class Interpolator1D;
+class Calibrator;
 
 /**
 Apply any apply tables to target data

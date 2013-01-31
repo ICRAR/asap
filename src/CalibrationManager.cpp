@@ -13,6 +13,7 @@
 
 #include <casa/Arrays/Vector.h>
 #include <casa/Exceptions/Error.h>
+#include <casa/Utilities/Assert.h>
 #include <casa/Utilities/Regex.h>
 #include <casa/BasicSL/String.h>
 #include <tables/Tables/Table.h>
@@ -149,9 +150,11 @@ void CalibrationManager::calibrate()
 {
   os_.origin(LogOrigin("CalibrationManager","calibrate",WHERE));
   os_ << LogIO::DEBUGGING << "start calibration with mode " << calmode_ << "." << LogIO::POST;
-  assert(!target_.null());
+  //assert(!target_.null());
+  assert_<AipsError>(!target_.null(), "You have to set target scantable first.");
   if (calmode_ == "TSYS") {
-    assert(spwlist_.size() > 0);
+    //assert(spwlist_.size() > 0);
+    assert_<AipsError>(spwlist_.size() > 0, "You have to set list of IFNOs for ATM calibration.");
     STCalTsys cal(target_, spwlist_);
     cal.calibrate();
     tsystables_.push_back(cal.applytable());
@@ -197,12 +200,14 @@ void CalibrationManager::saveCaltable(const string &name)
 {
   os_.origin(LogOrigin("CalibrationManager","saveCaltable",WHERE));
   if (calmode_ == "TSYS") {
-    assert(tsystables_.size() > 0);
+    //assert(tsystables_.size() > 0);
+    assert_<AipsError>(tsystables_.size() > 0, "Tsys table list is empty.");
     os_ << LogIO::DEBUGGING << "save latest STCalTsysTable as " << name << "." << LogIO::POST;
     tsystables_[tsystables_.size()-1]->save(name);
   }
   else {
-    assert(skytables_.size() > 0);
+    //assert(skytables_.size() > 0);
+    assert_<AipsError>(skytables_.size() > 0, "Sky table list is empty.");
     os_ << LogIO::DEBUGGING << "save latest STCalSkyTable as " << name << "." << LogIO::POST;
     skytables_[skytables_.size()-1]->save(name);
   }
