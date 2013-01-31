@@ -45,14 +45,8 @@ def is_scantable(filename):
         f=open(filename+'/table.info')
         l=f.readline()
         f.close()
-        match_pattern = '^Type = Scantable *$'
-        unmatch_pattern = '^Type = (MeasurementSet|Image|ApplyTable) *$'
-        #if ( l.find('Scantable') != -1 ):
+        match_pattern = '^Type = (Scantable)? *$'
         if re.match(match_pattern,l):
-            return True
-        #elif ( l.find('Measurement Set') == -1 and
-        #       l.find('Image') == -1):
-        elif re.match(unmatch_pattern,l):
             return True
         else:
             return False
@@ -242,7 +236,7 @@ class scantable(Scantable):
                 elif is_ms(filename):
                     # Measurement Set
                     opts={'ms': {}}
-                    mskeys=['getpt','antenna']
+                    mskeys=['getpt','antenna','freq_tolsr']
                     for key in mskeys:
                         if key in args.keys():
                             opts['ms'][key] = args[key]
