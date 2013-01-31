@@ -208,6 +208,18 @@ class scantable(Scantable):
             parallactify: Indicate that the data had been parallactified. 
                           Default (false) is taken from rc file.
 
+            getpt:        Whether to import direction from MS/POINTING
+                          table properly or not.
+                          This is effective only when filename is MS.
+                          The default (True) is to import direction
+                          from MS/POINTING.
+
+            freq_tolsr:   Whether to convert frequency frame information
+                          to LSRK or not.
+                          This is effective only when filename is MS.
+                          The default (False) is to import frequency
+                          as is.
+                          
         """
         if average is None:
             average = rcParams['scantable.autoaverage']
