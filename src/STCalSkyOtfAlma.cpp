@@ -34,10 +34,12 @@ void STCalSkyOtfAlma::setupSelector()
   sel_.reset();
 
   // Detect edges using EdgeMarker
-  EdgeMarker marker(false); // generic (non-raster) scan pattern
-  marker.setdata(scantable_, True);  // we can set insitu=True since we only need 
-                            // a list of rows to be marked. No marking is 
-                            // done here.
+  EdgeMarker marker(israster_); 
+
+  // we can set insitu=True since we only need 
+  // a list of rows to be marked. No marking is 
+  // done here.
+  marker.setdata(scantable_, True);  
   marker.setoption(options_);
   marker.detect();
   Block<uInt> rows = marker.getDetectedRows();

@@ -264,7 +264,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   uInt nchanTsys = 0;
   Vector<Double> ftsys;
   uInt tsysifno = getIFForTsys(ifno);
-  os_ << "tsysifno=" << tsysifno << LogIO::POST;
+  os_ << "tsysifno=" << (Int)tsysifno << LogIO::POST;
   if (tsystable_.size() == 0) {
     os_.origin(LogOrigin("STApplyTable", "doapply", WHERE));
     os_ << "No Tsys tables are given. Skip Tsys calibratoin." << LogIO::POST;
@@ -322,7 +322,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   Vector<Double> timeTsysSorted;
   Vector<Float> tmpTsys;
   if (doTsys) {
-    os_ << "doTsys" << LogIO::POST;
+    //os_ << "doTsys" << LogIO::POST;
     timeTsys.resize(nrowTsys);
     tsys.resize(nchanTsys, nrowTsys);
     nrowTsys = 0;
@@ -355,7 +355,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   ScalarColumn<Double> timeCol(tab, "TIME");
   Vector<Float> on;
   for (uInt i = 0; i < rows.nelements(); i++) {
-    os_ << "start i = " << i << " (row = " << rows[i] << ")" << LogIO::POST;
+    //os_ << "start i = " << i << " (row = " << rows[i] << ")" << LogIO::POST;
     uInt irow = rows[i];
 
     // target spectral data
