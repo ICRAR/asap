@@ -405,7 +405,14 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       }
     }
     else {
-      iTsys = 1.0;
+      Vector<Float> tsysInRow = tsysCol(irow);
+      if (tsysInRow.nelements() == 1) {
+        iTsys = tsysInRow[0];
+      }
+      else {
+        for (uInt ichan = 0; ichan < nchanTsys; ++ichan)
+          iTsys[ichan] = tsysInRow[ichan];
+      }
     } 
     //os_ << "iTsys=" << iTsys << LogIO::POST;
     calibrator_->setScaler(iTsys);
