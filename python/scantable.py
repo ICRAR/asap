@@ -254,7 +254,12 @@ class scantable(Scantable):
                             opts['ms'][key] = args[key]
                     self._fill([filename], unit, average, opts)
                 elif os.path.isfile(filename):
-                    self._fill([filename], unit, average)
+                    opts={'nro': {}}
+                    nrokeys=['freqref']
+                    for key in nrokeys:
+                        if key in args.keys():
+                            opts['nro'][key] = args[key]
+                    self._fill([filename], unit, average, opts)
                     # only apply to new data not "copy constructor"
                     self.parallactify(parallactify)
                 else:
