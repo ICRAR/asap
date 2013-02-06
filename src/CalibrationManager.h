@@ -42,6 +42,7 @@ public:
 
   void setScantable(ScantableWrapper &s);
   void setScantableByName(const std::string &s);
+  void addApplyTable(const std::string &c);
   void addSkyTable(const std::string &c);
   void addTsysTable(const std::string &c);
   void setMode(const std::string &mode);

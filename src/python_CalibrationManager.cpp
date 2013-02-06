@@ -20,6 +20,7 @@ void python_CalibrationManager() {
     .def( init <> () )
     .def("set_data", &CalibrationManager::setScantable)
     .def("set_data", &CalibrationManager::setScantableByName)
+    .def("add_applytable", &CalibrationManager::addApplyTable)
     .def("add_skytable", &CalibrationManager::addSkyTable)
     .def("add_tsystable", &CalibrationManager::addTsysTable)
     .def("set_calmode", &CalibrationManager::setMode)

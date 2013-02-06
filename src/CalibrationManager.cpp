@@ -59,6 +59,22 @@ void CalibrationManager::setScantableByName(const string &s)
   target_ = new Scantable(s, Table::Plain);
 }
 
+void CalibrationManager::addApplyTable(const string &c)
+{
+  STCalEnum::CalType caltype = STApplyTable::getCalType(c);
+  if (caltype == STCalEnum::CalTsys) {
+    addTsysTable(c);
+  }
+  else if (caltype != STCalEnum::NoType) {
+    // should be sky table
+    addSkyTable(c);
+  }
+  else {
+    os_.origin(LogOrigin("CalibrationManager","addCalTable",WHERE));
+    os_ << LogIO::WARN << "Table " << c << " is not ApplyTable." << LogIO::POST ;
+  }
+}
+
 void CalibrationManager::addSkyTable(const string &c)
 {
   os_.origin(LogOrigin("CalibrationManager","addSkyTable",WHERE));
