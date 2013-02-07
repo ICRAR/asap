@@ -167,7 +167,7 @@ class NROReader
   virtual string getScanType( int i ) ;
 
   // Get dataset
-  virtual NRODataset *getDataset() { return dataset_ ; } ;
+  const NRODataset &dataset() { return *dataset_ ; }
 
   // Get number of rows
   virtual Int getRowNum() ;
@@ -219,7 +219,7 @@ class NROReader
   string filename_ ;
 
   // dataset
-  NRODataset *dataset_ ;
+  CountedPtr<NRODataset> dataset_ ;
 
   // source direction
   Vector<Double> srcdir_ ;

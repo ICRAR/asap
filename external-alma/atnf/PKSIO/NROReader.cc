@@ -196,10 +196,6 @@ NROReader::NROReader( string name )
 // destructor
 NROReader::~NROReader()
 {
-  if ( dataset_ != NULL ) {
-    delete dataset_ ;
-    dataset_ = NULL ;
-  }
 }
 
 // set frequency reference frame

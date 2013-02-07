@@ -94,9 +94,22 @@ bool NROFiller::open(const std::string& filename, const Record& rec)
     return status ;
   }
 
-  // 2010/07/30 TBD: Do we need to set frame here?
+  // FREQUENCIES table setup
   table_->frequencies().setFrame( hdr.freqref, true ) ;
   table_->frequencies().setFrame( hdr.freqref, false ) ;
+  const string vref = reader_->dataset().getVREF() ;
+  if ( vref.compare( 0, 3, "RAD" ) ) {
+    table_->frequencies().setDoppler( "RADIO" ) ;
+  }
+  else if ( vref.compare( 0, 3, "OPT" ) ) {
+    table_->frequencies().setDoppler( "OPTICAL" ) ;
+  }
+  else {
+    LogIO os( LogOrigin( "NROFiller", "open", WHERE ) ) ;
+    os << LogIO::WARN 
+       << "VREF " << vref << " is not supported. Use default (RADIO)." 
+       << LogIO::POST ; 
+  }
 
   // set Header
   setHeader( hdr ) ;
