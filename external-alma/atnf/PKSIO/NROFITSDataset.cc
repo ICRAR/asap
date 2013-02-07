@@ -1825,7 +1825,7 @@ int NROFITSDataset::readHeader( string &v, char *name )
   return status ;
 }
 
-int NROFITSDataset::readHeader( int &v, char *name, int b ) 
+int NROFITSDataset::readHeader( int &v, char *name, int /*b*/ ) 
 {
   //
   // Read 'name' attribute defined as int from the FITS Header
@@ -1861,7 +1861,7 @@ int NROFITSDataset::readHeader( int &v, char *name, int b )
 }
 
 
-int NROFITSDataset::readHeader( float &v, char *name, int b ) 
+int NROFITSDataset::readHeader( float &v, char *name, int /*b*/ ) 
 {
   //
   // Read 'name' attribute defined as float from the FITS Header
@@ -1895,7 +1895,7 @@ int NROFITSDataset::readHeader( float &v, char *name, int b )
   return status ;
 }
 
-int NROFITSDataset::readHeader( double &v, char *name, int b ) 
+int NROFITSDataset::readHeader( double &v, char *name, int /*b*/ ) 
 {
   //
   // Read 'name' attribute defined as double from the FITS Header
