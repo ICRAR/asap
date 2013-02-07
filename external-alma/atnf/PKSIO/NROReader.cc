@@ -344,7 +344,7 @@ Vector<Double> NROReader::getSourceDirection()
 Vector<Double> NROReader::getDirection( int i )
 {
   Vector<Double> v( 2 ) ;
-  NRODataRecord *record = dataset_->getRecord( i ) ;
+  const NRODataRecord *record = dataset_->getRecord( i ) ;
   char epoch[5] ;
   strncpy( epoch, (dataset_->getEPOCH()).c_str(), 5 ) ;
   int icoord = dataset_->getSCNCD() ;
@@ -478,7 +478,7 @@ int NROReader::getHeaderInfo( Int &nchan,
   //freqref = "REST" ;
   freqref = freqRefFromVREF_ ? vref : "REST" ; 
   //cout << "freqref = " << freqref << endl ;
-  NRODataRecord *record = dataset_->getRecord( 0 ) ;
+  const NRODataRecord *record = dataset_->getRecord( 0 ) ;
   reffreq = record->FREQ0 ; // rest frequency
 
   //cout << "reffreq = " << reffreq << endl ;
@@ -519,7 +519,7 @@ int NROReader::getHeaderInfo( Int &nchan,
 
 string NROReader::getScanType( int i )
 {
-  NRODataRecord *record = dataset_->getRecord( i ) ;
+  const NRODataRecord *record = dataset_->getRecord( i ) ;
   string s = record->SCANTP ;
 
   return s ;

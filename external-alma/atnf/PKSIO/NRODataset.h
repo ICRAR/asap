@@ -41,6 +41,7 @@
 //#include <casa/aips.h>
 #include <casa/Logging/LogIO.h>
 #include <casa/Containers/Record.h>
+#include <casa/Utilities/CountedPtr.h>
 #include <atnf/PKSIO/NRODataRecord.h>
 #include <casa/namespace.h>
 #include <casa/iomanip.h>
@@ -193,7 +194,7 @@ class NRODataset
   virtual std::vector<double> getStartIntTime() ;
   virtual double getStartIntTime( int i ) ;
   virtual double getScanTime( int i ) ;
-  virtual double getMJD( char *time ) ;
+  virtual double getMJD( const char *time ) ;
   virtual std::vector<bool> getIFs() ;
   virtual std::vector<double> getFrequencies( int i ) ;
   virtual uInt getArrayId( std::string type ) ;
@@ -213,7 +214,7 @@ class NRODataset
   void convertEndian( double &value ) ;
 
   // Endian conversion for NRODataRecord
-  void convertEndian( NRODataRecord *r ) ;
+  void convertEndian( NRODataRecord &r ) ;
 
   // Read char data
   int readHeader( char *v, int size ) ;
@@ -499,7 +500,7 @@ class NRODataset
   int dataid_ ;
 
   // Data record
-  NRODataRecord *record_ ;
+  CountedPtr<NRODataRecord> record_ ;
 
   // input filename
   std::string filename_ ;

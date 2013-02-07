@@ -1224,7 +1224,7 @@ vector<double> NROFITSDataset::getSpectrum( int i )
 {
   vector<double> spec( chmax_, 0.0 ) ;
   vector<double> specout( chmax_, 0.0 ) ;
-  NRODataRecord *record = getRecord( i ) ;
+  const NRODataRecord *record = getRecord( i ) ;
   double scale = record->SFCTR ;
   double offset = record->ADOFF ;
   double dscale = MLTSCF[getIndex( i )] ;
@@ -1414,7 +1414,7 @@ vector<double> NROFITSDataset::getSpectrum( int i )
 
 int NROFITSDataset::getIndex( int irow ) 
 {
-  NRODataRecord *record = getRecord( irow ) ;
+  const NRODataRecord *record = getRecord( irow ) ;
   string str = record->ARRYT ;
   string::size_type pos = str.find( " " ) ;
   if ( pos != string::npos ) 
