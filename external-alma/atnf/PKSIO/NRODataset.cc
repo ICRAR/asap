@@ -228,11 +228,6 @@ void NRODataset::convertEndian( NRODataRecord *r )
 void NRODataset::releaseRecord()
 {
   if ( record_ ) {
-    if ( record_->LDATA != NULL ) {
-      delete record_->LDATA ;
-      record_->LDATA = NULL ;
-    }
-    delete record_ ;
     record_ = NULL ;
   }
   dataid_ = -1 ;
@@ -295,7 +290,7 @@ int NRODataset::fillRecord( int i )
     os << LogIO::SEVERE << "Failed to read scan header for " << i << "th row." << LogIO::POST ;
     return -1 ;
   }
-  if ( (int)fread( record_->LDATA, 1, dataLen_, fp_ ) != dataLen_ ) {
+  if ( (int)fread( &(*record_->LDATA), 1, dataLen_, fp_ ) != dataLen_ ) {
     //cerr << "Failed to read spectral data: " << i << endl ;
     LogIO os( LogOrigin( "NRODataset", "fillRecord()", WHERE ) ) ;
     os << LogIO::SEVERE << "Failed to read spectral data for " << i << "th row." << LogIO::POST ;
@@ -384,7 +379,7 @@ vector<double> NRODataset::getSpectrum( int i )
       *i = 0.0 ;
     return spec ;
   }
-  unsigned char *cdata = (unsigned char *)record->LDATA ;
+  unsigned char *cdata = (unsigned char *)&(*record->LDATA) ;
   vector<double> mscale = MLTSCF ;
   double dscale = mscale[getIndex( i )] ;
   int cbind = CHBIND ;
