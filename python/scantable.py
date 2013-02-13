@@ -2888,12 +2888,15 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, 
+    def sinusoid_baseline(self, mask=None, applyfft=None, 
                           fftmethod=None, fftthresh=None,
-                          addwn=None, rejwn=None, clipthresh=None,
-                          clipniter=None, plot=None,
-                          getresidual=None, showprogress=None, 
-                          minnrow=None, outlog=None,
+                          addwn=None, rejwn=None,
+                          insitu=None,
+                          clipthresh=None, clipniter=None,
+                          plot=None,
+                          getresidual=None,
+                          showprogress=None, minnrow=None,
+                          outlog=None,
                           blfile=None, csvformat=None,
                           bltable=None):
         """\
@@ -2901,9 +2904,6 @@ class scantable(Scantable):
         functions.
 
         Parameters:
-            insitu:        if False a new scantable is returned.
-                           Otherwise, the scaling is done in-situ
-                           The default is taken from .asaprc (False)
             mask:          an optional mask
             applyfft:      if True use some method, such as FFT, to find
                            strongest sinusoidal components in the wavenumber
@@ -2935,6 +2935,9 @@ class scantable(Scantable):
                            can be set just as addwn but has higher priority: 
                            wave numbers which are specified both in addwn
                            and rejwn will NOT be used. default is []. 
+            insitu:        if False a new scantable is returned.
+                           Otherwise, the scaling is done in-situ
+                           The default is taken from .asaprc (False)
             clipthresh:    Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:     maximum number of iteration of 'clipthresh'-sigma 
                            clipping (default is 0)
@@ -2981,7 +2984,6 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            #if mask          is None: mask          = [True for i in xrange(workscan.nchan())]
             if mask          is None: mask          = []
             if applyfft      is None: applyfft      = True
             if fftmethod     is None: fftmethod     = 'fft'
@@ -3033,13 +3035,16 @@ class scantable(Scantable):
 
 
     @asaplog_post_dec
-    def auto_sinusoid_baseline(self, insitu=None, mask=None, applyfft=None, 
+    def auto_sinusoid_baseline(self, mask=None, applyfft=None, 
                                fftmethod=None, fftthresh=None,
-                               addwn=None, rejwn=None, clipthresh=None,
-                               clipniter=None, edge=None, threshold=None,
-                               chan_avg_limit=None, plot=None,
-                               getresidual=None, showprogress=None, 
-                               minnrow=None, outlog=None,
+                               addwn=None, rejwn=None,
+                               insitu=None,
+                               clipthresh=None, clipniter=None,
+                               edge=None, threshold=None, chan_avg_limit=None,
+                               plot=None,
+                               getresidual=None,
+                               showprogress=None, minnrow=None,
+                               outlog=None,
                                blfile=None, csvformat=None,
                                bltable=None):
         """\
@@ -3049,9 +3054,6 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
-            insitu:         if False a new scantable is returned.
-                            Otherwise, the scaling is done in-situ
-                            The default is taken from .asaprc (False)
             mask:           an optional mask retreived from scantable
             applyfft:       if True use some method, such as FFT, to find
                             strongest sinusoidal components in the wavenumber
@@ -3083,6 +3085,9 @@ class scantable(Scantable):
                             can be set just as addwn but has higher priority: 
                             wave numbers which are specified both in addwn
                             and rejwn will NOT be used. default is []. 
+            insitu:         if False a new scantable is returned.
+                            Otherwise, the scaling is done in-situ
+                            The default is taken from .asaprc (False)
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:      maximum number of iteration of 'clipthresh'-sigma 
                             clipping (default is 0)
@@ -3146,7 +3151,6 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
             
-            #if mask           is None: mask           = [True for i in xrange(workscan.nchan())]
             if mask           is None: mask           = []
             if applyfft       is None: applyfft       = True
             if fftmethod      is None: fftmethod      = 'fft'
@@ -3199,7 +3203,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def cspline_baseline(self, insitu=None, mask=None, npiece=None, 
+    def cspline_baseline(self, mask=None, npiece=None, insitu=None, 
                          clipthresh=None, clipniter=None, plot=None, 
                          getresidual=None, showprogress=None, minnrow=None, 
                          outlog=None, blfile=None, csvformat=None,
@@ -3209,11 +3213,11 @@ class scantable(Scantable):
         function (piecewise cubic polynomial).
 
         Parameters:
+            mask:         An optional mask
+            npiece:       Number of pieces. (default is 2)
             insitu:       If False a new scantable is returned.
                           Otherwise, the scaling is done in-situ
                           The default is taken from .asaprc (False)
-            mask:         An optional mask
-            npiece:       Number of pieces. (default is 2)
             clipthresh:   Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:    maximum number of iteration of 'clipthresh'-sigma 
                           clipping (default is 0)
@@ -3260,7 +3264,6 @@ class scantable(Scantable):
             else:
                 workscan = self.copy()
 
-            #if mask         is None: mask         = [True for i in xrange(workscan.nchan())]
             if mask         is None: mask         = []
             if npiece       is None: npiece       = 2
             if clipthresh   is None: clipthresh   = 3.0
@@ -3299,7 +3302,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_cspline_baseline(self, insitu=None, mask=None, npiece=None, 
+    def auto_cspline_baseline(self, mask=None, npiece=None, insitu=None, 
                               clipthresh=None, clipniter=None,
                               edge=None, threshold=None, chan_avg_limit=None, 
                               getresidual=None, plot=None,
@@ -3312,11 +3315,11 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
+            mask:           an optional mask retreived from scantable
+            npiece:         Number of pieces. (default is 2)
             insitu:         if False a new scantable is returned.
                             Otherwise, the scaling is done in-situ
                             The default is taken from .asaprc (False)
-            mask:           an optional mask retreived from scantable
-            npiece:         Number of pieces. (default is 2)
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:      maximum number of iteration of 'clipthresh'-sigma 
                             clipping (default is 0)
@@ -3425,7 +3428,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def chebyshev_baseline(self, insitu=None, mask=None, order=None, 
+    def chebyshev_baseline(self, mask=None, order=None, insitu=None, 
                            clipthresh=None, clipniter=None, plot=None, 
                            getresidual=None, showprogress=None, minnrow=None, 
                            outlog=None, blfile=None, csvformat=None,
@@ -3434,11 +3437,11 @@ class scantable(Scantable):
         Return a scan which has been baselined (all rows) by Chebyshev polynomials.
 
         Parameters:
+            mask:         An optional mask
+            order:        the maximum order of Chebyshev polynomial (default is 5)
             insitu:       If False a new scantable is returned.
                           Otherwise, the scaling is done in-situ
                           The default is taken from .asaprc (False)
-            mask:         An optional mask
-            order:        the maximum order of Chebyshev polynomial (default is 5)
             clipthresh:   Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:    maximum number of iteration of 'clipthresh'-sigma 
                           clipping (default is 0)
@@ -3523,7 +3526,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_chebyshev_baseline(self, insitu=None, mask=None, order=None, 
+    def auto_chebyshev_baseline(self, mask=None, order=None, insitu=None, 
                               clipthresh=None, clipniter=None,
                               edge=None, threshold=None, chan_avg_limit=None, 
                               getresidual=None, plot=None,
@@ -3535,11 +3538,11 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
+            mask:           an optional mask retreived from scantable
+            order:          the maximum order of Chebyshev polynomial (default is 5)
             insitu:         if False a new scantable is returned.
                             Otherwise, the scaling is done in-situ
                             The default is taken from .asaprc (False)
-            mask:           an optional mask retreived from scantable
-            order:          the maximum order of Chebyshev polynomial (default is 5)
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:      maximum number of iteration of 'clipthresh'-sigma 
                             clipping (default is 0)
@@ -3646,7 +3649,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def poly_baseline(self, insitu=None, mask=None, order=None,
+    def poly_baseline(self, mask=None, order=None, insitu=None, 
                       clipthresh=None, clipniter=None, plot=None, 
                       getresidual=None, showprogress=None, minnrow=None, 
                       outlog=None, blfile=None, csvformat=None,
@@ -3654,11 +3657,11 @@ class scantable(Scantable):
         """\
         Return a scan which has been baselined (all rows) by a polynomial.
         Parameters:
+            mask:         an optional mask
+            order:        the order of the polynomial (default is 0)
             insitu:       if False a new scantable is returned.
                           Otherwise, the scaling is done in-situ
                           The default is taken from .asaprc (False)
-            mask:         an optional mask
-            order:        the order of the polynomial (default is 0)
             clipthresh:   Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:    maximum number of iteration of 'clipthresh'-sigma 
                           clipping (default is 0)
@@ -3796,7 +3799,7 @@ class scantable(Scantable):
             raise_fitting_failure_exception(e)
 
     @asaplog_post_dec
-    def auto_poly_baseline(self, insitu=None, mask=None, order=None,
+    def auto_poly_baseline(self, mask=None, order=None, insitu=None, 
                            clipthresh=None, clipniter=None, 
                            edge=None, threshold=None, chan_avg_limit=None,
                            getresidual=None, plot=None, 
@@ -3808,11 +3811,11 @@ class scantable(Scantable):
         to avoid them affecting the baseline solution.
 
         Parameters:
+            mask:           an optional mask retreived from scantable
+            order:          the order of the polynomial (default is 0)
             insitu:         if False a new scantable is returned.
                             Otherwise, the scaling is done in-situ
                             The default is taken from .asaprc (False)
-            mask:           an optional mask retreived from scantable
-            order:          the order of the polynomial (default is 0)
             clipthresh:     Clipping threshold. (default is 3.0, unit: sigma)
             clipniter:      maximum number of iteration of 'clipthresh'-sigma 
                             clipping (default is 0)
