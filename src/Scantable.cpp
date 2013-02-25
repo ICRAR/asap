@@ -2640,54 +2640,27 @@ std::vector<float> Scantable::doApplyBaselineTable(std::vector<float>& spec,
   return doSubtractBaseline(spec, mask, ftype, fpar, params, rms, finalmask, 0.0, 0, false, 0, 0.0, lfedge, 0);
 }
 
-  std::vector<float> Scantable::doSubtractBaseline(std::vector<float>& spec, 
-						   std::vector<bool>& mask, 
-						   const STBaselineFunc::FuncName ftype, 
-						   std::vector<int>& fpar, 
-						   std::vector<float>& params, 
-						   float&rms, 
-						   std::vector<bool>& finalmask, 
-						   float clipth, 
-						   int clipn, 
-						   bool uself, 
-						   int irow, 
-						   float lfth, 
-						   std::vector<int>& lfedge, 
-						   int lfavg)
+std::vector<float> Scantable::doSubtractBaseline(std::vector<float>& spec,
+						 std::vector<bool>& mask,
+						 const STBaselineFunc::FuncName ftype,
+						 std::vector<int>& fpar,
+						 std::vector<float>& params,
+						 float&rms,
+						 std::vector<bool>& finalmask,
+						 float clipth,
+						 int clipn,
+						 bool uself,
+						 int irow,
+						 float lfth,
+						 std::vector<int>& lfedge,
+						 int lfavg)
 {
-  //--- replacing mask with (mask AND mask_linefinder).
   if (uself) {
     STLineFinder lineFinder = STLineFinder();
-    lineFinder.setOptions(lfth, 3, lfavg);
-
-    int minEdgeSize = getIFNos().size()*2;
-    int edgeSize = lfedge.size();
+    initLineFinder(lfedge, lfth, lfavg, lineFinder);
     std::vector<int> currentEdge;
-    currentEdge.clear();
-    if (edgeSize >= 2) {
-      int idx = 0;
-      if (edgeSize > 2) {
-	if (edgeSize < minEdgeSize) {
-	  throw(AipsError("Length of edge element info is less than that of IFs"));
-	}
-	idx = 2 * getIF(irow);
-      }
-      currentEdge.push_back(lfedge[idx]);
-      currentEdge.push_back(lfedge[idx+1]);
-    } else {
-      throw(AipsError("Wrong length of edge element"));
-    }
-    lineFinder.setData(spec);
-    lineFinder.findLines(getCompositeChanMask(irow, mask), currentEdge, irow);
-
-    std::vector<bool> lfcompmask = lineFinder.getMask();
-    mask.clear();
-    mask.resize(lfcompmask.size());
-    for (uInt i = 0; i < mask.size(); ++i) {
-      mask[i] = lfcompmask[i];
-    }
+    mask = getCompositeChanMask(irow, mask, lfedge, currentEdge, lineFinder);
   }
-  //---
 
   std::vector<float> res;
   if (ftype == STBaselineFunc::Polynomial) {
@@ -2932,7 +2905,7 @@ void Scantable::initLineFinder(const std::vector<int>& edge,
 			       const int chanAvgLimit,
 			       STLineFinder& lineFinder)
 {
-  if (edge.size() < getIFNos().size()*2) {
+  if ((edge.size() > 2) && (edge.size() < getIFNos().size()*2)) {
     throw(AipsError("Length of edge element info is less than that of IFs"));
   }
 
@@ -2946,9 +2919,9 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
 			     const bool outLogger, const std::string& blfile, 
 			     const std::string& bltable)
 {
-  /****/
+  /****
   double TimeStart = mathutil::gettimeofday_sec();
-  /****/
+  ****/
 
   try {
     ofstream ofs;
@@ -3006,11 +2979,11 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
     throw;
   }
 
-  /****/
+  /****
   double TimeEnd = mathutil::gettimeofday_sec();
   double elapse1 = TimeEnd - TimeStart;
   std::cout << "poly-new   : " << elapse1 << " (sec.)" << endl;
-  /****/
+  ****/
 }
 
 void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order, 
@@ -3090,9 +3063,9 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
 				  const bool outLogger, const std::string& blfile, 
 				  const std::string& bltable)
 {
-  //
+  /*
   double TimeStart = mathutil::gettimeofday_sec();
-  //
+  */
 
   try {
     ofstream ofs;
@@ -3150,9 +3123,11 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
     throw;
   }
 
+  /*
   double TimeEnd = mathutil::gettimeofday_sec();
   double elapse1 = TimeEnd - TimeStart;
   std::cout << "cheby   : " << elapse1 << " (sec.)" << endl;
+  */
 }
 
 void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order, 
@@ -3225,40 +3200,26 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
   }
 }
 
-double Scantable::calculateModelSelectionCriteria(const std::string& valname, const std::string& blfunc, int order, const std::vector<bool>& inMask, int whichrow, bool useLineFinder, const std::vector<int>& edge, float threshold, int chanAvgLimit)
+double Scantable::calculateModelSelectionCriteria(const std::string& valname, 
+						  const std::string& blfunc, 
+						  int order, 
+						  const std::vector<bool>& inMask, 
+						  int whichrow, 
+						  bool useLineFinder, 
+						  const std::vector<int>& edge, 
+						  float threshold, 
+						  int chanAvgLimit)
 {
   std::vector<float> sp = getSpectrum(whichrow);
   std::vector<bool> chanMask;
   chanMask.clear();
 
   if (useLineFinder) {
-    int minEdgeSize = getIFNos().size()*2;
-
-    int edgeSize = edge.size();
-    std::vector<int> currentEdge;
-    currentEdge.clear();
-    if (edgeSize >= 2) {
-      int idx = 0;
-      if (edgeSize > 2) {
-        if (edgeSize < minEdgeSize) {
-          throw(AipsError("Length of edge element info is less than that of IFs"));
-        }
-        idx = 2 * getIF(whichrow);
-      }
-      currentEdge.push_back(edge[idx]);
-      currentEdge.push_back(edge[idx+1]);
-    } else {
-      throw(AipsError("Wrong length of edge element"));
-    }
-
     STLineFinder lineFinder = STLineFinder();
-    lineFinder.setData(sp);
-    lineFinder.setOptions(threshold, 3, chanAvgLimit);
-    lineFinder.findLines(getCompositeChanMask(whichrow, inMask), currentEdge, whichrow);
-    chanMask = lineFinder.getMask();
-
+    initLineFinder(edge, threshold, chanAvgLimit, lineFinder);
+    std::vector<int> currentEdge;
+    chanMask = getCompositeChanMask(whichrow, inMask, edge, currentEdge, lineFinder);
   } else {
-
     chanMask = getCompositeChanMask(whichrow, inMask);
   }
 
@@ -3734,9 +3695,9 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
 				    const bool outLogger, const std::string& blfile, 
 				    const std::string& bltable)
 {
-  /****/
+  /****
   double TimeStart = mathutil::gettimeofday_sec();
-  /****/
+  ****/
 
   try {
     ofstream ofs;
@@ -3795,11 +3756,11 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
     throw;
   }
 
-  /****/
+  /****
   double TimeEnd = mathutil::gettimeofday_sec();
   double elapse1 = TimeEnd - TimeStart;
   std::cout << "cspline-new   : " << elapse1 << " (sec.)" << endl;
-  /****/
+  ****/
 }
 
 void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiece, 
@@ -4444,9 +4405,9 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
 				 const bool outLogger, const std::string& blfile, 
 				 const std::string& bltable)
 {
-  /****/
+  /****
   double TimeStart = mathutil::gettimeofday_sec();
-  /****/
+  ****/
 
   try {
     ofstream ofs;
@@ -4517,11 +4478,11 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
     throw;
   }
 
-  /****/
+  /****
   double TimeEnd = mathutil::gettimeofday_sec();
   double elapse1 = TimeEnd - TimeStart;
   std::cout << "sinusoid-old   : " << elapse1 << " (sec.)" << endl;
-  /****/
+  ****/
 }
 
 void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::string& fftInfo, 
@@ -4743,22 +4704,24 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow,
 						  STLineFinder& lineFinder)
 {
   std::vector<uint> ifNos = getIFNos();
-  if (edge.size() < ifNos.size()*2) {
+  if ((edge.size() > 2) && (edge.size() < ifNos.size()*2)) {
     throw(AipsError("Length of edge element info is less than that of IFs"));
   }
 
-  int ifVal = getIF(whichrow);
-  bool foundIF = false;
-  uint idx;
-  for (uint i = 0; i < ifNos.size(); ++i) {
-    if (ifVal == (int)ifNos[i]) {
-      idx = 2*i;
-      foundIF = true;
-      break;
+  uint idx = 0;
+  if (edge.size() > 2) {
+    int ifVal = getIF(whichrow);
+    bool foundIF = false;
+    for (uint i = 0; i < ifNos.size(); ++i) {
+      if (ifVal == (int)ifNos[i]) {
+	idx = 2*i;
+	foundIF = true;
+	break;
+      }
     }
-  }
-  if (!foundIF) {
-    throw(AipsError("bad IF number"));
+    if (!foundIF) {
+      throw(AipsError("bad IF number"));
+    }
   }
 
   currEdge.clear();
