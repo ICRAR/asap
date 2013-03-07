@@ -55,6 +55,7 @@ ASTEReader::~ASTEReader()
 void ASTEReader::initDataset()
 {
   dataset_ = new ASTEDataset( filename_ ) ;
+  dataset_->initialize() ;
 }
 
 vector<double> ASTEReader::getAntennaPosition() 

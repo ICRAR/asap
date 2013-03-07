@@ -55,6 +55,7 @@ NRO45Reader::~NRO45Reader()
 void NRO45Reader::initDataset()
 {
   dataset_ = new NROOTFDataset( filename_ ) ;
+  dataset_->initialize() ;
 }
 
 vector<double> NRO45Reader::getAntennaPosition() 

@@ -55,4 +55,5 @@ ASTEFXReader::~ASTEFXReader()
 void ASTEFXReader::initDataset()
 {
   dataset_ = new ASTEFXDataset( filename_ ) ;
+  dataset_->initialize() ;
 }

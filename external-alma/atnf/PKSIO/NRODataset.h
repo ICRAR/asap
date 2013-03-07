@@ -97,7 +97,7 @@ class NRODataset
   virtual void close() ;
 
   // Fill data header from file
-  virtual int fillHeader() = 0 ;
+  virtual int fillHeader() ;
 
   // Fill data record
   virtual int fillRecord( int i ) ;

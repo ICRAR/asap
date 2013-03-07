@@ -102,6 +102,7 @@ NROReader *getNROReader( const String filename,
     } else {
       // otherwise, read SITE0
       NRODataset *d = new NROOTFDataset( filename ) ;
+      d->initialize() ;
       int size = d->getDataSize() - 188 ;
       delete d ;
       fseek( file, size, SEEK_SET ) ;
@@ -117,6 +118,7 @@ NROReader *getNROReader( const String filename,
       }
       else {
         d = new ASTEDataset( filename ) ;
+        d->initialize() ;
         size = d->getDataSize() - 188 ;
         delete d ;
         fseek( file, size, SEEK_SET ) ;

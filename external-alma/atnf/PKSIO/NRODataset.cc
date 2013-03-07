@@ -56,25 +56,17 @@ using namespace std ;
 //
 
 // constructor 
-NRODataset::NRODataset( string name ) 
-{
-  // memory allocation
-  initialize() ;
-
-  filename_ = name ;
-  fp_ = NULL ;
-  scanNum_ = 0 ;
-  rowNum_ = 0 ;
-  scanLen_ = 0 ;
-  dataLen_ = 0 ;
-  dataid_ = -1 ;
-
-  // endian matches
-  same_ = -1 ;
-
-  // Record for frequency setting
-  frec_ = Record() ;
-}
+NRODataset::NRODataset( string name )
+  : scanNum_(0),
+    rowNum_(0),
+    scanLen_(0),
+    dataLen_(0),
+    dataid_(-1),
+    filename_(name),
+    fp_(NULL),
+    same_(-1),
+    frec_()
+{}
 
 // destructor 
 NRODataset::~NRODataset() 
@@ -89,6 +81,64 @@ NRODataset::~NRODataset()
 // data initialization
 void NRODataset::initialize()
 {
+  LogIO os( LogOrigin( "NRODataset", "initialize()", WHERE ) ) ;
+
+  int arymax = arrayMax() ;
+
+  // check endian
+  open() ;
+  fseek( fp_, 144, SEEK_SET ) ;
+  int tmp ;
+  if( fread( &tmp, 1, sizeof(int), fp_ ) != sizeof(int) ) {
+    os << LogIO::SEVERE << "Error while checking endian of the file. " << LogIO::EXCEPTION ;
+    return ;
+  }
+  if ( ( 0 < tmp ) && ( tmp <= arymax ) ) {
+    same_ = 1 ;
+    os << LogIO::NORMAL << "same endian " << LogIO::POST ;
+  }
+  else {
+    same_ = 0 ;
+    os << LogIO::NORMAL << "different endian " << LogIO::POST ;
+  }
+  fseek( fp_, 0, SEEK_SET ) ;
+
+  // common part of calculation of data size and memory allocation
+  RX.resize( arymax ) ;
+  HPBW.resize( arymax ) ;
+  EFFA.resize( arymax ) ;
+  EFFB.resize( arymax ) ;
+  EFFL.resize( arymax ) ;
+  EFSS.resize( arymax ) ;
+  GAIN.resize( arymax ) ;
+  HORN.resize( arymax ) ;
+  POLTP.resize( arymax ) ;
+  POLDR.resize( arymax ) ;
+  POLAN.resize( arymax ) ;
+  DFRQ.resize( arymax ) ;
+  SIDBD.resize( arymax ) ;
+  REFN.resize( arymax ) ;
+  IPINT.resize( arymax ) ;
+  MULTN.resize( arymax ) ;
+  MLTSCF.resize( arymax ) ;
+  LAGWIND.resize( arymax ) ;
+  BEBW.resize( arymax ) ;
+  BERES.resize( arymax ) ;
+  CHWID.resize( arymax ) ;
+  ARRY.resize( arymax ) ;
+  NFCAL.resize( arymax ) ;
+  F0CAL.resize( arymax ) ;
+  FQCAL.resize( arymax ) ;
+  CHCAL.resize( arymax ) ;
+  CWCAL.resize( arymax ) ;
+  DSBFC.resize( arymax ) ;
+
+  for ( int i = 0 ; i < arymax ; i++ ) {
+    FQCAL[i].resize( 10 ) ;
+    CHCAL[i].resize( 10 ) ;
+    CWCAL[i].resize( 10 ) ;
+  }
+
   datasize_ = sizeof( char ) * 8   // LOFIL
     + sizeof( char ) * 8           // VER
     + sizeof( char ) * 16          // GROUP
@@ -119,6 +169,43 @@ void NRODataset::initialize()
   // NRODataRecord
   record_ = new NRODataRecord() ;
   record_->LDATA = NULL ;
+
+  // reference frequency
+  refFreq_.resize( arymax, 0.0 ) ;
+}
+
+// fill data header
+int NRODataset::fillHeader() 
+{
+  LogIO os( LogOrigin( "NRODataset", "fillHeader()", WHERE ) ) ;
+
+  // open file
+  if ( open() ) {
+    os << LogIO::SEVERE << "Error opening file " << filename_ << "." << LogIO::EXCEPTION ;
+    return -1 ;
+  }
+
+  // fill
+  int status = fillHeader( same_ ) ;
+
+  if ( status != 0 ) {
+    os << LogIO::SEVERE << "Error while reading header " << filename_ << "." << LogIO::EXCEPTION ;
+    return status ;
+  }
+
+  //scanNum_ = NSCAN + 1 ; // includes ZERO scan
+  scanLen_ = SCNLEN ;
+  dataLen_ = scanLen_ - SCAN_HEADER_SIZE ;
+  scanNum_ = getScanNum();
+  rowNum_ = scanNum_ * ARYNM ;
+  chmax_ = (int) ( dataLen_ * 8 / IBIT ) ;
+  record_->LDATA = new char[dataLen_] ;
+
+  initArray();
+
+  show() ;
+
+  return status ;
 }
 
 void NRODataset::convertEndian( int &value )
