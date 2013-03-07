@@ -82,6 +82,9 @@ class NROOTFDataset : public NRODataset
  protected:
   // fill header information
   virtual int fillHeader( int sameEndian ) ;
+
+  // return ARRAYMAX
+  virtual int arrayMax() { return NRO_ARYMAX; } ;
 } ;
 
 

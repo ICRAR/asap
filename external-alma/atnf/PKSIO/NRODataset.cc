@@ -261,7 +261,7 @@ NRODataRecord *NRODataset::getRecord( int i )
   else {
     LogIO os( LogOrigin( "NRODataset", "getRecord()", WHERE ) ) ;
     //cerr << "NRODataset::getRecord()  error while reading data " << i << endl ;
-    os << LogIO::SEVERE << "error while reading data " << i << ". return NULL." << LogIO::POST ;
+    os << LogIO::SEVERE << "error while reading data " << i << ". return NULL." << LogIO::EXCEPTION ;
     dataid_ = -1 ;
     return NULL ;
   }
@@ -467,14 +467,14 @@ int NRODataset::getIndex( int irow )
   //cout << "NRODataset::getIndex()  start" << endl ;
   //
   const NRODataRecord *record = getRecord( irow ) ;
+
   const string str = record->ARRYT ;
   // DEBUG
   //cout << "NRODataset::getIndex()  str = " << str << endl ;
   //
-  string substr = str.substr( 1, 2 ) ;
-  unsigned int index = (unsigned int)(atoi( substr.c_str() ) - 1) ;
+  int index = (int)getArrayId(str);
   // DEBUG 
-  //cout << "NRODataset::getIndex()  irow = " << irow << " index = " << index << endl ;
+  //cout << "NRODataset::getIndex()  irow = " << irow << "str = " << str << " index = " << index << endl ;
   //
 
   // DEBUG 
@@ -488,39 +488,25 @@ int NRODataset::getPolarizationNum()
   // DEBUG
   //cout << "NRODataset::getPolarizationNum()  start process" << endl ;
   //
-  int npol = 0 ;
-
-  vector<string> type( 2 ) ;
-  type[0] = "CIRC" ;
-  type[1] = "LINR" ;
-  vector<double> crot ;
-  vector<double> lagl ;
-  //vector<int> ntype( 2, 0 ) ;
-
-  unsigned int imax = rowNum_ ;
-  for ( unsigned int i = 0 ; i < imax ; i++ ) { 
-    int index = getIndex( i ) ;
-    // DEBUG 
-    //cout <<"NRODataset::getPolarizationNum()  index = " << index << endl ;
-    //
-    if ( POLTP[index] == type[0] ) {
-      if( count( crot.begin(), crot.end(), POLDR[index] ) != 0 ) {
-        crot.push_back( POLDR[index] ) ;
-        npol++ ;
-      }
-      //ntype[0] = 1 ;
+  int npol = 1;
+  Regex reRx2("(.*V|H20ch2)$");
+  Regex reRx1("(.*H|H20ch1)$");
+  Bool match1 = false;
+  Bool match2 = false;
+  for (int i = 0; i < arrayMax(); i++) {
+    cout << "RX[" << i << "]=" << RX[i] << endl;
+    if (!match1) {
+      match1 = (reRx1.match(RX[i].c_str(), RX[i].size()) != String::npos);
     }
-    else if ( POLTP[index] == type[1] ) {
-      if ( count( lagl.begin(), lagl.end(), POLAN[index] ) != 0 ) {
-        lagl.push_back( POLAN[index] ) ;
-        npol++ ;
-      }
-      //ntype[1] = 1 ;
+    if (!match2) {
+      match2 = (reRx2.match(RX[i].c_str(), RX[i].size()) != String::npos);
     }
   }
 
-  if ( npol == 0 )
-    npol = 1 ;
+  if (match1 && match2)
+    npol = 2;  
+
+  //cout << "npol = " << npol << endl;
 
   // DEBUG
   //cout << "NRODataset::getPolarizationNum()  end process" << endl ;
@@ -754,6 +740,14 @@ uInt NRODataset::getArrayId( string type )
   return ib ;
 }
 
+uInt NRODataset::getSortedArrayId( string type )
+{
+  uInt index = 0;
+  while (arrayNames_[index] != type && index < (uInt)ARYNM)
+    ++index;
+  return index;
+}
+
 void NRODataset::show()
 {
   LogIO os( LogOrigin( "NRODataset", "show()", WHERE ) ) ;
@@ -864,4 +858,24 @@ uInt NRODataset::polNoFromRX( const string &rx )
     polno = 1;
   }
   return polno ;
+}
+
+void NRODataset::initArray()
+{
+  if (ARYNM <= 0)
+    throw AipsError("ARYNM must be greater than zero.");
+
+  int numArray = 0;
+  arrayNames_.resize(ARYNM);
+  for (int irow = 0; numArray < ARYNM && irow < rowNum_; irow++) {
+    cout << "irow " << irow << endl;
+    const NRODataRecord *record = getRecord( irow ) ;
+    const string str = record->ARRYT ;
+    if (find(arrayNames_.begin(), arrayNames_.end(), str) == arrayNames_.end()) {
+      arrayNames_[numArray] = str;
+      cout << "arrayNames_[" << numArray << "]=" << str << endl;
+      ++numArray;
+    }
+  }
+  cout << "numArray=" << numArray << endl;
 }

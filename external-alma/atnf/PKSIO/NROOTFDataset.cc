@@ -828,11 +828,14 @@ int NROOTFDataset::fillHeader( int sameEndian )
   //
 
   scanNum_ = NSCAN + 1 ; // includes ZERO scan
+  //scanNum_ = NSCAN ; 
   rowNum_ = scanNum_ * ARYNM ;
   scanLen_ = SCNLEN ;
   dataLen_ = scanLen_ - SCAN_HEADER_SIZE ;
   chmax_ = (int) ( dataLen_ * 8 / IBIT ) ;
   record_->LDATA = new char[dataLen_] ;
+
+  initArray();
 
   show() ;
 

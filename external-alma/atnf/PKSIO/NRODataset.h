@@ -198,6 +198,7 @@ class NRODataset
   virtual std::vector<bool> getIFs() ;
   virtual std::vector<double> getFrequencies( int i ) ;
   virtual uInt getArrayId( std::string type ) ;
+  virtual uInt getSortedArrayId( std::string type ) ;
   virtual uInt getPolNo( int irow ) ;
 
  protected:
@@ -240,6 +241,12 @@ class NRODataset
   // POLNO from RX
   //uInt polNoFromRX( const char *rx ) ;
   uInt polNoFromRX( const std::string &rx ) ;
+
+  // initialize array information (only for OTF data)
+  void initArray();
+
+  // return ARRYMAX
+  virtual int arrayMax() {return 0;} ; 
 
   // Type of file record
   std::string LOFIL ;
@@ -516,6 +523,9 @@ class NRODataset
 
   // reference frequency for each array
   std::vector<double> refFreq_ ;
+
+  // list of array names
+  std::vector<std::string> arrayNames_;
 
   // record to store REFPIX, REFVAL, INCREMENT pair for each array
   Record frec_ ;

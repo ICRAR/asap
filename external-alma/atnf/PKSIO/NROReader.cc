@@ -578,13 +578,13 @@ int NROReader::getScanInfo( int irow,
   string rxname = dataset_->getRX()[0] ;
   if ( rxname.find("MULT2") != string::npos ) {
     string arryt = string( record->ARRYT ) ;
-    beamno = dataset_->getArrayId( arryt ) ;
+    beamno = dataset_->getSortedArrayId( arryt ) ;
     ifno = 0 ;
   }
   else {
     beamno = 0 ;
     string arryt = string( record->ARRYT ) ;
-    ifno = dataset_->getArrayId( arryt ) ;
+    ifno = dataset_->getSortedArrayId( arryt ) ;
   }
   //cout << "beamno = " << beamno << endl ;
 
