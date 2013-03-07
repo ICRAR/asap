@@ -494,7 +494,7 @@ int NRODataset::getPolarizationNum()
   Bool match1 = false;
   Bool match2 = false;
   for (int i = 0; i < arrayMax(); i++) {
-    cout << "RX[" << i << "]=" << RX[i] << endl;
+    //cout << "RX[" << i << "]=" << RX[i] << endl;
     if (!match1) {
       match1 = (reRx1.match(RX[i].c_str(), RX[i].size()) != String::npos);
     }
