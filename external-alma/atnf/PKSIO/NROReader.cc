@@ -198,6 +198,26 @@ NROReader::~NROReader()
 {
 }
 
+// Read data header
+Int NROReader::read() 
+{
+  LogIO os( LogOrigin( "NROReader", "read()", WHERE ) ) ;
+
+  int status = 0 ;
+
+  // initialize Dataset object
+  initDataset();
+  
+  // fill Dataset
+  status = dataset_->fillHeader() ;
+
+  if ( status != 0 ) {
+    os << LogIO::SEVERE << "Failed to fill data header." << LogIO::EXCEPTION ;
+  }
+
+  return status ;
+}
+
 // set frequency reference frame
 void NROReader::setFreqRefFromVREF( bool fromVREF )
 {

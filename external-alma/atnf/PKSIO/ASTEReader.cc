@@ -52,24 +52,9 @@ ASTEReader::~ASTEReader()
 {
 }
   
-// Read data header
-Int ASTEReader::read() 
+void ASTEReader::initDataset()
 {
-  LogIO os( LogOrigin( "ASTEReader", "read()", WHERE ) ) ;
-
-  int status = 0 ;
-
-  // create ASTEDataset
   dataset_ = new ASTEDataset( filename_ ) ;
-
-  // fill ASTEDataset
-  status = dataset_->fillHeader() ;
-
-  if ( status != 0 ) {
-    os << LogIO::SEVERE << "Failed to fill data header." << LogIO::EXCEPTION ;
-  }
-
-  return status ;
 }
 
 vector<double> ASTEReader::getAntennaPosition() 
