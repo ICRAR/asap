@@ -88,7 +88,7 @@ class NRODataset
   virtual ~NRODataset() ;
 
   // Data initialization
-  virtual void initialize() ;
+  virtual void initialize() = 0 ;
 
   // open file
   virtual int open() ;
@@ -202,8 +202,12 @@ class NRODataset
   virtual uInt getPolNo( int irow ) ;
 
  protected:
+  // initialize common part
+  void initializeCommon() ;
+
   // fill header information
   virtual int fillHeader( int sameEndian ) = 0 ;
+  int fillHeaderCommon( int sameEndian ) ;
 
   // Endian conversion for int variable
   void convertEndian( int &value ) ;

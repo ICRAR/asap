@@ -628,7 +628,7 @@ int NROReader::getScanInfo( int irow,
   // restfreq (for MOLECULE_ID)
   restfreq.resize( oneByOne ) ;
   restfreq[0] = record->FREQ0 ;
-  //cout << "restfreq = " << rf << endl ;
+  //cout << "restfreq = " << restfreq[0] << endl ;
 
   // refbeamno
   refbeamno = 0 ;
@@ -673,7 +673,7 @@ int NROReader::getScanInfo( int irow,
     flagtra.resize( spectra.nelements() ) ;
     flagtra.set( 0 ) ;
   }
-  //cout << "flag.size() = " << flag.size() << endl ;
+  //cout << "flag.size() = " << flagtra.size() << endl ;
 
   // tsys
   tsys.resize( oneByOne ) ;

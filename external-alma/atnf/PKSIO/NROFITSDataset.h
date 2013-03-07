@@ -82,8 +82,8 @@ class NROFITSDataset : public NRODataset
   // data initialization 
   virtual void initialize() ;
 
-  // fill header from file 
-  virtual int fillHeader() ;
+//   // fill header from file 
+//   virtual int fillHeader() ;
 
   // fill data record
   virtual  int fillRecord( int i ) ;

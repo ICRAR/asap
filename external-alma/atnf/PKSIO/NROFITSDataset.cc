@@ -46,19 +46,25 @@ using namespace std ;
 // constructor 
 NROFITSDataset::NROFITSDataset( string name )
   : NRODataset( name ) 
-{
-  LogIO os( LogOrigin( "NROFITSDataset", "NROFITSDataset()", WHERE ) ) ;
+{}
 
-  fp_ = NULL ;
-  dataid_ = -1 ;
-  record_ = new NRODataRecord() ;
-  record_->LDATA = NULL ; // never use LDATA 
+// destructor 
+NROFITSDataset::~NROFITSDataset() 
+{
+  // close file
+  close() ;
+}
+
+// data initialization
+void NROFITSDataset::initialize()
+{
+  LogIO os( LogOrigin( "NROFITSDataset", "initialize()", WHERE ) ) ;
 
   // open file
   if ( open() ) 
     os << LogIO::SEVERE << "error while opening file " << filename_ << LogIO::EXCEPTION ;
- 
-  // data initialization
+
+  // field names, units, and sizes
   readHeader( numField_, "TFIELDS", same_ ) ;
   names_.resize( numField_ ) ;
   units_.resize( numField_ ) ;
@@ -87,22 +93,7 @@ NROFITSDataset::NROFITSDataset( string name )
     os << LogIO::NORMAL << "different endian " << LogIO::POST ;
   }
 
-  // memory allocation
-  initialize() ;
-}
-
-// destructor 
-NROFITSDataset::~NROFITSDataset() 
-{
-  // close file
-  close() ;
-}
-
-// data initialization
-void NROFITSDataset::initialize()
-{
-  LogIO os( LogOrigin( "NROFITSDataset", "initialize()", WHERE ) ) ;
-
+  // initialization
   int status = 0 ;
   status = readHeader( ARYNM, "ARYNM", same_ ) ;
   if ( status != 0 ) 
@@ -181,23 +172,10 @@ void NROFITSDataset::initialize()
     + sizeof( char ) * 180 ;               // CDMY1
 
   refFreq_.resize( ARYNM, 0.0 ) ;
-}
 
-// fill data header
-int NROFITSDataset::fillHeader() 
-{
-  LogIO os( LogOrigin( "NROFITSDataset", "fillHeader()", WHERE ) ) ;
-
-  // open file
-  if ( open() ) {
-    os << LogIO::SEVERE << "Error opening file " << filename_ << "." << LogIO::EXCEPTION ;
-    return -1 ;
-  }
-
-  // fill
-  int status = fillHeader( same_ ) ;
-
-  return status ;
+  // NRODataRecord
+  record_ = new NRODataRecord() ;
+  record_->LDATA = NULL ;
 }
 
 int NROFITSDataset::fillHeader( int sameEndian )
@@ -861,8 +839,6 @@ int NROFITSDataset::fillHeader( int sameEndian )
   // DEBUG
 //   nro_debug_output( "DSBFC", ARYNM, DSBFC ) ;
   //
-
-  show() ;
 
   return 0 ;
 }
