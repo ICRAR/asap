@@ -248,6 +248,9 @@ class NRODataset
   // return ARRYMAX
   virtual int arrayMax() {return 0;} ; 
 
+  // get scanNum from NSCAN (NSCAN or NSCAN + 1)
+  int getScanNum();
+
   // Type of file record
   std::string LOFIL ;
 

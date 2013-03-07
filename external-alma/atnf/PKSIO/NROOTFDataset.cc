@@ -827,11 +827,11 @@ int NROOTFDataset::fillHeader( int sameEndian )
   //cout << "CDMY1 = " << CDMY1 << endl ;
   //
 
-  scanNum_ = NSCAN + 1 ; // includes ZERO scan
-  //scanNum_ = NSCAN ; 
-  rowNum_ = scanNum_ * ARYNM ;
+  //scanNum_ = NSCAN + 1 ; // includes ZERO scan
   scanLen_ = SCNLEN ;
   dataLen_ = scanLen_ - SCAN_HEADER_SIZE ;
+  scanNum_ = getScanNum();
+  rowNum_ = scanNum_ * ARYNM ;
   chmax_ = (int) ( dataLen_ * 8 / IBIT ) ;
   record_->LDATA = new char[dataLen_] ;
 

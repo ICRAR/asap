@@ -279,7 +279,7 @@ int NRODataset::fillRecord( int i )
     
 
   // fill NRODataset
-  int offset = getDataSize() + scanLen_ * i ;
+  long offset = getDataSize() + scanLen_ * i ;
   // DEBUG
   //cout << "NRODataset::fillRecord()  offset (header) = " << offset << endl ;
   //cout << "NRODataset::fillRecord()  sizeof(NRODataRecord) = " << sizeof( NRODataRecord ) << " byte" << endl ;
@@ -878,4 +878,17 @@ void NRODataset::initArray()
     }
   }
   //cout << "numArray=" << numArray << endl;
+}
+
+int NRODataset::getScanNum()
+{
+  long offset = getDataSize() + scanLen_ * NSCAN * ARYNM ;
+  fseek( fp_, offset, SEEK_SET ) ;
+  // try to read data
+  fgetc( fp_ ) ;
+  int eof = feof( fp_ ) ;
+  //cout << "eof=" << eof << endl;
+  // reset file pointer
+  fseek( fp_, 0, SEEK_SET ) ;
+  return NSCAN + (eof > 0 ? 0 : 1) ;
 }

@@ -830,12 +830,15 @@ int ASTEFXDataset::fillHeader( int sameEndian )
 //   nro_debug_output( "DSBFC", ASTE_ARYMAX_FX, DSBFC ) ;
   //
 
-  scanNum_ = NSCAN + 1 ; // includes ZERO scan
-  rowNum_ = scanNum_ * ARYNM ;
+  //scanNum_ = NSCAN + 1 ; // includes ZERO scan
   scanLen_ = SCNLEN ;
   dataLen_ = scanLen_ - SCAN_HEADER_SIZE ;
+  scanNum_ = getScanNum();
+  rowNum_ = scanNum_ * ARYNM ;
   chmax_ = (int) ( dataLen_ * 8 / IBIT ) ;
   record_->LDATA = new char[dataLen_] ;
+
+  initArray();
 
   show() ;
 
