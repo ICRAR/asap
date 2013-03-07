@@ -868,14 +868,14 @@ void NRODataset::initArray()
   int numArray = 0;
   arrayNames_.resize(ARYNM);
   for (int irow = 0; numArray < ARYNM && irow < rowNum_; irow++) {
-    cout << "irow " << irow << endl;
+    //cout << "irow " << irow << endl;
     const NRODataRecord *record = getRecord( irow ) ;
     const string str = record->ARRYT ;
     if (find(arrayNames_.begin(), arrayNames_.end(), str) == arrayNames_.end()) {
       arrayNames_[numArray] = str;
-      cout << "arrayNames_[" << numArray << "]=" << str << endl;
+      //cout << "arrayNames_[" << numArray << "]=" << str << endl;
       ++numArray;
     }
   }
-  cout << "numArray=" << numArray << endl;
+  //cout << "numArray=" << numArray << endl;
 }
