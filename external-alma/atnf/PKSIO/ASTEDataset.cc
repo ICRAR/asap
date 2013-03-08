@@ -35,6 +35,8 @@
 #include <iostream>
 #include <cstring>
 
+#define STRING2CHAR(s) const_cast<char *>((s).c_str())
+
 using namespace std ;
 
 // constructor 
@@ -78,21 +80,17 @@ int ASTEDataset::fillHeader( int sameEndian )
 
   int arymax = arrayMax();
 
-  string str120( 120, ' ' ) ;
-  char c120[120] ;
   // make sure file pointer points a beginning of the file
   fseek( fp_, 0, SEEK_SET ) ;
 
   fillHeaderCommon( sameEndian ) ;
 
   // specific part
-  strcpy( c120, str120.c_str() ) ;
-  if ( readHeader( c120, 116 ) == -1 ) {
+  CDMY1.resize(116);
+  if ( readHeader( STRING2CHAR(CDMY1), 116 ) == -1 ) {
     os << LogIO::WARN << "Error while reading data CDMY1." << LogIO::POST ;
     return -1 ;
   }
-  c120[116] = '\0' ;
-  CDMY1 = string( c120 ) ;
   // DEBUG
   //cout << "CDMY1 = " << CDMY1 << endl ;
   //

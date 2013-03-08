@@ -35,6 +35,8 @@
 #include <iostream>
 #include <cstring>
 
+#define STRING2CHAR(s) const_cast<char *>((s).c_str())
+
 using namespace std ;
 
 // constructor 
@@ -79,23 +81,17 @@ int NROOTFDataset::fillHeader( int sameEndian )
 {
   LogIO os( LogOrigin( "NROOTFDataset", "fillHeader()", WHERE ) ) ;
 
-  int arymax = arrayMax() ;
-
-  string str256( 256, ' ' ) ;
-  char c256[256] ;
   // make sure file pointer points a beginning of the file
   fseek( fp_, 0, SEEK_SET ) ;
 
   fillHeaderCommon( sameEndian ) ;
 
   // specific part
-  strcpy( c256, str256.c_str() ) ;
-  if ( readHeader( c256, 180 ) == -1 ) {
+  CDMY1.resize(180);
+  if ( readHeader( STRING2CHAR(CDMY1), 180 ) == -1 ) {
     os << LogIO::WARN << "Error while reading data CDMY1." << LogIO::POST ;
     return -1 ;
   }
-  c256[180] = '\0' ;
-  CDMY1 = string( c256 ) ;
   // DEBUG
   //cout << "CDMY1 = " << CDMY1 << endl ;
   //
