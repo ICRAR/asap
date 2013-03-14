@@ -634,12 +634,15 @@ public:
 					 float threshold,
 					 int chanAvgLimit);
   static std::vector<bool> getMaskFromMaskList(const int nchan,
-					       const std::vector<int>& masklist);
-  static casa::Vector<casa::uInt> getMaskListFromMask(const std::vector<bool>& mask);
-  static std::vector<int> splitToIntList(const std::string& str, const char delim);
-  static std::vector<string> splitToStringList(const std::string& str, const char delim);
+					  const std::vector<int>& masklist);
+  static casa::Vector<casa::uInt> getMaskListFromMask(
+					   const std::vector<bool>& mask);
+  static std::vector<int> splitToIntList(const std::string& str, 
+					 const char delim);
+  static std::vector<string> splitToStringList(const std::string& str, 
+					       const char delim);
 
-
+  void dropXPol();
 
 private:
 
