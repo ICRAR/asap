@@ -92,6 +92,9 @@ public:
   std::vector<float> getTsysSpectrum(int whichrow=0) const
     { return table_->getTsysSpectrum(whichrow); }
 
+  void setTsys(const std::vector<float>& newvals, int whichrow=-1)
+  { return table_->setTsys(newvals, whichrow); }
+
   //std::string getTime(int whichrow=0) const
   //  { return table_->getTime(whichrow); }
   std::string getTime(int whichrow=0, int prec = 0) const

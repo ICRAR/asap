@@ -93,6 +93,7 @@ void python_Scantable() {
 	 (boost::python::arg("whichrow")=0) )
     .def("_gettsys", &ScantableWrapper::getTsys)
     .def("_gettsysspectrum", &ScantableWrapper::getTsysSpectrum )
+    .def("_settsys", &ScantableWrapper::setTsys)
     .def("_getsourcename", &ScantableWrapper::getSourceName,
          (boost::python::arg("whichrow")=0) )
     .def("_getelevation", &ScantableWrapper::getElevation,

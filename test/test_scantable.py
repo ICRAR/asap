@@ -120,6 +120,17 @@ class TestScantable(object):
     def test_get_tsys(self):
         assert_almost_equal(self.st.get_tsys()[0], 175.830429077)
 
+    def test_set_tsys(self):
+        s = self.st.copy()
+        newval = 100.0
+        s.set_tsys(newval, 0)
+        assert_almost_equal(s.get_tsys()[0], newval)
+        s2 = self.st.copy()
+        s2.set_tsys(newval)
+        out = s2.get_tsys()
+        for i in xrange(len(out)):
+            assert_almost_equal(out[i], newval)
+
     def test_get_time(self):
         assert_equal(self.st.get_time(0), '2008/03/12/09:32:50')
         dt = datetime.datetime(2008,3,12,9,32,50)

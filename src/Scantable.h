@@ -341,6 +341,9 @@ public:
   float getTsys(int whichrow) const
     { return casa::Vector<casa::Float>(tsysCol_(whichrow))(0); }
   std::vector<float> getTsysSpectrum(int whichrow) const ;
+  
+  void setTsys(const std::vector<float>& newvals, int whichrow);
+
   float getElevation(int whichrow) const
     { return elCol_(whichrow); }
   float getAzimuth(int whichrow) const
