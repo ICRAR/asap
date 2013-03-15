@@ -1,4 +1,5 @@
 import os
+import weakref
 import matplotlib, numpy
 from asap.logging import asaplog, asaplog_post_dec
 from matplotlib.patches import Rectangle
@@ -12,7 +13,7 @@ from asap.utils import _n_bools, mask_not, mask_or
 ######################################
 class CustomToolbarCommon:
     def __init__(self,parent):
-        self.plotter = parent
+        self.plotter = weakref.ref(parent)
         #self.figmgr=self.plotter._plotter.figmgr
 
     ### select the nearest spectrum in pick radius
@@ -682,7 +683,7 @@ class NotationWindowCommon:
 ###########################################
 class CustomFlagToolbarCommon:
     def __init__(self,parent):
-        self.plotter=parent
+        self.plotter=weakref.ref(parent)
         #self.figmgr=self.plotter._plotter.figmgr
         self._selregions = {}
         self._selpanels = []
