@@ -3,10 +3,14 @@ import os
 import shutil
 import datetime
 from nose.tools import *
+import asap
 from asap import scantable, selector, mask_not
 from asap.logging import asaplog
 # no need for log messages
 asaplog.disable()
+
+def test_version():
+    assert_equal(asap.__version__, "4.1.2")
 
 def tempdir_setup():
     os.makedirs("test_temp")
@@ -16,7 +20,8 @@ def tempdir_teardown():
 
 class TestScantable(object):
     def setup(self):
-        s = scantable("data/MOPS.rpf", average=True)
+        pth = os.path.dirname(__file__)
+        s = scantable(os.path.join(pth, "data", "MOPS.rpf"), average=True)
         sel = selector()
         # make sure this order is always correct - in can be random
         sel.set_order(["SCANNO", "POLNO"])
@@ -26,16 +31,17 @@ class TestScantable(object):
         self.st.set_restfreqs(restfreqs,"GHz")
 
     def test_init(self):
-        st = scantable("data/MOPS.rpf", average=False)
+        fname = os.path.join(os.path.dirname(__file__), "data", "MOPS.rpf")
+        st = scantable(fname, average=False)
         assert_equal(st.ncycle(), 32)
-        st = scantable("data/MOPS.rpf", average=True)
+        st = scantable(fname, average=True)
         assert_equal(st.ncycle(), 2)
-        st = scantable("data/MOPS.rpf", unit="Jy")
+        st = scantable(fname, unit="Jy")
         assert_equal(st.get_fluxunit(), "Jy")
-        st = scantable("data/MOPS.rpf", unit="K")
+        st = scantable(fname, unit="K")
         assert_equal(st.get_fluxunit(), "K")
-        assert_raises(RuntimeError, scantable, "data/MOPS.rpf", unit="junk")
-        st = scantable(["data/MOPS.rpf","data/MOPS.rpf"], average=False)
+        assert_raises(RuntimeError, scantable, fname, unit="junk")
+        st = scantable([fname,fname], average=False)
         assert_equal(st.nscan(), 4)
 
     def test_copy(self):
