@@ -9,9 +9,6 @@ from asap.logging import asaplog
 # no need for log messages
 asaplog.disable()
 
-def test_version():
-    assert_equal(asap.__version__, "4.1.2")
-
 def tempdir_setup():
     os.makedirs("test_temp")
 
