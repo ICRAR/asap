@@ -41,9 +41,6 @@ class TestScantable(object):
         st = scantable([fname,fname], average=False)
         assert_equal(st.nscan(), 4)
 
-    def test_jenkins_email(self):
-        raise RuntimeError("Just check that the email has the log attached")
-
     def test_copy(self):
         st = self.st.copy()
         assert_not_equal(id(st), id(self.st))
