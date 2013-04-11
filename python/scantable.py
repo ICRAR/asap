@@ -2704,8 +2704,11 @@ class scantable(Scantable):
         Subtract baseline based on parameters written in Baseline Table.
 
         Parameters:
-            insitu:        if False a new scantable is returned.
-                           Otherwise, the scaling is done in-situ
+            insitu:        if True, baseline fitting/subtraction is done
+                           in-situ and fitting results is returned. If
+                           False, a dictionary containing new scantable
+                           (with baseline subtracted) and fitting results
+                           is returned. 
                            The default is taken from .asaprc (False)
             inbltable:     name of input baseline table. The row number of
                            scantable and that of inbltable must be
@@ -2713,8 +2716,9 @@ class scantable(Scantable):
             outbltable:    name of output baseline table where baseline 
                            parameters and fitting results recorded.
                            default is ''(no output).
-            overwrite:     if True, overwrites the existing baseline table
-                           specified in outbltable.
+            overwrite:     if True when an existing baseline table is
+                           specified for outbltable, overwrites it. 
+                           Otherwise there is no harm.
                            default is False.
         """
 
@@ -2753,8 +2757,11 @@ class scantable(Scantable):
         Subtract baseline based on parameters written in the input list. 
 
         Parameters:
-            insitu:        if False a new scantable is returned.
-                           Otherwise, the scaling is done in-situ
+            insitu:        if True, baseline fitting/subtraction is done
+                           in-situ and fitting results is returned. If
+                           False, a dictionary containing new scantable
+                           (with baseline subtracted) and fitting results
+                           is returned. 
                            The default is taken from .asaprc (False)
             blinfo:        baseline parameter set stored in a dictionary
                            or a list of dictionary. Each dictionary 
@@ -2776,8 +2783,9 @@ class scantable(Scantable):
             bltable:       name of output baseline table where baseline
                            parameters and fitting results recorded.
                            default is ''(no output).
-            overwrite:     if True, overwrites the existing baseline table
-                           specified in bltable.
+            overwrite:     if True when an existing baseline table is
+                           specified for bltable, overwrites it. 
+                           Otherwise there is no harm.
                            default is False.
                            
         Example:
