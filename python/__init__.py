@@ -58,7 +58,7 @@ from sbseparator import sbseparator
 from _asap import srctype
 
 __date__ = '$Date$'.split()[1]
-__version__  = '4.1.3a'
+__version__  = '4.2.0a'
 __revision__ = get_revision()
 
 def welcome():
