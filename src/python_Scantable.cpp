@@ -130,6 +130,8 @@ void python_Scantable() {
          (boost::python::arg("refstr")="") )
     .def("_gethistory", &ScantableWrapper::getHistory)
     .def("_addhistory", &ScantableWrapper::addHistory)
+    .def("drop_history", &ScantableWrapper::dropHistory)
+    .def("_historylength", &ScantableWrapper::historyLength)
     .def("_getselection", &ScantableWrapper::getSelection)
     .def("_setselection", &ScantableWrapper::setSelection)
     .def("_addfit", &ScantableWrapper::addFit)

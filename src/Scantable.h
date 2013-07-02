@@ -377,8 +377,13 @@ public:
    */
   void makePersistent(const std::string& filename);
 
-  std::vector<std::string> getHistory() const
-    { return historyTable_.getHistory(); };
+  std::vector<std::string> getHistory(int nrow=-1, int start=0) const
+    { return historyTable_.getHistory(nrow, start); }
+
+  uint historyLength()
+  { return historyTable_.nrow(); }
+  
+  void dropHistory() { historyTable_.drop(); }
 
   void addHistory(const std::string& hist) { historyTable_.addEntry(hist); }
 

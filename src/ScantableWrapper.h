@@ -241,8 +241,14 @@ public:
     return table_->headerSummary();
   }
 
-  std::vector<std::string> getHistory() const
-    { return table_->getHistory(); }
+  std::vector<std::string> getHistory(int nrow=-1, int start=0) const
+    { return table_->getHistory(nrow, start); }
+
+  uint historyLength() {
+    return table_->historyLength();
+  }
+
+  void dropHistory() { table_->dropHistory(); }
 
   void addHistory(const std::string& hist)
     { table_->addHistory(hist); }
