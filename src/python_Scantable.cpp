@@ -136,6 +136,7 @@ void python_Scantable() {
     .def("_getfit", &ScantableWrapper::getFit)
     .def("_recalcazel", &ScantableWrapper::calculateAZEL)
     .def("_setsourcetype", &ScantableWrapper::setSourceType)
+    .def("_setsourcename", &ScantableWrapper::setSourceName)
     .def("_getdirectionvec", &ScantableWrapper::getDirectionVector)
     .def("_parallactify", &ScantableWrapper::parallactify)
     .def("get_coordinate", &ScantableWrapper::getCoordinate)

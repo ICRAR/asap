@@ -187,6 +187,9 @@ public:
   void setSourceType(int stype)
     { table_->setSourceType(stype); }
 
+  void setSourceName(const std::string& name)
+    { table_->setSourceName(name); }
+
   void shift(int npix)
   { table_->shift(npix); }
 
