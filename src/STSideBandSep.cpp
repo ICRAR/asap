@@ -913,39 +913,6 @@ void STSideBandSep::deconvolve(Matrix<float> &specmat,
   os << "Threshold = " << threshold << ", Rejected channels = " << nreject << endl;
 };
 
-////////////////////////////////////////////////////////////////////
-// void STSideBandSep::cpprfft(std::vector<float> invec)
-// {
-//   cout << "c++ method cpprfft" << endl;
-//   const unsigned int len = invec.size();
-//   Vector<Complex> carr(len/2+1, 0.);
-//   Vector<float> inarr = Vector<float>(invec);
-//   Vector <float> outarr(len, 0.);
-//   FFTServer<Float, Complex> fftsf, fftsi;
-//   fftsf.resize(IPosition(1, len), FFTEnums::REALTOCOMPLEX);
-//   fftsi.resize(IPosition(1, invec.size()), FFTEnums::COMPLEXTOREAL);
-//   cout << "Input float array (length = " << len << "):" << endl;
-//   for (uInt i = 0 ; i < len ; i++){
-//     cout << (i == 0 ? "( " : " ") << inarr[i] << (i == len-1 ? ")" : ",");
-//   }
-//   cout << endl;
-//   cout << "R->C transform" << endl;
-//   fftsf.fft0(carr, inarr, true);
-//   cout << "FFTed complex array (length = " << carr.size() << "):" << endl;
-//   for (uInt i = 0 ; i < carr.size() ; i++){
-//     cout << (i == 0 ? "( " : " ") << carr[i] << ( (i == carr.size()-1) ? ")" : "," );
-//   }
-//   cout << endl;
-//   cout << "C->R transform" << endl;
-//   fftsi.fft0(outarr, carr, false);
-//   cout << "invFFTed float array (length = " << outarr.size() << "):" << endl;
-//   for (uInt i = 0 ; i < outarr.size() ; i++){
-//     cout << (i == 0 ? "( " : " ") << outarr[i] << ( (i == outarr.size()-1) ? ")" : "," );
-//   }
-//   cout << endl;
-// };
-////////////////////////////////////////////////////////////////////
-
 
 void STSideBandSep::aggregateMat(Matrix<float> &inmat,
 				 vector<float> &outvec)
