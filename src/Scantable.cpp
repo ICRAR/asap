@@ -2484,8 +2484,12 @@ std::vector<float> Scantable::getWeather(int whichrow) const
   return out;
 }
 
-bool Scantable::getFlagtraFast(uInt whichrow)
+bool Scantable::isAllChannelsFlagged(uInt whichrow)
 {
+  uInt rflag;
+  flagrowCol_.get(whichrow, rflag);
+  if (rflag > 0)
+    return true;
   uChar flag;
   Vector<uChar> flags;
   flagsCol_.get(whichrow, flags);
