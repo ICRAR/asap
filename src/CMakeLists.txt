@@ -18,6 +18,9 @@ link_directories( ${SRCDIR} )
 # use libpyrap
 add_definitions( -DHAVE_LIBPYRAP )
 
+# enable plotter2
+add_definitions( -DENABLE_PLOTTER2 )
+
 # source files for libpyrap
 set( ASAP_SRCS
      ${SRCDIR}/Plotter2.cpp
