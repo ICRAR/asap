@@ -514,29 +514,8 @@ endif()
 
 # PGPLOT (FORTRAN plotting package).
 # depends on X11
-if( STANDALONE )
-  ############
-  find_path( PGPLOT_INCLUDE_DIRS cpgplot.h
-             PATHS /usr
-             PATH_SUFFIXES include )
-  if( PGPLOT_INCLUDE_DIRS MATCHES "NOTFOUND$" )
-    message( FATAL ERROR "cpgplot.h could not be found. Please check!" )
-  endif()
-  find_library( CPGPLOT_LIB libcpgplot.${SO}
-                PATHS /usr
-                PATH_SUFFIXES lib64 lib )
-  if( CPGPLOT_LIB MATCHES "NOTFOUND$" )
-    message( FATAL ERROR "libcpgplot could not be found. Please check!" )
-  endif()
-  find_library( PGPLOT_LIB libpgplot.${SO}
-                PATHS /usr
-                PATH_SUFFIXES lib64 lib )
-  if( PGPLOT_LIB MATCHES "NOTFOUND$" )
-    message( FATAL ERROR "libpgplot could not be found. Please check!" )
-  endif()
-  set( PGPLOT_LIBRARIES "${CPGPLOT_LIB} ${PGPLOT_LIB} ${X11_LIBRARIES} ${FORTRAN_LIBRARIES} " )
-  ############
-else()
+# not require in standalone mode
+if( NOT STANDALONE )
   if( APPLE )
     set( _deps FORTRAN )
   else()
@@ -557,6 +536,8 @@ else()
     INCLUDES cpgplot.h
     LIBS pgplot${pgplot_ext} cpgplot${pgplot_ext}
     DEPENDS ${_deps} )
+
+  add_definitions( -DENABLE_PLOTTER2 )
 endif()
 
 #

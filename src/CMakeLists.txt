@@ -18,12 +18,8 @@ link_directories( ${SRCDIR} )
 # use libpyrap
 add_definitions( -DHAVE_LIBPYRAP )
 
-# enable plotter2
-add_definitions( -DENABLE_PLOTTER2 )
-
 # source files for libpyrap
 set( ASAP_SRCS
-     ${SRCDIR}/Plotter2.cpp
      ${SRCDIR}/concurrent.cpp
      ${SRCDIR}/MathUtils.cpp
      ${SRCDIR}/TableTraverse.cpp
@@ -82,8 +78,13 @@ set( ASAP_SRCS
      ${SRCDIR}/STBaselineTable.cpp
      ${SRCDIR}/CalibrationManager.cpp )
 
+if ( NOT STANDALONE )
+set( ASAP_SRCS
+     ${ASAP_SRCS}
+     ${SRCDIR}/Plotter2.cpp )
+endif()
+
 set( ASAP_PYSRCS
-     ${SRCDIR}/python_Plotter2.cpp
      ${SRCDIR}/python_Scantable.cpp
      ${SRCDIR}/python_STFiller.cpp
      ${SRCDIR}/python_STSelector.cpp
@@ -107,6 +108,12 @@ set( ASAP_PYSRCS
      ${SRCDIR}/python_STSideBandSep.cpp
      ${SRCDIR}/python_CalibrationManager.cpp
      ${SRCDIR}/python_asap.cpp )
+
+if ( NOT STANDALONE )
+set( ASAP_PYSRCS
+     ${ASAP_PYSRCS}
+     ${SRCDIR}/python_Plotter2.cpp )
+endif()
 
 add_library( ${ASAPLIB} SHARED ${ASAP_SRCS} )
 add_library( ${ASAPPYLIB} SHARED ${ASAP_PYSRCS} )
