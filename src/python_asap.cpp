@@ -67,7 +67,7 @@ void translate_ex(const casa::AipsError& e)
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(_asap) {
-  //asap::python::python_Plotter2();
+  asap::python::python_Plotter2();
   asap::python::python_Scantable();
   asap::python::python_STFiller();
   asap::python::python_Filler();

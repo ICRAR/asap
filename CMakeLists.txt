@@ -420,27 +420,6 @@ message( STATUS "BOOST_LIBRARIES = " ${Boost_LIBRARIES} )
 
 
 #
-# Qt4	4.3.4 or later
-#
-find_package( Qt4 4.3.4 
-	      COMPONENTS QtCore QtGui )
-if( NOT QT4_FOUND )
-  message( FATAL_ERROR "Qt4 could not be found. Please check!" )
-endif()
-set( QT4_INCLUDE_DIRS ${QT_INCLUDES} CACHE PATH "QT4 include directories" FORCE )
-set( QT4_DEFINITIONS ${QT_DEFINITIONS} -DQT_NO_DEBUG CACHE STRING "QT4 preprocessor flags" FORCE )
-set( QT4_LIBRARIES 
-  ${QT_QTCORE_LIBRARY} 
-  ${QT_QTGUI_LIBRARY} 
-  CACHE FILEPATH "QT4 libraries" FORCE )
-list( REMOVE_ITEM QT4_LIBRARIES "optimized" )
-list( REMOVE_ITEM QT4_LIBRARIES "debug" )
-message( STATUS "QT4_INCLUDE_DIRS = " ${QT4_INCLUDE_DIRS} )
-message( STATUS "QT4_DEFINITIONS = " ${QT4_DEFINITIONS} )
-message( STATUS "QT4_LIBRARIES = " ${QT4_LIBRARIES} )
-
-
-#
 # cfitsio
 #
 if( STANDALONE )
@@ -526,6 +505,59 @@ if( NOT FORTRAN_LIBRARIES )
   endif()
 endif()
 
+# X11.
+if( NOT APPLE )
+  find_package( X11 REQUIRED )
+  # Rename
+  set( X11_INCLUDE_DIRS ${X11_INCLUDE_DIR} )
+endif()
+
+# PGPLOT (FORTRAN plotting package).
+# depends on X11
+if( STANDALONE )
+  ############
+  find_path( PGPLOT_INCLUDE_DIRS cpgplot.h
+             PATHS /usr
+             PATH_SUFFIXES include )
+  if( PGPLOT_INCLUDE_DIRS MATCHES "NOTFOUND$" )
+    message( FATAL ERROR "cpgplot.h could not be found. Please check!" )
+  endif()
+  find_library( CPGPLOT_LIB libcpgplot.${SO}
+                PATHS /usr
+                PATH_SUFFIXES lib64 lib )
+  if( CPGPLOT_LIB MATCHES "NOTFOUND$" )
+    message( FATAL ERROR "libcpgplot could not be found. Please check!" )
+  endif()
+  find_library( PGPLOT_LIB libpgplot.${SO}
+                PATHS /usr
+                PATH_SUFFIXES lib64 lib )
+  if( PGPLOT_LIB MATCHES "NOTFOUND$" )
+    message( FATAL ERROR "libpgplot could not be found. Please check!" )
+  endif()
+  set( PGPLOT_LIBRARIES "${CPGPLOT_LIB} ${PGPLOT_LIB} ${X11_LIBRARIES} ${FORTRAN_LIBRARIES} " )
+  ############
+else()
+  if( APPLE )
+    set( _deps FORTRAN )
+  else()
+    set( _deps X11 FORTRAN )
+  endif()
+  if (CMAKE_SYSTEM MATCHES ^Darwin-11 AND NOT LLVMCOMPILER )
+     set( CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,error -framework AppKit -lgfortran" )
+  else()
+     if (APPLE) 
+        set( CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,error -framework AppKit" )
+     else()
+        set( CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,error" )
+     endif()
+  endif()
+  casa_find( PGPLOT
+    VERSION 5.3.1
+    PREFIX_HINTS ${PGPLOT_ROOT_DIR}
+    INCLUDES cpgplot.h
+    LIBS pgplot${pgplot_ext} cpgplot${pgplot_ext}
+    DEPENDS ${_deps} )
+endif()
 
 #
 # RPFITS
@@ -592,7 +624,8 @@ message( STATUS "WCSLIB_INCLUDE_DIR = " ${WCSLIB_INCLUDE_DIR} )
 #
 include_directories( ${CASACORE_INCLUDE_DIR} 
                      ${Boost_INCLUDE_DIR} 
-                     ${QT4_INCLUDE_DIRS} 
+                     ${X11_INCLUDE_DIRS} 
+                     ${PGPLOT_INCLUDE_DIRS} 
                      ${PYTHON_INCLUDE_DIRS} 
                      ${WCSLIB_INCLUDE_DIR} 
                      ${CFITSIO_INCLUDE_DIRS} 
