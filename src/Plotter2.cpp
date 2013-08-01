@@ -181,7 +181,7 @@ void Plotter2ViewportInfo::setData(const std::vector<float>& inXData, const std:
 
     info->xData.clear();
     info->xData.reserve(inXData.size());
-    for (uint i = 0; i < inXData.size(); ++i) {
+    for (unsigned int i = 0; i < inXData.size(); ++i) {
         info->xData.push_back(inXData[i]);
 
 	if (!info->hasData) {
@@ -191,7 +191,7 @@ void Plotter2ViewportInfo::setData(const std::vector<float>& inXData, const std:
 
     info->yData.clear();
     info->yData.reserve(inYData.size());
-    for (uint i = 0; i < inYData.size(); ++i) {
+    for (unsigned int i = 0; i < inYData.size(); ++i) {
         info->yData.push_back(inYData[i]);
 
 	if (!info->hasData) {
@@ -230,8 +230,8 @@ void Plotter2ViewportInfo::updateAllDataRanges() {
     minYData = vData[0].yData[0];
     maxYData = minYData;
 
-    for (uint i = 0; i < vData.size(); ++i) {
-        for (uint j = 0; j < vData[i].xData.size(); ++j) {
+    for (unsigned int i = 0; i < vData.size(); ++i) {
+        for (unsigned int j = 0; j < vData[i].xData.size(); ++j) {
             updateXDataRange(vData[i].xData[j]);
             updateYDataRange(vData[i].yData[j]);
 	}
@@ -351,7 +351,7 @@ int Plotter2::getCurrentViewportId() {
 
 void Plotter2::getViewInfo() {
     std::cout << "===================" << std::endl << std::flush;
-    for (uint i = 0; i < vInfo.size(); ++i) {
+    for (unsigned int i = 0; i < vInfo.size(); ++i) {
         std::cout << "[" << i << "]  " << std::endl;
         std::cout << "vpPos:  ";
 	std::cout << "xmin=" << vInfo[i].vpPosXMin << ", ";
@@ -366,9 +366,9 @@ void Plotter2::getViewInfo() {
 	std::cout << "ymax=" << vInfo[i].vpRangeYMax << std::endl;;
 
 	std::cout << "vdatasize=" << vInfo[i].vData.size() << std::endl;
-        for (uint j = 0; j < vInfo[i].vData.size(); ++j) {
+        for (unsigned int j = 0; j < vInfo[i].vData.size(); ++j) {
 	    std::cout << "vdataxdatasize=" << vInfo[i].vData[j].xData.size() << ", ";
-  	    for (uint k = 0; k < vInfo[i].vData[j].xData.size(); ++k) {
+  	    for (unsigned int k = 0; k < vInfo[i].vData[j].xData.size(); ++k) {
 	        std::cout << "(" << vInfo[i].vData[j].xData[k] << ", ";
 	        std::cout << vInfo[i].vData[j].yData[k] << ") ";
 	    }
@@ -994,7 +994,7 @@ void Plotter2::plot() {
     cpgscr(0, 1.0, 1.0, 1.0); // set background color white
     cpgscr(1, 0.0, 0.0, 0.0); // set foreground color black
 
-    for (uint i = 0; i < vInfo.size(); ++i) {
+    for (unsigned int i = 0; i < vInfo.size(); ++i) {
         Plotter2ViewportInfo vi = vInfo[i];
 
 	if (vi.showViewport) {
@@ -1021,7 +1021,7 @@ void Plotter2::plot() {
 	    }
 
 	    // data
-	    for (uint j = 0; j < vi.vData.size(); ++j) {
+	    for (unsigned int j = 0; j < vi.vData.size(); ++j) {
                 cpgstbg(0); // reset background colour to the initial one (white)
                 cpgsci(1);  // reset foreground colour to the initial one (black)
   	        cpgsls(1);  // reset line style to solid
@@ -1061,7 +1061,7 @@ void Plotter2::plot() {
 	    }
 
 	    // masks
-	    for (uint j = 0; j < vi.vRect.size(); ++j) {
+	    for (unsigned int j = 0; j < vi.vRect.size(); ++j) {
                 cpgstbg(0); // reset background colour to the initial one (white)
                 cpgsci(1);  // reset foreground colour to the initial one (black)
   	        cpgsls(1);  // reset line style to solid
