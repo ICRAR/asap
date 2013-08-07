@@ -285,11 +285,21 @@ void STSideBandSep::separate(string outname)
     // Solve signal sideband
     sigSpec = solve(specMat, tabIdvec, true);
     sigTab_p->setSpectrum(sigSpec, irow);
+    if (sigTab_p->isAllChannelsFlagged(irow)){
+      // unflag the spectrum since there should be some valid data
+      sigTab_p->flagRow(vector<uInt>(irow), true);
+      sigTab_p->flag(irow, vector<bool>(), true);
+    }
 
     // Solve image sideband
     if (doboth_) {
       imgSpec = solve(specMat, tabIdvec, false);
       imgTab_p->setSpectrum(imgSpec, irow);
+      if (imgTab_p->isAllChannelsFlagged(irow)){
+	// unflag the spectrum since there should be some valid data
+	imgTab_p->flagRow(vector<uInt>(irow), true);
+	imgTab_p->flag(irow, vector<bool>(), true);
+      }
     }
   } // end of row loop
 
@@ -721,7 +731,7 @@ vector<float> STSideBandSep::solve(const Matrix<float> &specmat,
   } else {
     // (solve signal && solveother = F) OR (solve image && solveother = T)
     thisShift =  &sigShift_;
-    otherShift = &imgShift_; 
+    otherShift = &imgShift_;
 #ifdef KS_DEBUG
     cout << "Signal sideband will be deconvolved." << endl;
 #endif
@@ -731,9 +741,11 @@ vector<float> STSideBandSep::solve(const Matrix<float> &specmat,
   Matrix<float> shiftSpecmat(nchan_, nspec, 0.);
   double tempshift;
   Vector<float> shiftspvec;
+  uInt shiftId;
   for (uInt i = 0 ; i < nspec; i++) {
-    spshift[i] = otherShift->at(i) - thisShift->at(i);
-    tempshift = - thisShift->at(i);
+    shiftId = tabIdvec[i];
+    spshift[i] = otherShift->at(shiftId) - thisShift->at(shiftId);
+    tempshift = - thisShift->at(shiftId);
     shiftspvec.reference(shiftSpecmat.column(i));
     shiftSpectrum(specmat.column(i), tempshift, shiftspvec);
   }
