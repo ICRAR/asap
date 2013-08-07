@@ -540,7 +540,8 @@ ScantableWrapper STSideBandSep::gridTable()
   STGrid2 gridder = STGrid2(stab0);
   gridder.setIF(sigIfno_);
   gridder.defineImage(nx, ny, scellx, scelly, scenter);
-  gridder.setFunc("box", 1);
+  //  gridder.setFunc("box", 1); // convsupport=1 fails
+  gridder.setFunc("box");
   gridder.setWeight("uniform");
 #ifdef KS_DEBUG
   cout << "Grid parameter summary: " << endl;
