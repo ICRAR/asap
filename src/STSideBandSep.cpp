@@ -546,9 +546,9 @@ ScantableWrapper STSideBandSep::gridTable()
 #ifdef KS_DEBUG
   cout << "Grid parameter summary: " << endl;
   cout << "- IF = " << sigIfno_ << endl;
-  cout << "- center = " << scenter << ")\n"
+  cout << "- center = " << scenter << "\n"
        << "- npix = (" << nx << ", " << ny << ")\n"
-       << "- cell = (" << scellx << ", " << scelly << endl;
+       << "- cell = (" << scellx << ", " << scelly << ")" << endl;
 #endif
   gridder.grid();
   const int itp = (tp_ == Table::Memory ? 0 : 1);
@@ -641,8 +641,8 @@ bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
     sel2.setRows(selrow);
     seltab_p->setSelection(sel2);
     CountedPtr<Scantable> avetab_p;
-    vector<bool> mask;
     if (seltab_p->nrow() > 1) {
+      // STMath::average also merges FLAGTRA and FLAGROW
       avetab_p = stm.average(vector< CountedPtr<Scantable> >(1, seltab_p),
 			     vector<bool>(), "TINTSYS", "NONE");
 #ifdef KS_DEBUG
@@ -654,13 +654,27 @@ bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
     } else {
       avetab_p = seltab_p;
     }
+    // Check FLAGTRA and FLAGROW if there's any valid channel in the spectrum
+    if (avetab_p->getFlagRow(0) || avetab_p->isAllChannelsFlagged(0)) {
+#ifdef KS_DEBUG
+      cout << "Table " << itab << " - All data are flagged. skipping the table."
+	   << endl;
+#endif
+      continue;
+    }
+    // Interpolate flagged channels of the spectrum.
+    Vector<Float> tmpSpec = avetab_p->getSpectrum(0);
+    vector<bool> mask = avetab_p->getMask(0);
+    mathutil::doZeroOrderInterpolation(tmpSpec, mask);
     spec.reference(specMat.column(nspec));
-    spec = avetab_p->getSpectrum(0);
+    spec = tmpSpec;
     tabIdvec.push_back((uInt) itab);
     nspec++;
   } // end of table loop
+  // Check the number of selected spectra and resize matrix.
   if (nspec != nshift_){
     //shiftSpecmat.resize(nchan_, nspec, true);
+    specMat.resize(nchan_, nspec, true);
 #ifdef KS_DEBUG
       cout << "Could not find corresponding rows in some tables."
 	   << endl;
@@ -800,7 +814,9 @@ void STSideBandSep::deconvolve(Matrix<float> &specmat,
   if (specmat.ncolumn() != shiftvec.size())
     throw(AipsError("Internal error. The number of input shifts and spectrum  differs."));
 
+#ifdef KS_DEBUG
   float minval, maxval;
+#endif
 #ifdef KS_DEBUG
   minMax(minval, maxval, specmat);
   cout << "Max/Min of input Matrix = (max: " << maxval << ", min: " << minval << ")" << endl;
@@ -1207,10 +1223,10 @@ Bool STSideBandSep::checkFile(const string name, string type)
 };
 
 bool STSideBandSep::getLo1FromAsdm(const string asdmname,
-				   const double refval,
-				   const double refpix,
-				   const double increment,
-				   const int nChan)
+				   const double /*refval*/,
+				   const double /*refpix*/,
+				   const double /*increment*/,
+				   const int /*nChan*/)
 {
   // Check for relevant tables.
   string spwname = asdmname + "/SpectralWindow.xml";
