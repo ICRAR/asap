@@ -1049,7 +1049,7 @@ private:
     Vector<Int> nchan = nchanCol.getColumn() ;
     TableRow tr( spwtab ) ;
     TableRecord &r = tr.record() ;
-    Int mfr = 1 ;
+    Int mfr = freqframe ;
     Int oneChan = 1 ;
     Vector<Double> dummy( 1, 0.0 ) ;
     putField( "MEAS_FREQ_REF", r, mfr ) ;
