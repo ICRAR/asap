@@ -273,7 +273,9 @@ protected:
   }
   void postFlagRow() 
   {
-    *flagRowRF = anyEQ( flagRow, True ) ;
+    // CAS-5545 FLAG_ROW must always be set False
+    //*flagRowRF = anyEQ( flagRow, True ) ;
+    *flagRowRF = False;
   }
   inline void accumulateFlag( uInt &id, Vector<Bool> &fl ) 
   {
@@ -346,6 +348,13 @@ public:
 protected:
   virtual void postFlag()
   {
+    // CAS-5545 FLAG must all be set True if FLAG_ROW is True
+    for (uInt ipol = 0; ipol < npol; ++ipol) {
+      if (flagRow[ipol]) {
+	flag(IPosition(2, ipol, 0), IPosition(2, ipol, nchan-1)) = True;
+      }
+    }
+    
     if ( npol == 2 ) {
       flagRF.define( flag( IPosition( 2, 0, 0 ), IPosition( 2, npol-1, nchan-1 ) ) ) ; 
     }
@@ -385,6 +394,13 @@ public:
 protected:
   virtual void postFlag()
   {
+    // CAS-5545 FLAG must all be set True if FLAG_ROW is True
+    for (uInt ipol = 0; ipol < npol; ++ipol) {
+      if (flagRow[ipol]) {
+	flag(IPosition(2, ipol, 0), IPosition(2, ipol, nchan-1)) = True;
+      }
+    }
+    
     if ( npol == 4 ) {
       Vector<Bool> tmp = flag.row( 3 ) ;
       flag.row( 3 ) = flag.row( 1 ) ;
