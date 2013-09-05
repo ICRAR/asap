@@ -137,7 +137,7 @@ void CubicSplineInterpolator1D<T, U>::evaly2()
   
   // Then, solve the system by backsubstitution and store solution 
   // vector to y2_.
-  for (int k = ny2_ - 2; k >= 0; k--)
+  for (int k = ny2_ - 2; k >= 1; k--)
     y2_[k] -= u[k] * y2_[k+1];
   
   delete[] idx;
