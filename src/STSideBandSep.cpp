@@ -15,7 +15,6 @@
 // cascore
 #include <casa/OS/File.h>
 #include <casa/Logging/LogIO.h>
-#include <casa/Arrays/Array.h>
 #include <casa/Quanta/QuantumHolder.h>
 
 #include <measures/Measures/MFrequency.h>
@@ -297,7 +296,9 @@ void STSideBandSep::separate(string outname)
     // apply channel flag
     flagVec = collapseFlag(flagMat, tabIdvec, true);
     //boolVec = !boolVec; // flag
-    sigTab_p->flag(irow, flagVec.tovector(), false);
+    vector<bool> tmpflag;
+    flagVec.tovector(tmpflag);
+    sigTab_p->flag(irow, tmpflag, false);
 
     // Solve image sideband
     if (doboth_) {
@@ -312,7 +313,8 @@ void STSideBandSep::separate(string outname)
       // apply channel flag
       flagVec = collapseFlag(flagMat, tabIdvec, false);
       //boolVec = !boolVec; // flag
-      imgTab_p->flag(irow, flagVec.tovector(), true);
+      flagVec.tovector(tmpflag);
+      imgTab_p->flag(irow, tmpflag, true);
     }
   } // end of row loop
 
