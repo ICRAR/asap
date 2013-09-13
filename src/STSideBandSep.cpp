@@ -260,7 +260,9 @@ void STSideBandSep::separate(string outname)
   vector<unsigned int> remRowIds;
   remRowIds.resize(0);
   Matrix<float> specMat(nchan_, nshift_);
+  Matrix<bool> flagMat(nchan_, nshift_);
   vector<float> sigSpec(nchan_), imgSpec(nchan_);
+  Vector<bool> flagVec(nchan_);
   vector<uInt> tabIdvec;
 
   //Generate FFTServer
@@ -275,7 +277,7 @@ void STSideBandSep::separate(string outname)
     const vector<double> dir = sigTab_p->getDirectionVector(irow);
     // Get a set of spectra to solve
     if (!getSpectraToSolve(polId, beamId, dir[0], dir[1],
-			   specMat, tabIdvec)){
+			   specMat, flagMat, tabIdvec)){
       remRowIds.push_back(irow);
 #ifdef KS_DEBUG
       cout << "no matching row found. skipping row = " << irow << endl;
@@ -288,8 +290,13 @@ void STSideBandSep::separate(string outname)
     if (sigTab_p->isAllChannelsFlagged(irow)){
       // unflag the spectrum since there should be some valid data
       sigTab_p->flagRow(vector<uInt>(irow), true);
+      // need to unflag whole channels anyway
       sigTab_p->flag(irow, vector<bool>(), true);
     }
+    // apply channel flag
+    flagVec = collapseFlag(flagMat, tabIdvec, true);
+    //boolVec = !boolVec; // flag
+    sigTab_p->flag(irow, flagVec.tovector(), false);
 
     // Solve image sideband
     if (doboth_) {
@@ -298,8 +305,13 @@ void STSideBandSep::separate(string outname)
       if (imgTab_p->isAllChannelsFlagged(irow)){
 	// unflag the spectrum since there should be some valid data
 	imgTab_p->flagRow(vector<uInt>(irow), true);
+	// need to unflag whole channels anyway
 	imgTab_p->flag(irow, vector<bool>(), true);
       }
+      // apply channel flag
+      flagVec = collapseFlag(flagMat, tabIdvec, false);
+      //boolVec = !boolVec; // flag
+      imgTab_p->flag(irow, flagVec.tovector(), true);
     }
   } // end of row loop
 
@@ -593,15 +605,21 @@ void STSideBandSep::mapExtent(vector< CountedPtr<Scantable> > &tablist,
   }
 };
 
+// bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
+// 				      const double dirX, const double dirY,
+// 				      Matrix<float> &specMat, vector<uInt> &tabIdvec)
 bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
 				      const double dirX, const double dirY,
-				      Matrix<float> &specMat, vector<uInt> &tabIdvec)
+				      Matrix<float> &specMat,
+				      Matrix<bool> &flagMat,
+				      vector<uInt> &tabIdvec)
 {
   LogIO os(LogOrigin("STSideBandSep","getSpectraToSolve()", WHERE));
 
   tabIdvec.resize(0);
   specMat.resize(nchan_, nshift_);
   Vector<float> spec;
+  Vector<bool> boolVec;
   uInt nspec = 0;
   STMath stm(false); // insitu has no effect for average.
   for (uInt itab = 0 ; itab < nshift_ ; itab++) {
@@ -674,17 +692,25 @@ bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
     }
     // Interpolate flagged channels of the spectrum.
     Vector<Float> tmpSpec = avetab_p->getSpectrum(0);
+    // Mask is true if the data is valid (!flag)
     vector<bool> mask = avetab_p->getMask(0);
     mathutil::doZeroOrderInterpolation(tmpSpec, mask);
     spec.reference(specMat.column(nspec));
     spec = tmpSpec;
+    boolVec.reference(flagMat.column(nspec));
+    boolVec = mask; // cast std::vector to casa::Vector
+    boolVec = !boolVec;
     tabIdvec.push_back((uInt) itab);
     nspec++;
+    //Liberate from reference
+    spec.unique();
+    boolVec.unique();
   } // end of table loop
   // Check the number of selected spectra and resize matrix.
   if (nspec != nshift_){
     //shiftSpecmat.resize(nchan_, nspec, true);
     specMat.resize(nchan_, nspec, true);
+    flagMat.resize(nchan_, nspec, true);
 #ifdef KS_DEBUG
       cout << "Could not find corresponding rows in some tables."
 	   << endl;
@@ -700,6 +726,49 @@ bool STSideBandSep::getSpectraToSolve(const int polId, const int beamId,
   }
   return true;
 };
+
+
+Vector<bool> STSideBandSep::collapseFlag(const Matrix<bool> &flagMat,
+					 const vector<uInt> &tabIdvec,
+					 const bool signal)
+{
+  LogIO os(LogOrigin("STSideBandSep","collapseFlag()", WHERE));
+  if (tabIdvec.size() == 0)
+    throw(AipsError("Internal error. Table index is not defined."));
+  if (flagMat.ncolumn() != tabIdvec.size())
+    throw(AipsError("Internal error. The row number of input matrix is not conformant."));
+  if (flagMat.nrow() != nchan_)
+    throw(AipsError("Internal error. The channel size of input matrix is not conformant."));
+  
+  const size_t nspec = tabIdvec.size();
+  vector<double> *thisShift;
+  if (signal == otherside_) {
+    // (solve signal && solveother = T) OR (solve image && solveother = F)
+    thisShift = &imgShift_;
+  } else {
+    // (solve signal && solveother = F) OR (solve image && solveother = T)
+    thisShift =  &sigShift_;
+ }
+
+  Vector<bool> outflag(nchan_, false);
+  double tempshift;
+  Vector<bool> shiftvec(nchan_, false);
+  Vector<bool> accflag(nchan_, false);
+  uInt shiftId;
+  for (uInt i = 0 ; i < nspec; ++i) {
+    shiftId = tabIdvec[i];
+    tempshift = - thisShift->at(shiftId);
+    shiftFlag(flagMat.column(i), tempshift, shiftvec);
+    // Now accumulate Flag
+    for (uInt j = 0 ; j < nchan_ ; ++j)
+      accflag[j] |= shiftvec[j];
+  }
+  // Shift back Flag
+  shiftFlag(accflag, thisShift->at(0), outflag);
+
+  return outflag;
+}
+
 
 vector<float> STSideBandSep::solve(const Matrix<float> &specmat,
 				   const vector<uInt> &tabIdvec,
@@ -814,6 +883,51 @@ void STSideBandSep::shiftSpectrum(const Vector<float> &invec,
     outvec(rchan) += invec(i) * rweight;
   }
 };
+
+
+void STSideBandSep::shiftFlag(const Vector<bool> &invec,
+				  double shift,
+				  Vector<bool> &outvec)
+{
+  LogIO os(LogOrigin("STSideBandSep","shiftFlag()", WHERE));
+  if (invec.size() != nchan_)
+    throw(AipsError("Internal error. The length of input vector differs from nchan_"));
+  if (outvec.size() != nchan_)
+    throw(AipsError("Internal error. The length of output vector differs from nchan_"));
+
+#ifdef KS_DEBUG
+  cout << "Start shifting flag for " << shift << "channels" << endl;
+#endif
+
+  // shift is almost integer think it as int.
+  // tolerance should be in 0 - 1
+  double tolerance = 0.01;
+  // tweak shift to be in 0 ~ nchan_-1
+  if ( fabs(shift) > nchan_ ) shift = fmod(shift, nchan_);
+  if (shift < 0.) shift += nchan_;
+  double rweight = fmod(shift, 1.);
+  bool ruse(true), luse(true);
+  if (rweight < 0.) rweight += 1.;
+  if (rweight < tolerance){
+    ruse = true;
+    luse = false;
+  }
+  if (rweight > 1-tolerance){
+    ruse = false;
+    luse = true;
+  }
+  uInt lchan, rchan;
+
+  outvec = false;
+  for (uInt i = 0 ; i < nchan_ ; i++) {
+    lchan = uInt( floor( fmod( (i + shift), nchan_ ) ) );
+    if (lchan < 0.) lchan += nchan_;
+    rchan = ( (lchan + 1) % nchan_ );
+    outvec(lchan) |= (invec(i) && luse);
+    outvec(rchan) |= (invec(i) && ruse);
+  }
+};
+
 
 void STSideBandSep::deconvolve(Matrix<float> &specmat,
 			       const vector<double> shiftvec,
