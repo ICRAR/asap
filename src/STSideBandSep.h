@@ -18,6 +18,7 @@
 // casacore
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <casa/Arrays/Vector.h>
 #include <measures/Measures/MDirection.h>
 #include <coordinates/Coordinates/DirectionCoordinate.h>
 #include <coordinates/Coordinates/SpectralCoordinate.h>
