@@ -15,6 +15,7 @@
 // cascore
 #include <casa/OS/File.h>
 #include <casa/Logging/LogIO.h>
+#include <casa/Arrays/Vector.h>
 #include <casa/Quanta/QuantumHolder.h>
 
 #include <measures/Measures/MFrequency.h>
