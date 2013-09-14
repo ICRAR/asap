@@ -87,9 +87,6 @@ STSideBandSep::STSideBandSep(const vector<ScantableWrapper> &tables)
 
 STSideBandSep::~STSideBandSep()
 {
-#ifdef KS_DEBUG
-  cout << "Destructor ~STSideBandSep()" << endl;
-#endif
 };
 
 void STSideBandSep::init()
@@ -240,9 +237,6 @@ void STSideBandSep::setThreshold(const double limit)
 
 void STSideBandSep::separate(string outname)
 {
-#ifdef KS_DEBUG
-  cout << "STSideBandSep::separate" << endl;
-#endif
   LogIO os(LogOrigin("STSideBandSep","separate()", WHERE));
   if (outname.empty())
     outname = "sbseparated.asap";
@@ -766,8 +760,10 @@ Vector<bool> STSideBandSep::collapseFlag(const Matrix<bool> &flagMat,
     for (uInt j = 0 ; j < nchan_ ; ++j)
       accflag[j] |= shiftvec[j];
   }
+  outflag = accflag;
   // Shift back Flag
-  shiftFlag(accflag, thisShift->at(0), outflag);
+  //cout << "Shifting FLAG back to " << thisShift->at(0) << " channels" << endl;
+  //shiftFlag(accflag, thisShift->at(0), outflag);
 
   return outflag;
 }
@@ -866,7 +862,7 @@ void STSideBandSep::shiftSpectrum(const Vector<float> &invec,
     throw(AipsError("Internal error. The length of output vector differs from nchan_"));
 
 #ifdef KS_DEBUG
-  cout << "Start shifting spectrum for " << shift << "channels" << endl;
+  cout << "Start shifting spectrum for " << shift << " channels" << endl;
 #endif
 
   // tweak shift to be in 0 ~ nchan_-1
@@ -884,6 +880,15 @@ void STSideBandSep::shiftSpectrum(const Vector<float> &invec,
     rchan = ( (lchan + 1) % nchan_ );
     outvec(lchan) += invec(i) * lweight;
     outvec(rchan) += invec(i) * rweight;
+#ifdef KS_DEBUG
+    if (i == 2350 || i== 2930) {
+      cout << "Channel= " << i << " of input vector: " << endl;
+      cout << "L channel = " << lchan << endl;
+      cout << "R channel = " << rchan << endl;
+      cout << "L weight = " << lweight << endl;
+      cout << "R weight = " << rweight << endl;
+    }
+#endif
   }
 };
 
@@ -912,12 +917,14 @@ void STSideBandSep::shiftFlag(const Vector<bool> &invec,
   bool ruse(true), luse(true);
   if (rweight < 0.) rweight += 1.;
   if (rweight < tolerance){
-    ruse = true;
-    luse = false;
-  }
-  if (rweight > 1-tolerance){
+    // the shift is almost lchan
     ruse = false;
     luse = true;
+  }
+  if (rweight > 1-tolerance){
+    // the shift is almost rchan
+    ruse = true;
+    luse = false;
   }
   uInt lchan, rchan;
 
@@ -928,6 +935,15 @@ void STSideBandSep::shiftFlag(const Vector<bool> &invec,
     rchan = ( (lchan + 1) % nchan_ );
     outvec(lchan) |= (invec(i) && luse);
     outvec(rchan) |= (invec(i) && ruse);
+#ifdef KS_DEBUG
+    if (i == 2350 || i == 2930) {
+      cout << "Channel= " << i << " of input vector: " << endl;
+      cout << "L channel = " << lchan << endl;
+      cout << "R channel = " << rchan << endl;
+      cout << "L channel will be " << (luse ? "used" : "ignored") << endl;
+      cout << "R channel will be " << (ruse ? "used" : "ignored") << endl;
+    }
+#endif
   }
 };
 
