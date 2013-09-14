@@ -314,7 +314,7 @@ void STSideBandSep::separate(string outname)
       flagVec = collapseFlag(flagMat, tabIdvec, false);
       //boolVec = !boolVec; // flag
       flagVec.tovector(tmpflag);
-      imgTab_p->flag(irow, tmpflag, true);
+      imgTab_p->flag(irow, tmpflag, false);
     }
   } // end of row loop
 
