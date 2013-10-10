@@ -346,7 +346,7 @@ bool Plotter2::getHasDefaultViewport() {
 }
 
 int Plotter2::getCurrentViewportId() {
-  return currentViewportId;
+    return currentViewportId;
 }
 
 void Plotter2::getViewInfo() {
