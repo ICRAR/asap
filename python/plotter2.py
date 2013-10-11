@@ -587,33 +587,39 @@ class plotter2:
     def get_vinfo(self):
         self._plotter.get_vinfo()
 
-    def get_colorindex(self, colorname):
+    @classmethod
+    def get_colorindex(cls, colorname):
         """\
-        (for internal use)
         convert the given color name into color index used in PGPLOT.
         """
         name = colorname.strip().lower()
+        available_color = True
 
-        if name == "white":       idx = 0  # our definition of bgcolor
-        if name == "black":       idx = 1  # our definition of fgcolor
-        if name == "red":         idx = 2
-        if name == "green":       idx = 3
-        if name == "blue":        idx = 4
-        if name == "cyan":        idx = 5
-        if name == "magenta":     idx = 6
-        if name == "yellow":      idx = 7
-        if name == "orange":      idx = 8
-        if name == "yellowgreen": idx = 9
-        if name == "emerald":     idx = 10
-        if name == "skyblue":     idx = 11
-        if name == "purple":      idx = 12
-        if name == "pink":        idx = 13
-        if name == "gray":        idx = 14
-        if name == "lightgray":   idx = 15
+        if   name == "white":       idx =  0  # our definition of bgcolor
+        elif name == "black":       idx =  1  # our definition of fgcolor
+        elif name == "red":         idx =  2
+        elif name == "green":       idx =  3
+        elif name == "blue":        idx =  4
+        elif name == "cyan":        idx =  5
+        elif name == "magenta":     idx =  6
+        elif name == "yellow":      idx =  7
+        elif name == "orange":      idx =  8
+        elif name == "yellowgreen": idx =  9
+        elif name == "emerald":     idx = 10
+        elif name == "skyblue":     idx = 11
+        elif name == "purple":      idx = 12
+        elif name == "pink":        idx = 13
+        elif name == "gray":        idx = 14
+        elif name == "lightgray":   idx = 15
+        else: available_color = False
 
-        return idx
+        if (available_color):
+            return idx
+        else:
+            raise ValueError("Unavailable colour name.")
 
-    def list_colornames(self):
+    @classmethod
+    def list_colornames(cls):
         """\
         list the available color names.
         """
@@ -636,21 +642,28 @@ class plotter2:
         print " (15) lightgray"
         print "---------------------------------"
 
-    def get_linestyleindex(self, fstyle):
+    @classmethod
+    def get_linestyleindex(cls, fstyle):
         """\
-        (for internal use)
         convert the given line style into style index used in PGPLOT.
         """
         style = fstyle.strip().lower()
-        if style == "solid":               idx = 1
-        if style == "dashed":              idx = 2
-        if style == "dash-dotted":         idx = 3
-        if style == "dotted":              idx = 4
-        if style == "dash-dot-dot-dotted": idx = 5
+        available_style = True
         
-        return idx
+        if   style == "solid":               idx = 1
+        elif style == "dashed":              idx = 2
+        elif style == "dash-dotted":         idx = 3
+        elif style == "dotted":              idx = 4
+        elif style == "dash-dot-dot-dotted": idx = 5
+        else: available_style = False
+
+        if (available_style):
+            return idx
+        else:
+            raise ValueError("Unavailable line style.")
     
-    def list_linestyles(self):
+    @classmethod
+    def list_linestyles(cls):
         """\
         list the available line styles.
         """
@@ -662,20 +675,27 @@ class plotter2:
         print "  (5) dash-dot-dot-dotted"
         print "------------------------------"
 
-    def get_fillstyleindex(self, fstyle):
+    @classmethod
+    def get_fillstyleindex(cls, fstyle):
         """\
-        (for internal use)
         convert the given fill style into style index used in PGPLOT.
         """
         style = fstyle.strip().lower()
-        if style == "solid":        idx = 1
-        if style == "outline":      idx = 2
-        if style == "hatched":      idx = 3
-        if style == "crosshatched": idx = 4
+        available_style = True
         
-        return idx
+        if   style == "solid":        idx = 1
+        elif style == "outline":      idx = 2
+        elif style == "hatched":      idx = 3
+        elif style == "crosshatched": idx = 4
+        else: available_style = False
+
+        if (available_style):
+            return idx
+        else:
+            raise ValueError("Unavailable fill style.")
     
-    def list_fillstyles(self):
+    @classmethod
+    def list_fillstyles(cls):
         """\
         list the available fill styles.
         """
