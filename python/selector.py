@@ -215,10 +215,15 @@ class selector(_selector):
                 yield 'SRCNAME == pattern(\'%s\')'%(s)
             elif re.match('^<=?[0-9]*$', s):
                 #print '"%s" is ID selection using < or <='%(s)
+                pass   
             elif re.match('^>=?[0-9]*$', s):
                 #print '"%s" is ID selection using > or >='%(s)
+                pass
             elif re.match('^[0-9]+~[0-9]+$', s):
                 #print '"%s" is ID selection using ~'%(s)
+                pass
+            elif s.isdigit():
+                yield 'FIELDNAME == regex(\'.+__%s$\')'%(s)
             else:
                 #print '"%s" is exact match'%(s)
                 yield 'SRCNAME == pattern(\'%s\')'%(s)
