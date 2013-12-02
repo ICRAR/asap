@@ -1,4 +1,5 @@
 import re
+import string
 from asap._asap import selector as _selector, srctype
 from asap.utils import unique, _to_list
 
@@ -199,6 +200,29 @@ class selector(_selector):
         else:
             raise TypeError('Unknown row number type. Use lists of integers.')
 
+    def set_msselection_field(self, selection):
+        """
+        """
+        selection_list =  map(string.strip, selection.split(','))
+        query_list = list(self.generate_query(selection_list))
+        query = 'SELECT FROM $1 WHERE ' + ' || '.join(query_list)
+        self._settaql(query)
+
+    def generate_query(self, selection_list):
+        for s in selection_list:
+            if re.match('.*\*.*', s):
+                #print '"%s" is pattern match using *'%(s)
+                yield 'SRCNAME == pattern(\'%s\')'%(s)
+            elif re.match('^<=?[0-9]*$', s):
+                #print '"%s" is ID selection using < or <='%(s)
+            elif re.match('^>=?[0-9]*$', s):
+                #print '"%s" is ID selection using > or >='%(s)
+            elif re.match('^[0-9]+~[0-9]+$', s):
+                #print '"%s" is ID selection using ~'%(s)
+            else:
+                #print '"%s" is exact match'%(s)
+                yield 'SRCNAME == pattern(\'%s\')'%(s)
+        
     def get_scans(self):
         return list(self._getscans())
     def get_cycles(self):
