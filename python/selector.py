@@ -210,23 +210,14 @@ class selector(_selector):
 
     def generate_query(self, selection_list):
         for s in selection_list:
-            if re.match('.*\*.*', s):
-                #print '"%s" is pattern match using *'%(s)
-                yield 'SRCNAME == pattern(\'%s\')'%(s)
-            elif re.match('^<=?[0-9]*$', s):
+            if s.isdigit() or re.match('^[<>]=?[0-9]*$', s) or \
+                    re.match('^[0-9]+~[0-9]+$', s):
                 #print '"%s" is ID selection using < or <='%(s)
-                pass   
-            elif re.match('^>=?[0-9]*$', s):
-                #print '"%s" is ID selection using > or >='%(s)
-                pass
-            elif re.match('^[0-9]+~[0-9]+$', s):
-                #print '"%s" is ID selection using ~'%(s)
-                pass
-            elif s.isdigit():
-                yield 'FIELDNAME == regex(\'.+__%s$\')'%(s)
+                a = FieldIdRegexGenerator(s)
+                yield '(%s)'%(a.get_regex())
             else:
-                #print '"%s" is exact match'%(s)
-                yield 'SRCNAME == pattern(\'%s\')'%(s)
+                #print '"%s" is UNIX style pattern match'%(s)
+                yield '(SRCNAME == pattern(\'%s\'))'%(s)
         
     def get_scans(self):
         return list(self._getscans())
@@ -303,3 +294,100 @@ class selector(_selector):
             elif len(qs):
                 union.set_query(qs)
         return union
+
+class FieldIdRegexGenerator(object):
+    def __init__(self, pattern):
+        if pattern.isdigit():
+            self.regex = 'FIELDNAME == regex(\'.+__%s$\')'%(pattern)
+        else:
+            self.regex = None
+            ineq = None
+            if pattern.find('<') >= 0:
+                ineq = '<'
+                s = pattern.strip().lstrip(ineq).lstrip('=')
+                if not s.isdigit():
+                    raise RuntimeError('Invalid syntax: %s'%(pattern))
+                self.id = int(s) + (-1 if pattern.find('=') < 0 else 0)
+                self.template = string.Template('FIELDNAME == regex(\'.+__${reg}$\')')
+            elif pattern.find('>') >= 0:
+                ineq = '>'
+                s = pattern.strip().lstrip(ineq).lstrip('=')
+                if not s.isdigit():
+                    raise RuntimeError('Invalid syntax: %s'%(pattern))
+                self.id = int(s) + (-1 if pattern.find('=') >= 0 else 0)
+                self.template = string.Template('FIELDNAME == regex(\'.+__[0-9]+$\') && FIELDNAME != regex(\'.+__${reg}$\')')
+            elif pattern.find('~') >= 0:
+                s = map(string.strip, pattern.split('~'))
+                if len(s) == 2 and s[0].isdigit() and s[1].isdigit():
+                    self.id = [int(s[0])-1,int(s[1])]
+                else:
+                    raise RuntimeError('Invalid syntax: %s'%(pattern))
+                self.template = string.Template('FIELDNAME == regex(\'.+__${reg}$\') && FIELDNAME != regex(\'.+__${optreg}$\')')
+            else:
+                raise RuntimeError('Invalid syntax: %s'%(pattern))
+            #print 'self.id=',self.id
+
+    def get_regex(self):
+        if self.regex is not None:
+            # 'X'
+            return self.regex
+        elif isinstance(self.id, list):
+            # 'X~Y'
+            return self.template.safe_substitute(reg=self.__compile(self.id[1]),
+                                                 optreg=self.__compile(self.id[0]))
+        else:
+            # '<(=)X' or '>(=)X'
+            return self.template.safe_substitute(reg=self.__compile(self.id))
+
+    def __compile(self, idx):
+        pattern = ''
+        if idx >= 0:
+            if idx < 10:
+                num_digits = 1
+            else:
+                num_digits = int(math.log10(idx)) + 1
+            numerics = []
+            modulo = 10
+            divider = 1
+            for i in xrange(num_digits):
+                numerics.append(int((idx % modulo) / divider))
+                modulo *= 10
+                divider *= 10
+            #print 'numerics=',numerics
+            if num_digits == 1:
+                if numerics[0] == 0:
+                    pattern = '0'
+                else:
+                    pattern = '[0-%s]'%(numerics[0])
+            elif num_digits == 2:
+                pattern_list = ['[0-9]']
+                pattern_list.append('[1-%s][0-9]'%(numerics[1]-1))
+                if numerics[0] == 0:
+                    pattern_list.append('%s%s'%(numerics[1],numerics[0]))
+                else:
+                    pattern_list.append('%s[0-%s]'%(numerics[1],numerics[0]))
+                pattern = '(%s)'%('|'.join(pattern_list))
+            elif num_digits == 3:
+                pattern_list = ['[0-9]','[1-9][0-9]']
+                if numerics[2] == 2:
+                    pattern_list.append('1[0-9][0-9]')
+                elif numerics[2] > 2:
+                    pattern_list.append('[1-%s][0-9][0-9]'%(numerics[2]-1))
+                if numerics[1] == 0:
+                    if numerics[0] == 0:
+                        pattern_list.append('%s00'%(numerics[2]))
+                    else:
+                        pattern_list.append('%s0[0-%s]'%(numerics[2],numerics[0]))
+                else:
+                    pattern_list.append('%s[0-%s][0-9]'%(numerics[2],numerics[1]-1))
+                    if numerics[0] == 0:
+                        pattern_list.append('%s%s%s'%(numerics[2],numerics[1],numerics[0]))
+                    else:
+                        pattern_list.append('%s%s[0-%s]'%(numerics[2],numerics[1],numerics[0]))
+                pattern = '(%s)'%('|'.join(pattern_list))
+            else:
+                raise RuntimeError('ID > 999 is not supported')
+                pattern = ''
+        else:
+            raise RuntimeError('ID must be >= 0')
+        return pattern
