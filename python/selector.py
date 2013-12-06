@@ -360,17 +360,9 @@ class FieldIdRegexGenerator(object):
     def __compile(self, idx):
         pattern = ''
         if idx >= 0:
-            if idx < 10:
-                num_digits = 1
-            else:
-                num_digits = int(math.log10(idx)) + 1
-            numerics = []
-            modulo = 10
-            divider = 1
-            for i in xrange(num_digits):
-                numerics.append(int((idx % modulo) / divider))
-                modulo *= 10
-                divider *= 10
+            numerics = map(int,list(str(idx)))
+            #numerics.reverse()
+            num_digits = len(numerics)
             #print 'numerics=',numerics
             if num_digits == 1:
                 if numerics[0] == 0:
@@ -378,34 +370,48 @@ class FieldIdRegexGenerator(object):
                 else:
                     pattern = '[0-%s]'%(numerics[0])
             elif num_digits == 2:
-                pattern_list = ['[0-9]']
-                pattern_list.append('[1-%s][0-9]'%(numerics[1]-1))
-                if numerics[0] == 0:
-                    pattern_list.append('%s%s'%(numerics[1],numerics[0]))
-                else:
-                    pattern_list.append('%s[0-%s]'%(numerics[1],numerics[0]))
-                pattern = '(%s)'%('|'.join(pattern_list))
+                pattern = '(%s)'%('|'.join(
+                        list(self.__gen_two_digit_pattern(numerics))))
             elif num_digits == 3:
-                pattern_list = ['[0-9]','[1-9][0-9]']
-                if numerics[2] == 2:
-                    pattern_list.append('1[0-9][0-9]')
-                elif numerics[2] > 2:
-                    pattern_list.append('[1-%s][0-9][0-9]'%(numerics[2]-1))
-                if numerics[1] == 0:
-                    if numerics[0] == 0:
-                        pattern_list.append('%s00'%(numerics[2]))
-                    else:
-                        pattern_list.append('%s0[0-%s]'%(numerics[2],numerics[0]))
-                else:
-                    pattern_list.append('%s[0-%s][0-9]'%(numerics[2],numerics[1]-1))
-                    if numerics[0] == 0:
-                        pattern_list.append('%s%s%s'%(numerics[2],numerics[1],numerics[0]))
-                    else:
-                        pattern_list.append('%s%s[0-%s]'%(numerics[2],numerics[1],numerics[0]))
-                pattern = '(%s)'%('|'.join(pattern_list))
+                pattern = '(%s)'%('|'.join(
+                        list(self.__gen_three_digit_pattern(numerics))))
             else:
                 raise RuntimeError('ID > 999 is not supported')
-                pattern = ''
         else:
             raise RuntimeError('ID must be >= 0')
         return pattern
+
+    def __gen_two_digit_pattern(self, numerics):
+        assert len(numerics) == 2
+        yield '[0-9]'
+        if numerics[0] == 2:
+            yield '1[0-9]'
+        elif numerics[0] > 2:
+            yield '[1-%s][0-9]'%(numerics[0]-1)
+        if numerics[1] == 0:
+            yield '%s%s'%(numerics[0],numerics[1])
+        else:
+            yield '%s[0-%s]'%(numerics[0],numerics[1])
+
+    def __gen_three_digit_pattern(self, numerics):
+        assert len(numerics) == 3
+        yield '[0-9]'
+        yield '[1-9][0-9]'
+        if numerics[0] == 2:
+            yield '1[0-9][0-9]'
+        elif numerics[0] > 2:
+            yield '[1-%s][0-9][0-9]'%(numerics[0]-1)
+        if numerics[1] == 0:
+            if numerics[2] == 0:
+                yield '%s00'%(numerics[0])
+            else:
+                yield '%s0[0-%s]'%(numerics[0],numerics[2])
+        else:
+            if numerics[1] > 1:
+                yield '%s[0-%s][0-9]'%(numerics[0],numerics[1]-1)
+            elif numerics[1] == 1:
+                yield '%s0[0-9]'%(numerics[0])
+            if numerics[0] == 0:
+                yield '%s%s%s'%(numerics[0],numerics[1],numerics[2])
+            else:
+                yield '%s%s[0-%s]'%(numerics[0],numerics[1],numerics[2])
