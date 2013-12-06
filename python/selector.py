@@ -203,11 +203,28 @@ class selector(_selector):
 
     def set_msselection_field(self, selection):
         """
+        Set a field selection in msselection syntax. The msselection
+        suppports the following syntax:
+
+        pattern match:
+            - UNIX style pattern match for source name using '*'
+              (compatible with set_name)
+
+        field id selection:
+            - simple number in string ('0', '1', etc.)
+            - range specification using '~' ('0~1', etc.)
+            - range specification using '>' or '<' in combination
+              with '=' ('>=1', '<3', etc.)
+
+        comma separated multiple selection:
+            - selections can be combined by using ',' ('0,>1',
+              'mysource*,2~4', etc.)
         """
         selection_list =  map(string.strip, selection.split(','))
         query_list = list(self.generate_query(selection_list))
-        query = 'SELECT FROM $1 WHERE ' + ' || '.join(query_list)
-        self._settaql(query)
+        if len(query_list) > 0:
+            query = 'SELECT FROM $1 WHERE ' + ' || '.join(query_list)
+            self._settaql(query)
 
     def generate_query(self, selection_list):
         for s in selection_list:
@@ -216,7 +233,7 @@ class selector(_selector):
                 #print '"%s" is ID selection using < or <='%(s)
                 a = FieldIdRegexGenerator(s)
                 yield '(%s)'%(a.get_regex())
-            else:
+            elif len(s) > 0:
                 #print '"%s" is UNIX style pattern match'%(s)
                 yield '(SRCNAME == pattern(\'%s\'))'%(s)
         
