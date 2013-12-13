@@ -3364,17 +3364,19 @@ double Scantable::getChebyshevPolynomial(int n, double x) {
   } else if (n == 1) {
     return x;
   } else {
-    double res = 0.0;
-    for (int m = 0; m <= n/2; ++m) {
-      double c = 1.0;
-      if (m > 0) {
-	for (int i = 1; i <= m; ++i) {
-	  c *= (double)(n-2*m+i)/(double)i;
-	}
+    double res[n+1];
+    for (int i = 0; i < n+1; ++i) {
+      double res0 = 0.0;
+      if (i == 0) {
+	res0 = 1.0;
+      } else if (i == 1) {
+	res0 = x;
+      } else {
+	res0 = 2.0 * x * res[i-1] - res[i-2];
       }
-      res += (m%2 == 0 ? 1.0 : -1.0)*(double)n/(double)(n-m)*pow(2.0*x, (double)(n-2*m))/2.0*c;
+      res[i] = res0;
     }
-    return res;
+    return res[n];
   }
 }
 
