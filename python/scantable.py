@@ -300,6 +300,72 @@ def parse_fitresult(sres):
 
     return res
 
+def is_number(s):
+    s = s.strip()
+    res = True
+    try:
+        a = float(s)
+        res = True
+    except:
+        res = False
+    finally:
+        return res
+
+def is_frequency(s):
+    s = s.strip()
+    return (s[-2:].lower() == "hz")
+
+def get_freq_by_string(s):
+    if not is_frequency(s):
+        raise RuntimeError("Invalid input string.")
+    
+    prefix_list = ["a", "f", "p", "n", "u", "m", ".", "k", "M", "G", "T", "P", "E"]
+    factor_list = [1e-18, 1e-15, 1e-12, 1e-9, 1e-6, 1e-3, 1.0, 1e+3, 1e+6, 1e+9, 1e+12, 1e+15, 1e+18]
+
+    s = s.strip()
+    factor = 1.0
+    
+    prefix = s[-3:-2]
+    if is_number(prefix):
+        res = float(s[:-2])
+    else:
+        res = float(s[:-3]) * factor_list[prefix_list.index(prefix)]
+
+    return res
+
+def is_velocity(s):
+    s = s.strip()
+    return (s[-3:].lower() == "m/s")
+
+def get_velocity_by_string(s):
+    if not is_velocity(s):
+        raise RuntimeError("Invalid input string.")
+
+    prefix_list = [".", "k"]
+    factor_list = [1e-3, 1.0]
+
+    s = s.strip()
+    factor = 1.0
+
+    prefix = s[-4:-3]
+    if is_number(prefix):
+        res = float(s[:-3]) * 1e-3
+    else:
+        res = float(s[:-4]) * factor_list[prefix_list.index(prefix)]
+
+    return res # in km/s
+
+def get_frequency_by_velocity(restfreq, vel):
+    # vel is in unit of km/s
+
+    # speed of light
+    vel_c = 299792.458
+
+    import math
+    r = vel / vel_c
+    return restfreq * math.sqrt((1.0 - r) / (1.0 + r))
+
+
 class scantable(Scantable):
     """\
         The ASAP container for scans (single-dish data).
@@ -1622,6 +1688,345 @@ class scantable(Scantable):
                 break
         return istart,iend
 
+    @asaplog_post_dec
+    def parse_spw_selection(self, selectstring, restfreq=None, frame=None, doppler=None):
+        """
+        Parse MS type spw/channel selection syntax. 
+
+        Parameters:
+            selectstring : A string expression of spw and channel selection.
+                           Comma-separated expressions mean different spw -
+                           channel combinations. Spws and channel selections
+                           are partitioned by a colon ':'. In a single
+                           selection expression, you can put multiple values
+                           separated by semicolons ';'. Both for spw and
+                           channel selection, allowed cases include single
+                           value, blank('') or asterisk('*') to specify all
+                           available values, two values connected with a
+                           tilde ('~') to specify an inclusive range. Unit
+                           strings for frequency or velocity can be added to
+                           the tilde-connected values. For channel selection
+                           expression, placing a '<' or a '>' is possible to
+                           specify a semi-infinite interval as well.
+
+                     examples:
+                           '' or '*'   = all spws (all channels)
+                           '<2,4~6,9'  = Spws 0,1,4,5,6,9 (all channels)
+                           '3:3~45;60' = channels 3 to 45 and 60 in spw 3
+                           '0~1:2~6,8' = channels 2 to 6 in spws 0,1, and
+                                         all channels in spw8
+                           '1.3GHz~1.5GHz' = all spws that fall in or have
+                                             at least some overwrap with 
+                                             frequency range between 1.3GHz
+                                             and 1.5GHz.
+                           '1.3GHz~1.5GHz:1.3GHz~1.5GHz' = channels that
+                                                           fall between the
+                                                           specified frequency
+                                                           range in spws that 
+                                                           fall in or have
+                                                           overwrap with the 
+                                                           specified frequency
+                                                           range.
+                           '1:-200km/s~250km/s' = channels that fall between
+                                                  the specified velocity range 
+                                                  in spw 1.
+        Returns:
+        A dictionary of selected (valid) spw and masklist pairs,
+        e.g. {'0': [[50,250],[350,462]], '2': [[100,400],[550,974]]}
+        """
+        if not isinstance(selectstring, str):
+            asaplog.post()
+            asaplog.push("Expression of spw/channel selection must be a string.")
+            asaplog.post("ERROR")
+
+        orig_unit = self.get_unit()
+        self.set_unit('channel')
+        
+        orig_restfreq = self.get_restfreqs()
+        orig_restfreq_list = []
+        for i in orig_restfreq.keys():
+            if len(orig_restfreq[i]) == 1:
+                orig_restfreq_list.append(orig_restfreq[i][0])
+            else:
+                orig_restfreq_list.append(orig_restfreq[i])
+        
+        orig_coord    = self._getcoordinfo()
+        orig_frame    = orig_coord[1]
+        orig_doppler  = orig_coord[2]
+        
+        if restfreq is None: restfreq = orig_restfreq_list
+        if frame    is None: frame    = orig_frame
+        if doppler  is None: doppler  = orig_doppler
+
+        self.set_restfreqs(restfreq)
+        self.set_freqframe(frame)
+        self.set_doppler(doppler)
+        
+        valid_ifs = self.getifnos()
+
+        comma_sep = selectstring.split(",")
+        res = {}
+
+        for cms_elem in comma_sep:
+            if (cms_elem.strip() == ""): continue
+            
+            colon_sep = cms_elem.split(":")
+            
+            if (len(colon_sep) > 2):
+                raise RuntimeError("Invalid selection expression: more than two colons!")
+            
+            # parse spw expression and store result in spw_list.
+            # allowed cases include '', '*', 'a', '<a', '>a', 'a~b',
+            # 'a*Hz~b*Hz' (where * can be '', 'k', 'M', 'G' etc.),
+            # 'a*m/s~b*m/s' (where * can be '' or 'k') and also
+            # several of the above expressions connected with ';'.
+            
+            spw_list = []
+
+            semicolon_sep = colon_sep[0].split(";")
+            
+            for scs_elem in semicolon_sep:
+                scs_elem = scs_elem.strip()
+                
+                lt_sep = scs_elem.split("<")
+                gt_sep = scs_elem.split(">")
+                ti_sep = scs_elem.split("~")
+                
+                lt_sep_length = len(lt_sep)
+                gt_sep_length = len(gt_sep)
+                ti_sep_length = len(ti_sep)
+                
+                len_product = lt_sep_length * gt_sep_length * ti_sep_length
+
+                if (len_product > 2):
+                    # '<', '>' and '~' must not coexist in a single spw expression
+                    
+                    raise RuntimeError("Invalid spw selection.")
+                
+                elif (len_product == 1):
+                    # '', '*', or single spw number.
+                    
+                    if (scs_elem == "") or (scs_elem == "*"):
+                        spw_list = valid_ifs[:] # deep copy
+                    
+                    else: # single number
+                        try:
+                            #checking if the given number is valid for spw ID
+                            idx = valid_ifs.index(int(scs_elem))
+                            spw_list.append(valid_ifs[idx])
+                        
+                        except:
+                            asaplog.post()
+                            asaplog.push("Wrong spw number (" + scs_elem + ") given. ignored.")
+                            asaplog.post("WARNING")
+                
+                else: # (len_product == 2)
+                    # namely, one of '<', '>' or '~' appers just once.
+                    
+                    if (lt_sep_length == 2): # '<a'
+                        if is_number(lt_sep[1]):
+                            for i in valid_ifs:
+                                if (i < float(lt_sep[1])):
+                                    spw_list.append(i)
+                        
+                        else:
+                            RuntimeError("Invalid spw selection.")
+                        
+                    elif (gt_sep_length == 2): # '>a'
+                        if is_number(gt_sep[1]):
+                            for i in valid_ifs:
+                                if (i > float(gt_sep[1])):
+                                    spw_list.append(i)
+                        
+                        else:
+                            RuntimeError("Invalid spw selection.")
+                        
+                    else: # (ti_sep_length == 2) where both boundaries inclusive
+                        expr0 = ti_sep[0].strip()
+                        expr1 = ti_sep[1].strip()
+
+                        if is_number(expr0) and is_number(expr1):
+                            # 'a~b'
+                            expr_pmin = min(float(expr0), float(expr1))
+                            expr_pmax = max(float(expr0), float(expr1))
+                            for i in valid_ifs:
+                                if (expr_pmin <= i) and (i <= expr_pmax):
+                                    spw_list.append(i)
+                            
+                        elif is_frequency(expr0) and is_frequency(expr1):
+                            # 'a*Hz~b*Hz'
+                            expr_f0 = get_freq_by_string(expr0)
+                            expr_f1 = get_freq_by_string(expr1)
+
+                            for coord in self._get_coordinate_list():
+                                expr_p0 = coord['coord'].to_pixel(expr_f0)
+                                expr_p1 = coord['coord'].to_pixel(expr_f1)
+                                expr_pmin = min(expr_p0, expr_p1)
+                                expr_pmax = max(expr_p0, expr_p1)
+                                
+                                spw = coord['if']
+                                pmin = 0.0
+                                pmax = float(self.nchan(spw) - 1)
+                                
+                                if ((expr_pmax - pmin)*(expr_pmin - pmax) <= 0.0):
+                                    spw_list.append(spw)
+                                
+                        elif is_velocity(expr0) and is_velocity(expr1):
+                            # 'a*m/s~b*m/s'
+                            expr_v0 = get_velocity_by_string(expr0)
+                            expr_v1 = get_velocity_by_string(expr1)
+                            expr_vmin = min(expr_v0, expr_v1)
+                            expr_vmax = max(expr_v0, expr_v1)
+
+                            for coord in self._get_coordinate_list():
+                                spw = coord['if']
+                                
+                                pmin = 0.0
+                                pmax = float(self.nchan(spw) - 1)
+                                
+                                vel0 = coord['coord'].to_velocity(pmin)
+                                vel1 = coord['coord'].to_velocity(pmax)
+                                
+                                vmin = min(vel0, vel1)
+                                vmax = max(vel0, vel1)
+
+                                if ((expr_vmax - vmin)*(expr_vmin - vmax) <= 0.0):
+                                    spw_list.append(spw)
+                            
+                        else:
+                            # cases such as 'aGHz~bkm/s' are not allowed now
+                            raise RuntimeError("Invalid spw selection.")
+
+            # parse channel expression and store the result in crange_list.
+            # allowed cases include '', 'a~b', 'a*Hz~b*Hz' (where * can be
+            # '', 'k', 'M', 'G' etc.), 'a*m/s~b*m/s' (where * can be '' or 'k')
+            # and also several of the above expressions connected with ';'.
+            
+            for spw in spw_list:
+                pmin = 0.0
+                pmax = float(self.nchan(spw) - 1)
+                
+                if (len(colon_sep) == 1):
+                    # no expression for channel selection, 
+                    # which means all channels are to be selected.
+                    crange_list = [[pmin, pmax]]
+                
+                else: # (len(colon_sep) == 2)
+                    crange_list = []
+                    
+                    found = False
+                    for i in self._get_coordinate_list():
+                        if (i['if'] == spw):
+                            coord = i['coord']
+                            found = True
+                            break
+
+                    if not found:
+                        raise RuntimeError("Invalid spw value.")
+                    
+                    semicolon_sep = colon_sep[1].split(";")
+                    for scs_elem in semicolon_sep:
+                        scs_elem = scs_elem.strip()
+
+                        ti_sep = scs_elem.split("~")
+                        ti_sep_length = len(ti_sep)
+
+                        if (ti_sep_length > 2):
+                            raise RuntimeError("Invalid channel selection.")
+                        
+                        elif (ti_sep_length == 1):
+                            if (scs_elem == "") or (scs_elem == "*"):
+                                # '' and '*' for all channels
+                                crange_list = [[pmin, pmax]]
+                                break
+                            elif (is_number(scs_elem)):
+                                # single channel given
+                                crange_list.append([float(scs_elem), float(scs_elem)])
+                            else:
+                                raise RuntimeError("Invalid channel selection.")
+
+                        else: #(ti_sep_length == 2)
+                            expr0 = ti_sep[0].strip()
+                            expr1 = ti_sep[1].strip()
+
+                            if is_number(expr0) and is_number(expr1):
+                                # 'a~b'
+                                expr_pmin = min(float(expr0), float(expr1))
+                                expr_pmax = max(float(expr0), float(expr1))
+
+                            elif is_frequency(expr0) and is_frequency(expr1):
+                                # 'a*Hz~b*Hz'
+                                expr_p0 = coord.to_pixel(get_freq_by_string(expr0))
+                                expr_p1 = coord.to_pixel(get_freq_by_string(expr1))
+                                expr_pmin = min(expr_p0, expr_p1)
+                                expr_pmax = max(expr_p0, expr_p1)
+
+                            elif is_velocity(expr0) and is_velocity(expr1):
+                                # 'a*m/s~b*m/s'
+                                restf = self.get_restfreqs().values()[0][0]
+                                expr_f0 = get_frequency_by_velocity(restf, get_velocity_by_string(expr0))
+                                expr_f1 = get_frequency_by_velocity(restf, get_velocity_by_string(expr1))
+                                expr_p0 = coord.to_pixel(expr_f0)
+                                expr_p1 = coord.to_pixel(expr_f1)
+                                expr_pmin = min(expr_p0, expr_p1)
+                                expr_pmax = max(expr_p0, expr_p1)
+                            
+                            else:
+                                # cases such as 'aGHz~bkm/s' are not allowed now
+                                raise RuntimeError("Invalid channel selection.")
+
+                            cmin = max(pmin, expr_pmin)
+                            cmax = min(pmax, expr_pmax)
+                            # if the given range of channel selection has overwrap with
+                            # that of current spw, output the overwrap area.
+                            if (cmin <= cmax):
+                                cmin = float(int(cmin + 0.5))
+                                cmax = float(int(cmax + 0.5))
+                                crange_list.append([cmin, cmax])
+
+                    if (len(crange_list) == 0):
+                        crange_list.append([])
+
+                if res.has_key(spw):
+                    res[spw].extend(crange_list)
+                else:
+                    res[spw] = crange_list
+
+        # restore original values
+        self.set_restfreqs(orig_restfreq_list)
+        self.set_freqframe(orig_frame)
+        self.set_doppler(orig_doppler)
+        self.set_unit(orig_unit)
+        
+        return res
+
+    @asaplog_post_dec
+    def get_first_rowno_by_if(self, ifno):
+        found = False
+        for irow in xrange(self.nrow()):
+            if (self.getif(irow) == ifno):
+                res = irow
+                found = True
+                break
+
+        if not found: raise RuntimeError("Invalid IF value.")
+        
+        return res
+
+    @asaplog_post_dec
+    def _get_coordinate_list(self):
+        res = []
+        spws = self.getifnos()
+        for spw in spws:
+            elem = {}
+            elem['if']    = spw
+            elem['coord'] = self.get_coordinate(self.get_first_rowno_by_if(spw))
+            res.append(elem)
+
+        return res
+    
+##################################
+    
     @asaplog_post_dec
     def parse_maskexpr(self, maskstring):
         """
