@@ -315,45 +315,52 @@ def is_frequency(s):
     s = s.strip()
     return (s[-2:].lower() == "hz")
 
-def get_freq_by_string(s):
-    if not is_frequency(s):
+def get_freq_by_string(s1, s2):
+    if not (is_number(s1) and is_frequency(s2)):
         raise RuntimeError("Invalid input string.")
     
     prefix_list = ["a", "f", "p", "n", "u", "m", ".", "k", "M", "G", "T", "P", "E"]
     factor_list = [1e-18, 1e-15, 1e-12, 1e-9, 1e-6, 1e-3, 1.0, 1e+3, 1e+6, 1e+9, 1e+12, 1e+15, 1e+18]
 
-    s = s.strip()
-    factor = 1.0
+    s1 = s1.strip()
+    s2 = s2.strip()
     
-    prefix = s[-3:-2]
+    prefix = s2[-3:-2]
     if is_number(prefix):
-        res = float(s[:-2])
+        res1 = float(s1)
+        res2 = float(s2[:-2])
     else:
-        res = float(s[:-3]) * factor_list[prefix_list.index(prefix)]
+        factor = factor_list[prefix_list.index(prefix)]
+        res1 = float(s1) * factor
+        res2 = float(s2[:-3]) * factor
 
-    return res
+    return (res1, res2)
 
 def is_velocity(s):
     s = s.strip()
     return (s[-3:].lower() == "m/s")
 
-def get_velocity_by_string(s):
-    if not is_velocity(s):
+def get_velocity_by_string(s1, s2):
+    if not (is_number(s1) and is_velocity(s2)):
         raise RuntimeError("Invalid input string.")
 
+    # note that the default velocity unit is km/s
     prefix_list = [".", "k"]
     factor_list = [1e-3, 1.0]
 
-    s = s.strip()
-    factor = 1.0
+    s1 = s1.strip()
+    s2 = s2.strip()
 
-    prefix = s[-4:-3]
-    if is_number(prefix):
-        res = float(s[:-3]) * 1e-3
+    prefix = s2[-4:-3]
+    if is_number(prefix): # in case velocity unit m/s
+        res1 = float(s1) * 1e-3
+        res2 = float(s2[:-3]) * 1e-3
     else:
-        res = float(s[:-4]) * factor_list[prefix_list.index(prefix)]
+        factor = factor_list[prefix_list.index(prefix)]
+        res1 = float(s1) * factor
+        res2 = float(s2[:-4]) * factor
 
-    return res # in km/s
+    return (res1, res2)
 
 def get_frequency_by_velocity(restfreq, vel):
     # vel is in unit of km/s
@@ -1715,21 +1722,19 @@ class scantable(Scantable):
                            '3:3~45;60' = channels 3 to 45 and 60 in spw 3
                            '0~1:2~6,8' = channels 2 to 6 in spws 0,1, and
                                          all channels in spw8
-                           '1.3GHz~1.5GHz' = all spws that fall in or have
-                                             at least some overwrap with 
-                                             frequency range between 1.3GHz
-                                             and 1.5GHz.
-                           '1.3GHz~1.5GHz:1.3GHz~1.5GHz' = channels that
-                                                           fall between the
-                                                           specified frequency
-                                                           range in spws that 
-                                                           fall in or have
-                                                           overwrap with the 
-                                                           specified frequency
-                                                           range.
-                           '1:-200km/s~250km/s' = channels that fall between
-                                                  the specified velocity range 
-                                                  in spw 1.
+                           '1.3~1.5GHz' = all spws that fall in or have at
+                                          least some overwrap with frequency
+                                          range between 1.3GHz and 1.5GHz.
+                           '1.3~1.5GHz:1.3~1.5GHz' = channels that fall
+                                                     between the specified
+                                                     frequency range in spws
+                                                     that fall in or have
+                                                     overwrap with the
+                                                     specified frequency
+                                                     range.
+                           '1:-200~250km/s' = channels that fall between the
+                                              specified velocity range in
+                                              spw 1.
         Returns:
         A dictionary of selected (valid) spw and masklist pairs,
         e.g. {'0': [[50,250],[350,462]], '2': [[100,400],[550,974]]}
@@ -1777,8 +1782,8 @@ class scantable(Scantable):
             
             # parse spw expression and store result in spw_list.
             # allowed cases include '', '*', 'a', '<a', '>a', 'a~b',
-            # 'a*Hz~b*Hz' (where * can be '', 'k', 'M', 'G' etc.),
-            # 'a*m/s~b*m/s' (where * can be '' or 'k') and also
+            # 'a~b*Hz' (where * can be '', 'k', 'M', 'G' etc.),
+            # 'a~b*m/s' (where * can be '' or 'k') and also
             # several of the above expressions connected with ';'.
             
             spw_list = []
@@ -1853,10 +1858,9 @@ class scantable(Scantable):
                                 if (expr_pmin <= i) and (i <= expr_pmax):
                                     spw_list.append(i)
                             
-                        elif is_frequency(expr0) and is_frequency(expr1):
-                            # 'a*Hz~b*Hz'
-                            expr_f0 = get_freq_by_string(expr0)
-                            expr_f1 = get_freq_by_string(expr1)
+                        elif is_number(expr0) and is_frequency(expr1):
+                            # 'a~b*Hz'
+                            (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
 
                             for coord in self._get_coordinate_list():
                                 expr_p0 = coord['coord'].to_pixel(expr_f0)
@@ -1871,10 +1875,9 @@ class scantable(Scantable):
                                 if ((expr_pmax - pmin)*(expr_pmin - pmax) <= 0.0):
                                     spw_list.append(spw)
                                 
-                        elif is_velocity(expr0) and is_velocity(expr1):
-                            # 'a*m/s~b*m/s'
-                            expr_v0 = get_velocity_by_string(expr0)
-                            expr_v1 = get_velocity_by_string(expr1)
+                        elif is_number(expr0) and is_velocity(expr1):
+                            # 'a~b*m/s'
+                            (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
                             expr_vmin = min(expr_v0, expr_v1)
                             expr_vmax = max(expr_v0, expr_v1)
 
@@ -1954,18 +1957,20 @@ class scantable(Scantable):
                                 expr_pmin = min(float(expr0), float(expr1))
                                 expr_pmax = max(float(expr0), float(expr1))
 
-                            elif is_frequency(expr0) and is_frequency(expr1):
-                                # 'a*Hz~b*Hz'
-                                expr_p0 = coord.to_pixel(get_freq_by_string(expr0))
-                                expr_p1 = coord.to_pixel(get_freq_by_string(expr1))
+                            elif is_number(expr0) and is_frequency(expr1):
+                                # 'a~b*Hz'
+                                (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
+                                expr_p0 = coord.to_pixel(expr_f0)
+                                expr_p1 = coord.to_pixel(expr_f1)
                                 expr_pmin = min(expr_p0, expr_p1)
                                 expr_pmax = max(expr_p0, expr_p1)
 
-                            elif is_velocity(expr0) and is_velocity(expr1):
-                                # 'a*m/s~b*m/s'
+                            elif is_number(expr0) and is_velocity(expr1):
+                                # 'a~b*m/s'
                                 restf = self.get_restfreqs().values()[0][0]
-                                expr_f0 = get_frequency_by_velocity(restf, get_velocity_by_string(expr0))
-                                expr_f1 = get_frequency_by_velocity(restf, get_velocity_by_string(expr1))
+                                (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
+                                expr_f0 = get_frequency_by_velocity(restf, expr_v0)
+                                expr_f1 = get_frequency_by_velocity(restf, expr_v1)
                                 expr_p0 = coord.to_pixel(expr_f0)
                                 expr_p1 = coord.to_pixel(expr_f1)
                                 expr_pmin = min(expr_p0, expr_p1)
