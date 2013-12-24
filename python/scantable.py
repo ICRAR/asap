@@ -1773,8 +1773,6 @@ class scantable(Scantable):
         res = {}
 
         for cms_elem in comma_sep:
-            if (cms_elem.strip() == ""): continue
-            
             colon_sep = cms_elem.split(":")
             
             if (len(colon_sep) > 2):
