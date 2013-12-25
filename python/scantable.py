@@ -1813,12 +1813,13 @@ class scantable(Scantable):
                         spw_list = valid_ifs[:] # deep copy
                     
                     else: # single number
-                        #checking if the given number is valid for spw ID
-                        idx = valid_ifs.index(int(scs_elem))
-                        spw_list.append(valid_ifs[idx])
-                        
+                        expr = int(scs_elem)
+                        spw_list.append(expr)
+                        if expr not in valid_ifs:
+                            asaplog.push("Invalid spw given. Ignored.")
+                    
                 else: # (len_product == 2)
-                    # namely, one of '<', '>' or '~' appers just once.
+                    # namely, one of '<', '>' or '~' appears just once.
                     
                     if (lt_sep_length == 2): # '<a'
                         if is_number(lt_sep[1]):
@@ -1856,16 +1857,24 @@ class scantable(Scantable):
                             # 'a~b'
                             expr_pmin = min(float(expr0), float(expr1))
                             expr_pmax = max(float(expr0), float(expr1))
+                            has_invalid_spw = False
                             no_valid_spw = True
                             
                             for i in valid_ifs:
                                 if (expr_pmin <= i) and (i <= expr_pmax):
                                     spw_list.append(i)
                                     no_valid_spw = False
+                                else:
+                                    has_invalid_spw = True
+
+                            if has_invalid_spw:
+                                msg = "Invalid spw is given. Ignored."
+                                asaplog.push(msg)
+                                asaplog.post()
 
                             if no_valid_spw:
                                 raise ValueError("No valid spw in range ('" + str(expr_pmin) + "~" + str(expr_pmax) + "').")
-                            
+                        
                         elif is_number(expr0) and is_frequency(expr1):
                             # 'a~b*Hz'
                             (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
@@ -1918,6 +1927,23 @@ class scantable(Scantable):
                             # cases such as 'aGHz~bkm/s' are not allowed now
                             raise RuntimeError("Invalid spw selection.")
 
+            # check spw list and remove invalid ones.
+            # if no valid spw left, emit ValueError.
+            if len(spw_list) == 0:
+                raise ValueError("No valid spw in given range.")
+            """
+            no_valid_spw = True
+            for spw in spw_list:
+                print spw_list
+                if spw in valid_ifs:
+                    no_valid_spw = False
+                else:
+                    spw_list.remove(spw)
+
+            if no_valid_spw:
+                raise ValueError("No valid spw in given range.")
+            """
+            
             # parse channel expression and store the result in crange_list.
             # allowed cases include '', 'a~b', 'a*Hz~b*Hz' (where * can be
             # '', 'k', 'M', 'G' etc.), 'a*m/s~b*m/s' (where * can be '' or 'k')
@@ -1942,70 +1968,68 @@ class scantable(Scantable):
                             found = True
                             break
 
-                    if not found:
-                        raise RuntimeError("Invalid spw value.")
-                    
-                    semicolon_sep = colon_sep[1].split(";")
-                    for scs_elem in semicolon_sep:
-                        scs_elem = scs_elem.strip()
+                    if found:
+                        semicolon_sep = colon_sep[1].split(";")
+                        for scs_elem in semicolon_sep:
+                            scs_elem = scs_elem.strip()
 
-                        ti_sep = scs_elem.split("~")
-                        ti_sep_length = len(ti_sep)
+                            ti_sep = scs_elem.split("~")
+                            ti_sep_length = len(ti_sep)
 
-                        if (ti_sep_length > 2):
-                            raise RuntimeError("Invalid channel selection.")
+                            if (ti_sep_length > 2):
+                                raise RuntimeError("Invalid channel selection.")
                         
-                        elif (ti_sep_length == 1):
-                            if (scs_elem == "") or (scs_elem == "*"):
-                                # '' and '*' for all channels
-                                crange_list = [[pmin, pmax]]
-                                break
-                            elif (is_number(scs_elem)):
-                                # single channel given
-                                crange_list.append([float(scs_elem), float(scs_elem)])
-                            else:
-                                raise RuntimeError("Invalid channel selection.")
+                            elif (ti_sep_length == 1):
+                                if (scs_elem == "") or (scs_elem == "*"):
+                                    # '' and '*' for all channels
+                                    crange_list = [[pmin, pmax]]
+                                    break
+                                elif (is_number(scs_elem)):
+                                    # single channel given
+                                    crange_list.append([float(scs_elem), float(scs_elem)])
+                                else:
+                                    raise RuntimeError("Invalid channel selection.")
 
-                        else: #(ti_sep_length == 2)
-                            expr0 = ti_sep[0].strip()
-                            expr1 = ti_sep[1].strip()
+                            else: #(ti_sep_length == 2)
+                                expr0 = ti_sep[0].strip()
+                                expr1 = ti_sep[1].strip()
 
-                            if is_number(expr0) and is_number(expr1):
-                                # 'a~b'
-                                expr_pmin = min(float(expr0), float(expr1))
-                                expr_pmax = max(float(expr0), float(expr1))
+                                if is_number(expr0) and is_number(expr1):
+                                    # 'a~b'
+                                    expr_pmin = min(float(expr0), float(expr1))
+                                    expr_pmax = max(float(expr0), float(expr1))
 
-                            elif is_number(expr0) and is_frequency(expr1):
-                                # 'a~b*Hz'
-                                (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
-                                expr_p0 = coord.to_pixel(expr_f0)
-                                expr_p1 = coord.to_pixel(expr_f1)
-                                expr_pmin = min(expr_p0, expr_p1)
-                                expr_pmax = max(expr_p0, expr_p1)
+                                elif is_number(expr0) and is_frequency(expr1):
+                                    # 'a~b*Hz'
+                                    (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
+                                    expr_p0 = coord.to_pixel(expr_f0)
+                                    expr_p1 = coord.to_pixel(expr_f1)
+                                    expr_pmin = min(expr_p0, expr_p1)
+                                    expr_pmax = max(expr_p0, expr_p1)
 
-                            elif is_number(expr0) and is_velocity(expr1):
-                                # 'a~b*m/s'
-                                restf = self.get_restfreqs().values()[0][0]
-                                (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
-                                expr_f0 = get_frequency_by_velocity(restf, expr_v0)
-                                expr_f1 = get_frequency_by_velocity(restf, expr_v1)
-                                expr_p0 = coord.to_pixel(expr_f0)
-                                expr_p1 = coord.to_pixel(expr_f1)
-                                expr_pmin = min(expr_p0, expr_p1)
-                                expr_pmax = max(expr_p0, expr_p1)
+                                elif is_number(expr0) and is_velocity(expr1):
+                                    # 'a~b*m/s'
+                                    restf = self.get_restfreqs().values()[0][0]
+                                    (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
+                                    expr_f0 = get_frequency_by_velocity(restf, expr_v0)
+                                    expr_f1 = get_frequency_by_velocity(restf, expr_v1)
+                                    expr_p0 = coord.to_pixel(expr_f0)
+                                    expr_p1 = coord.to_pixel(expr_f1)
+                                    expr_pmin = min(expr_p0, expr_p1)
+                                    expr_pmax = max(expr_p0, expr_p1)
                             
-                            else:
-                                # cases such as 'aGHz~bkm/s' are not allowed now
-                                raise RuntimeError("Invalid channel selection.")
+                                else:
+                                    # cases such as 'aGHz~bkm/s' are not allowed now
+                                    raise RuntimeError("Invalid channel selection.")
 
-                            cmin = max(pmin, expr_pmin)
-                            cmax = min(pmax, expr_pmax)
-                            # if the given range of channel selection has overwrap with
-                            # that of current spw, output the overwrap area.
-                            if (cmin <= cmax):
-                                cmin = float(int(cmin + 0.5))
-                                cmax = float(int(cmax + 0.5))
-                                crange_list.append([cmin, cmax])
+                                cmin = max(pmin, expr_pmin)
+                                cmax = min(pmax, expr_pmax)
+                                # if the given range of channel selection has overwrap with
+                                # that of current spw, output the overwrap area.
+                                if (cmin <= cmax):
+                                    cmin = float(int(cmin + 0.5))
+                                    cmax = float(int(cmax + 0.5))
+                                    crange_list.append([cmin, cmax])
 
                     if (len(crange_list) == 0):
                         crange_list.append([])
@@ -2015,6 +2039,13 @@ class scantable(Scantable):
                 else:
                     res[spw] = crange_list
 
+        for spw in res.keys():
+            if spw not in valid_ifs:
+                del res[spw]
+
+        if len(res) == 0:
+            raise RuntimeError("No valid spw.")
+        
         # restore original values
         self.set_restfreqs(orig_restfreq_list)
         self.set_freqframe(orig_frame)
