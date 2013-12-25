@@ -1813,36 +1813,40 @@ class scantable(Scantable):
                         spw_list = valid_ifs[:] # deep copy
                     
                     else: # single number
-                        try:
-                            #checking if the given number is valid for spw ID
-                            idx = valid_ifs.index(int(scs_elem))
-                            spw_list.append(valid_ifs[idx])
+                        #checking if the given number is valid for spw ID
+                        idx = valid_ifs.index(int(scs_elem))
+                        spw_list.append(valid_ifs[idx])
                         
-                        except:
-                            asaplog.post()
-                            asaplog.push("Wrong spw number (" + scs_elem + ") given. ignored.")
-                            asaplog.post("WARNING")
-                
                 else: # (len_product == 2)
                     # namely, one of '<', '>' or '~' appers just once.
                     
                     if (lt_sep_length == 2): # '<a'
                         if is_number(lt_sep[1]):
+                            no_valid_spw = True
                             for i in valid_ifs:
                                 if (i < float(lt_sep[1])):
                                     spw_list.append(i)
+                                    no_valid_spw = False
+
+                            if no_valid_spw:
+                                raise ValueError("Invalid spw selection ('<" + str(lt_sep[1]) + "').")
                         
                         else:
-                            RuntimeError("Invalid spw selection.")
+                            raise RuntimeError("Invalid spw selection.")
                         
                     elif (gt_sep_length == 2): # '>a'
                         if is_number(gt_sep[1]):
+                            no_valid_spw = True
                             for i in valid_ifs:
                                 if (i > float(gt_sep[1])):
                                     spw_list.append(i)
+                                    no_valid_spw = False
+                            
+                            if no_valid_spw:
+                                raise ValueError("Invalid spw selection ('>" + str(gt_sep[1]) + "').")
                         
                         else:
-                            RuntimeError("Invalid spw selection.")
+                            raise RuntimeError("Invalid spw selection.")
                         
                     else: # (ti_sep_length == 2) where both boundaries inclusive
                         expr0 = ti_sep[0].strip()
@@ -1852,14 +1856,21 @@ class scantable(Scantable):
                             # 'a~b'
                             expr_pmin = min(float(expr0), float(expr1))
                             expr_pmax = max(float(expr0), float(expr1))
+                            no_valid_spw = True
+                            
                             for i in valid_ifs:
                                 if (expr_pmin <= i) and (i <= expr_pmax):
                                     spw_list.append(i)
+                                    no_valid_spw = False
+
+                            if no_valid_spw:
+                                raise ValueError("No valid spw in range ('" + str(expr_pmin) + "~" + str(expr_pmax) + "').")
                             
                         elif is_number(expr0) and is_frequency(expr1):
                             # 'a~b*Hz'
                             (expr_f0, expr_f1) = get_freq_by_string(expr0, expr1)
-
+                            no_valid_spw = True
+                            
                             for coord in self._get_coordinate_list():
                                 expr_p0 = coord['coord'].to_pixel(expr_f0)
                                 expr_p1 = coord['coord'].to_pixel(expr_f1)
@@ -1872,13 +1883,18 @@ class scantable(Scantable):
                                 
                                 if ((expr_pmax - pmin)*(expr_pmin - pmax) <= 0.0):
                                     spw_list.append(spw)
+                                    no_valid_spw = False
+
+                            if no_valid_spw:
+                                raise ValueError("No valid spw in range ('" + str(expr0) + "~" + str(expr1) + "').")
                                 
                         elif is_number(expr0) and is_velocity(expr1):
                             # 'a~b*m/s'
                             (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
                             expr_vmin = min(expr_v0, expr_v1)
                             expr_vmax = max(expr_v0, expr_v1)
-
+                            no_valid_spw = True
+                            
                             for coord in self._get_coordinate_list():
                                 spw = coord['if']
                                 
@@ -1893,6 +1909,10 @@ class scantable(Scantable):
 
                                 if ((expr_vmax - vmin)*(expr_vmin - vmax) <= 0.0):
                                     spw_list.append(spw)
+                                    no_valid_spw = False
+
+                            if no_valid_spw:
+                                raise ValueError("No valid spw in range ('" + str(expr0) + "~" + str(expr1) + "').")
                             
                         else:
                             # cases such as 'aGHz~bkm/s' are not allowed now
@@ -2002,6 +2022,7 @@ class scantable(Scantable):
         self.set_unit(orig_unit)
         
         return res
+    #found
 
     @asaplog_post_dec
     def get_first_rowno_by_if(self, ifno):
