@@ -5229,6 +5229,15 @@ void Scantable::setMoleculeIdColumnData(const std::vector<uint>& molids)
 }
 
 
+std::vector<uint> Scantable::getRootTableRowNumbers() const
+{
+  Vector<uInt> rowIds(table_.rowNumbers());
+  vector<uint> res;
+  rowIds.tovector(res);
+  return res;
+}
+
+
 void Scantable::dropXPol()
 {
   if (npol() <= 2) {
