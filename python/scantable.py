@@ -362,7 +362,7 @@ def get_velocity_by_string(s1, s2):
 
     return (res1, res2)
 
-def get_frequency_by_velocity(restfreq, vel):
+def get_frequency_by_velocity(restfreq, vel, doppler):
     # vel is in unit of km/s
 
     # speed of light
@@ -370,7 +370,13 @@ def get_frequency_by_velocity(restfreq, vel):
 
     import math
     r = vel / vel_c
-    return restfreq * math.sqrt((1.0 - r) / (1.0 + r))
+
+    if doppler.lower() == 'radio':
+        return restfreq * (1.0 - r)
+    if doppler.lower() == 'optical':
+        return restfreq / (1.0 + r)
+    else:
+        return restfreq * math.sqrt((1.0 - r) / (1.0 + r))
 
 
 class scantable(Scantable):
@@ -1931,18 +1937,6 @@ class scantable(Scantable):
             # if no valid spw left, emit ValueError.
             if len(spw_list) == 0:
                 raise ValueError("No valid spw in given range.")
-            """
-            no_valid_spw = True
-            for spw in spw_list:
-                print spw_list
-                if spw in valid_ifs:
-                    no_valid_spw = False
-                else:
-                    spw_list.remove(spw)
-
-            if no_valid_spw:
-                raise ValueError("No valid spw in given range.")
-            """
             
             # parse channel expression and store the result in crange_list.
             # allowed cases include '', 'a~b', 'a*Hz~b*Hz' (where * can be
@@ -2011,8 +2005,8 @@ class scantable(Scantable):
                                     # 'a~b*m/s'
                                     restf = self.get_restfreqs().values()[0][0]
                                     (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
-                                    expr_f0 = get_frequency_by_velocity(restf, expr_v0)
-                                    expr_f1 = get_frequency_by_velocity(restf, expr_v1)
+                                    expr_f0 = get_frequency_by_velocity(restf, expr_v0, doppler)
+                                    expr_f1 = get_frequency_by_velocity(restf, expr_v1, doppler)
                                     expr_p0 = coord.to_pixel(expr_f0)
                                     expr_p1 = coord.to_pixel(expr_f1)
                                     expr_pmin = min(expr_p0, expr_p1)
@@ -2079,7 +2073,7 @@ class scantable(Scantable):
             res.append(elem)
 
         return res
-    
+    # doppler
 ##################################
     
     @asaplog_post_dec
