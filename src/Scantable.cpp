@@ -3555,10 +3555,21 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
   int j = 0;
   for (int i = 0; i < nChan; ++i) {
     maskArray[i] = mask[i] ? 1 : 0;
+    if (isnan(data[i])) maskArray[i] = 0;
+    if (isinf(data[i])) maskArray[i] = 0;
+
+    finalMask[i] = (maskArray[i] == 1);
+    if (finalMask[i]) {
+      j++;
+    }
+
+    /*
+    maskArray[i] = mask[i] ? 1 : 0;
     if (mask[i]) {
       j++;
     }
     finalMask[i] = mask[i];
+    */
   }
 
   int initNData = j;
@@ -3610,6 +3621,7 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
       }
     }
 
+    //compute inverse matrix of the left half of xMatrix
     std::vector<double> invDiag(nDOF);
     for (int i = 0; i < nDOF; ++i) {
       invDiag[i] = 1.0 / xMatrix[i][i];
@@ -3668,7 +3680,8 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
 
     double stdDev = 0.0;
     for (int i = 0; i < nChan; ++i) {
-      stdDev += residual[i]*residual[i]*(double)maskArray[i];
+      if (maskArray[i] == 0) continue;
+      stdDev += residual[i]*residual[i];
     }
     stdDev = sqrt(stdDev/(double)nData);
     rms = (float)stdDev;
@@ -3689,7 +3702,7 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
 	}
       }
       if (newNData == nData) {
-	break; //no more flag to add. iteration stops.
+	break; //no more flag to add. stop iteration.
       } else {
 	nData = newNData;
       }
@@ -3711,7 +3724,7 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
   }
 
   return result;
-}
+} //xMatrix
 
 void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece, 
 				    float thresClip, int nIterClip, 
@@ -3954,11 +3967,23 @@ std::vector<float> Scantable::doCubicSplineLeastSquareFitting(const std::vector<
   int j = 0;
   for (int i = 0; i < nChan; ++i) {
     maskArray[i] = mask[i] ? 1 : 0;
+    if (isnan(data[i])) maskArray[i] = 0;
+    if (isinf(data[i])) maskArray[i] = 0;
+
+    finalMask[i] = (maskArray[i] == 1);
+    if (finalMask[i]) {
+      x[j] = i;
+      j++;
+    }
+
+    /*
+    maskArray[i] = mask[i] ? 1 : 0;
     if (mask[i]) {
       x[j] = i;
       j++;
     }
     finalMask[i] = mask[i];
+    */
   }
 
   int initNData = j;
@@ -4169,7 +4194,8 @@ std::vector<float> Scantable::doCubicSplineLeastSquareFitting(const std::vector<
 
     double stdDev = 0.0;
     for (int i = 0; i < nChan; ++i) {
-      stdDev += residual[i]*residual[i]*(double)maskArray[i];
+      if (maskArray[i] == 0) continue;
+      stdDev += residual[i]*residual[i];
     }
     stdDev = sqrt(stdDev/(double)nData);
     rms = (float)stdDev;

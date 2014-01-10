@@ -2047,8 +2047,7 @@ class scantable(Scantable):
         self.set_unit(orig_unit)
         
         return res
-    #found
-
+    
     @asaplog_post_dec
     def get_first_rowno_by_if(self, ifno):
         found = False
@@ -2073,8 +2072,6 @@ class scantable(Scantable):
             res.append(elem)
 
         return res
-    # doppler
-##################################
     
     @asaplog_post_dec
     def parse_maskexpr(self, maskstring):
