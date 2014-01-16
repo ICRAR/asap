@@ -1852,28 +1852,26 @@ class scantable(Scantable):
         orig_unit = self.get_unit()
         self.set_unit('channel')
         
-        orig_restfreq = self.get_restfreqs()
-        orig_restfreq_list = []
-        for i in orig_restfreq.keys():
-            if len(orig_restfreq[i]) == 1:
-                orig_restfreq_list.append(orig_restfreq[i][0])
-            else:
-                orig_restfreq_list.append(orig_restfreq[i])
-        
-        orig_coord    = self._getcoordinfo()
-        orig_frame    = orig_coord[1]
-        orig_doppler  = orig_coord[2]
-        
-        #if restfreq is None: restfreq = orig_restfreq_list
-        #self.set_restfreqs(restfreq)
         if restfreq is not None:
-            set_restfreq(self, restfreq) #<----------------------
+            orig_molids = self._getmolidcol_list()
+            set_restfreq(self, restfreq)
 
+        orig_coord   = self._getcoordinfo()
+
+        if frame is not None:
+            orig_frame = orig_coord[1]
+            self.set_freqframe(frame)
+
+        if doppler is not None:
+            orig_doppler = orig_coord[2]
+            self.set_doppler(doppler)
+        """
         if frame is None: frame = orig_frame
         self.set_freqframe(frame)
 
         if doppler is None: doppler = orig_doppler
         self.set_doppler(doppler)
+        """
         
         valid_ifs = self.getifnos()
 
@@ -2143,13 +2141,13 @@ class scantable(Scantable):
             raise RuntimeError("No valid spw.")
         
         # restore original values
-
-        if restfreq is not None:
-            #self.set_restfreqs(orig_restfreq_list)#<-- SHOULD BE set_restfreqs(normalise_restfreq(orig_restfreq))
-            set_restfreq(self, orig_restfreq_list)
-        self.set_freqframe(orig_frame)
-        self.set_doppler(orig_doppler)
         self.set_unit(orig_unit)
+        if restfreq is not None:
+            self._setmolidcol_list(orig_molids)
+        if frame is not None:
+            self.set_freqframe(orig_frame)
+        if doppler is not None:
+            self.set_doppler(orig_doppler)
         
         return res
     
