@@ -378,6 +378,105 @@ def get_frequency_by_velocity(restfreq, vel, doppler):
     else:
         return restfreq * math.sqrt((1.0 - r) / (1.0 + r))
 
+def get_restfreq_in_Hz(s_restfreq):
+    value = 0.0
+    unit = ""
+    s = s_restfreq.replace(" ","")
+
+    for i in range(len(s))[::-1]:
+        if s[i].isalpha():
+            unit = s[i] + unit
+        else:
+            value = float(s[0:i+1])
+            break
+
+    if (unit == "") or (unit.lower() == "hz"):
+        return value
+    elif (len(unit) == 3) and (unit[1:3].lower() == "hz"):
+        unitprefix = unit[0]
+        factor = 1.0
+
+        prefix_list = ["a", "f", "p", "n", "u", "m", ".", "k", "M", "G", "T", "P", "E"]
+        factor_list = [1e-18, 1e-15, 1e-12, 1e-9, 1e-6, 1e-3, 1.0, 1e+3, 1e+6, 1e+9, 1e+12, 1e+15, 1e+18]
+        factor = factor_list[prefix_list.index(unitprefix)]
+        """
+        if (unitprefix == 'a'):
+            factor = 1.0e-18
+        elif (unitprefix == 'f'):
+            factor = 1.0e-15
+        elif (unitprefix == 'p'):
+            factor = 1.0e-12
+        elif (unitprefix == 'n'):
+            factor = 1.0e-9
+        elif (unitprefix == 'u'):
+            factor = 1.0e-6
+        elif (unitprefix == 'm'):
+            factor = 1.0e-3
+        elif (unitprefix == 'k'):
+            factor = 1.0e+3
+        elif (unitprefix == 'M'):
+            factor = 1.0e+6
+        elif (unitprefix == 'G'):
+            factor = 1.0e+9
+        elif (unitprefix == 'T'):
+            factor = 1.0e+12
+        elif (unitprefix == 'P'):
+            factor = 1.0e+15
+        elif (unitprefix == 'E'):
+            factor = 1.0e+18
+        """
+        return value*factor
+    else:
+        mesg = "wrong unit of restfreq."
+        raise Exception, mesg
+
+def normalise_restfreq(in_restfreq):
+    if isinstance(in_restfreq, float):
+        return in_restfreq
+    elif isinstance(in_restfreq, int) or isinstance(in_restfreq, long):
+        return float(in_restfreq)
+    elif isinstance(in_restfreq, str):
+        return get_restfreq_in_Hz(in_restfreq)
+    elif isinstance(in_restfreq, list) or isinstance(in_restfreq, numpy.ndarray):
+        if isinstance(in_restfreq, numpy.ndarray):
+            if len(in_restfreq.shape) > 1:
+                mesg = "given in numpy.ndarray, in_restfreq must be 1-D."
+                raise Exception, mesg
+        
+        res = []
+        for i in xrange(len(in_restfreq)):
+            elem = in_restfreq[i]
+            if isinstance(elem, float):
+                res.append(elem)
+            elif isinstance(elem, int) or isinstance(elem, long):
+                res.append(float(elem))
+            elif isinstance(elem, str):
+                res.append(get_restfreq_in_Hz(elem))
+            elif isinstance(elem, dict):
+                if isinstance(elem["value"], float):
+                    res.append(elem)
+                elif isinstance(elem["value"], int):
+                    dictelem = {}
+                    dictelem["name"]  = elem["name"]
+                    dictelem["value"] = float(elem["value"])
+                    res.append(dictelem)
+                elif isinstance(elem["value"], str):
+                    dictelem = {}
+                    dictelem["name"]  = elem["name"]
+                    dictelem["value"] = get_restfreq_in_Hz(elem["value"])
+                    res.append(dictelem)
+            else:
+                mesg = "restfreq elements must be float, int, or string."
+                raise Exception, mesg
+        return res
+    else:
+        mesg = "wrong type of restfreq given."
+        raise Exception, mesg
+
+def set_restfreq(s, restfreq):
+    rfset = (restfreq != '') and (restfreq != [])
+    if rfset:
+        s.set_restfreqs(normalise_restfreq(restfreq))
 
 class scantable(Scantable):
     """\
@@ -1765,12 +1864,15 @@ class scantable(Scantable):
         orig_frame    = orig_coord[1]
         orig_doppler  = orig_coord[2]
         
-        if restfreq is None: restfreq = orig_restfreq_list
-        if frame    is None: frame    = orig_frame
-        if doppler  is None: doppler  = orig_doppler
+        #if restfreq is None: restfreq = orig_restfreq_list
+        #self.set_restfreqs(restfreq)
+        if restfreq is not None:
+            set_restfreq(self, restfreq) #<----------------------
 
-        self.set_restfreqs(restfreq)
+        if frame is None: frame = orig_frame
         self.set_freqframe(frame)
+
+        if doppler is None: doppler = orig_doppler
         self.set_doppler(doppler)
         
         valid_ifs = self.getifnos()
@@ -2041,7 +2143,10 @@ class scantable(Scantable):
             raise RuntimeError("No valid spw.")
         
         # restore original values
-        self.set_restfreqs(orig_restfreq_list)
+
+        if restfreq is not None:
+            #self.set_restfreqs(orig_restfreq_list)#<-- SHOULD BE set_restfreqs(normalise_restfreq(orig_restfreq))
+            set_restfreq(self, orig_restfreq_list)
         self.set_freqframe(orig_frame)
         self.set_doppler(orig_doppler)
         self.set_unit(orig_unit)
