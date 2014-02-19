@@ -293,6 +293,9 @@ Plotter2::Plotter2() {
 
     hasDefaultViewport = true;
     currentViewportId = 0;
+
+    width = 8.82796; // default viewsurface width seems to be this value.
+    aspect = 0.75;   // default viewsurface aspect
 }
 
 Plotter2::~Plotter2() {
@@ -319,6 +322,19 @@ void Plotter2::setDevice(const std::string& inDevice) {
 void Plotter2::open() {
     cpgopen((filename + "/" + device).c_str());
     hasDevice = true;
+}
+
+float Plotter2::getViewSurfaceWidth() {
+    return width;
+}
+
+float Plotter2::getViewSurfaceAspect() {
+    return aspect;
+}
+
+void Plotter2::setViewSurface(const float inWidth, const float inAspect) {
+    width = inWidth;
+    aspect = inAspect;
 }
 
 int Plotter2::addViewport(const float xmin, const float xmax, const float ymin, const float ymax) {
@@ -1125,6 +1141,10 @@ void Plotter2::close() {
 
 void Plotter2::plot() {
     open();
+
+    if ((width > 0.0) && (aspect > 0.0)) {
+        cpgpap(width, aspect);
+    }
 
     cpgscr(0, 1.0, 1.0, 1.0); // set background color white
     cpgscr(1, 0.0, 0.0, 0.0); // set foreground color black

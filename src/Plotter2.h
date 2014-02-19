@@ -161,6 +161,9 @@ public:
     std::string getDevice();
     void setDevice(const std::string& inDevice);
 
+    float getViewSurfaceWidth();
+    float getViewSurfaceAspect();
+    void setViewSurface(const float width, const float aspect);
     int addViewport(const float xmin, const float xmax, const float ymin, const float ymax);
     void setViewport(const float xmin, const float xmax, const float ymin, const float ymax, const int id);
     void showViewport(const int inVpid);
@@ -207,6 +210,8 @@ private:
     std::vector<Plotter2ViewportInfo> vInfo;
     bool hasDefaultViewport;
     int currentViewportId;
+    float width;
+    float aspect;
     void open();
     void close();
 };

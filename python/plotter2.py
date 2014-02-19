@@ -4,6 +4,7 @@ from asap._asap import Plotter2
 class plotter2:
     def __init__(self):
         self._plotter = Plotter2()
+        self.current_vs_unit = 'cm'
 
     def set_output(self, filename=None, dev=None):
         """\
@@ -36,7 +37,78 @@ class plotter2:
 
         self._plotter.set_filename(expanduser(expandvars(filename)))
         self._plotter.set_device(dev.strip())
+        self.device = dev.strip()
 
+    def get_vs(self):
+        """\
+        returns viewsurface information as a dictionary.
+        """
+        width = self._plotter.get_viewsurface_width()
+        unit = self.current_vs_unit
+        if unit == 'cm':
+            width = width * 2.54 # inch to centimeter
+        elif unit == 'mm':
+            width = width * 25.4 # inch to millimeter
+        elif unit == 'pixel':
+            width = width * 85.0 + 1.0 # inch to pixel (plus correction for 1pixel)
+
+        aspect = self._plotter.get_viewsurface_aspect()
+
+        return {'width': width, 'unit': unit, 'aspect': aspect}
+
+    def set_vs(self, width=None, unit=None, aspect=None):
+        """\
+        set size/shape of graphic window or output file. ('vs' comes from
+        'view surface' defined by PGPLOT)
+        Parameters:
+            width:  width of graphic window or output file.
+            unit:   unit of width. default value is 'cm'. 'mm', 'inch'
+                    and 'pixel' are also available.
+            aspect: aspect ratio (= height / width).
+        
+        Example:
+            set_vs(width=10, unit='cm', aspect=1.0) -- set the output
+                window/file as a square 10cm on a side.
+            set_vs(width=400, unit='pixel', aspect=0.75) -- set the output
+                window/file as a rectangle with 400 pixels in width and
+                300 pixels in height.
+
+        Note:
+            setting unit to 'cm', 'mm' or 'inch' results in the correct
+            size when output device is X Window or PostScript, but not for
+            the other cases (png). also, setting unit to 'pixel' works
+            correctly only when output device is 'png'. this arises from
+            the fixed size of pixel (=1/85 inch) defined in PGPLOT. 
+        """
+        if width is None:
+            width = self._plotter.get_viewsurface_width() # inch
+            if self.current_vs_unit == 'cm':
+                width = width * 2.54 # inch to centimeter
+            elif self.current_vs_unit == 'mm':
+                width = width * 25.4 # inch to millimeter
+            elif self.current_vs_unit == 'pixel':
+                width = width * 85.0 + 1.0 # inch to pixel (plus correction for 1pixel)
+        if unit is None: unit = self.current_vs_unit
+        if aspect is None: aspect = self._plotter.get_viewsurface_aspect()
+        
+        if not ((isinstance(width, int) or isinstance(width, float)) and (width > 0)):
+            raise ValueError("Width must be positive float or integer.")
+        if not (isinstance(aspect, int) or isinstance(aspect, float)):
+            raise ValueError("Aspect must be positive float or integer.")
+
+        unit = unit.lower().strip()
+        if unit == 'cm':
+            width = width / 2.54 # centimeter to inch
+        elif unit == 'mm':
+            width = width / 25.4 # millimeter to inch
+        elif unit == 'pixel':
+            width = (width - 1.0) / 85.0 # pixel to inch (plus correction for 1pixel)
+        elif unit != 'inch':
+            raise ValueError("Unit must be 'cm', 'mm', 'inch' or 'pixel'.")
+        self.current_vs_unit = unit
+
+        self._plotter.set_viewsurface(width, aspect)
+        
     def set_vp(self, xmin, xmax, ymin, ymax, id=None):
         """\
         change the position/shape of viewport in which data are to be plotted.
