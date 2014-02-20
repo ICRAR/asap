@@ -10,6 +10,40 @@
 
 namespace asap {
 
+class Plotter2AnnotationInfo {
+public:
+    Plotter2AnnotationInfo();
+    ~Plotter2AnnotationInfo();
+
+    std::string text;
+    float posx;
+    float posy;
+    float angle;
+    float fjust;
+    float size;
+    int color;
+    int bgcolor;
+};
+
+class Plotter2ArrowInfo {
+public:
+    Plotter2ArrowInfo();
+    ~Plotter2ArrowInfo();
+
+    float xhead;
+    float xtail;
+    float yhead;
+    float ytail;
+
+    int color;
+    int width;
+    int lineStyle;
+    float headSize;
+    int headFillStyle;
+    float headAngle;
+    float headVent;
+};
+
 class Plotter2RectInfo {
 public: 
     Plotter2RectInfo();
@@ -100,6 +134,12 @@ public:
 
     // rectangles
     std::vector<Plotter2RectInfo> vRect;
+
+    // arrows
+    std::vector<Plotter2ArrowInfo> vArro;
+
+    //annotations
+    std::vector<Plotter2AnnotationInfo> vAnno;
 
     // x-label
     std::string labelXString;
@@ -197,11 +237,12 @@ public:
     void showPoint(const int inVpid, const int inDataid);
     void hidePoint(const int inVpid, const int inDataid);
     void setMaskX(const float xmin, const float xmax, const int color, const int fill, const int width, const float hsep, const int inVpid);
+    void setArrow(const float xtail, const float xhead, const float ytail, const float yhead, const int color, const int width, const int lineStyle, const float headSize, const int headFillStyle, const float headAngle, const float headVent, const int inVpid, const int inArrowid);
+    void setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inAnnid);
     void setLabelX(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
     void setLabelY(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
     void setTitle(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
     void setViewportBackgroundColor(const int bgcolor, const int inVpid);
-    //void setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
     void plot();
 private:
     std::string filename;
@@ -214,6 +255,7 @@ private:
     float aspect;
     void open();
     void close();
+    void resetAttributes(const Plotter2ViewportInfo& vi);
 };
 
 } // namespace asap

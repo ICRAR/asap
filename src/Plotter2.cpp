@@ -2,6 +2,37 @@
 
 namespace asap {
 
+Plotter2AnnotationInfo::Plotter2AnnotationInfo() {
+    text = "";
+    posx = 0.0;
+    posy = 0.0;
+    angle = 0.0;
+    fjust = 0.0;
+    size = 1.0;
+    color = 1;    // black
+    bgcolor = -1; // transparent
+}
+
+Plotter2AnnotationInfo::~Plotter2AnnotationInfo() {
+}
+
+Plotter2ArrowInfo::Plotter2ArrowInfo() {
+    xhead = 1.0;
+    xtail = 0.0;
+    yhead = 1.0;
+    ytail = 0.0;
+    color = 1;         // black
+    width = 1;
+    lineStyle = 1;     // solid line
+    headSize = 1.0;
+    headFillStyle = 1; // solid
+    headAngle = 45.0;
+    headVent = 0.3;
+}
+
+Plotter2ArrowInfo::~Plotter2ArrowInfo() {
+}
+
 Plotter2RectInfo::Plotter2RectInfo() {
     xmin = 0.0;
     xmax = 1.0;
@@ -70,6 +101,8 @@ Plotter2ViewportInfo::Plotter2ViewportInfo() {
 
     vData.clear();
     vRect.clear();
+    vArro.clear();
+    vAnno.clear();
 
     labelXString = "";
     labelXPosX = 0.5;
@@ -103,6 +136,9 @@ Plotter2ViewportInfo::Plotter2ViewportInfo() {
 
 Plotter2ViewportInfo::~Plotter2ViewportInfo() {
     vData.clear();
+    vRect.clear();
+    vArro.clear();
+    vAnno.clear();
 }
 
 void Plotter2ViewportInfo::adjustRange() {
@@ -352,6 +388,9 @@ int Plotter2::addViewport(const float xmin, const float xmax, const float ymin, 
 }
 
 void Plotter2::setViewport(const float xmin, const float xmax, const float ymin, const float ymax, const int id) {
+  if (id >= (int)vInfo.size()) {
+      return;
+    }
     Plotter2ViewportInfo* vi = &vInfo[id];
 
     vi->vpPosXMin = xmin;
@@ -364,6 +403,9 @@ void Plotter2::setViewport(const float xmin, const float xmax, const float ymin,
 
 void Plotter2::showViewport(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        return;
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -377,6 +419,9 @@ void Plotter2::showViewport(const int inVpid) {
 
 void Plotter2::hideViewport(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        return;
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -535,6 +580,9 @@ void Plotter2::setRange(const float xmin, const float xmax, const float ymin, co
 
 void Plotter2::setRangeX(const float xmin, const float xmax, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        return;
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -552,6 +600,9 @@ void Plotter2::setRangeX(const float xmin, const float xmax, const int inVpid) {
 
 void Plotter2::setRangeY(const float ymin, const float ymax, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        return;
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -569,6 +620,9 @@ void Plotter2::setRangeY(const float ymin, const float ymax, const int inVpid) {
 
 std::vector<float> Plotter2::getRangeX(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -581,6 +635,9 @@ std::vector<float> Plotter2::getRangeX(const int inVpid) {
 
 std::vector<float> Plotter2::getRangeY(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -598,6 +655,9 @@ void Plotter2::setAutoRange(const int inVpid) {
 
 void Plotter2::setAutoRangeX(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -613,6 +673,9 @@ void Plotter2::setAutoRangeX(const int inVpid) {
 
 void Plotter2::setAutoRangeY(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -628,6 +691,9 @@ void Plotter2::setAutoRangeY(const int inVpid) {
 
 void Plotter2::setFontSizeDef(const float size, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -643,6 +709,9 @@ void Plotter2::setFontSizeDef(const float size, const int inVpid) {
 
 void Plotter2::setTicksX(const float interval, const int num, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -660,6 +729,9 @@ void Plotter2::setTicksX(const float interval, const int num, const int inVpid) 
 
 void Plotter2::setTicksY(const float interval, const int num, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -682,6 +754,9 @@ void Plotter2::setAutoTicks(const int inVpid) {
 
 void Plotter2::setAutoTicksX(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -697,6 +772,9 @@ void Plotter2::setAutoTicksX(const int inVpid) {
 
 void Plotter2::setAutoTicksY(const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -712,6 +790,9 @@ void Plotter2::setAutoTicksY(const int inVpid) {
 
 void Plotter2::setNumIntervalX(const float interval, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -727,6 +808,9 @@ void Plotter2::setNumIntervalX(const float interval, const int inVpid) {
 
 void Plotter2::setNumIntervalY(const float interval, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -742,6 +826,9 @@ void Plotter2::setNumIntervalY(const float interval, const int inVpid) {
 
 void Plotter2::setNumLocationX(const std::string& side, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -757,6 +844,9 @@ void Plotter2::setNumLocationX(const std::string& side, const int inVpid) {
 
 void Plotter2::setNumLocationY(const std::string& side, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -772,6 +862,9 @@ void Plotter2::setNumLocationY(const std::string& side, const int inVpid) {
 
 void Plotter2::setData(const std::vector<float>& xdata, const std::vector<float>& ydata, const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -788,6 +881,8 @@ void Plotter2::setData(const std::vector<float>& xdata, const std::vector<float>
         Plotter2DataInfo di;
         vi->vData.push_back(di);
         dataid = vi->vData.size() - 1;
+    } else if (dataid >= (int)vi->vData.size()) {
+        exit(0);
     }
 
     vi->setData(xdata, ydata, dataid);
@@ -795,6 +890,9 @@ void Plotter2::setData(const std::vector<float>& xdata, const std::vector<float>
 
 void Plotter2::setLine(const int color, const int width, const int style, const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -804,20 +902,28 @@ void Plotter2::setLine(const int color, const int width, const int style, const 
 	vpid = 0;
     }
 
+    Plotter2ViewportInfo* vi = &vInfo[vpid];
+
     int dataid = inDataid;
     if (dataid < 0) {
-	dataid = vInfo[vpid].vData.size() - 1;
+	dataid = vi->vData.size() - 1;
+    } else if (dataid >= (int)vi->vData.size()) {
+        exit(0);
     }
 
-    Plotter2ViewportInfo* vi = &vInfo[vpid];
-    vi->vData[dataid].drawLine  = true;
-    vi->vData[dataid].lineColor = color;
-    vi->vData[dataid].lineWidth = width;
-    vi->vData[dataid].lineStyle = style;
+    Plotter2DataInfo* di = &vi->vData[dataid];
+    di->drawLine  = true;
+    di->lineColor = color;
+    di->lineWidth = width;
+    di->lineStyle = style;
+    //vi->vData[dataid].lineStyle = style;
 }
 
 void Plotter2::showLine(const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -826,6 +932,9 @@ void Plotter2::showLine(const int inVpid, const int inDataid) {
     }
 
     int dataid = inDataid;
+    if (dataid >= (int)vInfo[vpid].vData.size()) {
+        exit(0);
+    }
     if (dataid < 0) {
 	dataid = vInfo[vpid].vData.size() - 1;
     }
@@ -839,6 +948,9 @@ void Plotter2::showLine(const int inVpid, const int inDataid) {
 
 void Plotter2::hideLine(const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -847,6 +959,9 @@ void Plotter2::hideLine(const int inVpid, const int inDataid) {
     }
 
     int dataid = inDataid;
+    if (dataid >= (int)vInfo[vpid].vData.size()) {
+        exit(0);
+    }
     if (dataid < 0) {
 	dataid = vInfo[vpid].vData.size() - 1;
     }
@@ -860,6 +975,9 @@ void Plotter2::hideLine(const int inVpid, const int inDataid) {
 
 void Plotter2::setPoint(const int type, const float size, const int color, const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -870,6 +988,9 @@ void Plotter2::setPoint(const int type, const float size, const int color, const
     }
 
     int dataid = inDataid;
+    if (dataid >= (int)vInfo[vpid].vData.size()) {
+        exit(0);
+    }
     if (dataid < 0) {
 	dataid = vInfo[vpid].vData.size() - 1;
     }
@@ -883,6 +1004,9 @@ void Plotter2::setPoint(const int type, const float size, const int color, const
 
 void Plotter2::showPoint(const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -891,6 +1015,9 @@ void Plotter2::showPoint(const int inVpid, const int inDataid) {
     }
 
     int dataid = inDataid;
+    if (dataid >= (int)vInfo[vpid].vData.size()) {
+        exit(0);
+    }
     if (dataid < 0) {
 	dataid = vInfo[vpid].vData.size() - 1;
     }
@@ -904,6 +1031,9 @@ void Plotter2::showPoint(const int inVpid, const int inDataid) {
 
 void Plotter2::hidePoint(const int inVpid, const int inDataid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -912,6 +1042,9 @@ void Plotter2::hidePoint(const int inVpid, const int inDataid) {
     }
 
     int dataid = inDataid;
+    if (dataid >= (int)vInfo[vpid].vData.size()) {
+        exit(0);
+    }
     if (dataid < 0) {
 	dataid = vInfo[vpid].vData.size() - 1;
     }
@@ -925,6 +1058,9 @@ void Plotter2::hidePoint(const int inVpid, const int inDataid) {
 
 void Plotter2::setMaskX(const float xmin, const float xmax, const int color, const int fill, const int width, const float hsep, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -952,8 +1088,103 @@ void Plotter2::setMaskX(const float xmin, const float xmax, const int color, con
     vi->vRect.push_back(ri);
 }
 
+void Plotter2::setArrow(const float xtail, const float xhead, const float ytail, 
+			  const float yhead, const int color, const int width, 
+			  const int lineStyle, const float headSize, 
+			  const int headFillStyle, const float headAngle, 
+			  const float headVent, const int inVpid, const int inArrowid) {
+    int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
+    if (vpid < 0) {
+        vpid = vInfo.size() - 1;
+    }
+    if (vpid < 0) {
+        Plotter2ViewportInfo vi;
+        vInfo.push_back(vi);
+	vpid = 0;
+    }
+
+    Plotter2ViewportInfo* vi = &vInfo[vpid];
+
+    int arrowid = inArrowid;
+    if (arrowid < 0) {
+        Plotter2ArrowInfo ai;
+        vi->vArro.push_back(ai);
+        arrowid = vi->vArro.size() - 1;
+    } else if (arrowid >= (int)vi->vArro.size()) {
+        exit(0);
+    }
+
+    Plotter2ArrowInfo* ai = &vi->vArro[arrowid];
+
+    ai->xhead = xhead;
+    ai->xtail = xtail;
+    ai->yhead = yhead;
+    ai->ytail = ytail;
+    ai->color = color;
+    ai->width = width;
+    ai->lineStyle = lineStyle;
+    ai->headSize = headSize;
+    ai->headFillStyle = headFillStyle;
+    ai->headAngle = headAngle;
+    ai->headVent = headVent;
+}
+
+void Plotter2::setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inAnnid) {
+    int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
+    if (vpid < 0) {
+        vpid = vInfo.size() - 1;
+    }
+    if (vpid < 0) {
+        Plotter2ViewportInfo vi;
+        vInfo.push_back(vi);
+	vpid = 0;
+    }
+
+    Plotter2ViewportInfo* vi = &vInfo[vpid];
+
+    int annotationid = inAnnid;
+    if (annotationid < 0) {
+        Plotter2AnnotationInfo ai;
+        vi->vAnno.push_back(ai);
+        annotationid = vi->vAnno.size() - 1;
+    } else if (annotationid >= (int)vi->vAnno.size()) {
+        exit(0);
+    }
+
+    Plotter2AnnotationInfo* ai = &vi->vAnno[annotationid];
+
+    std::string styleString;
+    if (style == "") {
+      styleString = "";
+    } else if (style == "roman") {
+      styleString = "\\fr";
+    } else if (style == "italic") {
+      styleString = "\\fi";
+    } else if (style == "script") {
+      styleString = "\\fs";
+    }
+
+    ai->text = styleString + label;
+    ai->posx = posx;
+    ai->posy = posy;
+    ai->angle = angle;
+    ai->fjust = fjust;
+    ai->size = size;
+    ai->color = color;
+    ai->bgcolor = bgcolor;
+}
+
 void Plotter2::setLabelX(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -998,6 +1229,9 @@ void Plotter2::setLabelX(const std::string& label, const float inPosx, const flo
 
 void Plotter2::setLabelY(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -1042,6 +1276,9 @@ void Plotter2::setLabelY(const std::string& label, const float inPosx, const flo
 
 void Plotter2::setTitle(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -1086,6 +1323,9 @@ void Plotter2::setTitle(const std::string& label, const float inPosx, const floa
 
 void Plotter2::setViewportBackgroundColor(const int bgcolor, const int inVpid) {
     int vpid = inVpid;
+    if (vpid >= (int)vInfo.size()) {
+        exit(0);
+    }
     if (vpid < 0) {
         vpid = vInfo.size() - 1;
     }
@@ -1097,46 +1337,21 @@ void Plotter2::setViewportBackgroundColor(const int bgcolor, const int inVpid) {
     vi->vpBColor = bgcolor;
 }
 
-/*
-void Plotter2::setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid) {
-    int vpid = inVpid;
-    if (vpid < 0) {
-        vpid = vInfo.size() - 1;
-    }
-    if (vpid < 0) {
-        Plotter2ViewportInfo vi;
-        vInfo.push_back(vi);
-	vpid = 0;
-    }
-
-    std::string styleString;
-    if (style == "") {
-      styleString = "";
-    } else if (style == "roman") {
-      styleString = "\\fr";
-    } else if (style == "italic") {
-      styleString = "\\fi";
-    } else if (style == "script") {
-      styleString = "\\fs";
-    }
-
-    Plotter2ViewportInfo* vi = &vInfo[vpid];
-    //vi->titleString = styleString + label;
-    //vi->titlePosX   = posx;
-    //vi->titlePosY   = posy;
-    //vi->titleAngle  = angle;
-    //vi->titleFJust  = fjust;
-    //vi->titleSize   = size;
-    //vi->titleColor  = color;
-    //vi->titleBColor = bgcolor;
-}
-*/
-
 void Plotter2::close() {
     if (hasDevice) {
         cpgclos();
         hasDevice = false;
     }
+}
+
+void Plotter2::resetAttributes(const Plotter2ViewportInfo& vi) {
+    cpgstbg(0); // reset background colour to the initial one (white)
+    cpgsci(1);  // reset foreground colour to the initial one (black)
+    cpgsls(1);  // reset line style to solid
+    cpgslw(1);  // reset line width to 1
+    cpgscf(1);  // reset font style to normal
+    cpgsch(vi.fontSizeDef);// reset font size
+    cpgsfs(1);  // reset fill style (solid)
 }
 
 void Plotter2::plot() {
@@ -1153,13 +1368,7 @@ void Plotter2::plot() {
         Plotter2ViewportInfo vi = vInfo[i];
 
 	if (vi.showViewport) {
-            cpgstbg(0); // reset background colour to the initial one (white)
-            cpgsci(1);  // reset foreground colour to the initial one (black)
-  	    cpgsls(1);  // reset line style to solid
-	    cpgslw(1);  // reset line width to 1
-	    cpgscf(1);  // reset font style to normal
-	    cpgsch(vi.fontSizeDef);// reset font size
-	    cpgsfs(1);  // reset fill style (solid)
+	    resetAttributes(vi);
 
 	    // setup viewport
             cpgsvp(vi.vpPosXMin, vi.vpPosXMax, vi.vpPosYMin, vi.vpPosYMax);
@@ -1174,12 +1383,7 @@ void Plotter2::plot() {
 
 	    // data
 	    for (unsigned int j = 0; j < vi.vData.size(); ++j) {
-                cpgstbg(0); // reset background colour to the initial one (white)
-                cpgsci(1);  // reset foreground colour to the initial one (black)
-  	        cpgsls(1);  // reset line style to solid
-	        cpgslw(1);  // reset line width to 1
-	        cpgscf(1);  // reset font style to normal
-	        cpgsch(vi.fontSizeDef);// reset font size
+	        resetAttributes(vi);
 
 	        Plotter2DataInfo di = vi.vData[j];
 	        std::vector<float> vxdata = di.xData;
@@ -1220,13 +1424,7 @@ void Plotter2::plot() {
 
 	    // masks
 	    for (unsigned int j = 0; j < vi.vRect.size(); ++j) {
-                cpgstbg(0); // reset background colour to the initial one (white)
-                cpgsci(1);  // reset foreground colour to the initial one (black)
-  	        cpgsls(1);  // reset line style to solid
-	        cpgslw(1);  // reset line width to 1
-	        cpgscf(1);  // reset font style to normal
-	        cpgsch(vi.fontSizeDef);// reset font size
-	        cpgsfs(1);  // reset fill style (solid)
+	        resetAttributes(vi);
 
 	        Plotter2RectInfo ri = vi.vRect[j];
                 cpgsci(ri.color);
@@ -1246,18 +1444,37 @@ void Plotter2::plot() {
                 cpgpoly(4, mxdata, mydata);
 	    }
 
-            cpgstbg(0); // reset background colour to the initial one (white)
-            cpgsci(1);  // reset foreground colour to the initial one (black)
-  	    cpgsls(1);  // reset line style to solid
-	    cpgslw(1);  // reset line width to 1
-	    cpgscf(1);  // reset font style to normal
-	    cpgsch(vi.fontSizeDef);// reset font size
-	    cpgsfs(1);  // reset fill style (solid)
+	    // arrows
+	    for (unsigned int j = 0; j < vi.vArro.size(); ++j) {
+  	        resetAttributes(vi);
+
+		Plotter2ArrowInfo ai = vi.vArro[j];
+		cpgsci(ai.color);
+		cpgslw(ai.width);
+                cpgsls(ai.lineStyle);
+		cpgsch(ai.headSize);
+		cpgsah(ai.headFillStyle, ai.headAngle, ai.headVent);
+		cpgarro(ai.xtail, ai.ytail, ai.xhead, ai.yhead);
+	    }
+
+	    // annotations
+	    for (unsigned int j = 0; j < vi.vAnno.size(); ++j) {
+  	        resetAttributes(vi);
+
+		Plotter2AnnotationInfo ai = vi.vAnno[j];
+		cpgsch(ai.size);
+		cpgsci(ai.color);
+		cpgstbg(ai.bgcolor);
+		cpgptxt(ai.posx, ai.posy, ai.angle, ai.fjust, ai.text.c_str());
+	    }
+
+	    // viewport outline and ticks
+	    resetAttributes(vi);
 
             cpgbox("BCTS",  vi.majorTickIntervalX, vi.nMinorTickWithinMajorTicksX, 
 	           "BCTSV", vi.majorTickIntervalY, vi.nMinorTickWithinMajorTicksY);
 
-	    // viewport outline, ticks and number labels
+	    // viewport numberings
 	    std::string numformatx, numformaty;
 	    if (vi.numLocationX == "b") {
 	        numformatx = "N";
