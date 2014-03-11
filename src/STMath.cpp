@@ -24,6 +24,7 @@
 #include <casa/Containers/RecordField.h>
 #include <casa/Exceptions/Error.h>
 #include <casa/Logging/LogIO.h>
+#include <casa/Quanta/Quantum.h>
 
 #include <coordinates/Coordinates/CoordinateSystem.h>
 #include <coordinates/Coordinates/CoordinateUtil.h>
@@ -2539,8 +2540,25 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
 }
 
 CountedPtr< Scantable >
-  STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
+STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
+//STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
+//	       const std::string &freqTol )
 {
+  /**
+  LogIO os;
+  Double freqTolInHz = 0.0;
+  if (freqTol.size() > 0) {
+    Quantum<Double> freqTolInQuantity;
+    if (!Quantum<Double>::read(freqTolInQuantity, freqTol)) {
+      throw(AipsError("Failed to convert freqTol string to quantity"));
+    }
+    if (!freqTolInQuantity.isConform("Hz")) {
+      throw(AipsError("Invalid freqTol string"));
+    }
+    freqTolInHz = freqTolInQuantity.getValue("Hz");
+  }
+  **/
+  
   if ( in.size() < 2 ) {
     throw(AipsError("Need at least two scantables to perform a merge."));
   }
@@ -2552,6 +2570,7 @@ CountedPtr< Scantable >
   Table& tout = out->table();
   ScalarColumn<uInt> freqidcol(tout,"FREQ_ID"), molidcol(tout, "MOLECULE_ID");
   ScalarColumn<uInt> scannocol(tout,"SCANNO"), focusidcol(tout,"FOCUS_ID");
+  ScalarColumn<uInt> ifnocol(tout, "IFNO");
   // Renumber SCANNO to be 0-based
   Vector<uInt> scannos = scannocol.getColumn();
   uInt offset = min(scannos);
@@ -2560,6 +2579,13 @@ CountedPtr< Scantable >
   uInt newscanno = max(scannos)+1;
   ++it;
   while ( it != in.end() ){
+    /**
+    // Check FREQUENCIES/BASEFRAME
+    if ( out->frequencies().getFrame(true) != (*it)->frequencies().getFrame(true) ) {
+      throw(AipsError("BASEFRAME is not identical"));
+    }
+    **/
+    
     if ( ! (*it)->conformant(*out) ) {
       // non conformant.
       LogIO os( LogOrigin( "STMath", "merge()", WHERE ) ) ;
@@ -2575,34 +2601,39 @@ CountedPtr< Scantable >
 
     TableIterator scanit(tab, "SCANNO");
     while (!scanit.pastEnd()) {
-      ScalarColumn<uInt> thescannocol(scanit.table(),"SCANNO");
-      Vector<uInt> thescannos(thescannocol.nrow(),newscanno);
-      thescannocol.putColumn(thescannos);
       TableIterator subit(scanit.table(), cols);
       while ( !subit.pastEnd() ) {
         uInt nrow = tout.nrow();
         Table thetab = subit.table();
         ROTableRow row(thetab);
 	Vector<uInt> thecolvals(thetab.nrow());
-	ScalarColumn<uInt> thefreqidcol(thetab,"FREQ_ID");
-	ScalarColumn<uInt> themolidcol(thetab, "MOLECULE_ID");
-	ScalarColumn<uInt> thefocusidcol(thetab,"FOCUS_ID");
 	// The selected subset of table should have 
 	// the equal FREQ_ID, MOLECULE_ID, and FOCUS_ID values.
 	const TableRecord& rec = row.get(0);
+	tout.addRow(thetab.nrow());
+	TableCopy::copyRows(tout, thetab, nrow, 0, thetab.nrow());
+
+	Slicer slice(IPosition(1, nrow), IPosition(1, thetab.nrow()),
+		     Slicer::endIsLength);
+
 	// Set the proper FREQ_ID
 	Double rv,rp,inc;
 	(*it)->frequencies().getEntry(rp, rv, inc, rec.asuInt("FREQ_ID"));
 	uInt id;
 	id = out->frequencies().addEntry(rp, rv, inc);
+	//if ( !out->frequencies().match(rp, rv, inc, freqTolInHz, id) ) {
+	//  id = out->frequencies().addEntry(rp, rv, inc);
+	//}
 	thecolvals = id;
-	thefreqidcol.putColumn(thecolvals);
+	freqidcol.putColumnRange(slice, thecolvals);
+	
 	// Set the proper MOLECULE_ID
 	Vector<String> name,fname;Vector<Double> rf;
 	(*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
 	id = out->molecules().addEntry(rf, name, fname);
 	thecolvals = id;
-	themolidcol.putColumn(thecolvals);
+	molidcol.putColumnRange(slice, thecolvals);
+	
 	// Set the proper FOCUS_ID
 	Float fpa,frot,fax,ftan,fhand,fmount,fuser, fxy, fxyp;
 	(*it)->focus().getEntry(fpa, fax, ftan, frot, fhand, fmount,fuser,
@@ -2610,10 +2641,11 @@ CountedPtr< Scantable >
 	id = out->focus().addEntry(fpa, fax, ftan, frot, fhand, fmount,fuser,
 				   fxy, fxyp);
 	thecolvals = id;
-	thefocusidcol.putColumn(thecolvals);
+	focusidcol.putColumnRange(slice, thecolvals);
 
-        tout.addRow(thetab.nrow());
-        TableCopy::copyRows(tout, thetab, nrow, 0, thetab.nrow());
+	// Set the proper SCANNO
+	thecolvals = newscanno;
+	scannocol.putColumnRange(slice, thecolvals);
 
         ++subit;
       }
