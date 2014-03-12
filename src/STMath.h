@@ -309,7 +309,8 @@ public:
                                       const std::vector<float>& tau);
 
   casa::CountedPtr<Scantable>
-    merge(const std::vector<casa::CountedPtr<Scantable> >& in);
+    merge(const std::vector<casa::CountedPtr<Scantable> >& in,
+	  const std::string &freqTol = "");
 
   casa::CountedPtr<Scantable>
     invertPhase( const casa::CountedPtr<Scantable>& in);

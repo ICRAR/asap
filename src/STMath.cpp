@@ -2540,13 +2540,10 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
 }
 
 CountedPtr< Scantable >
-STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
-//STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
-//	       const std::string &freqTol )
+STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
+	       const std::string &freqTol )
 {
-  /**
-  LogIO os;
-  Double freqTolInHz = 0.0;
+  Double freqTolInHz = 1.0; // default is 1.0Hz according to concat task
   if (freqTol.size() > 0) {
     Quantum<Double> freqTolInQuantity;
     if (!Quantum<Double>::read(freqTolInQuantity, freqTol)) {
@@ -2557,7 +2554,6 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
     }
     freqTolInHz = freqTolInQuantity.getValue("Hz");
   }
-  **/
   
   if ( in.size() < 2 ) {
     throw(AipsError("Need at least two scantables to perform a merge."));
@@ -2578,13 +2574,15 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
   scannocol.putColumn(scannos);
   uInt newscanno = max(scannos)+1;
   ++it;
+
+  // new IFNO
+  uInt ifnoCounter = max(ifnocol.getColumn()) + 1;
+  
   while ( it != in.end() ){
-    /**
     // Check FREQUENCIES/BASEFRAME
     if ( out->frequencies().getFrame(true) != (*it)->frequencies().getFrame(true) ) {
       throw(AipsError("BASEFRAME is not identical"));
     }
-    **/
     
     if ( ! (*it)->conformant(*out) ) {
       // non conformant.
@@ -2620,12 +2618,56 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in )
 	Double rv,rp,inc;
 	(*it)->frequencies().getEntry(rp, rv, inc, rec.asuInt("FREQ_ID"));
 	uInt id;
-	id = out->frequencies().addEntry(rp, rv, inc);
-	//if ( !out->frequencies().match(rp, rv, inc, freqTolInHz, id) ) {
-	//  id = out->frequencies().addEntry(rp, rv, inc);
-	//}
+	
+	// default value is new unique IFNO
+	uInt newifno = ifnoCounter;
+	uInt nchan = rec.asArrayFloat("SPECTRA").shape()[0];
+	//id = out->frequencies().addEntry(rp, rv, inc);
+	if ( !out->frequencies().match(rp, rv, inc, freqTolInHz, id) ) {
+	  // add new entry to FREQUENCIES table
+	  id = out->frequencies().addEntry(rp, rv, inc);
+
+	  // increment counter for IFNO
+	  ifnoCounter++;
+	}
+	else {
+	  // should renumber IFNO to be same as existing rows that have same FREQ_ID
+	  LogIO os(LogOrigin("STMath", "merge", WHERE));
+	  Table outFreqIdSelected = tout(tout.col("FREQ_ID") == id);
+	  TableIterator _iter(outFreqIdSelected, "IFNO");
+	  map<uInt, uInt> nchanMap;
+	  while (!_iter.pastEnd()) {
+	    const Table _table = _iter.table();
+	    ROTableRow _row(_table);
+	    const TableRecord &_rec = _row.get(0); 
+	    uInt nchan = _rec.asArrayFloat("SPECTRA").shape()[0];
+	    if (nchanMap.find(nchan) != nchanMap.end()) {
+	      throw(AipsError("There are non-unique IFNOs assigned to spectra that have same FREQ_ID and same nchan. Something wrong."));
+	    }
+	    nchanMap[nchan] = _rec.asuInt("IFNO");
+	    _iter.next();
+	  }
+
+	  os << LogIO::DEBUGGING << "nchanMap for " << id << ":" << LogIO::POST;
+	  for (map<uInt, uInt>::iterator i = nchanMap.begin(); i != nchanMap.end(); ++i) {
+	    os << LogIO::DEBUGGING << "nchanMap[" << i->first << "] = " << i->second << LogIO::POST;
+	  }
+
+	  if (nchanMap.find(nchan) == nchanMap.end()) {
+	    // increment counter for IFNO
+	    ifnoCounter++;
+	  }
+	  else {
+	    // renumber IFNO to be same as existing value that corresponds to nchan
+	    newifno = nchanMap[nchan];
+	  }
+	  os << LogIO::DEBUGGING << "newifno = " << newifno << LogIO::POST;
+	}
 	thecolvals = id;
 	freqidcol.putColumnRange(slice, thecolvals);
+
+	thecolvals = newifno;
+	ifnocol.putColumnRange(slice, thecolvals);
 	
 	// Set the proper MOLECULE_ID
 	Vector<String> name,fname;Vector<Double> rf;
