@@ -5145,7 +5145,7 @@ class scantable(Scantable):
             if average:
                 tbl = self._math._average((tbl, ), (), 'NONE', 'SCAN')
             if not first:
-                tbl = self._math._merge([self, tbl])
+                tbl = self._math._merge([self, tbl], "")
             Scantable.__init__(self, tbl)
             r.close()
             del r, tbl
