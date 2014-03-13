@@ -2543,7 +2543,7 @@ CountedPtr< Scantable >
 STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
 	       const std::string &freqTol )
 {
-  Double freqTolInHz = 1.0; // default is 1.0Hz according to concat task
+  Double freqTolInHz = 0.0; // default is 0.0Hz (merge only when exact match)
   if (freqTol.size() > 0) {
     Quantum<Double> freqTolInQuantity;
     if (!Quantum<Double>::read(freqTolInQuantity, freqTol)) {
