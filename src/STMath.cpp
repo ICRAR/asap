@@ -2553,6 +2553,8 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
       throw(AipsError("Invalid freqTol string"));
     }
     freqTolInHz = freqTolInQuantity.getValue("Hz");
+    LogIO os(LogOrigin("STMath", "merge", WHERE));
+    os << "frequency tolerance = " << freqTolInHz << "Hz" << LogIO::POST;
   }
   
   if ( in.size() < 2 ) {

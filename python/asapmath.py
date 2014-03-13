@@ -1,3 +1,4 @@
+import re
 from asap.scantable import scantable
 from asap.parameters import rcParams
 from asap.logging import asaplog, asaplog_post_dec
@@ -850,6 +851,8 @@ def merge(*args, **kwargs):
         lst = tuple(args)
     if kwargs.has_key('freq_tol'):
         freq_tol = str(kwargs['freq_tol'])
+        if len(freq_tol) > 0 and re.match('.+[GMk]Hz$', freq_tol) is None:
+            freq_tol += 'Hz'
     else:
         freq_tol = ''
     varlist["args"] = "%d scantables" % len(lst)
