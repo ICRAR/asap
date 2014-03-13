@@ -2580,6 +2580,21 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
   // new IFNO
   uInt ifnoCounter = max(ifnocol.getColumn()) + 1;
   
+  // Here we assume that each IFNO has unique MOLECULE_ID
+  // molIdMap:
+  //    KEY: IFNO
+  //    VALUE: MOLECULE_ID
+  map<uInt, uInt> molIdMap;
+  {
+    TableIterator ifit(tout, "IFNO");
+    while (!ifit.pastEnd()) {
+      ROTableRow row(ifit.table());
+      const TableRecord& rec = row.get(0);
+      molIdMap[rec.asuInt("IFNO")] = rec.asuInt("MOLECULE_ID");
+      ifit.next();
+    }
+  }
+  
   while ( it != in.end() ){
     // Check FREQUENCIES/BASEFRAME
     if ( out->frequencies().getFrame(true) != (*it)->frequencies().getFrame(true) ) {
@@ -2598,7 +2613,7 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
     cols[0] = String("FREQ_ID");
     cols[1] = String("MOLECULE_ID");
     cols[2] = String("FOCUS_ID");
-
+    
     TableIterator scanit(tab, "SCANNO");
     while (!scanit.pastEnd()) {
       TableIterator subit(scanit.table(), cols);
@@ -2623,6 +2638,7 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
 	
 	// default value is new unique IFNO
 	uInt newifno = ifnoCounter;
+	Bool isIfMerged = False;
 	uInt nchan = rec.asArrayFloat("SPECTRA").shape()[0];
 	//id = out->frequencies().addEntry(rp, rv, inc);
 	if ( !out->frequencies().match(rp, rv, inc, freqTolInHz, id) ) {
@@ -2662,6 +2678,7 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
 	  else {
 	    // renumber IFNO to be same as existing value that corresponds to nchan
 	    newifno = nchanMap[nchan];
+	    isIfMerged = True;
 	  }
 	  os << LogIO::DEBUGGING << "newifno = " << newifno << LogIO::POST;
 	}
@@ -2675,6 +2692,13 @@ STMath::merge( const std::vector< CountedPtr < Scantable > >& in,
 	Vector<String> name,fname;Vector<Double> rf;
 	(*it)->molecules().getEntry(rf, name, fname, rec.asuInt("MOLECULE_ID"));
 	id = out->molecules().addEntry(rf, name, fname);
+	if (molIdMap.find(newifno) == molIdMap.end()) {
+	  // add new entry to molIdMap
+	  molIdMap[newifno] = id;
+	}
+	if (isIfMerged) {
+	  id = molIdMap[newifno];
+	}
 	thecolvals = id;
 	molidcol.putColumnRange(slice, thecolvals);
 	
