@@ -2052,6 +2052,8 @@ class scantable(Scantable):
             for spw in spw_list:
                 pmin = 0.0
                 pmax = float(self.nchan(spw) - 1)
+
+                molid = self._getmolidcol_list()[self.get_first_rowno_by_if(spw)]
                 
                 if (len(colon_sep) == 1):
                     # no expression for channel selection, 
@@ -2109,7 +2111,7 @@ class scantable(Scantable):
 
                                 elif is_number(expr0) and is_velocity(expr1):
                                     # 'a~b*m/s'
-                                    restf = self.get_restfreqs().values()[0][0]
+                                    restf = self.get_restfreqs()[molid][0]
                                     (expr_v0, expr_v1) = get_velocity_by_string(expr0, expr1)
                                     dppl = self.get_doppler()
                                     expr_f0 = get_frequency_by_velocity(restf, expr_v0, dppl)

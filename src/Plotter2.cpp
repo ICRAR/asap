@@ -2,7 +2,7 @@
 
 namespace asap {
 
-Plotter2AnnotationInfo::Plotter2AnnotationInfo() {
+Plotter2TextInfo::Plotter2TextInfo() {
     text = "";
     posx = 0.0;
     posy = 0.0;
@@ -13,7 +13,7 @@ Plotter2AnnotationInfo::Plotter2AnnotationInfo() {
     bgcolor = -1; // transparent
 }
 
-Plotter2AnnotationInfo::~Plotter2AnnotationInfo() {
+Plotter2TextInfo::~Plotter2TextInfo() {
 }
 
 Plotter2ArrowInfo::Plotter2ArrowInfo() {
@@ -102,7 +102,7 @@ Plotter2ViewportInfo::Plotter2ViewportInfo() {
     vData.clear();
     vRect.clear();
     vArro.clear();
-    vAnno.clear();
+    vText.clear();
 
     labelXString = "";
     labelXPosX = 0.5;
@@ -138,7 +138,7 @@ Plotter2ViewportInfo::~Plotter2ViewportInfo() {
     vData.clear();
     vRect.clear();
     vArro.clear();
-    vAnno.clear();
+    vText.clear();
 }
 
 void Plotter2ViewportInfo::adjustRange() {
@@ -916,7 +916,6 @@ void Plotter2::setLine(const int color, const int width, const int style, const 
     di->lineColor = color;
     di->lineWidth = width;
     di->lineStyle = style;
-    //vi->vData[dataid].lineStyle = style;
 }
 
 void Plotter2::showLine(const int inVpid, const int inDataid) {
@@ -1132,7 +1131,7 @@ void Plotter2::setArrow(const float xtail, const float xhead, const float ytail,
     ai->headVent = headVent;
 }
 
-void Plotter2::setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inAnnid) {
+void Plotter2::setText(const std::string& text, const float inPosx, const float inPosy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inTextid) {
     int vpid = inVpid;
     if (vpid >= (int)vInfo.size()) {
         exit(0);
@@ -1148,16 +1147,16 @@ void Plotter2::setAnnotation(const std::string& label, const float posx, const f
 
     Plotter2ViewportInfo* vi = &vInfo[vpid];
 
-    int annotationid = inAnnid;
+    int annotationid = inTextid;
     if (annotationid < 0) {
-        Plotter2AnnotationInfo ai;
-        vi->vAnno.push_back(ai);
-        annotationid = vi->vAnno.size() - 1;
-    } else if (annotationid >= (int)vi->vAnno.size()) {
+        Plotter2TextInfo ti;
+        vi->vText.push_back(ti);
+        annotationid = vi->vText.size() - 1;
+    } else if (annotationid >= (int)vi->vText.size()) {
         exit(0);
     }
 
-    Plotter2AnnotationInfo* ai = &vi->vAnno[annotationid];
+    Plotter2TextInfo* ti = &vi->vText[annotationid];
 
     std::string styleString;
     if (style == "") {
@@ -1170,14 +1169,25 @@ void Plotter2::setAnnotation(const std::string& label, const float posx, const f
       styleString = "\\fs";
     }
 
-    ai->text = styleString + label;
-    ai->posx = posx;
-    ai->posy = posy;
-    ai->angle = angle;
-    ai->fjust = fjust;
-    ai->size = size;
-    ai->color = color;
-    ai->bgcolor = bgcolor;
+    ti->text = styleString + text;
+
+    float posx = inPosx;
+    if (posx < 0.0) {
+        posx = 0.5*(vi->vpPosXMin + vi->vpPosXMax);
+    }
+    ti->posx = posx;
+
+    float posy = inPosy;
+    if (posy < 0.0) {
+        posy = 0.5*(vi->vpPosYMin + vi->vpPosYMax);
+    }
+    ti->posy = posy;
+
+    ti->angle = angle;
+    ti->fjust = fjust;
+    ti->size = size;
+    ti->color = color;
+    ti->bgcolor = bgcolor;
 }
 
 void Plotter2::setLabelX(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid) {
@@ -1457,15 +1467,15 @@ void Plotter2::plot() {
 		cpgarro(ai.xtail, ai.ytail, ai.xhead, ai.yhead);
 	    }
 
-	    // annotations
-	    for (unsigned int j = 0; j < vi.vAnno.size(); ++j) {
+	    // arbitrary texts
+	    for (unsigned int j = 0; j < vi.vText.size(); ++j) {
   	        resetAttributes(vi);
 
-		Plotter2AnnotationInfo ai = vi.vAnno[j];
-		cpgsch(ai.size);
-		cpgsci(ai.color);
-		cpgstbg(ai.bgcolor);
-		cpgptxt(ai.posx, ai.posy, ai.angle, ai.fjust, ai.text.c_str());
+		Plotter2TextInfo ti = vi.vText[j];
+		cpgsch(ti.size);
+		cpgsci(ti.color);
+		cpgstbg(ti.bgcolor);
+		cpgptxt(ti.posx, ti.posy, ti.angle, ti.fjust, ti.text.c_str());
 	    }
 
 	    // viewport outline and ticks

@@ -544,7 +544,7 @@ class plotter2:
 
     def set_arrow(self, xtail, xhead, ytail, yhead, color=None, width=None, linestyle=None, headsize=None, headfs=None, headangle=None, headvent=None, vpid=None, arrowid=None):
         """\
-        append an arrow or change existing arrow attributes.
+        draw an arrow or change existing arrow attributes.
 
         Parameters:
             xtail:     x position of arrow tail
@@ -588,22 +588,50 @@ class plotter2:
         
         self._plotter.set_arrow(xtail, xhead, ytail, yhead, coloridx, width, linestyleidx, headsize, headfsidx, headangle, headvent, vpid, arrowid)
 
-    def set_annotation(self, label, posx=None, posy=None, angle=None, fjust=None, size=None, style=None, color=None, bgcolor=None, vpid=None, annid=None):
-        if posx    is None: posx    = 0.5
-        if posy    is None: posy    = 0.5
+    def set_text(self, text, posx=None, posy=None, angle=None, fjust=None, size=None, style=None, color=None, bgcolor=None, vpid=None, textid=None):
+        """\
+        write text string or change existing text attributes.
+        
+        Parameters:
+            text:    text string.
+            posx:    x position of text in world coordinate.
+                     default is center of x axis.
+            posy:    y position of text in world coordinate.
+                     default is center of y axis.
+            angle:   rotation angle of text in unit of degree.
+                     0.0 (default) is horizontal.
+            fjust:   horizontal justification of text string. if 0.0
+                     (default) is given, the text is left-justified at
+                     (posx, posy). if 0.5, the text is centered, and if
+                     1.0, the text is right-justified.
+            size:    size of text string. the default is 1.0.
+            style:   font style. "normal", "roman", "italic" and "script"
+                     are available. default is "normal".
+            color:   color of text. see output of list_colornames().
+                     default is "black".
+            bgcolor: background color of text. see output of
+                     list_colornames(). default is transparent(-1).
+            vpid:    viewport id. when not given, the last viewport will
+                     be the target.
+            textid:  text id independently defined for each viewport.
+                     when not given, the text having the final text id
+                     for the specified viewport will be the target.
+        """
+        if posx    is None: posx    = -1.0
+        if posy    is None: posy    = -1.0
         if angle   is None: angle   = 0.0
-        if fjust   is None: fjust   = 0.5
+        if fjust   is None: fjust   = 0.0
         if size    is None: size    = 1.0
         if style   is None: style   = ""
         if color   is None: color   = "black"
         if bgcolor is None: bgcolor = "" # transparent
         if vpid    is None: vpid    = -1
-        if annid   is None: annid   = -1
+        if textid  is None: textid  = -1
         
         coloridx = self.get_colorindex(color)
-        bgcoloridx = self.get_colorindex(bgcolor) if (bgcolor.strip() != "") else bgcolor
+        bgcoloridx = self.get_colorindex(bgcolor) if (bgcolor.strip() != "") else -1 #bgcolor
         
-        self._plotter.set_annotation(label, posx, posy, angle, fjust, size, style, coloridx, bgcoloridx, vpid, annid)
+        self._plotter.set_text(text, posx, posy, angle, fjust, size, style, coloridx, bgcoloridx, vpid, textid)
 
     def set_xlabel(self, label, style=None, size=None, posx=None, posy=None, vpid=None):
         """\
@@ -619,7 +647,7 @@ class plotter2:
                    of number labels)
             posx:  x position of label string in window coordinate.
                    default is the center of x axis.
-            posy:  y position of label string.
+            posy:  y position of label string in window coordinate.
             vpid:  viewport id. when not given, the last viewport
                    will be the target. 
         """
@@ -644,7 +672,7 @@ class plotter2:
             size:  font size. default is 1.1 (10% larger than that
                    of number labels)
             posx:  x position of label string in window coordinate. 
-            posy:  y position of label string.
+            posy:  y position of label string in window coordinate. 
                    default is the center of y axis.
             vpid:   viewport id. when not given, the last viewport
                     will be the target. 

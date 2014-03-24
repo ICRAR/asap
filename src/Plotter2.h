@@ -10,10 +10,10 @@
 
 namespace asap {
 
-class Plotter2AnnotationInfo {
+class Plotter2TextInfo {
 public:
-    Plotter2AnnotationInfo();
-    ~Plotter2AnnotationInfo();
+    Plotter2TextInfo();
+    ~Plotter2TextInfo();
 
     std::string text;
     float posx;
@@ -139,7 +139,7 @@ public:
     std::vector<Plotter2ArrowInfo> vArro;
 
     //annotations
-    std::vector<Plotter2AnnotationInfo> vAnno;
+    std::vector<Plotter2TextInfo> vText;
 
     // x-label
     std::string labelXString;
@@ -238,10 +238,10 @@ public:
     void hidePoint(const int inVpid, const int inDataid);
     void setMaskX(const float xmin, const float xmax, const int color, const int fill, const int width, const float hsep, const int inVpid);
     void setArrow(const float xtail, const float xhead, const float ytail, const float yhead, const int color, const int width, const int lineStyle, const float headSize, const int headFillStyle, const float headAngle, const float headVent, const int inVpid, const int inArrowid);
-    void setAnnotation(const std::string& label, const float posx, const float posy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inAnnid);
-    void setLabelX(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
-    void setLabelY(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
-    void setTitle(const std::string& label, const float posx, const float posy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
+    void setText(const std::string& text, const float inPosx, const float inPosy, const float angle, const float fjust, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid, const int inTextid);
+    void setLabelX(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
+    void setLabelY(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
+    void setTitle(const std::string& label, const float inPosx, const float inPosy, const float size, const std::string& style, const int color, const int bgcolor, const int inVpid);
     void setViewportBackgroundColor(const int bgcolor, const int inVpid);
     void plot();
 private:

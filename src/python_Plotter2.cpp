@@ -81,7 +81,7 @@ namespace asap {
          .def("hide_point",&Plotter2::hidePoint)
          .def("set_mask_x",&Plotter2::setMaskX)
          .def("set_arrow",&Plotter2::setArrow)
-         .def("set_annotation",&Plotter2::setAnnotation)
+         .def("set_text",&Plotter2::setText)
          .def("set_label_x",&Plotter2::setLabelX)
          .def("set_label_y",&Plotter2::setLabelY)
          .def("set_title",&Plotter2::setTitle)
