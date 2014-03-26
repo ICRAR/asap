@@ -2137,10 +2137,11 @@ class scantable(Scantable):
                     if (len(crange_list) == 0):
                         crange_list.append([])
 
-                if res.has_key(spw):
-                    res[spw].extend(crange_list)
-                else:
-                    res[spw] = crange_list
+                if (len(crange_list[0]) > 0):
+                    if res.has_key(spw):
+                        res[spw].extend(crange_list)
+                    else:
+                        res[spw] = crange_list
 
         for spw in res.keys():
             if spw not in valid_ifs:
