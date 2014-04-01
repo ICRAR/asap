@@ -606,10 +606,10 @@ Vector<uInt> STIdxIter2::getRows( StorageInitPolicy policy )
 
 void STIdxIter2::init()
 {
+  num_row_ = table_.nrow();
   for (uInt i = 0; i < cols_.size(); ++i) {
     addSortKey(cols_[i]);
   }
-  num_row_ = table_.nrow();
   sorter_.sort(index_, num_row_);
   num_iter_ = sorter_.unique(unique_, index_);
   // cout << "num_row_ = " << num_row_ << endl
@@ -652,10 +652,9 @@ void STIdxIter2::addSortKey(const string &name)
 template<class T, DataType U>
 void STIdxIter2::addColumnToKey(const string &name)
 {
-  uInt nrow = table_.nrow();
-  void *raw_storage = malloc(sizeof(T) * nrow);
+  void *raw_storage = malloc(sizeof(T) * num_row_);
   T *storage = reinterpret_cast<T*>(raw_storage);
-  Vector<T> array(IPosition(1, nrow), storage, SHARE); 
+  Vector<T> array(IPosition(1, num_row_), storage, SHARE); 
   ROScalarColumn<T> col(table_, name);
   col.getColumn(array);
   sorter_.sortKey(storage, U, 0, Sort::Ascending);
