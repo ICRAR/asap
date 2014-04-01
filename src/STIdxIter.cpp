@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <iostream>
 #include <casa/Utilities/GenSort.h>
 #include <casa/Arrays/Vector.h>
