@@ -3620,26 +3620,25 @@ CountedPtr<Scantable> STMath::almacal( const CountedPtr<Scantable>& s,
     cols[0] = "BEAMNO" ;
     cols[1] = "POLNO" ;
     cols[2] = "IFNO" ;
-    STIdxIter *iter = new STIdxIterAcc( out, cols ) ;
+    STIdxIter2 iter( out, cols ) ;
     STSelector sel ;
-    while ( !iter->pastEnd() ) {
-      Vector<uInt> ids = iter->current() ;
+    while ( !iter.pastEnd() ) {
+      Record ids = iter.currentValue() ;
       stringstream ss ;
       ss << "SELECT FROM $1 WHERE "
-         << "BEAMNO==" << ids[0] << "&&"
-         << "POLNO==" << ids[1] << "&&"
-         << "IFNO==" << ids[2] ;
+         << "BEAMNO==" << ids.asuInt(cols[0]) << "&&"
+         << "POLNO==" << ids.asuInt(cols[1]) << "&&"
+         << "IFNO==" << ids.asuInt(cols[2]) ;
       //cout << "TaQL string: " << ss.str() << endl ;
       sel.setTaQL( ss.str() ) ;
       aoff->setSelection( sel ) ;
-      Vector<uInt> rows = iter->getRows( SHARE ) ;
+      Vector<uInt> rows = iter.getRows( SHARE ) ;
       // out should be an exact copy of s except that SPECTRA column is empty
       calibrateALMA( out, s, aoff, rows ) ;
       aoff->unsetSelection() ;
       sel.reset() ;
-      iter->next() ;
+      iter.next() ;
     }
-    delete iter ;
     s->table_ = torg ;
     s->attach() ;
 

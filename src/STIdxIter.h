@@ -8,6 +8,8 @@
 #include <casa/Arrays/IPosition.h>
 #include <casa/BasicSL/String.h>
 
+#include <casa/Utilities/Sort.h>
+
 #include "Scantable.h"
 
 using namespace std ;
@@ -152,6 +154,37 @@ private:
   Block<String> srcname_m ;
   Int srctypeid_m ;
   Int srcnameid_m ;
+} ;
+
+class STIdxIter2
+{ 
+public:
+  STIdxIter2() ;
+  STIdxIter2( const string &name,
+                             const vector<string> &cols ) ;
+  STIdxIter2( const CountedPtr<Scantable> &s,
+                          const vector<string> &cols ) ; 
+  virtual ~STIdxIter2() ;
+  Record currentValue();
+  Bool pastEnd() ;
+  void next() ;
+  Vector<uInt> getRows(StorageInitPolicy policy=COPY) ;
+  vector<uInt> getRowsSTL() { return tovector( getRows() ) ; } ;
+  virtual void init();
+private:
+  vector<uInt> tovector(Vector<uInt> v);
+  void addSortKey(const string &name);
+  template<class T, DataType U> void addColumnToKey(const string &name);
+  void deallocate();
+  vector<string> cols_;
+  Table table_;
+  uInt counter_;
+  uInt num_iter_;
+  uInt num_row_;
+  Sort sorter_;
+  Vector<uInt> index_;
+  Vector<uInt> unique_;
+  vector<void*> pointer_;
 } ;
 
 } // namespace
