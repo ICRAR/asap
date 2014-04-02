@@ -588,7 +588,7 @@ vector<uInt> STIdxIter2::tovector( Vector<uInt> v )
 
 Vector<uInt> STIdxIter2::getRows( StorageInitPolicy policy )
 {
-  assert(num_iter_ > 1);
+  assert(num_iter_ >= 1);
   assert(counter_ < num_iter_);
   if (counter_ == num_iter_ - 1) {
     uInt start = unique_[counter_];
