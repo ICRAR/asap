@@ -43,7 +43,10 @@ public:
   
 private:
   void setupSelector(const STSelector &sel);
-  void fillCalTable();
+  virtual void appenddata(casa::uInt scanno, casa::uInt cycleno, 
+			  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
+			  casa::uInt freqid, casa::Double time, casa::Float elevation, 
+			  casa::Vector<casa::Float> any_data);
 
   vector<int> iflist_;
 };
