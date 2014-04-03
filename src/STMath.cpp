@@ -3537,29 +3537,28 @@ CountedPtr<Scantable> STMath::cwcal( const CountedPtr<Scantable>& s,
     cols[0] = "BEAMNO" ;
     cols[1] = "POLNO" ;
     cols[2] = "IFNO" ;
-    STIdxIter *iter = new STIdxIterAcc( out, cols ) ;
-    while ( !iter->pastEnd() ) {
-      Vector<uInt> ids = iter->current() ;
+    STIdxIter2 iter(out, cols);
+    while ( !iter.pastEnd() ) {
+      Record ids = iter.currentValue();
       stringstream ss ;
       ss << "SELECT FROM $1 WHERE "
-         << "BEAMNO==" << ids[0] << "&&"
-         << "POLNO==" << ids[1] << "&&"
-         << "IFNO==" << ids[2] ;
+         << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
+         << "POLNO==" << ids.asuInt("POLNO") << "&&"
+         << "IFNO==" << ids.asuInt("IFNO") ;
       //cout << "TaQL string: " << ss.str() << endl ;
       sel.setTaQL( ss.str() ) ;
       aoff->setSelection( sel ) ;
       ahot->setSelection( sel ) ;
       asky->setSelection( sel ) ;
-      Vector<uInt> rows = iter->getRows( SHARE ) ;
+      Vector<uInt> rows = iter.getRows( SHARE ) ;
       // out should be an exact copy of s except that SPECTRA column is empty
       calibrateCW( out, s, aoff, asky, ahot, acold, rows, antname ) ; 
       aoff->unsetSelection() ;
       ahot->unsetSelection() ;
       asky->unsetSelection() ;
       sel.reset() ;
-      iter->next() ;
+      iter.next() ;
     }
-    delete iter ;
     s->table_ = torg ;
     s->attach() ;
 
@@ -3615,7 +3614,7 @@ CountedPtr<Scantable> STMath::almacal( const CountedPtr<Scantable>& s,
     // process each on scan
 //     t0 = mathutil::gettimeofday_sec() ;
 
-    // using STIdxIterAcc 
+    // using STIdxIter2
     vector<string> cols( 3 ) ;
     cols[0] = "BEAMNO" ;
     cols[1] = "POLNO" ;
@@ -3743,12 +3742,12 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
     copyRows( ssig->table_, rsig->table_, 0, 0, rsig->nrow(), False, True, False ) ;
           
     if ( apexcalmode == 0 ) {
-      // using STIdxIterAcc 
+      // using STIdxIter2 
       vector<string> cols( 3 ) ;
       cols[0] = "BEAMNO" ;
       cols[1] = "POLNO" ;
       cols[2] = "IFNO" ;
-      STIdxIter *iter = new STIdxIterAcc( ssig, cols ) ;
+      STIdxIter2 iter(ssig, cols) ;
       STSelector sel ;
       vector< CountedPtr<Scantable> > on( 2 ) ;
       on[0] = rsig ;
@@ -3760,29 +3759,28 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
       hot[0] = ahotlo ;
       hot[1] = ahothi ;
       vector< CountedPtr<Scantable> > cold( 2 ) ;
-      while ( !iter->pastEnd() ) {
-        Vector<uInt> ids = iter->current() ;
+      while ( !iter.pastEnd() ) {
+        Record ids = iter.currentValue() ;
         stringstream ss ;
         ss << "SELECT FROM $1 WHERE "
-           << "BEAMNO==" << ids[0] << "&&"
-           << "POLNO==" << ids[1] << "&&"
-           << "IFNO==" << ids[2] ;
+           << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
+           << "POLNO==" << ids.asuInt("POLNO") << "&&"
+           << "IFNO==" << ids.asuInt("IFNO") ;
         //cout << "TaQL string: " << ss.str() << endl ;
         sel.setTaQL( ss.str() ) ;
         sky[0]->setSelection( sel ) ;
         sky[1]->setSelection( sel ) ;
         hot[0]->setSelection( sel ) ;
         hot[1]->setSelection( sel ) ;
-        Vector<uInt> rows = iter->getRows( SHARE ) ;
+        Vector<uInt> rows = iter.getRows( SHARE ) ;
         calibrateAPEXFS( ssig, sref, on, sky, hot, cold, rows ) ;
         sky[0]->unsetSelection() ;
         sky[1]->unsetSelection() ;
         hot[0]->unsetSelection() ;
         hot[1]->unsetSelection() ;
         sel.reset() ;
-        iter->next() ;
+        iter.next() ;
       }
-      delete iter ;
 
     }
     else if ( apexcalmode == 1 ) {
@@ -3805,51 +3803,49 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
       cols[0] = "BEAMNO" ;
       cols[1] = "POLNO" ;
       cols[2] = "IFNO" ;
-      STIdxIter *iter = new STIdxIterAcc( ssig, cols ) ;
+      STIdxIter2 iter(ssig, cols);
       STSelector sel ;
-      while ( !iter->pastEnd() ) {
-        Vector<uInt> ids = iter->current() ;
+      while ( !iter.pastEnd() ) {
+        Record ids = iter.currentValue() ;
         stringstream ss ;
         ss << "SELECT FROM $1 WHERE "
-           << "BEAMNO==" << ids[0] << "&&"
-           << "POLNO==" << ids[1] << "&&"
-           << "IFNO==" << ids[2] ;
+           << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
+           << "POLNO==" << ids.asuInt("POLNO") << "&&"
+           << "IFNO==" << ids.asuInt("IFNO") ;
         //cout << "TaQL string: " << ss.str() << endl ;
         sel.setTaQL( ss.str() ) ;
         aofflo->setSelection( sel ) ;
         ahotlo->setSelection( sel ) ;
         askylo->setSelection( sel ) ;
-        Vector<uInt> rows = iter->getRows( SHARE ) ;
+        Vector<uInt> rows = iter.getRows( SHARE ) ;
         calibrateCW( ssig, rsig, aofflo, askylo, ahotlo, acoldlo, rows, antname ) ; 
         aofflo->unsetSelection() ;
         ahotlo->unsetSelection() ;
         askylo->unsetSelection() ;
         sel.reset() ;
-        iter->next() ;
+        iter.next() ;
       }
-      delete iter ;
-      iter = new STIdxIterAcc( sref, cols ) ;
-      while ( !iter->pastEnd() ) {
-        Vector<uInt> ids = iter->current() ;
+      iter = STIdxIter2(sref, cols);
+      while ( !iter.pastEnd() ) {
+        Record ids = iter.currentValue() ;
         stringstream ss ;
         ss << "SELECT FROM $1 WHERE "
-           << "BEAMNO==" << ids[0] << "&&"
-           << "POLNO==" << ids[1] << "&&"
-           << "IFNO==" << ids[2] ;
+           << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
+           << "POLNO==" << ids.asuInt("POLNO") << "&&"
+           << "IFNO==" << ids.asuInt("IFNO") ;
         //cout << "TaQL string: " << ss.str() << endl ;
         sel.setTaQL( ss.str() ) ;
         aoffhi->setSelection( sel ) ;
         ahothi->setSelection( sel ) ;
         askyhi->setSelection( sel ) ;
-        Vector<uInt> rows = iter->getRows( SHARE ) ;
+        Vector<uInt> rows = iter.getRows( SHARE ) ;
         calibrateCW( sref, rref, aoffhi, askyhi, ahothi, acoldhi, rows, antname ) ; 
         aoffhi->unsetSelection() ;
         ahothi->unsetSelection() ;
         askyhi->unsetSelection() ;
         sel.reset() ;
-        iter->next() ;
+        iter.next() ;
       }
-      delete iter ;
     }
   }
   else {
@@ -3901,27 +3897,26 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
     cols[0] = "BEAMNO" ;
     cols[1] = "POLNO" ;
     cols[2] = "IFNO" ;
-    STIdxIter *iter = new STIdxIterAcc( ssig, cols ) ;
-    while ( !iter->pastEnd() ) {
-      Vector<uInt> ids = iter->current() ;
+    STIdxIter2 iter(ssig, cols);
+    while ( !iter.pastEnd() ) {
+      Record ids = iter.currentValue() ;
       stringstream ss ;
       ss << "SELECT FROM $1 WHERE "
-         << "BEAMNO==" << ids[0] << "&&"
-         << "POLNO==" << ids[1] << "&&"
-         << "IFNO==" << ids[2] ;
+         << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
+         << "POLNO==" << ids.asuInt("POLNO") << "&&"
+         << "IFNO==" << ids.asuInt("IFNO") ;
       //cout << "TaQL string: " << ss.str() << endl ;
       sel.setTaQL( ss.str() ) ;
       ahot->setSelection( sel ) ;
       asky->setSelection( sel ) ;
-      Vector<uInt> rows = iter->getRows( SHARE ) ;
+      Vector<uInt> rows = iter.getRows( SHARE ) ;
       // out should be an exact copy of s except that SPECTRA column is empty
       calibrateFS( ssig, sref, rsig, rref, asky, ahot, acold, rows ) ; 
       ahot->unsetSelection() ;
       asky->unsetSelection() ;
       sel.reset() ;
-      iter->next() ;
+      iter.next() ;
     }
-    delete iter ;
   }
 
   // do folding if necessary
@@ -4781,7 +4776,7 @@ CountedPtr<Scantable> STMath::averageWithinSession( CountedPtr<Scantable> &s,
   cols[0] = "IFNO" ;
   cols[1] = "POLNO" ;
   cols[2] = "BEAMNO" ;
-  STIdxIterAcc iter( s, cols ) ;
+  STIdxIter2 iter( s, cols ) ;
 
   Table ttab = s->table() ;
   ROScalarColumn<Double> *timeCol = new ROScalarColumn<Double>( ttab, "TIME" ) ;

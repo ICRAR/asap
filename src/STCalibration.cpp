@@ -43,7 +43,7 @@ void STCalibration::fillCalTable()
   cols[0] = "IFNO";
   cols[1] = "POLNO";
   cols[2] = "BEAMNO";
-  STIdxIterAcc iter(scantable_, cols);
+  STIdxIter2 iter(scantable_, cols);
 
   ROScalarColumn<Double> *tcol = new ROScalarColumn<Double>(scantable_->table(), "TIME");
   Vector<Double> timeSec = tcol->getColumn() * 86400.0;
@@ -68,7 +68,7 @@ void STCalibration::fillCalTable()
 
   while(!iter.pastEnd()) {
     Vector<uInt> rows = iter.getRows(SHARE);
-    Vector<uInt> current = iter.current();
+    Record current = iter.currentValue();
     //os_ << "current=" << current << LogIO::POST;
     uInt len = rows.nelements();
     if (len == 0) {
@@ -77,7 +77,7 @@ void STCalibration::fillCalTable()
     }
     else if (len == 1) {
       uInt irow = rows[0];
-      appenddata(0, 0, current[2], current[0], current[1],
+      appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
 		 freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow));
       iter.next();
       continue;
@@ -125,7 +125,7 @@ void STCalibration::fillCalTable()
 //           }
           timeCen /= (Double)count * 86400.0; // sec->day
           elCen /= (Float)count;
-	  appenddata(0, 0, current[2], current[0], current[1],
+	  appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
 		     freqidCol(irow), timeCen, elCen, acc.getSpectrum());
         }
         acc.reset() ;

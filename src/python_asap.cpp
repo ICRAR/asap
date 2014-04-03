@@ -87,7 +87,7 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STAtmosphere();
   asap::python::python_SrcType();
   asap::python::python_STGrid();
-  asap::python::python_Iterator();
+  //asap::python::python_Iterator();
   asap::python::python_EdgeMarker();
   asap::python::python_PlotHelper();
   asap::python::python_STSideBandSep();

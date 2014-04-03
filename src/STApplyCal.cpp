@@ -225,12 +225,12 @@ void STApplyCal::apply(Bool insitu, Bool filltsys)
   cols[0] = "BEAMNO" ;
   cols[1] = "POLNO" ;
   cols[2] = "IFNO" ;
-  CountedPtr<STIdxIter> iter = new STIdxIterAcc(work_, cols) ;
+  CountedPtr<STIdxIter2> iter = new STIdxIter2(work_, cols) ;
   while (!iter->pastEnd()) {
-    Vector<uInt> ids = iter->current();
+    Record ids = iter->currentValue();
     Vector<uInt> rows = iter->getRows(SHARE);
     if (rows.nelements() > 0)
-      doapply(ids[0], ids[2], ids[1], rows, skycalList, filltsys);
+      doapply(ids.asuInt("BEAMNO"), ids.asuInt("IFNO"), ids.asuInt("POLNO"), rows, skycalList, filltsys);
     iter->next();
   }
 
