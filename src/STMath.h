@@ -401,11 +401,6 @@ private:
   casa::Vector<casa::uChar>
     flagsFromMA(const casa::MaskedArray<casa::Float>& ma);
 
-  casa::Vector<casa::Float> getSpectrumFromTime( double reftime, const casa::Vector<casa::Double> &v, const vector<int> &idx, const casa::Matrix<casa::Float>& sp, string mode = "before" ) ;
-  casa::Vector<casa::Float> getTcalFromTime( double reftime, const casa::Vector<casa::Double> &v, const vector<int> &idx, const casa::CountedPtr<Scantable>& s, string mode="before" ) ;
-  casa::Vector<casa::Float> getTsysFromTime( double reftime, const casa::Vector<casa::Double> &v, const vector<int> &idx, const casa::CountedPtr<Scantable>& s, string mode="before" ) ;
-  vector<int> getRowIdFromTime( double reftime, const casa::Vector<casa::Double>& t ) ;
-
   // Chopper-Wheel type calibration
   void calibrateCW( casa::CountedPtr<Scantable> &out,
                     const casa::CountedPtr<Scantable> &on,
