@@ -215,8 +215,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     cols[4] = String("SCANNO");
   }
   uInt outrowCount = 0;
-  // use STIdxIterExAcc instead of TableIterator
-  STIdxIterExAcc iter( in[0], cols ) ;
+  // use STIdxIter2 instead of TableIterator
+  STIdxIter2 iter( in[0], cols ) ;
 //   double t2 = 0 ;
 //   double t3 = 0 ;
 //   double t4 = 0 ;
@@ -229,8 +229,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       iter.next() ;
       continue ;
     }
-    Vector<uInt> current = iter.current() ;
-    String srcname = iter.getSrcName() ;
+    Record current = iter.currentValue() ;
     //Table subt = iter.table();
     // copy the first row of this selection into the new table
     tout.addRow();
@@ -335,7 +334,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 #if 1
       static char const*const colNames1[] = { "IFNO", "BEAMNO", "POLNO" };
       //uInt const values1[] = { rec.asuInt("IFNO"), rec.asuInt("BEAMNO"), rec.asuInt("POLNO") };
-      uInt const values1[] = { current[1], current[0], current[2] };
+      uInt const values1[] = { current.asuInt("IFNO"), current.asuInt("BEAMNO"), current.asuInt("POLNO") };
       SingleTypeEqPredicate<uInt, 3> myPred(tin, colNames1, values1);
       CustomTableExprNodeRep myNodeRep(tin, myPred);
       myNodeRep.link(); // to avoid automatic delete when myExpr is destructed.
@@ -345,20 +344,20 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 //       Table basesubt = tin( tin.col("BEAMNO") == Int(rec.asuInt("BEAMNO"))
 //                          && tin.col("IFNO") == Int(rec.asuInt("IFNO"))
 //                          && tin.col("POLNO") == Int(rec.asuInt("POLNO")) );
-      Table basesubt = tin( tin.col("BEAMNO") == current[0]
-                         && tin.col("IFNO") == current[1]
-                         && tin.col("POLNO") == current[2] );
+      Table basesubt = tin( tin.col("BEAMNO") == current.asuInt("BEAMNO")
+			    && tin.col("IFNO") == current.asuInt("IFNO")
+			    && tin.col("POLNO") == current.asuInt("POLNO") );
 #endif
       Table subt;
       if ( avmode == "SOURCE") {
 //         subt = basesubt( basesubt.col("SRCNAME") == rec.asString("SRCNAME"));
-        subt = basesubt( basesubt.col("SRCNAME") == srcname );
+        subt = basesubt( basesubt.col("SRCNAME") == current.asString("SRCNAME") );
 
       } else if (avmode == "SCAN") {
 //         subt = basesubt( basesubt.col("SRCNAME") == rec.asString("SRCNAME") 
 // 		      && basesubt.col("SCANNO") == Int(rec.asuInt("SCANNO")) );
-        subt = basesubt( basesubt.col("SRCNAME") == srcname 
-		      && basesubt.col("SCANNO") == current[4] );
+        subt = basesubt( basesubt.col("SRCNAME") == current.asString("SRCNAME")
+			 && basesubt.col("SCANNO") == current.asuInt("SCANNO") );
       } else {
         subt = basesubt;
       }

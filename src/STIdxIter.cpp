@@ -514,7 +514,8 @@ STIdxIter2::STIdxIter2()
     sorter_(),
     index_(),
     unique_(),
-    pointer_()
+    pointer_(),
+    string_storage_()
 {
 }
 
@@ -528,7 +529,8 @@ STIdxIter2::STIdxIter2( const string &name,
     sorter_(),
     index_(),
     unique_(),
-    pointer_()
+    pointer_(),
+    string_storage_()
 {
   init();
 }
@@ -543,7 +545,8 @@ STIdxIter2::STIdxIter2( const CountedPtr<Scantable> &s,
     sorter_(),
     index_(),
     unique_(),
-    pointer_()
+    pointer_(),
+    string_storage_()
 {
   init();
 }
@@ -639,9 +642,9 @@ void STIdxIter2::addSortKey(const string &name)
   case TpComplex:
     addColumnToKey<Complex, TpComplex>(name);
     break;
-  // case TpString:
-  //   addColumnToKey<String, TpString>(name);
-  //   break;
+  case TpString:
+    addColumnToKeyTpString(name);
+    break;
   default:
     deallocate();
     stringstream oss;
@@ -661,5 +664,16 @@ void STIdxIter2::addColumnToKey(const string &name)
   sorter_.sortKey(storage, U, 0, Sort::Ascending);
   pointer_.push_back(raw_storage);
 }
+
+void STIdxIter2::addColumnToKeyTpString(const string &name)
+{
+  ROScalarColumn<String> col(table_, name);
+  String *storage = new String[num_row_];
+  Vector<String> array(IPosition(1, num_row_), storage, TAKE_OVER);
+  col.getColumn(array);
+  sorter_.sortKey(storage, TpString, 0, Sort::Ascending);
+  string_storage_.push_back(array);
+}
+
 } // namespace
 

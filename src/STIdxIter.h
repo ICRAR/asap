@@ -175,6 +175,7 @@ private:
   vector<uInt> tovector(Vector<uInt> v);
   void addSortKey(const string &name);
   template<class T, DataType U> void addColumnToKey(const string &name);
+  void addColumnToKeyTpString(const string &name);
   void deallocate();
   vector<string> cols_;
   Table table_;
@@ -185,6 +186,7 @@ private:
   Vector<uInt> index_;
   Vector<uInt> unique_;
   vector<void*> pointer_;
+  vector<Vector<String> > string_storage_;
 } ;
 
 } // namespace
