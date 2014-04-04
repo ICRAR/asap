@@ -57,57 +57,10 @@
 #include "STIdxIter.h"
 
 #include "CalibrationHelper.h"
+#include "IterationHelper.h"
 
 using namespace casa;
 using namespace asap;
-
-// namespace {
-// class CalibrationIterator
-// {
-// public:
-//   CalibrationIterator()
-//     : table_(table)
-//   {}
-//   ~CalibrationIterator() {}
-//   void Iterate() {
-//     STSelector sel;
-//     vector<string> cols( 3 ) ;
-//     cols[0] = "BEAMNO" ;
-//     cols[1] = "POLNO" ;
-//     cols[2] = "IFNO" ;
-//     STIdxIter2 iter(out, cols);
-//     while ( !iter.pastEnd() ) {
-//       Record ids = iter.currentValue();
-//       stringstream ss ;
-//       ss << "SELECT FROM $1 WHERE "
-//          << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
-//          << "POLNO==" << ids.asuInt("POLNO") << "&&"
-//          << "IFNO==" << ids.asuInt("IFNO") ;
-//       //cout << "TaQL string: " << ss.str() << endl ;
-//       sel.setTaQL( ss.str() ) ;
-//       ////
-//       // begin individual processing
-//       aoff->setSelection( sel ) ;
-//       ahot->setSelection( sel ) ;
-//       asky->setSelection( sel ) ;
-//       Vector<uInt> rows = iter.getRows( SHARE ) ;
-//       // out should be an exact copy of s except that SPECTRA column is empty
-//       calibrateCW( out, s, aoff, asky, ahot, acold, rows, antname ) ; 
-//       aoff->unsetSelection() ;
-//       ahot->unsetSelection() ;
-//       asky->unsetSelection() ;
-//       // end individual processing
-//       ////
-//       sel.reset() ;
-//       iter.next() ;
-//     }    
-//   };
-// protected:
-//   CountedPtr<Scantable> table_;
-// };
-
-
-// } // anonymous namespace
 
 // 2012/02/17 TN
 // Since STGrid is implemented, average doesn't consider direction 
@@ -3580,34 +3533,10 @@ CountedPtr<Scantable> STMath::cwcal( const CountedPtr<Scantable>& s,
     out->table().addRow( s->nrow() ) ;
     copyRows( out->table(), s->table(), 0, 0, s->nrow(), False, True, False ) ;
     
-    // process each on scan
-    STSelector sel ;
-    vector<string> cols( 3 ) ;
-    cols[0] = "BEAMNO" ;
-    cols[1] = "POLNO" ;
-    cols[2] = "IFNO" ;
-    STIdxIter2 iter(out, cols);
-    while ( !iter.pastEnd() ) {
-      Record ids = iter.currentValue();
-      stringstream ss ;
-      ss << "SELECT FROM $1 WHERE "
-         << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
-         << "POLNO==" << ids.asuInt("POLNO") << "&&"
-         << "IFNO==" << ids.asuInt("IFNO") ;
-      //cout << "TaQL string: " << ss.str() << endl ;
-      sel.setTaQL( ss.str() ) ;
-      aoff->setSelection( sel ) ;
-      ahot->setSelection( sel ) ;
-      asky->setSelection( sel ) ;
-      Vector<uInt> rows = iter.getRows( SHARE ) ;
-      // out should be an exact copy of s except that SPECTRA column is empty
-      calibrateCW( out, s, aoff, asky, ahot, acold, rows, antname ) ; 
-      aoff->unsetSelection() ;
-      ahot->unsetSelection() ;
-      asky->unsetSelection() ;
-      sel.reset() ;
-      iter.next() ;
-    }
+    // iterate throgh IterationHelper
+    ChopperWheelCalibrator cal(out, s, aoff, asky, ahot, acold);
+    IterationHelper<ChopperWheelCalibrator>::Iterate(cal, "BEAMNO,POLNO,IFNO");
+
     s->table_ = torg ;
     s->attach() ;
 
@@ -3663,30 +3592,11 @@ CountedPtr<Scantable> STMath::almacal( const CountedPtr<Scantable>& s,
     // process each on scan
 //     t0 = mathutil::gettimeofday_sec() ;
 
-    // using STIdxIter2
-    vector<string> cols( 3 ) ;
-    cols[0] = "BEAMNO" ;
-    cols[1] = "POLNO" ;
-    cols[2] = "IFNO" ;
-    STIdxIter2 iter( out, cols ) ;
-    STSelector sel ;
-    while ( !iter.pastEnd() ) {
-      Record ids = iter.currentValue() ;
-      stringstream ss ;
-      ss << "SELECT FROM $1 WHERE "
-         << "BEAMNO==" << ids.asuInt(cols[0]) << "&&"
-         << "POLNO==" << ids.asuInt(cols[1]) << "&&"
-         << "IFNO==" << ids.asuInt(cols[2]) ;
-      //cout << "TaQL string: " << ss.str() << endl ;
-      sel.setTaQL( ss.str() ) ;
-      aoff->setSelection( sel ) ;
-      Vector<uInt> rows = iter.getRows( SHARE ) ;
-      // out should be an exact copy of s except that SPECTRA column is empty
-      calibrateALMA( out, s, aoff, rows ) ;
-      aoff->unsetSelection() ;
-      sel.reset() ;
-      iter.next() ;
-    }
+    // iterate throgh IterationHelper
+    AlmaCalibrator cal(out, s, aoff);
+    IterationHelper<AlmaCalibrator>::Iterate(cal, "BEAMNO,POLNO,IFNO");
+
+    // finalize
     s->table_ = torg ;
     s->attach() ;
 
@@ -3847,54 +3757,11 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
                                                            "TINT" ) ;
       
       // process each sig and ref scan
-//       STSelector sel ;
-      vector<string> cols( 3 ) ;
-      cols[0] = "BEAMNO" ;
-      cols[1] = "POLNO" ;
-      cols[2] = "IFNO" ;
-      STIdxIter2 iter(ssig, cols);
-      STSelector sel ;
-      while ( !iter.pastEnd() ) {
-        Record ids = iter.currentValue() ;
-        stringstream ss ;
-        ss << "SELECT FROM $1 WHERE "
-           << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
-           << "POLNO==" << ids.asuInt("POLNO") << "&&"
-           << "IFNO==" << ids.asuInt("IFNO") ;
-        //cout << "TaQL string: " << ss.str() << endl ;
-        sel.setTaQL( ss.str() ) ;
-        aofflo->setSelection( sel ) ;
-        ahotlo->setSelection( sel ) ;
-        askylo->setSelection( sel ) ;
-        Vector<uInt> rows = iter.getRows( SHARE ) ;
-        calibrateCW( ssig, rsig, aofflo, askylo, ahotlo, acoldlo, rows, antname ) ; 
-        aofflo->unsetSelection() ;
-        ahotlo->unsetSelection() ;
-        askylo->unsetSelection() ;
-        sel.reset() ;
-        iter.next() ;
-      }
-      iter = STIdxIter2(sref, cols);
-      while ( !iter.pastEnd() ) {
-        Record ids = iter.currentValue() ;
-        stringstream ss ;
-        ss << "SELECT FROM $1 WHERE "
-           << "BEAMNO==" << ids.asuInt("BEAMNO") << "&&"
-           << "POLNO==" << ids.asuInt("POLNO") << "&&"
-           << "IFNO==" << ids.asuInt("IFNO") ;
-        //cout << "TaQL string: " << ss.str() << endl ;
-        sel.setTaQL( ss.str() ) ;
-        aoffhi->setSelection( sel ) ;
-        ahothi->setSelection( sel ) ;
-        askyhi->setSelection( sel ) ;
-        Vector<uInt> rows = iter.getRows( SHARE ) ;
-        calibrateCW( sref, rref, aoffhi, askyhi, ahothi, acoldhi, rows, antname ) ; 
-        aoffhi->unsetSelection() ;
-        ahothi->unsetSelection() ;
-        askyhi->unsetSelection() ;
-        sel.reset() ;
-        iter.next() ;
-      }
+      // iterate throgh IterationHelper
+      ChopperWheelCalibrator cal_sig(ssig, rsig, aofflo, askylo, ahotlo, acoldlo);
+      IterationHelper<ChopperWheelCalibrator>::Iterate(cal_sig, "BEAMNO,POLNO,IFNO");
+      ChopperWheelCalibrator cal_ref(sref, rref, aoffhi, askyhi, ahothi, acoldhi);
+      IterationHelper<ChopperWheelCalibrator>::Iterate(cal_ref, "BEAMNO,POLNO,IFNO");
     }
   }
   else {
@@ -4052,152 +3919,6 @@ CountedPtr<Scantable> STMath::almacalfs( const CountedPtr<Scantable>& s )
   CountedPtr<Scantable> out ;
 
   return out ;
-}
-
-void STMath::calibrateCW( CountedPtr<Scantable> &out,
-                          const CountedPtr<Scantable>& on,
-                          const CountedPtr<Scantable>& off,
-                          const CountedPtr<Scantable>& sky,
-                          const CountedPtr<Scantable>& hot,
-                          const CountedPtr<Scantable>& cold,
-                          const Vector<uInt> &rows,
-                          const String &antname )
-{
-  // 2012/05/22 TN
-  // Assume that out has empty SPECTRA column
-
-  // if rows is empty, just return
-  if ( rows.nelements() == 0 )
-    return ;
-  ROScalarColumn<Double> timeCol( off->table(), "TIME" ) ;
-  Vector<Double> timeOff = timeCol.getColumn() ;
-  timeCol.attach( sky->table(), "TIME" ) ;
-  Vector<Double> timeSky = timeCol.getColumn() ;
-  timeCol.attach( hot->table(), "TIME" ) ;
-  Vector<Double> timeHot = timeCol.getColumn() ;
-  timeCol.attach( on->table(), "TIME" ) ;
-  ROArrayColumn<Float> arrayFloatCol( off->table(), "SPECTRA" ) ;
-  SpectralData offspectra(arrayFloatCol.getColumn());
-  arrayFloatCol.attach( sky->table(), "SPECTRA" ) ;
-  SpectralData skyspectra(arrayFloatCol.getColumn());
-  arrayFloatCol.attach( hot->table(), "SPECTRA" ) ;
-  SpectralData hotspectra(arrayFloatCol.getColumn());
-  TcalData tcaldata(sky);
-  TsysData tsysdata(sky);
-  unsigned int spsize = on->nchan( on->getIF(rows[0]) ) ;
-  // I know that the data is contiguous
-  const uInt *p = rows.data() ;
-  vector<int> ids( 2 ) ;
-  Block<uInt> flagchan( spsize ) ;
-  uInt nflag = 0 ;
-  for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
-    double reftime = timeCol.asdouble(*p) ;
-    ids = getRowIdFromTime( reftime, timeOff ) ;
-    Vector<Float> spoff = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeOff, ids, offspectra, "linear");
-    ids = getRowIdFromTime( reftime, timeSky ) ; 
-    Vector<Float> spsky = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeSky, ids, skyspectra, "linear");
-    Vector<Float> tcal = SimpleInterpolationHelper<TcalData>::GetFromTime(reftime, timeSky, ids, tcaldata, "linear");
-    Vector<Float> tsys = SimpleInterpolationHelper<TsysData>::GetFromTime(reftime, timeSky, ids, tsysdata, "linear");
-    ids = getRowIdFromTime( reftime, timeHot ) ;
-    Vector<Float> sphot = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeHot, ids, hotspectra, "linear");
-    Vector<Float> spec = on->specCol_( *p ) ;
-    if ( antname.find( "APEX" ) != String::npos ) {
-      // using gain array
-      for ( unsigned int j = 0 ; j < tcal.size() ; j++ ) {
-        if ( spoff[j] == 0.0 || (sphot[j]-spsky[j]) == 0.0 ) {
-          spec[j] = 0.0 ;
-          flagchan[nflag++] = j ;
-        }
-        else {
-          spec[j] = ( ( spec[j] - spoff[j] ) / spoff[j] )
-            * ( spsky[j] / ( sphot[j] - spsky[j] ) ) * tcal[j] ;
-        }
-      }
-    }
-    else {
-      // Chopper-Wheel calibration (Ulich & Haas 1976)
-      for ( unsigned int j = 0 ; j < tcal.size() ; j++ ) {
-        if ( (sphot[j]-spsky[j]) == 0.0 ) {
-          spec[j] = 0.0 ;
-          flagchan[nflag++] = j ;
-        }
-        else {
-          spec[j] = ( spec[j] - spoff[j] ) / ( sphot[j] - spsky[j] ) * tcal[j] ;
-        }
-      }
-    }
-    out->specCol_.put( *p, spec ) ;
-    out->tsysCol_.put( *p, tsys ) ;
-    if ( nflag > 0 ) {
-      Vector<uChar> fl = out->flagsCol_( *p ) ;
-      for ( unsigned int j = 0 ; j < nflag ; j++ ) {
-        fl[flagchan[j]] = (uChar)True ;
-      }
-      out->flagsCol_.put( *p, fl ) ;
-    }
-    nflag = 0 ;
-    p++ ;
-  }
-}
-
-void STMath::calibrateALMA( CountedPtr<Scantable>& out,
-                            const CountedPtr<Scantable>& on,
-                            const CountedPtr<Scantable>& off,
-                            const Vector<uInt>& rows )
-{
-  // 2012/05/22 TN
-  // Assume that out has empty SPECTRA column
-
-  // if rows is empty, just return
-  if ( rows.nelements() == 0 )
-    return ;
-  ROScalarColumn<Double> timeCol( off->table(), "TIME" ) ;
-  Vector<Double> timeVec = timeCol.getColumn() ;
-  timeCol.attach( on->table(), "TIME" ) ;
-  ROArrayColumn<Float> arrayFloatCol( off->table(), "SPECTRA" ) ;
-  SpectralData offspectra(arrayFloatCol.getColumn());
-  unsigned int spsize = on->nchan( on->getIF(rows[0]) ) ;
-  // I know that the data is contiguous
-  const uInt *p = rows.data() ;
-  vector<int> ids( 2 ) ;
-  Block<uInt> flagchan( spsize ) ;
-  uInt nflag = 0 ;
-  for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
-    double reftime = timeCol.asdouble(*p) ;
-    ids = getRowIdFromTime( reftime, timeVec ) ;
-    Vector<Float> spoff = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeVec, ids, offspectra, "linear");
-    Vector<Float> spec = on->specCol_( *p ) ;
-    Vector<Float> tsys = on->tsysCol_( *p ) ;
-    // ALMA Calibration
-    // 
-    // Ta* = Tsys * ( ON - OFF ) / OFF
-    //
-    // 2010/01/07 Takeshi Nakazato
-    unsigned int tsyssize = tsys.nelements() ;
-    for ( unsigned int j = 0 ; j < spsize ; j++ ) {
-      if ( spoff[j] == 0.0 ) {
-        spec[j] = 0.0 ;
-        flagchan[nflag++] = j ;
-      }
-      else {
-        spec[j] = ( spec[j] - spoff[j] ) / spoff[j] ;
-      }
-      if ( tsyssize == spsize ) 
-        spec[j] *= tsys[j] ;
-      else 
-        spec[j] *= tsys[0] ;
-    }
-    out->specCol_.put( *p, spec ) ;
-    if ( nflag > 0 ) {
-      Vector<uChar> fl = out->flagsCol_( *p ) ;
-      for ( unsigned int j = 0 ; j < nflag ; j++ ) {
-        fl[flagchan[j]] = (uChar)True ;
-      }
-      out->flagsCol_.put( *p, fl ) ;
-    }
-    nflag = 0 ;
-    p++ ;
-  }
 }
 
 void STMath::calibrateAPEXFS( CountedPtr<Scantable> &sig,

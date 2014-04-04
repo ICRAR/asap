@@ -401,22 +401,6 @@ private:
   casa::Vector<casa::uChar>
     flagsFromMA(const casa::MaskedArray<casa::Float>& ma);
 
-  // Chopper-Wheel type calibration
-  void calibrateCW( casa::CountedPtr<Scantable> &out,
-                    const casa::CountedPtr<Scantable> &on,
-                    const casa::CountedPtr<Scantable> &off,
-                    const casa::CountedPtr<Scantable> &sky,
-                    const casa::CountedPtr<Scantable> &hot,
-                    const casa::CountedPtr<Scantable> &cold,
-                    const casa::Vector<casa::uInt> &rows,
-                    const casa::String &antname ) ;
-
-  // Tsys * (ON-OFF)/OFF
-  void calibrateALMA( casa::CountedPtr<Scantable>& out,
-                      const casa::CountedPtr<Scantable>& on,
-                      const casa::CountedPtr<Scantable>& off,
-                      const casa::Vector<casa::uInt>& rows ) ;
-
   // Frequency switching
   void calibrateFS( casa::CountedPtr<Scantable> &sig,
                     casa::CountedPtr<Scantable> &ref,
