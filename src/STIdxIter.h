@@ -15,6 +15,21 @@
 using namespace std ;
 using namespace casa ;
 
+namespace {
+vector<string> split(const string &str, char delim)
+{
+  vector<string> result;
+  size_t current = 0;
+  size_t found;
+  while ((found = str.find_first_of(delim, current)) != string::npos) {
+    result.push_back(string(str, current, found - current));
+    current = found + 1;
+  }
+  result.push_back(string(str, current, str.size() - current));
+  return result;
+}
+} // anonymous namespace
+
 namespace asap {
 class IndexIterator 
 {
@@ -159,6 +174,23 @@ private:
 class STIdxIter2
 { 
 public:
+  template<class T>
+  static void Iterate(T &processor, const string cols_list)
+  {
+    vector<string> cols = split(cols_list, ',');
+    // for (vector<string>::iterator i = cols.begin(); i != cols.end(); ++i)
+    //   cout << *i << endl;
+    STIdxIter2 iter(processor.target(), cols);
+    STSelector sel ;
+    while ( !iter.pastEnd() ) {
+      const Record current = iter.currentValue() ;
+      Vector<uInt> rows = iter.getRows( SHARE ) ;
+      // any process
+      processor.Process(cols, current, rows);
+      // go next
+      iter.next() ;
+    }    
+  }
   STIdxIter2() ;
   STIdxIter2( const string &name,
                              const vector<string> &cols ) ;

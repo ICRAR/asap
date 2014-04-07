@@ -57,7 +57,6 @@
 #include "STIdxIter.h"
 
 #include "CalibrationHelper.h"
-#include "IterationHelper.h"
 
 using namespace casa;
 using namespace asap;
@@ -3533,9 +3532,9 @@ CountedPtr<Scantable> STMath::cwcal( const CountedPtr<Scantable>& s,
     out->table().addRow( s->nrow() ) ;
     copyRows( out->table(), s->table(), 0, 0, s->nrow(), False, True, False ) ;
     
-    // iterate throgh IterationHelper
+    // iterate throgh STIdxIter2
     ChopperWheelCalibrator cal(out, s, aoff, asky, ahot, acold);
-    IterationHelper<ChopperWheelCalibrator>::Iterate(cal, "BEAMNO,POLNO,IFNO");
+    STIdxIter2::Iterate<ChopperWheelCalibrator>(cal, "BEAMNO,POLNO,IFNO");
 
     s->table_ = torg ;
     s->attach() ;
@@ -3592,9 +3591,9 @@ CountedPtr<Scantable> STMath::almacal( const CountedPtr<Scantable>& s,
     // process each on scan
 //     t0 = mathutil::gettimeofday_sec() ;
 
-    // iterate throgh IterationHelper
+    // iterate throgh STIdxIter2
     AlmaCalibrator cal(out, s, aoff);
-    IterationHelper<AlmaCalibrator>::Iterate(cal, "BEAMNO,POLNO,IFNO");
+    STIdxIter2::Iterate<AlmaCalibrator>(cal, "BEAMNO,POLNO,IFNO");
 
     // finalize
     s->table_ = torg ;
@@ -3757,11 +3756,11 @@ CountedPtr<Scantable> STMath::cwcalfs( const CountedPtr<Scantable>& s,
                                                            "TINT" ) ;
       
       // process each sig and ref scan
-      // iterate throgh IterationHelper
+      // iterate throgh STIdxIter2
       ChopperWheelCalibrator cal_sig(ssig, rsig, aofflo, askylo, ahotlo, acoldlo);
-      IterationHelper<ChopperWheelCalibrator>::Iterate(cal_sig, "BEAMNO,POLNO,IFNO");
+      STIdxIter2::Iterate<ChopperWheelCalibrator>(cal_sig, "BEAMNO,POLNO,IFNO");
       ChopperWheelCalibrator cal_ref(sref, rref, aoffhi, askyhi, ahothi, acoldhi);
-      IterationHelper<ChopperWheelCalibrator>::Iterate(cal_ref, "BEAMNO,POLNO,IFNO");
+      STIdxIter2::Iterate<ChopperWheelCalibrator>(cal_ref, "BEAMNO,POLNO,IFNO");
     }
   }
   else {
