@@ -81,17 +81,22 @@ void STCalTsys::appenddata(uInt scanno, uInt cycleno,
     LogIO os(LogOrigin("STCalTsys", "appenddata", WHERE));
     Vector<Float> averaged_data(any_data.size());
     Float averaged_value = 0.0;
-    uInt num_value = 0;
+    size_t num_value = 0;
     Vector<Double> channel_range = tsysspw_.asArrayDouble(String::toString(ifno));
     os << LogIO::DEBUGGING << "do averaging: channel range for IFNO " << ifno << " is " << channel_range << LogIO::POST;
     for (uInt i = 1; i < channel_range.size(); i += 2) {
-      uInt start = (uInt)channel_range[i-1];
-      uInt end = std::min((uInt)channel_range[i] + 1, (uInt)averaged_data.size());
+      size_t start = (size_t)channel_range[i-1];
+      size_t end = std::min((size_t)channel_range[i] + 1, averaged_data.size());
       os << LogIO::DEBUGGING << "start=" << start << ", end=" << end << LogIO::POST;
-      for (uInt j = start; j < end; ++j) {
-	averaged_value += any_data[j];
-	num_value++;
+      //Vector<Float> segment = any_data(Slice(start, end - 1, 1, False));
+      //averaged_value += sum(segment);
+      //num_value += segment.size();
+      float sum_per_segment = 0.0;
+      for (size_t j = start; j < end; ++j) {
+        sum_per_segment += any_data[j];
       }
+      averaged_value += sum_per_segment;
+      num_value += end - start;
     }
     averaged_value /= (Float)num_value;
     averaged_data = averaged_value;
