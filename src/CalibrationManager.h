@@ -75,6 +75,7 @@ private:
   casa::String calmode_;
   std::vector<int> spwlist_;
   casa::Record spwlist_withrange_;
+  bool do_average_;
 
   casa::LogIO os_;
 

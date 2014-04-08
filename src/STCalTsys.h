@@ -19,6 +19,7 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/BasicSL/String.h>
 #include <casa/Utilities/CountedPtr.h>
+#include <casa/Containers/Record.h>
 
 #include <scimath/Mathematics/InterpolateArray1D.h>
 
@@ -38,6 +39,7 @@ namespace asap {
 class STCalTsys : public STCalibration {
 public:
   STCalTsys(casa::CountedPtr<Scantable> &s, vector<int> &iflist);
+  STCalTsys(casa::CountedPtr<Scantable> &s, casa::Record &iflist, bool average=false);
 
   ~STCalTsys() {;}
   
@@ -49,6 +51,8 @@ private:
 			  casa::Vector<casa::Float> any_data);
 
   vector<int> iflist_;
+  casa::Record tsysspw_;
+  bool do_average_;
 };
 
 }

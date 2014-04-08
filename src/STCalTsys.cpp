@@ -24,10 +24,25 @@ using namespace std;
 using namespace casa;
 
 namespace asap {
-  STCalTsys::STCalTsys(CountedPtr<Scantable> &s, vector<int> &iflist)
-    : STCalibration(s, "TSYS"),
-      iflist_(iflist)
+STCalTsys::STCalTsys(CountedPtr<Scantable> &s, vector<int> &iflist)
+  : STCalibration(s, "TSYS"),
+    iflist_(iflist),
+    tsysspw_(),
+    do_average_(false)
 {
+  applytable_ = new STCalTsysTable(*s);
+}
+
+STCalTsys::STCalTsys(CountedPtr<Scantable> &s, Record &iflist, bool average)
+  : STCalibration(s, "TSYS"),
+    iflist_(),
+    tsysspw_(iflist),
+    do_average_(average)
+{
+  iflist_.resize(tsysspw_.nfields());
+  for (uInt i = 0; i < tsysspw_.nfields(); ++i) {
+    iflist_[i] = std::atoi(tsysspw_.name(i).c_str());
+  }
   applytable_ = new STCalTsysTable(*s);
 }
 
@@ -62,8 +77,33 @@ void STCalTsys::appenddata(uInt scanno, uInt cycleno,
 			   Vector<Float> any_data)
 {
   STCalTsysTable *p = dynamic_cast<STCalTsysTable *>(&(*applytable_));
-  p->appenddata(scanno, cycleno, beamno, ifno, polno,
-		freqid, time, elevation, any_data);
+  if (do_average_ && tsysspw_.isDefined(String::toString(ifno))) {
+    LogIO os(LogOrigin("STCalTsys", "appenddata", WHERE));
+    Vector<Float> averaged_data(any_data.size());
+    Float averaged_value = 0.0;
+    uInt num_value = 0;
+    Vector<Double> channel_range = tsysspw_.asArrayDouble(String::toString(ifno));
+    os << LogIO::DEBUGGING << "do averaging: channel range for IFNO " << ifno << " is " << channel_range << LogIO::POST;
+    for (uInt i = 1; i < channel_range.size(); i += 2) {
+      uInt start = (uInt)channel_range[i-1];
+      uInt end = std::min((uInt)channel_range[i] + 1, (uInt)averaged_data.size());
+      os << LogIO::DEBUGGING << "start=" << start << ", end=" << end << LogIO::POST;
+      for (uInt j = start; j < end; ++j) {
+	averaged_value += any_data[j];
+	num_value++;
+      }
+    }
+    averaged_value /= (Float)num_value;
+    averaged_data = averaged_value;
+    os << LogIO::DEBUGGING << "averaged_data = " << averaged_data << LogIO::POST;
+    os << LogIO::DEBUGGING << "any_data = " << any_data << LogIO::POST;
+    p->appenddata(scanno, cycleno, beamno, ifno, polno,
+		  freqid, time, elevation, averaged_data);
+  }
+  else {
+    p->appenddata(scanno, cycleno, beamno, ifno, polno,
+		  freqid, time, elevation, any_data);
+  }
 }
 
 }

@@ -36,7 +36,8 @@ CalibrationManager::CalibrationManager()
   : target_(0),
     calmode_(""),
     spwlist_(0),
-    spwlist_withrange_()
+    spwlist_withrange_(),
+    do_average_(false)
 {
   applicator_ = new STApplyCal();
 }
@@ -154,6 +155,7 @@ void CalibrationManager::setTsysSpwWithRange(const Record &spwlist, bool average
   os_ << LogIO::DEBUGGING << LogIO::POST;
   os_ << LogIO::DEBUGGING << ((average) ? "with averaging" : "without averaging") << LogIO::POST;
   spwlist_withrange_ = spwlist;
+  do_average_ = average;
 }
 
 void CalibrationManager::resetCalSetup()
@@ -164,6 +166,7 @@ void CalibrationManager::resetCalSetup()
   calmode_ = "";
   spwlist_.clear();
   spwlist_withrange_ = Record();
+  do_average_ = false;
 }
 
 void CalibrationManager::reset()
@@ -174,6 +177,7 @@ void CalibrationManager::reset()
   calmode_ = "";
   spwlist_.clear();
   spwlist_withrange_ = Record();
+  do_average_ = false;
 }
 
 void CalibrationManager::calibrate()
@@ -191,12 +195,7 @@ void CalibrationManager::calibrate()
       tsystables_.push_back(cal.applytable());
     }
     else {
-      uInt nfield = spwlist_withrange_.nfields();
-      vector<int> spwlist(nfield);
-      for (uInt i = 0; i < nfield; ++i) {
-	spwlist[i] = std::atoi(spwlist_withrange_.name(i).c_str());
-      }
-      STCalTsys cal(target_, spwlist);
+      STCalTsys cal(target_, spwlist_withrange_, do_average_);
       cal.calibrate();
       tsystables_.push_back(cal.applytable());
     }      
