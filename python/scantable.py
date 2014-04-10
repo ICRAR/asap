@@ -2170,7 +2170,7 @@ class scantable(Scantable):
                 found = True
                 break
 
-        if not found: raise RuntimeError("Invalid IF value.")
+        if not found: raise RuntimeError("No valid spw.")
         
         return res
 
