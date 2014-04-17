@@ -1097,7 +1097,7 @@ class scantable(Scantable):
 
     def get_weather(self, row=-1):
         """\
-        Return the weather informations.
+        Return the weather information.
 
         Parameters:
 
@@ -1108,7 +1108,8 @@ class scantable(Scantable):
             a dict or list of of dicts of values for the current selection
 
         """
-
+        if row >= len(self):
+            raise IndexError("row out of range")
         values = self._get_column(self._get_weather, row)
         if row > -1:
             return {'temperature': values[0],
@@ -1118,7 +1119,6 @@ class scantable(Scantable):
         else:
             out = []
             for r in values:
-
                 out.append({'temperature': r[0],
                             'pressure': r[1], 'humidity' : r[2],
                             'windspeed' : r[3], 'windaz' : r[4]

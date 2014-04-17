@@ -84,25 +84,32 @@ uInt STWeather::addEntry( Float temp, Float pressure, Float humidity,
 {
   /// @todo this is a zero implementation as none of the telescopes
   /// fills in this information (yet)
-  uInt nrow = table_.nrow();
-  if ( nrow == 0 ) {
+// test if this already exists
+  Table result = table_( near(table_.col("TEMPERATURE"), temp)
+                         && near(table_.col("PRESSURE"), pressure)
+                         && near(table_.col("WINDSPEED"), wspeed)
+                         && near(table_.col("WINDAZ"), waz)
+                         && near(table_.col("HUMIDITY"), humidity), 1 );
+  uInt resultid = 0;
+  if ( result.nrow() > 0) {
+    ROScalarColumn<uInt> c(result, "ID");
+    c.get(0, resultid);
+  } else {
+    uInt rno = table_.nrow();
     table_.addRow();
-    TableRow row(table_);
-    TableRecord& rec = row.record();
-    RecordFieldPtr< Float > rfp;
-    rfp.attachToRecord(rec,"TEMPERATURE");
-    *rfp = temp;
-    rfp.attachToRecord(rec,"PRESSURE");
-    *rfp = pressure;
-    rfp.attachToRecord(rec,"HUMIDITY");
-    *rfp = humidity;
-    rfp.attachToRecord(rec,"WINDSPEED");
-    *rfp = wspeed;
-    rfp.attachToRecord(rec,"WINDAZ");
-    *rfp = waz;
-    row.put(table_.nrow()-1, rec);
+    // get last assigned freq_id and increment
+    if ( rno > 0 ) {
+      idCol_.get(rno-1, resultid);
+      resultid++;
+    }
+    temperatureCol_.put(rno, temp);
+    pressureCol_.put(rno, pressure);
+    windspeedCol_.put(rno, wspeed);
+    windazCol_.put(rno, waz);
+    humidityCol_.put(rno, humidity);
+    idCol_.put(rno, resultid);
   }
-  return 0;
+  return resultid;
 }
 
 void STWeather::getEntry( Float& temperature, Float& pressure,
