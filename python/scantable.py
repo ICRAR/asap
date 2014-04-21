@@ -2144,7 +2144,16 @@ class scantable(Scantable):
                         res[spw] = crange_list
 
         for spw in res.keys():
-            if spw not in valid_ifs:
+            if spw in valid_ifs:
+                # remove duplicated chennal ranges
+                for i in reversed(xrange(len(res[spw]))):
+                    for j in xrange(i):
+                        if ((res[spw][i][0]-res[spw][j][1])*(res[spw][i][1]-res[spw][j][0]) <= 0):
+                            res[spw][j][0] = min(res[spw][i][0], res[spw][j][0])
+                            res[spw][j][1] = max(res[spw][i][1], res[spw][j][1])
+                            res[spw].pop(i)
+                            break
+            else:
                 del res[spw]
 
         if len(res) == 0:
@@ -2373,6 +2382,10 @@ class scantable(Scantable):
                                              minval=minidx,maxval=maxidx)
             for thelist in currlist:
                 idxlist += range(thelist[0],thelist[1]+1)
+        # remove duplicated elements after first ones
+        for i in reversed(xrange(len(idxlist))):
+            if idxlist.index(idxlist[i]) < i:
+                idxlist.pop(i)
         msg = "Selected %s: %s" % (mode.upper()+"NO", str(idxlist))
         asaplog.push(msg)
         return idxlist
