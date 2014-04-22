@@ -2145,10 +2145,11 @@ class scantable(Scantable):
 
         for spw in res.keys():
             if spw in valid_ifs:
-                # remove duplicated chennal ranges
+                # remove duplicated channel ranges
                 for i in reversed(xrange(len(res[spw]))):
                     for j in xrange(i):
-                        if ((res[spw][i][0]-res[spw][j][1])*(res[spw][i][1]-res[spw][j][0]) <= 0):
+                        if ((res[spw][i][0]-res[spw][j][1])*(res[spw][i][1]-res[spw][j][0]) <= 0) or \
+                            (min(abs(res[spw][i][0]-res[spw][j][1]),abs(res[spw][j][0]-res[spw][i][1])) == 1):
                             res[spw][j][0] = min(res[spw][i][0], res[spw][j][0])
                             res[spw][j][1] = max(res[spw][i][1], res[spw][j][1])
                             res[spw].pop(i)
