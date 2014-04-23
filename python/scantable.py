@@ -2150,6 +2150,10 @@ class scantable(Scantable):
                     for j in xrange(i):
                         if ((res[spw][i][0]-res[spw][j][1])*(res[spw][i][1]-res[spw][j][0]) <= 0) or \
                             (min(abs(res[spw][i][0]-res[spw][j][1]),abs(res[spw][j][0]-res[spw][i][1])) == 1):
+                            asaplog.post()
+                            merge_warn_mesg = "Spw " + str(spw) + ": overwrapping channel ranges are merged."
+                            asaplog.push(merge_warn_mesg)
+                            asaplog.post('WARN')
                             res[spw][j][0] = min(res[spw][i][0], res[spw][j][0])
                             res[spw][j][1] = max(res[spw][i][1], res[spw][j][1])
                             res[spw].pop(i)
