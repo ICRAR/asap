@@ -2010,8 +2010,9 @@ class scantable(Scantable):
                                     no_valid_spw = False
                                 """
 
-                                fhead = coord['coord'].to_frequency(0)
-                                ftail = coord['coord'].to_frequency(self.nchan(spw) - 1)
+                                crd = coord['coord']
+                                fhead = crd.to_frequency(0)
+                                ftail = crd.to_frequency(self.nchan(spw) - 1)
                                 fcen  = (fhead + ftail) / 2.0
 
                                 if ((expr_fmin <= fcen) and (fcen <= expr_fmax)):
@@ -2046,9 +2047,11 @@ class scantable(Scantable):
                                     no_valid_spw = False
                                 """
 
-                                vhead = coord['coord'].to_velocity(0)
-                                vtail = coord['coord'].to_velocity(self.nchan(spw) - 1)
-                                vcen  = (vhead + vtail) / 2.0
+                                crd = coord['coord']
+                                fhead = crd.to_frequency(0)
+                                ftail = crd.to_frequency(self.nchan(spw) - 1)
+                                fcen  = (fhead + ftail) / 2.0
+                                vcen  = crd.to_velocity(crd.to_pixel(fcen))
 
                                 if ((expr_vmin <= vcen) and (vcen <= expr_vmax)):
                                     spw_list.append(spw)
