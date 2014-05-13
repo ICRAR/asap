@@ -231,7 +231,7 @@ protected:
 			  int max_box_nchan)
                                       throw (casa::AipsError);
 private:
-   casa::CountedConstPtr<Scantable> scan; // the scan to work with
+   casa::CountedPtr<Scantable> scan; // the scan to work with
    casa::Vector<casa::Bool> mask;          // associated mask
    std::pair<int,int> edge;                // start and stop+1 channels
                                            // to work with
