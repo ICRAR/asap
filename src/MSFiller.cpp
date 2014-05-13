@@ -994,7 +994,7 @@ private:
   String detectSeparator( String &s )
   {
     String tmp = s.substr( 0, s.find_first_of( "," ) ) ;
-    Char *separators[] = { ":", "#", ".", "_" } ;
+    const Char *separators[] = { ":", "#", ".", "_" } ;
     uInt nsep = 4 ;
     for ( uInt i = 0 ; i < nsep ; i++ ) {
       if ( tmp.find( separators[i] ) != String::npos )
