@@ -32,8 +32,6 @@ opts = Variables("options.cache")
 opts.AddVariables(
 		("extraroot", "Addition tree to look for packages", None),
 		("extraflags", "Additional build flags", None),
-                ("FORTRAN", "The fortran compiler", None),
-                ("f2clib", "The fortran to c library", None),
 		PathVariable("casacoreroot", "The location of casacore",
                              "/usr/local"),
 		BoolVariable("casacorestatic", 
@@ -44,18 +42,6 @@ opts.AddVariables(
 		 "boost_python"),
 		("boostlibdir", "The boost library location", None),
 		("boostincdir", "The boost header file location", None),
-		("lapackroot", 
-		 "The root directory where lapack is installed", None),
-		("lapacklibdir", "The lapack library location", None),
-		("lapacklib",
-		 "The lapack library name (e.g. for specialized AMD libraries",
-		 "lapack"),
-		("blasroot", 
-		 "The root directory where blas is installed", None),
-		("blaslibdir", "The blas library location", None),
-		("blaslib",
-		 "The blas library name (e.g. for specialized AMD libraries",
-		 "blas"),
 		("cfitsioroot", 
 		 "The root directory where cfistio is installed", None),
 		("cfitsiolibdir", "The cfitsio library location", None),
@@ -191,24 +177,6 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
         libs = cclibs
     conf.env.PrependUnique(LIBS=libs)
 
-    # test for blas/lapack
-    conf.env.AddCustomPackage("lapack")
-    libname = conf.env.get("lapacklib", "lapack")
-    if libname.find(".") > -1 and os.path.exists(libname):
-        conf.env.AppendUnique(LIBS=[env.File(libname)])
-    else:
-        if not conf.CheckLib(libname): Exit(1)
-    libname = conf.env.get("blaslib", "blas")
-    if libname.find(".") > -1 and os.path.exists(libname):
-        conf.env.AppendUnique(LIBS=[env.File(libname)])
-    else:
-        if not conf.CheckLib(libname): Exit(1)
-
-    libname = conf.env.get("f2clib", "gfortran")
-    if libname.find(".") > -1 and os.path.exists(libname):
-        conf.env.AppendUnique(LIBS=[env.File(libname)])
-    else:
-        conf.env.CheckFortran(conf)
     if not conf.CheckLib('stdc++', language='c++'): Exit(1)
     if conf.env["alma"]:
         conf.env.Append(CPPFLAGS=['-DUSE_CASAPY'])
@@ -219,7 +187,7 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
 
 opts.Save('options.cache', env)
 
-env["version"] = "4.1.x"
+env["version"] = "4.3.x"
 
 if env['mode'] == 'release':
     if env["PLATFORM"] != "darwin":
