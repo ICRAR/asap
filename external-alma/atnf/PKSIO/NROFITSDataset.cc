@@ -886,8 +886,8 @@ int NROFITSDataset::fillRecord( int i )
   // DEBUG
   //cout << "SCANTP(" << i << ") = " << record_->SCANTP << endl ;
   //
-  char *name1 = "" ;
-  char *name2 = "" ;
+  const char *name1 = "" ;
+  const char *name2 = "" ;
   if ( SCNCD == 0 ) {
     name1 = "DRA" ;
     name2 = "DDEC" ;
@@ -1682,7 +1682,7 @@ void NROFITSDataset::findData()
   int index = 0 ;
   while ( count < ARYNM && index < rowNum_ ) {
     char ctmp[5] ;
-    fread( ctmp, 1, 4, fp_ ) ;
+    std::size_t retval = fread( ctmp, 1, 4, fp_ ) ;
     ctmp[4] = '\0' ;
     //cout << "ctmp = " << ctmp << endl ;
     for ( int i = 0 ; i < ARYNM ; i++ ) {
@@ -1766,7 +1766,7 @@ int NROFITSDataset::readHeader( string &v, const char *name )
   fseek( fp_, 0, SEEK_SET ) ;
   int count = 0 ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
-    fread( buf, 1, 80, fp_ ) ;
+    std::size_t retval = fread( buf, 1, 80, fp_ ) ;
     buf[80] = '\0' ;
     count++ ;
   }
@@ -1800,7 +1800,7 @@ int NROFITSDataset::readHeader( int &v, const char *name )
   strcpy( buf, "     " ) ;
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
-    fread( buf, 1, 80, fp_ ) ;
+    std::size_t retval = fread( buf, 1, 80, fp_ ) ;
     buf[80] = '\0' ;
     //char bufo[9] ;
     //strncpy( bufo, buf, 8 ) ;
@@ -1836,7 +1836,7 @@ int NROFITSDataset::readHeader( float &v, const char *name )
   strcpy( buf, "     " ) ;
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
-    fread( buf, 1, 80, fp_ ) ;
+    std::size_t retval = fread( buf, 1, 80, fp_ ) ;
     buf[80] = '\0' ;
     //char bufo[9] ;
     //strncpy( bufo, buf, 8 ) ;
@@ -1870,7 +1870,7 @@ int NROFITSDataset::readHeader( double &v, const char *name )
   strcpy( buf, "     " ) ;
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
-    fread( buf, 1, 80, fp_ ) ;
+    std::size_t retval = fread( buf, 1, 80, fp_ ) ;
     buf[80] = '\0' ;
     char bufo[9] ;
     strncpy( bufo, buf, 8 ) ;
@@ -1912,11 +1912,11 @@ int NROFITSDataset::readTable( char *v, const char *name, int clen, int idx )
 
   // read data
   if ( xsize < clen ) {
-    fread( v, 1, xsize, fp_ ) ;
+    std::size_t retval = fread( v, 1, xsize, fp_ ) ;
     //v[xsize] = '\0' ;
   }
   else {
-    fread( v, 1, clen-1, fp_ ) ;
+    std::size_t retval = fread( v, 1, clen-1, fp_ ) ;
     //v[clen-1] = '\0' ;
   }
 
@@ -1934,7 +1934,7 @@ int NROFITSDataset::readTable( int &v, const char *name, int b, int idx )
     return status ;
 
   // read data
-  fread( &v, sizeof(int), 1, fp_ ) ;
+  std::size_t retval = fread( &v, sizeof(int), 1, fp_ ) ;
   if ( b == 0 ) 
     convertEndian( v ) ;
  
@@ -1952,7 +1952,7 @@ int NROFITSDataset::readTable( float &v, const char *name, int b, int idx )
     return status ;
 
   // read data
-  fread( &v, sizeof(float), 1, fp_ ) ;
+  std::size_t retval = fread( &v, sizeof(float), 1, fp_ ) ;
   if ( b == 0 ) 
     convertEndian( v ) ;
 
@@ -1970,7 +1970,7 @@ int NROFITSDataset::readTable( double &v, const char *name, int b, int idx )
     return status ;
 
   // read data
-  fread( &v, sizeof(double), 1, fp_ ) ;
+  std::size_t retval = fread( &v, sizeof(double), 1, fp_ ) ;
   if ( b == 0 ) 
     convertEndian( v ) ;  
 
@@ -1995,11 +1995,11 @@ int NROFITSDataset::readTable( vector<char *> &v, const char *name, int idx )
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int clen = strlen( v[i] ) ;
     if ( clen > xsize ) {
-      fread( v[i], 1, xsize, fp_ ) ;
+      std::size_t retval = fread( v[i], 1, xsize, fp_ ) ;
       //v[i][xsize] = '\0' ;
     }
     else {
-      fread( v[i], 1, clen, fp_ ) ;
+      std::size_t retval = fread( v[i], 1, clen, fp_ ) ;
       //v[i][clen-1] = '\0' ;
     }
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2018,7 +2018,7 @@ int NROFITSDataset::readTable( vector<int> &v, const char *name, int b, int idx 
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    fread( &v[i], 1, sizeof(int), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(int), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2037,7 +2037,7 @@ int NROFITSDataset::readTable( vector<float> &v, const char *name, int b, int id
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    fread( &v[i], 1, sizeof(float), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(float), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2056,7 +2056,7 @@ int NROFITSDataset::readTable( vector<double> &v, const char *name, int b, int i
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    fread( &v[i], 1, sizeof(double), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(double), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2086,15 +2086,15 @@ int NROFITSDataset::readColumn( vector<string> &v, const char *name, int idx )
     fseek( fp_, offset, SEEK_CUR ) ;
 //     int clen = (int)strlen( v[i] ) ;
 //     if ( clen > xsize ) {
-//       fread( v[i], 1, xsize, fp_ ) ;
+//       std::size_t retval = fread( v[i], 1, xsize, fp_ ) ;
 //       //v[i][xsize] = '\0' ;
 //     }
 //     else {
-//       fread( v[i], 1, clen-1, fp_ ) ;
+//       std::size_t retval = fread( v[i], 1, clen-1, fp_ ) ;
 //       //v[i][clen-1] = '\0' ;
 //     }
     char c[xsize+1] ;
-    fread( c, 1, xsize, fp_ ) ;
+    std::size_t retval = fread( c, 1, xsize, fp_ ) ;
     c[xsize] = '\0' ;
     v[i] = string( c ) ;
     //cout << "v[" << i << "] = \'" << v[i] << "\'" << endl ;
@@ -2117,7 +2117,7 @@ int NROFITSDataset::readColumn( vector<int> &v, const char *name, int b, int idx
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int offset = scanLen_ * arrayid_[i] + sizeof(int) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
-    fread( &v[i], 1, sizeof(int), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(int), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2140,7 +2140,7 @@ int NROFITSDataset::readColumn( vector<float> &v, const char *name, int b, int i
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int offset = scanLen_ * arrayid_[i] + sizeof(float) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
-    fread( &v[i], 1, sizeof(float), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(float), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2163,7 +2163,7 @@ int NROFITSDataset::readColumn( vector<double> &v, const char *name, int b, int 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int offset = scanLen_ * arrayid_[i] + sizeof(double) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
-    fread( &v[i], 1, sizeof(double), fp_ ) ;
+    std::size_t retval = fread( &v[i], 1, sizeof(double), fp_ ) ;
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "offset = " << offset << ", v[" << i << "] = " << v[i] << endl ;

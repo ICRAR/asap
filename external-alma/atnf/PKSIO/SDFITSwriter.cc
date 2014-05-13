@@ -229,58 +229,58 @@ int SDFITSwriter::create(
                      "[m] Antenna ITRF Z-coordinate", &cStatus);
 
   // SCAN (shared, real).
-  fits_insert_col(cSDptr, ++ncol, "SCAN", "1I", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"SCAN", (char *)"1I", &cStatus);
 
   // CYCLE (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "CYCLE", "1J", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CYCLE", (char *)"1J", &cStatus);
 
   // DATE-OBS (core, real).
-  fits_insert_col(cSDptr, ++ncol, "DATE-OBS", "10A", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"DATE-OBS", (char *)"10A", &cStatus);
 
   // TIME (core, real).
-  fits_insert_col(cSDptr, ++ncol, "TIME", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"TIME", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "s", "units of field", &cStatus);
 
   // EXPOSURE (core, real).
-  fits_insert_col(cSDptr, ++ncol, "EXPOSURE", "1E", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"EXPOSURE", (char *)"1E", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "s", "units of field", &cStatus);
 
   // OBJECT (core, real).
-  fits_insert_col(cSDptr, ++ncol, "OBJECT", "16A", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"OBJECT", (char *)"16A", &cStatus);
 
   // OBJ-RA (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "OBJ-RA", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"OBJ-RA", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
   // OBJ-DEC (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "OBJ-DEC", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"OBJ-DEC", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
   // RESTFRQ (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "RESTFRQ", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"RESTFRQ",(char *) "1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "Hz", "units of field", &cStatus);
 
   // OBSMODE (shared, real).
-  fits_insert_col(cSDptr, ++ncol, "OBSMODE", "16A", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"OBSMODE", (char *)"16A", &cStatus);
 
   // BEAM (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "BEAM", "1I", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"BEAM", (char *)"1I", &cStatus);
 
   // IF (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "IF", "1I", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"IF", (char *)"1I", &cStatus);
 
   // FREQRES (core, real).
-  fits_insert_col(cSDptr, ++ncol, "FREQRES", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"FREQRES", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "Hz", "units of field", &cStatus);
 
   // BANDWID (core, real).
-  fits_insert_col(cSDptr, ++ncol, "BANDWID", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"BANDWID", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "Hz", "units of field", &cStatus);
 
@@ -289,15 +289,15 @@ int SDFITSwriter::create(
                      "DATA array axis 1: frequency in Hz.", &cStatus);
 
   // CRPIX1 (core, real).
-  fits_insert_col(cSDptr, ++ncol, "CRPIX1", "1E", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CRPIX1", (char *)"1E", &cStatus);
 
   // CRVAL1 (core, real).
-  fits_insert_col(cSDptr, ++ncol, "CRVAL1", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CRVAL1", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "Hz", "units of field", &cStatus);
 
   // CDELT1 (core, real).
-  fits_insert_col(cSDptr, ++ncol, "CDELT1", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CDELT1", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "Hz", "units of field", &cStatus);
 
@@ -329,7 +329,7 @@ int SDFITSwriter::create(
                      &cStatus);
 
   // CRVAL3 (core, real).
-  fits_insert_col(cSDptr, ++ncol, "CRVAL3", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CRVAL3", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
@@ -346,7 +346,7 @@ int SDFITSwriter::create(
                      &cStatus);
 
   // CRVAL4 (core, real).
-  fits_insert_col(cSDptr, ++ncol, "CRVAL4", "1D", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CRVAL4", (char *)"1D", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
@@ -354,7 +354,7 @@ int SDFITSwriter::create(
   fits_write_key_dbl(cSDptr, "CDELT4", 1.0, 1, "Dec axis increment", &cStatus);
 
   // SCANRATE (additional, real).
-  fits_insert_col(cSDptr, ++ncol, "SCANRATE", "2E", &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"SCANRATE", (char *)"2E", &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, "deg/s", "units of field", &cStatus);
 
@@ -376,24 +376,24 @@ int SDFITSwriter::create(
 
   // TSYS (core, real).
   sprintf(tform, "%dE", maxNPol);
-  fits_insert_col(cSDptr, ++ncol, "TSYS", tform, &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"TSYS", tform, &cStatus);
   sprintf(tunit, "TUNIT%d", ncol);
   fits_write_key_str(cSDptr, tunit, bunit, "units of field", &cStatus);
 
   // CALFCTR (additional, real).
   sprintf(tform, "%dE", maxNPol);
-  fits_insert_col(cSDptr, ++ncol, "CALFCTR", tform, &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"CALFCTR", tform, &cStatus);
 
   if (cHaveBase) {
     // BASELIN (additional, real).
     sprintf(tform, "%dE", 2*maxNPol);
-    fits_insert_col(cSDptr, ++ncol, "BASELIN", tform, &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"BASELIN", tform, &cStatus);
     long tdim[] = {2, maxNPol};
     fits_write_tdim(cSDptr, ncol, 2, tdim, &cStatus);
 
     // BASESUB (additional, real).
     sprintf(tform, "%dE", 24*maxNPol);
-    fits_insert_col(cSDptr, ++ncol, "BASESUB", tform, &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"BASESUB", tform, &cStatus);
     tdim[0] = 24;
     fits_write_tdim(cSDptr, ncol, 2, tdim, &cStatus);
   }
@@ -406,12 +406,12 @@ int SDFITSwriter::create(
     // IFs have a differing number of products, use variable-length arrays.
     strcpy(tform, "1PE");
   }
-  fits_insert_col(cSDptr, ++ncol, "DATA", tform, &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"DATA", tform, &cStatus);
 
   if (cDoTDIM) {
     // TDIMn varies with IF, write a TDIM column.
     sprintf(ttype, "TDIM%d", ncol);
-    fits_insert_col(cSDptr, ++ncol, ttype, "16A", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, ttype, (char *)"16A", &cStatus);
   } else {
     // TDIMn fixed for each IF, write a TDIM keyword.
     long tdim[] = {cNChan[0], cNPol[0], 1, 1};
@@ -429,12 +429,12 @@ int SDFITSwriter::create(
     // IFs have a differing number of products, use variable-length arrays.
     strcpy(tform, "1PB");
   }
-  fits_insert_col(cSDptr, ++ncol, "FLAGGED", tform, &cStatus);
+  fits_insert_col(cSDptr, ++ncol, (char *)"FLAGGED", tform, &cStatus);
 
   if (cDoTDIM) {
     // TDIMn varies with IF, write a TDIM column.
     sprintf(ttype, "TDIM%d", ncol);
-    fits_insert_col(cSDptr, ++ncol, ttype, "16A", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, ttype, (char *)"16A", &cStatus);
   } else {
     // TDIMn fixed for each IF, write a TDIM keyword.
     long tdim[] = {cNChan[0], cNPol[0], 1, 1};
@@ -444,7 +444,7 @@ int SDFITSwriter::create(
   if (cDoXPol) {
     // XCALFCTR (additional, real).
     sprintf(tform, "%dE", 2);
-    fits_insert_col(cSDptr, ++ncol, "XCALFCTR", tform, &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"XCALFCTR", tform, &cStatus);
 
     // XPOLDATA (additional, real).
     if (cDoTDIM < 2) {
@@ -454,12 +454,12 @@ int SDFITSwriter::create(
       // IFs have a differing number of products, use variable-length arrays.
       strcpy(tform, "1PE");
     }
-    fits_insert_col(cSDptr, ++ncol, "XPOLDATA", tform, &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"XPOLDATA", tform, &cStatus);
 
     if (cDoTDIM) {
       // TDIMn varies with IF, write a TDIM column.
       sprintf(ttype, "TDIM%d", ncol);
-      fits_insert_col(cSDptr, ++ncol, ttype, "16A", &cStatus);
+      fits_insert_col(cSDptr, ++ncol, ttype, (char *)"16A", &cStatus);
     } else {
       // TDIMn fixed for each IF, write a TDIM keyword.
       long tdim[] = {2, cNChan[0]};
@@ -473,70 +473,70 @@ int SDFITSwriter::create(
   if (cExtraSysCal) {
     if (cIsMX) {
       // REFBEAM (additional, real).
-      fits_insert_col(cSDptr, ++ncol, "REFBEAM",  "1I", &cStatus);
+      fits_insert_col(cSDptr, ++ncol, (char *)"REFBEAM",  (char *)"1I", &cStatus);
     }
 
     // TCAL (shared, real).
     sprintf(tform, "%dE", min(maxNPol,2));
-    fits_insert_col(cSDptr, ++ncol, "TCAL", tform, &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"TCAL", tform, &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "Jy", "units of field", &cStatus);
 
     // TCALTIME (additional, real).
-    fits_insert_col(cSDptr, ++ncol, "TCALTIME",  "16A", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"TCALTIME",  (char *)"16A", &cStatus);
 
     // AZIMUTH (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "AZIMUTH",  "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"AZIMUTH",  (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
     // ELEVATIO (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "ELEVATIO", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"ELEVATIO", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
     // PARANGLE (additional, real).
-    fits_insert_col(cSDptr, ++ncol, "PARANGLE", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"PARANGLE", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
 
     // FOCUSAXI (additional, real).
-    fits_insert_col(cSDptr, ++ncol, "FOCUSAXI", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"FOCUSAXI", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "m", "units of field", &cStatus);
 
     // FOCUSTAN (additional, real).
-    fits_insert_col(cSDptr, ++ncol, "FOCUSTAN", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"FOCUSTAN", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "m", "units of field", &cStatus);
 
     // FOCUSROT (additional, real).
-    fits_insert_col(cSDptr, ++ncol, "FOCUSROT", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"FOCUSROT", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
-    fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
+    fits_write_key_str(cSDptr, tunit, (char *)"deg", (char *)"units of field", &cStatus);
 
     // TAMBIENT (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "TAMBIENT", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"TAMBIENT", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "C", "units of field", &cStatus);
 
     // PRESSURE (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "PRESSURE", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"PRESSURE", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "Pa", "units of field", &cStatus);
 
     // HUMIDITY (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "HUMIDITY", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"HUMIDITY", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "%", "units of field", &cStatus);
 
     // WINDSPEE (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "WINDSPEE", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"WINDSPEE", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "m/s", "units of field", &cStatus);
 
     // WINDDIRE (shared, real).
-    fits_insert_col(cSDptr, ++ncol, "WINDDIRE", "1E", &cStatus);
+    fits_insert_col(cSDptr, ++ncol, (char *)"WINDDIRE", (char *)"1E", &cStatus);
     sprintf(tunit, "TUNIT%d", ncol);
     fits_write_key_str(cSDptr, tunit, "deg", "units of field", &cStatus);
   }

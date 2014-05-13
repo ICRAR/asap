@@ -169,23 +169,23 @@ int GBTFITSreader::open(
 
   // Move to the SDFITS extension.
   cALFA = cALFA_BD = cALFA_CIMA = 0;
-  char *extName = "SINGLE DISH" ;
-  if (fits_movnam_hdu(cSDptr, BINARY_TBL, "SINGLE DISH", 0, &cStatus)) {
+  char *extName = (char *)"SINGLE DISH" ;
+  if (fits_movnam_hdu(cSDptr, BINARY_TBL, extName, 0, &cStatus)) {
     // No SDFITS table, look for BDFITS or CIMAFITS.
     cStatus = 0;
-    if (fits_movnam_hdu(cSDptr, BINARY_TBL, "BDFITS", 0, &cStatus) == 0) {
+    if (fits_movnam_hdu(cSDptr, BINARY_TBL, (char *)"BDFITS", 0, &cStatus) == 0) {
       cALFA_BD = 1;
-      extName = "BDFITS" ;
+      extName = (char *)"BDFITS" ;
 
     } else {
       cStatus = 0;
-      if (fits_movnam_hdu(cSDptr, BINARY_TBL, "CIMAFITS", 0, &cStatus) == 0) {
+      if (fits_movnam_hdu(cSDptr, BINARY_TBL, (char *)"CIMAFITS", 0, &cStatus) == 0) {
         cALFA_CIMA = 1;
-        extName = "CIMAFITS" ;
+        extName = (char *)"CIMAFITS" ;
 
         // Check for later versions of CIMAFITS.
         float version;
-        readParm("VERSION", TFLOAT, &version);
+        readParm((char *)(char *)"VERSION", TFLOAT, &version);
         if (version >= 2.0f) cALFA_CIMA = int(version);
 
       } else {
@@ -281,13 +281,13 @@ int GBTFITSreader::open(
   
   // GBT data.
   char telescope[32];
-  readParm("TELESCOP", TSTRING, telescope);      // Core.
+  readParm((char *)(char *)"TELESCOP", TSTRING, telescope);      // Core.
   cGBT = strncmp(telescope, "GBT", 3) == 0 ||
          strncmp(telescope, "NRAO_GBT", 8) == 0;
 
 
   // Check that the DATA array column is present.
-  findData(DATA, "DATA", TFLOAT);
+  findData(DATA, (char *)(char *)"DATA", TFLOAT);
   haveSpectra = cHaveSpectra = cData[DATA].colnum > 0;
 
   cNAxisTime = 0;
@@ -304,7 +304,7 @@ int GBTFITSreader::open(
       // ALFA BDFITS: variable length arrays don't actually vary and there is
       // no TDIM (or MAXISn) card; use the LAGS_IN value.
       cNAxes = 5;
-      readParm("LAGS_IN", TLONG, cNAxis);
+      readParm((char *)"LAGS_IN", TLONG, cNAxis);
       cNAxis[1] = 1;
       cNAxis[2] = 1;
       cNAxis[3] = 1;
@@ -324,11 +324,11 @@ int GBTFITSreader::open(
       return 1;
     }
 
-    findData(FLAGGED, "FLAGGED", TBYTE);
+    findData(FLAGGED, (char *)(char *)"FLAGGED", TBYTE);
 
   } else {
     // DATA column not present, check for a DATAXED keyword.
-    findData(DATAXED, "DATAXED", TSTRING);
+    findData(DATAXED, (char *)(char *)"DATAXED", TSTRING);
     if (cData[DATAXED].colnum < 0) {
       log(LogOrigin( className, methodName, WHERE ), LogIO::SEVERE, "DATA array column absent from binary table.");
       close();
@@ -337,7 +337,7 @@ int GBTFITSreader::open(
 
     // Determine the number of axes and their length.
     char dataxed[32];
-    readParm("DATAXED", TSTRING, dataxed);
+    readParm((char *)(char *)"DATAXED", TSTRING, dataxed);
 
     for (int iaxis = 0; iaxis < 5; iaxis++) cNAxis[iaxis] = 0;
     sscanf(dataxed, "(%ld,%ld,%ld,%ld,%ld)", cNAxis, cNAxis+1, cNAxis+2,
@@ -347,10 +347,10 @@ int GBTFITSreader::open(
     }
   }
 
-  char  *CTYPE[5] = {"CTYPE1", "CTYPE2", "CTYPE3", "CTYPE4", "CTYPE5"};
-  char  *CRPIX[5] = {"CRPIX1", "CRPIX2", "CRPIX3", "CRPIX4", "CRPIX5"};
-  char  *CRVAL[5] = {"CRVAL1", "CRVAL2", "CRVAL3", "CRVAL4", "CRVAL5"};
-  char  *CDELT[5] = {"CDELT1", "CDELT2", "CDELT3", "CDELT4", "CDELT5"};
+  char  *CTYPE[5] = {(char *)"CTYPE1", (char *)"CTYPE2", (char *)"CTYPE3", (char *)"CTYPE4", (char *)"CTYPE5"};
+  char  *CRPIX[5] = {(char *)"CRPIX1", (char *)"CRPIX2", (char *)"CRPIX3", (char *)"CRPIX4", (char *)"CRPIX5"};
+  char  *CRVAL[5] = {(char *)"CRVAL1", (char *)"CRVAL2", (char *)"CRVAL3", (char *)"CRVAL4", (char *)"CRVAL5"};
+  char  *CDELT[5] = {(char *)"CDELT1", (char *)"CDELT2", (char *)"CDELT3", (char *)"CDELT4", (char *)"CDELT5"};
 
   // Find required DATA array axes.
   char ctype[5][72];
@@ -428,10 +428,10 @@ int GBTFITSreader::open(
   if (cALFA_BD) {
     // Fixed in ALFA CIMAFITS.
     cRaAxis = 2;
-    raCRVAL = "CRVAL2A";
+    raCRVAL = (char *)"CRVAL2A";
 
     cDecAxis = 3;
-    decCRVAL = "CRVAL3A";
+    decCRVAL = (char *)"CRVAL3A";
   }
 
 
@@ -443,9 +443,9 @@ int GBTFITSreader::open(
   }
 
   // Set up machinery for data retrieval.
-  findData(SCAN,     "SCAN",     TINT);         // Shared.
-  findData(CYCLE,    "CYCLE",    TINT);         // Additional.
-  findData(DATE_OBS, "DATE-OBS", TSTRING);      // Core.
+  findData(SCAN,     (char *)(char *)"SCAN",     TINT);         // Shared.
+  findData(CYCLE,    (char *)(char *)"CYCLE",    TINT);         // Additional.
+  findData(DATE_OBS, (char *)"DATE-OBS", TSTRING);      // Core.
 
   if (cTimeAxis >= 0) {
     // The DATA array has a TIME axis.
@@ -460,58 +460,58 @@ int GBTFITSreader::open(
     }
 
   } else {
-    findData(TIME,   "TIME",     TDOUBLE);      // Core.
+    findData(TIME,   (char *)(char *)"TIME",     TDOUBLE);      // Core.
   }
 
-  findData(EXPOSURE, "EXPOSURE", TFLOAT);       // Core.
-  findData(OBJECT,   "OBJECT",   TSTRING);      // Core.
-  findData(OBJ_RA,   "OBJ-RA",   TDOUBLE);      // Additional.
-  findData(OBJ_DEC,  "OBJ-DEC",  TDOUBLE);      // Additional.
-  findData(RESTFRQ,  "RESTFRQ",  TDOUBLE);      // Additional.
-  findData(OBSMODE,  "OBSMODE",  TSTRING);      // Shared.
+  findData(EXPOSURE, (char *)(char *)"EXPOSURE", TFLOAT);       // Core.
+  findData(OBJECT,   (char *)(char *)"OBJECT",   TSTRING);      // Core.
+  findData(OBJ_RA,   (char *)"OBJ-RA",   TDOUBLE);      // Additional.
+  findData(OBJ_DEC,  (char *)"OBJ-DEC",  TDOUBLE);      // Additional.
+  findData(RESTFRQ,  (char *)(char *)"RESTFRQ",  TDOUBLE);      // Additional.
+  findData(OBSMODE,  (char *)(char *)"OBSMODE",  TSTRING);      // Shared.
 
-  findData(BEAM,     "BEAM",     TSHORT);       // Additional.
-  findData(IF,       "IF",       TSHORT);       // Additional.
+  findData(BEAM,     (char *)(char *)"BEAM",     TSHORT);       // Additional.
+  findData(IF,       (char *)(char *)"IF",       TSHORT);       // Additional.
   findData(FqRefVal,  fqCRVAL,   TDOUBLE);      // Frequency reference value.
   findData(FqDelt,    fqCDELT,   TDOUBLE);      // Frequency increment.
   findData(FqRefPix,  fqCRPIX,   TFLOAT);       // Frequency reference pixel.
   findData(RA,        raCRVAL,   TDOUBLE);      // Right ascension.
   findData(DEC,      decCRVAL,   TDOUBLE);      // Declination.
-  findData(SCANRATE, "SCANRATE", TFLOAT);       // Additional.
+  findData(SCANRATE, (char *)(char *)"SCANRATE", TFLOAT);       // Additional.
 
-  findData(TSYS,     "TSYS",     TFLOAT);       // Core.
-  findData(CALFCTR,  "CALFCTR",  TFLOAT);       // Additional.
-  findData(XCALFCTR, "XCALFCTR", TFLOAT);       // Additional.
-  findData(BASELIN,  "BASELIN",  TFLOAT);       // Additional.
-  findData(BASESUB,  "BASESUB",  TFLOAT);       // Additional.
-  findData(XPOLDATA, "XPOLDATA", TFLOAT);       // Additional.
+  findData(TSYS,     (char *)(char *)"TSYS",     TFLOAT);       // Core.
+  findData(CALFCTR,  (char *)(char *)"CALFCTR",  TFLOAT);       // Additional.
+  findData(XCALFCTR, (char *)(char *)"XCALFCTR", TFLOAT);       // Additional.
+  findData(BASELIN,  (char *)(char *)"BASELIN",  TFLOAT);       // Additional.
+  findData(BASESUB,  (char *)(char *)"BASESUB",  TFLOAT);       // Additional.
+  findData(XPOLDATA, (char *)(char *)"XPOLDATA", TFLOAT);       // Additional.
 
-  findData(REFBEAM,  "REFBEAM",  TSHORT);       // Additional.
-  findData(TCAL,     "TCAL",     TFLOAT);       // Shared.
-  findData(TCALTIME, "TCALTIME", TSTRING);      // Additional.
-  findData(AZIMUTH,  "AZIMUTH",  TFLOAT);       // Shared.
-  findData(ELEVATIO, "ELEVATIO", TFLOAT);       // Shared.
-  findData(PARANGLE, "PARANGLE", TFLOAT);       // Additional.
-  findData(FOCUSAXI, "FOCUSAXI", TFLOAT);       // Additional.
-  findData(FOCUSTAN, "FOCUSTAN", TFLOAT);       // Additional.
-  findData(FOCUSROT, "FOCUSROT", TFLOAT);       // Additional.
-  findData(TAMBIENT, "TAMBIENT", TFLOAT);       // Shared.
-  findData(PRESSURE, "PRESSURE", TFLOAT);       // Shared.
-  findData(HUMIDITY, "HUMIDITY", TFLOAT);       // Shared.
-  findData(WINDSPEE, "WINDSPEE", TFLOAT);       // Shared.
-  findData(WINDDIRE, "WINDDIRE", TFLOAT);       // Shared.
+  findData(REFBEAM,  (char *)(char *)"REFBEAM",  TSHORT);       // Additional.
+  findData(TCAL,     (char *)(char *)"TCAL",     TFLOAT);       // Shared.
+  findData(TCALTIME, (char *)(char *)"TCALTIME", TSTRING);      // Additional.
+  findData(AZIMUTH,  (char *)(char *)"AZIMUTH",  TFLOAT);       // Shared.
+  findData(ELEVATIO, (char *)(char *)"ELEVATIO", TFLOAT);       // Shared.
+  findData(PARANGLE, (char *)(char *)"PARANGLE", TFLOAT);       // Additional.
+  findData(FOCUSAXI, (char *)(char *)"FOCUSAXI", TFLOAT);       // Additional.
+  findData(FOCUSTAN, (char *)(char *)"FOCUSTAN", TFLOAT);       // Additional.
+  findData(FOCUSROT, (char *)(char *)"FOCUSROT", TFLOAT);       // Additional.
+  findData(TAMBIENT, (char *)(char *)"TAMBIENT", TFLOAT);       // Shared.
+  findData(PRESSURE, (char *)(char *)"PRESSURE", TFLOAT);       // Shared.
+  findData(HUMIDITY, (char *)(char *)"HUMIDITY", TFLOAT);       // Shared.
+  findData(WINDSPEE, (char *)(char *)"WINDSPEE", TFLOAT);       // Shared.
+  findData(WINDDIRE, (char *)(char *)"WINDDIRE", TFLOAT);       // Shared.
 
   findData(STOKES,    polCRVAL,  TINT);
-  findData(SIG,       "SIG",     TSTRING);
-  findData(CAL,       "CAL",     TSTRING);
+  findData(SIG,       (char *)(char *)"SIG",     TSTRING);
+  findData(CAL,       (char *)(char *)"CAL",     TSTRING);
 
-  findData(RVSYS,     "RVSYS",   TDOUBLE);
-  findData(VFRAME,    "VFRAME",  TDOUBLE);
-  findData(VELDEF,    "VELDEF",  TSTRING);
+  findData(RVSYS,     (char *)(char *)"RVSYS",   TDOUBLE);
+  findData(VFRAME,    (char *)(char *)"VFRAME",  TDOUBLE);
+  findData(VELDEF,    (char *)(char *)"VELDEF",  TSTRING);
 
-  findData(TIMESTAMP, "TIMESTAMP", TSTRING);
-  findData(DURATION,  "DURATION", TDOUBLE);
-  findData(SAMPLER,   "SAMPLER", TSTRING);
+  findData(TIMESTAMP, (char *)(char *)"TIMESTAMP", TSTRING);
+  findData(DURATION,  (char *)(char *)"DURATION", TDOUBLE);
+  findData(SAMPLER,   (char *)(char *)"SAMPLER", TSTRING);
 
   if (cStatus) {
     log(LogOrigin( className, methodName, WHERE ), LogIO::SEVERE);
@@ -526,16 +526,16 @@ int GBTFITSreader::open(
     cALFAscan = 0;
     cScanNo = 0;
     if (cALFA_CIMA) {
-      findData(SCAN,  "SCAN_ID", TINT);
+      findData(SCAN,  (char *)"SCAN_ID", TINT);
       if (cALFA_CIMA > 1) {
         // Note that RECNUM increases by cNAxisTime per row.
-        findData(CYCLE, "RECNUM", TINT);
+        findData(CYCLE, (char *)(char *)"RECNUM", TINT);
       } else {
-        findData(CYCLE, "SUBSCAN", TINT);
+        findData(CYCLE, (char *)(char *)"SUBSCAN", TINT);
       }
     } else if (cALFA_BD) {
-      findData(SCAN,  "SCAN_NUMBER", TINT);
-      findData(CYCLE, "PATTERN_NUMBER", TINT);
+      findData(SCAN,  (char *)"SCAN_NUMBER", TINT);
+      findData(CYCLE, (char *)"PATTERN_NUMBER", TINT);
     }
   } else {
     readData(SCAN, 1, &cFirstScanNo);
@@ -553,7 +553,7 @@ int GBTFITSreader::open(
   cBeam_1rel = 1;
   if (cALFA) {
     // ALFA INPUT_ID, 0-relative (overrides BEAM column if present).
-    findData(BEAM, "INPUT_ID", TSHORT);
+    findData(BEAM, (char *)"INPUT_ID", TSHORT);
     cBeam_1rel = 0;
 
   } else if (cData[BEAM].colnum < 0) {
@@ -562,7 +562,7 @@ int GBTFITSreader::open(
       findData(BEAM, beamCRVAL, TDOUBLE);
     } else {
       // ms2sdfits output, 0-relative "feed" number.
-      findData(BEAM, "MAIN_FEED1", TSHORT);
+      findData(BEAM, (char *)"MAIN_FEED1", TSHORT);
       cBeam_1rel = 0;
     }
   }
@@ -572,79 +572,79 @@ int GBTFITSreader::open(
   if (cALFA && cData[IF].colnum < 0) {
     // ALFA data, 0-relative.
     if (cALFA_CIMA > 1) {
-      findData(IF, "IFN", TSHORT);
+      findData(IF, (char *)(char *)"IFN", TSHORT);
     } else {
-      findData(IF, "IFVAL", TSHORT);
+      findData(IF, (char *)(char *)"IFVAL", TSHORT);
     }
     cIF_1rel = 0;
   }
 
   // ms2sdfits writes a scalar "TSYS" column that averages the polarizations.
   int colnum;
-  findCol("SYSCAL_TSYS", &colnum);
+  findCol((char *)"SYSCAL_TSYS", &colnum);
   if (colnum > 0) {
     // This contains the vector Tsys.
-    findData(TSYS, "SYSCAL_TSYS", TFLOAT);
+    findData(TSYS, (char *)"SYSCAL_TSYS", TFLOAT);
   }
 
   // XPOLDATA?
 
   if (cData[SCANRATE].colnum < 0) {
-    findData(SCANRATE, "FIELD_POINTING_DIR_RATE", TFLOAT);
+    findData(SCANRATE, (char *)"FIELD_POINTING_DIR_RATE", TFLOAT);
   }
 
   if (cData[RESTFRQ].colnum < 0) {
-    findData(RESTFRQ, "RESTFREQ", TDOUBLE);
+    findData(RESTFRQ, (char *)(char *)"RESTFREQ", TDOUBLE);
     if (cData[RESTFRQ].colnum < 0) {
-      findData(RESTFRQ, "SPECTRAL_WINDOW_REST_FREQUENCY", TDOUBLE);
+      findData(RESTFRQ, (char *)"SPECTRAL_WINDOW_REST_FREQUENCY", TDOUBLE);
     }
   }
 
   if (cData[OBJ_RA].colnum < 0) {
-    findData(OBJ_RA, "SOURCE_DIRECTION", TDOUBLE);
+    findData(OBJ_RA, (char *)"SOURCE_DIRECTION", TDOUBLE);
   }
   if (cData[OBJ_DEC].colnum < 0) {
-    findData(OBJ_DEC, "SOURCE_DIRECTION", TDOUBLE);
+    findData(OBJ_DEC, (char *)"SOURCE_DIRECTION", TDOUBLE);
   }
 
   // REFBEAM?
 
   if (cData[TCAL].colnum < 0) {
-    findData(TCAL, "SYSCAL_TCAL", TFLOAT);
+    findData(TCAL, (char *)"SYSCAL_TCAL", TFLOAT);
   } else if (cALFA_BD) {
     // ALFA BDFITS has a different TCAL with 64 elements - kill it!
-    findData(TCAL, "NO NO NO", TFLOAT);
+    findData(TCAL, (char *)"NO NO NO", TFLOAT);
   }
 
   if (cALFA_BD) {
     // ALFA BDFITS.
-    findData(AZIMUTH, "CRVAL2B", TFLOAT);
-    findData(ELEVATIO, "CRVAL3B", TFLOAT);
+    findData(AZIMUTH, (char *)(char *)"CRVAL2B", TFLOAT);
+    findData(ELEVATIO, (char *)(char *)"CRVAL3B", TFLOAT);
   }
 
   if (cALFA) {
     // ALFA data.
-    findData(PARANGLE, "PARA_ANG", TFLOAT);
+    findData(PARANGLE, (char *)"PARA_ANG", TFLOAT);
   }
 
   if (cData[TAMBIENT].colnum < 0) {
-    findData(TAMBIENT, "WEATHER_TEMPERATURE", TFLOAT);
+    findData(TAMBIENT, (char *)"WEATHER_TEMPERATURE", TFLOAT);
   }
 
   if (cData[PRESSURE].colnum < 0) {
-    findData(PRESSURE, "WEATHER_PRESSURE", TFLOAT);
+    findData(PRESSURE, (char *)"WEATHER_PRESSURE", TFLOAT);
   }
 
   if (cData[HUMIDITY].colnum < 0) {
-    findData(HUMIDITY, "WEATHER_REL_HUMIDITY", TFLOAT);
+    findData(HUMIDITY, (char *)"WEATHER_REL_HUMIDITY", TFLOAT);
   }
 
   if (cData[WINDSPEE].colnum < 0) {
-    findData(WINDSPEE, "WEATHER_WIND_SPEED", TFLOAT);
+    findData(WINDSPEE, (char *)"WEATHER_WIND_SPEED", TFLOAT);
   }
 
   if (cData[WINDDIRE].colnum < 0) {
-    findData(WINDDIRE, "WEATHER_WIND_DIRECTION", TFLOAT);
+    findData(WINDDIRE, (char *)"WEATHER_WIND_DIRECTION", TFLOAT);
   }
 
   // Determine which beams are present in the data.
@@ -767,7 +767,7 @@ int GBTFITSreader::open(
         } else {
           if (cData[DATAXED].colnum > 0) {
             char dataxed[32];
-            readParm("DATAXED", TSTRING, dataxed);
+            readParm((char *)(char *)"DATAXED", TSTRING, dataxed);
 
             sscanf(dataxed, "(%ld,%ld,%ld,%ld,%ld)", cNAxis, cNAxis+1,
               cNAxis+2, cNAxis+3, cNAxis+4);
@@ -1013,7 +1013,7 @@ int GBTFITSreader::open(
   cALFAacc = 0.0f;
   if (cALFA_CIMA > 1) {
     // FFTs per second when the Mock correlator operates in RFI blanking mode.
-    readData("PHFFTACC", TFLOAT, 0, &cALFAacc);
+    readData((char *)"PHFFTACC", TFLOAT, 0, &cALFAacc);
   }
 
 
@@ -1050,24 +1050,24 @@ int GBTFITSreader::getHeader(
   }
 
   // Read parameter values.
-  readParm("OBSERVER", TSTRING, observer);		// Shared.
-  readParm("PROJID",   TSTRING, project);		// Shared.
-  readParm("TELESCOP", TSTRING, telescope);		// Core.
+  readParm((char *)(char *)"OBSERVER", TSTRING, observer);		// Shared.
+  readParm((char *)(char *)"PROJID",   TSTRING, project);		// Shared.
+  readParm((char *)(char *)"TELESCOP", TSTRING, telescope);		// Core.
 
   antPos[0] = 0.0;
   antPos[1] = 0.0;
   antPos[2] = 0.0;
-  if (readParm("ANTENNA_POSITION", TDOUBLE, antPos)) {
-    readParm("OBSGEO-X",  TDOUBLE, antPos);		// Additional.
-    readParm("OBSGEO-Y",  TDOUBLE, antPos + 1);		// Additional.
-    readParm("OBSGEO-Z",  TDOUBLE, antPos + 2);		// Additional.
+  if (readParm((char *)"ANTENNA_POSITION", TDOUBLE, antPos)) {
+    readParm((char *)"OBSGEO-X",  TDOUBLE, antPos);		// Additional.
+    readParm((char *)"OBSGEO-Y",  TDOUBLE, antPos + 1);		// Additional.
+    readParm((char *)"OBSGEO-Z",  TDOUBLE, antPos + 2);		// Additional.
   }
 
   if (antPos[0] == 0.0) {
     if (cGBT) {
-      readParm( "SITELONG", TDOUBLE, antPos ) ;
-      readParm( "SITELAT", TDOUBLE, antPos+1 ) ;
-      readParm( "SITEELEV", TDOUBLE, antPos+2 ) ;
+      readParm( (char *)(char *)"SITELONG", TDOUBLE, antPos ) ;
+      readParm( (char *)(char *)"SITELAT", TDOUBLE, antPos+1 ) ;
+      readParm( (char *)(char *)"SITEELEV", TDOUBLE, antPos+2 ) ;
       Vector<Double> pos( 2 ) ;
       pos[0] = Double( antPos[0] ) ;
       pos[1] = Double( antPos[1] ) ;
@@ -1115,22 +1115,22 @@ int GBTFITSreader::getHeader(
     strcpy(bunit, "Jy/beam");
   }
 
-  readParm("EQUINOX",  TFLOAT,  &equinox);		// Shared.
+  readParm((char *)(char *)"EQUINOX",  TFLOAT,  &equinox);		// Shared.
   if (cStatus == 405) {
     // EQUINOX was written as string value in early versions.
     cStatus = 0;
     char strtmp[32];
-    readParm("EQUINOX", TSTRING, strtmp);
+    readParm((char *)(char *)"EQUINOX", TSTRING, strtmp);
     sscanf(strtmp, "%f", &equinox);
   }
 
-  if (readParm("RADESYS", TSTRING, radecsys)) {		// Additional.
-    if (readParm("RADECSYS", TSTRING, radecsys)) {	// Additional.
+  if (readParm((char *)(char *)"RADESYS", TSTRING, radecsys)) {		// Additional.
+    if (readParm((char *)(char *)"RADECSYS", TSTRING, radecsys)) {	// Additional.
       strcpy(radecsys, "");
     }
   }
 
-  if (readParm("SPECSYS", TSTRING, dopplerFrame)) {	// Additional.
+  if (readParm((char *)(char *)"SPECSYS", TSTRING, dopplerFrame)) {	// Additional.
     // Fallback value.
     strcpy(dopplerFrame, "TOPOCENT");
 
@@ -1138,7 +1138,7 @@ int GBTFITSreader::getHeader(
     //
     // Added few more codes currently (as of 2009 Oct) used in the GBT
     // SDFITS (based io_sdfits_define.pro of GBTIDL). - TT
-    if (readParm("VELFRAME", TSTRING, dopplerFrame)) {	// Additional.
+    if (readParm((char *)(char *)"VELFRAME", TSTRING, dopplerFrame)) {	// Additional.
       // No, try digging it out of the CTYPE card (AIPS convention).
       char keyw[9], ctype[9];
       sprintf(keyw, "CTYPE%ld", cFreqAxis+1);
@@ -1210,7 +1210,7 @@ int GBTFITSreader::getHeader(
   // Get parameters from first row of table.
   readTime(1, 1, datobs, utc);
   readData(FqRefVal, 1, &refFreq);
-  readParm("BANDWID", TDOUBLE, &bandwidth);		// Core.
+  readParm((char *)(char *)"BANDWID", TDOUBLE, &bandwidth);		// Core.
 
   if (cStatus) {
     log(LogOrigin( className, methodName, WHERE ), LogIO::SEVERE);
@@ -1262,7 +1262,7 @@ int GBTFITSreader::getFreqInfo(
 
             if (cALFA_BD) {
               unsigned char invert;
-              readData("UPPERSB", TBYTE, irow, &invert);
+              readData((char *)"UPPERSB", TBYTE, irow, &invert);
 
               if (invert) {
                 fqDelt = -fqDelt;
@@ -1866,7 +1866,7 @@ int GBTFITSreader::read(
   if (cALFA_BD) {
     unsigned char invert;
     int anynul, colnum;
-    findCol("UPPERSB", &colnum);
+    findCol((char *)"UPPERSB", &colnum);
     fits_read_col(cSDptr, TBYTE, colnum, cRow, 1, 1, 0, &invert, &anynul,
                   &cStatus);
 
@@ -2010,7 +2010,7 @@ int GBTFITSreader::read(
         if (cALFA_CIMA > 1) {
           // Rescale according to the number of unblanked accumulations.
           int colnum, naccum;
-          findCol("STAT", &colnum);
+          findCol((char *)"STAT", &colnum);
           fits_read_col(cSDptr, TINT, colnum, cRowR, 10*(cTimeIdx-1)+2, 1, 0,
                         &naccum, &anynul, &cStatus);
           factor *= cALFAacc / naccum;
@@ -2630,9 +2630,9 @@ int GBTFITSreader::alfaCal(
   int  calOn;
   char chars[32];
   if (cALFA_BD) {
-    readData("OBS_NAME", TSTRING, cRow, chars);
+    readData((char *)"OBS_NAME", TSTRING, cRow, chars);
   } else {
-    readData("SCANTYPE", TSTRING, cRow, chars);
+    readData((char *)"SCANTYPE", TSTRING, cRow, chars);
   }
 
   if (strcmp(chars, "ON") == 0) {
@@ -2690,7 +2690,7 @@ int GBTFITSreader::alfaCal(
   float factor = 1.0f;
   if (cALFA_CIMA > 1) {
     int   colnum, naccum;
-    findCol("STAT", &colnum);
+    findCol((char *)"STAT", &colnum);
     fits_read_col(cSDptr, TINT, colnum, cRow, 2, 1, 0, &naccum, &anynul,
                   &cStatus);
     factor = cALFAacc / naccum;
@@ -2915,9 +2915,9 @@ Double GBTFITSreader::getRefValLSR( int irow )
     dd += 0.5 * duration / 86400.0 ;
     MEpoch me( Quantity( dd, "d" ), MEpoch::UTC ) ;
     double antPos[3] ;
-    readParm( "SITELONG", TDOUBLE, antPos ) ;
-    readParm( "SITELAT", TDOUBLE, antPos+1 ) ;
-    readParm( "SITEELEV", TDOUBLE, antPos+2 ) ;
+    readParm( (char *)(char *)"SITELONG", TDOUBLE, antPos ) ;
+    readParm( (char *)(char *)"SITELAT", TDOUBLE, antPos+1 ) ;
+    readParm( (char *)(char *)"SITEELEV", TDOUBLE, antPos+2 ) ;
     Vector<Double> pos( 2 ) ;
     pos[0] = Double( antPos[0] ) ;
     pos[1] = Double( antPos[1] ) ;
