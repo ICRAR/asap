@@ -2729,6 +2729,8 @@ std::vector<float> Scantable::doSubtractBaseline(std::vector<float>& spec,
     initLineFinder(lfedge, lfth, lfavg, lineFinder);
     std::vector<int> currentEdge;
     mask = getCompositeChanMask(irow, mask, lfedge, currentEdge, lineFinder);
+  } else {
+    mask = getCompositeChanMask(irow, mask);
   }
 
   std::vector<float> res;
