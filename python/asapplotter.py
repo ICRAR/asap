@@ -1716,7 +1716,8 @@ class asapplotter:
             selstr += '\n'
             self._headtext['selstr'] = selstr
         #ssel=(selstr+self._data.get_selection().__str__()+self._selection.__str__() or 'none')
-        ssel=(selstr+self._data.get_selection().__str__()+"\n"+self._selection.__str__() or 'none')
+        curr_selstr = selstr+self._data.get_selection().__str__() or "none"
+        ssel=(curr_selstr+"\n" +self._selection.__str__())
         headstr.append('\n\n***Selections***\n'+ssel.replace('$','\$'))
 
         if plot:
