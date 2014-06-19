@@ -2119,7 +2119,7 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
 	    if (regridTsys) newtsys[i] += oldtsys[j] * ( yr - zl ) ;
 	    wsum += ( yr - zl ) ;
 	  }
-	  newflag[i] = newflag[i] && oldflag[j] ;
+	  newflag[i] = (newflag[i] && oldflag[j]) ? 1 << 7 : 0 ;
 	}
 	else {
 	  if (!oldflag[j]) {
@@ -2127,7 +2127,7 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
 	    if (regridTsys) newtsys[i] += oldtsys[j] * abs(dnu) ;
 	    wsum += abs(dnu) ;
 	  }
-	  newflag[i] = newflag[i] && oldflag[j] ;
+	  newflag[i] = (newflag[i] && oldflag[j]) ? 1 << 7 : 0 ;
 	  ichan = jj ;
 	  break ;
 	}
@@ -2139,7 +2139,7 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
 	    if (regridTsys) newtsys[i] += oldtsys[j] * ( yr - yl ) ;
 	    wsum += ( yr - yl ) ;
 	  }
-	  newflag[i] = newflag[i] && oldflag[j] ;
+	  newflag[i] = (newflag[i] && oldflag[j]) ? 1 << 7 : 0 ;
 	}
 	else {
 	  if (!oldflag[j]) {
@@ -2147,7 +2147,7 @@ void asap::Scantable::regridChannel( int nChan, double dnu, int irow )
 	    if (regridTsys) newtsys[i] += oldtsys[j] * ( zr - yl ) ;
 	    wsum += ( zr - yl ) ;
 	  }
-	  newflag[i] = newflag[i] && oldflag[j] ;
+	  newflag[i] = (newflag[i] && oldflag[j]) ? 1 << 7 : 0 ;
 	  ichan = jj ;
 	  break ;
 	}

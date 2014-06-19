@@ -2469,9 +2469,15 @@ CountedPtr< Scantable > STMath::smoothOther( const CountedPtr< Scantable >& in,
     Table tab = iter.table();
     ArrayColumn<Float> specCol(tab, "SPECTRA");
     ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+    ScalarColumn<uInt> flagrowCol(tab, "FLAGROW");
     Vector<Float> spec;
     Vector<uChar> flag;
+    Vector<uInt> flagrow = flagrowCol.getColumn();
     for (uInt i = 0; i < tab.nrow(); ++i) {
+      if (flagrow[i] != 0) {
+	// do not process flagged row
+	continue;
+      }
       specCol.get(i, spec);
       flagCol.get(i, flag);
       Vector<Bool> mask(flag.nelements());
@@ -2517,13 +2523,20 @@ CountedPtr< Scantable > STMath::smooth( const CountedPtr< Scantable >& in,
     Table tab = iter.table();
     ArrayColumn<Float> specCol(tab, "SPECTRA");
     ArrayColumn<uChar> flagCol(tab, "FLAGTRA");
+    ScalarColumn<uInt> flagrowCol(tab, "FLAGROW");
     Vector<Float> spec = specCol( 0 );
     uInt nchan = spec.nelements();
     Vector<Float> kvec = VectorKernel::make(type, width, nchan, True, False);
     Convolver<Float> conv(kvec, IPosition(1,nchan));
     Vector<uChar> flag;
     Vector<Bool> mask(nchan);
+    Vector<uInt> flagrow = flagrowCol.getColumn();
     for ( uInt i=0; i<tab.nrow(); ++i) {
+      if (flagrow[i] != 0) {
+	// do not process flagged row
+	continue;
+      }
+      
       specCol.get(i, spec);
       flagCol.get(i, flag);
       convertArray(mask, flag);
