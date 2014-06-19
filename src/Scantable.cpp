@@ -841,9 +841,10 @@ void Scantable::flag( int whichrow, const std::vector<bool>& msk, bool unflag ) 
       applyChanFlag(uInt(whichrow), msk, userflag);
     }
   } else {
+    Vector<uInt> flagrow = flagrowCol_.getColumn();
     for ( uInt i=0; i<table_.nrow(); ++i) {
       // apply flag only when specified row is vaild
-      if (flagrowCol_(i) == 0) {
+      if (flagrow[i] == 0) {
         applyChanFlag(i, msk, userflag);
       }
     }
