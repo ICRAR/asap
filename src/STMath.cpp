@@ -373,6 +373,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     if ( allEQ(msk, False) ) {
       rowstodelB[nrowdel] = i ;
       nrowdel++ ;
+      iter.next();
       continue;
     }
     //write out
