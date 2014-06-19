@@ -762,10 +762,14 @@ void Scantable::calculateAZEL()
 
 void Scantable::clip(const Float uthres, const Float dthres, bool clipoutside, bool unflag)
 {
+  Vector<uInt> flagrow = flagrowCol_.getColumn();
   for (uInt i=0; i<table_.nrow(); ++i) {
-    Vector<uChar> flgs = flagsCol_(i);
-    srchChannelsToClip(i, uthres, dthres, clipoutside, unflag, flgs);
-    flagsCol_.put(i, flgs);
+    // apply flag only when specified row is vaild
+    if (flagrow[i] == 0) {
+      Vector<uChar> flgs = flagsCol_(i);
+      srchChannelsToClip(i, uthres, dthres, clipoutside, unflag, flgs);
+      flagsCol_.put(i, flgs);
+    }
   }
 }
 
@@ -832,10 +836,16 @@ void Scantable::flag( int whichrow, const std::vector<bool>& msk, bool unflag ) 
     userflag = 0 << 7;
   }
   if (whichrow > -1 ) {
-    applyChanFlag(uInt(whichrow), msk, userflag);
+    // apply flag only when specified row is vaild
+    if (flagrowCol_(whichrow) == 0) {
+      applyChanFlag(uInt(whichrow), msk, userflag);
+    }
   } else {
     for ( uInt i=0; i<table_.nrow(); ++i) {
-      applyChanFlag(i, msk, userflag);
+      // apply flag only when specified row is vaild
+      if (flagrowCol_(i) == 0) {
+        applyChanFlag(i, msk, userflag);
+      }
     }
   }
 }
