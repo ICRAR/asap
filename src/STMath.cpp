@@ -617,19 +617,24 @@ CountedPtr< Scantable > STMath::getScantable(const CountedPtr< Scantable >& in,
 CountedPtr< Scantable > STMath::unaryOperate( const CountedPtr< Scantable >& in,
                                               float val,
                                               const std::string& mode,
-                                              bool tsys )
+                                              bool tsys,
+                                              bool skip_flaggedrow )
 {
   CountedPtr< Scantable > out = getScantable(in, false);
   Table& tab = out->table();
   ArrayColumn<Float> specCol(tab,"SPECTRA");
   ArrayColumn<Float> tsysCol(tab,"TSYS");
+  ScalarColumn<uInt> flagrowCol(tab, "FLAGROW");
   if (mode=="DIV") val = 1.0/val ;
   else if (mode=="SUB") val *= -1.0 ;
   for (uInt i=0; i<tab.nrow(); ++i) {
     Vector<Float> spec;
     Vector<Float> ts;
+    uInt flagrow;
     specCol.get(i, spec);
     tsysCol.get(i, ts);
+    flagrowCol.get(i, flagrow);
+    if (skip_flaggedrow && (flagrow > 0)) continue;
     if (mode == "MUL" || mode == "DIV") {
       //if (mode == "DIV") val = 1.0/val;
       spec *= val;
@@ -655,14 +660,15 @@ CountedPtr< Scantable > STMath::arrayOperate( const CountedPtr< Scantable >& in,
                                               const std::vector<float> val,
                                               const std::string& mode,
                                               const std::string& opmode, 
-                                              bool tsys )
+                                              bool tsys,
+                                              bool skip_flaggedrow )
 {
   CountedPtr< Scantable > out ;
   if ( opmode == "channel" ) {
-    out = arrayOperateChannel( in, val, mode, tsys ) ;
+    out = arrayOperateChannel( in, val, mode, tsys, skip_flaggedrow ) ;
   }
   else if ( opmode == "row" ) {
-    out = arrayOperateRow( in, val, mode, tsys ) ;
+    out = arrayOperateRow( in, val, mode, tsys, skip_flaggedrow ) ;
   }
   else {
     throw( AipsError( "Unknown array operation mode." ) ) ;
@@ -673,7 +679,8 @@ CountedPtr< Scantable > STMath::arrayOperate( const CountedPtr< Scantable >& in,
 CountedPtr< Scantable > STMath::arrayOperateChannel( const CountedPtr< Scantable >& in,
                                                      const std::vector<float> val,
                                                      const std::string& mode,
-                                                     bool tsys )
+                                                     bool tsys,
+                                                     bool skip_flaggedrow )
 {
   if ( val.size() == 1 ){
     return unaryOperate( in, val[0], mode, tsys ) ;
@@ -720,13 +727,17 @@ CountedPtr< Scantable > STMath::arrayOperateChannel( const CountedPtr< Scantable
   Table& tab = out->table();
   ArrayColumn<Float> specCol(tab,"SPECTRA");
   ArrayColumn<Float> tsysCol(tab,"TSYS");
+  ScalarColumn<uInt> flagrowCol(tab, "FLAGROW");
   if (mode == "DIV") fact = (float)1.0 / fact;
   else if (mode == "SUB") fact *= (float)-1.0 ;
   for (uInt i=0; i<tab.nrow(); ++i) {
     Vector<Float> spec;
     Vector<Float> ts;
+    uInt flagrow;
     specCol.get(i, spec);
     tsysCol.get(i, ts);
+    flagrowCol.get(i, flagrow);
+    if (skip_flaggedrow && (flagrow > 0)) continue;
     if (mode == "MUL" || mode == "DIV") {
       //if (mode == "DIV") fact = (float)1.0 / fact;
       spec *= fact;
@@ -751,7 +762,8 @@ CountedPtr< Scantable > STMath::arrayOperateChannel( const CountedPtr< Scantable
 CountedPtr< Scantable > STMath::arrayOperateRow( const CountedPtr< Scantable >& in,
                                                  const std::vector<float> val,
                                                  const std::string& mode,
-                                                 bool tsys )
+                                                 bool tsys,
+                                                 bool skip_flaggedrow )
 {
   if ( val.size() == 1 ) {
     return unaryOperate( in, val[0], mode, tsys ) ;
@@ -787,13 +799,17 @@ CountedPtr< Scantable > STMath::arrayOperateRow( const CountedPtr< Scantable >& 
   Table& tab = out->table();
   ArrayColumn<Float> specCol(tab,"SPECTRA");
   ArrayColumn<Float> tsysCol(tab,"TSYS");
+  ScalarColumn<uInt> flagrowCol(tab, "FLAGROW");
   if (mode == "DIV") fact = (float)1.0 / fact;
   if (mode == "SUB") fact *= (float)-1.0 ;
   for (uInt i=0; i<tab.nrow(); ++i) {
     Vector<Float> spec;
     Vector<Float> ts;
+    uInt flagrow;
     specCol.get(i, spec);
     tsysCol.get(i, ts);
+    flagrowCol.get(i, flagrow);
+    if (skip_flaggedrow && (flagrow > 0)) continue;
     if (mode == "MUL" || mode == "DIV") {
       spec *= fact[i];
       specCol.put(i, spec);

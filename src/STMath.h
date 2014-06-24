@@ -14,6 +14,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 
 #include <casa/aips.h>
 #include <casa/Arrays/Vector.h>
@@ -116,7 +117,8 @@ public:
 
   casa::CountedPtr<Scantable>
     unaryOperate( const casa::CountedPtr<Scantable>& in, float val,
-                  const std::string& mode, bool tsys=false );
+                  const std::string& mode, bool tsys=false,
+                  bool skip_flaggedrow=false );
 
   // array operation
   casa::CountedPtr<Scantable>
@@ -124,19 +126,22 @@ public:
                   const std::vector<float> val,
                   const std::string& mode,
                   const std::string& opmode="channel",  
-                  bool tsys=false );
+                  bool tsys=false,
+                  bool skip_flaggedrow=false );
 
   // channel operation
   casa::CountedPtr<Scantable>
     arrayOperateChannel( const casa::CountedPtr<Scantable>& in, 
                          const std::vector<float> val,
-                         const std::string& mode, bool tsys=false );
+                         const std::string& mode, bool tsys=false,
+                         bool skip_flaggedrow=false );
 
   // row operation
   casa::CountedPtr<Scantable>
     arrayOperateRow( const casa::CountedPtr<Scantable>& in, 
                      const std::vector<float> val,
-                     const std::string& mode, bool tsys=false );
+                     const std::string& mode, bool tsys=false,
+                     bool skip_flaggedrow=false );
 
   // 2d array operation
   casa::CountedPtr<Scantable>

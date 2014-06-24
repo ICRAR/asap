@@ -1024,7 +1024,7 @@ def splitant(filename, outprefix='',overwrite=False, getpt=True):
     return outfiles
 
 @asaplog_post_dec
-def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
+def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None, skip_flaggedrow=False):
     """
     This function is workaround on the basic operation of scantable
     with 2 dimensional float list.
@@ -1035,6 +1035,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
     tsys:    if True, operate tsys as well
     insitu:  if False, a new scantable is returned.
              Otherwise, the array operation is done in-sitsu.
+    skip_flaggedrow: skip operation for row-flagged spectra.
     """
     if insitu is None: insitu = rcParams['insitu']
     nrow = scan.nrow()
@@ -1043,7 +1044,7 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
     stm = stmath()
     stm._setinsitu(insitu)
     if len( value ) == 1:
-        s = scantable( stm._arrayop( scan, value[0], mode, tsys ) )
+        s = scantable( stm._arrayop( scan, value[0], mode, tsys, skip_flaggedrow ) )
     elif len( value ) != nrow:
         raise ValueError( 'len(value) must be 1 or conform to scan.nrow()' )
     else:
@@ -1061,9 +1062,9 @@ def _array2dOp( scan, value, mode="ADD", tsys=False, insitu=None):
             sel.set_rows( irow )
             s.set_selection( sel )
             if len( value[irow] ) == 1:
-                stm._unaryop( s, value[irow][0], mode, tsys )
+                stm._unaryop( s, value[irow][0], mode, tsys, skip_flaggedrow )
             else:
                 #stm._arrayop( s, value[irow], mode, tsys, 'channel' )
-                stm._arrayop( s, value[irow], mode, tsys )
+                stm._arrayop( s, value[irow], mode, tsys, skip_flaggedrow )
         s.set_selection(basesel)
     return s

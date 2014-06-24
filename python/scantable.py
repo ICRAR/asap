@@ -4796,7 +4796,7 @@ class scantable(Scantable):
             return s
 
     @asaplog_post_dec
-    def scale(self, factor, tsys=True, insitu=None):
+    def scale(self, factor, tsys=True, insitu=None, skip_flaggedrow=False):
         """\
 
         Return a scan where all spectra are scaled by the given 'factor'
@@ -4812,6 +4812,8 @@ class scantable(Scantable):
             tsys:        if True (default) then apply the operation to Tsys
                          as well as the data
 
+            skip_flaggedrow: if True, scaling is NOT executed for
+                             row-flagged spectra. default is False.
         """
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
@@ -4822,12 +4824,12 @@ class scantable(Scantable):
             if isinstance(factor[0], list) or isinstance(factor[0], 
                                                          numpy.ndarray):
                 from asapmath import _array2dOp
-                s = _array2dOp( self, factor, "MUL", tsys, insitu )
+                s = _array2dOp( self, factor, "MUL", tsys, insitu, skip_flaggedrow )
             else:
                 s = scantable( self._math._arrayop( self, factor, 
-                                                    "MUL", tsys ) )
+                                                    "MUL", tsys, skip_flaggedrow ) )
         else:
-            s = scantable(self._math._unaryop(self, factor, "MUL", tsys))
+            s = scantable(self._math._unaryop(self, factor, "MUL", tsys, skip_flaggedrow))
         s._add_history("scale", varlist)
         if insitu:
             self._assign(s)
