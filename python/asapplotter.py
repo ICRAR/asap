@@ -1327,7 +1327,7 @@ class asapplotter:
         from pytz import timezone
         from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
-        from numpy import array, pi
+        from numpy import array, pi, ma
         if self._plotter and (PL.gcf() == self._plotter.figure):
             # the current figure is ASAP plotter. Use mpl plotter
             figids = PL.get_fignums()
@@ -1339,6 +1339,8 @@ class asapplotter:
             PL.gcf().canvas.switch_backends(FigureCanvasAgg)
         self._data = scan
         dates = self._data.get_time(asdatetime=True)
+        # for flag handling
+        mask = [ self._data._is_all_chan_flagged(i) for i in range(self._data.nrow())]
         t = PL.date2num(dates)
         tz = timezone('UTC')
         PL.cla()
@@ -1353,7 +1355,7 @@ class asapplotter:
 
         tdel = max(t) - min(t)
         ax = PL.subplot(2,1,1)
-        el = array(self._data.get_elevation())*180./pi
+        el = ma.masked_array(array(self._data.get_elevation())*180./pi, mask)
         PL.ylabel('El [deg.]')
         dstr = dates[0].strftime('%Y/%m/%d')
         if tdel > 1.0:
@@ -1391,7 +1393,7 @@ class asapplotter:
             PL.setp(labels, fontsize=10)
 
         # Az plot
-        az = array(self._data.get_azimuth())*180./pi
+        az = ma.masked_array(array(self._data.get_azimuth())*180./pi, mask)
         if min(az) < 0:
             for irow in range(len(az)):
                 if az[irow] < 0: az[irow] += 360.0
@@ -1439,7 +1441,7 @@ class asapplotter:
                          ''(no projection [deg])|'coord'(not implemented)
         """
         self._plotmode = "pointing"
-        from numpy import array, pi
+        from numpy import array, pi, ma
         from asap import scantable
         # check for scantable
         if isinstance(scan, scantable):
@@ -1518,8 +1520,10 @@ class asapplotter:
             #print "Plotting direction of %s = %s" % (colorby, str(idx))
             # getting data to plot
             dir = array(self._data.get_directionval()).transpose()
+            # for flag handling
+            mask = [ self._data._is_all_chan_flagged(i) for i in range(self._data.nrow())]
             ra = dir[0]*180./pi
-            dec = dir[1]*180./pi
+            dec = ma.masked_array(dir[1]*180./pi, mask)
             # actual plot
             self._plotter.set_line(label=(sellab+str(idx)))
             self._plotter.plot(ra,dec,marker)
@@ -1678,6 +1682,9 @@ class asapplotter:
         l,m = y.shape
         if m > 1:
             y=y.mean(axis=1)
+        # flag handling
+        m = [ scan._is_all_chan_flagged(i) for i in range(scan.nrow()) ]
+        y = ma.masked_array(y,mask=m)
         plotit = self._plotter.plot
         llbl = self._get_label(scan, r, self._stacking, None)
         self._plotter.set_line(label=llbl)
