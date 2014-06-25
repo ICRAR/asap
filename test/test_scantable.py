@@ -205,7 +205,7 @@ class TestScantable(object):
                    'var' : 232.98752,
                    'tsys' : 236.37482,
                    'tint' : 236.61423,
-                   'tintsys' : 236.37485,
+                   'tintsys' : 236.37482,
                    'median' : 236.61423,
                    }
 
