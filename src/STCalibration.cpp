@@ -78,7 +78,8 @@ void STCalibration::fillCalTable()
     else if (len == 1) {
       uInt irow = rows[0];
       appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
-		 freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow));
+		 freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow),
+		 flagCol(irow));
       iter.next();
       continue;
     }
@@ -125,8 +126,17 @@ void STCalibration::fillCalTable()
 //           }
           timeCen /= (Double)count * 86400.0; // sec->day
           elCen /= (Float)count;
-	  appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
-		     freqidCol(irow), timeCen, elCen, acc.getSpectrum());
+	  const Vector<Bool> &mask = acc.getMask();
+	  Vector<uChar> flag(mask.shape(), (uChar)0);
+	  const uChar userFlag = 1 << 7;
+	  for (uInt k = 0; k < flag.nelements(); ++k) {
+	    if (mask[k] == True)
+	      flag[k] = userFlag;
+	  }
+	  appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"),
+		     current.asuInt("POLNO"),
+		     freqidCol(irow), timeCen, elCen,
+		     acc.getSpectrum(), flag);
         }
         acc.reset() ;
         timeCen = 0.0;

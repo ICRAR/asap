@@ -45,7 +45,8 @@ protected:
   virtual void appenddata(casa::uInt scanno, casa::uInt cycleno, 
 			  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
 			  casa::uInt freqid, casa::Double time, casa::Float elevation, 
-			  casa::Vector<casa::Float> any_data);
+			  const casa::Vector<casa::Float> &any_data,
+			  const casa::Vector<casa::uChar> &channel_flag);
 };
 
 }

@@ -74,12 +74,14 @@ void STCalTsys::setupSelector(const STSelector &sel)
 void STCalTsys::appenddata(uInt scanno, uInt cycleno, 
 			   uInt beamno, uInt ifno, uInt polno, 
 			   uInt freqid, Double time, Float elevation, 
-			   Vector<Float> any_data)
+			   const Vector<Float> &any_data,
+			   const Vector<uChar> &channel_flag)
 {
   STCalTsysTable *p = dynamic_cast<STCalTsysTable *>(&(*applytable_));
   if (do_average_ && tsysspw_.isDefined(String::toString(ifno))) {
     LogIO os(LogOrigin("STCalTsys", "appenddata", WHERE));
     Vector<Float> averaged_data(any_data.size());
+    Vector<uChar> averaged_flag(any_data.size(), 0);
     Float averaged_value = 0.0;
     size_t num_value = 0;
     Vector<Double> channel_range = tsysspw_.asArrayDouble(String::toString(ifno));
@@ -103,11 +105,13 @@ void STCalTsys::appenddata(uInt scanno, uInt cycleno,
     os << LogIO::DEBUGGING << "averaged_data = " << averaged_data << LogIO::POST;
     os << LogIO::DEBUGGING << "any_data = " << any_data << LogIO::POST;
     p->appenddata(scanno, cycleno, beamno, ifno, polno,
-		  freqid, time, elevation, averaged_data);
+		  freqid, time, elevation, averaged_data,
+		  averaged_flag);
   }
   else {
     p->appenddata(scanno, cycleno, beamno, ifno, polno,
-		  freqid, time, elevation, any_data);
+		  freqid, time, elevation, any_data,
+		  channel_flag);
   }
 }
 

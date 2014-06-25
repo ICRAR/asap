@@ -52,11 +52,12 @@ void STCalSkyPSAlma::setupSelector(const STSelector &sel)
 void STCalSkyPSAlma::appenddata(uInt scanno, uInt cycleno, 
 				uInt beamno, uInt ifno, uInt polno, 
 				uInt freqid, Double time, Float elevation, 
-				Vector<Float> any_data)
+				const Vector<Float> &any_data,
+				const Vector<uChar> &channel_flag)
 {
   STCalSkyTable *p = dynamic_cast<STCalSkyTable *>(&(*applytable_));
   p->appenddata(scanno, cycleno, beamno, ifno, polno,
-		freqid, time, elevation, any_data);
+		freqid, time, elevation, any_data, channel_flag);
 }
 
 }

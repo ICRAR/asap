@@ -46,11 +46,13 @@ public:
   void setdata(casa::uInt irow, casa::uInt scannos, casa::uInt cycleno, 
                casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
                casa::uInt freqid, casa::Double time, casa::Float elevation, 
-               casa::Vector<casa::Float> spectra);
+               const casa::Vector<casa::Float> &spectra,
+	       const casa::Vector<casa::uChar> &flagtra);
   void appenddata(casa::uInt scanno, casa::uInt cycleno, casa::uInt beamno, 
                   casa::uInt ifno, casa::uInt polno, casa::uInt freqid,  
                   casa::Double time, casa::Float elevation, 
-                  casa::Vector<casa::Float> spectra);
+                  const casa::Vector<casa::Float> &spectra,
+		  const casa::Vector<casa::uChar> &flagtra);
   
   casa::Vector<casa::Float> getElevation() {return elCol_.getColumn();}
   casa::Matrix<casa::Float> getSpectra() {return spectraCol_.getColumn();}
@@ -62,6 +64,7 @@ private:
   static const casa::String name_;
   const casa::String caltype_;
   casa::ArrayColumn<casa::Float> spectraCol_;
+  casa::ArrayColumn<casa::uChar> flagtraCol_;
   casa::ScalarColumn<casa::Float> elCol_;
 };
 
