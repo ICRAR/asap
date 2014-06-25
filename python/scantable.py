@@ -951,6 +951,10 @@ class scantable(Scantable):
             rows = [ row ]
 
         for i in rows:
+            print '@@@@@@@@'
+            print '['+str(i)+'/'+str(rows)+'] -- '+('RowFlagged' if self._getflagrow(i) else '')
+            print '@@@@@@@@'
+            #if self._getflagrow(i): continue
             refstr = ''
             statunit= ''
             if getchan:
@@ -4788,7 +4792,7 @@ class scantable(Scantable):
         if insitu is None: insitu = rcParams['insitu']
         self._math._setinsitu(insitu)
         varlist = vars()
-        s = scantable(self._math._unaryop(self, offset, "ADD", False))
+        s = scantable(self._math._unaryop(self, offset, "ADD", False, False))
         s._add_history("add", varlist)
         if insitu:
             self._assign(s)
@@ -5042,7 +5046,7 @@ class scantable(Scantable):
         elif isinstance(other, float):
             if other == 0.0:
                 raise ZeroDivisionError("Dividing by zero is not recommended")
-            s = scantable(self._math._unaryop(self, other, mode, False))
+            s = scantable(self._math._unaryop(self, other, mode, False, False))
         elif isinstance(other, list) or isinstance(other, numpy.ndarray):
             if isinstance(other[0], list) \
                     or isinstance(other[0], numpy.ndarray):
@@ -5050,7 +5054,7 @@ class scantable(Scantable):
                 s = _array2dOp( self, other, mode, False )
             else:
                 s = scantable( self._math._arrayop( self, other, 
-                                                    mode, False ) )
+                                                    mode, False, False ) )
         else:
             raise TypeError("Other input is not a scantable or float value")
         return s
