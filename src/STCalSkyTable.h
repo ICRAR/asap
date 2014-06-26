@@ -56,6 +56,7 @@ public:
   
   casa::Vector<casa::Float> getElevation() {return elCol_.getColumn();}
   casa::Matrix<casa::Float> getSpectra() {return spectraCol_.getColumn();}
+  casa::Matrix<casa::uChar> getFlagtra() {return flagtraCol_.getColumn();}
   casa::uInt nchan(casa::uInt ifno);
 
   //casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);

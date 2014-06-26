@@ -57,6 +57,8 @@ void STCalibration::fillCalTable()
   ROArrayColumn<Float> specCol(scantable_->table(), target_column_);
   ROArrayColumn<uChar> flagCol(scantable_->table(), "FLAGTRA");
   ROScalarColumn<uInt> freqidCol(scantable_->table(), "FREQ_ID");
+  ROScalarColumn<uInt> flagrowCol(scantable_->table(), "FLAGROW");
+  Vector<uInt> flagrow = flagrowCol.getColumn();
 
   // dummy Tsys: the following process doesn't need Tsys but RowAccumulator 
   //             requires to set it with spectral data
@@ -77,9 +79,11 @@ void STCalibration::fillCalTable()
     }
     else if (len == 1) {
       uInt irow = rows[0];
-      appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
-		 freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow),
-		 flagCol(irow));
+      if (flagrow[irow] == 0) {
+	appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
+		   freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow),
+		   flagCol(irow));
+      }
       iter.next();
       continue;
     }
@@ -106,7 +110,7 @@ void STCalibration::fillCalTable()
       flagCol.get(irow, flag);
       convertArray(bflag, flag);
       specCol.get(irow, spec);
-      if ( !allEQ(bflag,True) ) 
+      if ( !allEQ(bflag,True) && flagrow[irow] == 0 ) 
         acc.add( spec, !bflag, tsys, intervalSec[irow], timeSec[irow] ) ;
       timeCen += timeSec[irow];
       elCen += elevation[irow];
@@ -130,7 +134,7 @@ void STCalibration::fillCalTable()
 	  Vector<uChar> flag(mask.shape(), (uChar)0);
 	  const uChar userFlag = 1 << 7;
 	  for (uInt k = 0; k < flag.nelements(); ++k) {
-	    if (mask[k] == True)
+	    if (mask[k] == False)
 	      flag[k] = userFlag;
 	  }
 	  appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"),

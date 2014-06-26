@@ -90,15 +90,16 @@ void STCalTsys::appenddata(uInt scanno, uInt cycleno,
       size_t start = (size_t)channel_range[i-1];
       size_t end = std::min((size_t)channel_range[i] + 1, averaged_data.size());
       os << LogIO::DEBUGGING << "start=" << start << ", end=" << end << LogIO::POST;
-      //Vector<Float> segment = any_data(Slice(start, end - 1, 1, False));
-      //averaged_value += sum(segment);
-      //num_value += segment.size();
       float sum_per_segment = 0.0;
+      size_t count = 0;
       for (size_t j = start; j < end; ++j) {
-        sum_per_segment += any_data[j];
+	if (channel_flag[j] == 0) {
+	  sum_per_segment += any_data[j];
+	  count += 1;
+	}
       }
       averaged_value += sum_per_segment;
-      num_value += end - start;
+      num_value += count;
     }
     averaged_value /= (Float)num_value;
     averaged_data = averaged_value;
