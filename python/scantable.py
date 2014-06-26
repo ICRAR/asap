@@ -891,7 +891,7 @@ class scantable(Scantable):
             return workscan
 
     @asaplog_post_dec
-    def stats(self, stat='stddev', mask=None, form='3.3f', row=None):
+    def stats(self, stat='stddev', mask=None, form='3.3f', row=None, skip_flaggedrow=False):
         """\
         Determine the specified statistic of the current beam/if/pol
         Takes a 'mask' as an optional parameter to specify which
@@ -910,6 +910,9 @@ class scantable(Scantable):
             row:     row number of spectrum to process.
                      (default is None: for all rows)
 
+            skip_flaggedrow: if True, skip outputting text for flagged
+                             spectra. default is False.
+
         Example:
             scan.set_unit('channel')
             msk = scan.create_mask([100, 200], [500, 600])
@@ -921,14 +924,16 @@ class scantable(Scantable):
             raise ValueError("Cannot apply mask as the IFs have different "
                              "number of channels. Please use setselection() "
                              "to select individual IFs")
-        rtnabc = False
-        if stat.lower().endswith('_abc'): rtnabc = True
         getchan = False
         if stat.lower().startswith('min') or stat.lower().startswith('max'):
             chan = self._math._minmaxchan(self, mask, stat)
             getchan = True
             statvals = []
-        if not rtnabc:
+
+        rtnabc = False
+        if stat.lower().endswith('_abc'):
+            rtnabc = True
+        else:
             if row == None:
                 statvals = self._math._stats(self, mask, stat)
             else:
@@ -951,10 +956,6 @@ class scantable(Scantable):
             rows = [ row ]
 
         for i in rows:
-            print '@@@@@@@@'
-            print '['+str(i)+'/'+str(rows)+'] -- '+('RowFlagged' if self._getflagrow(i) else '')
-            print '@@@@@@@@'
-            #if self._getflagrow(i): continue
             refstr = ''
             statunit= ''
             if getchan:
@@ -965,6 +966,8 @@ class scantable(Scantable):
                     statunit= '['+qx['unit']+']'
                 else:
                     refstr = ('(@ %'+form) % (qx['value'])+' ['+qx['unit']+'])'
+
+            if skip_flaggedrow and self._getflagrow(i): continue
 
             tm = self._gettime(i)
             src = self._getsourcename(i)
