@@ -303,17 +303,21 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   uInt nrowSkySorted = nrowSky;
   Vector<Double> timeSkySorted;
   Matrix<Float> spoffSorted;
+  Matrix<uChar> flagoffSorted;
   {
     Vector<Double> timeSky(nrowSky);
     Matrix<Float> spoff(nrowSky, nchanSp);
+    Matrix<uChar> flagoff(nrowSky, nchanSp);
     nrowSky = 0;
     for (uInt i = 0 ; i < skylist.nelements(); i++) {
       STCalSkyTable *p = skytable_[skylist[i]];
       Vector<Double> t = p->getTime();
       Matrix<Float> sp = p->getSpectra();
+      Matrix<uChar> fl = p->getFlagtra();
       for (uInt j = 0; j < t.nelements(); j++) {
 	timeSky[nrowSky] = t[j];
 	spoff.row(nrowSky) = sp.column(j);
+	flagoff.row(nrowSky) = fl.column(j);
 	nrowSky++;
       }
     }
@@ -332,18 +336,24 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     spoffSorted.takeStorage(IPosition(2, nrowSky, nchanSp),
 			    new Float[nrowSky * nchanSp],
 			    TAKE_OVER);
+    flagoffSorted.takeStorage(IPosition(2, nrowSkySorted, nchanSp),
+			      new uChar[nrowSkySorted * nchanSp],
+			      TAKE_OVER);
     for (uInt i = 0 ; i < nrowSky; i++) {
       spoffSorted.row(i) = spoff.row(skyIdx[i]);
+      flagoffSorted.row(i) = flagoff.row(skyIdx[i]);
     }
   }
 
   uInt nrowTsysSorted = nrowTsys;
   Matrix<Float> tsysSorted;
+  Matrix<uChar> flagtsysSorted;
   Vector<Double> timeTsysSorted;
   if (doTsys) {
     //os_ << "doTsys" << LogIO::POST;
     Vector<Double> timeTsys(nrowTsys);
     Matrix<Float> tsys(nrowTsys, nchanTsys);
+    Matrix<uChar> flagtsys(nrowTsys, nchanTsys);
     tsysSorted.takeStorage(IPosition(2, nrowTsys, nchanTsys),
 			   new Float[nrowTsys * nchanTsys],
 			   TAKE_OVER);
@@ -352,9 +362,11 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       STCalTsysTable *p = tsystable_[i];
       Vector<Double> t = p->getTime();
       Matrix<Float> ts = p->getTsys();
+      Matrix<uChar> fl = p->getFlagtra();
       for (uInt j = 0; j < t.nelements(); j++) {
         timeTsys[nrowTsys] = t[j];
         tsys.row(nrowTsys) = ts.column(j);
+	flagtsys.row(nrowTsys) = fl.column(j);
         nrowTsys++;
       }
     }
@@ -364,6 +376,9 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     timeTsysSorted.takeStorage(IPosition(1, nrowTsysSorted),
 			       new Double[nrowTsysSorted],
 			       TAKE_OVER);
+    flagtsysSorted.takeStorage(IPosition(2, nrowTsysSorted, nchanTsys),
+			       new uChar[nrowTsysSorted * nchanTsys],
+			       TAKE_OVER);
     for (uInt i = 0 ; i < nrowTsysSorted; i++) {
       timeTsysSorted[i] = timeTsys[tsysIdx[i]];
     }
@@ -371,14 +386,16 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 
     for (uInt i = 0; i < nrowTsys; ++i) {
       tsysSorted.row(i) = tsys.row(tsysIdx[i]);
+      flagtsysSorted.row(i) = flagtsys.row(tsysIdx[i]);
     }
   }
 
   Table tab = work_->table();
   ArrayColumn<Float> spCol(tab, "SPECTRA");
+  ArrayColumn<uChar> flCol(tab, "FLAGTRA");
   ArrayColumn<Float> tsysCol(tab, "TSYS");
   ScalarColumn<Double> timeCol(tab, "TIME");
-  Vector<Float> on;
+  //Vector<Float> on;
 
   // Array for scaling factor (aka Tsys)
   Vector<Float> iTsys(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
@@ -395,14 +412,18 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     uInt irow = rows[i];
 
     // target spectral data
-    on = spCol(irow);
+    Vector<Float> on = spCol(irow);
+    Vector<uChar> flag = flCol(irow);
     //os_ << "on=" << on[0] << LogIO::POST;
     calibrator_->setSource(on);
 
     // interpolation
     Double t0 = timeCol(irow);
     for (uInt ichan = 0; ichan < nchanSp; ichan++) {
-      Float *tmpY = &(spoffSorted.data()[ichan * nrowSkySorted]); 
+      Float *tmpY = &(spoffSorted.data()[ichan * nrowSkySorted]);
+      if (allNE(flagoffSorted.column(ichan), (uChar)0)) {
+	flag[ichan] = 1 << 7; // user flag
+      }
       interpolatorS_->setY(tmpY, nrowSkySorted);
       iOff[ichan] = interpolatorS_->interpolate(t0);
     }
@@ -449,6 +470,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     // update table
     //os_ << "calibrated=" << calibrator_->getCalibrated()[0] << LogIO::POST; 
     spCol.put(irow, calibrator_->getCalibrated());
+    flCol.put(irow, flag);
     if (filltsys)
       tsysCol.put(irow, iTsys);
   }
