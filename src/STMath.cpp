@@ -373,6 +373,8 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
     if ( allEQ(msk, False) ) {
       rowstodelB[nrowdel] = i ;
       nrowdel++ ;
+      outrowCount++;
+      acc.reset();
       iter.next();
       continue;
     }
@@ -417,7 +419,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 
   if ( nrowdel > 0 ) {
     Vector<uInt> rowstodelete( IPosition(1,nrowdel), rowstodelB.storage(), SHARE ) ;
-    os << rowstodelete << LogIO::POST ;
+    //os << rowstodelete << LogIO::POST ;
     tout.removeRow(rowstodelete);
     if (tout.nrow() == 0) {
       throw(AipsError("Can't average fully flagged data."));
