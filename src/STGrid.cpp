@@ -1974,6 +1974,7 @@ void STGrid::fillTable( Table &tab )
   ArrayColumn<Double> directionCol( tab, "DIRECTION" ) ;
   ArrayColumn<Float> spectraCol( tab, "SPECTRA" ) ;
   ArrayColumn<uChar> flagtraCol( tab, "FLAGTRA" ) ;
+  ScalarColumn<uInt> flagRowCol( tab, "FLAGROW" );
   ScalarColumn<uInt> polnoCol( tab, "POLNO" ) ;
   ScalarColumn<uInt> scannoCol( tab, "SCANNO" ) ;
   Int irow = 0 ;
@@ -1988,6 +1989,7 @@ void STGrid::fillTable( Table &tab )
   long step = nx_ * ny_ * npol_ ;
   long offset ;
   uInt scanno = 0 ;
+  uChar rflag;
   for ( Int iy = 0 ; iy < ny_ ; iy++ ) {
     pix(1) = (Double)(iy);
     for ( Int ix = 0 ; ix < nx_ ; ix++ ) {
@@ -2001,16 +2003,19 @@ void STGrid::fillTable( Table &tab )
         wsp_p = sp_p ;
         wdata_p = data_p + offset ;
         wflag_p = flag_p + offset ;
+	rflag = ~0 ; //11111111
         for ( Int ichan = 0 ; ichan < nchan_ ; ichan++ ) {
           *wsp_p = *wdata_p ;
           wsp_p++ ;
           wdata_p += step ;
-	  flag[ichan] = *wflag_p;
+	  flag[ichan] = *wflag_p ;
+	  rflag &= flag[ichan] ;
 	  wflag_p += step ;
         }
         sp.putStorage( sp_p, bsp ) ;
         spectraCol.put( irow, sp ) ;
         flagtraCol.put( irow, flag ) ;
+        flagRowCol.put( irow, ((rflag>0) ? 1 : 0) ) ;
         directionCol.put( irow, dir ) ;
         polnoCol.put( irow, pollist_[ipol] ) ;
         scannoCol.put( irow, scanno ) ;
@@ -2087,7 +2092,7 @@ void STGrid::fillMainColumns( Table &tab )
     focusidCol.put( i, focusId ) ;
     weatheridCol.put( i, weatherId ) ;
     //flagtraCol.put( i, flagtra ) ;
-    rflagCol.put( i, 0 ) ;
+    //rflagCol.put( i, 0 ) ;
     tsysCol.put( i, defaultTsys ) ;
     srcnameCol.put( i, srcname ) ;
     fieldnameCol.put( i, fieldname ) ;
