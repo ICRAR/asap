@@ -979,6 +979,8 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
 
   // taking flagged channels into account
   if (useScantable) {
+    if (scan->getFlagRow(whichRow))
+      throw AipsError("STLineFinder::findLines - flagged scantable row.");
     vector<bool> flaggedChannels = scan->getMask(whichRow);
     if (flaggedChannels.size()) {
       // there is a mask set for this row

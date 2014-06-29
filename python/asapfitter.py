@@ -156,6 +156,8 @@ class fitter:
             raise RuntimeError(msg)
 
         if self.data is not None:
+            if self.data._getflagrow(row):
+                raise RuntimeError,"Can not fit flagged row."
             self.x = self.data._getabcissa(row)
             self.y = self.data._getspectrum(row)
             #self.mask = mask_and(self.mask, self.data._getmask(row))
