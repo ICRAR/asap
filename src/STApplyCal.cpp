@@ -45,22 +45,103 @@ using namespace casa;
 using namespace std;
 
 namespace {
-// utility functions
-Vector<uInt> indexSort(Vector<Double> &t)
+template<class Accessor, class Type>
+class AccessorInterface
 {
-  Sort sort;
-  sort.sortKey(&t[0], TpDouble, 0, Sort::Ascending);
-  Vector<uInt> idx;
-  sort.sort(idx, t.nelements(), Sort::QuickSort|Sort::NoDuplicates);
-  return idx;
-}
+public:
+  typedef Type TableType;
+  static void GetSortedData(const vector<TableType *> &tablelist,
+			   const Vector<uInt> &tableIndex,
+			   const uInt nrow,
+			   const uInt nchan,
+			   Vector<Double> &time,
+			   Matrix<Float> &data,
+			   Matrix<uChar> &flag)
+  {
+    Vector<Double> timeUnsorted;
+    Matrix<Float> dataUnsorted;
+    Matrix<uChar> flagUnsorted;
+    GetFromTable(tablelist, tableIndex, nrow, nchan,
+		 timeUnsorted, dataUnsorted, flagUnsorted);
+    SortData(timeUnsorted, dataUnsorted, flagUnsorted,
+	     time, data, flag);
+  }
+private:
+  static void GetFromTable(const vector<TableType *> &tableList,
+			   const Vector<uInt> &tableIndex,
+			   const uInt nrow,
+			   const uInt nchan,
+			   Vector<Double> &time,
+			   Matrix<Float> &data,
+			   Matrix<uChar> &flag)
+  {
+    time.resize(nrow, False);
+    const IPosition shape(2, nrow, nchan);
+    data.resize(shape, False);
+    flag.resize(shape, False);
+    uInt rowIndex = 0;
+    for (uInt i = 0 ; i < tableIndex.nelements(); i++) {
+      TableType *p = tableList[tableIndex[i]];
+      Vector<Double> t = Accessor::GetTime(p);
+      Matrix<Float> dt = Accessor::GetData(p);
+      Matrix<uChar> fl = Accessor::GetFlag(p);
+      for (uInt j = 0; j < t.nelements(); j++) {
+	time[rowIndex] = t[j];
+	data.row(rowIndex) = dt.column(j);
+	flag.row(rowIndex) = fl.column(j);
+	rowIndex++;
+      }
+    }    
+  }
 
-void getSortedData(const Vector<Double> key, const Vector<Float> data,
-		   const Vector<uChar> flag,
-		   Vector<Double> sortedKey, Vector<Float> sortedData,
-		   Vector<uChar> sortedFlag)
+  static Vector<uInt> IndexSort(const Vector<Double> &t)
+  {
+    Sort sort;
+    sort.sortKey(&t[0], TpDouble, 0, Sort::Ascending);
+    Vector<uInt> idx;
+    sort.sort(idx, t.nelements(), Sort::QuickSort|Sort::NoDuplicates);
+    return idx;
+  }
+
+  static void SortData(const Vector<Double> &key, const Matrix<Float> &data,
+			 const Matrix<uChar> &flag,
+			 Vector<Double> &sortedKey, Matrix<Float> &sortedData,
+			 Matrix<uChar> &sortedFlag)
+  {
+    Vector<uInt> sortIndex = IndexSort(key);
+    uInt len = sortIndex.nelements();
+    IPosition shape = data.shape();
+    shape[0] = len;
+    Int64 nelements = shape.product();
+    sortedKey.takeStorage(IPosition(1, len), new Double[len], TAKE_OVER);
+    sortedData.takeStorage(shape, new Float[nelements], TAKE_OVER);
+    sortedFlag.takeStorage(shape, new uChar[nelements], TAKE_OVER);
+    for (uInt i = 0 ; i < len; i++) {
+      sortedKey[i] = key[sortIndex[i]];
+    }
+    for (uInt i = 0; i < len; ++i) {
+      sortedData.row(i) = data.row(sortIndex[i]);
+      sortedFlag.row(i) = flag.row(sortIndex[i]);
+    }
+  }
+
+};
+
+class SkyTableAccessor : public AccessorInterface<SkyTableAccessor, asap::STCalSkyTable>
 {
-}
+public:
+  static Vector<Double> GetTime(const TableType *t) {return t->getTime();}
+  static Matrix<Float> GetData(const TableType *t) {return t->getSpectra();}
+  static Matrix<uChar> GetFlag(const TableType *t) {return t->getFlagtra();}
+};
+
+class TsysTableAccessor : public AccessorInterface<TsysTableAccessor, asap::STCalTsysTable>
+{
+public:
+  static Vector<Double> GetTime(const TableType *t) {return t->getTime();}
+  static Matrix<Float> GetData(const TableType *t) {return t->getTsys();}
+  static Matrix<uChar> GetFlag(const TableType *t) {return t->getFlagtra();}
+};
 }
 
 namespace asap {
@@ -276,16 +357,16 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   sel.setPolarizations(id);  
 
   // apply selection to apply tables
-  uInt nrowSky = 0;
-  uInt nrowTsys = 0;
+  uInt nrowSkyTotal = 0;
+  uInt nrowTsysTotal = 0;
   for (uInt i = 0; i < skylist.nelements(); i++) {
     skytable_[skylist[i]]->setSelection(sel);
-    nrowSky += skytable_[skylist[i]]->nrow();
-    os_ << "nrowSky=" << nrowSky << LogIO::POST;
+    nrowSkyTotal += skytable_[skylist[i]]->nrow();
+    os_ << "nrowSkyTotal=" << nrowSkyTotal << LogIO::POST;
   }
 
   // Skip IFNO without sky data
-  if (nrowSky == 0)
+  if (nrowSkyTotal == 0)
     return;
 
   uInt nchanTsys = 0;
@@ -308,104 +389,36 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     for (uInt i = 0; i < tsystable_.size() ; i++) {
       tsystable_[i]->setSelection(sel);
       uInt nrowThisTsys = tsystable_[i]->nrow();
-      nrowTsys += nrowThisTsys;
+      nrowTsysTotal += nrowThisTsys;
       if (nrowThisTsys > 0 && nchanTsys == 0) {
 	nchanTsys = tsystable_[i]->nchan(tsysifno);
 	ftsys = tsystable_[i]->getBaseFrequency(0);
       }
     }
-    interpolatorF_->setX(ftsys.data(), nchanTsys);
   }
 
   uInt nchanSp = skytable_[skylist[0]]->nchan(ifno);
-  uInt nrowSkySorted = nrowSky;
-  Vector<Double> timeSkySorted;
-  Matrix<Float> spoffSorted;
-  Matrix<uChar> flagoffSorted;
-  {
-    Vector<Double> timeSky(nrowSky);
-    Matrix<Float> spoff(nrowSky, nchanSp);
-    Matrix<uChar> flagoff(nrowSky, nchanSp);
-    nrowSky = 0;
-    for (uInt i = 0 ; i < skylist.nelements(); i++) {
-      STCalSkyTable *p = skytable_[skylist[i]];
-      Vector<Double> t = p->getTime();
-      Matrix<Float> sp = p->getSpectra();
-      Matrix<uChar> fl = p->getFlagtra();
-      for (uInt j = 0; j < t.nelements(); j++) {
-	timeSky[nrowSky] = t[j];
-	spoff.row(nrowSky) = sp.column(j);
-	flagoff.row(nrowSky) = fl.column(j);
-	nrowSky++;
-      }
-    }
-    
-    Vector<uInt> skyIdx = indexSort(timeSky);
-    nrowSkySorted = skyIdx.nelements();
-    
-    timeSkySorted.takeStorage(IPosition(1, nrowSkySorted),
-			      new Double[nrowSkySorted],
-			      TAKE_OVER);
-    for (uInt i = 0 ; i < nrowSkySorted; i++) {
-      timeSkySorted[i] = timeSky[skyIdx[i]];
-    }
-    interpolatorS_->setX(timeSkySorted.data(), nrowSkySorted);
-    
-    spoffSorted.takeStorage(IPosition(2, nrowSky, nchanSp),
-			    new Float[nrowSky * nchanSp],
-			    TAKE_OVER);
-    flagoffSorted.takeStorage(IPosition(2, nrowSkySorted, nchanSp),
-			      new uChar[nrowSkySorted * nchanSp],
-			      TAKE_OVER);
-    for (uInt i = 0 ; i < nrowSky; i++) {
-      spoffSorted.row(i) = spoff.row(skyIdx[i]);
-      flagoffSorted.row(i) = flagoff.row(skyIdx[i]);
-    }
-  }
+  uInt nrowSky = nrowSkyTotal;
+  Vector<Double> timeSky;
+  Matrix<Float> spoff;
+  Matrix<uChar> flagoff;
+  SkyTableAccessor::GetSortedData(skytable_, skylist,
+				  nrowSkyTotal, nchanSp,
+				  timeSky, spoff, flagoff);
+  nrowSky = timeSky.nelements();
 
-  uInt nrowTsysSorted = nrowTsys;
-  Matrix<Float> tsysSorted;
-  Matrix<uChar> flagtsysSorted;
-  Vector<Double> timeTsysSorted;
+  uInt nrowTsys = nrowTsysTotal;
+  Vector<Double> timeTsys;
+  Matrix<Float> tsys;
+  Matrix<uChar> flagtsys;
   if (doTsys) {
     //os_ << "doTsys" << LogIO::POST;
-    Vector<Double> timeTsys(nrowTsys);
-    Matrix<Float> tsys(nrowTsys, nchanTsys);
-    Matrix<uChar> flagtsys(nrowTsys, nchanTsys);
-    tsysSorted.takeStorage(IPosition(2, nrowTsys, nchanTsys),
-			   new Float[nrowTsys * nchanTsys],
-			   TAKE_OVER);
-    nrowTsys = 0;
-    for (uInt i = 0 ; i < tsystable_.size(); i++) {
-      STCalTsysTable *p = tsystable_[i];
-      Vector<Double> t = p->getTime();
-      Matrix<Float> ts = p->getTsys();
-      Matrix<uChar> fl = p->getFlagtra();
-      for (uInt j = 0; j < t.nelements(); j++) {
-        timeTsys[nrowTsys] = t[j];
-        tsys.row(nrowTsys) = ts.column(j);
-	flagtsys.row(nrowTsys) = fl.column(j);
-        nrowTsys++;
-      }
-    }
-    Vector<uInt> tsysIdx = indexSort(timeTsys);
-    nrowTsysSorted = tsysIdx.nelements();
-
-    timeTsysSorted.takeStorage(IPosition(1, nrowTsysSorted),
-			       new Double[nrowTsysSorted],
-			       TAKE_OVER);
-    flagtsysSorted.takeStorage(IPosition(2, nrowTsysSorted, nchanTsys),
-			       new uChar[nrowTsysSorted * nchanTsys],
-			       TAKE_OVER);
-    for (uInt i = 0 ; i < nrowTsysSorted; i++) {
-      timeTsysSorted[i] = timeTsys[tsysIdx[i]];
-    }
-    interpolatorT_->setX(timeTsysSorted.data(), nrowTsysSorted);
-
-    for (uInt i = 0; i < nrowTsys; ++i) {
-      tsysSorted.row(i) = tsys.row(tsysIdx[i]);
-      flagtsysSorted.row(i) = flagtsys.row(tsysIdx[i]);
-    }
+    Vector<uInt> tsyslist(tsystable_.size());
+    indgen(tsyslist);
+    TsysTableAccessor::GetSortedData(tsystable_, tsyslist,
+				     nrowTsysTotal, nchanTsys,
+				     timeTsys, tsys, flagtsys);
+    nrowTsys = timeTsys.nelements();
   }
 
   Table tab = work_->table();
@@ -413,7 +426,6 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   ArrayColumn<uChar> flCol(tab, "FLAGTRA");
   ArrayColumn<Float> tsysCol(tab, "TSYS");
   ScalarColumn<Double> timeCol(tab, "TIME");
-  //Vector<Float> on;
 
   // Array for scaling factor (aka Tsys)
   Vector<Float> iTsys(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
@@ -426,7 +438,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   Vector<Float> iOff(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
 
   // working array for interpolation with flags
-  uInt arraySize = max(max(nrowTsysSorted, nchanTsys), nrowSkySorted);
+  uInt arraySize = max(max(nrowTsys, nchanTsys), nrowSky);
   Vector<Double> xwork(IPosition(1, arraySize), new Double[arraySize], TAKE_OVER);
   Vector<Float> ywork(IPosition(1, arraySize), new Float[arraySize], TAKE_OVER);
   Vector<uChar> fwork(IPosition(1, nchanTsys), new uChar[nchanTsys], TAKE_OVER);
@@ -446,17 +458,16 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     Double *xwork_p = xwork.data();
     Float *ywork_p = ywork.data();
     for (uInt ichan = 0; ichan < nchanSp; ichan++) {
-      Float *tmpY = &(spoffSorted.data()[ichan * nrowSkySorted]);
-      uChar *tmpF = &(flagoffSorted.data()[ichan * nrowSkySorted]);
+      Float *tmpY = &(spoff.data()[ichan * nrowSky]);
+      uChar *tmpF = &(flagoff.data()[ichan * nrowSky]);
       uInt wnrow = 0;
-      for (uInt ir = 0; ir < nrowSkySorted; ++ir) {
+      for (uInt ir = 0; ir < nrowSky; ++ir) {
 	if (tmpF[ir] == 0) {
-	  xwork_p[wnrow] = timeSkySorted.data()[ir];
+	  xwork_p[wnrow] = timeSky.data()[ir];
 	  ywork_p[wnrow] = tmpY[ir];
 	  wnrow++;
 	}
       }
-      //if (allNE(flagoffSorted.column(ichan), (uChar)0)) {
       if (wnrow > 0) {
 	// any valid reference data
 	interpolatorS_->setData(xwork_p, ywork_p, wnrow);
@@ -464,11 +475,10 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       else {
 	// no valid reference data
 	// interpolate data regardless of flag
-	interpolatorS_->setData(timeSkySorted.data(), tmpY, nrowSkySorted);
+	interpolatorS_->setData(timeSky.data(), tmpY, nrowSky);
 	// flag this channel for calibrated data
 	flag[ichan] = 1 << 7; // user flag
       }
-      //interpolatorS_->setY(tmpY, nrowSkySorted);
       iOff[ichan] = interpolatorS_->interpolate(t0);
     }
     //os_ << "iOff=" << iOff[0] << LogIO::POST;
@@ -480,19 +490,18 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       Float *yt = iTsysT.data();
       uChar *fwork_p = fwork.data();
       for (uInt ichan = 0; ichan < nchanTsys; ichan++) {
-	Float *tmpY = &(tsysSorted.data()[ichan * nrowTsysSorted]);
-	uChar *tmpF = &(flagtsysSorted.data()[ichan * nrowTsysSorted]);
+	Float *tmpY = &(tsys.data()[ichan * nrowTsys]);
+	uChar *tmpF = &(flagtsys.data()[ichan * nrowTsys]);
 	uInt wnrow = 0;
-	for (uInt ir = 0; ir < nrowTsysSorted; ++ir) {
+	for (uInt ir = 0; ir < nrowTsys; ++ir) {
 	  if (tmpF[ir] == 0) {
-	    xwork_p[wnrow] = timeTsysSorted.data()[ir];
+	    xwork_p[wnrow] = timeTsys.data()[ir];
 	    ywork_p[wnrow] = tmpY[ir];
 	    wnrow++;
 	  }
 	}
 	if (wnrow > 0) {
 	  // any valid value exists
-	  //interpolatorT_->setY(tmpY, nrowTsysSorted);
 	  interpolatorT_->setData(xwork_p, ywork_p, wnrow);
 	  iTsysT[ichan] = interpolatorT_->interpolate(t0);
 	  fwork_p[ichan] = 0;

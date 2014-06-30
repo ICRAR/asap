@@ -52,9 +52,9 @@ public:
                   const casa::Vector<casa::Float> &tsys,
 		  const casa::Vector<casa::uChar> &flagtra);
   
-  casa::Vector<casa::Float> getElevation() {return elCol_.getColumn();}
-  casa::Matrix<casa::Float> getTsys() {return tsysCol_.getColumn();}
-  casa::Matrix<casa::uChar> getFlagtra() {return flagtraCol_.getColumn();}
+  casa::Vector<casa::Float> getElevation() const {return elCol_.getColumn();}
+  casa::Matrix<casa::Float> getTsys() const {return tsysCol_.getColumn();}
+  casa::Matrix<casa::uChar> getFlagtra() const {return flagtraCol_.getColumn();}
   casa::uInt nchan(casa::uInt ifno);
 
   casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);

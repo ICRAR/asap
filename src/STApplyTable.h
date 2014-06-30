@@ -58,12 +58,12 @@ public:
 
   casa::uInt nrow() {return table_.nrow();}
 
-  casa::Vector<casa::uInt> getScan() {return scanCol_.getColumn();}
-  casa::Vector<casa::uInt> getCycle() {return cycleCol_.getColumn();}
-  casa::Vector<casa::uInt> getBeam() {return beamCol_.getColumn();}
-  casa::Vector<casa::uInt> getIF() {return ifCol_.getColumn();}
-  casa::Vector<casa::uInt> getPol() {return polCol_.getColumn();}
-  casa::Vector<casa::Double> getTime() {return timeCol_.getColumn();}
+  casa::Vector<casa::uInt> getScan() const {return scanCol_.getColumn();}
+  casa::Vector<casa::uInt> getCycle() const {return cycleCol_.getColumn();}
+  casa::Vector<casa::uInt> getBeam() const {return beamCol_.getColumn();}
+  casa::Vector<casa::uInt> getIF() const {return ifCol_.getColumn();}
+  casa::Vector<casa::uInt> getPol() const {return polCol_.getColumn();}
+  casa::Vector<casa::Double> getTime() const {return timeCol_.getColumn();}
 
   void setSelection(STSelector &sel, bool sortByTime=false);
   void unsetSelection();
