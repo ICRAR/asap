@@ -44,8 +44,26 @@
 using namespace casa;
 using namespace std;
 
-namespace asap {
+namespace {
+// utility functions
+Vector<uInt> indexSort(Vector<Double> &t)
+{
+  Sort sort;
+  sort.sortKey(&t[0], TpDouble, 0, Sort::Ascending);
+  Vector<uInt> idx;
+  sort.sort(idx, t.nelements(), Sort::QuickSort|Sort::NoDuplicates);
+  return idx;
+}
 
+void getSortedData(const Vector<Double> key, const Vector<Float> data,
+		   const Vector<uChar> flag,
+		   Vector<Double> sortedKey, Vector<Float> sortedData,
+		   Vector<uChar> sortedFlag)
+{
+}
+}
+
+namespace asap {
 STApplyCal::STApplyCal()
 {
   init();
@@ -291,7 +309,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       tsystable_[i]->setSelection(sel);
       uInt nrowThisTsys = tsystable_[i]->nrow();
       nrowTsys += nrowThisTsys;
-      if (nrowThisTsys > 0 and nchanTsys == 0) {
+      if (nrowThisTsys > 0 && nchanTsys == 0) {
 	nchanTsys = tsystable_[i]->nchan(tsysifno);
 	ftsys = tsystable_[i]->getBaseFrequency(0);
       }
@@ -322,7 +340,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       }
     }
     
-    Vector<uInt> skyIdx = timeSort(timeSky);
+    Vector<uInt> skyIdx = indexSort(timeSky);
     nrowSkySorted = skyIdx.nelements();
     
     timeSkySorted.takeStorage(IPosition(1, nrowSkySorted),
@@ -370,7 +388,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
         nrowTsys++;
       }
     }
-    Vector<uInt> tsysIdx = timeSort(timeTsys);
+    Vector<uInt> tsysIdx = indexSort(timeTsys);
     nrowTsysSorted = tsysIdx.nelements();
 
     timeTsysSorted.takeStorage(IPosition(1, nrowTsysSorted),
@@ -406,6 +424,12 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 
   // Array for interpolated off spectrum
   Vector<Float> iOff(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
+
+  // working array for interpolation with flags
+  uInt arraySize = max(max(nrowTsysSorted, nchanTsys), nrowSkySorted);
+  Vector<Double> xwork(IPosition(1, arraySize), new Double[arraySize], TAKE_OVER);
+  Vector<Float> ywork(IPosition(1, arraySize), new Float[arraySize], TAKE_OVER);
+  Vector<uChar> fwork(IPosition(1, nchanTsys), new uChar[nchanTsys], TAKE_OVER);
   
   for (uInt i = 0; i < rows.nelements(); i++) {
     //os_ << "start i = " << i << " (row = " << rows[i] << ")" << LogIO::POST;
@@ -419,12 +443,32 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 
     // interpolation
     Double t0 = timeCol(irow);
+    Double *xwork_p = xwork.data();
+    Float *ywork_p = ywork.data();
     for (uInt ichan = 0; ichan < nchanSp; ichan++) {
       Float *tmpY = &(spoffSorted.data()[ichan * nrowSkySorted]);
-      if (allNE(flagoffSorted.column(ichan), (uChar)0)) {
+      uChar *tmpF = &(flagoffSorted.data()[ichan * nrowSkySorted]);
+      uInt wnrow = 0;
+      for (uInt ir = 0; ir < nrowSkySorted; ++ir) {
+	if (tmpF[ir] == 0) {
+	  xwork_p[wnrow] = timeSkySorted.data()[ir];
+	  ywork_p[wnrow] = tmpY[ir];
+	  wnrow++;
+	}
+      }
+      //if (allNE(flagoffSorted.column(ichan), (uChar)0)) {
+      if (wnrow > 0) {
+	// any valid reference data
+	interpolatorS_->setData(xwork_p, ywork_p, wnrow);
+      }
+      else {
+	// no valid reference data
+	// interpolate data regardless of flag
+	interpolatorS_->setData(timeSkySorted.data(), tmpY, nrowSkySorted);
+	// flag this channel for calibrated data
 	flag[ichan] = 1 << 7; // user flag
       }
-      interpolatorS_->setY(tmpY, nrowSkySorted);
+      //interpolatorS_->setY(tmpY, nrowSkySorted);
       iOff[ichan] = interpolatorS_->interpolate(t0);
     }
     //os_ << "iOff=" << iOff[0] << LogIO::POST;
@@ -432,11 +476,31 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     
     if (doTsys) {
       // Tsys correction
+      // interpolation on time axis
       Float *yt = iTsysT.data();
+      uChar *fwork_p = fwork.data();
       for (uInt ichan = 0; ichan < nchanTsys; ichan++) {
 	Float *tmpY = &(tsysSorted.data()[ichan * nrowTsysSorted]);
-	interpolatorT_->setY(tmpY, nrowTsysSorted);
-        iTsysT[ichan] = interpolatorT_->interpolate(t0);
+	uChar *tmpF = &(flagtsysSorted.data()[ichan * nrowTsysSorted]);
+	uInt wnrow = 0;
+	for (uInt ir = 0; ir < nrowTsysSorted; ++ir) {
+	  if (tmpF[ir] == 0) {
+	    xwork_p[wnrow] = timeTsysSorted.data()[ir];
+	    ywork_p[wnrow] = tmpY[ir];
+	    wnrow++;
+	  }
+	}
+	if (wnrow > 0) {
+	  // any valid value exists
+	  //interpolatorT_->setY(tmpY, nrowTsysSorted);
+	  interpolatorT_->setData(xwork_p, ywork_p, wnrow);
+	  iTsysT[ichan] = interpolatorT_->interpolate(t0);
+	  fwork_p[ichan] = 0;
+	}
+	else {
+	  // no valid data
+	  fwork_p[ichan] = 1 << 7; // user flag
+	}
       }
       if (nchanSp == 1) {
         // take average
@@ -445,7 +509,16 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       else {
         // interpolation on frequency axis
         Vector<Double> fsp = getBaseFrequency(rows[i]);
-        interpolatorF_->setY(yt, nchanTsys);
+	uInt wnchan = 0;
+	for (uInt ichan = 0; ichan < nchanTsys; ++ichan) {
+	  if (fwork_p[ichan] == 0) {
+	    xwork_p[wnchan] = ftsys.data()[ichan];
+	    ywork_p[wnchan] = yt[ichan];
+	    ++wnchan;
+	  }
+	}
+        //interpolatorF_->setY(yt, nchanTsys);
+	interpolatorF_->setData(xwork_p, ywork_p, wnchan);
         for (uInt ichan = 0; ichan < nchanSp; ichan++) {
           iTsys[ichan] = interpolatorF_->interpolate(fsp[ichan]);
         }
@@ -487,15 +560,6 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   interpolatorS_->reset();
   interpolatorF_->reset();
   interpolatorT_->reset();
-}
-
-Vector<uInt> STApplyCal::timeSort(Vector<Double> &t)
-{
-  Sort sort;
-  sort.sortKey(&t[0], TpDouble, 0, Sort::Ascending);
-  Vector<uInt> idx;
-  sort.sort(idx, t.nelements(), Sort::QuickSort|Sort::NoDuplicates);
-  return idx;
 }
 
 uInt STApplyCal::getIFForTsys(uInt to)
@@ -628,4 +692,5 @@ void STApplyCal::initInterpolator()
     }
   }
 }
+
 }

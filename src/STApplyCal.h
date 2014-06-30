@@ -95,9 +95,6 @@ private:
   // get frequency information from FREQUENCIES subtable
   casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
 
-  // time sort
-  casa::Vector<casa::uInt> timeSort(casa::Vector<casa::Double> &t);
-
   // search spwmap_ to get IFNO for Tsys
   casa::uInt getIFForTsys(casa::uInt to);
 
