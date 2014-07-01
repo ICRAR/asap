@@ -142,6 +142,93 @@ public:
   static Matrix<Float> GetData(const TableType *t) {return t->getTsys();}
   static Matrix<uChar> GetFlag(const TableType *t) {return t->getFlagtra();}
 };
+
+inline uInt setupWorkingData(const uInt n, const Double *xin, const Float *yin,
+		      const uChar *f, Double *xout, Float *yout)
+{
+  uInt nValid = 0;
+  for (uInt i = 0; i < n; ++i) {
+    if (f[i] == 0) {
+      xout[nValid] = xin[i];
+      yout[nValid] = yin[i];
+      nValid++;
+    }
+  }
+  return nValid;
+}
+
+template<class InterpolationHelperImpl>
+class InterpolationHelperInterface
+{
+public:
+  static void Interpolate(const Double xref, const uInt nx, const uInt ny,
+			  Double *xin, Float *yin, uChar *fin,
+			  asap::Interpolator1D<Double, Float> *interpolator,
+			  Double *xwork, Float *ywork,
+			  Float *yout, uChar *fout)
+  {
+    for (uInt i = 0; i < ny; i++) {
+      Float *tmpY = &(yin[i * nx]);
+      uInt wnrow = setupWorkingData(nx, xin, tmpY, &(fin[i * nx]), xwork, ywork);
+      if (wnrow > 0) {
+	// any valid reference data
+	InterpolationHelperImpl::ProcessValid(xref, i, interpolator,
+					      xwork, ywork, wnrow,
+					      yout, fout);
+      }
+      else {
+	// no valid reference data
+	InterpolationHelperImpl::ProcessInvalid(xref, i, interpolator,
+						xin, tmpY, nx,
+						yout, fout);
+      }
+    }
+  }
+};
+
+class SkyInterpolationHelper : public InterpolationHelperInterface<SkyInterpolationHelper>
+{
+public:
+  static void ProcessValid(const Double xref, const uInt index,
+			   asap::Interpolator1D<Double, Float> *interpolator,
+			   Double *xwork, Float *ywork,
+			   const uInt wnrow, Float *yout, uChar *fout)
+  {
+    interpolator->setData(xwork, ywork, wnrow);
+    yout[index] = interpolator->interpolate(xref);
+  }
+  static void ProcessInvalid(const Double xref, const uInt index,
+			     asap::Interpolator1D<Double, Float> *interpolator,
+			     Double *xwork, Float *ywork,
+			     const uInt wnrow, Float *yout, uChar *fout)
+  {
+    // interpolate data regardless of flag
+    ProcessValid(xref, index, interpolator, xwork, ywork, wnrow, yout, fout);
+    // flag this channel for calibrated data
+    fout[index] = 1 << 7; // user flag
+  }
+};
+
+class TsysInterpolationHelper : public InterpolationHelperInterface<TsysInterpolationHelper>
+{
+public:
+  static void ProcessValid(const Double xref, const uInt index,
+			   asap::Interpolator1D<Double, Float> *interpolator,
+			   Double *xwork, Float *ywork,
+			   const uInt wnrow, Float *yout, uChar *fout)
+  {
+    interpolator->setData(xwork, ywork, wnrow);
+    yout[index] = interpolator->interpolate(xref);
+    fout[index] = 0;
+  }
+  static void ProcessInvalid(const Double xref, const uInt index,
+			     asap::Interpolator1D<Double, Float> *interpolator,
+			     Double *xwork, Float *ywork,
+			     const uInt wnrow, Float *yout, uChar *fout)
+  {
+    fout[index] = 1 << 7; // user flag
+  }
+};
 }
 
 namespace asap {
@@ -442,14 +529,18 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   Vector<Double> xwork(IPosition(1, arraySize), new Double[arraySize], TAKE_OVER);
   Vector<Float> ywork(IPosition(1, arraySize), new Float[arraySize], TAKE_OVER);
   Vector<uChar> fwork(IPosition(1, nchanTsys), new uChar[nchanTsys], TAKE_OVER);
+
+  // data array 
+  Vector<Float> on(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
+  Vector<uChar> flag(on.shape(), new uChar[on.shape().product()], TAKE_OVER);
   
   for (uInt i = 0; i < rows.nelements(); i++) {
     //os_ << "start i = " << i << " (row = " << rows[i] << ")" << LogIO::POST;
     uInt irow = rows[i];
 
     // target spectral data
-    Vector<Float> on = spCol(irow);
-    Vector<uChar> flag = flCol(irow);
+    spCol.get(irow, on);
+    flCol.get(irow, flag);
     //os_ << "on=" << on[0] << LogIO::POST;
     calibrator_->setSource(on);
 
@@ -457,60 +548,22 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     Double t0 = timeCol(irow);
     Double *xwork_p = xwork.data();
     Float *ywork_p = ywork.data();
-    for (uInt ichan = 0; ichan < nchanSp; ichan++) {
-      Float *tmpY = &(spoff.data()[ichan * nrowSky]);
-      uChar *tmpF = &(flagoff.data()[ichan * nrowSky]);
-      uInt wnrow = 0;
-      for (uInt ir = 0; ir < nrowSky; ++ir) {
-	if (tmpF[ir] == 0) {
-	  xwork_p[wnrow] = timeSky.data()[ir];
-	  ywork_p[wnrow] = tmpY[ir];
-	  wnrow++;
-	}
-      }
-      if (wnrow > 0) {
-	// any valid reference data
-	interpolatorS_->setData(xwork_p, ywork_p, wnrow);
-      }
-      else {
-	// no valid reference data
-	// interpolate data regardless of flag
-	interpolatorS_->setData(timeSky.data(), tmpY, nrowSky);
-	// flag this channel for calibrated data
-	flag[ichan] = 1 << 7; // user flag
-      }
-      iOff[ichan] = interpolatorS_->interpolate(t0);
-    }
-    //os_ << "iOff=" << iOff[0] << LogIO::POST;
+    SkyInterpolationHelper::Interpolate(t0, nrowSky, nchanSp,
+					timeSky.data(), spoff.data(),
+					flagoff.data(), &(*interpolatorS_),
+					xwork_p, ywork_p, 
+					iOff.data(), flag.data());
     calibrator_->setReference(iOff);
     
     if (doTsys) {
       // Tsys correction
       // interpolation on time axis
-      Float *yt = iTsysT.data();
+      TsysInterpolationHelper::Interpolate(t0, nrowTsys, nchanTsys,
+					   timeTsys.data(), tsys.data(),
+					   flagtsys.data(), &(*interpolatorT_),
+					   xwork_p, ywork_p,
+					   iTsysT.data(), fwork.data());
       uChar *fwork_p = fwork.data();
-      for (uInt ichan = 0; ichan < nchanTsys; ichan++) {
-	Float *tmpY = &(tsys.data()[ichan * nrowTsys]);
-	uChar *tmpF = &(flagtsys.data()[ichan * nrowTsys]);
-	uInt wnrow = 0;
-	for (uInt ir = 0; ir < nrowTsys; ++ir) {
-	  if (tmpF[ir] == 0) {
-	    xwork_p[wnrow] = timeTsys.data()[ir];
-	    ywork_p[wnrow] = tmpY[ir];
-	    wnrow++;
-	  }
-	}
-	if (wnrow > 0) {
-	  // any valid value exists
-	  interpolatorT_->setData(xwork_p, ywork_p, wnrow);
-	  iTsysT[ichan] = interpolatorT_->interpolate(t0);
-	  fwork_p[ichan] = 0;
-	}
-	else {
-	  // no valid data
-	  fwork_p[ichan] = 1 << 7; // user flag
-	}
-      }
       if (nchanSp == 1) {
         // take average
         iTsys[0] = mean(iTsysT);
@@ -518,15 +571,8 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
       else {
         // interpolation on frequency axis
         Vector<Double> fsp = getBaseFrequency(rows[i]);
-	uInt wnchan = 0;
-	for (uInt ichan = 0; ichan < nchanTsys; ++ichan) {
-	  if (fwork_p[ichan] == 0) {
-	    xwork_p[wnchan] = ftsys.data()[ichan];
-	    ywork_p[wnchan] = yt[ichan];
-	    ++wnchan;
-	  }
-	}
-        //interpolatorF_->setY(yt, nchanTsys);
+	uInt wnchan = setupWorkingData(nchanTsys, ftsys.data(), iTsysT.data(),
+				       fwork_p, xwork_p, ywork_p);
 	interpolatorF_->setData(xwork_p, ywork_p, wnchan);
         for (uInt ichan = 0; ichan < nchanSp; ichan++) {
           iTsys[ichan] = interpolatorF_->interpolate(fsp[ichan]);
