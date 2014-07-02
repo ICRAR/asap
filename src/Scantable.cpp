@@ -3028,31 +3028,48 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
     modelReservoir = getPolynomialModelReservoir(order, 
 						 &Scantable::getNormalPolynomial,
 						 nChanNos);
+    int nModel = modelReservoir.size();
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       chanMask = getCompositeChanMask(whichrow, mask);
-
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, 
                                    modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
                                    params, rms, finalChanMask, 
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Polynomial, order, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Polynomial, order, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+	  		    coordInfo, hasSameNchan, ofs, "polyBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+	  params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Polynomial, order, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        }
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "polyBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3103,32 +3120,49 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
     modelReservoir = getPolynomialModelReservoir(order, 
 						 &Scantable::getNormalPolynomial,
 						 nChanNos);
+    int nModel = modelReservoir.size();
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       std::vector<int> currentEdge;
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
-
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, 
                                    modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
                                    params, rms, finalChanMask,
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Polynomial, order, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Polynomial, order, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+	  		    coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+          params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Polynomial, order, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+	}
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3172,31 +3206,48 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
     modelReservoir = getPolynomialModelReservoir(order, 
 						 &Scantable::getChebyshevPolynomial,
 						 nChanNos);
+    int nModel = modelReservoir.size();
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       chanMask = getCompositeChanMask(whichrow, mask);
-
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, 
                                    modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
                                    params, rms, finalChanMask, 
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "chebyshevBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+	  params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        }
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "chebyshevBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
     
@@ -3247,32 +3298,49 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
     modelReservoir = getPolynomialModelReservoir(order, 
 						 &Scantable::getChebyshevPolynomial,
 						 nChanNos);
+    int nModel = modelReservoir.size();
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       std::vector<int> currentEdge;
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
-
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, 
                                    modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
                                    params, rms, finalChanMask, 
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "autoChebyshevBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+          params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Chebyshev, order, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+	}
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "autoChebyshevBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -3819,32 +3887,53 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
     modelReservoir = getPolynomialModelReservoir(3, 
 						 &Scantable::getNormalPolynomial,
 						 nChanNos);
+    int nDOF = nPiece + 3;
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       chanMask = getCompositeChanMask(whichrow, mask);
-
       std::vector<int> pieceEdges;
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doCubicSplineLeastSquareFitting(sp, chanMask, 
-                                   modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
-                                   nPiece, false, pieceEdges, params, rms, finalChanMask, 
-                                   nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, 0.0, 0, std::vector<int>());
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doCubicSplineLeastSquareFitting(sp, chanMask,
+                modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
+                nPiece, false, pieceEdges, params, rms, finalChanMask, 
+                nClipped, thresClip, nIterClip, getResidual);
+
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", 
+			    pieceEdges, params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+          pieceEdges.resize(nPiece+1);
+          for (uInt i = 0; i < pieceEdges.size(); ++i) {
+            pieceEdges[i] = 0;
+	  }
+	  params.resize(nDOF);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        }
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", 
-			  pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
     
@@ -3895,33 +3984,54 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     modelReservoir = getPolynomialModelReservoir(3, 
 						 &Scantable::getNormalPolynomial,
 						 nChanNos);
+    int nDOF = nPiece + 3;
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       std::vector<int> currentEdge;
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
-
       std::vector<int> pieceEdges;
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doCubicSplineLeastSquareFitting(sp, chanMask, 
-                                   modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
-                                   nPiece, false, pieceEdges, params, rms, finalChanMask, 
-                                   nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doCubicSplineLeastSquareFitting(sp, chanMask, 
+                modelReservoir[getIdxOfNchan(sp.size(), nChanNos)], 
+                nPiece, false, pieceEdges, params, rms, finalChanMask, 
+                nClipped, thresClip, nIterClip, getResidual);
+
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", 
+			    pieceEdges, params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+          pieceEdges.resize(nPiece+1);
+          for (uInt i = 0; i < pieceEdges.size(); ++i) {
+            pieceEdges[i] = 0;
+	  }
+          params.resize(nDOF);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::CSpline, pieceEdges, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+	}
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", 
-			  pieceEdges, params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -4560,26 +4670,44 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
       } else {
 	model = modelReservoir[getIdxOfNchan(sp.size(), nChanNos)];
       }
+      int nModel = modelReservoir.size();
 
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, model, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, model, 
                                    params, rms, finalChanMask, 
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+	  params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, 0.0, 0, std::vector<int>());
+        }
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
@@ -4651,26 +4779,44 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
       } else {
 	model = modelReservoir[getIdxOfNchan(sp.size(), nChanNos)];
       }
+      int nModel = modelReservoir.size();
 
       std::vector<float> params;
-      int nClipped = 0;
-      std::vector<float> res = doLeastSquareFitting(sp, chanMask, model, 
+
+      if (flagrowCol_(whichrow) == 0) {
+        int nClipped = 0;
+        std::vector<float> res;
+        res = doLeastSquareFitting(sp, chanMask, model, 
                                    params, rms, finalChanMask, 
                                    nClipped, thresClip, nIterClip, getResidual);
 
-      if (outBaselineTable) {
-	bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
-		      getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
-	              true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
-	              getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
-	              thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        if (outBaselineTable) {
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
+	                getMaskListFromMask(finalChanMask), params, rms, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        } else {
+	  setSpectrum(res, whichrow);
+        }
+
+        outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
+			    coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", 
+			    params, nClipped);
       } else {
-	setSpectrum(res, whichrow);
+        if (outBaselineTable) {
+	  params.resize(nModel);
+          for (uInt i = 0; i < params.size(); ++i) {
+            params[i] = 0.0;
+	  }
+	  bt.appenddata(getScan(whichrow), getCycle(whichrow), getBeam(whichrow), 
+		        getIF(whichrow), getPol(whichrow), 0, timeSecCol[whichrow], 
+	                true, STBaselineFunc::Sinusoid, nWaves, std::vector<float>(),
+	                getMaskListFromMask(chanMask), params, 0.0, sp.size(), 
+	                thresClip, nIterClip, threshold, chanAvgLimit, currentEdge);
+        }
       }
 
-      outputFittingResult(outLogger, outTextFile, csvFormat, chanMask, whichrow, 
-			  coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", 
-			  params, nClipped);
       showProgressOnTerminal(whichrow, nRow, showProgress, minNRow);
     }
 
