@@ -691,9 +691,10 @@ private:
   /**
    *  Turns a casa::MDirection into a nicely formatted string
    * @param md an casa::MDirection
+   * @param prec output precision of direction
    * @return
    */
-  std::string formatDirection(const casa::MDirection& md) const;
+  std::string formatDirection(const casa::MDirection& md, casa::Int prec=7) const;
 
   /**
    * Create a unique file name for the paged (temporary) table

@@ -482,10 +482,11 @@ std::string Scantable::formatSec(Double x) const
   }
 };
 
-std::string Scantable::formatDirection(const MDirection& md) const
+  std::string Scantable::formatDirection(const MDirection& md, Int prec) const
 {
   Vector<Double> t = md.getAngle(Unit(String("rad"))).getValue();
-  Int prec = 7;
+  if (prec<0)
+    prec = 7;
 
   String ref = md.getRefString();
   MVAngle mvLon(t[0]);
@@ -1173,7 +1174,9 @@ void Scantable::summary( const std::string& filename )
     // Times
     meanIntTim = sum(intervalCol.getColumn()) / (double) snrow;
     minMax(btime, etime, mjdCol.getColumn());
-    etime += meanIntTim/C::day;
+    double shiftInDay(0.5*meanIntTim/C::day);
+    btime -= shiftInDay;
+    etime += shiftInDay;
 
     // MOLECULE_ID and FREQ_ID
     Vector<uInt> molids(getNumbers(molIdCol));
@@ -1278,8 +1281,8 @@ void Scantable::summary( const std::string& filename )
     oss << setw(4) << std::right << rec.asuInt("SCANNO")
 	<< std::left << setw(1) << ""
 	<< setw(15) << rec.asString("SRCNAME")
-	<< setw(21) << MVTime(btime).string(MVTime::YMD,7)
-	<< setw(3) << " - " << MVTime(etime).string(MVTime::TIME,7)
+	<< setw(21) << MVTime(btime).string(MVTime::YMD,8)
+	<< setw(3) << " - " << MVTime(etime).string(MVTime::TIME,8)
 	<< setw(3) << "" << setw(6) << meanIntTim << setw(1) << "" 
 	<< std::right << setw(5) << snrow << setw(2) << ""
 	<< std::left << stypestrs << setw(1) << ""
@@ -1288,7 +1291,7 @@ void Scantable::summary( const std::string& filename )
     // Format Beam summary
     for (uInt j=0; j < nbeam; j++) {
       oss << setw(7) << "" << setw(6) << beamids(j) << setw(1) << ""
-	  << formatDirection(beamDirs(j)) << endl;
+	  << formatDirection(beamDirs(j),9) << endl;
     }
     // Flush summary every scan and clear up the string
     ols << String(oss) << LogIO::POST;
