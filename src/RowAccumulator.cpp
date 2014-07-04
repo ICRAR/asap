@@ -262,7 +262,7 @@ Vector<Float> RowAccumulator::getSpectrum() const
 
 Double RowAccumulator::getTime() const
 {
-  return timeSum_/Float(max(n_));
+  return timeSum_/Double(max(n_));
 }
 
 Double RowAccumulator::getInterval() const
