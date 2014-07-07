@@ -65,6 +65,7 @@ set( CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -O0 -fno-omit-frame-pointer" )
 
 # flags for Profile build
 set( CMAKE_CXX_FLAGS_PROFILE "-g -O2 -pg -fprofile-arcs -fno-omit-frame-pointer" )
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG -fno-omit-frame-pointer" )
 
 # flags for Release build
 set( CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-s" )
@@ -84,7 +85,7 @@ endif()
 
 # default flags
 set( DEFAULT_CXX_FLAGS
-     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
+     "-march=native -funroll-all-loops -pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
 
 find_package( OpenMP )
 if( OPENMP_FOUND )

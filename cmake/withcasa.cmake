@@ -154,7 +154,7 @@ endif()
 message( STATUS "LIBXML2_INCLUDE_DIR = " ${LIBXML2_INCLUDE_DIR} )
 find_path( LIBXML2_LIBRARY libxml2${CMAKE_SHARED_LIBRARY_SUFFIX}
            PATHS /usr
-           PATH_SUFFIXES lib64 lib )
+           PATH_SUFFIXES lib64 lib lib/x86_64-linux-gnu)
 #find_path( LIBXML2_LIBRARY libxml2.so )
 if ( LIBXML2_LIBRARY MATCHES "NOTFOUND$" )
    message( FATAL_ERROR "libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} could not be found. Please check!" )
