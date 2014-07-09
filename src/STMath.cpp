@@ -926,12 +926,33 @@ CountedPtr<Scantable> STMath::binaryOperate(const CountedPtr<Scantable>& left,
   ROArrayColumn<Float> rspecCol(tmpr,"SPECTRA");
   ArrayColumn<uChar> lflagCol(tmpl,"FLAGTRA");
   ROArrayColumn<uChar> rflagCol(tmpr,"FLAGTRA");
+  ScalarColumn<uInt> lflagrowCol(tmpl,"FLAGROW");
+  ROScalarColumn<uInt> rflagrowCol(tmpr,"FLAGROW");
 
   for (uInt i=0; i<tout.nrow(); ++i) {
+    uInt lflagrow, rflagrow;
+    lflagrow = lflagrowCol(i); rflagrow = rflagrowCol(i);
+    //-------
+    if ((lflagrow > 0)||(rflagrow > 0)) {
+      lflagrowCol.put(i, uInt(1));
+      continue;
+    }
     Vector<Float> lspecvec, rspecvec;
     Vector<uChar> lflagvec, rflagvec;
     lspecvec = lspecCol(i);    rspecvec = rspecCol(i);
     lflagvec = lflagCol(i);    rflagvec = rflagCol(i);
+    Vector<uChar> outflagvec = lflagCol(i);
+    //-------
+    for (uInt j = 0; j < outflagvec.nelements(); ++j) {
+      uChar outflag = 0 << 7;
+      if ((lflagvec(j) == 1 << 7) || (rflagvec(j) == 1 << 7)) {
+        outflag = 1 << 7;
+      }
+      outflagvec(j) = outflag;
+    }
+    lflagvec = 0 << 7;
+    rflagvec = 0 << 7;
+    //-------
     MaskedArray<Float> mleft = maskedArray(lspecvec, lflagvec);
     MaskedArray<Float> mright = maskedArray(rspecvec, rflagvec);
     if (mode == "ADD") {
@@ -946,6 +967,9 @@ CountedPtr<Scantable> STMath::binaryOperate(const CountedPtr<Scantable>& left,
       throw(AipsError("Illegal binary operator"));
     }
     lspecCol.put(i, mleft.getArray());
+    //-----
+    lflagCol.put(i, outflagvec);
+    //-----
   }
   return out;
 }
