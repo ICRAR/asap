@@ -967,7 +967,9 @@ class scantable(Scantable):
                 else:
                     refstr = ('(@ %'+form) % (qx['value'])+' ['+qx['unit']+'])'
 
-            if skip_flaggedrow and self._getflagrow(i): continue
+            if skip_flaggedrow and self._getflagrow(i):
+                statvals[i] = None
+                continue
 
             tm = self._gettime(i)
             src = self._getsourcename(i)
