@@ -289,7 +289,7 @@ protected:
   uInt filledIndex()
   {
     uInt idx = 0;
-    while( !isFilled[idx] && idx < 4 ) ++idx;
+    while( idx < 4 && !isFilled[idx] ) ++idx;
     return idx;
   }
   virtual void postData() = 0 ;
@@ -349,8 +349,8 @@ protected:
   virtual void postFlag()
   {
     // CAS-5545 FLAG must all be set True if FLAG_ROW is True
-    for (uInt ipol = 0; ipol < npol; ++ipol) {
-      if (flagRow[ipol]) {
+    for (uInt ipol = 0; ipol < 4; ++ipol) {
+      if (isFilled[ipol] and flagRow[ipol]) {
 	flag(IPosition(2, ipol, 0), IPosition(2, ipol, nchan-1)) = True;
       }
     }
@@ -395,8 +395,8 @@ protected:
   virtual void postFlag()
   {
     // CAS-5545 FLAG must all be set True if FLAG_ROW is True
-    for (uInt ipol = 0; ipol < npol; ++ipol) {
-      if (flagRow[ipol]) {
+    for (uInt ipol = 0; ipol < 4; ++ipol) {
+      if (isFilled[ipol] and flagRow[ipol]) {
 	flag(IPosition(2, ipol, 0), IPosition(2, ipol, nchan-1)) = True;
       }
     }
