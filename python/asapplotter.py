@@ -1353,24 +1353,32 @@ class asapplotter:
         PL.gcf().subplots_adjust(left=lef,bottom=bot,right=rig,top=top,
                                  wspace=wsp,hspace=hsp)
 
-        tdel = max(t) - min(t)
+        tdel = max(t) - min(t) # interval in day
         ax = PL.subplot(2,1,1)
         el = ma.masked_array(array(self._data.get_elevation())*180./pi, mask)
         PL.ylabel('El [deg.]')
         dstr = dates[0].strftime('%Y/%m/%d')
-        if tdel > 1.0:
+        if tdel > 1.0: # >1day
             dstr2 = dates[len(dates)-1].strftime('%Y/%m/%d')
             dstr = dstr + " - " + dstr2
             majloc = DayLocator()
             minloc = HourLocator(range(0,23,12))
             timefmt = DateFormatter("%b%d")
-        elif tdel > 24./60.:
+        elif tdel > 24./60.: # 9.6h - 1day
             timefmt = DateFormatter('%H:%M')
             majloc = HourLocator()
-            minloc = MinuteLocator(30)
-        else:
+            minloc = MinuteLocator(range(0,60,30))
+        elif tdel > 2./24.: # 2h-9.6h
             timefmt = DateFormatter('%H:%M')
-            majloc = MinuteLocator(interval=5)
+            majloc = HourLocator()
+            minloc = MinuteLocator(range(0,60,10))
+        elif tdel> 10./24./60.: # 10min-2h
+            timefmt = DateFormatter('%H:%M')
+            majloc = MinuteLocator(range(0,60,10))
+            minloc = MinuteLocator()
+        else: # <10min
+            timefmt = DateFormatter('%H:%M')
+            majloc = MinuteLocator()
             minloc = SecondLocator(30)
 
         PL.title(dstr)
