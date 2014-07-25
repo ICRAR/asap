@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 
 #include <casa/Arrays/Vector.h>
@@ -105,6 +106,57 @@ vector<int> getRowIdFromTime(double reftime, const Vector<Double> &t)
   return v ;
 }
   
+vector<int> getRowIdFromTime2(double reftime,
+			      const Vector<Double> &t,
+			      const Vector<uInt> &flagrow,
+			      const Matrix<uChar> &flagtra)
+{
+  unsigned int nchan = flagtra[0].nelements();
+  vector<int> v(2*nchan);
+
+  for (unsigned int j = 0; j < nchan; ++j) {
+    //   double reft = reftime ;
+    double dtmin = 1.0e100 ;
+    double dtmax = -1.0e100 ;
+    //   vector<double> dt ;
+    int just_before = -1 ;
+    int just_after = -1 ;
+    Vector<Double> dt = t - reftime ;
+    for ( unsigned int i = 0 ; i < dt.size() ; i++ ) {
+      if ( flagrow[i] > 0 ) continue;
+      if ( flagtra.column(i)[j] == 1 << 7) continue;
+
+      if ( dt[i] > 0.0 ) {
+        // after reftime
+        if ( dt[i] < dtmin ) {
+	  just_after = i ;
+	  dtmin = dt[i] ;
+        }
+      }
+      else if ( dt[i] < 0.0 ) {
+        // before reftime
+        if ( dt[i] > dtmax ) {
+	  just_before = i ;
+  	  dtmax = dt[i] ;
+        }
+      }
+      else {
+        // just a reftime
+        just_before = i ;
+        just_after = i ;
+        dtmax = 0 ;
+        dtmin = 0 ;
+        break ;
+      }
+    }
+
+    v[j*2]   = just_before ;
+    v[j*2+1] = just_after ;
+  }
+  
+  return v ;
+}
+  
 template<class T>
 class SimpleInterpolationHelper
 {
@@ -115,7 +167,7 @@ class SimpleInterpolationHelper
 				   const T &data,
 				   const string mode)
   {
-    Vector<Float> return_value;
+    Vector<Float> return_value(idx.size()/2);
     LogIO os_;
     LogIO os( LogOrigin( "STMath", data.method_name(), WHERE ) ) ;
     if ( data.nrow() == 0 ) {
@@ -125,88 +177,91 @@ class SimpleInterpolationHelper
       return_value = data.GetEntry(0);
     }
     else {
-      if ( mode == "before" ) {
-	int id = -1 ;
-	if ( idx[0] != -1 ) {
-	  id = idx[0] ;
-	}
-	else if ( idx[1] != -1 ) {
-	  os << LogIO::WARN << "Failed to find a scan before reftime. return a spectrum just after the reftime." << LogIO::POST ;
-	  id = idx[1] ;
-	}
+      for (unsigned int i = 0; i < idx.size()/2; ++i) {
+        unsigned int idx0 = 2*i;
+        unsigned int idx1 = 2*i + 1;
+	//no off data available. calibration impossible.
+	if ( ( idx[idx0] == -1 ) && ( idx[idx1] == -1 ) ) continue;
+
+        if ( mode == "before" ) {
+	  int id = -1 ;
+	  if ( idx[idx0] != -1 ) {
+	    id = idx[idx0] ;
+	  }
+	  else if ( idx[idx1] != -1 ) {
+	    os << LogIO::WARN << "Failed to find a scan before reftime. return a spectrum just after the reftime." << LogIO::POST ;
+	    id = idx[idx1] ;
+	  }
 	
-	return_value = data.GetEntry(id);
-      }
-      else if ( mode == "after" ) {
-	int id = -1 ;
-	if ( idx[1] != -1 ) {
-	  id = idx[1] ;
-	}
-	else if ( idx[0] != -1 ) {
-	  os << LogIO::WARN << "Failed to find a scan after reftime. return a spectrum just before the reftime." << LogIO::POST ;
-	  id = idx[1] ;
-	}
+	  return_value[i] = data.GetEntry(id)[i];
+        }
+        else if ( mode == "after" ) {
+	  int id = -1 ;
+	  if ( idx[idx1] != -1 ) {
+	    id = idx[idx1] ;
+	  }
+	  else if ( idx[idx0] != -1 ) {
+	    os << LogIO::WARN << "Failed to find a scan after reftime. return a spectrum just before the reftime." << LogIO::POST ;
+	    id = idx[idx1] ;
+	  }
 	
-	return_value = data.GetEntry(id);
-      }
-      else if ( mode == "nearest" ) {
-	int id = -1 ;
-	if ( idx[0] == -1 ) {
-	  id = idx[1] ;
-	}
-	else if ( idx[1] == -1 ) {
-	  id = idx[0] ;
-	}
-	else if ( idx[0] == idx[1] ) {
-	  id = idx[0] ;
-	}
-	else {
-	  double t0 = timeVec[idx[0]] ;
-	  double t1 = timeVec[idx[1]] ;
-	  if ( abs( t0 - reftime ) > abs( t1 - reftime ) ) {
-	    id = idx[1] ;
+	  return_value[i] = data.GetEntry(id)[i];
+        }
+        else if ( mode == "nearest" ) {
+	  int id = -1 ;
+	  if ( idx[idx0] == -1 ) {
+	    id = idx[idx1] ;
+	  }
+	  else if ( idx[idx1] == -1 ) {
+	    id = idx[idx0] ;
+	  }
+	  else if ( idx[idx0] == idx[idx1] ) {
+	    id = idx[idx0] ;
 	  }
 	  else {
-	    id = idx[0] ;
+	    double t0 = timeVec[idx[idx0]] ;
+	    double t1 = timeVec[idx[idx1]] ;
+	    if ( abs( t0 - reftime ) > abs( t1 - reftime ) ) {
+	      id = idx[idx1] ;
+	    }
+	    else {
+	      id = idx[idx0] ;
+	    }
 	  }
-	}
-	return_value = data.GetEntry(id);
-      }
-      else if ( mode == "linear" ) {
-	if ( idx[0] == -1 ) {
-	  // use after
-	  os << LogIO::WARN << "Failed to interpolate. return a spectrum just after the reftime." << LogIO::POST ;
-	  int id = idx[1] ;
-	  return_value = data.GetEntry(id);
-	}
-	else if ( idx[1] == -1 ) {
-	  // use before
-	  os << LogIO::WARN << "Failed to interpolate. return a spectrum just before the reftime." << LogIO::POST ;
-	  int id = idx[0] ;
-	  return_value = data.GetEntry(id);
-	}
-	else if ( idx[0] == idx[1] ) {
-	  // use before
-	  //os << "No need to interporate." << LogIO::POST ;
-	  int id = idx[0] ;
-	  return_value = data.GetEntry(id);
-	}
-	else {
-	  // do interpolation
-
-	  double t0 = timeVec[idx[0]] ;
-	  double t1 = timeVec[idx[1]] ;
-	  Vector<Float> value0 = data.GetEntry(idx[0]);
-	  Vector<Float> value1 = data.GetEntry(idx[1]);
-	  double tfactor = (reftime - t0) / (t1 - t0) ;
-	  for ( unsigned int i = 0 ; i < value0.size() ; i++ ) {
-	    value1[i] = ( value1[i] - value0[i] ) * tfactor + value0[i] ;
+	  return_value[i] = data.GetEntry(id)[i];
+        }
+        else if ( mode == "linear" ) {
+	  if ( idx[idx0] == -1 ) {
+	    // use after
+	    os << LogIO::WARN << "Failed to interpolate. return a spectrum just after the reftime." << LogIO::POST ;
+	    int id = idx[idx1] ;
+	    return_value[i] = data.GetEntry(id)[i];
 	  }
-	  return_value = value1;
-	}
-      }
-      else {
-	os << LogIO::SEVERE << "Unknown mode" << LogIO::POST ;
+	  else if ( idx[idx1] == -1 ) {
+	    // use before
+	    os << LogIO::WARN << "Failed to interpolate. return a spectrum just before the reftime." << LogIO::POST ;
+	    int id = idx[idx0] ;
+	    return_value[i] = data.GetEntry(id)[i];
+	  }
+	  else if ( idx[idx0] == idx[idx1] ) {
+	    // use before
+	    //os << "No need to interporate." << LogIO::POST ;
+	    int id = idx[idx0] ;
+	    return_value[i] = data.GetEntry(id)[i];
+	  }
+	  else {
+	    // do interpolation
+	    double t0 = timeVec[idx[idx0]] ;
+	    double t1 = timeVec[idx[idx1]] ;
+	    Vector<Float> value0 = data.GetEntry(idx[idx0]);
+	    Vector<Float> value1 = data.GetEntry(idx[idx1]);
+	    double tfactor = (reftime - t0) / (t1 - t0) ;
+	    return_value[i] = ( value1[i] - value0[i] ) * tfactor + value0[i] ;
+	  }
+        }
+        else {
+	  os << LogIO::SEVERE << "Unknown mode" << LogIO::POST ;
+        }
       }
     }
     return return_value ;
@@ -237,17 +292,22 @@ public:
     
     Vector<Double> timeVec = GetScalarColumn<Double>(off->table(), "TIME");
     Vector<Double> refTimeVec = GetScalarColumn<Double>(on->table(), "TIME");
+    Vector<uInt> flagrowVec = GetScalarColumn<uInt>(off->table(), "FLAGROW");
+    Vector<uInt> refFlagrowVec = GetScalarColumn<uInt>(on->table(), "FLAGROW");
+    Matrix<uChar> flagtraMtx = GetArrayColumn<uChar>(off->table(), "FLAGTRA");
     SpectralData offspectra(Matrix<Float>(GetArrayColumn<Float>(off->table(), "SPECTRA")));
     unsigned int spsize = on->nchan( on->getIF(rows[0]) ) ;
-    vector<int> ids( 2 ) ;
-    for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
+    vector<int> ids( 2 * spsize ) ;
+
+    for ( unsigned int irow = 0 ; irow < rows.nelements() ; irow++ ) {
       uInt row = rows[irow];
       double reftime = refTimeVec[row];
-      ids = getRowIdFromTime( reftime, timeVec ) ;
+      ids = getRowIdFromTime2( reftime, timeVec, flagrowVec, flagtraMtx ) ;
       Vector<Float> spoff = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeVec, ids, offspectra, "linear");
       Vector<Float> spec = in_spectra_column(row);
       Vector<Float> tsys = in_tsys_column(row);
       Vector<uChar> flag = in_flagtra_column(row);
+
       // ALMA Calibration
       // 
       // Ta* = Tsys * ( ON - OFF ) / OFF
@@ -255,14 +315,22 @@ public:
       // 2010/01/07 Takeshi Nakazato
       unsigned int tsyssize = tsys.nelements() ;
       for ( unsigned int j = 0 ; j < spsize ; j++ ) {
-	if ( spoff[j] == 0.0 ) {
-	  spec[j] = 0.0 ;
-	  flag[j] = (uChar)True;
+        //if there is no off data available for a channel, just flag the channel.(2014/7/18 WK)
+	if ((ids[2*j] == -1)&&(ids[2*j+1] == -1)) {
+	  flag[j] = 1 << 7;
+	  continue;
 	}
-	else {
-	  spec[j] = ( spec[j] - spoff[j] ) / spoff[j] ;
+
+        if (refFlagrowVec[row] == 0) {
+          if ( spoff[j] == 0.0 ) {
+	    spec[j] = 0.0 ;
+ 	    flag[j] = (uChar)True;
+	  }
+	  else {
+	    spec[j] = ( spec[j] - spoff[j] ) / spoff[j] ;
+	  }
+	  spec[j] *= (tsyssize == spsize) ? tsys[j] : tsys[0];
 	}
-	spec[j] *= (tsyssize == spsize) ? tsys[j] : tsys[0];
       }
       out_spectra_column.put(row, spec);
       out_flagtra_column.put(row, flag);
@@ -294,48 +362,75 @@ public:
     Vector<Double> timeSky = GetScalarColumn<Double>(sky->table(), "TIME");
     Vector<Double> timeHot = GetScalarColumn<Double>(hot->table(), "TIME");
     Vector<Double> timeOn = GetScalarColumn<Double>(on->table(), "TIME");
+    Vector<uInt> flagrowOff = GetScalarColumn<uInt>(off->table(), "FLAGROW");
+    Vector<uInt> flagrowSky = GetScalarColumn<uInt>(sky->table(), "FLAGROW");
+    Vector<uInt> flagrowHot = GetScalarColumn<uInt>(hot->table(), "FLAGROW");
+    Vector<uInt> flagrowOn = GetScalarColumn<uInt>(on->table(), "FLAGROW");
+    Matrix<uChar> flagtraOff = GetArrayColumn<uChar>(off->table(), "FLAGTRA");
+    Matrix<uChar> flagtraSky = GetArrayColumn<uChar>(sky->table(), "FLAGTRA");
+    Matrix<uChar> flagtraHot = GetArrayColumn<uChar>(hot->table(), "FLAGTRA");
     SpectralData offspectra(Matrix<Float>(GetArrayColumn<Float>(off->table(), "SPECTRA")));
     SpectralData skyspectra(Matrix<Float>(GetArrayColumn<Float>(sky->table(), "SPECTRA")));
     SpectralData hotspectra(Matrix<Float>(GetArrayColumn<Float>(hot->table(), "SPECTRA")));
     TcalData tcaldata(sky);
     TsysData tsysdata(sky);
     unsigned int spsize = on->nchan( on->getIF(rows[0]) ) ;
-    vector<int> ids( 2 ) ;
-    for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
+    vector<int> idsOff( 2 * spsize ) ;
+    vector<int> idsSky( 2 * spsize ) ;
+    vector<int> idsHot( 2 * spsize ) ;
+    for ( unsigned int irow = 0 ; irow < rows.nelements() ; irow++ ) {
       uInt row = rows[irow];
       double reftime = timeOn[row];
-      ids = getRowIdFromTime( reftime, timeOff ) ;
-      Vector<Float> spoff = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeOff, ids, offspectra, "linear");
-      ids = getRowIdFromTime( reftime, timeSky ) ; 
-      Vector<Float> spsky = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeSky, ids, skyspectra, "linear");
-      Vector<Float> tcal = SimpleInterpolationHelper<TcalData>::GetFromTime(reftime, timeSky, ids, tcaldata, "linear");
-      Vector<Float> tsys = SimpleInterpolationHelper<TsysData>::GetFromTime(reftime, timeSky, ids, tsysdata, "linear");
-      ids = getRowIdFromTime( reftime, timeHot ) ;
-      Vector<Float> sphot = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeHot, ids, hotspectra, "linear");
+      idsOff = getRowIdFromTime2( reftime, timeOff, flagrowOff, flagtraOff ) ;
+      Vector<Float> spoff = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeOff, idsOff, offspectra, "linear");
+      idsSky = getRowIdFromTime2( reftime, timeSky, flagrowSky, flagtraSky ) ; 
+      Vector<Float> spsky = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeSky, idsSky, skyspectra, "linear");
+      Vector<Float> tcal = SimpleInterpolationHelper<TcalData>::GetFromTime(reftime, timeSky, idsSky, tcaldata, "linear");
+      Vector<Float> tsys = SimpleInterpolationHelper<TsysData>::GetFromTime(reftime, timeSky, idsSky, tsysdata, "linear");
+      idsHot = getRowIdFromTime2( reftime, timeHot, flagrowHot, flagtraHot ) ;
+      Vector<Float> sphot = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeHot, idsHot, hotspectra, "linear");
       Vector<Float> spec = in_spectra_column(row);
       Vector<uChar> flag = in_flagtra_column(row);
       if ( antenna_name.find( "APEX" ) != String::npos ) {
 	// using gain array
 	for ( unsigned int j = 0 ; j < tcal.size() ; j++ ) {
-	  if ( spoff[j] == 0.0 || (sphot[j]-spsky[j]) == 0.0 ) {
-	    spec[j] = 0.0 ;
+	  //if at least one of off/sky/hot data unavailable, just flag the channel.
+	  if (((idsOff[2*j] == -1)&&(idsOff[2*j+1] == -1))||
+	      ((idsSky[2*j] == -1)&&(idsSky[2*j+1] == -1))||
+	      ((idsHot[2*j] == -1)&&(idsHot[2*j+1] == -1))) {
 	    flag[j] = (uChar)True;
+	    continue;
 	  }
-	  else {
-	    spec[j] = ( ( spec[j] - spoff[j] ) / spoff[j] )
-	      * ( spsky[j] / ( sphot[j] - spsky[j] ) ) * tcal[j] ;
+	  if (flagrowOn[row] == 0) {
+	    if ( spoff[j] == 0.0 || (sphot[j]-spsky[j]) == 0.0 ) {
+	      spec[j] = 0.0 ;
+	      flag[j] = (uChar)True;
+	    }
+	    else {
+	      spec[j] = ( ( spec[j] - spoff[j] ) / spoff[j] )
+		* ( spsky[j] / ( sphot[j] - spsky[j] ) ) * tcal[j] ;
+	    }
 	  }
 	}
       }
       else {
 	// Chopper-Wheel calibration (Ulich & Haas 1976)
 	for ( unsigned int j = 0 ; j < tcal.size() ; j++ ) {
-	  if ( (sphot[j]-spsky[j]) == 0.0 ) {
-	    spec[j] = 0.0 ;
+	  //if at least one of off/sky/hot data unavailable, just flag the channel.
+	  if (((idsOff[2*j] == -1)&&(idsOff[2*j+1] == -1))||
+	      ((idsSky[2*j] == -1)&&(idsSky[2*j+1] == -1))||
+	      ((idsHot[2*j] == -1)&&(idsHot[2*j+1] == -1))) {
 	    flag[j] = (uChar)True;
+	    continue;
 	  }
-	  else {
-	    spec[j] = ( spec[j] - spoff[j] ) / ( sphot[j] - spsky[j] ) * tcal[j] ;
+	  if (flagrowOn[row] == 0) {
+	    if ( (sphot[j]-spsky[j]) == 0.0 ) {
+	      spec[j] = 0.0 ;
+	      flag[j] = (uChar)True;
+	    }
+	    else {
+	      spec[j] = ( spec[j] - spoff[j] ) / ( sphot[j] - spsky[j] ) * tcal[j] ;
+	    }
 	  }
 	}
       }

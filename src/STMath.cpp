@@ -11,6 +11,7 @@
 //
 
 #include <sstream>
+#include <iostream>
 
 #include <casa/iomanip.h>
 #include <casa/Arrays/MaskArrLogi.h>
@@ -4265,11 +4266,17 @@ CountedPtr<Scantable> STMath::averageWithinSession( CountedPtr<Scantable> &s,
       jrow = rows[i+1] ;
       // accumulate data
       s->flagsCol_.get( irow, flag ) ;
+      //if row-flagged, all channels set flagged
+      if (s->getFlagRow(irow)) {
+	for (uInt k = 0; k < nchan; ++k) {
+	  flag(k) = 1 << 7;
+	}
+      }
       convertArray( bflag, flag ) ;
       s->specCol_.get( irow, spec ) ;
       tsys.assign( s->tsysCol_( irow ) ) ;
-      if ( !allEQ(bflag,True) ) 
-        acc.add( spec, !bflag, tsys, interval[irow], timeVec[irow] ) ;
+      //if ( !allEQ(bflag,True) ) 
+      acc.add( spec, !bflag, tsys, interval[irow], timeVec[irow] ) ;
       double gap = 2.0 * 86400.0 * timeSep[i] / ( interval[jrow] + interval[irow] ) ;
       //cout << "gap[" << i << "]=" << setw(5) << gap << endl ;
       if ( gap > 1.1 ) {
@@ -4302,11 +4309,17 @@ CountedPtr<Scantable> STMath::averageWithinSession( CountedPtr<Scantable> &s,
     // accumulate and add last data
     irow = rows[len-1] ;
     s->flagsCol_.get( irow, flag ) ;
+    //if row-flagged, all channels set flagged
+    if (s->getFlagRow(irow)) {
+      for (uInt k = 0; k < nchan; ++k) {
+	flag(k) = 1 << 7;
+      }
+    }
     convertArray( bflag, flag ) ;
     s->specCol_.get( irow, spec ) ;
     tsys.assign( s->tsysCol_( irow ) ) ;
-    if (!allEQ(bflag,True) ) 
-      acc.add( spec, !bflag, tsys, interval[irow], timeVec[irow] ) ;
+    //if (!allEQ(bflag,True) ) 
+    acc.add( spec, !bflag, tsys, interval[irow], timeVec[irow] ) ;
     if ( acc.state() ) {
       atab.addRow() ;
       copyRows( atab, ttab, outrow, irow, 1, False, False, False ) ;
