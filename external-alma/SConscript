@@ -4,8 +4,11 @@ Import("env")
 sources = []
 sources += glob.glob("atnf/PKSIO/*.cc")
 sources += glob.glob("atnf/pks/pks_maths.cc")
-#atnflib= env.SConscript("atnf/SConscript")
+
+#sources2 = glob.glob("components/SpectralComponents/*.cc")
+
 env.AppendUnique(CPPPATH=[Dir(".").abspath])
 atnflib=env.Library("atnf", sources)
+#complib=env.Library("oldcomponents", sources2)
 env.AppendUnique(LIBPATH=[Dir(".").abspath])
-env.Prepend(LIBS=["atnf"])
+env.Prepend(LIBS=["atnf"])#,"oldcomponents"])
