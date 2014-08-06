@@ -189,7 +189,6 @@ if( NOT USE_LIBCASACORE )
      message( FATAL_ERROR "${_includename} could not be found. Please check!" )
    endif()
    set( CASACORE_LIBS casa
-                      components
                       coordinates
                       fits
                       images
