@@ -230,10 +230,9 @@ def do_pack_blinfo(blinfo, maxirow):
                 sval = str(val)
             dinfo[key] = sval
 
-    blfunc = dinfo['blfunc']
     fspec_keys = {'poly': 'order', 'chebyshev': 'order', 'cspline': 'npiece', 'sinusoid': 'nwave'}
 
-    fspec_key = fspec_keys[blfunc]
+    fspec_key = fspec_keys[dinfo['blfunc']]
     if not blinfo.has_key(fspec_key):
         raise ValueError("'"+fspec_key+"' is missing in blinfo.")
 
@@ -273,7 +272,7 @@ def do_pack_blinfo(blinfo, maxirow):
     else:
         raise ValueError("all of 'thresh', 'edge' and 'chan_avg_limit' must be given to use linefinder.")
     
-    slblinfo = [dinfo['row'], blfunc, dinfo[fspec_key], dinfo['masklist'], \
+    slblinfo = [dinfo['row'], dinfo['blfunc'], dinfo[fspec_key], dinfo['masklist'], \
                 dinfo['clipthresh'], dinfo['clipniter'], \
                 dinfo['use_linefinder'], dinfo['thresh'], dinfo['edge'], dinfo['chan_avg_limit']]
     
@@ -3492,8 +3491,6 @@ class scantable(Scantable):
             nrow = workscan.nrow()
 
             in_blinfo = pack_blinfo(blinfo=blinfo, maxirow=nrow)
-
-            print "in_blinfo=< "+ str(in_blinfo)+" >"
 
             sres = workscan._sub_baseline(in_blinfo,
                                           retfitres,
