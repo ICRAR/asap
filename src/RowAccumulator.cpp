@@ -20,6 +20,13 @@
 using namespace casa;
 using namespace asap;
 
+namespace {
+inline uInt nNominal(MaskedArray<uInt> nvalid, MaskedArray<uInt> ninvalid)
+{
+  return max((allEQ(nvalid, uInt(0))) ? ninvalid : nvalid);
+}
+} // anonymous namespace
+
 RowAccumulator::RowAccumulator(WeightType wt) : weightType_(wt), initialized_(False)
 {
   reset();
@@ -199,10 +206,12 @@ Float RowAccumulator::getTotalWeight(const MaskedArray<Float>& data,
 {
   Float totalWeight = 1.0;
   Vector<Bool> m = data.getMask();
+  Float tsysWeight = addTsys(tsys, inverseMask);
+  Float intervalWeight = addInterval(interval, inverseMask);
+  addTime(time, inverseMask);
   if (!allEQ(m, False)) {  // only add these if not everything masked
-    totalWeight *= addTsys(tsys, inverseMask);
-    totalWeight *= addInterval(interval, inverseMask);
-    addTime(time, inverseMask);
+    totalWeight *= tsysWeight; 
+    totalWeight *= intervalWeight; 
 
     if (weightType_ == W_VAR) {
       Float fac = 1.0/variance(data);
@@ -262,7 +271,7 @@ Vector<Float> RowAccumulator::getSpectrum() const
 
 Double RowAccumulator::getTime() const
 {
-  return timeSum_/Double(max(n_));
+  return timeSum_/Double(nNominal(n_, nNoMask_));
 }
 
 Double RowAccumulator::getInterval() const
@@ -279,7 +288,7 @@ Vector<Bool> RowAccumulator::getMask() const
 Vector<Float> RowAccumulator::getTsys() const
 {
   // @fixme this assumes tsys.nelements() == 1
-  return tsysSum_/Float(max(n_));
+  return tsysSum_/Float(nNominal(n_, nNoMask_));
 }
 
 void RowAccumulator::setUserMask(const Vector<Bool>& m)
@@ -310,4 +319,7 @@ void RowAccumulator::replaceNaN()
 
   spectrum_.setData(v, Vector<Bool>(v.nelements(), True));
   weightSum_.setData(w, Vector<Bool>(w.nelements(), True));
+
+  tsysSum_ = tsysSumNoMask_;
+  intervalSum_ = intervalSumNoMask_;
 }

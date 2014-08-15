@@ -371,13 +371,11 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
 
     }
     const Vector<Bool>& msk = acc.getMask();
+    uInt outFlagRow = 0;
     if ( allEQ(msk, False) ) {
       rowstodelB[nrowdel] = i ;
       nrowdel++ ;
-      outrowCount++;
-      acc.reset();
-      iter.next();
-      continue;
+      outFlagRow = 1;
     }
     //write out
     if (acc.state()) {
@@ -405,8 +403,7 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
       // frequency switched data has different CYCLENO for different IFNO
       // which requires resetting this value
       cycColOut.put(i, uInt(0));
-      // completely flagged rows are removed anyway
-      flagRowColOut.put(i, uInt(0));
+      flagRowColOut.put(i, outFlagRow);
     } else {
       os << "For output row="<<i<<", all input rows of data are flagged. no averaging" << LogIO::POST;
     }
@@ -419,9 +416,9 @@ STMath::average( const std::vector<CountedPtr<Scantable> >& in,
   }
 
   if ( nrowdel > 0 ) {
-    Vector<uInt> rowstodelete( IPosition(1,nrowdel), rowstodelB.storage(), SHARE ) ;
-    //os << rowstodelete << LogIO::POST ;
-    tout.removeRow(rowstodelete);
+    if (nrowdel == tout.nrow()) {
+      os << LogIO::WARN << "Output data are fully flagged." << LogIO::POST;
+    }
     if (tout.nrow() == 0) {
       throw(AipsError("Can't average fully flagged data."));
     }
