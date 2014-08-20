@@ -2404,7 +2404,7 @@ class scantable(Scantable):
         maxidx = None
         if smode == 'r':
             minidx = 0
-            maxidx = self.nrow()
+            maxidx = self.nrow()-1
         else:
             idx = getattr(self,"get"+mode+"nos")()
             minidx = min(idx)
@@ -2424,6 +2424,13 @@ class scantable(Scantable):
         for i in reversed(xrange(len(idxlist))):
             if idxlist.index(idxlist[i]) < i:
                 idxlist.pop(i)
+
+        # remove elements outside range [minidx, maxidx] for smode='r'
+        if smode == 'r':
+            for i in reversed(xrange(len(idxlist))):
+                if (idxlist[i] < minidx) or (idxlist[i] > maxidx):
+                    idxlist.pop(i)
+        
         msg = "Selected %s: %s" % (mode.upper()+"NO", str(idxlist))
         asaplog.push(msg)
         return idxlist
