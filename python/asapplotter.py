@@ -1316,6 +1316,49 @@ class asapplotter:
         else:
             return start,end
 
+    def _get_date_axis_setup(self, dates):
+        """
+        Returns proper axis title and formatters for a list of dates
+        Input
+            dates : a list of datetime objects returned by,
+                    e.g. scantable.get_time(asdatetime=True)
+        Output
+            a set of
+            * date axis title string
+            * formatter of date axis 
+            * major axis locator
+            * minor axis locator
+        """
+        from matplotlib import pylab as PL
+        from matplotlib.dates import DateFormatter
+        from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
+        t = PL.date2num(dates)
+        tdel = max(t) - min(t) # interval in day
+        dstr = dates[0].strftime('%Y/%m/%d')
+        if tdel > 1.0: # >1day
+            dstr2 = dates[len(dates)-1].strftime('%Y/%m/%d')
+            dstr = dstr + " - " + dstr2
+            majloc = DayLocator()
+            minloc = HourLocator(range(0,23,12))
+            timefmt = DateFormatter("%b%d")
+        elif tdel > 24./60.: # 9.6h - 1day
+            timefmt = DateFormatter('%H:%M')
+            majloc = HourLocator()
+            minloc = MinuteLocator(range(0,60,30))
+        elif tdel > 2./24.: # 2h-9.6h
+            timefmt = DateFormatter('%H:%M')
+            majloc = HourLocator()
+            minloc = MinuteLocator(range(0,60,10))
+        elif tdel> 10./24./60.: # 10min-2h
+            timefmt = DateFormatter('%H:%M')
+            majloc = MinuteLocator(range(0,60,10))
+            minloc = MinuteLocator()
+        else: # <10min
+            timefmt = DateFormatter('%H:%M')
+            majloc = MinuteLocator()
+            minloc = SecondLocator(30)
+        return (dstr, timefmt, majloc, minloc)
+
     def plotazel(self, scan=None, outfile=None):
         """
         plot azimuth and elevation versus time of a scantable
@@ -1323,9 +1366,7 @@ class asapplotter:
         self._plotmode = "azel"
         visible = rcParams['plotter.gui']
         from matplotlib import pylab as PL
-        from matplotlib.dates import DateFormatter
         from pytz import timezone
-        from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
         from matplotlib.ticker import MultipleLocator
         from numpy import array, pi, ma
         if self._plotter and (PL.gcf() == self._plotter.figure):
@@ -1357,30 +1398,8 @@ class asapplotter:
         ax = PL.subplot(2,1,1)
         el = ma.masked_array(array(self._data.get_elevation())*180./pi, mask)
         PL.ylabel('El [deg.]')
-        dstr = dates[0].strftime('%Y/%m/%d')
-        if tdel > 1.0: # >1day
-            dstr2 = dates[len(dates)-1].strftime('%Y/%m/%d')
-            dstr = dstr + " - " + dstr2
-            majloc = DayLocator()
-            minloc = HourLocator(range(0,23,12))
-            timefmt = DateFormatter("%b%d")
-        elif tdel > 24./60.: # 9.6h - 1day
-            timefmt = DateFormatter('%H:%M')
-            majloc = HourLocator()
-            minloc = MinuteLocator(range(0,60,30))
-        elif tdel > 2./24.: # 2h-9.6h
-            timefmt = DateFormatter('%H:%M')
-            majloc = HourLocator()
-            minloc = MinuteLocator(range(0,60,10))
-        elif tdel> 10./24./60.: # 10min-2h
-            timefmt = DateFormatter('%H:%M')
-            majloc = MinuteLocator(range(0,60,10))
-            minloc = MinuteLocator()
-        else: # <10min
-            timefmt = DateFormatter('%H:%M')
-            majloc = MinuteLocator()
-            minloc = SecondLocator(30)
-
+        (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(dates)
+        
         PL.title(dstr)
         if tdel == 0.0:
             th = (t - PL.floor(t))*24.0
