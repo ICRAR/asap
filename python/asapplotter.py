@@ -1576,7 +1576,19 @@ class asapplotter:
         else: self._plotter.legend(None)
         # reverse x-axis
         xmin, xmax = self.gca().get_xlim()
-        self._plotter.set_limits(xlim=[xmax,xmin])
+        ymin, ymax = self.gca().get_ylim()
+        # expand plotrange if xmin==xmax or ymin==ymax
+        if abs(ymax-ymin) < 1.e-3: #~4arcsec
+            delx = 0.5*abs(xmax - xmin)
+            if delx < 5.e-4:
+                dxy = 5.e-4 #~2arcsec
+                (ymin, ymax) = (ymin-dxy, ymax+dxy)
+                (xmin, xmax) = (xmin-dxy, xmax+dxy)
+            (ymin, ymax) = (ymin-delx, ymax+delx)
+        elif abs(xmax-xmin) < 1.e-3:
+            dely = 0.5*abs(ymax - ymin)
+            (xmin, xmax) = (xmin-dely, xmax+dely)
+        self._plotter.set_limits(xlim=[xmax,xmin], ylim=[ymin, ymax])
 
         self._plotter.release()
         self._plotter.show(hardrefresh=False)
