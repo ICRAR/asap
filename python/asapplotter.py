@@ -1460,7 +1460,7 @@ class asapplotter:
         """
         plot telescope pointings
         Parameters:
-            infile  : input filename or scantable instance
+            scan    : input scantable instance
             colorby : change color by either
                       'type'(source type)|'scan'|'if'|'pol'|'beam'
             showline : show dotted line
@@ -1644,7 +1644,14 @@ class asapplotter:
     # plot total power data
     # plotting in time is not yet implemented..
     @asaplog_post_dec
-    def plottp(self, scan=None):
+    def plottp(self, scan=None, colorby=''):
+        """
+        Plot averaged spectra (total power) in time or in row ID (colorby='')
+        Parameters:
+            scan    : input scantable instance
+            colorby : change color by either
+                      'type'(source type)|'scan'|'if'|'pol'|'beam'|''
+        """
         self._plotmode = "totalpower"
         from asap import scantable
         if not self._data and not scan:
@@ -1675,13 +1682,124 @@ class asapplotter:
         self._plotter.figure.subplots_adjust(
             left=lef,bottom=bot,right=rig,top=top,wspace=wsp,hspace=hsp)
         if self.casabar_exists(): self._plotter.figmgr.casabar.disable_button()
-        self._plottp(self._data)
+        if len(colorby) == 0:
+            self._plottp(self._data)
+        else:
+            self._plottp2(self._data,colorby)
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
         self._plotter.tidy()
         self._plotter.show(hardrefresh=False)
         return
+
+    def _plottp2(self,scan,colorby):
+        """
+        private method for plotting total power data in time
+        """
+        from numpy import ma, array, arange, logical_not
+        r=0
+        nr = scan.nrow()
+        a0,b0 = -1,-1
+        allxlim = []
+        allylim = []
+        y=[]
+        self._plotter.set_panels()
+        self._plotter.palette(0)
+        #title
+        #xlab = self._abcissa and self._abcissa[panelcount] \
+        #       or scan._getabcissalabel()
+        #ylab = self._ordinate and self._ordinate[panelcount] \
+        #       or scan._get_ordinate_label()
+        tmplab = 'row number' if colorby=='' else 'Time (UTC)'  
+        xlab = self._abcissa or tmplab
+        ylab = self._ordinate or scan._get_ordinate_label()
+        self._plotter.set_axes('xlabel',xlab)
+        self._plotter.set_axes('ylabel',ylab)
+        lbl = self._get_label(scan, r, 's', self._title)
+        if isinstance(lbl, list) or isinstance(lbl, tuple):
+        #    if 0 <= panelcount < len(lbl):
+        #        lbl = lbl[panelcount]
+        #    else:
+                # get default label
+             lbl = self._get_label(scan, r, self._panelling, None)
+        self._plotter.set_axes('title',lbl)
+        # check of overlay settings
+        validtypes=['type','scan','if','pol', 'beam']
+        stype = None
+        if (colorby in validtypes):
+            stype = colorby[0]
+        elif len(colorby) > 0:
+            msg = "Invalid choice of 'colorby' (choices: %s)" % str(validtypes)
+            raise ValueError(msg)
+        if not stype:
+            selIds = [""] # cheating
+            sellab = "all points"
+        elif stype == 't':
+            selIds = range(15)
+            sellab = "src type "
+        else:
+            selIds = getattr(scan,'get'+colorby+'nos')()
+            sellab = colorby.upper()
+        selFunc = "set_"+colorby+"s"
+        basesel = scan.get_selection()
+        if stype: basesel.set_order(["TIME"])
+        alldates = []
+        for idx in selIds:
+            sel = selector() + basesel
+            if stype:
+                bid = getattr(basesel,'get_'+colorby+"s")()
+                if (len(bid) > 0) and (not idx in bid):
+                    # base selection doesn't contain idx
+                    # Note summation of selector is logical sum if 
+                    continue
+                getattr(sel, selFunc)([idx])
+            if not sel.is_empty():
+                try:
+                    scan.set_selection(sel)
+                except RuntimeError, instance:
+                    if stype == 't' and str(instance).startswith("Selection contains no data."):
+                        continue
+                    else:
+                        scan.set_selection(basesel)
+                        raise RuntimeError, instance
+            if scan.nrow() == 0:
+                scan.set_selection(basesel)
+                continue
+            y=array(scan._get_column(scan._getspectrum,-1))
+            m = array(scan._get_column(scan._getmask,-1))
+            y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
+            # try to handle spectral data somewhat...
+            l,m = y.shape
+            if m > 1:
+                y=y.mean(axis=1)
+            # flag handling
+            m = [ scan._is_all_chan_flagged(i) for i in range(scan.nrow()) ]
+            y = ma.masked_array(y,mask=m)
+            if len(y) == 0: continue
+            #llbl = self._get_label(scan, r, self._stacking, None)
+            #self._plotter.set_line(label=llbl)
+            self._plotter.set_line(label=(sellab+str(idx)))
+            if stype:
+                from matplotlib.dates import date2num
+                from pytz import timezone
+                dates = self._data.get_time(asdatetime=True)
+                alldates += list(dates)
+                x = date2num(dates)
+                tz = timezone('UTC')
+                self._plotter.axes.plot_date(x,y,'-',tz=tz)
+            else:
+                x = arange(len(y))
+                self._plotter.plot(x,y)
+        # legend and axis formatting
+        if stype:
+            (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates)
+            ax = self.gca()
+            ax.xaxis.set_major_formatter(timefmt)
+            ax.xaxis.set_major_locator(majloc)
+            ax.xaxis.set_minor_locator(minloc)
+            self._plotter.legend(self._legendloc)
+        else: self._plotter.legend(None)
 
     def _plottp(self,scan):
         """
