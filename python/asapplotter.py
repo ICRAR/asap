@@ -1685,7 +1685,7 @@ class asapplotter:
         if len(colorby) == 0:
             self._plottp(self._data)
         else:
-            self._plottp2(self._data,colorby)
+            self._plottp_in_time(self._data,colorby)
         if self._minmaxy is not None:
             self._plotter.set_limits(ylim=self._minmaxy)
         self._plotter.release()
@@ -1693,9 +1693,13 @@ class asapplotter:
         self._plotter.show(hardrefresh=False)
         return
 
-    def _plottp2(self,scan,colorby):
+    def _plottp_in_time(self,scan,colorby):
         """
         private method for plotting total power data in time
+        Parameters:
+            scan    : input scantable instance
+            colorby : change color by either
+                      'type'(source type)|'scan'|'if'|'pol'|'beam'
         """
         from numpy import ma, array, arange, logical_not
         r=0
@@ -1711,8 +1715,7 @@ class asapplotter:
         #       or scan._getabcissalabel()
         #ylab = self._ordinate and self._ordinate[panelcount] \
         #       or scan._get_ordinate_label()
-        tmplab = 'row number' if colorby=='' else 'Time (UTC)'  
-        xlab = self._abcissa or tmplab
+        xlab = self._abcissa or 'Time (UTC)'
         ylab = self._ordinate or scan._get_ordinate_label()
         self._plotter.set_axes('xlabel',xlab)
         self._plotter.set_axes('ylabel',ylab)
@@ -1727,14 +1730,13 @@ class asapplotter:
         # check of overlay settings
         validtypes=['type','scan','if','pol', 'beam']
         stype = None
+        col_msg = "Invalid choice of 'colorby' (choices: %s)" % str(validtypes)
         if (colorby in validtypes):
             stype = colorby[0]
         elif len(colorby) > 0:
-            msg = "Invalid choice of 'colorby' (choices: %s)" % str(validtypes)
-            raise ValueError(msg)
+            raise ValueError(col_msg)
         if not stype:
-            selIds = [""] # cheating
-            sellab = "all points"
+            raise ValueError(col_msg)
         elif stype == 't':
             selIds = range(15)
             sellab = "src type "
@@ -1747,13 +1749,12 @@ class asapplotter:
         alldates = []
         for idx in selIds:
             sel = selector() + basesel
-            if stype:
-                bid = getattr(basesel,'get_'+colorby+"s")()
-                if (len(bid) > 0) and (not idx in bid):
-                    # base selection doesn't contain idx
-                    # Note summation of selector is logical sum if 
-                    continue
-                getattr(sel, selFunc)([idx])
+            bid = getattr(basesel,'get_'+colorby+"s")()
+            if (len(bid) > 0) and (not idx in bid):
+                # base selection doesn't contain idx
+                # Note summation of selector is logical sum if 
+                continue
+            getattr(sel, selFunc)([idx])
             if not sel.is_empty():
                 try:
                     scan.set_selection(sel)
@@ -1770,7 +1771,10 @@ class asapplotter:
             m = array(scan._get_column(scan._getmask,-1))
             y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
             # try to handle spectral data somewhat...
-            l,m = y.shape
+            try:
+                l,m = y.shape
+            except ValueError, e:
+                raise ValueError(str(e)+" This error usually occurs when you select multiple spws with different number of channels. Try selecting single channels and retry.")
             if m > 1:
                 y=y.mean(axis=1)
             # flag handling
@@ -1780,26 +1784,21 @@ class asapplotter:
             #llbl = self._get_label(scan, r, self._stacking, None)
             #self._plotter.set_line(label=llbl)
             self._plotter.set_line(label=(sellab+str(idx)))
-            if stype:
-                from matplotlib.dates import date2num
-                from pytz import timezone
-                dates = self._data.get_time(asdatetime=True)
-                alldates += list(dates)
-                x = date2num(dates)
-                tz = timezone('UTC')
-                self._plotter.axes.plot_date(x,y,'-',tz=tz)
-            else:
-                x = arange(len(y))
-                self._plotter.plot(x,y)
+            from matplotlib.dates import date2num
+            from pytz import timezone
+            dates = self._data.get_time(asdatetime=True)
+            alldates += list(dates)
+            x = date2num(dates)
+            tz = timezone('UTC')
+            self._plotter.axes.plot_date(x,y,'-',tz=tz)
+
         # legend and axis formatting
-        if stype:
-            (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates)
-            ax = self.gca()
-            ax.xaxis.set_major_formatter(timefmt)
-            ax.xaxis.set_major_locator(majloc)
-            ax.xaxis.set_minor_locator(minloc)
-            self._plotter.legend(self._legendloc)
-        else: self._plotter.legend(None)
+        (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates)
+        ax = self.gca()
+        ax.xaxis.set_major_formatter(timefmt)
+        ax.xaxis.set_major_locator(majloc)
+        ax.xaxis.set_minor_locator(minloc)
+        self._plotter.legend(self._legendloc)
 
     def _plottp(self,scan):
         """
