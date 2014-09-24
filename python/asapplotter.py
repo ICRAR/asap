@@ -1710,42 +1710,54 @@ class asapplotter:
         y=[]
         self._plotter.set_panels()
         self._plotter.palette(0)
-        #title
-        #xlab = self._abcissa and self._abcissa[panelcount] \
-        #       or scan._getabcissalabel()
-        #ylab = self._ordinate and self._ordinate[panelcount] \
-        #       or scan._get_ordinate_label()
-        xlab = self._abcissa or 'Time (UTC)'
-        ylab = self._ordinate or scan._get_ordinate_label()
-        self._plotter.set_axes('xlabel',xlab)
-        self._plotter.set_axes('ylabel',ylab)
-        lbl = self._get_label(scan, r, 's', self._title)
-        if isinstance(lbl, list) or isinstance(lbl, tuple):
-        #    if 0 <= panelcount < len(lbl):
-        #        lbl = lbl[panelcount]
-        #    else:
-                # get default label
-             lbl = self._get_label(scan, r, self._panelling, None)
-        self._plotter.set_axes('title',lbl)
         # check of overlay settings
-        validtypes=['type','scan','if','pol', 'beam']
+        time_types = ['type','scan'] # time dependent meta-data
+        misc_types = ['if','pol','beam'] # time independent meta-data
+        validtypes=time_types + misc_types
         stype = None
         col_msg = "Invalid choice of 'colorby' (choices: %s)" % str(validtypes)
+        colorby = colorby.lower()
         if (colorby in validtypes):
             stype = colorby[0]
         elif len(colorby) > 0:
             raise ValueError(col_msg)
         if not stype:
             raise ValueError(col_msg)
-        elif stype == 't':
+        # Selection and sort order
+        basesel = scan.get_selection()
+        if colorby in misc_types: misc_types.pop(misc_types.index(colorby))
+        sel_lbl = ""
+        for meta in misc_types:
+            idx = getattr(scan,'get'+meta+'nos')()
+            if len(idx) > 1: getattr(basesel, 'set_'+meta+'s')([idx[0]])
+            sel_lbl += ("%s%d, " % (meta.upper(), idx[0]))
+        sel_lbl = sel_lbl.rstrip(', ')
+        scan.set_selection(basesel)
+        if len(sel_lbl) > 0:
+            asaplog.push("Selection contains multiple IFs/Pols/Beams. Plotting the first ones: %s" % sel_lbl)
+            asaplog.post("WARN")
+        if stype == 't':
             selIds = range(15)
             sellab = "src type "
         else:
             selIds = getattr(scan,'get'+colorby+'nos')()
             sellab = colorby.upper()
         selFunc = "set_"+colorby+"s"
-        basesel = scan.get_selection()
-        if stype: basesel.set_order(["TIME"])
+        basesel.set_order(["TIME"])
+        # define axes labels
+        xlab = self._abcissa or 'Time (UTC)'
+        ylab = self._ordinate or scan._get_ordinate_label()
+        self._plotter.set_axes('xlabel',xlab)
+        self._plotter.set_axes('ylabel',ylab)
+        # define the panel title
+        if len(sel_lbl) > 0: lbl = sel_lbl
+        else: lbl = self._get_label(scan, r, 's', self._title)
+        if isinstance(lbl, list) or isinstance(lbl, tuple):
+            # get default label
+            lbl = self._get_label(scan, r, self._panelling, None)
+        self._plotter.set_axes('title',lbl)
+        # linestyle
+        lstyle = '' if colorby in time_types else ':'
         alldates = []
         for idx in selIds:
             sel = selector() + basesel
@@ -1774,23 +1786,27 @@ class asapplotter:
             try:
                 l,m = y.shape
             except ValueError, e:
-                raise ValueError(str(e)+" This error usually occurs when you select multiple spws with different number of channels. Try selecting single channels and retry.")
+                raise ValueError(str(e)+" This error usually occurs when you select multiple spws with different number of channels. Try selecting single spw and retry.")
             if m > 1:
                 y=y.mean(axis=1)
             # flag handling
             m = [ scan._is_all_chan_flagged(i) for i in range(scan.nrow()) ]
             y = ma.masked_array(y,mask=m)
             if len(y) == 0: continue
-            #llbl = self._get_label(scan, r, self._stacking, None)
-            #self._plotter.set_line(label=llbl)
-            self._plotter.set_line(label=(sellab+str(idx)))
+            # line label
+            llbl=sellab+str(idx)
             from matplotlib.dates import date2num
             from pytz import timezone
             dates = self._data.get_time(asdatetime=True)
             alldates += list(dates)
             x = date2num(dates)
             tz = timezone('UTC')
-            self._plotter.axes.plot_date(x,y,'-',tz=tz)
+            # get color
+            lc = self._plotter.colormap[self._plotter.color]
+            self._plotter.palette( (self._plotter.color+1) % len(self._plotter.colormap) )
+            # actual plotting
+            self._plotter.axes.plot_date(x,y,tz=tz,label=llbl,linestyle=lstyle,color=lc,
+                                         marker='o',markersize=3,markeredgewidth=0)
 
         # legend and axis formatting
         (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates)
@@ -1798,7 +1814,7 @@ class asapplotter:
         ax.xaxis.set_major_formatter(timefmt)
         ax.xaxis.set_major_locator(majloc)
         ax.xaxis.set_minor_locator(minloc)
-        self._plotter.legend(self._legendloc)
+        self._plotter.axes.legend(loc=self._legendloc)
 
     def _plottp(self,scan):
         """
@@ -1835,7 +1851,10 @@ class asapplotter:
         y = ma.masked_array(y,mask=logical_not(array(m,copy=False)))
         x = arange(len(y))
         # try to handle spectral data somewhat...
-        l,m = y.shape
+        try:
+            l,m = y.shape
+        except ValueError, e:
+                raise ValueError(str(e)+" This error usually occurs when you select multiple spws with different number of channels. Try selecting single spw and retry.")
         if m > 1:
             y=y.mean(axis=1)
         # flag handling
