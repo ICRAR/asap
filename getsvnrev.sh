@@ -8,7 +8,6 @@ if test ! -d .svn; then
    exit 0;
 fi
 
-
 OUT=python/svninfo.txt
 
 INFOTOP=`svn info | awk '/Last Changed Rev:/ { print $4} /URL:/ { print $2 }'`
