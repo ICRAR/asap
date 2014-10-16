@@ -1,6 +1,6 @@
-#####
+###
 # CMakeLists.txt for ASAP module
-#####
+###
 
 # minimum requirement for cmake version
 cmake_minimum_required( VERSION 2.8 )
@@ -50,8 +50,6 @@ project( ASAP )
 # CMAKE_BUILD_TYPE (Release, Debug, RelWithDebInfo, MinSizeRel, Profile)
 # default is RelWithDebInfo
 #
-
-
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE RelWithDebInfo )
 endif()
