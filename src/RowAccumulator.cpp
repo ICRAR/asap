@@ -206,12 +206,10 @@ Float RowAccumulator::getTotalWeight(const MaskedArray<Float>& data,
 {
   Float totalWeight = 1.0;
   Vector<Bool> m = data.getMask();
-  Float tsysWeight = addTsys(tsys, inverseMask);
-  Float intervalWeight = addInterval(interval, inverseMask);
-  addTime(time, inverseMask);
   if (!allEQ(m, False)) {  // only add these if not everything masked
-    totalWeight *= tsysWeight; 
-    totalWeight *= intervalWeight; 
+    totalWeight *= addTsys(tsys, inverseMask);
+    totalWeight *= addInterval(interval, inverseMask);
+    addTime(time, inverseMask);
 
     if (weightType_ == W_VAR) {
       Float fac = 1.0/variance(data);
@@ -320,6 +318,8 @@ void RowAccumulator::replaceNaN()
   spectrum_.setData(v, Vector<Bool>(v.nelements(), True));
   weightSum_.setData(w, Vector<Bool>(w.nelements(), True));
 
-  tsysSum_ = tsysSumNoMask_;
-  intervalSum_ = intervalSumNoMask_;
+  if (allEQ(tsysSum_, 0.0f))
+    tsysSum_ = tsysSumNoMask_;
+  if (intervalSum_ == 0.0)
+    intervalSum_ = intervalSumNoMask_;
 }
