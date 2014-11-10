@@ -2104,6 +2104,9 @@ void STGrid::fillMainColumns( Table &tab )
     scanrateCol.put( i, scanrate ) ;
     timeCol.put( i, time ) ;
     intervalCol.put( i, interval ) ;
+    if ( (i + 1) % npol_ == 0 ) {
+      time += interval / 86400.0;
+    }
   }
 }
 
