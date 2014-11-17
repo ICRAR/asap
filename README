@@ -48,3 +48,4 @@ You can make a binary distribution for you platform by running::
 This will create an 'egg' archive in the subdirectory 'dist'.
 Send this to asap@atnf.csiro.au so other people can share it.
 
+
