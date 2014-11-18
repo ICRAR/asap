@@ -190,7 +190,6 @@ if( NOT USE_LIBCASACORE )
    endif()
    set( CASACORE_LIBS casa
                       coordinates
-		      components
                       fits
                       images
                       lattices
@@ -215,6 +214,16 @@ if( NOT USE_LIBCASACORE )
          list( APPEND _casacore_libs ${_casacore_lib} )
       endif()
    endforeach()
+   set ( _libname libcomponents.${SO} )
+   unset( _casacore_lib CACHE )
+   find_library( _casacore_lib ${_libname}
+             PATHS ${CASACORE_PATHS}
+              PATH_SUFFIXES lib64 lib )
+   if( _casacore_lib MATCHES "NOTFOUND$" )
+       message( FATAL_ERROR "${_libname} could not be found. Please check!" )
+   else()
+       list( APPEND _casacore_libs ${_casacore_lib} )
+   endif()
    set( CASACORE_LIBRARIES ${_casacore_libs} )
 else()
    # use libcasacore
