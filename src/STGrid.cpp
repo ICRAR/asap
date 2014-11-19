@@ -1135,9 +1135,6 @@ void STGrid::setupGrid( Int &nx,
   //Double wy = ymax - ymin ;
   Double wx = max( abs(xmax-center_(0)), abs(xmin-center_(0)) ) * 2 ;
   Double wy = max( abs(ymax-center_(1)), abs(ymin-center_(1)) ) * 2 ;
-  // take 10% margin
-  wx *= 1.10 ;
-  wy *= 1.10 ;
 
   Quantum<Double> qcellx ;
   Quantum<Double> qcelly ;
@@ -1171,8 +1168,18 @@ void STGrid::setupGrid( Int &nx,
         os << "Using default spatial extent (10arcmin) in y" << LogIO::POST ;
         wy = 0.00290888 ;
       }
-      qcellx = Quantum<Double>( wx/nx_*cos(center_[1]), "rad" ) ;
-      qcelly = Quantum<Double>( wy/ny_, "rad" ) ;
+      if (nx_ > 1) {
+	qcellx = Quantum<Double>(wx / (nx_ - 1) * cos(center_[1]), "rad");
+      }
+      else {
+	qcellx = Quantum<Double>( 1.1f * wx / nx_ * cos(center_[1]), "rad" );
+      }
+      if (ny_ > 1) {
+	qcelly = Quantum<Double>(wy / (ny_ - 1), "rad");
+      }
+      else {
+	qcelly = Quantum<Double>( 1.1f * wy / ny_, "rad" );
+      }
     }
   }
   cellx_ = qcellx.getValue( "rad" ) ;
