@@ -73,7 +73,8 @@ class plotter2:
                 window/file as a square 10cm on a side.
             set_vs(width=400, unit='pixel', aspect=0.75) -- set the output
                 window/file as a rectangle with 400 pixels in width and
-                300 pixels in height.
+                300 pixels in height, though the actual height might not
+                be the same as specified (see below).
 
         Note:
             setting unit to 'cm', 'mm' or 'inch' results in output with the
@@ -85,6 +86,9 @@ class plotter2:
             thus, for output with a correct size specified, users are
             recommended to use 'pixel' for 'png' output, and other units
             for 'xwindow' (the default) or PostScript output.
+            It should also be noted in case unit of 'pixel' that the actual
+            height might not be always the same as you expect by (width *
+            aspect); one pixel difference in the actual height might occur.
         """
         if width is None:
             width = self._plotter.get_viewsurface_width() # inch
