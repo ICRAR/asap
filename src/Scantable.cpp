@@ -2685,7 +2685,7 @@ std::vector<std::string> Scantable::subBaseline(const std::vector<std::string>& 
       std::vector<bool> finalmask;
       Bool doApply = True;
       
-      if (flagrowCol_(irow) == 0) {
+      if (!isAllChannelsFlagged(irow)) {
         std::vector<float> resfit = doSubtractBaseline(spec, mask, ftype, fpar, params, rms, finalmask, clipth, clipn, uself, irow, lfth, lfedge, lfavg);
         setSpectrum(resfit, irow);
       }
