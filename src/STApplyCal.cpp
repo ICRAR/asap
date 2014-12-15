@@ -229,6 +229,32 @@ public:
     fout[index] = 1 << 7; // user flag
   }
 };
+
+inline void flagSpectrum(uInt &flagrow, Vector<uChar> &flagchan) {
+  flagrow = 1;
+  flagchan = (uChar)(1 << 7);
+}
+
+inline void flagSpectra(Table &tab, const Vector<uInt> &rows) {
+  //os_ << LogIO::WARN << "No valid sky data in sky caltable. Completely flag Beam " << beamno << " Spw " << ifno << " Pol " << polno << LogIO::POST;
+  // Given sky tables are all empty
+  // So, flag all data
+  //Table tab = work_->table();
+  ArrayColumn<uChar> flCol(tab, "FLAGTRA");
+  ScalarColumn<uInt> frCol(tab, "FLAGROW");
+  Vector<uChar> flag;
+  uInt flagrow;
+  for (uInt i = 0; i < rows.nelements(); i++) {
+    uInt irow = rows[i];
+    flCol.get(irow, flag);
+    frCol.get(irow, flagrow);
+    flagSpectrum(flagrow, flag);
+    //flag = (uChar)(1 << 7);
+    flCol.put(irow, flag);
+    frCol.put(irow, flagrow);
+  }
+}
+
 }
 
 namespace asap {
@@ -453,12 +479,20 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   }
 
   // Skip IFNO without sky data
-  if (nrowSkyTotal == 0)
+  if (nrowSkyTotal == 0) {
+    if (skytable_.size() > 0) {
+      os_ << LogIO::WARN << "No data in sky caltable. Completely flag Beam " << beamno << " Spw " << ifno << " Pol " << polno << LogIO::POST;
+      // Given sky tables are all empty
+      // So, flag all data
+      flagSpectra(work_->table(), rows);
+    }
     return;
+  }
 
   uInt nchanTsys = 0;
   Vector<Double> ftsys;
   uInt tsysifno = getIFForTsys(ifno);
+  Bool onlyInvalidTsys = False;
   os_ << "tsysifno=" << (Int)tsysifno << LogIO::POST;
   if (tsystable_.size() == 0) {
     os_.origin(LogOrigin("STApplyTable", "doapply", WHERE));
@@ -482,6 +516,11 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 	ftsys = tsystable_[i]->getBaseFrequency(0);
       }
     }
+    if (nrowTsysTotal == 0) {
+      os_ << "No valid Tsys measurement. for Beam " << beamno << " Spw " << ifno << " Pol " << polno << ". Skip Tsys calibration." << LogIO::POST;
+      doTsys = False;
+      onlyInvalidTsys = True;
+    }
   }
 
   uInt nchanSp = skytable_[skylist[0]]->nchan(ifno);
@@ -492,6 +531,12 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   SkyTableAccessor::GetSortedData(skytable_, skylist,
 				  nrowSkyTotal, nchanSp,
 				  timeSky, spoff, flagoff);
+  if (allNE(flagoff, (uChar)0)) {
+    os_ << LogIO::WARN << "No valid sky data in sky caltable. Completely flag Beam " << beamno << " Spw " << ifno << " Pol " << polno << LogIO::POST;
+    // Given sky tables are all invalid
+    // So, flag all data
+    flagSpectra(work_->table(), rows);
+  }
   nrowSky = timeSky.nelements();
 
   uInt nrowTsys = nrowTsysTotal;
@@ -508,8 +553,9 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     nrowTsys = timeTsys.nelements();
 
     if (allNE(flagtsys, (uChar)0)) {
-      os_ << LogIO::WARN << "No valid Tsys measurement. Skip Tsys calibration." << LogIO::POST;
+      os_ << LogIO::WARN << "No valid Tsys measurement for Beam " << beamno << " Spw " << ifno << " Pol " << polno << ". Skip Tsys calibration." << LogIO::POST;
       doTsys = False;
+      onlyInvalidTsys = True;
     }
   }
 
@@ -518,6 +564,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
   ArrayColumn<uChar> flCol(tab, "FLAGTRA");
   ArrayColumn<Float> tsysCol(tab, "TSYS");
   ScalarColumn<Double> timeCol(tab, "TIME");
+  ScalarColumn<uInt> frCol(tab, "FLAGROW");
 
   // Array for scaling factor (aka Tsys)
   Vector<Float> iTsys(IPosition(1, nchanSp), new Float[nchanSp], TAKE_OVER);
@@ -546,6 +593,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     // target spectral data
     spCol.get(irow, on);
     flCol.get(irow, flag);
+    uInt flagrow = frCol(irow);
     //os_ << "on=" << on[0] << LogIO::POST;
     calibrator_->setSource(on);
 
@@ -604,11 +652,17 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
     // do calibration
     calibrator_->calibrate();
 
+    // flag spectrum if no valid Tsys measurement available
+    if (onlyInvalidTsys) {
+      flagSpectrum(flagrow, flag);
+    }
+
     // update table
     //os_ << "calibrated=" << calibrator_->getCalibrated()[0] << LogIO::POST; 
     spCol.put(irow, calibrator_->getCalibrated());
     flCol.put(irow, flag);
-    if (filltsys)
+    frCol.put(irow, flagrow);
+    if (filltsys && !onlyInvalidTsys)
       tsysCol.put(irow, iTsys);
   }
   
