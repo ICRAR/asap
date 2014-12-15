@@ -2700,7 +2700,7 @@ void MSWriter::fillSysCal()
 {
   Table mssc = mstable_->sysCal() ;
 
-  {
+  if (table_->tcal().table().nrow() > 0) {
     static const char *cols[] = {
       "BEAMNO", "IFNO", "TIME", "POLNO",
       NULL
