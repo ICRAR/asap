@@ -506,6 +506,11 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 				     nrowTsysTotal, nchanTsys,
 				     timeTsys, tsys, flagtsys);
     nrowTsys = timeTsys.nelements();
+
+    if (allNE(flagtsys, (uChar)0)) {
+      os_ << LogIO::WARN << "No valid Tsys measurement. Skip Tsys calibration." << LogIO::POST;
+      doTsys = False;
+    }
   }
 
   Table tab = work_->table();
@@ -573,8 +578,12 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
         Vector<Double> fsp = getBaseFrequency(rows[i]);
 	uInt wnchan = setupWorkingData(nchanTsys, ftsys.data(), iTsysT.data(),
 				       fwork_p, xwork_p, ywork_p);
+	assert(wnchan > 0);
+	if (wnchan == 0) {
+	  throw AipsError("No valid Tsys measurements.");
+	}
 	interpolatorF_->setData(xwork_p, ywork_p, wnchan);
-        for (uInt ichan = 0; ichan < nchanSp; ichan++) {
+	for (uInt ichan = 0; ichan < nchanSp; ichan++) {
           iTsys[ichan] = interpolatorF_->interpolate(fsp[ichan]);
         }
       }

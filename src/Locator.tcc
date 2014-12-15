@@ -10,6 +10,8 @@
 //
 //
 #include <assert.h>
+#include <iostream>
+#include <stdexcept>
 
 #include "Locator.h"
 
@@ -55,6 +57,10 @@ template <class T> void Locator<T>::set(T *v, unsigned int n, bool copystorage)
   }
   else {
     x_ = v;
+  }
+  assert(n_ > 0);
+  if (n_ == 0) {
+    throw std::runtime_error("Input array length is 0.");
   }
   ascending_ = (x_[0] <= x_[n_-1]);
 }
