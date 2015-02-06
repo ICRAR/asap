@@ -84,6 +84,18 @@ endif()
 set( DEFAULT_CXX_FLAGS
      "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
 
+# additional flag for fortran complex div/mul rules.
+include( CheckCXXCompilerFlag )
+include( CheckCCompilerFlag )
+check_cxx_compiler_flag( -fcx-fortran-rules HAS_GXX_FORTRAN_RULES )
+check_c_compiler_flag( -fcx-fortran-rules HAS_GCC_FORTRAN_RULES )
+if( HAS_GXX_FORTRAN_RULES )
+     set( DEFAULT_CXX_FLAGS "-fcx-fortran-rules ${DEFAULT_CXX_FLAGS}")
+endif()
+if( HAS_GCC_FORTRAN_RULES )
+     set( CMAKE_C_FLAGS "-fcx-fortran-rules ${CMAKE_C_FLAGS}" )
+endif()
+
 find_package( OpenMP )
 if( OPENMP_FOUND )
    set( DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
