@@ -11,7 +11,6 @@
 //
 #include <map>
 #include <sys/time.h>
-#include <assert.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
@@ -36,6 +35,7 @@
 #include <casa/Quanta/MVAngle.h>
 #include <casa/Quanta/MVTime.h>
 #include <casa/Utilities/GenSort.h>
+#include <casa/Utilities/Assert.h>
 
 #include <coordinates/Coordinates/CoordinateUtil.h>
 
@@ -2566,8 +2566,9 @@ bool Scantable::isAllChannelsFlagged(uInt whichrow)
 std::size_t Scantable::nValidMask(const std::vector<bool>& mask)
 {
   std::size_t nvalid=0;
-  assert(static_cast<std::size_t>(true)==1);
-  assert(static_cast<std::size_t>(false)==0);
+  // the assertion lines had better be replaced with static_assert when c++11 is supported
+  AlwaysAssert(static_cast<std::size_t>(true)==1, AipsError);
+  AlwaysAssert(static_cast<std::size_t>(false)==0, AipsError);
   for (uInt i = 1; i < mask.size(); ++i) {
     nvalid += static_cast<std::size_t>(mask[i]);
   }
@@ -3045,6 +3046,7 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
     bool outBaselineTable = (bltable != "");
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -3088,6 +3090,7 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3105,7 +3108,10 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
     }
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
-
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "polyBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -3138,6 +3144,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
     STLineFinder lineFinder = STLineFinder();
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -3184,6 +3191,7 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
           params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3201,7 +3209,10 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
     }
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
-
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "autoPolyBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -3229,6 +3240,7 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
     bool outBaselineTable = (bltable != "");
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -3272,6 +3284,7 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3290,6 +3303,10 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
     
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "chebyshevBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -3322,6 +3339,7 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
     STLineFinder lineFinder = STLineFinder();
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -3368,6 +3386,7 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
           params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3386,6 +3405,10 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "autoChebyshevBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -3916,6 +3939,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
     bool outBaselineTable = (bltable != "");
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -3960,6 +3984,7 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
           pieceEdges.resize(nPiece+1);
           for (uInt i = 0; i < pieceEdges.size(); ++i) {
@@ -3982,6 +4007,10 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
     
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "cubicSplineBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -4014,6 +4043,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
     STLineFinder lineFinder = STLineFinder();
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -4061,6 +4091,7 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
           pieceEdges.resize(nPiece+1);
           for (uInt i = 0; i < pieceEdges.size(); ++i) {
@@ -4083,6 +4114,10 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "autoCubicSplineBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -4687,6 +4722,7 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
     bool outBaselineTable = (bltable != "");
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -4744,6 +4780,7 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -4762,6 +4799,10 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "sinusoidBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
@@ -4796,6 +4837,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
     STBaselineTable bt = STBaselineTable(*this);
     Vector<Double> timeSecCol;
     STLineFinder lineFinder = STLineFinder();
+    size_t flagged=0;
 
     initialiseBaselining(blfile, ofs, outLogger, outTextFile, csvFormat, 
 			 coordInfo, hasSameNchan, 
@@ -4856,6 +4898,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
       } else {
 	// no valid channels to fit (flag the row)
 	flagrowCol_.put(whichrow, 1);
+	++flagged;
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -4874,6 +4917,10 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
 
     finaliseBaselining(outBaselineTable, &bt, bltable, outTextFile, ofs);
 
+    if (flagged > 0) {
+      LogIO os( LogOrigin( "Scantable", "autoSinusoidBaseline()") ) ;
+      os << LogIO::WARN << "Baseline subtraction is skipped for " << flagged << " spectra due to too few valid channels to operate fit. The spectra will be flagged in output data." << LogIO::POST;
+    }
   } catch (...) {
     throw;
   }
