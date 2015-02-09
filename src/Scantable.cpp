@@ -11,6 +11,7 @@
 //
 #include <map>
 #include <sys/time.h>
+#include <assert.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
