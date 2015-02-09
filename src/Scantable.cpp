@@ -3085,6 +3085,8 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
 	  		    coordInfo, hasSameNchan, ofs, "polyBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3179,6 +3181,8 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
 	  		    coordInfo, hasSameNchan, ofs, "autoPolyBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
           params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3265,6 +3269,8 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
 			    coordInfo, hasSameNchan, ofs, "chebyshevBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3359,6 +3365,8 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
 			    coordInfo, hasSameNchan, ofs, "autoChebyshevBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
           params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -3949,6 +3957,8 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
 			    coordInfo, hasSameNchan, ofs, "cubicSplineBaseline()", 
 			    pieceEdges, params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
           pieceEdges.resize(nPiece+1);
           for (uInt i = 0; i < pieceEdges.size(); ++i) {
@@ -4048,6 +4058,8 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
 			    coordInfo, hasSameNchan, ofs, "autoCubicSplineBaseline()", 
 			    pieceEdges, params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
           pieceEdges.resize(nPiece+1);
           for (uInt i = 0; i < pieceEdges.size(); ++i) {
@@ -4729,6 +4741,8 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
 			    coordInfo, hasSameNchan, ofs, "sinusoidBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
@@ -4839,6 +4853,8 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
 			    coordInfo, hasSameNchan, ofs, "autoSinusoidBaseline()", 
 			    params, nClipped);
       } else {
+	// no valid channels to fit (flag the row)
+	flagrowCol_.put(whichrow, 1);
         if (outBaselineTable) {
 	  params.resize(nModel);
           for (uInt i = 0; i < params.size(); ++i) {
