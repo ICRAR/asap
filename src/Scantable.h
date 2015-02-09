@@ -724,6 +724,13 @@ private:
 
   std::vector<uint> getNumbers(const casa::ScalarColumn<casa::uInt>& col) const;
 
+  /**
+   * Returns a number of elements with "true" in a bool vector. 
+   * @param[in] mask (boolean vector)
+   * @return the numerb of elements in true
+   */
+  std::size_t nValidMask(const std::vector<bool>& mask);
+
   static const casa::uInt version_ = 4;
 
   STSelector selector_;

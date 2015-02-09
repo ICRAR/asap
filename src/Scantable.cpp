@@ -2551,16 +2551,28 @@ bool Scantable::isAllChannelsFlagged(uInt whichrow)
   flagrowCol_.get(whichrow, rflag);
   if (rflag > 0)
     return true;
-  uChar flag;
+  bool flag;
   Vector<uChar> flags;
   flagsCol_.get(whichrow, flags);
-  flag = flags[0];
+  flag = (flags[0]>0);
   for (uInt i = 1; i < flags.size(); ++i) {
-    flag &= flags[i];
+    flag &= (flags[i]>0);
   }
   //  return ((flag >> 7) == 1);
   return (flag > 0);
 }
+
+std::size_t Scantable::nValidMask(const std::vector<bool>& mask)
+{
+  std::size_t nvalid=0;
+  assert(static_cast<std::size_t>(true)==1);
+  assert(static_cast<std::size_t>(false)==0);
+  for (uInt i = 1; i < mask.size(); ++i) {
+    nvalid += static_cast<std::size_t>(mask[i]);
+  }
+  return nvalid;
+}
+
 
 std::vector<std::string> Scantable::applyBaselineTable(const std::string& bltable, const bool returnfitresult, const std::string& outbltable, const bool outbltableexists, const bool overwrite)
 {
@@ -3050,7 +3062,8 @@ void Scantable::polyBaseline(const std::vector<bool>& mask, int order,
       chanMask = getCompositeChanMask(whichrow, mask);
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, 
@@ -3143,7 +3156,8 @@ void Scantable::autoPolyBaseline(const std::vector<bool>& mask, int order,
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, 
@@ -3228,7 +3242,8 @@ void Scantable::chebyshevBaseline(const std::vector<bool>& mask, int order,
       chanMask = getCompositeChanMask(whichrow, mask);
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //      if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, 
@@ -3321,7 +3336,8 @@ void Scantable::autoChebyshevBaseline(const std::vector<bool>& mask, int order,
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //      if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, 
@@ -3910,7 +3926,8 @@ void Scantable::cubicSplineBaseline(const std::vector<bool>& mask, int nPiece,
       std::vector<int> pieceEdges;
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doCubicSplineLeastSquareFitting(sp, chanMask,
@@ -4008,7 +4025,8 @@ void Scantable::autoCubicSplineBaseline(const std::vector<bool>& mask, int nPiec
       std::vector<int> pieceEdges;
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doCubicSplineLeastSquareFitting(sp, chanMask, 
@@ -4689,7 +4707,8 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
 
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, model, 
@@ -4798,7 +4817,8 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
 
       std::vector<float> params;
 
-      if (flagrowCol_(whichrow) == 0) {
+      //if (flagrowCol_(whichrow) == 0) {
+      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, model, 
@@ -4975,6 +4995,14 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow,
 						  std::vector<int>& currEdge, 
 						  STLineFinder& lineFinder)
 {
+  if (isAllChannelsFlagged(whichrow)) {//all channels flagged
+    std::vector<bool> res_mask(inMask.size(),false);
+    return res_mask;
+  } else if (nValidMask(inMask)==0){ //no valid mask channels
+    std::vector<bool> res_mask(inMask);
+    return res_mask; 
+  }
+
   std::vector<uint> ifNos = getIFNos();
   if ((edge.size() > 2) && (edge.size() < ifNos.size()*2)) {
     throw(AipsError("Length of edge element info is less than that of IFs"));
