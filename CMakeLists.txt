@@ -64,13 +64,26 @@ set( CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -O0 -fno-omit-frame-pointer" )
 # flags for Profile build
 set( CMAKE_CXX_FLAGS_PROFILE "-g -O2 -pg -fprofile-arcs -fno-omit-frame-pointer" )
 
-# flags for Release build
-set( CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-s" )
-set( CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-s" )
 
-# flags for MinSizeRel build
-set( CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
-set( CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+# flags for Release and MinSizeRel build
+if ( APPLE )
+    # OS X
+    # On 10.8 (Darwin-12) with llvm clang, -s option for linker
+    # causes link error. This may be because that -s option is 
+    # obsolete and is different behavior from Linux.
+    if ( CMAKE_SYSTEM MATCHES ^Darwin-11 AND NOT LLVMCOMPILER )
+        set( CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-s" )
+        set( CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-s" )
+        set( CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+        set( CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+    endif()
+else()
+    # Linux
+    set( CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-s" )
+    set( CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-s" )
+    set( CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+    set( CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "-Wl,-s" )
+endif()
 
 if ( DEFINED CXX_FLAGS_TAIL_END )
    set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_FLAGS_TAIL_END}" )
