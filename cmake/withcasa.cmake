@@ -198,6 +198,17 @@ endif( )
 message( STATUS "ASDM_LIBRARY = " ${ASDM_LIBRARY} ) 
 add_definitions( -DWITHOUT_ACS )
 
+set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH} )
+if ( EXISTS ${CASA_CODE_PATH}/include/components )
+   set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH}/include )
+endif()
+set( COMPONENTS_INCLUDE_DIR ${COMPONENTS_INCLUDE_ROOT}/components/SpectralComponents )
+if ( NOT COMPONENTS_LIB_PATH )
+   set( COMPONENTS_LIBRARY ${casaroot}/${arch}/lib/libcomponents${CMAKE_SHARED_LIBRARY_SUFFIX} )
+else( )
+   set( COMPONENTS_LIBRARY ${COMPONENTS_LIB_PATH} )
+endif( )
+
 #
 # subdirectories
 #  ASAP2TO3 asap2to3       apps
