@@ -162,7 +162,7 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
             libpath = os.path.join(p, LIBDIR)
             conf.env.AppendUnique(CPPPATH=[pth])
 	    break
-    cclibs = ["casa_images", "casa_ms", "casa_components", 
+    cclibs = ["casa_images", "casa_ms", #"casa_components", 
               "casa_coordinates", "casa_lattices", 
               "casa_fits", "casa_measures", "casa_scimath",
               "casa_scimath_f", "casa_tables", "casa_casa"]
