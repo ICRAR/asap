@@ -219,8 +219,8 @@ def test_module(target,source,env):
 def test_str(target, source, env):
     return "Testing module..."
 
-#taction = Action(test_module, test_str)
-#env.AddPostAction(so, taction)
+taction = Action(test_module, test_str)
+env.AddPostAction(so, taction)
 
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
