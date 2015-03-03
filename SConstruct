@@ -160,7 +160,7 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
         pth = os.path.join(p, "include", "casacore")        
 	if os.path.exists(pth):
             libpath = os.path.join(p, LIBDIR)
-            conf.env.AppendUnique(CPPPATH=[pth])
+            conf.env.AppendUnique(CPPPATH=[pth,pth+'/..'])
 	    break
     cclibs = ["casa_images", "casa_ms", #"casa_components", 
               "casa_coordinates", "casa_lattices", 
@@ -219,8 +219,8 @@ def test_module(target,source,env):
 def test_str(target, source, env):
     return "Testing module..."
 
-taction = Action(test_module, test_str)
-env.AddPostAction(so, taction)
+#taction = Action(test_module, test_str)
+#env.AddPostAction(so, taction)
 
 if env.GetOption("clean"):
     Execute(Delete(".sconf_temp"))
