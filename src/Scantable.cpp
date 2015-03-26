@@ -3869,19 +3869,23 @@ std::vector<float> Scantable::doLeastSquareFitting(const std::vector<float>& dat
       residual[i] = z1[i] - r1[i];
     }
 
-    double stdDev = 0.0;
+    double mean  = 0.0;
+    double mean2 = 0.0;
     for (int i = 0; i < nChan; ++i) {
       if (maskArray[i] == 0) continue;
-      stdDev += residual[i]*residual[i];
+      mean  += residual[i];
+      mean2 += residual[i]*residual[i];
     }
-    stdDev = sqrt(stdDev/(double)nData);
-    rms = (float)stdDev;
+    mean  /= (double)nData;
+    mean2 /= (double)nData;
+    double rmsd = sqrt(mean2 - mean*mean);
+    rms = (float)rmsd;
 
     if ((nClip == nIterClip) || (thresClip <= 0.0)) {
       break;
     } else {
 
-      double thres = stdDev * thresClip;
+      double thres = rmsd * thresClip;
       int newNData = 0;
       for (int i = 0; i < nChan; ++i) {
 	if (abs(residual[i]) >= thres) {
@@ -4443,19 +4447,23 @@ std::vector<float> Scantable::doCubicSplineLeastSquareFitting(const std::vector<
       residual[i] = z1[i] - r1[i];
     }
 
-    double stdDev = 0.0;
+    double mean  = 0.0;
+    double mean2 = 0.0;
     for (int i = 0; i < nChan; ++i) {
       if (maskArray[i] == 0) continue;
-      stdDev += residual[i]*residual[i];
+      mean  += residual[i];
+      mean2 += residual[i]*residual[i];
     }
-    stdDev = sqrt(stdDev/(double)nData);
-    rms = (float)stdDev;
+    mean  /= (double)nData;
+    mean2 /= (double)nData;
+    double rmsd = sqrt(mean2 - mean*mean);
+    rms = (float)rmsd;
 
     if ((nClip == nIterClip) || (thresClip <= 0.0)) {
       break;
     } else {
       
-      double thres = stdDev * thresClip;
+      double thres = rmsd * thresClip;
       int newNData = 0;
       for (int i = 0; i < nChan; ++i) {
 	if (abs(residual[i]) >= thres) {
