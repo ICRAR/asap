@@ -31,9 +31,9 @@
 
 #include <ms/MeasurementSets/MeasurementSet.h>
 #include <ms/MeasurementSets/MSColumns.h>
-#include <ms/MeasurementSets/MSPolIndex.h>
-#include <ms/MeasurementSets/MSDataDescIndex.h>
-#include <ms/MeasurementSets/MSSourceIndex.h>
+#include <ms/MSSel/MSPolIndex.h>
+#include <ms/MSSel/MSDataDescIndex.h>
+#include <ms/MSSel/MSSourceIndex.h>
 
 #include "MSWriter.h"
 #include "STHeader.h"

@@ -46,7 +46,7 @@
 #include <measures/TableMeasures/ScalarQuantColumn.h>
 #include <measures/TableMeasures/ArrayQuantColumn.h>
 
-#include <ms/MeasurementSets/MSAntennaIndex.h>
+#include <ms/MSSel/MSAntennaIndex.h>
 
 #include <atnf/PKSIO/SrcType.h>
 
