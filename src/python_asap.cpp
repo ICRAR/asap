@@ -39,18 +39,14 @@
 #include <casa/Exceptions/Error.h>
 #include "ScantableWrapper.h"
 
-#ifndef HAVE_LIBPYRAP
-  #include "pyconversions.h"
-#else
-  #include <pyrap/Converters/PycExcp.h>
-  #include <pyrap/Converters/PycBasicData.h>
-  #include <pyrap/Converters/PycValueHolder.h>
-  #include <pyrap/Converters/PycRecord.h>
-#endif
+#include <casacore/python/Converters/PycExcp.h>
+#include <casacore/python/Converters/PycBasicData.h>
+#include <casacore/python/Converters/PycValueHolder.h>
+#include <casacore/python/Converters/PycRecord.h>
+
 
 #include "python_asap.h"
 
-#ifndef HAVE_LIBPYRAP
 namespace asap {
   namespace python {
 
@@ -62,7 +58,6 @@ void translate_ex(const casa::AipsError& e)
 
   }
 }
-#endif
 
 using namespace boost::python;
 
@@ -93,48 +88,23 @@ BOOST_PYTHON_MODULE(_asap) {
   asap::python::python_STSideBandSep();
   asap::python::python_CalibrationManager();
 
-#ifndef HAVE_LIBPYRAP
-  // Use built-in pyconversions.h
-  register_exception_translator<casa::AipsError>(&asap::python::translate_ex);
-  from_python_sequence < std::vector< asap::ScantableWrapper >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < int > ();
-  from_python_sequence < std::vector < int >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < uint > ();
-  from_python_sequence < std::vector < uint >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < float > ();
-  from_python_sequence < std::vector < float >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < double > ();
-  from_python_sequence < std::vector < double >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < std::string > ();
-  from_python_sequence < std::vector < std::string >,
-    variable_capacity_policy > ();
-  std_vector_to_tuple < bool> ();
-  from_python_sequence < std::vector < bool >,
-    variable_capacity_policy > ();
-#else
-  casa::pyrap::register_convert_excp();
-  casa::pyrap::register_convert_basicdata();
-  casa::pyrap::register_convert_std_vector<asap::ScantableWrapper>();
-  casa::pyrap::register_convert_std_vector<int>();
-  casa::pyrap::register_convert_std_vector<uint>();
-  casa::pyrap::register_convert_std_vector<float>();
-  casa::pyrap::register_convert_std_vector<double>();
-  casa::pyrap::register_convert_std_vector<std::string>();
+  casacore::python::register_convert_excp();
+  casacore::python::register_convert_basicdata();
+  casacore::python::register_convert_std_vector<asap::ScantableWrapper>();
+  casacore::python::register_convert_std_vector<int>();
+  casacore::python::register_convert_std_vector<uint>();
+  casacore::python::register_convert_std_vector<float>();
+  casacore::python::register_convert_std_vector<double>();
+  casacore::python::register_convert_std_vector<std::string>();
 //////////////see error below//////////////////////////////
-  casa::pyrap::register_convert_std_vector<bool>();
+  casacore::python::register_convert_std_vector<bool>();
 ///////////////////////////////////////////////////////////
-  casa::pyrap::register_convert_casa_valueholder();
-  casa::pyrap::register_convert_casa_record();
+  casacore::python::register_convert_casa_valueholder();
+  casacore::python::register_convert_casa_record();
 
-#endif
 }
 //[ 79%] Building CXX object src/CMakeFiles/_asap.dir/python_asap.cpp.o
-//cd ...trunk/asap/build/src && /usr/bin/clang++   -DAIPS_AUTO_STL -DAIPS_DEBUG -DAIPS_STDLIB -DCASACORE_NEEDS_RETHROW -DCASA_USECASAPATH -DENABLE_PLOTTER2 -DHAVE_LIBPYRAP -DNOPKSMS -DUSE_CASAPY -DWITHOUT_ACS -D_GNU_SOURCE -D_asap_EXPORTS -pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment -ggdb3 -O0 -fno-omit-frame-pointer -fPIC -I...trunk/darwin/include/casacore -I...trunk/darwin/include/casacore/.. -I/opt/casa/01/include -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/include -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/numpy/core/include -I...trunk/asap/src -I...trunk/asap/external-alma -I...trunk/asap/external/libpyrap/pyrap-0.3.2    -o CMakeFiles/_asap.dir/python_asap.cpp.o -c ...trunk/asap/src/python_asap.cpp
+//cd ...trunk/asap/build/src && /usr/bin/clang++   -DAIPS_AUTO_STL -DAIPS_DEBUG -DAIPS_STDLIB -DCASACORE_NEEDS_RETHROW -DCASA_USECASAPATH -DENABLE_PLOTTER2 -DHAVE_LIBPYTHON -DNOPKSMS -DUSE_CASAPY -DWITHOUT_ACS -D_GNU_SOURCE -D_asap_EXPORTS -pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment -ggdb3 -O0 -fno-omit-frame-pointer -fPIC -I...trunk/darwin/include/casacore -I...trunk/darwin/include/casacore/.. -I/opt/casa/01/include -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/include -I/opt/casa/01/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/numpy/core/include -I...trunk/asap/src -I...trunk/asap/external-alma -I...trunk/asap/external/libpython/python-0.3.2    -o CMakeFiles/_asap.dir/python_asap.cpp.o -c ...trunk/asap/src/python_asap.cpp
 //warning: unknown warning option '-Wno-non-template-friend'; did you mean '-Wno-unsupported-friend'? [-Wunknown-warning-option]
 //In file included from ...trunk/asap/src/python_asap.cpp:32:
 //In file included from /opt/casa/01/include/boost/python.hpp:29:
@@ -154,151 +124,151 @@ BOOST_PYTHON_MODULE(_asap) {
 //      , keyword_range const& kw // ignored
 //                             ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:95:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:95:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'boost::python::converter::rvalue_from_python_storage<String> *' increases required alignment
 //      from 8 to 16 [-Wcast-align]
 //        (boost::python::converter::rvalue_from_python_storage<String>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<asap::ScantableWrapper,
 //      std::__1::allocator<asap::ScantableWrapper> > > *' increases required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<asap::ScantableWrapper, std::__1::allocator<asap::ScantableWrapper> >,
-//      casa::pyrap::stl_variable_capacity_policy>::construct' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<asap::ScantableWrapper, std::__1::allocator<asap::ScantableWrapper> >,
+//      casacore::python::stl_variable_capacity_policy>::construct' requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<asap::ScantableWrapper, std::__1::allocator<asap::ScantableWrapper> >,
-//      casa::pyrap::stl_variable_capacity_policy>::from_python_sequence' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<asap::ScantableWrapper, std::__1::allocator<asap::ScantableWrapper> >,
+//      casacore::python::stl_variable_capacity_policy>::from_python_sequence' requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<asap::ScantableWrapper>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<asap::ScantableWrapper>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:122:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<asap::ScantableWrapper>' requested here
-//  casa::pyrap::register_convert_std_vector<asap::ScantableWrapper>();
+//      'casacore::python::register_convert_std_vector<asap::ScantableWrapper>' requested here
+//  casacore::python::register_convert_std_vector<asap::ScantableWrapper>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<int, std::__1::allocator<int> > > *' increases
 //      required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<int, std::__1::allocator<int> >, casa::pyrap::stl_variable_capacity_policy>::construct' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<int, std::__1::allocator<int> >, casacore::python::stl_variable_capacity_policy>::construct' requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<int, std::__1::allocator<int> >, casa::pyrap::stl_variable_capacity_policy>::from_python_sequence'
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<int, std::__1::allocator<int> >, casacore::python::stl_variable_capacity_policy>::from_python_sequence'
 //      requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<int>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<int>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:123:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<int>' requested here
-//  casa::pyrap::register_convert_std_vector<int>();
+//      'casacore::python::register_convert_std_vector<int>' requested here
+//  casacore::python::register_convert_std_vector<int>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<unsigned int, std::__1::allocator<unsigned int> >
 //      > *' increases required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<unsigned int, std::__1::allocator<unsigned int> >, casa::pyrap::stl_variable_capacity_policy>::construct'
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<unsigned int, std::__1::allocator<unsigned int> >, casacore::python::stl_variable_capacity_policy>::construct'
 //      requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<unsigned int, std::__1::allocator<unsigned int> >,
-//      casa::pyrap::stl_variable_capacity_policy>::from_python_sequence' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<unsigned int, std::__1::allocator<unsigned int> >,
+//      casacore::python::stl_variable_capacity_policy>::from_python_sequence' requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<unsigned int>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<unsigned int>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:124:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<unsigned int>' requested here
-//  casa::pyrap::register_convert_std_vector<uint>();
+//      'casacore::python::register_convert_std_vector<unsigned int>' requested here
+//  casacore::python::register_convert_std_vector<uint>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<float, std::__1::allocator<float> > > *'
 //      increases required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<float, std::__1::allocator<float> >, casa::pyrap::stl_variable_capacity_policy>::construct' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<float, std::__1::allocator<float> >, casacore::python::stl_variable_capacity_policy>::construct' requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<float, std::__1::allocator<float> >, casa::pyrap::stl_variable_capacity_policy>::from_python_sequence'
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<float, std::__1::allocator<float> >, casacore::python::stl_variable_capacity_policy>::from_python_sequence'
 //      requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<float>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<float>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:125:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<float>' requested here
-//  casa::pyrap::register_convert_std_vector<float>();
+//      'casacore::python::register_convert_std_vector<float>' requested here
+//  casacore::python::register_convert_std_vector<float>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<double, std::__1::allocator<double> > > *'
 //      increases required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<double, std::__1::allocator<double> >, casa::pyrap::stl_variable_capacity_policy>::construct' requested
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<double, std::__1::allocator<double> >, casacore::python::stl_variable_capacity_policy>::construct' requested
 //      here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<double, std::__1::allocator<double> >, casa::pyrap::stl_variable_capacity_policy>::from_python_sequence'
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<double, std::__1::allocator<double> >, casacore::python::stl_variable_capacity_policy>::from_python_sequence'
 //      requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<double>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<double>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:126:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<double>' requested here
-//  casa::pyrap::register_convert_std_vector<double>();
+//      'casacore::python::register_convert_std_vector<double>' requested here
+//  casacore::python::register_convert_std_vector<double>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<std::__1::basic_string<char>,
 //      std::__1::allocator<std::__1::basic_string<char> > > > *' increases required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<std::__1::basic_string<char>, std::__1::allocator<std::__1::basic_string<char> > >,
-//      casa::pyrap::stl_variable_capacity_policy>::construct' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<std::__1::basic_string<char>, std::__1::allocator<std::__1::basic_string<char> > >,
+//      casacore::python::stl_variable_capacity_policy>::construct' requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<std::__1::basic_string<char>, std::__1::allocator<std::__1::basic_string<char> > >,
-//      casa::pyrap::stl_variable_capacity_policy>::from_python_sequence' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<std::__1::basic_string<char>, std::__1::allocator<std::__1::basic_string<char> > >,
+//      casacore::python::stl_variable_capacity_policy>::from_python_sequence' requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<std::__1::basic_string<char> >::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<std::__1::basic_string<char> >::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:127:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<std::__1::basic_string<char> >' requested here
-//  casa::pyrap::register_convert_std_vector<std::string>();
+//      'casacore::python::register_convert_std_vector<std::__1::basic_string<char> >' requested here
+//  casacore::python::register_convert_std_vector<std::string>();
 //               ^
 //In file included from ...trunk/asap/src/python_asap.cpp:32:
 //In file included from /opt/casa/01/include/boost/python.hpp:11:
@@ -331,31 +301,31 @@ BOOST_PYTHON_MODULE(_asap) {
 //      'boost::python::api::object::object<std::__1::__bit_const_reference<std::__1::vector<bool, std::__1::allocator<bool> > > >' requested here
 //        base::append(object(x));
 //                     ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:219:9: note: (skipping 3 contexts in backtrace; use
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:219:9: note: (skipping 3 contexts in backtrace; use
 //      -ftemplate-backtrace-limit=0 to see all)
 //        result.append(*i);
 //               ^
 ///opt/casa/01/include/boost/python/to_python_converter.hpp:88:22: note: in instantiation of member function
-//      'boost::python::converter::as_to_python_function<std::__1::vector<bool, std::__1::allocator<bool> >, casa::pyrap::to_list<std::__1::vector<bool,
+//      'boost::python::converter::as_to_python_function<std::__1::vector<bool, std::__1::allocator<bool> >, casacore::python::to_list<std::__1::vector<bool,
 //      std::__1::allocator<bool> > > >::convert' requested here
 //        &normalized::convert
 //                     ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:317:7: note: in instantiation of member function
-//      'boost::python::to_python_converter<std::__1::vector<bool, std::__1::allocator<bool> >, casa::pyrap::to_list<std::__1::vector<bool, std::__1::allocator<bool>
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:317:7: note: in instantiation of member function
+//      'boost::python::to_python_converter<std::__1::vector<bool, std::__1::allocator<bool> >, casacore::python::to_list<std::__1::vector<bool, std::__1::allocator<bool>
 //      > >, false>::to_python_converter' requested here
 //      boost::python::to_python_converter < std::vector < T >,
 //      ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:542:2: note: in instantiation of member function
-//      'casa::pyrap::std_vector_to_list<bool>::std_vector_to_list' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:542:2: note: in instantiation of member function
+//      'casacore::python::std_vector_to_list<bool>::std_vector_to_list' requested here
 //        std_vector_to_list < T > ();
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<bool>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<bool>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:128:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<bool>' requested here
-//  casa::pyrap::register_convert_std_vector<bool>();
+//      'casacore::python::register_convert_std_vector<bool>' requested here
+//  casacore::python::register_convert_std_vector<bool>();
 //               ^
 ///opt/casa/01/include/boost/python/converter/arg_to_python_base.hpp:20:7: note: candidate constructor not viable: no known conversion from
 //      '__bit_iterator<std::__1::vector<bool, std::__1::allocator<bool> >, true>' to 'const volatile void *' for 1st argument
@@ -366,27 +336,27 @@ BOOST_PYTHON_MODULE(_asap) {
 //  struct BOOST_PYTHON_DECL arg_to_python_base
 //                           ^
 //In file included from ...trunk/asap/src/python_asap.cpp:46:
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:424:9: warning: cast from
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:424:9: warning: cast from
 //      'boost::python::converter::rvalue_from_python_stage1_data *' to 'rvalue_from_python_storage<std::__1::vector<bool, std::__1::allocator<bool> > > *' increases
 //      required alignment from 8 to 16 [-Wcast-align]
 //        (rvalue_from_python_storage<ContainerType>*)
 //        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:367:10: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<bool, std::__1::allocator<bool> >, casa::pyrap::stl_variable_capacity_policy>::construct' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:367:10: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<bool, std::__1::allocator<bool> >, casacore::python::stl_variable_capacity_policy>::construct' requested here
 //        &construct,
 //         ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:543:2: note: in instantiation of member function
-//      'casa::pyrap::from_python_sequence<std::__1::vector<bool, std::__1::allocator<bool> >, casa::pyrap::stl_variable_capacity_policy>::from_python_sequence'
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:543:2: note: in instantiation of member function
+//      'casacore::python::from_python_sequence<std::__1::vector<bool, std::__1::allocator<bool> >, casacore::python::stl_variable_capacity_policy>::from_python_sequence'
 //      requested here
 //        from_python_sequence < std::vector < T >,
 //        ^
-//...trunk/asap/external/libpyrap/pyrap-0.3.2/pyrap/Converters/PycBasicData.h:550:30: note: in instantiation of member function
-//      'casa::pyrap::convert_std_vector<bool>::reg' requested here
+//...trunk/asap/external/libpython/python-0.3.2/python/Converters/PycBasicData.h:550:30: note: in instantiation of member function
+//      'casacore::python::convert_std_vector<bool>::reg' requested here
 //    { convert_std_vector<T>::reg(); }
 //                             ^
 //...trunk/asap/src/python_asap.cpp:128:16: note: in instantiation of function template specialization
-//      'casa::pyrap::register_convert_std_vector<bool>' requested here
-//  casa::pyrap::register_convert_std_vector<bool>();
+//      'casacore::python::register_convert_std_vector<bool>' requested here
+//  casacore::python::register_convert_std_vector<bool>();
 //               ^
 //12 warnings and 1 error generated.
 //make[2]: *** [src/CMakeFiles/_asap.dir/python_asap.cpp.o] Error 1

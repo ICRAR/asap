@@ -110,22 +110,6 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
                                        'boost/python.hpp', language='c++'): 
             Exit(1)
 
-    if env["enable_pyrap"]:
-        conf.env.AddCustomPackage('pyrap')
-        if conf.CheckLib(conf.env["pyraplib"], language='c++', autoadd=0):
-            conf.env.PrependUnique(LIBS=env['pyraplib'])
-        else:
-            Exit(1)
-    else:
-        conf.env.AppendUnique(CPPPATH=[conf.env["numpyincdir"]])
-        if conf.CheckHeader("numpy/numpyconfig.h"):
-            conf.env.Append(CPPDEFINES=["-DAIPS_USENUMPY"])
-        else:
-            conf.env.Exit(1)
-        # compile in pyrap from here...
-        conf.env["pyrapint"] = "#/external/libpyrap/pyrap-0.3.2"
-    conf.env.Append(CPPFLAGS=['-DHAVE_LIBPYRAP'])
-
     if not conf.CheckLib("m"): 
         Exit(1)
     # test for cfitsio
@@ -162,7 +146,7 @@ if not ( env.GetOption('clean') or env.GetOption('help') ):
             libpath = os.path.join(p, LIBDIR)
             conf.env.AppendUnique(CPPPATH=[pth,pth+'/..'])
 	    break
-    cclibs = ["casa_images", "casa_ms", #"casa_components", 
+    cclibs = ["casa_python", "casa_images", "casa_ms",
               "casa_coordinates", "casa_lattices", 
               "casa_fits", "casa_measures", "casa_scimath",
               "casa_scimath_f", "casa_tables", "casa_casa"]
