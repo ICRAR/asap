@@ -6,6 +6,8 @@
 cmake_minimum_required( VERSION 2.8 )
 
 # options
+option (CXX11 "Compile as C++11 if possible" NO)
+
 option( USE_LIBCASACORE 
         "set ON to use libcasacore.so instead of libcasa_*.so"
         OFF )
@@ -107,6 +109,16 @@ if( HAS_GXX_FORTRAN_RULES )
 endif()
 if( HAS_GCC_FORTRAN_RULES )
      set( CMAKE_C_FLAGS "-fcx-fortran-rules ${CMAKE_C_FLAGS}" )
+endif()
+
+# Detect if the compiler supports C++11 if we want to use it.
+if (CXX11)
+    if ((CMAKE_COMPILER_IS_GNUCXX AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.6) OR
+       (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.3))
+        set(DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} -std=c++11 -DCXX11")
+    else()
+        option(CXX11 "" NO)
+    endif()
 endif()
 
 find_package( OpenMP )
