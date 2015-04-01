@@ -220,7 +220,7 @@ endif( )
 #
 macro( asap_add_subdirectory )
    add_subdirectory( apps )
-   add_subdirectory( external/libpyrap )
+#   add_subdirectory( external/libpyrap )
    add_subdirectory( external-alma/atnf )
    add_subdirectory( src )
    add_subdirectory( python )

@@ -47,6 +47,7 @@ endif()
 add_library( ${ATNFLIB} SHARED ${ATNF_SRCS} )
 target_link_libraries( ${ATNFLIB} 
                        ${CASACORE_LIBRARIES} 
+			${PYTHON_LIBRARIES}
                        ${CFITSIO_LIBRARIES} 
                        ${RPFITS_LIBRARIES} 
                        ${DL_LIBRARIES} 

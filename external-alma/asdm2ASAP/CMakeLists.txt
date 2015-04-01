@@ -17,7 +17,7 @@ set( EXEC_SRC ASDMReader.cc
 add_executable( ${ASDM2ASAP} ${EXEC_SRC} )
 
 # dependencies
-target_link_libraries( ${ASDM2ASAP} ${ASDM_LIBRARY}
+target_link_libraries( ${ASDM2ASAP} ${Boost_LIBRARIES} ${ASDM_LIBRARY}
                                     ${ASAPLIB} )
 add_dependencies( inst ${ASDM2ASAP} )
 

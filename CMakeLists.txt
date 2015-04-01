@@ -224,7 +224,8 @@ if( NOT USE_LIBCASACORE )
                       msfits
                       scimath
                       scimath_f
-                      tables )
+                      tables
+		      python )
    set( _casacore_libs "" )
    foreach( _a ${CASACORE_LIBS} )
       set( _libname libcasa_${_a}.${SO} )
@@ -277,7 +278,6 @@ endif()
 message( STATUS "CASACORE_LIBRARIES = " ${CASACORE_LIBRARIES} )
 message( STATUS "CASACORE_INCLUDE_DIR = " ${CASACORE_INCLUDE_DIR} )
 unset( USE_LIBCASACORE CACHE )
-
 
 #
 # Python
@@ -691,7 +691,7 @@ endif()
 #
 set( ASAPPYLIB _asap )
 set( ASAPLIB asap )
-set( PYRAPLIB pyrap )
+#set( PYRAPLIB pyrap )
 set( ATNFLIB atnf )
 set( ASAP2TO3 asap2to3 )
 if ( NOT STANDALONE )

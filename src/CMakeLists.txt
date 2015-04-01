@@ -9,14 +9,14 @@ set( SRCDIR ${ASAPROOT}/src )
 # include path
 include_directories( ${SRCDIR} 
                      ${Boost_INCLUDE_DIR}
-                     ${ASAPROOT}/external-alma 
-                     ${ASAPROOT}/external/libpyrap/pyrap-0.3.2 )
+                     ${ASAPROOT}/external-alma )
+#                     ${ASAPROOT}/external/libpyrap/pyrap-0.3.2 )
 
 # link path
 link_directories( ${SRCDIR} )
 
 # use libpyrap
-add_definitions( -DHAVE_LIBPYRAP )
+#add_definitions( -DHAVE_LIBPYRAP )
 
 # source files for libpyrap
 set( ASAP_SRCS
@@ -130,10 +130,10 @@ set_target_properties( ${ASAPPYLIB}
                        SUFFIX .so )
 
 target_link_libraries( ${ASAPLIB} 
-                       #${Boost_LIBRARIES}
+                       ${Boost_LIBRARIES}
                        ${X11_LIBRARIES} 
                        ${PGPLOT_LIBRARIES} 
-                       ${PYRAPLIB} 
+                       #${PYRAPLIB} 
                        ${ATNFLIB} 
                        #${CASACORE_LIBRARIES} 
                        ${WCSLIB} )

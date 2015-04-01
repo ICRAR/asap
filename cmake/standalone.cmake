@@ -29,7 +29,7 @@ set( WCSLIB_PATHS "/usr/local;/usr" )
 #
 macro( asap_add_subdirectory )
    add_subdirectory( apps )
-   add_subdirectory( external/libpyrap )
+#   add_subdirectory( external/libpyrap )
    add_subdirectory( external/atnf )
    add_subdirectory( src )
    add_subdirectory( python )
