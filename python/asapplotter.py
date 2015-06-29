@@ -1316,12 +1316,14 @@ class asapplotter:
         else:
             return start,end
 
-    def _get_date_axis_setup(self, dates):
+    def _get_date_axis_setup(self, dates, axlim=None):
         """
         Returns proper axis title and formatters for a list of dates
         Input
             dates : a list of datetime objects returned by,
                     e.g. scantable.get_time(asdatetime=True)
+            axlim : a tuple of min and max day range in the plot axis.
+                    if defined, the values are taken into account.
         Output
             a set of
             * date axis title string
@@ -1331,11 +1333,20 @@ class asapplotter:
         """
         from matplotlib import pylab as PL
         from matplotlib.dates import DateFormatter
-        from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator
+        from matplotlib.dates import HourLocator, MinuteLocator,SecondLocator, DayLocator, YearLocator, MonthLocator
         t = PL.date2num(dates)
-        tdel = max(t) - min(t) # interval in day
+        tmin = min(t)
+        tmax = max(t)
+        if axlim is not None:
+            tmin = min(tmin, min(axlim))
+            tmax = max(tmax, max(axlim))
+        tdel = tmax - tmin # interval in day
         dstr = dates[0].strftime('%Y/%m/%d')
-        if tdel > 1.0: # >1day
+        if tdel > 365.0: # >1year (also the case for single or very small time range)
+            majloc = YearLocator()
+            minloc = MonthLocator(range(1,12,6))
+            timefmt = DateFormatter('%Y/%m/%d')
+        elif tdel > 1.0: # >1day
             dstr2 = dates[len(dates)-1].strftime('%Y/%m/%d')
             dstr = dstr + " - " + dstr2
             majloc = DayLocator()
@@ -1808,8 +1819,8 @@ class asapplotter:
                                          marker='o',markersize=3,markeredgewidth=0)
 
         # legend and axis formatting
-        (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates)
         ax = self.gca()
+        (dstr, timefmt, majloc, minloc) = self._get_date_axis_setup(alldates, ax.get_xlim())
         ax.xaxis.set_major_formatter(timefmt)
         ax.xaxis.set_major_locator(majloc)
         ax.xaxis.set_minor_locator(minloc)
