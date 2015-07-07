@@ -5068,9 +5068,9 @@ std::vector<bool> Scantable::getCompositeChanMask(int whichrow,
 						  STLineFinder& lineFinder)
 {
   if (isAllChannelsFlagged(whichrow)) {//all channels flagged
-    std::vector<bool> res_mask(inMask.size(),false);
+    std::vector<bool> res_mask(nchan(getIF(whichrow)),false);
     return res_mask;
-  } else if (nValidMask(inMask)==0){ //no valid mask channels
+  } else if (inMask.size() != 0 && nValidMask(inMask)==0){ //no valid mask channels
     std::vector<bool> res_mask(inMask);
     return res_mask; 
   }
