@@ -5,9 +5,11 @@
 
 # environment dependent settings
 if( APPLE )
-   if( CMAKE_SYSTEM MATCHES ^Darwin-10 OR
-	CMAKE_SYSTEM MATCHES ^Darwin-11 OR
-	CMAKE_SYSTEM MATCHES ^Darwin-12 )
+   if ( CMAKE_SYSTEM MATCHES ^Darwin-1[0-4] )
+      message( STATUS "This is OS X" )
+      if ( CMAKE_SYSTEM MATCHES ^Darwin-1[34] )
+         set( arch darwin )
+      endif()
       if ( NOT arch )
          set( arch darwin64 )
       endif()
@@ -29,7 +31,7 @@ if( APPLE )
          endif()
       endif()
       if( archflag STREQUAL x86_64 )
-      	 if( CMAKE_SYSTEM MATCHES ^Darwin-12 )
+      	 if( CMAKE_SYSTEM MATCHES ^Darwin-1[2-4] )
              if ( EXISTS /opt/casa/01 )
                  set( casa_packages /opt/casa/01 )
              else()
@@ -71,6 +73,7 @@ elseif( CMAKE_SYSTEM_NAME STREQUAL Linux )
    endif()
 endif()
 message( STATUS "arch = " ${arch} )
+message( STATUS "casa_packages = " ${casa_packages} )
 
 # install directory
 #
