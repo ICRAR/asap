@@ -10,6 +10,8 @@
 //
 //
 #include <math.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/Matrix.h>
@@ -166,8 +168,13 @@ void GenericEdgeDetector::setup()
   dy_ = med * width_ ;
   dx_ = dy_ / decCorr ;
 
-  nx_ = uInt( ceil( wx / dx_ ) ) ;
-  ny_ = uInt( ceil( wy / dy_ ) ) ;
+  Double nxTemp = ceil(wx / dx_);
+  Double nyTemp = ceil(wy / dy_);
+  if (nxTemp > (Double)UINT_MAX || nyTemp > (Double)UINT_MAX) {
+	  throw AipsError("Error in setup: Too large number of pixels.");
+  }
+  nx_ = uInt( nxTemp ) ;
+  ny_ = uInt( nyTemp ) ;
 
   pcenx_ = 0.5 * Double( nx_ - 1 ) ;
   pceny_ = 0.5 * Double( ny_ - 1 ) ;
@@ -185,8 +192,19 @@ void GenericEdgeDetector::countup()
 {
   os_.origin(LogOrigin( "GenericEdgeDetector", "countup", WHERE )) ;
 
-  uInt *a_p = new uInt[nx_*ny_] ;
-  apix_.takeStorage( IPosition(2,nx_,ny_), a_p, TAKE_OVER ) ;
+  try {
+	  size_t n = (size_t)nx_ * (size_t)ny_;
+	  uInt *a_p = new uInt[n] ;
+	  apix_.takeStorage( IPosition(2,nx_,ny_), a_p, TAKE_OVER ) ;
+  }
+  catch (std::bad_alloc const &e) {
+	  os_ << LogIO::SEVERE << "Failed to allocate working array" << LogIO::POST;
+	  throw e;
+  }
+  catch (...) {
+	  os_ << LogIO::SEVERE << "Failed due to unknown error" << LogIO::POST;
+	  throw;
+  }
   apix_ = 0 ;
   
   uInt len = time_.nelements() ;
@@ -197,6 +215,8 @@ void GenericEdgeDetector::countup()
   const Double *px_p = pdir_p ;
   const Double *py_p = pdir_p + 1 ;
   long offset ;
+  // apix_ is always contiguous
+  uInt *a_p = apix_.data();
   for ( uInt i = 0 ; i < len ; i++ ) {
     ix = uInt(round( *px_p )) ;
     iy = uInt(round( *py_p )) ;
