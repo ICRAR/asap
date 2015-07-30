@@ -2656,7 +2656,7 @@ std::vector<std::string> Scantable::subBaseline(const std::vector<std::string>& 
     throw(AipsError("Cannot overwrite bltable. Set overwrite=True."));
   }
 
-  STBaselineTable* btp;
+  STBaselineTable* btp = NULL;
   ROScalarColumn<Double> tcol = ROScalarColumn<Double>(table_, "TIME");
   Vector<Double> timeSecCol = tcol.getColumn();
 
@@ -2733,7 +2733,10 @@ std::vector<std::string> Scantable::subBaseline(const std::vector<std::string>& 
     btp->save(outbltable);
   }
 
-  delete btp;
+  if (btp != NULL) {
+	delete btp;
+  }
+
   return res;
 }
 
