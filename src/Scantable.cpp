@@ -2782,10 +2782,25 @@ std::vector<float> Scantable::doSubtractBaseline(std::vector<float>& spec,
   } else if (ftype == STBaselineFunc::Chebyshev) {
     res = doChebyshevFitting(spec, mask, fpar[0], params, rms, finalmask, clipth, clipn);
   } else if (ftype == STBaselineFunc::CSpline) {
+    int nclip = 0;
+    size_t numChan = spec.size();
+    if (cubicSplineModelPool_.find(numChan) == cubicSplineModelPool_.end()) {
+      cubicSplineModelPool_[numChan] = getPolynomialModel(3, numChan, &Scantable::getNormalPolynomial);
+    }
     if (fpar.size() > 1) { // reading from baseline table in which pieceEdges are already calculated and stored.
-      res = doCubicSplineFitting(spec, mask, fpar, params, rms, finalmask, clipth, clipn);
+      //res = doCubicSplineFitting(spec, mask, fpar, params, rms, finalmask, clipth, clipn);
+      res = doCubicSplineLeastSquareFitting(spec, mask,
+                                            cubicSplineModelPool_[numChan],
+                                            fpar.size()-1, true, fpar, params,
+                                            rms, finalmask, nclip, clipth,
+                                            clipn);
     } else {               // usual cspline fitting by giving nPiece only. fpar will be replaced with pieceEdges. 
-      res = doCubicSplineFitting(spec, mask, fpar[0], fpar, params, rms, finalmask, clipth, clipn);
+      //res = doCubicSplineFitting(spec, mask, fpar[0], fpar, params, rms, finalmask, clipth, clipn);
+      res = doCubicSplineLeastSquareFitting(spec, mask,
+                                            cubicSplineModelPool_[numChan],
+                                            fpar[0], false, fpar, params,
+                                            rms, finalmask, nclip, clipth,
+                                            clipn);
     }
   } else if (ftype == STBaselineFunc::Sinusoid) {
     res = doSinusoidFitting(spec, mask, fpar, params, rms, finalmask, clipth, clipn);
