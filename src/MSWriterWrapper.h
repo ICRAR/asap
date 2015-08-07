@@ -23,6 +23,7 @@
 
 #include "ScantableWrapper.h"
 #include "MSWriter.h" 
+#include "GILHandler.h"
 
 namespace asap
 {
@@ -38,6 +39,8 @@ public:
 
   void write(const std::string& filename, const casa::Record& rec) 
   {
+    GILHandler scopedRelease;
+
     casa::File file( filename ) ;
     writer_ = new MSWriter( stable_ ) ;
     if ( writer_->write( filename, rec ) ) {

@@ -23,6 +23,7 @@
 
 #include "ScantableWrapper.h"
 #include "MSFiller.h" 
+#include "GILHandler.h"
 
 namespace asap
 {
@@ -62,6 +63,8 @@ public:
 
   void fill()
   {
+    GILHandler scopedRelease;
+
     if ( attached_ ) {
       filler_->fill() ;
     }
