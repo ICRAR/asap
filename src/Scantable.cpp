@@ -92,7 +92,8 @@ void Scantable::initFactories() {
 }
 
 Scantable::Scantable(Table::TableType ttype) :
-  type_(ttype)
+  type_(ttype),
+  cubicSplineModelPool_()
 {
   initFactories();
   setupMainTable();
@@ -116,7 +117,8 @@ Scantable::Scantable(Table::TableType ttype) :
 }
 
 Scantable::Scantable(const std::string& name, Table::TableType ttype) :
-  type_(ttype)
+  type_(ttype),
+  cubicSplineModelPool_()
 {
   initFactories();
 
