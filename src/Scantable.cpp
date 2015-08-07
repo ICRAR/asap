@@ -4764,16 +4764,23 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
     std::vector<std::vector<std::vector<double> > > modelReservoir;
     if (!applyFFT) {
       nWaves = selectWaveNumbers(addNWaves, rejectNWaves);
+      if (nWaves.size()==0) //no wave numbers to fit
+	throw(AipsError("No valid wave numbers to fit"));
       modelReservoir = getSinusoidModelReservoir(nWaves, nChanNos);
     }
 
     for (int whichrow = 0; whichrow < nRow; ++whichrow) {
       std::vector<float> sp = getSpectrum(whichrow);
       chanMask = getCompositeChanMask(whichrow, mask);
-      std::vector<std::vector<double> > model;
+      std::vector<std::vector<double> > model; 
+      bool canfit = true;
       if (applyFFT) {
 	nWaves = selectWaveNumbers(whichrow, chanMask, true, fftMethod, fftThresh, 
 				   addNWaves, rejectNWaves);
+	if (nWaves.size()==0) {// no wave numbers to fit.
+	  canfit = false;
+	  break;
+	}
 	model = getSinusoidModel(nWaves, sp.size());
       } else {
 	model = modelReservoir[getIdxOfNchan(sp.size(), nChanNos)];
@@ -4783,7 +4790,7 @@ void Scantable::sinusoidBaseline(const std::vector<bool>& mask, const std::strin
       std::vector<float> params;
 
       //if (flagrowCol_(whichrow) == 0) {
-      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
+      if (canfit && flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, model, 
@@ -4881,6 +4888,8 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
     std::vector<std::vector<std::vector<double> > > modelReservoir;
     if (!applyFFT) {
       nWaves = selectWaveNumbers(addNWaves, rejectNWaves);
+      if (nWaves.size()==0) //no wave numbers to fit
+	throw(AipsError("No valid wave numbers to fit"));
       modelReservoir = getSinusoidModelReservoir(nWaves, nChanNos);
     }
 
@@ -4889,9 +4898,14 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
       std::vector<int> currentEdge;
       chanMask = getCompositeChanMask(whichrow, mask, edge, currentEdge, lineFinder);
       std::vector<std::vector<double> > model;
+      bool canfit=true;
       if (applyFFT) {
 	nWaves = selectWaveNumbers(whichrow, chanMask, true, fftMethod, fftThresh, 
 				   addNWaves, rejectNWaves);
+	if (nWaves.size()==0) { // no wave numbers to fit.
+	  canfit = false;
+	  break;
+	}
 	model = getSinusoidModel(nWaves, sp.size());
       } else {
 	model = modelReservoir[getIdxOfNchan(sp.size(), nChanNos)];
@@ -4901,7 +4915,7 @@ void Scantable::autoSinusoidBaseline(const std::vector<bool>& mask, const std::s
       std::vector<float> params;
 
       //if (flagrowCol_(whichrow) == 0) {
-      if (flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
+      if (canfit && flagrowCol_(whichrow)==0 && nValidMask(chanMask)>0) {
         int nClipped = 0;
         std::vector<float> res;
         res = doLeastSquareFitting(sp, chanMask, model, 
