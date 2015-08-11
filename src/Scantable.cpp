@@ -5046,6 +5046,9 @@ std::vector<std::vector<double> > Scantable::getSinusoidModel(const std::vector<
   std::vector<int>::iterator end_it = unique(nWaves.begin(), nWaves.end());
   nWaves.erase(end_it, nWaves.end());
 
+  if (nWaves.size()==0)
+    throw(AipsError("No valid wavenumbers to fit."));
+
   int minNWaves = nWaves[0];
   if (minNWaves < 0) {
     throw(AipsError("wave number must be positive or zero (i.e. constant)"));
