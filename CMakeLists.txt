@@ -96,8 +96,11 @@ if ( DEFINED CXX_FLAGS_TAIL_END )
 endif()
 
 # default flags
-set( DEFAULT_CXX_FLAGS
-     "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
+if( APPLE )
+    set( DEFAULT_CXX_FLAGS "-pipe -Wall -Wextra -Wcast-align -Wno-comment" )
+else ()
+    set( DEFAULT_CXX_FLAGS "-pipe -Wall -Wextra -Wno-non-template-friend -Wcast-align -Wno-comment" )
+endif()
 
 # additional flag for fortran complex div/mul rules.
 include( CheckCXXCompilerFlag )
