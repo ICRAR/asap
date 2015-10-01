@@ -43,6 +43,7 @@ public:
   explicit ScantableWrapper( const std::string& name,
                     int type=0)
   {
+    GILHandler scopedRelease;
     casa::Table::TableType tp = casa::Table::Memory;
     if ( type == 1 ) tp = casa::Table::Plain;
     table_ = new Scantable(name, tp);
@@ -50,6 +51,7 @@ public:
 
   explicit ScantableWrapper(int type=0)
   {
+    GILHandler scopedRelease;
     casa::Table::TableType tp = casa::Table::Memory;
     if ( type == 1) tp = casa::Table::Plain;
     table_= new Scantable(tp);
@@ -62,12 +64,15 @@ public:
 
   ~ScantableWrapper()
   {
+    GILHandler scopedRelease;
+    table_.reset();
   }
 
   void assign(const ScantableWrapper& mt)
     { table_= mt.getCP(); }
 
   ScantableWrapper copy() {
+    GILHandler scopedRelease;
     return ScantableWrapper(new Scantable(*(this->getCP()), false));
   }
 
@@ -183,7 +188,10 @@ public:
   int ncycle(int scanno) const {return table_->ncycle(scanno);}
 
   void makePersistent(const std::string& fname)
-    { table_->makePersistent(fname); }
+    {
+        GILHandler scopedRelease;
+        table_->makePersistent(fname);
+    }
 
   void setSourceType(int stype)
     { table_->setSourceType(stype); }
