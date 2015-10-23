@@ -6,7 +6,7 @@
 cmake_minimum_required( VERSION 2.8 )
 
 # options
-option (CXX11 "Compile as C++11 if possible" NO)
+option (CXX11 "Compile as C++11 if possible" YES)
 
 option( USE_LIBCASACORE 
         "set ON to use libcasacore.so instead of libcasa_*.so"
@@ -17,6 +17,7 @@ option( STANDALONE
 option( PKSMS
         "set ON to diable to build PKSMS2reader/writer"
         OFF )
+message( STATUS "CXX11 = " ${CXX11} )
 message( STATUS "USE_LIBCASACORE = " ${USE_LIBCASACORE} )
 message( STATUS "STANDALONE = " ${STANDALONE} )
 message( STATUS "PKSMS = " ${PKSMS} )
