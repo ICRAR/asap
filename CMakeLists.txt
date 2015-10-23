@@ -682,9 +682,23 @@ set( SHARED_INSTALL_DIR share/asap )
 # execute getsvnrev.sh to create/update svninfo.txt
 # run chmod to make sure the script has executable 
 #
-exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getsvnrev.sh )
-exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh )
-exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh ARGS ${ASAP_SOURCE_DIR})
+execute_process( COMMAND svn info
+                   RESULT_VARIABLE SVNINFOSTATUS
+                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+message("SVNINFOSTATUS: ${SVNINFOSTATUS}")
+
+if(${SVNINFOSTATUS} STREQUAL "0")
+    message("Running svn scripts.")
+    exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getsvnrev.sh )
+    exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh )
+    exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh ARGS ${ASAP_SOURCE_DIR})
+else ()
+    message("Couldn't get svn info. Running git scripts.")
+    exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getgitrev.sh )
+    exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getgitrev.sh )
+    exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getgitrev.sh ARGS ${ASAP_SOURCE_DIR})
+endif ()
 
 # Add the modules to be built.
 #
