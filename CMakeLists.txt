@@ -726,10 +726,10 @@ set( ASAPLIB asap )
 #set( ATNFLIB atnf )
 set( ATNFLIB atnf_asap )
 set( ASAP2TO3 asap2to3 )
-if ( NOT STANDALONE )
+#if ( NOT STANDALONE )
 #   set( ASDM2ASAP_OLD oldasdm2ASAP )
-   set( ASDM2ASAP asdm2ASAP )
-endif()
+#   set( ASDM2ASAP asdm2ASAP )
+#endif()
 
 #
 # always install by default

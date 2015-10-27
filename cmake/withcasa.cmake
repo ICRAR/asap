@@ -151,27 +151,27 @@ set( WCSLIB_PATHS "${casaroot}/${arch};/usr/local;/usr" )
 #
 # CASA (only alma/ASDM)
 #
-find_path( LIBXML2_INCLUDE_DIR libxml/xmlversion.h 
-	   HINTS ${LIBXML2_ROOT_DIR}/include
-           PATH_SUFFIXES libxml2 )
-if( LIBXML2_INCLUDE_DIR MATCHES "NOTFOUND$" )
-   message( FATAL_ERROR "libxml/xmlversion.h could not be found. Please check!" )
-endif()
-message( STATUS "LIBXML2_INCLUDE_DIR = " ${LIBXML2_INCLUDE_DIR} )
-find_path( LIBXML2_LIBRARY libxml2${CMAKE_SHARED_LIBRARY_SUFFIX}
-	   HINTS ${LIBXML2_ROOT_DIR}
-           PATHS /usr
-           PATH_SUFFIXES lib64 lib lib/x86_64-linux-gnu)
+#find_path( LIBXML2_INCLUDE_DIR libxml/xmlversion.h 
+#	   HINTS ${LIBXML2_ROOT_DIR}/include
+#           PATH_SUFFIXES libxml2 )
+#if( LIBXML2_INCLUDE_DIR MATCHES "NOTFOUND$" )
+#   message( FATAL_ERROR "libxml/xmlversion.h could not be found. Please check!" )
+#endif()
+#message( STATUS "LIBXML2_INCLUDE_DIR = " ${LIBXML2_INCLUDE_DIR} )
+#find_path( LIBXML2_LIBRARY libxml2${CMAKE_SHARED_LIBRARY_SUFFIX}
+#	   HINTS ${LIBXML2_ROOT_DIR}
+#           PATHS /usr
+#           PATH_SUFFIXES lib64 lib lib/x86_64-linux-gnu)
 #find_path( LIBXML2_LIBRARY libxml2.so )
-if ( LIBXML2_LIBRARY MATCHES "NOTFOUND$" )
-   message( FATAL_ERROR "libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} could not be found. Please check!" )
-endif()
-message( STATUS "LIBXML2_LIBRARY = " ${LIBXML2_LIBRARY} ) 
+#if ( LIBXML2_LIBRARY MATCHES "NOTFOUND$" )
+#   message( FATAL_ERROR "libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} could not be found. Please check!" )
+#endif()
+#message( STATUS "LIBXML2_LIBRARY = " ${LIBXML2_LIBRARY} ) 
 
-set( ASDM_INCLUDE_ROOT ${CASA_CODE_PATH} )
-if ( EXISTS ${CASA_CODE_PATH}/include/alma )
-   set( ASDM_INCLUDE_ROOT ${CASA_CODE_PATH}/include )
-endif()
+#set( ASDM_INCLUDE_ROOT ${CASA_CODE_PATH} )
+#if ( EXISTS ${CASA_CODE_PATH}/include/alma )
+#   set( ASDM_INCLUDE_ROOT ${CASA_CODE_PATH}/include )
+#endif()
 #set( ASDM_INCLUDE_DIR_OLD ${ASDM_INCLUDE_ROOT}/alma/ASDM
 #                          ${ASDM_INCLUDE_ROOT}/alma/Enumerations
 #                          ${ASDM_INCLUDE_ROOT}/alma/ASDMBinaries
@@ -186,31 +186,31 @@ endif()
 #                      ${LIBXML2_INCLUDE_DIR} )
 #set( ASDM_LIBRARY ${casaroot}/${arch}/lib/libalma_v3${CMAKE_SHARED_LIBRARY_SUFFIX}
 #                  ${LIBXML2_LIBRARY}/libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} )
-set( ASDM_INCLUDE_DIR ${ASDM_INCLUDE_ROOT}/alma/ASDM
-                      ${ASDM_INCLUDE_ROOT}/alma/Enumerations
-                      ${ASDM_INCLUDE_ROOT}/alma/ASDMBinaries
-                      ${ASDM_INCLUDE_ROOT}/alma/Enumtcl
-                      ${LIBXML2_INCLUDE_DIR} )
-if ( NOT ALMA_LIB_PATH )
-   set( ASDM_LIBRARY ${casaroot}/${arch}/lib/libalma${CMAKE_SHARED_LIBRARY_SUFFIX}
-                     ${LIBXML2_LIBRARY}/libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} )
-else( )
-   set( ASDM_LIBRARY ${ALMA_LIB_PATH}
-                     ${LIBXML2_LIBRARY}/libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} )
-endif( )
-message( STATUS "ASDM_LIBRARY = " ${ASDM_LIBRARY} ) 
-add_definitions( -DWITHOUT_ACS )
+#set( ASDM_INCLUDE_DIR ${ASDM_INCLUDE_ROOT}/alma/ASDM
+#                      ${ASDM_INCLUDE_ROOT}/alma/Enumerations
+#                      ${ASDM_INCLUDE_ROOT}/alma/ASDMBinaries
+#                      ${ASDM_INCLUDE_ROOT}/alma/Enumtcl
+#                      ${LIBXML2_INCLUDE_DIR} )
+#if ( NOT ALMA_LIB_PATH )
+#   set( ASDM_LIBRARY ${casaroot}/${arch}/lib/libalma${CMAKE_SHARED_LIBRARY_SUFFIX}
+#                     ${LIBXML2_LIBRARY}/libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} )
+#else( )
+#   set( ASDM_LIBRARY ${ALMA_LIB_PATH}
+#                     ${LIBXML2_LIBRARY}/libxml2${CMAKE_SHARED_LIBRARY_SUFFIX} )
+#endif( )
+#message( STATUS "ASDM_LIBRARY = " ${ASDM_LIBRARY} ) 
+#add_definitions( -DWITHOUT_ACS )
 
-set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH} )
-if ( EXISTS ${CASA_CODE_PATH}/include/components )
-   set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH}/include )
-endif()
-set( COMPONENTS_INCLUDE_DIR ${COMPONENTS_INCLUDE_ROOT}/components/SpectralComponents )
-if ( NOT COMPONENTS_LIB_PATH )
-   set( COMPONENTS_LIBRARY ${casaroot}/${arch}/lib/libcomponents${CMAKE_SHARED_LIBRARY_SUFFIX} )
-else( )
-   set( COMPONENTS_LIBRARY ${COMPONENTS_LIB_PATH} )
-endif( )
+#set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH} )
+#if ( EXISTS ${CASA_CODE_PATH}/include/components )
+#   set( COMPONENTS_INCLUDE_ROOT ${CASA_CODE_PATH}/include )
+#endif()
+#set( COMPONENTS_INCLUDE_DIR ${COMPONENTS_INCLUDE_ROOT}/components/SpectralComponents )
+#if ( NOT COMPONENTS_LIB_PATH )
+#   set( COMPONENTS_LIBRARY ${casaroot}/${arch}/lib/libcomponents${CMAKE_SHARED_LIBRARY_SUFFIX} )
+#else( )
+#   set( COMPONENTS_LIBRARY ${COMPONENTS_LIB_PATH} )
+#endif( )
 
 #
 # subdirectories
@@ -228,7 +228,7 @@ macro( asap_add_subdirectory )
    add_subdirectory( src )
    add_subdirectory( python )
    add_subdirectory( share )
-   add_subdirectory( external-alma/asdm2ASAP )
+#   add_subdirectory( external-alma/asdm2ASAP )
 #   add_subdirectory( external-alma/oldasdm2ASAP ) 
 endmacro( asap_add_subdirectory )
 
