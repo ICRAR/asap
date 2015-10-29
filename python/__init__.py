@@ -59,7 +59,7 @@ from sbseparator import sbseparator
 from _asap import srctype
 
 __date__ = get_asap_revdate()
-__version__  = '4.3.0a'
+__version__  = '4.0.0a'
 __revision__ = get_revision()
 
 def welcome():
