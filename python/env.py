@@ -1,7 +1,7 @@
 """This module has various functions for environment specific setings.
 """
 __all__ = ["is_casapy", "is_ipython", "setup_env", "get_revision",
-           "is_asap_cli"]
+           "is_asap_cli", "get_asap_revdate"]
 
 import sys
 import os
@@ -51,13 +51,14 @@ def setup_env():
             not os.path.exists(os.environ["CASAPATH"].split()[0]+"/data"):
         os.environ["CASAPATH"] = "%s %s somwhere" % ( asapdata, plf)
 
-def get_revision():
+def get_revinfo_file():
     """Get the revision of the software. Only useful within casapy."""
     if not is_casapy:
         return ' unknown '
     casapath=os.environ["CASAPATH"].split()
     versioninfo = sys.version_info
     pyversion = '%s.%s'%(versioninfo[0],versioninfo[1])
+    revinfo = None
     if os.path.isdir(casapath[0]+'/'+casapath[1]+'/python/%s/asap'%(pyversion)):
         # for casa developer environment (linux or darwin)
         revinfo=casapath[0]+'/'+casapath[1]+'/python/%s/asap/svninfo.txt'%(pyversion)
@@ -67,6 +68,10 @@ def get_revision():
             revinfo=casapath[0]+'/Resources/python/asap/svninfo.txt'
         else:
             revinfo=casapath[0]+'/lib/python%s/asap/svninfo.txt'%(pyversion)
+    return revinfo
+
+def get_revision():
+    revinfo=get_revinfo_file()
     if os.path.isfile(revinfo):
         f = file(revinfo)
         f.readline()
@@ -74,3 +79,16 @@ def get_revision():
         f.close()
         return revsionno.rstrip()
     return ' unknown '
+
+
+def get_asap_revdate():
+    revinfo=get_revinfo_file() 
+    if os.path.isfile(revinfo):
+        f = file(revinfo)
+        f.readline()
+        f.readline()
+        revdate=f.readline()
+        return revdate.rstrip().lstrip()
+    return 'unknown'
+
+
