@@ -675,7 +675,9 @@ public:
   MSWriterVisitor(const Table &table, Table &mstable)
     : BaseMSWriterVisitor(table),
       ms(mstable),
-      addScanrate_(False)
+      addScanrate_(False),
+      pointingTimeList_(table.nrow(), -1.0),
+      referenceBeam_(-1)
   { 
     rowidx = 0 ;
     fieldName = "" ;
@@ -751,6 +753,11 @@ public:
     //printf("%u: BeamNo: %u\n", recordNo, columnValue);
     
     feedId = (Int)columnValue ;
+    if (referenceBeam_ < 0) {
+      referenceBeam_ = feedId;
+      LogIO os;
+      os << "Reference beam is " << referenceBeam_ << LogIO::POST;
+    }
 
     // put value
     *feed1RF = feedId ;
@@ -805,9 +812,22 @@ public:
     Double timeSec = columnValue * 86400.0 ;
     Double interval = intervalCol.asdouble( recordNo ) ;
 
-    if ( ptName.empty() ) {
+    // add POINTING row only when 1) BEAMNO is 0 and
+    // 2) there is no row corresponding to the current timestamp
+    //LogIO os;
+    //os << "feedId = " << feedId << LogIO::POST;
+    if ( ptName.empty() && //feedId == referenceBeam_ &&
+        (potab.nrow() == 0 || allNE(pointingTimeList_(Slice(0, potab.nrow())), timeSec))) {
+      LogIO os;
+      os << LogIO::DEBUGGING << "ROW " << recordNo << " Beam " << feedId
+          << ": adding pointing row, potab.nrow() = " << potab.nrow() << LogIO::POST;
+      pointingTimeList_[potab.nrow()] = timeSec;
       Vector<Double> dir = directionCol( recordNo ) ;
       Vector<Double> rate = scanRateCol( recordNo ) ;
+      if (feedId != referenceBeam_) {
+        os << LogIO::DEBUGGING << "TODO: Need to store pointing direction of reference beam"
+            << " if only non-reference beam row is available for certain timestamp" << LogIO::POST;
+      }
       //if ( anyNE( rate, 0.0 ) ) {
       if (addScanrate_) {
         Matrix<Double> msdir( 2, 2 ) ;
@@ -1531,6 +1551,8 @@ private:
   MFrequency::Types freqframe;
   Record srcRec;
   map< Int, Matrix<Int> > corrProductTemplate;
+  Vector<Double> pointingTimeList_;
+  Int referenceBeam_;
 };
 
 class BaseMSSysCalVisitor: public TableVisitor {
