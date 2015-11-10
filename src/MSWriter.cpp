@@ -816,7 +816,7 @@ public:
     // 2) there is no row corresponding to the current timestamp
     //LogIO os;
     //os << "feedId = " << feedId << LogIO::POST;
-    if ( ptName.empty() && //feedId == referenceBeam_ &&
+    if ( ptName.empty() && feedId == referenceBeam_ &&
         (potab.nrow() == 0 || allNE(pointingTimeList_(Slice(0, potab.nrow())), timeSec))) {
       LogIO os;
       os << LogIO::DEBUGGING << "ROW " << recordNo << " Beam " << feedId
@@ -824,10 +824,10 @@ public:
       pointingTimeList_[potab.nrow()] = timeSec;
       Vector<Double> dir = directionCol( recordNo ) ;
       Vector<Double> rate = scanRateCol( recordNo ) ;
-      if (feedId != referenceBeam_) {
-        os << LogIO::DEBUGGING << "TODO: Need to store pointing direction of reference beam"
-            << " if only non-reference beam row is available for certain timestamp" << LogIO::POST;
-      }
+//      if (feedId != referenceBeam_) {
+//        os << LogIO::DEBUGGING << "TODO: Need to store pointing direction of reference beam"
+//            << " if only non-reference beam row is available for certain timestamp" << LogIO::POST;
+//      }
       //if ( anyNE( rate, 0.0 ) ) {
       if (addScanrate_) {
         Matrix<Double> msdir( 2, 2 ) ;
