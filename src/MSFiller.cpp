@@ -1074,11 +1074,14 @@ private:
     Int nextpos = first.find_first_of( sep, epos+1 ) ;
     String m1 = first.substr( 0, epos ) ;
     String m2 = first.substr( epos+1, nextpos-epos-1 ) ;
-    if ( m1.find( "CALIBRATE_" ) == 0 ) {
+    if ( m1.find( "CALIBRATE_ATMOSPHERE" ) == 0 ) {
       if (m2.find( "ON_SOURCE" ) == 0 || m2.find("HOT") == 0 || m2.find("AMBIENT") == 0)
         st = SrcType::PONCAL ;
       else if ( m2.find( "OFF_SOURCE" ) == 0 )
         st = SrcType::POFFCAL ;
+    }
+    else if ( m1.find( "CALIBRATE_" ) == 0 ) {
+      st = SrcType::CAL ;
     }
     else if ( m1.find( "OBSERVE_TARGET" ) == 0 ) {
       if ( m2.find( "ON_SOURCE" ) == 0 ) 
