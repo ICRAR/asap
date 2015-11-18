@@ -14,6 +14,7 @@
 
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Logging/LogIO.h>
+#include <tables/Tables/ScalarColumn.h>
 
 #include "STSelector.h"
 #include "STCalTsys.h"
@@ -48,7 +49,10 @@ STCalTsys::STCalTsys(CountedPtr<Scantable> &s, Record &iflist, bool average)
 
 void STCalTsys::setupSelector(const STSelector &sel)
 {
+  // sel is an selector object that is associated with
+  // input Scantable
   sel_ = sel;
+  //cout << "original: " << endl << sel_.print() << endl;
   vector<int> ifnos = sel_.getIFs();
   if (ifnos.size() > 0) {
     int nif = 0;
@@ -69,6 +73,34 @@ void STCalTsys::setupSelector(const STSelector &sel)
   else {
     sel_.setIFs(iflist_);
   }
+
+  // intent selection
+  ROScalarColumn<Int> srctypeCol(scantable_->table(), "SRCTYPE");
+  Vector<Int> srctype = srctypeCol.getColumn();
+  uInt calOffCount = 0;
+  uInt calOnCount = 0;
+  for (size_t i = 0; i < srctype.nelements(); ++i) {
+    if (srctype[i] == static_cast<Int>(SrcType::PONCAL)) {
+      calOnCount++;
+    }
+    else if (srctype[i] == static_cast<Int>(SrcType::POFFCAL)) {
+      calOffCount++;
+    }
+  }
+  //cout << "srctype = " << srctype << endl;
+  //cout << "calOnCount, calOffCount = " << calOnCount << "," << calOffCount << endl;
+  if (calOnCount == 0 || calOffCount == 0) {
+    LogIO os(LogOrigin("STCalTsys", "setupSelector", WHERE));
+    os << LogIO::SEVERE << "Input scantable doesn't have ATMCal intents" << LogIO::EXCEPTION;
+  }
+
+  vector<int> intents = sel_.getTypes();
+  if (count(intents.begin(), intents.end(), static_cast<Int>(SrcType::POFFCAL)) == 0) {
+    intents.push_back(static_cast<Int>(SrcType::POFFCAL));
+    sel_.setTypes(intents);
+  }
+
+  //cout << "modified: " << endl << sel_.print() << endl;
 }
 
 void STCalTsys::appenddata(uInt scanno, uInt cycleno, 
