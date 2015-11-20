@@ -911,6 +911,9 @@ public:
 
     // fill empty FIELD rows
     infillField() ;
+
+    // sort POINTING rows
+    sortPointing();
   }
 
   void dataColumnName( String name ) 
@@ -1016,6 +1019,73 @@ private:
     poTargetRF.define( dir ) ;
     porow.put( nrow ) ;
   }
+
+  void sortPointing()
+  {
+    ScalarColumn<Double> timeCol(potab, "TIME");
+    Vector<Double> originalTime = timeCol.getColumn();
+    Sort sort;
+    sort.sortKey(&originalTime[0], TpDouble, 0, Sort::Ascending);
+    Vector<uInt> sortIndex;
+    sort.sort(sortIndex, originalTime.nelements());
+
+    sortPointingTime(sortIndex);
+    sortPointingNumPoly(sortIndex);
+    sortPointingInterval(sortIndex);
+    sortPointingName(sortIndex);
+    sortPointingDirection(sortIndex);
+  }
+
+  void sortPointingTime(const Vector<uInt> &sortIndex)
+  {
+    sortScalarColumn<Double>("TIME", sortIndex, "TIME_ORIGIN");
+  }
+
+  void sortPointingNumPoly(const Vector<uInt> &sortIndex)
+  {
+    sortScalarColumn<Int>("NUM_POLY", sortIndex);
+  }
+
+  void sortPointingInterval(const Vector<uInt> &sortIndex)
+  {
+    sortScalarColumn<Double>("INTERVAL", sortIndex);
+  }
+
+  void sortPointingName(const Vector<uInt> &sortIndex)
+  {
+    sortScalarColumn<String>("NAME", sortIndex);
+  }
+
+  void sortPointingDirection(const Vector<uInt> &sortIndex)
+  {
+    ArrayColumn<Double> col(potab, "DIRECTION");
+    Cube<Double> data = col.getColumn();
+    Cube<Double> sortedData(data.shape());
+    for (size_t i = 0; i < sortIndex.nelements(); ++i) {
+      sortedData.xyPlane(i) = data.xyPlane(sortIndex[i]);
+    }
+
+    col.putColumn(sortedData);
+    col.attach(potab, "TARGET");
+    col.putColumn(sortedData);
+  }
+
+  template<class T>
+  void sortScalarColumn(const String &columnName, const Vector<uInt> &sortIndex, const String &copyColumnName="")
+  {
+    ScalarColumn<T> col(potab, columnName);
+    Vector<T> data = col.getColumn();
+    Vector<T> sortedData(data.shape());
+    for (size_t i = 0; i < sortIndex.nelements(); ++i) {
+      sortedData[i] = data[sortIndex[i]];
+    }
+    col.putColumn(sortedData);
+    if (copyColumnName.size() > 0) {
+      col.attach(potab, copyColumnName);
+      col.putColumn(sortedData);
+    }
+  }
+
   Int addPolarization()
   {
     Int idx = -1 ;
