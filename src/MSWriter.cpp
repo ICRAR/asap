@@ -913,7 +913,9 @@ public:
     infillField() ;
 
     // sort POINTING rows
-    sortPointing();
+    if (ptName.empty()) {
+      sortPointing();
+    }
   }
 
   void dataColumnName( String name ) 
