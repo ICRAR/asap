@@ -465,6 +465,21 @@ find_package( Boost REQUIRED ${boost_components} )
 if( NOT Boost_FOUND )
   message( FATAL_ERROR "Boost could not be found. Please check!" )
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL Linux AND Boost_LIBRARIES)
+    if(EXISTS "/usr/lib64/libicuuc.so")
+        set( Boost_LIBRARIES "${Boost_LIBRARIES};/usr/lib64/libicuuc.so" )
+    endif( )
+    if(EXISTS "/usr/lib64/libicudata.so")
+        set( Boost_LIBRARIES "${Boost_LIBRARIES};/usr/lib64/libicudata.so" )
+    endif( )
+    if(EXISTS "/usr/lib64/libicui18n.so")
+        set( Boost_LIBRARIES "${Boost_LIBRARIES};/usr/lib64/libicui18n.so" )
+    endif( )
+    message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
+endif( )
+
+
 message( STATUS "BOOST_INCLUDE_DIR = " ${Boost_INCLUDE_DIR} )
 message( STATUS "BOOST_LIBRARIES = " ${Boost_LIBRARIES} )
 
