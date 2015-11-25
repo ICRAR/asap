@@ -1127,7 +1127,7 @@ void STLineFinder::averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update
   DebugAssert(boxsize!=0,AipsError);
 
   for (int n=edge.first;n<edge.second;n+=boxsize) {
-       DebugAssert(n<spectrum.nelements(),AipsError);
+       DebugAssert((uInt)n<spectrum.nelements(),AipsError);
        int nboxch=0; // number of channels currently in the box
        Float mean=0; // buffer for mean calculations
        for (int k=n;k<n+boxsize && k<edge.second;++k)
@@ -1160,7 +1160,7 @@ std::vector<bool> STLineFinder::getMask(bool invert)
       if (scan.null())
 	throw AipsError("STLineFinder::getMask - a scan should be set first,"
 			" use set_scan followed by find_lines");
-      DebugAssert(mask.nelements()==scan->getChannels(last_row_used), AipsError);
+      DebugAssert(mask.nelements()==(uInt)scan->getChannels(last_row_used), AipsError);
     }
     /*
     if (!lines.size())
@@ -1226,7 +1226,7 @@ std::vector<int> STLineFinder::getLineRangesInChannels() const
       if (scan.null())
 	throw AipsError("STLineFinder::getLineRangesInChannels - a scan should be set first,"
 			" use set_scan followed by find_lines");
-      DebugAssert(mask.nelements()==scan->getChannels(last_row_used), AipsError);
+      DebugAssert(mask.nelements()==(uInt)scan->getChannels(last_row_used), AipsError);
     }
 
     if (!lines.size())
