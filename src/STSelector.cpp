@@ -9,9 +9,8 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#include <tables/Tables/ExprNode.h>
-#include <tables/Tables/TableParse.h>
-#include <tables/Tables/ExprNode.h>
+#include <tables/TaQL/ExprNode.h>
+#include <tables/TaQL/TableParse.h>
 #include <casa/BasicSL/String.h>
 #include <casa/iostream.h>
 #include <casa/iomanip.h>

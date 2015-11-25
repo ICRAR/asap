@@ -41,11 +41,11 @@
 #include <scimath/Mathematics/Convolver.h>
 #include <scimath/Mathematics/VectorKernel.h>
 
-#include <tables/Tables/ExprNode.h>
+#include <tables/TaQL/ExprNode.h>
+#include <tables/TaQL/TableParse.h>
 #include <tables/Tables/ReadAsciiTable.h>
 #include <tables/Tables/TableCopy.h>
 #include <tables/Tables/TableIter.h>
-#include <tables/Tables/TableParse.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableVector.h>

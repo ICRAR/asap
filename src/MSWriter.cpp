@@ -22,7 +22,7 @@
 #include <casa/Arrays/Cube.h>
 #include <casa/Containers/RecordField.h>
 
-#include <tables/Tables/ExprNode.h>
+#include <tables/TaQL/ExprNode.h>
 #include <tables/Tables/TableDesc.h>
 #include <tables/Tables/SetupNewTab.h>
 #include <tables/Tables/TableIter.h>

@@ -13,7 +13,7 @@
 //
 
 #include <casa/Utilities/Assert.h>
-#include <tables/Tables/ExprNode.h>
+#include <tables/TaQL/ExprNode.h>
 #include <tables/Tables/ScalarColumn.h>
 
 namespace asap {

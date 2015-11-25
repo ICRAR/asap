@@ -12,7 +12,7 @@
 #include "TableTraverse.h"
 #include <tables/Tables/TableColumn.h>
 #include <tables/Tables/PlainColumn.h>
-#include <tables/Tables/DataManager.h>
+#include <tables/DataMan/DataManager.h>
 
 #define TIMING 0
 

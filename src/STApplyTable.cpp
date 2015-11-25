@@ -16,7 +16,7 @@
 #include <tables/Tables/ScaColDesc.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/Table.h>
-#include <tables/Tables/ExprNode.h>
+#include <tables/TaQL/ExprNode.h>
 #include <measures/TableMeasures/TableMeasDesc.h>
 #include <measures/TableMeasures/TableMeasRefDesc.h>
 #include <measures/TableMeasures/TableMeasValueDesc.h>

@@ -21,7 +21,7 @@
 #include <casa/OS/File.h>
 #include <casa/Arrays/Vector.h>
 #include <tables/Tables/ReadAsciiTable.h>
-#include <tables/Tables/TableParse.h>
+#include <tables/TaQL/TableParse.h>
 #include <tables/Tables/ScalarColumn.h>
 
 #include "STAttr.h"
