@@ -71,7 +71,7 @@ public:
   }
 
   // add dummy method for consistency
-  void setReferenceRegex(const std::string& rx) {
+  void setReferenceRegex(const std::string& /*rx*/) {
     // do nothing
   }  
 
