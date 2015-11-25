@@ -660,7 +660,7 @@ int Scantable::ncycle( int scanno ) const
 }
 
 
-int Scantable::nrow( int scanno ) const
+int Scantable::nrow( int /*scanno*/ ) const
 {
   return int(table_.nrow());
 }
