@@ -243,12 +243,12 @@ namespace asap {
       cols[i] = NULL;
       colValues[i] = NULL;
     }
-    size_t sizes[colCount];
+    //size_t sizes[colCount];
     const uInt nRows = table.nrow();
     for (uInt i = 0; i < colCount; i++) {
       cols[i] = new ROTableColumn(table, columnNames[i]);
       colValues[i] = typeManagers[i]->allocArray(nRows);
-      sizes[i] = typeManagers[i]->sizeOf();
+      //sizes[i] = typeManagers[i]->sizeOf();
       BaseColumn *baseCol = ROTableColumnBackDoor::baseColumnPtr(cols[i]);
       copyColumnData(colValues[i], typeManagers[i]->sizeOf(), nRows, baseCol);
 //       PlainColumn *col = dynamic_cast <PlainColumn *>(baseCol);
