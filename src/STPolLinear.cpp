@@ -29,7 +29,7 @@ STPolLinear::~STPolLinear()
 
 Vector<Float> asap::STPolLinear::getStokes( uint index )
 {
-  if ( index > 4 ) throw(AipsError("Stokes index out of range"));
+  if ( index >= 4 ) throw(AipsError("Stokes index out of range"));
   Vector<Float> out;
   Float phase = getTotalPhase();
   Vector<Float> q(getSpectrum(0) - getSpectrum(1));
@@ -60,7 +60,7 @@ Vector<Float> asap::STPolLinear::getLinPol( uInt index )
   if (nspec() != 4) {
     throw(AipsError("You must have 4 linear polarizations to run this function"));
   }
-  if ( index >4 ) throw(AipsError("LinPol index out of range"));
+  if ( index >= 4 ) throw(AipsError("LinPol index out of range"));
   Vector<Float> out,q,u;
   if ( nspec() == 4) {
     switch(index) {

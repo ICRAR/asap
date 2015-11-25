@@ -45,7 +45,8 @@ Vector<Float> asap::STPolCircular::getLinPol( uInt index )
   if (nspec() != 4) {
     throw(AipsError("You must have 4 circular polarisations to run this function"));
   }
-  if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
+//  if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
+  if ( index >= 4 ) throw(AipsError("LinPol index out of range"));
   Vector<Float> out,q,u;
   if ( nspec() == 4) {
     switch(index) {

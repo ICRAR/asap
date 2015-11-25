@@ -34,7 +34,8 @@ Vector<Float> asap::STPolStokes::getStokes( uint index )
 
 Vector<Float> asap::STPolStokes::getLinPol( uInt index )
 {
-  if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
+//  if ( index < 0 || index >4 ) throw(AipsError("LinPol index out of range"));
+  if ( index >= 4 ) throw(AipsError("LinPol index out of range"));
   Vector<Float> out;
   if ( nspec() == 4) {
     switch(index) {
