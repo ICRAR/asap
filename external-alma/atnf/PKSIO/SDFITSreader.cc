@@ -1937,11 +1937,11 @@ void SDFITSreader::close()
 // Log a message.  If the current CFITSIO status value is non-zero, also log
 // the corresponding error message and the CFITSIO message stack.
 
-void SDFITSreader::log(LogOrigin origin, LogIO::Command cmd, const char *msg)
+void SDFITSreader::log(LogOrigin origin, LogIO::Command priority, const char *msg)
 {
   LogIO os( origin ) ;
 
-  os << msg << endl ;
+  os << priority << msg << endl ;
 
   if (cStatus > 0) {
     fits_get_errstatus(cStatus, cMsg);

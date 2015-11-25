@@ -415,16 +415,16 @@ int MBFITSreader::getHeader(
     antPos[2] = -3200483.747;
 
     // ATCA-104.  Updated position at epoch 2007/06/24 from Chris Phillips.
-    // antPos[0] = -4751640.182; // ± 0.008
-    // antPos[1] =  2791700.322; // ± 0.006
-    // antPos[2] = -3200490.668; // ± 0.007
+    // antPos[0] = -4751640.182; // ï¿½ 0.008
+    // antPos[1] =  2791700.322; // ï¿½ 0.006
+    // antPos[2] = -3200490.668; // ï¿½ 0.007
     //
   } else if (strncmp(names_.sta, "MOP", 3) == 0) {
     // Mopra.  Updated position at epoch 2007/06/24 from Chris Phillips.
     sprintf(telescope, "%-16.16s", "ATMOPRA");
-    antPos[0] = -4682769.444; // ± 0.009
-    antPos[1] =  2802618.963; // ± 0.006
-    antPos[2] = -3291758.864; // ± 0.008
+    antPos[0] = -4682769.444; // ï¿½ 0.009
+    antPos[1] =  2802618.963; // ï¿½ 0.006
+    antPos[2] = -3291758.864; // ï¿½ 0.008
 
   } else if (strncmp(names_.sta, "HOB", 3) == 0) {
     // Hobart.
@@ -436,9 +436,9 @@ int MBFITSreader::getHeader(
   } else if (strncmp(names_.sta, "CED", 3) == 0) {
     // Ceduna.  Updated position at epoch 2007/06/24 from Chris Phillips.
     sprintf(telescope, "%-16.16s", "CEDUNA");
-    antPos[0] = -3753443.168; // ± 0.017
-    antPos[1] =  3912709.794; // ± 0.017
-    antPos[2] = -3348067.060; // ± 0.016
+    antPos[0] = -3753443.168; // ï¿½ 0.017
+    antPos[1] =  3912709.794; // ï¿½ 0.017
+    antPos[2] = -3348067.060; // ï¿½ 0.016
 
   } else if (strncmp(names_.sta, "tid", 3) == 0) {
     // DSS.
@@ -485,9 +485,9 @@ int MBFITSreader::getHeader(
 // Get frequency parameters for each IF.
 
 int MBFITSreader::getFreqInfo(
-        int     &nIF,
-        double* &startFreq,
-        double* &endFreq)
+        int     &/*nIF*/,
+        double* &/*startFreq*/,
+        double* &/*endFreq*/)
 {
   // This is RPFITS - can't do it!
   return 1;
@@ -498,11 +498,11 @@ int MBFITSreader::getFreqInfo(
 // Find the range of the data selected in time and position.
 
 int MBFITSreader::findRange(
-        int    &nRow,
-        int    &nSel,
-        char   dateSpan[2][32],
-        double utcSpan[2],
-        double* &positions)
+        int    &/*nRow*/,
+        int    &/*nSel*/,
+        char   /*dateSpan*/[2][32],
+        double /*utcSpan*/[2],
+        double* &/*positions*/)
 {
   // This is RPFITS - can't do it!
   return 1;

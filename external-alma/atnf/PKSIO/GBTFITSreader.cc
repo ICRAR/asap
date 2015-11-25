@@ -2959,7 +2959,7 @@ Double GBTFITSreader::getRefValLSR( int irow )
   return Double(fqRefVal) ;
 }
 
-Double GBTFITSreader::getRefValLSR( long iRow, int idx, char *sampler, double restfreq ) 
+Double GBTFITSreader::getRefValLSR( long iRow, int idx, char *sampler, double /*restfreq*/ )
 {
   const string methodName = "getRefValLSR()" ;
 

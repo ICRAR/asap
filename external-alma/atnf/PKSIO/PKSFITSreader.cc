@@ -81,7 +81,7 @@ PKSFITSreader::~PKSFITSreader()
 
 Int PKSFITSreader::open(
         const String fitsName,
-        const String antenna,
+        const String /*antenna*/,
         Vector<Bool> &beams,
         Vector<Bool> &IFs,
         Vector<uInt> &nChan,

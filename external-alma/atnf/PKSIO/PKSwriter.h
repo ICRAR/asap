@@ -75,8 +75,8 @@ class PKSwriter
         const PKSrecord &pksrec) = 0;
 
     // Write a history record.
-    virtual Int history(const String text) {return 0;};
-    virtual Int history(const char *text)  {return 0;};
+    virtual Int history(const String /*text*/) {return 0;};
+    virtual Int history(const char */*text*/)  {return 0;};
 
     // Close the output file.
     virtual void close() = 0;

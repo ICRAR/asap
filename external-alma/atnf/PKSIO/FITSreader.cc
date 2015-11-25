@@ -55,7 +55,7 @@ int FITSreader::select(
         const int getSpectra,
         const int getXPol,
         const int getFeedPos,
-        const int getPointing,
+        const int /* getPointing */,
         const int coordSys)
 {
   int maxNChan = 0;
