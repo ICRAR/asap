@@ -14,6 +14,7 @@
 //#include <bits/nan.h>
 #include <sstream>
 #include <iostream>
+#include <limits.h>
 
 #include <casa/iomanip.h>
 #include <casa/Arrays/MaskArrLogi.h>
@@ -2056,7 +2057,7 @@ std::vector< int > STMath::minMaxChan( const CountedPtr< Scantable > & in,
   std::vector<int> out;
   for (uInt i=0; i < tab.nrow(); ++i ) {
     if (in->isAllChannelsFlagged(i)) {
-      out.push_back(NAN);
+      out.push_back(static_cast<int>(NAN));
     } else {
       Vector<Float> spec; specCol.get(i, spec);
       Vector<uChar> flag; flagCol.get(i, flag);
@@ -3426,13 +3427,18 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
     for ( uInt itable = 0 ; itable < insize ; itable++ ) {
       for ( uInt ifreq = 0 ; ifreq < freqid[itable].size() ; ifreq++ ) {
         double minf = iffreq[itable][2*ifreq] ;
-        uInt groupid ;
+        uInt groupid = UINT_MAX;
         for ( uInt igrp = 0 ; igrp < freqgrp.size() ; igrp++ ) {
           vector<uInt> memberlist = freqgrp[igrp] ;
           if ( (minf >= grprange[2*igrp]) && (minf <= grprange[2*igrp+1]) ) {
             groupid = igrp ;
             break ;
           }
+        }
+        if (groupid == UINT_MAX) {
+          LogIO os(LogOrigin("STMath", "new_average", WHERE));
+          os << LogIO::WARN << "frequency grouping may be failed. set to 0" << LogIO::POST;
+          groupid = 0;
         }
         groups[itable][ifreq] = groupid ;
       }
@@ -3493,7 +3499,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
       Vector<uInt> newFreqId( oldFreqId.nelements() ) ;
 
       // update MAIN
-      for ( uInt irow = 0 ; irow < newin[itable]->nrow() ; irow++ ) {
+      for ( Int irow = 0 ; irow < newin[itable]->nrow() ; irow++ ) {
         uInt groupid = groups[itable][oldFreqId[irow]] ;
         newFreqId[irow] = groupid ;
         newin[itable]->regridChannel( gnchan[groupid], 
@@ -3990,7 +3996,7 @@ void STMath::calibrateAPEXFS( CountedPtr<Scantable> &sig,
                               const vector< CountedPtr<Scantable> >& on,
                               const vector< CountedPtr<Scantable> >& sky,
                               const vector< CountedPtr<Scantable> >& hot,
-                              const vector< CountedPtr<Scantable> >& cold,
+                              const vector< CountedPtr<Scantable> >& /*cold*/,
                               const Vector<uInt> &rows )
 {
   // if rows is empty, just return
@@ -4025,7 +4031,7 @@ void STMath::calibrateAPEXFS( CountedPtr<Scantable> &sig,
   vector<int> ids( 2 ) ;
   Block<uInt> flagchan( spsize ) ;
   uInt nflag = 0 ;
-  for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
+  for ( size_t irow = 0 ; irow < rows.nelements() ; irow++ ) {
     double reftime = timeCol.asdouble(*p) ;
     ids = getRowIdFromTime( reftime, timeSkyS ) ;
     Vector<Float> spskyS = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeSkyS, ids, skyspectraS, "linear");
@@ -4078,7 +4084,7 @@ void STMath::calibrateFS( CountedPtr<Scantable> &sig,
                           const CountedPtr<Scantable>& rref,
                           const CountedPtr<Scantable>& sky,
                           const CountedPtr<Scantable>& hot,
-                          const CountedPtr<Scantable>& cold,
+                          const CountedPtr<Scantable>& /*cold*/,
                           const Vector<uInt> &rows )
 {
   // if rows is empty, just return
@@ -4103,7 +4109,7 @@ void STMath::calibrateFS( CountedPtr<Scantable> &sig,
   vector<int> ids( 2 ) ;
   Block<uInt> flagchan( spsize ) ;
   uInt nflag = 0 ;
-  for ( int irow = 0 ; irow < rows.nelements() ; irow++ ) {
+  for ( size_t irow = 0 ; irow < rows.nelements() ; irow++ ) {
     double reftime = timeCol.asdouble(*p) ;
     ids = getRowIdFromTime( reftime, timeSky ) ;
     Vector<Float> spsky = SimpleInterpolationHelper<SpectralData>::GetFromTime(reftime, timeSky, ids, skyspectra, "linear");
@@ -4241,7 +4247,7 @@ CountedPtr<Scantable> STMath::averageWithinSession( CountedPtr<Scantable> &s,
   Vector<Double> timeVec = timeCol->getColumn() ;
   delete timeCol ;
   Vector<Double> interval = s->integrCol_.getColumn() ;
-  uInt nrow = timeVec.nelements() ;
+  //uInt nrow = timeVec.nelements() ;
   uInt outrow = 0 ;
 
   while( !iter.pastEnd() ) {
