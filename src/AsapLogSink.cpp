@@ -23,13 +23,15 @@ namespace asap {
 				const std::string& priority,
                                 const std::string& origin)
   {
-    LogMessage::Priority p;
+    LogMessage::Priority p = LogMessage::NORMAL;
     if (priority == "INFO") {
       p = LogMessage::NORMAL;
     } else if (priority == "WARN") {
       p = LogMessage::WARN;
     } else if (priority == "ERROR") {
       p = LogMessage::SEVERE;
+    } else if (priority == "DEBUG") {
+      p = LogMessage::DEBUGGING;
     }
     LogMessage message(msg, LogOrigin(origin), p);
 
