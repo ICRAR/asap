@@ -114,8 +114,8 @@ bool Fitter::computeEstimate() {
   //estimator.setWindowing(True);
   SpectralList listGauss = estimator.estimate(x_, y_);
   parameters_.resize(n*3);
-  Gaussian1D<Float>* g = 0;
-  for (uInt i=0; i<n;i++) {
+//  Gaussian1D<Float>* g = 0;
+//  for (uInt i=0; i<n;i++) {
 //     g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
 //     if (g) {
 //       const GaussianSpectralElement *gauss = 
@@ -129,7 +129,7 @@ bool Fitter::computeEstimate() {
 //       (*g)[2] = listGauss[i].getFWHM();
 //       */
 //     }
-  }
+//  }
   estimate_.resize();
   listGauss.evaluate(estimate_,x_);
   return true;
