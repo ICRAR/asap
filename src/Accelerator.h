@@ -72,6 +72,7 @@ public:
 	}
 	virtual Bool match(Table const& table, const TableExprId& id) {
 		DebugAssert(&table == &this->table, AipsError);
+		(void)table;
 		for (size_t i = 0; i < N; i++) {
 			T v;
 			cols[i]->get(id.rownr(), v);
