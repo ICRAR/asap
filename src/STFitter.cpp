@@ -87,6 +87,10 @@ bool Fitter::computeEstimate() {
   if (x_.nelements() == 0 || y_.nelements() == 0)
     throw (AipsError("No x/y data specified."));
 
+  if (funcs_.size() == 0) {
+    throw AipsError("No fit function specified.");
+  }
+
   if (dynamic_cast<Gaussian1D<Float>* >(funcs_[0]) == 0)
     return false;
   uInt n = funcs_.nelements();
@@ -114,22 +118,22 @@ bool Fitter::computeEstimate() {
   //estimator.setWindowing(True);
   SpectralList listGauss = estimator.estimate(x_, y_);
   parameters_.resize(n*3);
-//  Gaussian1D<Float>* g = 0;
-//  for (uInt i=0; i<n;i++) {
-//     g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
-//     if (g) {
-//       const GaussianSpectralElement *gauss = 
-// 	dynamic_cast<const GaussianSpectralElement *>(listGauss[i]) ;
-//       (*g)[0] = gauss->getAmpl();
-//       (*g)[1] = gauss->getCenter();
-//       (*g)[2] = gauss->getFWHM();     
-//       /*
-//       (*g)[0] = listGauss[i].getAmpl();
-//       (*g)[1] = listGauss[i].getCenter();
-//       (*g)[2] = listGauss[i].getFWHM();
-//       */
-//     }
-//  }
+  Gaussian1D<Float>* g = 0;
+  for (uInt i=0; i<n;i++) {
+     g = dynamic_cast<Gaussian1D<Float>* >(funcs_[i]);
+     if (g) {
+       const GaussianSpectralElement *gauss =
+           dynamic_cast<const GaussianSpectralElement *>(listGauss[i]) ;
+       (*g)[0] = gauss->getAmpl();
+       (*g)[1] = gauss->getCenter();
+       (*g)[2] = gauss->getFWHM();
+       /*
+       (*g)[0] = listGauss[i].getAmpl();
+       (*g)[1] = listGauss[i].getCenter();
+       (*g)[2] = listGauss[i].getFWHM();
+       */
+     }
+  }
   estimate_.resize();
   listGauss.evaluate(estimate_,x_);
   return true;
