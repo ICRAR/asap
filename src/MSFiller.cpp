@@ -105,6 +105,7 @@ public:
 
   virtual Bool visit(Bool isFirst, const uInt recordNo,
 		     const uInt nCols, void const *const colValues[]) {
+    (void)nCols;
     Int observationId, feedId, fieldId, dataDescId, scanNo, stateId;
     Double time;
     { // prologue
@@ -807,14 +808,14 @@ private:
       }
     }
   }
-  void spectralSetup( Int &spwId, MEpoch &me, MPosition &mp, MDirection &md,
+  void spectralSetup( Int &spwId, MEpoch &/*me*/, MPosition &/*mp*/, MDirection &/*md*/,
                       uInt &freqId, Int &nchan,
                       String &freqref, Double &reffreq, Double &bandwidth )
   {
     // fill
     Int measFreqRef ;
     getScalar( "MEAS_FREQ_REF", spwId, spwtab, measFreqRef ) ;
-    MFrequency::Types freqRef = MFrequency::castType( measFreqRef ) ;
+    //MFrequency::Types freqRef = MFrequency::castType( measFreqRef ) ;
     //freqref = MFrequency::showType( freqRef ) ;
     //freqref = "LSRK" ;
     freqref = "TOPO";
@@ -1384,6 +1385,7 @@ public:
 
   virtual Bool visit(Bool isFirst, const uInt recordNo,
 		     const uInt nCols, void const *const colValues[]) {
+    (void)nCols;
     Int antennaId, feedId, spwId; 
     Double time;
     { // prologue
