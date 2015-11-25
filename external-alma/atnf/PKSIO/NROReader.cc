@@ -80,13 +80,17 @@ NROReader *getNROReader( const String filename,
 
   // Determine the type of input.
   NROReader *reader = 0;
-  std::size_t retval;
   if ( inFile.isRegular() ) {
     FILE *file ;
     file = fopen( filename.c_str(), "r" ) ;
     // read LOFIL0
     char buf[9];
-    retval = fread( buf, 4, 1, file ) ;
+    size_t retval = fread( buf, 4, 1, file ) ;
+    if (retval < 1) {
+      os << LogIO::SEVERE << "Failed to read data" << LogIO::POST;
+      fclose(file);
+      return 0;
+    }
     buf[4] = '\0' ;
     // DEBUG
     //os << LogIO::NORMAL << "getNROReader:: buf = " << String(buf) << LogIO::POST ;
@@ -107,7 +111,12 @@ NROReader *getNROReader( const String filename,
       int size = d->getDataSize() - 188 ;
       delete d ;
       fseek( file, size, SEEK_SET ) ;
-      retval = fread( buf, 8, 1, file ) ;
+      size_t retval = fread( buf, 8, 1, file ) ;
+      if (retval < 1) {
+        os << LogIO::SEVERE << "Failed to read data" << LogIO::POST;
+        fclose(file);
+        return 0;
+      }
       buf[8] = '\0' ;
       // DEBUG
       //cout << "getNROReader:: buf = " << buf << endl ;
@@ -123,7 +132,12 @@ NROReader *getNROReader( const String filename,
         size = d->getDataSize() - 188 ;
         delete d ;
         fseek( file, size, SEEK_SET ) ;
-        retval = fread( buf, 8, 1, file ) ;
+        size_t retval = fread( buf, 8, 1, file ) ;
+        if (retval < 1) {
+          os << LogIO::SEVERE << "Failed to read data" << LogIO::POST;
+          fclose(file);
+          return 0;
+        }
         buf[8] = '\0' ;
         // DEBUG
         //cout << "getNROReader:: buf = " << buf << endl ;

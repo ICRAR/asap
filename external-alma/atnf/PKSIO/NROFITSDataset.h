@@ -100,9 +100,9 @@ class NROFITSDataset : public NRODataset
   // stracture representing property of fields
   struct FieldProperty {
     //string name;    // field name
-    int size;         // data size [byte]
+    size_t size;      // data size [byte]
     //string unit;    // unit of the field
-    long offset;      // offset from the head of scan record [byte]
+    size_t offset;    // offset from the head of scan record [byte]
   };
 
   // fill header information
@@ -110,7 +110,7 @@ class NROFITSDataset : public NRODataset
 
   // Read char data
   int readHeader( string &v, const char *name ) ;
-  int readTable( char *v, const char *name, int clen, int idx=0 ) ;
+  int readTable( char *v, const char *name, size_t clen, int idx=0 ) ;
   int readTable( vector<char *> &v, const char *name, int idx=0 ) ;
   int readColumn( vector<string> &v, const char *name, int idx=0 ) ;
 

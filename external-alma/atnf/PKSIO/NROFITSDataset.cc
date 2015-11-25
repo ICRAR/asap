@@ -1683,6 +1683,9 @@ void NROFITSDataset::findData()
   while ( count < ARYNM && index < rowNum_ ) {
     char ctmp[5] ;
     std::size_t retval = fread( ctmp, 1, 4, fp_ ) ;
+    if (retval < 4) {
+      os << LogIO::SEVERE << "Failed to read array configuration." << LogIO::EXCEPTION;
+    }
     ctmp[4] = '\0' ;
     //cout << "ctmp = " << ctmp << endl ;
     for ( int i = 0 ; i < ARYNM ; i++ ) {
@@ -1767,6 +1770,10 @@ int NROFITSDataset::readHeader( string &v, const char *name )
   int count = 0 ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
     std::size_t retval = fread( buf, 1, 80, fp_ ) ;
+    if (retval < 80) {
+      LogIO os(LogOrigin("NROFITSDataset", "readHeader(string)", WHERE));
+      os << LogIO::SEVERE << "Failed to read header" << LogIO::EXCEPTION;
+    }
     buf[80] = '\0' ;
     count++ ;
   }
@@ -1801,6 +1808,10 @@ int NROFITSDataset::readHeader( int &v, const char *name )
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
     std::size_t retval = fread( buf, 1, 80, fp_ ) ;
+    if (retval < 80) {
+      LogIO os(LogOrigin("NROFITSDataset", "readHeader(int)", WHERE));
+      os << LogIO::SEVERE << "Failed to read header" << LogIO::EXCEPTION;
+    }
     buf[80] = '\0' ;
     //char bufo[9] ;
     //strncpy( bufo, buf, 8 ) ;
@@ -1837,6 +1848,10 @@ int NROFITSDataset::readHeader( float &v, const char *name )
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
     std::size_t retval = fread( buf, 1, 80, fp_ ) ;
+    if (retval < 80) {
+      LogIO os(LogOrigin("NROFITSDataset", "readHeader(float)", WHERE));
+      os << LogIO::SEVERE << "Failed to read header" << LogIO::EXCEPTION;
+    }
     buf[80] = '\0' ;
     //char bufo[9] ;
     //strncpy( bufo, buf, 8 ) ;
@@ -1871,6 +1886,10 @@ int NROFITSDataset::readHeader( double &v, const char *name )
   fseek( fp_, 0, SEEK_SET ) ;
   while ( strncmp( buf, name, strlen(name) ) != 0 && strncmp( buf, "END", 3 ) != 0 ) {
     std::size_t retval = fread( buf, 1, 80, fp_ ) ;
+    if (retval < 80) {
+      LogIO os(LogOrigin("NROFITSDataset", "readHeader(double)", WHERE));
+      os << LogIO::SEVERE << "Failed to read header" << LogIO::EXCEPTION;
+    }
     buf[80] = '\0' ;
     char bufo[9] ;
     strncpy( bufo, buf, 8 ) ;
@@ -1894,7 +1913,7 @@ int NROFITSDataset::readHeader( double &v, const char *name )
   return status ;
 }
 
-int NROFITSDataset::readTable( char *v, const char *name, int clen, int idx ) 
+int NROFITSDataset::readTable( char *v, const char *name, size_t clen, int idx )
 {
   //
   // Read 'name' attribute defined as char from the idx-th row 
@@ -1908,16 +1927,27 @@ int NROFITSDataset::readTable( char *v, const char *name, int clen, int idx )
   if (iter == properties_.end())
     return -1;
 
-  int xsize = iter->second.size;
+  size_t xsize = iter->second.size;
 
   // read data
   if ( xsize < clen ) {
     std::size_t retval = fread( v, 1, xsize, fp_ ) ;
+    if (retval < xsize) {
+      LogIO os(LogOrigin("NROFITSDataset", "readTable(char *)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     //v[xsize] = '\0' ;
   }
-  else {
-    std::size_t retval = fread( v, 1, clen-1, fp_ ) ;
+  else if (clen > 0) {
+    std::size_t retval = fread( v, 1, clen - 1, fp_ ) ;
+    if (retval < clen - 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readTable(char *)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     //v[clen-1] = '\0' ;
+  }
+  else {
+    status = -1;
   }
 
   return status ;
@@ -1935,6 +1965,10 @@ int NROFITSDataset::readTable( int &v, const char *name, int b, int idx )
 
   // read data
   std::size_t retval = fread( &v, sizeof(int), 1, fp_ ) ;
+  if (retval < 1) {
+    LogIO os(LogOrigin("NROFITSDataset", "readTable(int)", WHERE));
+    os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+  }
   if ( b == 0 ) 
     convertEndian( v ) ;
  
@@ -1953,6 +1987,10 @@ int NROFITSDataset::readTable( float &v, const char *name, int b, int idx )
 
   // read data
   std::size_t retval = fread( &v, sizeof(float), 1, fp_ ) ;
+  if (retval < 1) {
+    LogIO os(LogOrigin("NROFITSDataset", "readTable(float)", WHERE));
+    os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+  }
   if ( b == 0 ) 
     convertEndian( v ) ;
 
@@ -1971,6 +2009,10 @@ int NROFITSDataset::readTable( double &v, const char *name, int b, int idx )
 
   // read data
   std::size_t retval = fread( &v, sizeof(double), 1, fp_ ) ;
+  if (retval < 1) {
+    LogIO os(LogOrigin("NROFITSDataset", "readTable(double)", WHERE));
+    os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+  }
   if ( b == 0 ) 
     convertEndian( v ) ;  
 
@@ -1990,16 +2032,24 @@ int NROFITSDataset::readTable( vector<char *> &v, const char *name, int idx )
   if (iter == properties_.end())
     return -1;
 
-  int xsize = iter->second.size;
+  size_t xsize = iter->second.size;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    int clen = strlen( v[i] ) ;
+    size_t clen = strlen( v[i] ) ;
     if ( clen > xsize ) {
       std::size_t retval = fread( v[i], 1, xsize, fp_ ) ;
+      if (retval < xsize) {
+        LogIO os(LogOrigin("NROFITSDataset", "readTable(vector<char *>)", WHERE));
+        os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+      }
       //v[i][xsize] = '\0' ;
     }
     else {
       std::size_t retval = fread( v[i], 1, clen, fp_ ) ;
+      if (retval < clen) {
+        LogIO os(LogOrigin("NROFITSDataset", "readTable(vector<char *>)", WHERE));
+        os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+      }
       //v[i][clen-1] = '\0' ;
     }
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2018,7 +2068,11 @@ int NROFITSDataset::readTable( vector<int> &v, const char *name, int b, int idx 
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    std::size_t retval = fread( &v[i], 1, sizeof(int), fp_ ) ;
+    std::size_t retval = fread( &v[i], sizeof(int), 1, fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readTable(vector<int>)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2037,7 +2091,11 @@ int NROFITSDataset::readTable( vector<float> &v, const char *name, int b, int id
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    std::size_t retval = fread( &v[i], 1, sizeof(float), fp_ ) ;
+    std::size_t retval = fread( &v[i], sizeof(float), 1, fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readTable(vector<float>)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2056,7 +2114,11 @@ int NROFITSDataset::readTable( vector<double> &v, const char *name, int b, int i
     return status ;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
-    std::size_t retval = fread( &v[i], 1, sizeof(double), fp_ ) ;
+    std::size_t retval = fread( &v[i], sizeof(double), 1, fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readTable(vector<double>)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2079,7 +2141,7 @@ int NROFITSDataset::readColumn( vector<string> &v, const char *name, int idx )
   if (iter == properties_.end())
     return -1;
 
-  int xsize = iter->second.size;
+  size_t xsize = iter->second.size;
 
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int offset = scanLen_ * arrayid_[i] + xsize * idx ;
@@ -2095,6 +2157,10 @@ int NROFITSDataset::readColumn( vector<string> &v, const char *name, int idx )
 //     }
     char c[xsize+1] ;
     std::size_t retval = fread( c, 1, xsize, fp_ ) ;
+    if (retval < xsize) {
+      LogIO os(LogOrigin("NROFITSDataset", "readColumn(string)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     c[xsize] = '\0' ;
     v[i] = string( c ) ;
     //cout << "v[" << i << "] = \'" << v[i] << "\'" << endl ;
@@ -2117,7 +2183,11 @@ int NROFITSDataset::readColumn( vector<int> &v, const char *name, int b, int idx
   for ( unsigned int i = 0 ; i < v.size() ; i++ ) {
     int offset = scanLen_ * arrayid_[i] + sizeof(int) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
-    std::size_t retval = fread( &v[i], 1, sizeof(int), fp_ ) ;
+    std::size_t retval = fread( &v[i], sizeof(int), 1, fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readColumn(int)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2141,6 +2211,10 @@ int NROFITSDataset::readColumn( vector<float> &v, const char *name, int b, int i
     int offset = scanLen_ * arrayid_[i] + sizeof(float) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
     std::size_t retval = fread( &v[i], 1, sizeof(float), fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readColumn(float)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "v[" << i << "] = " << v[i] << endl ;
@@ -2164,6 +2238,10 @@ int NROFITSDataset::readColumn( vector<double> &v, const char *name, int b, int 
     int offset = scanLen_ * arrayid_[i] + sizeof(double) * idx ;
     fseek( fp_, offset, SEEK_CUR ) ;
     std::size_t retval = fread( &v[i], 1, sizeof(double), fp_ ) ;
+    if (retval < 1) {
+      LogIO os(LogOrigin("NROFITSDataset", "readColumn(double)", WHERE));
+      os << LogIO::SEVERE << "Failed to read binary table" << LogIO::EXCEPTION;
+    }
     if ( b == 0 ) 
       convertEndian( v[i] ) ;
     //cout << "offset = " << offset << ", v[" << i << "] = " << v[i] << endl ;
