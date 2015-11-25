@@ -242,10 +242,10 @@ void PKSFiller::fill( )
   Vector<Complex> xPol;
 **/
 
-  Double min = 0.0;
-  Double max = nInDataRow;
 #ifdef HAS_ALMA
-  ProgressMeter fillpm(min, max, "Data importing progress");
+  Double minRow = 0.0;
+  Double maxRow = nInDataRow;
+  ProgressMeter fillpm(minRow, maxRow, "Data importing progress");
 #endif
   PKSrecord pksrec;
   pksrec.srcType=-1;
