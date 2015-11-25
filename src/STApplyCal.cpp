@@ -192,7 +192,7 @@ public:
   static void ProcessValid(const Double xref, const uInt index,
 			   asap::Interpolator1D<Double, Float> *interpolator,
 			   Double *xwork, Float *ywork,
-			   const uInt wnrow, Float *yout, uChar *fout)
+			   const uInt wnrow, Float *yout, uChar */*fout*/)
   {
     interpolator->setData(xwork, ywork, wnrow);
     yout[index] = interpolator->interpolate(xref);
@@ -221,10 +221,10 @@ public:
     yout[index] = interpolator->interpolate(xref);
     fout[index] = 0;
   }
-  static void ProcessInvalid(const Double xref, const uInt index,
-			     asap::Interpolator1D<Double, Float> *interpolator,
-			     Double *xwork, Float *ywork,
-			     const uInt wnrow, Float *yout, uChar *fout)
+  static void ProcessInvalid(const Double /*xref*/, const uInt index,
+			     asap::Interpolator1D<Double, Float> */*interpolator*/,
+			     Double */*xwork*/, Float */*ywork*/,
+			     const uInt /*wnrow*/, Float */*yout*/, uChar *fout)
   {
     fout[index] = 1 << 7; // user flag
   }
