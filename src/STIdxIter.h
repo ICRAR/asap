@@ -15,20 +15,20 @@
 using namespace std ;
 using namespace casa ;
 
-namespace {
-vector<string> split(const string &str, char delim)
-{
-  vector<string> result;
-  size_t current = 0;
-  size_t found;
-  while ((found = str.find_first_of(delim, current)) != string::npos) {
-    result.push_back(string(str, current, found - current));
-    current = found + 1;
-  }
-  result.push_back(string(str, current, str.size() - current));
-  return result;
-}
-} // anonymous namespace
+//namespace {
+//vector<string> split(const string &str, char delim)
+//{
+//  vector<string> result;
+//  size_t current = 0;
+//  size_t found;
+//  while ((found = str.find_first_of(delim, current)) != string::npos) {
+//    result.push_back(string(str, current, found - current));
+//    current = found + 1;
+//  }
+//  result.push_back(string(str, current, str.size() - current));
+//  return result;
+//}
+//} // anonymous namespace
 
 namespace asap {
 class STIdxIter2
@@ -64,6 +64,18 @@ public:
   vector<uInt> getRowsSTL() { return tovector( getRows() ) ; } ;
   virtual void init();
 private:
+  static vector<string> split(const string &str, char delim)
+  {
+    vector<string> result;
+    size_t current = 0;
+    size_t found;
+    while ((found = str.find_first_of(delim, current)) != string::npos) {
+      result.push_back(string(str, current, found - current));
+      current = found + 1;
+    }
+    result.push_back(string(str, current, str.size() - current));
+    return result;
+  }
   vector<uInt> tovector(Vector<uInt> v);
   void addSortKey(const string &name);
   template<class T, DataType U> void addColumnToKey(const string &name);
