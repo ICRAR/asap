@@ -364,10 +364,10 @@ void STWriter::polConversion( Matrix< Float >& specs, Matrix< uChar >& flags,
     flags.column(i) = flagCol(i);
   }
   // now the complex if exists
-  Bool hasxpol = False;
+  //Bool hasxpol = False;
   xpol.resize();
   if ( tab.nrow() == 4 ) {
-    hasxpol = True;
+    //hasxpol = True;
     xpol.resize(nchan);
     Vector<Float> reals, imags;
     reals = specCol(2); imags = specCol(3);
