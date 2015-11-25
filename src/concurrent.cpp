@@ -95,7 +95,13 @@ Semaphore::Semaphore(unsigned initial) throw(int)
 Semaphore::~Semaphore()
 {
 	int result = pthread_mutex_destroy(&mutex);
+  if (result != 0) {
+    LOG(result);
+  }
 	result = pthread_cond_destroy(&cond);
+  if (result != 0) {
+    LOG(result);
+  }
 }
 
 void Semaphore::up(unsigned amount) throw(int)
