@@ -31,6 +31,10 @@
 #ifndef STLINEFINDER_H
 #define STLINEFINDER_H
 
+// ASAP
+#include "ScantableWrapper.h"
+#include "Scantable.h"
+
 // STL
 #include <vector>
 #include <list>
@@ -43,10 +47,6 @@
 #include <casa/Arrays/Vector.h>
 #include <casa/Utilities/Assert.h>
 #include <casa/Utilities/CountedPtr.h>
-
-// ASAP
-#include "ScantableWrapper.h"
-#include "Scantable.h"
 
 namespace asap {
 

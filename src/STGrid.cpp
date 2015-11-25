@@ -9,6 +9,14 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+// ASAP
+// STGrid must be included first to avoid compiler warning related
+// with _XOPEN_SOURCE
+#include "STGrid.h"
+#include "MathUtils.h"
+#include <atnf/PKSIO/SrcType.h>
+
 #include <casa/BasicSL/String.h>
 #include <casa/Arrays/Vector.h>
 #include <casa/Arrays/ArrayMath.h>
@@ -28,11 +36,6 @@
 #include <tables/Tables/TableCopy.h>
 
 #include <measures/Measures/MDirection.h>
-
-#include "MathUtils.h"
-#include <atnf/PKSIO/SrcType.h>
-
-#include "STGrid.h"
 
 using namespace std ;
 using namespace concurrent ;

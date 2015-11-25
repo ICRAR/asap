@@ -12,6 +12,13 @@
 #ifndef ASAPSTGRID_H
 #define ASAPSTGRID_H
 
+// ASAP
+// ScantableWrapper.h must be included first to avoid compiler warnings
+// related with _XOPEN_SOURCE
+#include "ScantableWrapper.h"
+#include "Scantable.h"
+#include "concurrent.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -28,10 +35,6 @@
 #include <tables/Tables/ArrayColumn.h>
 
 #include <coordinates/Coordinates/DirectionCoordinate.h>
-
-#include "ScantableWrapper.h"
-#include "Scantable.h"
-#include "concurrent.h"
 
 using namespace std ;
 using namespace casa ;

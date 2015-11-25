@@ -10,6 +10,9 @@
 //
 //
 
+// ASAP
+#include "PlotHelper.h"
+
 // casacore
 #include <casa/Arrays/Vector.h>
 #include <casa/Quanta/Quantum.h>
@@ -20,8 +23,6 @@
 #include <measures/Measures/MDirection.h>
 #include <tables/Tables/TableRecord.h>
 
-
-#include "PlotHelper.h"
 
 #define SMALL_ANGLE 1.0e-7
 

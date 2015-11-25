@@ -12,6 +12,12 @@
 #ifndef ASAPPLOTHELPER_H
 #define ASAPPLOTHELPER_H
 
+// ASAP
+// ScantableWrapper.h must be included first to avoid compiler warnings
+// related with _XOPEN_SOURCE
+#include "ScantableWrapper.h"
+#include "Scantable.h"
+
 // STL
 #include <iostream>
 #include <string>
@@ -20,9 +26,6 @@
 #include <casa/aips.h>
 #include <casa/Utilities/CountedPtr.h>
 #include <coordinates/Coordinates/DirectionCoordinate.h>
-
-#include "ScantableWrapper.h"
-#include "Scantable.h"
 
 namespace asap {
 

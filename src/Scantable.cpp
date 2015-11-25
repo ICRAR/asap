@@ -9,6 +9,20 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+// ASAP
+// STLineFinder must be included first to avoid compiler warnings related with _XOPEN_SOURCE
+#include "STLineFinder.h"
+#include "MathUtils.h"
+#include "STAttr.h"
+#include "STBaselineTable.h"
+#include "STPolCircular.h"
+#include "STPolLinear.h"
+#include "STPolStokes.h"
+#include "STUpgrade.h"
+#include "STFitter.h"
+#include "Scantable.h"
+
 #include <map>
 #include <sys/time.h>
 #include <iostream>
@@ -64,17 +78,6 @@
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableVector.h>
-
-#include "MathUtils.h"
-#include "STAttr.h"
-#include "STBaselineTable.h"
-#include "STLineFinder.h"
-#include "STPolCircular.h"
-#include "STPolLinear.h"
-#include "STPolStokes.h"
-#include "STUpgrade.h"
-#include "STFitter.h"
-#include "Scantable.h"
 
 #define debug 1
 

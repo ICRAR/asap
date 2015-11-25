@@ -12,6 +12,15 @@
 #ifndef ASAP_CALIBRATION_MANAGER_H
 #define ASAP_CALIBRATION_MANAGER_H
 
+// ASAP
+// ScantableWrapper.h must be included first to avoid compiler warnings
+// related with _XOPEN_SOURCE
+#include "ScantableWrapper.h"
+#include "STApplyCal.h"
+#include "STCalTsys.h"
+#include "STCalibration.h"
+#include "STCalEnum.h"
+
 #include <string>
 #include <vector>
 
@@ -20,12 +29,6 @@
 #include <casa/BasicSL/String.h>
 #include <casa/Utilities/CountedPtr.h>
 #include <casa/Logging/LogIO.h>
-
-#include "ScantableWrapper.h"
-#include "STApplyCal.h"
-#include "STCalTsys.h"
-#include "STCalibration.h"
-#include "STCalEnum.h"
 
 namespace asap {
 

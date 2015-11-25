@@ -12,18 +12,18 @@
 #ifndef ASAPSCANTABLEWRAPPER_H
 #define ASAPSCANTABLEWRAPPER_H
 
-#include <iostream>
-#include <string>
-#include <vector>
-
-#include <casa/Arrays/Vector.h>
-
+#include "GILHandler.h"
 #include "MathUtils.h"
 #include "Scantable.h"
 #include "STCoordinate.h"
 #include "STFit.h"
 #include "STFitEntry.h"
-#include "GILHandler.h"
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include <casa/Arrays/Vector.h>
 
 namespace asap {
 /**

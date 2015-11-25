@@ -9,6 +9,14 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+// ASAP
+#include "CalibrationManager.h"
+#include "Scantable.h"
+#include "STCalTsys.h"
+#include "STCalSkyPSAlma.h"
+#include "STCalSkyOtfAlma.h"
+
 #include <assert.h>
 
 #include <casa/Arrays/Vector.h>
@@ -20,12 +28,6 @@
 #include <tables/Tables/ScalarColumn.h>
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 
-
-#include "CalibrationManager.h"
-#include "Scantable.h"
-#include "STCalTsys.h"
-#include "STCalSkyPSAlma.h"
-#include "STCalSkyOtfAlma.h"
 
 using namespace casa;
 using namespace std;

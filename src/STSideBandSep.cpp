@@ -9,6 +9,12 @@
 //
 //
 
+// asap
+#include "STGrid.h"
+#include "STMath.h"
+#include "MathUtils.h"
+#include "STSideBandSep.h"
+
 // STL
 #include <ctype.h>
 
@@ -23,12 +29,6 @@
 #include <tables/Tables/TableRow.h>
 #include <tables/Tables/TableRecord.h>
 #include <tables/Tables/TableVector.h>
-
-// asap
-#include "STGrid.h"
-#include "STMath.h"
-#include "MathUtils.h"
-#include "STSideBandSep.h"
 
 using namespace std ;
 using namespace casa ;
