@@ -495,6 +495,7 @@ public:
 
   virtual Bool visit(Bool isFirst, const uInt recordNo,
 		     const uInt nCols, void const *const colValues[]) {
+    (void)nCols;
     const String *fieldName = NULL;
     uInt beamNo, scanNo, ifNo;
     Int srcType;
@@ -1658,6 +1659,7 @@ public:
 
   virtual Bool visit(Bool isFirst, const uInt recordNo,
 		     const uInt nCols, void const *const colValues[]) {
+    (void)nCols;
     uInt beamNo, ifNo, polNo;
     Double time;
     { // prologue
