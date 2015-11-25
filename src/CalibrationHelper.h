@@ -341,7 +341,7 @@ public:
 				     const CountedPtr<Scantable>& off,
 				     const CountedPtr<Scantable>& sky,
 				     const CountedPtr<Scantable>& hot,
-				     const CountedPtr<Scantable>& cold,
+				     const CountedPtr<Scantable>& /*cold*/,
 				     const Vector<uInt> &rows )
   {
     // 2012/05/22 TN
