@@ -41,8 +41,6 @@
 
 #include <atnf/PKSIO/MBrecord.h>
 
-using namespace std;
-
 
 // <summary>
 // ATNF single-dish FITS reader.

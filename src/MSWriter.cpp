@@ -1577,7 +1577,6 @@ private:
   Int subscan;
   CountedPtr<DataHolder> holder;
   String ptName;
-  Bool useFloat;
   String poltype;
   Bool addScanrate_;
 

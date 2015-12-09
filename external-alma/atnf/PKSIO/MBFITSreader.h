@@ -42,7 +42,6 @@
 #include <atnf/PKSIO/FITSreader.h>
 #include <atnf/PKSIO/MBrecord.h>
 
-using namespace std;
 
 // <summary>
 // ATNF single-dish RPFITS reader.

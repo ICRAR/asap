@@ -35,10 +35,10 @@
 //# Original: 2000/08/01 Mark Calabretta, ATNF
 //#---------------------------------------------------------------------------
 
+#include <string.h>
+
 #include <atnf/PKSIO/MBrecord.h>
 #include <atnf/PKSIO/SrcType.h>
-
-#include <string.h>
 
 //--------------------------------------------------------- MBrecord::MBrecord
 

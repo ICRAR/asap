@@ -118,7 +118,7 @@ private:
   STHeader* header_;
   casa::String filename_;
   casa::CountedPtr< Scantable > table_;
-  casa::Int nIF_, nBeam_, nPol_, nChan_, nInDataRow;
+  casa::Int nIF_, nBeam_, /* nPol_, nChan_,*/ nInDataRow;
   casa::uInt ifOffset_, beamOffset_;
   casa::Vector<casa::Bool> haveXPol_;
   casa::String refRx_;

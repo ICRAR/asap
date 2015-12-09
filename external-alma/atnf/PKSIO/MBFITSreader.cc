@@ -57,7 +57,9 @@ using namespace std;
 const double PI = 3.141592653589793238462643;
 const double TWOPI = 2.0 * PI;
 const double HALFPI = PI / 2.0;
+#ifdef PKSIO_DEBUG
 const double R2D = 180.0 / PI;
+#endif
 
 // Class name
 const string className = "MBFITSreader" ;

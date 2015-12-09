@@ -60,7 +60,6 @@
 #ifndef ATNF_MBRECORD_H
 #define ATNF_MBRECORD_H
 
-using namespace std;
 
 // <summary>
 // Class to store an MBFITS single-dish data record.

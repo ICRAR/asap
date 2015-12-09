@@ -1510,10 +1510,10 @@ CountedPtr< Scantable > STMath::donod(const casa::CountedPtr<Scantable>& s,
   // Debug for IRC CS data
   //float tcal1=7.0;
   //float tcal2=4.0;
-  sig1 = dototalpower(sctables[0], sctables[1], tcal=tcal);
-  ref1 = dototalpower(sctables[2], sctables[3], tcal=tcal);
-  ref2 = dototalpower(sctables[4], sctables[5], tcal=tcal);
-  sig2 = dototalpower(sctables[6], sctables[7], tcal=tcal);
+  sig1 = dototalpower(sctables[0], sctables[1], tcal);
+  ref1 = dototalpower(sctables[2], sctables[3], tcal);
+  ref2 = dototalpower(sctables[4], sctables[5], tcal);
+  sig2 = dototalpower(sctables[6], sctables[7], tcal);
 
   // correction of user-specified tsys for elevation here
 
@@ -1632,8 +1632,8 @@ CountedPtr< Scantable > STMath::dofs( const CountedPtr< Scantable >& s,
   sel.reset() ;
   types.clear() ;
 
-  calsig = dototalpower(sigwcal, sig, tcal=tcal);
-  calref = dototalpower(refwcal, ref, tcal=tcal);
+  calsig = dototalpower(sigwcal, sig, tcal);
+  calref = dototalpower(refwcal, ref, tcal);
 
   out1=dosigref(calsig,calref,smoothref,tsysv,tau); 
   out2=dosigref(calref,calsig,smoothref,tsysv,tau); 
