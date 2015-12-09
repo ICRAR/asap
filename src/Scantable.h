@@ -52,7 +52,7 @@
 namespace asap {
 
 class Fitter;
-class STLineFinder;
+struct STLineFinder;
 class STBaselineTable;
 
 /**
