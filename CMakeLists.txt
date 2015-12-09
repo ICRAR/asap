@@ -399,6 +399,7 @@ else()
          numpy/npy_interrupt.h   # for numpy
       INCLUDES_SUFFIXES python${PYTHONV}
       PREFIX_HINTS
+         ${NUMPY_ROOT_DIR}
          ${python_prefix}/lib/python${PYTHONV}/site-packages/numpy/core
          ${python_prefix}/Library/Frameworks/Python.framework/Versions/${PYTHONV}
          ${python_prefix}/Library/Frameworks/Python.framework/Versions/${PYTHONV}/lib/python${PYTHONV}/site-packages/numpy/core
