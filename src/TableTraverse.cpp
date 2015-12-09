@@ -20,7 +20,7 @@
 #include <sys/time.h>
 #endif
 
-static const char version[] = "$Id$";
+//static const char version[] = "$Id$";
 
 using namespace casa;
 
