@@ -1433,7 +1433,7 @@ Bool STSideBandSep::checkFile(const string name, string type)
     return true;
   } else {
     // Check for file type
-    switch (tolower(type[0])) {
+    switch (std::tolower(type[0])) {
     case 'f':
       return file.isRegular(True);
     case 'd':
