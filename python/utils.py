@@ -15,7 +15,9 @@ def _n_bools(n, val):
     return [ val for i in xrange(n) ]
 
 def _is_sequence_or_number(param, ptype=int):
-    if isinstance(param,tuple) or isinstance(param,list):
+    import numpy
+    #if isinstance(param,tuple) or isinstance(param,list):
+    if type(param) in (tuple, list, numpy.ndarray):
         if len(param) == 0: return True # empty list
         out = True
         for p in param:
@@ -30,7 +32,7 @@ def _to_list(param, ptype=int):
         if ptype is str: return param.split()
         else: return [param]
     if _is_sequence_or_number(param, ptype):
-        return param
+        return list(param)
     return None
 
 def unique(x):
