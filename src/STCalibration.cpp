@@ -81,7 +81,7 @@ void STCalibration::fillCalTable()
       uInt irow = rows[0];
       if (flagrow[irow] == 0) {
 	appenddata(0, 0, current.asuInt("BEAMNO"), current.asuInt("IFNO"), current.asuInt("POLNO"),
-		   freqidCol(irow), timeSec[irow], elevation[irow], specCol(irow),
+		   freqidCol(irow), timeSec[irow] / 86400.0, elevation[irow], specCol(irow),
 		   flagCol(irow));
       }
       iter.next();
