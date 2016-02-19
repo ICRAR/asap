@@ -44,6 +44,7 @@
 
 #include <math.h>
 #include <fstream>
+#include <iostream>
 
 #define STRING2CHAR(s) const_cast<char *>((s).c_str())
 
@@ -1220,12 +1221,25 @@ int NRODataset::getPolarizationNum()
   Bool match1 = false;
   Bool match2 = false;
   for (int i = 0; i < arrayMax(); i++) {
-    //cout << "RX[" << i << "]=" << RX[i] << endl;
+    //cout << "RX[" << i << "]=\"" << RX[i] << "\"" << endl;
+
+    String rxString(RX[i]);
+    //cout << "rxString = \"" << rxString << "\" rxString.size() = " << rxString.size() << endl;
+
+    // RX may contain some null characters at the end
+    // Remove it for pattern matching
+    rxString.rtrim('\0');
+    //cout << "rxString (rtrim) = \"" << rxString << "\" rxString.size() = " << rxString.size() << endl;
+
+    // Also remove whitespaces
+    rxString.trim();
+    //cout << "rxString (trim) = \"" << rxString << "\" rxString.size() = " << rxString.size() << endl;
+
     if (!match1) {
-      match1 = (reRx1.match(RX[i].c_str(), RX[i].size()) != String::npos);
+      match1 = (reRx1.match(rxString.c_str(), rxString.size()) != String::npos);
     }
     if (!match2) {
-      match2 = (reRx2.match(RX[i].c_str(), RX[i].size()) != String::npos);
+      match2 = (reRx2.match(rxString.c_str(), rxString.size()) != String::npos);
     }
   }
 
@@ -1576,13 +1590,18 @@ uInt NRODataset::polNoFromRX( const string &rx )
   //
   // For others, POLNO is always 0.
   String rxString(rx);
+  //cout << "rx='" << rxString << "' (size " << rxString.length() << ")" << endl;
+
+  // see getPolarizationNum for detail why we need to trim
+  rxString.rtrim('\0');
   rxString.trim();
-  //cout << "rx='" << rxString << "' (size " << rxString.size() << ")" << endl;
+
   Regex reRx("(.*V|H20ch2)$");
-  if (reRx.match(rxString.c_str(), rxString.size()) != String::npos) {
+  if (reRx.match(rxString.c_str(), rxString.length()) != String::npos) {
     //cout << "match!" << endl;
     polno = 1;
   }
+  //cout << "polno = " << polno << endl;
   return polno ;
 }
 
