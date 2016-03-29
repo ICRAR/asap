@@ -56,6 +56,29 @@
 
 using namespace std ;
 
+namespace {
+// to limit template argument to specified type
+template<class T>
+constexpr inline bool type_guard() {
+  return false;
+}
+template<>
+constexpr inline bool type_guard<string>() {
+  return true;
+}
+template<>
+constexpr inline bool type_guard<String>() {
+  return true;
+}
+
+// T must be std::string or casa::String
+template<class T>
+inline String trim_nro_string(T const &s) {
+  static_assert(type_guard<T>(), "");
+  return s.substr(0, s.find_first_of('\0'));
+}
+}
+
 //
 // getNROReader 
 //
@@ -468,14 +491,14 @@ int NROReader::getHeaderInfo( Int &nchan,
   //cout << "nchan = " << nchan << endl ;
   npol = getPolarizationNum() ;
   //cout << "npol = " << npol << endl ;
-  observer = dataset_->getOBSVR() ;
-  //cout << "observer = " << observer << endl ;
-  project = dataset_->getPROJ() ;
-  //cout << "project = " << project << endl ;
-  obstype = dataset_->getSWMOD() ;
-  //cout << "obstype = " << obstype << endl ;
-  antname = dataset_->getSITE() ;
-  //cout << "antname = " << antname << endl ;
+  observer = trim_nro_string(dataset_->getOBSVR()) ;
+  //cout << "observer = \"" << observer << "\" (size " << observer.size() << ")" << endl ;
+  project = trim_nro_string(dataset_->getPROJ()) ;
+  //cout << "project = \"" << project << "\" (size " << project.size() << ")" << endl ;
+  obstype = trim_nro_string(dataset_->getSWMOD()) ;
+  //cout << "obstype = \"" << obstype << "\" (size " << obstype.size() << ")" << endl ;
+  antname = trim_nro_string(dataset_->getSITE()) ;
+  //cout << "antname = \"" << antname << "\" (size " << antname.size() << ")" << endl ;
   // TODO: should be investigated antenna position since there are 
   //       no corresponding information in the header
   // 2008/11/13 Takeshi Nakazato
@@ -513,8 +536,8 @@ int NROReader::getHeaderInfo( Int &nchan,
   //freqref = vref ;
   //freqref = "LSRK" ;
   //freqref = "REST" ;
-  freqref = freqRefFromVREF_ ? vref : "REST" ; 
-  //cout << "freqref = " << freqref << endl ;
+  freqref = freqRefFromVREF_ ? trim_nro_string(vref) : "REST" ;
+  //cout << "freqref = \"" << freqref << "\" (size " << freqref.size() << ")" << endl ;
   const NRODataRecord *record = dataset_->getRecord( 0 ) ;
   reffreq = record->FREQ0 ; // rest frequency
 
@@ -527,8 +550,8 @@ int NROReader::getHeaderInfo( Int &nchan,
   //cout << "fluxunit = " << fluxunit << endl ;
   epoch = "UTC" ;  
   //cout << "epoch = " << epoch << endl ;
-  string poltp = dataset_->getPOLTP()[0] ;
-  //cout << "poltp = '" << poltp << "'" << endl ;
+  string poltp = trim_nro_string(dataset_->getPOLTP()[0]) ;
+  //cout << "poltp = \"" << poltp << "\" (size " << poltp.size() << ")" << endl ;
   if ( poltp.empty() || poltp[0] == ' ' || poltp[0] == '\0' ) 
     //poltp = "None" ;
     poltp = "linear" ;   // if no polarization type specified, set to "linear"
@@ -659,12 +682,12 @@ int NROReader::getScanInfo( int irow,
   //cout << "interval = " << interval << endl ;
 
   // srcname
-  srcname = String( dataset_->getOBJ() ) ;
-  //cout << "srcname = " << srcname << endl ;
+  srcname = trim_nro_string( dataset_->getOBJ() ) ;
+  //cout << "srcname = \"" << srcname << "\" (size " << srcname.size() << ")" << endl ;
 
   // fieldname
-  fieldname = String( dataset_->getOBJ() ) ;
-  //cout << "fieldname = " << fieldname << endl ;
+  fieldname = trim_nro_string( dataset_->getOBJ() ) ;
+  //cout << "fieldname = \"" << fieldname << "\" (size " << fieldname.size() << ")" << endl ;
 
   // spectra
   vector<double> spec = dataset_->getSpectrum( irow ) ;
