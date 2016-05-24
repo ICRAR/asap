@@ -1787,6 +1787,11 @@ void MSFiller::fill()
     //myVisitor.setHeader( sdh ) ;
     if ( getPt_ ) {
       Table ptsel = pointtab( pointtab.col("ANTENNA_ID")==antenna_ ).sort( "TIME" ) ;
+      if (ptsel.nrow() == 0) {
+        stringstream ss; 
+        ss << "No rows for ANTENNA_ID " << antenna_ << " in POINTING table" << endl;
+        throw AipsError(ss.str());
+      }
       myVisitor.setPointingTable( ptsel ) ;
     }
     if ( isWeather_ )
