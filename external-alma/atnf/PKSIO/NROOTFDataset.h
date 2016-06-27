@@ -76,6 +76,9 @@ class NROOTFDataset : public NRODataset
   // data initialization 
   virtual void initialize() ;
 
+  // this is NOSTAR data
+  virtual bool isNewstarFormat() const {return false;}
+
  protected:
   // fill header information
   virtual int fillHeader( int sameEndian ) ;

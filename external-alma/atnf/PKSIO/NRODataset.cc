@@ -1403,24 +1403,31 @@ vector<double> NRODataset::getFrequencies( int i )
   vector<double> fqcal = getFQCAL()[ib] ;
   vector<double> chcal = getCHCAL()[ib] ;
   double f0cal = getF0CAL()[ib] ;
+  //cout << "FREQ0=" << fq0 << " F0CAL=" << f0cal << endl;
   Vector<Double> freqs( ncal, fq0-f0cal ) ;
 
   double factor = vel / cvel ;
   if ( ivdef == 0 )
     factor = 1.0 / ( 1.0 - factor ) ;
+
   for ( int ii = 0 ; ii < ncal ; ii++ ) {
+    //double freqs_org = freqs[ii];
     freqs[ii] += fqcal[ii] ;
-    if ( ivdef == 0 ) {
-      freqs[ii] = freqs[ii] * factor + record->FQTRK * ( 1.0 - factor ) ;
-    }
-    else if ( ivdef == 1 ) {
-      freqs[ii] = freqs[ii] * ( 1.0 + factor ) - record->FQTRK * factor ;
+    if (isNewstarFormat()) {
+      if ( ivdef == 0 ) {
+        freqs[ii] = freqs[ii] * factor + record->FQTRK * ( 1.0 - factor ) ;
+      }
+      else if ( ivdef == 1 ) {
+        freqs[ii] = freqs[ii] * ( 1.0 + factor ) - record->FQTRK * factor ;
+      }
     }
 
     //ofstream ofs("freqs.txt",ios::out|ios::app) ;
     //ofs << setprecision(16) ;
     //ofs << i << " " << record->ARRYT << " " << chcal[ii] << " " << freqs[ii] << " " << record->ISCAN << " " << fqcal[ii] << " " << f0cal << " " << record->FQTRK << " " << vel << endl ; 
     //ofs.close() ;
+//    cout << setprecision(16) ;
+//    cout << "LOOP " << ii << " ARRAY ID=" << record->ARRYT << " CHCAL=" << chcal[ii] << " FREQS(ORG)=" << freqs_org << " FREQS=" << freqs[ii] << " ISCAN=" << record->ISCAN << " FQCAL=" << fqcal[ii] << " F0CAL=" << f0cal << " FQTRK=" << record->FQTRK << " VEL=" << vel << endl ;
 
   }
 
@@ -1446,9 +1453,12 @@ vector<double> NRODataset::getFrequencies( int i )
     v[2] = dz ;
   }
   else {
-
-    cw = ( freqs[1] - freqs[0] ) 
-      / ( chcal[1] - chcal[0] ) ;    
+    double nchcal = static_cast<double>(chcal[1] - chcal[0]);
+    //cout << "nchcal = " << nchcal << endl;
+    double bw = freqs[1] - freqs[0];
+    //cout << "bw = " << bw << " (effective bw " << bw * (nchcal + 1.0) / nchcal << ")"<< endl;
+    cw = bw / nchcal;
+    //cout << "cw = " << cw << endl;
 
     if ( isUSB ) {
       // channel frequency inversion 
@@ -1470,6 +1480,7 @@ vector<double> NRODataset::getFrequencies( int i )
   Vector<Double> f( v ) ;
   frec_.define( key, f ) ;
 
+  //cout << "refpix " << v[0] << " refval " << v[1] << " increment " << v[2] << endl;
   return v ;
 }
 

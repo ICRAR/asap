@@ -90,6 +90,9 @@ class NRODataset
   // Data initialization
   virtual void initialize() = 0 ;
 
+  // whether data is NEWSTAR or not
+  virtual bool isNewstarFormat() const {return true;}
+
   // open file
   virtual int open() ;
 
