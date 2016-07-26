@@ -225,7 +225,7 @@ if( NOT USE_LIBCASACORE )
    # use casacore libraries 
    set( _includename casa/aipsdef.h )
    find_path( CASACORE_INCLUDE_DIR ${_includename}
-              PATHS ${CASACORE_PATHS}
+              PATHS ${CASACORE_PATHS} ${CMAKE_INSTALL_PREFIX}
               PATH_SUFFIXES include include/casacore
               NO_DEFAULT_PATH )
    find_path( CASACORE_INCLUDE_DIR ${_includename} ) 
