@@ -53,28 +53,29 @@
 #include <stdio.h>
 #include <string>
 #include <iomanip>
+#include <cassert>
 
 using namespace std ;
 
 namespace {
 // to limit template argument to specified type
 template<class T>
-constexpr inline bool type_guard() {
+inline bool type_guard() {
   return false;
 }
 template<>
-constexpr inline bool type_guard<string>() {
+inline bool type_guard<string>() {
   return true;
 }
 template<>
-constexpr inline bool type_guard<String>() {
+inline bool type_guard<String>() {
   return true;
 }
 
 // T must be std::string or casa::String
 template<class T>
 inline String trim_nro_string(T const &s) {
-  static_assert(type_guard<T>(), "");
+  assert(type_guard<T>());
   return s.substr(0, s.find_first_of('\0'));
 }
 }
