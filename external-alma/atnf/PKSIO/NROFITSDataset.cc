@@ -848,7 +848,7 @@ int NROFITSDataset::fillRecord( int i )
   string str8( 8, ' ' ) ;
   string str24( 24, ' ' ) ;
 
-  for (auto i = 0u; i < 4u; ++i) {
+  for (unsigned int i = 0u; i < 4u; ++i) {
     record_->LSFIL[i] = ' ';
   }
   status = readTable( record_->LSFIL, "LSFIL", 4, i ) ;
@@ -879,7 +879,7 @@ int NROFITSDataset::fillRecord( int i )
   // DEBUG
   //cout << "LAVST(" << i << ") = " << record_->LAVST << endl ;
   //
-  for (auto i = 0u; i < 8u; ++i) {
+  for (unsigned int i = 0u; i < 8u; ++i) {
     record_->SCANTP[i] = ' ';
   }
     status = readTable( record_->SCANTP, "SCNTP", strlen(record_->SCANTP), i ) ;
@@ -996,7 +996,7 @@ int NROFITSDataset::fillRecord( int i )
   // DEBUG
   //cout << "YY(" << i << ") = " << record_->YY << endl ;
   //
-  for (auto i = 0u; i < 4u; ++i) {
+  for (unsigned int i = 0u; i < 4u; ++i) {
     record_->ARRYT[i] = ' ';
   }
   status = readTable( record_->ARRYT, "ARRYT", 4, i ) ;
