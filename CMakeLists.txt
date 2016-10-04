@@ -5,6 +5,8 @@
 # minimum requirement for cmake version
 cmake_minimum_required( VERSION 2.8 )
 
+add_definitions ("-DUseCasacoreNamespace")
+
 # options
 option (CXX11 "Compile as C++11 if possible" YES)
 

@@ -35,7 +35,7 @@ namespace asap {
  */
 class STCalSkyOtfAlma : public STCalSkyPSAlma {
 public:
-  STCalSkyOtfAlma(casa::CountedPtr<Scantable> &s, bool israster=false);
+  STCalSkyOtfAlma(casacore::CountedPtr<Scantable> &s, bool israster=false);
 
   virtual ~STCalSkyOtfAlma() {;}
   
@@ -46,7 +46,7 @@ protected:
 private:
   bool israster_;
 
-  casa::Vector<casa::uInt> rowNumbers_;
+  casacore::Vector<casacore::uInt> rowNumbers_;
 };
 
 }

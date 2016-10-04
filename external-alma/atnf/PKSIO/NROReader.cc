@@ -72,7 +72,7 @@ inline bool type_guard<String>() {
   return true;
 }
 
-// T must be std::string or casa::String
+// T must be std::string or casacore::String
 template<class T>
 inline String trim_nro_string(T const &s) {
   assert(type_guard<T>());

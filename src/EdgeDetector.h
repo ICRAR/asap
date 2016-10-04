@@ -25,32 +25,32 @@ public:
   EdgeDetector() ;
   virtual ~EdgeDetector() ;
 
-  void setDirection( const casa::Matrix<casa::Double> &dir ) ;
-  void setTime( const casa::Vector<casa::Double> &t ) ;
-  void setOption( const casa::Record &option ) ;
-  virtual casa::Vector<casa::uInt> detect() = 0 ;
+  void setDirection( const casacore::Matrix<casacore::Double> &dir ) ;
+  void setTime( const casacore::Vector<casacore::Double> &t ) ;
+  void setOption( const casacore::Record &option ) ;
+  virtual casacore::Vector<casacore::uInt> detect() = 0 ;
 
 protected:
-  virtual void parseOption( const casa::Record &option ) = 0 ;
-  casa::Vector<casa::uInt> vectorFromTempStorage( const casa::uInt &n ) ;
+  virtual void parseOption( const casacore::Record &option ) = 0 ;
+  casacore::Vector<casacore::uInt> vectorFromTempStorage( const casacore::uInt &n ) ;
   void initDetect() ;
 
   // input data
-  casa::Matrix<casa::Double> dir_ ;
-  casa::Vector<casa::Double> time_ ;
+  casacore::Matrix<casacore::Double> dir_ ;
+  casacore::Vector<casacore::Double> time_ ;
 
   // output data: list of indexes for OFF positions
-  casa::Vector<casa::uInt> off_ ;
+  casacore::Vector<casacore::uInt> off_ ;
   
   // temporary memory storage
-  casa::Block<casa::uInt> tempuInt_ ;
-  casa::IPosition tempIP_ ;
+  casacore::Block<casacore::uInt> tempuInt_ ;
+  casacore::IPosition tempIP_ ;
 
   // logging
-  casa::LogIO os_ ;
+  casacore::LogIO os_ ;
 
 private:
-  void resizeTempArea( const casa::uInt &n ) ;
+  void resizeTempArea( const casacore::uInt &n ) ;
 } ;
 
 }

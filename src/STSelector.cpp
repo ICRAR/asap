@@ -21,7 +21,7 @@
 #include "STSelector.h"
 
 using namespace asap;
-using namespace casa;
+using namespace casacore;
 
 STSelector::STSelector() :
   taql_("")
@@ -313,7 +313,7 @@ bool asap::STSelector::empty( ) const
   return (intselections_.empty() && taql_.size() == 0 && rowselection_.size() == 0);
 }
 
-casa::Table asap::STSelector::sort( const casa::Table & tab )
+casacore::Table asap::STSelector::sort( const casacore::Table & tab )
 {
   if (order_.nelements() > 0) {
     Table t = tab.sort(order_);

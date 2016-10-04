@@ -31,10 +31,10 @@ namespace asap
 class PKSFiller : public FillerBase
 {
   public:
-    explicit PKSFiller(casa::CountedPtr<Scantable> stable);
+    explicit PKSFiller(casacore::CountedPtr<Scantable> stable);
     virtual ~PKSFiller();
 
-    bool open(const std::string& filename, const casa::Record& rec);
+    bool open(const std::string& filename, const casacore::Record& rec);
     //    bool open(const std::string& filename);
     void fill();
     void close();
@@ -46,10 +46,10 @@ class PKSFiller : public FillerBase
     PKSFiller(const PKSFiller&);
     PKSFiller& operator=(const PKSFiller&);
 
-    casa::CountedPtr<PKSreader> reader_;
-    casa::String filename_;
-    casa::Int nIF_, nBeam_, nPol_, nChan_, nInDataRow;
-    casa::Vector<casa::Bool> haveXPol_;
+    casacore::CountedPtr<PKSreader> reader_;
+    casacore::String filename_;
+    casacore::Int nIF_, nBeam_, nPol_, nChan_, nInDataRow;
+    casacore::Vector<casacore::Bool> haveXPol_;
 };
 
 

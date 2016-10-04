@@ -33,34 +33,34 @@ public:
 
   virtual ~EdgeMarker() ;
 
-  void setdata( const casa::CountedPtr<Scantable> &s,
-                const casa::Bool &insitu ) ;
+  void setdata( const casacore::CountedPtr<Scantable> &s,
+                const casacore::Bool &insitu ) ;
   void examine() ;
-  void setoption( const casa::Record &option ) ;
+  void setoption( const casacore::Record &option ) ;
   void detect() ;
   void mark() ;
-  casa::Block<casa::uInt> getDetectedRows() ;
-  casa::CountedPtr<Scantable> get() ;
+  casacore::Block<casacore::uInt> getDetectedRows() ;
+  casacore::CountedPtr<Scantable> get() ;
 //   void reset() ;
 
 private:
   void initDetect() ;
 
   // data
-  casa::CountedPtr<Scantable> st_ ;
+  casacore::CountedPtr<Scantable> st_ ;
 
   // pointer to detector object
-  casa::CountedPtr<EdgeDetector> detector_ ;
+  casacore::CountedPtr<EdgeDetector> detector_ ;
   
   // list of IFNO for WVR
-  casa::Vector<casa::uInt> wvr_ ;
+  casacore::Vector<casacore::uInt> wvr_ ;
 
   // off position list
-  casa::Block<casa::uInt> off_ ;
-  casa::uInt noff_ ;
+  casacore::Block<casacore::uInt> off_ ;
+  casacore::uInt noff_ ;
 
   // logger
-  casa::LogIO os_ ;
+  casacore::LogIO os_ ;
 } ;
 
 }

@@ -16,8 +16,6 @@
 
 #include "NearestInterpolator1D.h"
 
-using namespace casa;
-
 namespace asap {
 
 template <class T, class U> 
@@ -32,7 +30,7 @@ NearestInterpolator1D<T, U>::~NearestInterpolator1D()
 template <class T, class U> U NearestInterpolator1D<T, U>::interpolate(T x)
 {
   //assert(this->isready());
-  casa::assert_<casa::AipsError>(this->isready(),"object is not ready to process.");
+  casacore::assert_<casacore::AipsError>(this->isready(),"object is not ready to process.");
   if (this->n_ == 1)
     return this->y_[0];
 

@@ -16,7 +16,7 @@
 #include <casa/BasicSL/Constants.h>
 #include "STPolLinear.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
@@ -137,7 +137,7 @@ void asap::STPolLinear::invertPhase( Float phase )
   I *= Float(-1.0);
 }
 
-void asap::STPolLinear::rotateLinPolPhase( casa::Float phase )
+void asap::STPolLinear::rotateLinPolPhase( casacore::Float phase )
 {
 //
 // Rotate P = Q + iU but do it directly on the  linear

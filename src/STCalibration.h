@@ -34,33 +34,33 @@ namespace asap {
  */
 class STCalibration {
 public:
-  STCalibration(casa::CountedPtr<Scantable> &s, const casa::String target_column);
+  STCalibration(casacore::CountedPtr<Scantable> &s, const casacore::String target_column);
 
   void calibrate();
 
   virtual ~STCalibration() {;}
 
-  void save(casa::String name) {applytable_->save(name);}
+  void save(casacore::String name) {applytable_->save(name);}
   //const STApplyTable &applytable() {return *applytable_;}
-  const casa::CountedPtr<STApplyTable> applytable() {return applytable_;}
+  const casacore::CountedPtr<STApplyTable> applytable() {return applytable_;}
 
-  void setOption(casa::Record &rec) {options_ = rec;}
+  void setOption(casacore::Record &rec) {options_ = rec;}
 
 protected:
   virtual void setupSelector(const STSelector &sel) = 0;
   virtual void fillCalTable();
-  virtual void appenddata(casa::uInt scanno, casa::uInt cycleno, 
-			  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-			  casa::uInt freqid, casa::Double time, casa::Float elevation, 
-			  const casa::Vector<casa::Float> &any_data,
-			  const casa::Vector<casa::uChar> &channel_flag) = 0;
+  virtual void appenddata(casacore::uInt scanno, casacore::uInt cycleno, 
+			  casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+			  casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+			  const casacore::Vector<casacore::Float> &any_data,
+			  const casacore::Vector<casacore::uChar> &channel_flag) = 0;
 
   STSelector sel_;
-  casa::CountedPtr<Scantable> scantable_;
-  casa::CountedPtr<STApplyTable> applytable_; 
-  casa::LogIO os_;
-  casa::Record options_;
-  const casa::String target_column_;
+  casacore::CountedPtr<Scantable> scantable_;
+  casacore::CountedPtr<STApplyTable> applytable_; 
+  casacore::LogIO os_;
+  casacore::Record options_;
+  const casacore::String target_column_;
 };
  
 }

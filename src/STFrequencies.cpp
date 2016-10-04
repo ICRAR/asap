@@ -30,7 +30,7 @@
 #include "STFrequencies.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
@@ -42,7 +42,7 @@ STFrequencies::STFrequencies(const Scantable& parent) :
   setup();
 }
 
-STFrequencies::STFrequencies( casa::Table tab ) :
+STFrequencies::STFrequencies( casacore::Table tab ) :
   STSubTable(tab, name_)
 {
   refpixCol_.attach(table_,"REFPIX");
@@ -265,7 +265,7 @@ MFrequency::Types STFrequencies::getFrame(bool base) const
   MFrequency::Types mft;
   if (!MFrequency::getType(mft, rf)) {
     ostringstream oss;
-    LogIO os( casa::LogOrigin( "STFrequencies", "getFrame") );
+    LogIO os( casacore::LogOrigin( "STFrequencies", "getFrame") );
     os << LogIO::WARN << "WARNING: Frequency type unknown assuming TOPO"
        << LogIO::POST;
     mft = MFrequency::TOPO;

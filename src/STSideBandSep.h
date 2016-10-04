@@ -27,9 +27,6 @@
 #include "ScantableWrapper.h"
 #include "Scantable.h"
 
-using namespace std;
-using namespace casa;
-
 namespace asap {
 
 class STSideBandSep {
@@ -37,34 +34,34 @@ public:
   /**
    * constructors and a destructor
    **/
-  STSideBandSep() { throw( AipsError("No data set to process") ); };
-  explicit STSideBandSep(const vector<string> &names);
-  explicit STSideBandSep(const vector<ScantableWrapper> &tables);
+  STSideBandSep() { throw( casacore::AipsError("No data set to process") ); };
+  explicit STSideBandSep(const std::vector<std::string> &names);
+  explicit STSideBandSep(const std::vector<ScantableWrapper> &tables);
   virtual ~STSideBandSep();
 
 
   /**
    * Separate side bands
    **/
-  void separate(string outname);
+  void separate(std::string outname);
 
   /**
    * Set IFNO and frequency tolerance to select data to process
    **/
-  void setFrequency(const int ifno, const string freqtol,
-		    const string frame="");
+  void setFrequency(const int ifno, const std::string freqtol,
+		    const std::string frame="");
 
   /**
    * Set direction tolerance to group spectra.
    * The spectra within this range will be averaged before procesing.
    **/
-  void setDirTolerance(const vector<string> dirtol);
+  void setDirTolerance(const std::vector<std::string> dirtol);
 
   /**
    * Set the number of channels shifted in image side band 
    * of each of scantable.
    **/
-  void setShift(const vector<double> &shift);
+  void setShift(const std::vector<double> &shift);
 
   /**
    * Set rejection limit of solution.
@@ -90,9 +87,9 @@ public:
   /**
    * Set additional information to fill frequencies of image sideband
    **/
-  void setLO1(const string lo1, const string frame="TOPO",
-	      const double reftime=-1, string refdir="");
-  void setLO1Root(const string name);
+  void setLO1(const std::string lo1, const std::string frame="TOPO",
+	      const double reftime=-1, std::string refdir="");
+  void setLO1Root(const std::string name);
 
 private:
   /** Initialize member variables **/
@@ -100,18 +97,18 @@ private:
   void initshift();
 
   /** Return if the path exists (optionally, check file type) **/
-  Bool checkFile(const string name, string type="");
+  casacore::Bool checkFile(const std::string name, std::string type="");
 
   /** **/
   unsigned int setupShift();
-  bool getFreqInfo(const CountedPtr<Scantable> &stab, const unsigned int &ifno,
+  bool getFreqInfo(const casacore::CountedPtr<Scantable> &stab, const unsigned int &ifno,
 		   double &freq0, double &incr, unsigned int &nchan);
 
   /** Grid scantable **/
   ScantableWrapper gridTable();
-  void mapExtent(vector< CountedPtr<Scantable> > &tablist,
-		 Double &xmin, Double &xmax,
-		 Double &ymin, Double &ymax);
+  void mapExtent(std::vector< casacore::CountedPtr<Scantable> > &tablist,
+		 casacore::Double &xmin, casacore::Double &xmax,
+		 casacore::Double &ymin, casacore::Double &ymax);
 
   /** 
    * Shift TIME in gridded scantable for future imaging
@@ -133,7 +130,7 @@ private:
    * The function workarounds this defect by artificially shifting
    * TIME by INTERVAL in each row.
    **/
-  void shiftTimeInGriddedST(const CountedPtr<Scantable> &stab);
+  void shiftTimeInGriddedST(const casacore::CountedPtr<Scantable> &stab);
   /**
    * Actual calculation of frequencies of image sideband
    **/
@@ -142,76 +139,76 @@ private:
   /** 
    * Get LO1 frequency to solve the frequencies of image side band
    **/
-  bool getLo1FromAsdm(const string asdmname,
+  bool getLo1FromAsdm(const std::string asdmname,
 		      const double refval, const double refpix,
 		      const double increment, const int nChan);
-  bool getLo1FromAsisTab(const string msname,
+  bool getLo1FromAsisTab(const std::string msname,
 			 const double refval, const double refpix,
 			 const double increment, const int nChan);
-  bool getLo1FromScanTab(casa::CountedPtr< Scantable > &scantab,
+  bool getLo1FromScanTab(casacore::CountedPtr< Scantable > &scantab,
 			 const double refval, const double refpix,
 			 const double increment, const int nChan);
   //  bool getSpectraToSolve(const int polId, const int beamId,
   //			 const double dirX, const double dirY,
-  //			 Matrix<float> &specmat, vector<uInt> &tabIdvec);
+  //			 Matrix<float> &specmat, std::vector<casacore::uInt> &tabIdvec);
   bool getSpectraToSolve(const int polId, const int beamId,
 			 const double dirX, const double dirY,
-			 Matrix<float> &specMat, Matrix<bool> &flagMat,
-			 vector<uInt> &tabIdvec);
+			 casacore::Matrix<float> &specMat, casacore::Matrix<bool> &flagMat,
+			 std::vector<casacore::uInt> &tabIdvec);
 
-  vector<float> solve(const Matrix<float> &specMat,
-		      const vector<uInt> &tabIdvec,
+  std::vector<float> solve(const casacore::Matrix<float> &specMat,
+		      const std::vector<casacore::uInt> &tabIdvec,
 		      const bool signal = true);
 
-  Vector<bool> collapseFlag(const Matrix<bool> &flagMat,
-			    const vector<uInt> &tabIdvec,
+  casacore::Vector<bool> collapseFlag(const casacore::Matrix<bool> &flagMat,
+			    const std::vector<casacore::uInt> &tabIdvec,
 			    const bool signal = true);
 
-  void shiftSpectrum(const Vector<float> &invec, double shift,
-		     Vector<float> &outvec);
+  void shiftSpectrum(const casacore::Vector<float> &invec, double shift,
+		     casacore::Vector<float> &outvec);
 
-  void shiftFlag(const Vector<bool> &invec, double shift,
-		     Vector<bool> &outvec);
+  void shiftFlag(const casacore::Vector<bool> &invec, double shift,
+		     casacore::Vector<bool> &outvec);
 
-  void deconvolve(Matrix<float> &specmat, const vector<double> shiftvec,
-		  const double threshold, Matrix<float> &outmat);
+  void deconvolve(casacore::Matrix<float> &specmat, const std::vector<double> shiftvec,
+		  const double threshold, casacore::Matrix<float> &outmat);
 
-  void aggregateMat(Matrix<float> &inmat, vector<float> &outvec);
+  void aggregateMat(casacore::Matrix<float> &inmat, std::vector<float> &outvec);
 
-  void subtractFromOther(const Matrix<float> &shiftmat,
-			 const vector<float> &invec,
-			 const vector<double> &shift,
-			 vector<float> &outvec);
+  void subtractFromOther(const casacore::Matrix<float> &shiftmat,
+			 const std::vector<float> &invec,
+			 const std::vector<double> &shift,
+			 std::vector<float> &outvec);
 
 
 
   /** Member variables **/
   // input tables
-  vector<string> infileList_;
-  vector< CountedPtr<Scantable> > intabList_;
+  std::vector<std::string> infileList_;
+  std::vector< casacore::CountedPtr<Scantable> > intabList_;
   unsigned int ntable_;
   // frequency and direction setup to select data.
   int sigIfno_;
-  Quantum<Double> ftol_;
-  MFrequency::Types solFrame_;
-  vector<double> sigShift_, imgShift_;
+  casacore::Quantum<casacore::Double> ftol_;
+  casacore::MFrequency::Types solFrame_;
+  std::vector<double> sigShift_, imgShift_;
   unsigned int nshift_, nchan_;
-  vector< CountedPtr<Scantable> > tableList_;
-  Double xtol_, ytol_;
+  std::vector< casacore::CountedPtr<Scantable> > tableList_;
+  casacore::Double xtol_, ytol_;
   // solution parameters
   bool otherside_, doboth_;
   double rejlimit_;
   // LO1
   double lo1Freq_; // in Hz
-  MFrequency::Types loFrame_;
+  casacore::MFrequency::Types loFrame_;
   double loTime_;
-  string loDir_;
-  string asdmName_, asisName_;
+  std::string loDir_;
+  std::string asdmName_, asisName_;
 
   //CountedPtr<Scantable> imgTab_p, sigTab_p;
-  CountedPtr<Scantable> imgTab_p, sigTab_p;
-  Table::TableType tp_;
-  FFTServer<Float, Complex> fftsf, fftsi;
+  casacore::CountedPtr<Scantable> imgTab_p, sigTab_p;
+  casacore::Table::TableType tp_;
+  casacore::FFTServer<casacore::Float, casacore::Complex> fftsf, fftsi;
 
 }; // class
 

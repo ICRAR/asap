@@ -18,7 +18,7 @@
 
 namespace asap {
 
-using namespace casa;
+using namespace casacore;
 
 class TableExprPredicate {
 public:

@@ -191,7 +191,7 @@ struct NRODataRecord
   // this int array is stored into the char array.
   //
   // 2009/02/26 Takeshi Nakazato  Moved to NROReader
-  casa::CountedPtr<char> LDATA ;
+  casacore::CountedPtr<char> LDATA ;
   // Spectral data for FITS data
   //vector<int> JDATA ;
 } ;

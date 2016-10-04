@@ -39,20 +39,20 @@ class STPolCircular : public STPol
 public:
   STPolCircular() {}
 
-  explicit STPolCircular(const casa::Matrix<casa::Float>& specs)
+  explicit STPolCircular(const casacore::Matrix<casacore::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolCircular();
 
   static Factory<STPol,STPolCircular> myFactory;
 
-  virtual casa::Vector<casa::Float> getCircular( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getCircular( casacore::uInt index );
 
-  virtual casa::Vector<casa::Float> getStokes( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getStokes( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinPol( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getLinPol( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinear( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getLinear( casacore::uInt index );
 
 };
 

@@ -55,7 +55,7 @@
 
 #include "MathUtils.h"
 
-using namespace casa ;
+using namespace casacore;
 using namespace std ;
 
 namespace asap {
@@ -1581,7 +1581,7 @@ private:
   RecordFieldPtr< Vector<Float> > tcalRF;
 };
 
-MSFiller::MSFiller( casa::CountedPtr<Scantable> stable )
+MSFiller::MSFiller( casacore::CountedPtr<Scantable> stable )
   : table_( stable ),
     tablename_( "" ),
     antenna_( -1 ),
@@ -1608,7 +1608,7 @@ MSFiller::~MSFiller()
   os_.origin( LogOrigin( "MSFiller", "~MSFiller()", WHERE ) ) ;
 }
 
-bool MSFiller::open( const std::string &filename, const casa::Record &rec )
+bool MSFiller::open( const std::string &filename, const casacore::Record &rec )
 {
   os_.origin( LogOrigin( "MSFiller", "open()", WHERE ) ) ;
   //double startSec = mathutil::gettimeofday_sec() ;

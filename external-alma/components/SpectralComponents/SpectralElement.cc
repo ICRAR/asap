@@ -41,6 +41,7 @@
 
 #include <casa/iostream.h>
 
+using namespace casacore;
 namespace casa { //# NAMESPACE CASA - BEGIN
 
 SpectralElement::SpectralElement(SpectralElement::Types type, const Vector<Double>& parms)

@@ -58,7 +58,8 @@
 
 #include "STWriter.h"
 
-using namespace casa;
+using namespace casacore;
+
 namespace asap {
 
 STWriter::STWriter(const std::string &format)
@@ -321,9 +322,9 @@ Int STWriter::write(const CountedPtr<Scantable> in,
     ++pksrec.scanNo;
     ++scanit;
   }
-  LogIO os( casa::LogOrigin("STWriter"));
+  LogIO os( casacore::LogOrigin("STWriter"));
   os << "STWriter: wrote " << count << " rows to " << filename
-     << casa::LogIO::POST;
+     << casacore::LogIO::POST;
 
   writer_->close();
 

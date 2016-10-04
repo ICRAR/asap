@@ -33,40 +33,40 @@ ApplyTable for sky calibration
 class STCalSkyTable : public STApplyTable {
 public:
   STCalSkyTable() {;}
-  STCalSkyTable(const Scantable& parent, const casa::String &caltype);
-  STCalSkyTable(const casa::String &name);
+  STCalSkyTable(const Scantable& parent, const casacore::String &caltype);
+  STCalSkyTable(const casacore::String &name);
 
   virtual ~STCalSkyTable();
 
   void setup();
   void attachOptionalColumns();
 
-  const casa::String& name() const {return name_;}
+  const casacore::String& name() const {return name_;}
 
-  void setdata(casa::uInt irow, casa::uInt scannos, casa::uInt cycleno, 
-               casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-               casa::uInt freqid, casa::Double time, casa::Float elevation, 
-               const casa::Vector<casa::Float> &spectra,
-	       const casa::Vector<casa::uChar> &flagtra);
-  void appenddata(casa::uInt scanno, casa::uInt cycleno, casa::uInt beamno, 
-                  casa::uInt ifno, casa::uInt polno, casa::uInt freqid,  
-                  casa::Double time, casa::Float elevation, 
-                  const casa::Vector<casa::Float> &spectra,
-		  const casa::Vector<casa::uChar> &flagtra);
+  void setdata(casacore::uInt irow, casacore::uInt scannos, casacore::uInt cycleno, 
+               casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+               casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+               const casacore::Vector<casacore::Float> &spectra,
+	       const casacore::Vector<casacore::uChar> &flagtra);
+  void appenddata(casacore::uInt scanno, casacore::uInt cycleno, casacore::uInt beamno, 
+                  casacore::uInt ifno, casacore::uInt polno, casacore::uInt freqid,  
+                  casacore::Double time, casacore::Float elevation, 
+                  const casacore::Vector<casacore::Float> &spectra,
+		  const casacore::Vector<casacore::uChar> &flagtra);
   
-  casa::Vector<casa::Float> getElevation() const {return elCol_.getColumn();}
-  casa::Matrix<casa::Float> getSpectra() const {return spectraCol_.getColumn();}
-  casa::Matrix<casa::uChar> getFlagtra() const {return flagtraCol_.getColumn();}
-  casa::uInt nchan(casa::uInt ifno);
+  casacore::Vector<casacore::Float> getElevation() const {return elCol_.getColumn();}
+  casacore::Matrix<casacore::Float> getSpectra() const {return spectraCol_.getColumn();}
+  casacore::Matrix<casacore::uChar> getFlagtra() const {return flagtraCol_.getColumn();}
+  casacore::uInt nchan(casacore::uInt ifno);
 
-  //casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
+  //casacore::Vector<casacore::Double> getBaseFrequency(casacore::uInt whichrow);
 
 private:
-  static const casa::String name_;
-  const casa::String caltype_;
-  casa::ArrayColumn<casa::Float> spectraCol_;
-  casa::ArrayColumn<casa::uChar> flagtraCol_;
-  casa::ScalarColumn<casa::Float> elCol_;
+  static const casacore::String name_;
+  const casacore::String caltype_;
+  casacore::ArrayColumn<casacore::Float> spectraCol_;
+  casacore::ArrayColumn<casacore::uChar> flagtraCol_;
+  casacore::ScalarColumn<casacore::Float> elCol_;
 };
 
 }

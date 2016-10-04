@@ -73,7 +73,7 @@ void OldASDMFiller::fill()
   table_->frequencies().setFrame( freqFrame, true ) ;
   //logsink_->postLocally( LogMessage("sFreqFrame = "+sFreqFrame,LogOrigin(className_,funcName,WHERE)) ) ;
   
-  Vector<casa::Double> antpos = table_->getHeader().antennaposition ;
+  Vector<casacore::Double> antpos = table_->getHeader().antennaposition ;
 
   // data selection
   reader_->select() ;
@@ -171,26 +171,26 @@ void OldASDMFiller::fill()
                                       rf ) ;
           
           // fill MOLECULE_ID and add MOLECULES row if necessary
-          Vector<casa::Double> restFreqs( rf.size() ) ;
+          Vector<casacore::Double> restFreqs( rf.size() ) ;
           for ( uInt i = 0 ; i < rf.size() ; i++ )
-            restFreqs[i] = (casa::Double)(rf[i]) ;
+            restFreqs[i] = (casacore::Double)(rf[i]) ;
           setMolecule( restFreqs ) ;
           
           // time and interval
-          casa::Double mjd = (casa::Double)(reader_->getTime()) ;
-          casa::Double interval = (casa::Double)(reader_->getInterval()) ;
+          casacore::Double mjd = (casacore::Double)(reader_->getTime()) ;
+          casacore::Double interval = (casacore::Double)(reader_->getInterval()) ;
 
           // fill TIME and INTERVAL
           setTime( mjd, interval ) ;
           
           // fill SRCNAME, SRCTYPE, FIELDNAME, SRCDIRECTION, SRCPROPERMOTION, and SRCVELOCITY
-          Vector<casa::Double> srcDir( 2 ) ;
-          srcDir[0] = (casa::Double)(srcDirection[0]) ;
-          srcDir[1] = (casa::Double)(srcDirection[1]) ;
-          Vector<casa::Double> srcPM( 2 ) ;
-          srcPM[0] = (casa::Double)(srcProperMotion[0]) ;
-          srcPM[1] = (casa::Double)(srcProperMotion[1]) ;
-          setSource( srcname, srctype, fieldname, srcDir, srcPM, (casa::Double)sysVel ) ;
+          Vector<casacore::Double> srcDir( 2 ) ;
+          srcDir[0] = (casacore::Double)(srcDirection[0]) ;
+          srcDir[1] = (casacore::Double)(srcDirection[1]) ;
+          Vector<casacore::Double> srcPM( 2 ) ;
+          srcPM[0] = (casacore::Double)(srcProperMotion[0]) ;
+          srcPM[1] = (casacore::Double)(srcProperMotion[1]) ;
+          setSource( srcname, srctype, fieldname, srcDir, srcPM, (casacore::Double)sysVel ) ;
 
           // fill FLAGROW
           unsigned int flagrow = reader_->getFlagRow() ;
@@ -207,11 +207,11 @@ void OldASDMFiller::fill()
                                    humidity,
                                    windspeed,
                                    windaz ) ;
-          setWeather2( (casa::Float)temperature,
-                       (casa::Float)pressure,
-                       (casa::Float)humidity,
-                       (casa::Float)windspeed,
-                       (casa::Float)windaz ) ;
+          setWeather2( (casacore::Float)temperature,
+                       (casacore::Float)pressure,
+                       (casacore::Float)humidity,
+                       (casacore::Float)windspeed,
+                       (casacore::Float)windaz ) ;
 
           // fill AZIMUTH, ELEVATION, DIRECTION and SCANRATE
           vector<double> dir ;
@@ -222,22 +222,22 @@ void OldASDMFiller::fill()
                                     az,
                                     el,
                                     srate ) ;
-          Vector<casa::Double> scanRate( 2, 0.0 ) ;
-          Vector<casa::Double> direction( 2, 0.0 ) ;
+          Vector<casacore::Double> scanRate( 2, 0.0 ) ;
+          Vector<casacore::Double> direction( 2, 0.0 ) ;
           if ( srate.size() > 0 ) {
-            scanRate[0] = (casa::Double)(srate[0]) ;
-            scanRate[1] = (casa::Double)(srate[1]) ;
+            scanRate[0] = (casacore::Double)(srate[0]) ;
+            scanRate[1] = (casacore::Double)(srate[1]) ;
           }
           setScanRate( scanRate ) ;
           if ( dir.size() > 0 ) {
-            direction[0] = (casa::Double)(dir[0]) ;
-            direction[1] = (casa::Double)(dir[1]) ;
+            direction[0] = (casacore::Double)(dir[0]) ;
+            direction[1] = (casacore::Double)(dir[1]) ;
           }
           else {
             toJ2000( direction, az, el, mjd, antpos ) ;
           }
           //logsink_->postLocally( LogMessage("direction = "+String::toString(direction),LogOrigin(className_,funcName,WHERE)) ) ;
-          setDirection( direction, (casa::Float)az, (casa::Float)el ) ;
+          setDirection( direction, (casacore::Float)az, (casacore::Float)el ) ;
 
            // REFPIX, REFVAL, INCREMENT
           String ifkey = getIFKey( ifno ) ;
@@ -246,7 +246,7 @@ void OldASDMFiller::fill()
           }
           else {
             reader_->getFrequency( refpix, refval, incr, freqref ) ;
-            refval = (double)toLSRK( casa::Double(refval), 
+            refval = (double)toLSRK( casacore::Double(refval), 
                                      String(freqref),
                                      mjd,
                                      antpos,
@@ -257,7 +257,7 @@ void OldASDMFiller::fill()
           }
 
           // fill FREQ_ID and add FREQUENCIES row if necessary
-          setFrequency( (casa::Double)refpix, (casa::Double)refval, (casa::Double)incr ) ;
+          setFrequency( (casacore::Double)refpix, (casacore::Double)refval, (casacore::Double)incr ) ;
 
           // loop on polarization
           vector<unsigned int> dataShape = reader_->getDataShape() ;
@@ -279,19 +279,19 @@ void OldASDMFiller::fill()
 
           // OPACITY
           vector<float> tau = reader_->getOpacity() ;
-          Vector<casa::Float> opacity = toVector( tau, numPol ) ;
+          Vector<casacore::Float> opacity = toVector( tau, numPol ) ;
 
           // SPECTRA, FLAGTRA, TSYS, TCAL
           float *sp = reader_->getSpectrum() ;
           vector< vector<float> > ts ;
           vector< vector<float> > tc ;
           reader_->getTcalAndTsys( tc, ts ) ;
-          Matrix<casa::Float> spectra = toMatrix( sp, numPol, numChan ) ;
+          Matrix<casacore::Float> spectra = toMatrix( sp, numPol, numChan ) ;
           Vector<uChar> flagtra( numChan, 0 ) ;
-          Matrix<casa::Float> tsys = toMatrix( ts, numPol, numChan ) ;
-          Matrix<casa::Float> tcal = toMatrix( tc, numPol, numChan ) ;
+          Matrix<casacore::Float> tsys = toMatrix( ts, numPol, numChan ) ;
+          Matrix<casacore::Float> tcal = toMatrix( tc, numPol, numChan ) ;
 //           String caltime = "" ;
-//           if ( anyNE( tcal, (casa::Float)1.0 ) ) 
+//           if ( anyNE( tcal, (casacore::Float)1.0 ) ) 
 //             caltime = toTcalTime( mjd ) ;
           String caltime = toTcalTime( mjd ) ;
 
@@ -373,7 +373,7 @@ void OldASDMFiller::fillHeader()
     vector<double> sdir ;
     string ref ;
     reader_->getSourceDirection( sdir, ref ) ;
-    Vector<casa::Double> sourceDir( sdir ) ; 
+    Vector<casacore::Double> sourceDir( sdir ) ; 
     hdr.reffreq = toLSRK( hdr.reffreq, hdr.freqref, hdr.utc, hdr.antennaposition, sdir, String(ref) ) ;
     hdr.freqref = "LSRK" ;
   }
@@ -409,68 +409,68 @@ void OldASDMFiller::setFrequencyRec( String key,
   ifrec_.defineRecord( key, frec ) ;
 }
 
-Matrix<casa::Float> OldASDMFiller::toMatrix( float *sp,
+Matrix<casacore::Float> OldASDMFiller::toMatrix( float *sp,
                                          unsigned int npol,
                                          unsigned int nchan )
 {
-  Matrix<casa::Float> mSp( npol, nchan ) ;
+  Matrix<casacore::Float> mSp( npol, nchan ) ;
   if ( npol <= 2 ) {
     // 1 or 2 polarization case
     for ( unsigned int ich = 0 ; ich < nchan ; ich++ ) {
       for ( unsigned int ipol = 0 ; ipol < npol ; ipol++ ) {
-        mSp(ipol,ich) = (casa::Float)(sp[npol*ich+ipol]) ;
+        mSp(ipol,ich) = (casacore::Float)(sp[npol*ich+ipol]) ;
       }
     }
   }
   else {
     // 4 polarization case
     for ( unsigned int ich = 0 ; ich < nchan ; ich++ ) {
-      mSp(0,ich) = (casa::Float)(sp[4*ich]) ;   // Re(XX)
-      mSp(1,ich) = (casa::Float)(sp[4*ich+4]) ; // Re(YY)
-      mSp(2,ich) = (casa::Float)(sp[4*ich+2]) ; // Re(XY)
-      mSp(3,ich) = (casa::Float)(sp[4*ich+3]) ; // Im(XY)
+      mSp(0,ich) = (casacore::Float)(sp[4*ich]) ;   // Re(XX)
+      mSp(1,ich) = (casacore::Float)(sp[4*ich+4]) ; // Re(YY)
+      mSp(2,ich) = (casacore::Float)(sp[4*ich+2]) ; // Re(XY)
+      mSp(3,ich) = (casacore::Float)(sp[4*ich+3]) ; // Im(XY)
     }
   }
   return mSp ;
 }
 
-Matrix<casa::Float> OldASDMFiller::toMatrix( vector< vector<float> > &tsys,
+Matrix<casacore::Float> OldASDMFiller::toMatrix( vector< vector<float> > &tsys,
                                                unsigned int npol,
                                                unsigned int nchan ) 
 {
   unsigned int numRec = tsys.size() ;
   unsigned int numChan = tsys[0].size() ;
-  Matrix<casa::Float> ret ;
+  Matrix<casacore::Float> ret ;
   if ( npol == numRec && nchan == numChan ) {
     ret.resize( npol, nchan ) ; 
     for ( unsigned int ip = 0 ; ip < npol ; ip++ ) 
       for ( unsigned int ic = 0 ; ic < nchan ; ic++ ) 
-        ret( ip, ic ) = (casa::Float)(tsys[ip][ic]) ;
+        ret( ip, ic ) = (casacore::Float)(tsys[ip][ic]) ;
   }
   else if ( npol == numRec && numChan == 1 ) {
     ret.resize( npol, 1 ) ;
     for ( unsigned int ip = 0 ; ip < npol ; ip++ )
-      ret( ip, 0 ) = (casa::Float)(tsys[0][0]) ;
+      ret( ip, 0 ) = (casacore::Float)(tsys[0][0]) ;
   }
   else if ( numRec == 1 && nchan == numChan ) {
     ret.resize( npol, nchan ) ;
     for ( unsigned int ip = 0 ; ip < npol ; ip++ ) 
       for ( unsigned int ic = 0 ; ic < nchan ; ic++ ) 
-        ret( ip, ic ) = (casa::Float)(tsys[0][ic]) ;
+        ret( ip, ic ) = (casacore::Float)(tsys[0][ic]) ;
   }
   else if ( numRec == 1 && numChan == 1 ) {
     ret.resize( npol, 1 ) ;
     for ( unsigned int ip = 0 ; ip < npol ; ip++ )
-      ret( ip, 0 ) = (casa::Float)(tsys[0][0]) ;
+      ret( ip, 0 ) = (casacore::Float)(tsys[0][0]) ;
   }
   else if ( numRec == 2 && npol == 4 && numChan == nchan ) {
     // TODO: How to determine Tsys for XY? 
     //       at the moment Tsys[XY] = 0.5*(Tsys[X]+Tsys[Y])
     ret.resize( npol, nchan ) ; 
     for ( unsigned int ic = 0 ; ic < nchan ; ic++ ) {
-      casa::Float tsysxy = (casa::Float)(0.5*(tsys[0][ic]+tsys[1][ic])) ;
-      ret( 0, ic ) = (casa::Float)(tsys[0][ic]) ;
-      ret( 1, ic ) = (casa::Float)(tsys[1][ic]) ;
+      casacore::Float tsysxy = (casacore::Float)(0.5*(tsys[0][ic]+tsys[1][ic])) ;
+      ret( 0, ic ) = (casacore::Float)(tsys[0][ic]) ;
+      ret( 1, ic ) = (casacore::Float)(tsys[1][ic]) ;
       ret( 2, ic ) = tsysxy ;
       ret( 3, ic ) = tsysxy ;
     }
@@ -479,9 +479,9 @@ Matrix<casa::Float> OldASDMFiller::toMatrix( vector< vector<float> > &tsys,
     // TODO: How to determine Tsys for XY? 
     //       at the moment Tsys[XY] = 0.5*(Tsys[X]+Tsys[Y])
     ret.resize( npol, 1 ) ;
-    casa::Float tsysxy = (casa::Float)(0.5*(tsys[0][0]+tsys[1][0])) ;
-    ret( 0, 0 ) = (casa::Float)(tsys[0][0]) ;
-    ret( 1, 0 ) = (casa::Float)(tsys[1][0]) ;
+    casacore::Float tsysxy = (casacore::Float)(0.5*(tsys[0][0]+tsys[1][0])) ;
+    ret( 0, 0 ) = (casacore::Float)(tsys[0][0]) ;
+    ret( 1, 0 ) = (casacore::Float)(tsys[1][0]) ;
     ret( 2, 0 ) = tsysxy ;
     ret( 3, 0 ) = tsysxy ;
   }
@@ -489,51 +489,51 @@ Matrix<casa::Float> OldASDMFiller::toMatrix( vector< vector<float> > &tsys,
     // I don't know how to handle ...
     for ( unsigned int ip = 0 ; ip < npol ; ip++ ) 
       for ( unsigned int ic = 0 ; ic < nchan ; ic++ ) 
-        ret( ip, ic ) = (casa::Float)(tsys[0][ic]) ;    
+        ret( ip, ic ) = (casacore::Float)(tsys[0][ic]) ;    
   }
   return ret ;
 }
 
-Vector<casa::Float> OldASDMFiller::toVector( vector<float> &tau,
+Vector<casacore::Float> OldASDMFiller::toVector( vector<float> &tau,
                                                unsigned int npol ) 
 {
   String funcName = "toVector" ;
 
-  Vector<casa::Float> ret( npol ) ;
+  Vector<casacore::Float> ret( npol ) ;
   //logsink_->postLocally( LogMessage("tau0="+String::toString(tau[0]),LogOrigin(className_,funcName,WHERE)) ) ;
   if ( npol == 4 ) {
-    ret[0] = (casa::Float)tau[0] ;
-    ret[1] = (casa::Float)tau[1] ;
+    ret[0] = (casacore::Float)tau[0] ;
+    ret[1] = (casacore::Float)tau[1] ;
     ret[2] = 0.5 * ( ret[0] + ret[1] ) ;
     ret[3] = ret[2] ;
   }
   else if ( npol == tau.size() ) {
     for ( unsigned int ipol = 0 ; ipol < npol ; ipol++ ) 
-      ret[ipol] = (casa::Float)tau[ipol] ;
+      ret[ipol] = (casacore::Float)tau[ipol] ;
   }
   else {
     // I don't know how to handle...
     for ( unsigned int ipol = 0 ; ipol < npol ; ipol++ )
-      ret[ipol] = (casa::Float)tau[0] ;
+      ret[ipol] = (casacore::Float)tau[0] ;
   }
   //logsink_->postLocally( LogMessage("tau="+String::toString(ret),LogOrigin(className_,funcName,WHERE)) ) ;
   return ret ;
 }
 
-String OldASDMFiller::toTcalTime( casa::Double mjd ) 
+String OldASDMFiller::toTcalTime( casacore::Double mjd ) 
 {
   return MVTime( mjd ).string( MVTime::YMD ) ;
 }
 
-void OldASDMFiller::toJ2000( Vector<casa::Double> &dir,
+void OldASDMFiller::toJ2000( Vector<casacore::Double> &dir,
                                double az, 
                                double el,
-                               casa::Double mjd,
-                               Vector<casa::Double> antpos ) 
+                               casacore::Double mjd,
+                               Vector<casacore::Double> antpos ) 
 {
   String funcName = "toJ2000" ;
 
-  Vector<casa::Double> azel( 2 ) ;
+  Vector<casacore::Double> azel( 2 ) ;
   azel[0] = az ;
   azel[1] = el ;
 //   MEpoch me( Quantity( mjd, "d" ), MEpoch::UTC ) ;
@@ -552,12 +552,12 @@ void OldASDMFiller::toJ2000( Vector<casa::Double> &dir,
   //logsink_->postLocally( LogMessage("dir = "+String::toString(dir),LogOrigin(className_,funcName,WHERE)) ) ;
 }
 
-Vector<casa::Double> OldASDMFiller::toJ2000( Vector<casa::Double> dir,
+Vector<casacore::Double> OldASDMFiller::toJ2000( Vector<casacore::Double> dir,
                                           String dirref,
-                                          casa::Double mjd,
-                                          Vector<casa::Double> antpos ) 
+                                          casacore::Double mjd,
+                                          Vector<casacore::Double> antpos ) 
 {
-  Vector<casa::Double> newd( dir ) ;
+  Vector<casacore::Double> newd( dir ) ;
   if ( dirref != "J2000" ) {
     MEpoch me( Quantity( mjd, "d" ), MEpoch::UTC ) ;
     Vector<Quantity> qantpos( 3 ) ;
@@ -592,29 +592,29 @@ MFrequency::Types OldASDMFiller::toFrameType( string &s )
   return ftype ;
 }
 
-casa::Double OldASDMFiller::toLSRK( casa::Double freq,
+casacore::Double OldASDMFiller::toLSRK( casacore::Double freq,
                                  String freqref,
-                                 casa::Double utc,
-                                 Vector<casa::Double> antpos,
-                                 Vector<casa::Double> dir,
+                                 casacore::Double utc,
+                                 Vector<casacore::Double> antpos,
+                                 Vector<casacore::Double> dir,
                                  String dirref ) 
 {
   String funcName = "toLSRK" ;
 
   //logsink_->postLocally( LogMessage("freqref = "+freqref,LogOrigin(className_,funcName,WHERE)) ) ;
-  casa::Double newf = freq ;
+  casacore::Double newf = freq ;
   if ( freqref != "LSRK" ) {
-    MEpoch me( Quantum<casa::Double>( utc, Unit("d") ), MEpoch::UTC ) ;
-    Vector< Quantum<casa::Double> > antposQ( 3 ) ;
+    MEpoch me( Quantum<casacore::Double>( utc, Unit("d") ), MEpoch::UTC ) ;
+    Vector< Quantum<casacore::Double> > antposQ( 3 ) ;
     for ( int i = 0 ; i < 3 ; i++ ) 
-      antposQ[i] = Quantum<casa::Double>( antpos[i], Unit("m") ) ;
+      antposQ[i] = Quantum<casacore::Double>( antpos[i], Unit("m") ) ;
     MPosition mp( antposQ, MPosition::ITRF ) ;
     MDirection::Types dirtype ;
     Bool b = MDirection::getType( dirtype, dirref ) ;
     if ( !b )
       dirtype = MDirection::J2000 ;
-    MDirection md( Quantum<casa::Double>( dir[0], Unit("rad") ), 
-                   Quantum<casa::Double>( dir[1], Unit("rad") ),
+    MDirection md( Quantum<casacore::Double>( dir[0], Unit("rad") ), 
+                   Quantum<casacore::Double>( dir[1], Unit("rad") ),
                    dirtype ) ;
     MeasFrame mf( me, mp, md ) ;
     MFrequency::Types freqtype ;
@@ -623,7 +623,7 @@ casa::Double OldASDMFiller::toLSRK( casa::Double freq,
       freqtype = MFrequency::TOPO ;
     MFrequency::Convert tolsr( freqtype, 
                                MFrequency::Ref( MFrequency::LSRK, mf ) ) ;
-    newf = tolsr( Quantum<casa::Double>( freq, Unit("Hz") ) ).get( "Hz" ).getValue() ;
+    newf = tolsr( Quantum<casacore::Double>( freq, Unit("Hz") ) ).get( "Hz" ).getValue() ;
     //logsink_->postLocally( LogMessage("freq = "+String::toString(freq)+", newf = "+String::toString(newf),LogOrigin(className_,funcName,WHERE)) ) ;
   }
   return newf ;

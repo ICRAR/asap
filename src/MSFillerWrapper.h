@@ -38,11 +38,11 @@ public:
 
   virtual ~MSFillerWrapper() { close() ; }
 
-  void open(const std::string& filename, const casa::Record& rec) 
+  void open(const std::string& filename, const casacore::Record& rec) 
   {
-    casa::File file( filename ) ;
+    casacore::File file( filename ) ;
     if ( !file.exists() ) {
-      throw casa::AipsError( "File does not exist" ) ;
+      throw casacore::AipsError( "File does not exist" ) ;
     }
     filler_ = new MSFiller( stable_ ) ;
     if ( filler_->open( filename, rec ) ) {
@@ -50,7 +50,7 @@ public:
       return ;
     }
     else {
-      throw casa::AipsError( "Failed to open file" ) ;
+      throw casacore::AipsError( "Failed to open file" ) ;
     }
   }
 
@@ -81,9 +81,9 @@ private:
   MSFillerWrapper(const MSFillerWrapper&) ;
   MSFillerWrapper& operator=(const MSFillerWrapper&) ;
 
-  casa::CountedPtr<MSFiller> filler_ ;
+  casacore::CountedPtr<MSFiller> filler_ ;
   bool attached_ ;
-  casa::CountedPtr<Scantable> stable_ ;
+  casacore::CountedPtr<Scantable> stable_ ;
 };
 
 

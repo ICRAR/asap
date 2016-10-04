@@ -49,7 +49,7 @@
 // std includes
 #include <cmath>
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 /**
@@ -156,7 +156,7 @@ void STAtmosphere::recomputeAtmosphereModel()
        itsTemperatures[layer] = itsGndTemperature/(1.+itsLapseRate*height/itsGndTemperature);
        const double pressure = gndPressure * exp(-M*g/(QC::R.get().getValue()*itsGndTemperature)*
                    (height+0.5*itsLapseRate*height*height/itsGndTemperature));
-       itsVapourPressures[layer] = casa::min(itsGndHumidity*exp(-height/itsWVScale)*wvGndSaturationPressure,
+       itsVapourPressures[layer] = casacore::min(itsGndHumidity*exp(-height/itsWVScale)*wvGndSaturationPressure,
                                              wvSaturationPressure(itsTemperatures[layer]));
        itsDryPressures[layer] = pressure - itsVapourPressures[layer];                                      
        //std::cout<<"layer="<<layer<<": H="<<itsHeights[layer]<<" T="<<itsTemperatures[layer]<<
@@ -403,7 +403,7 @@ double STAtmosphere::zenithOpacity(double freq) const
        const double nImag = 1e-6*std::imag(dryRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer],
              itsVapourPressures[layer])+vapourRefractivity(freq,itsTemperatures[layer],itsDryPressures[layer],
              itsVapourPressures[layer]));
-       tau += dH*4.*casa::C::pi/QC::c.get().getValue()*freq*nImag;
+       tau += dH*4.*casacore::C::pi/QC::c.get().getValue()*freq*nImag;
   }
   return tau;
 }
@@ -456,7 +456,7 @@ double STAtmosphere::opacity(double freq, double el) const
        const double nReal = 1. + 1e-6*std::real(n);
        // length increment
        const double dL = dH*nReal/sqrt(nReal*nReal+sineEl*sineEl-1.);
-       tau += dL*4.*casa::C::pi/QC::c.get().getValue()*freq*nImag;
+       tau += dL*4.*casacore::C::pi/QC::c.get().getValue()*freq*nImag;
   }
   return tau;  
 }

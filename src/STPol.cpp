@@ -42,12 +42,12 @@ std::string asap::STPol::getPolLabel( int index,
   initLabelMap();
   if ( labelmap_.find(type) ==  labelmap_.end() ) {
     std::string msg = "Illegal polarisation type "+type;
-    throw(casa::AipsError(msg));
+    throw(casacore::AipsError(msg));
   } else {
     std::map<int, std::string>  poltype = labelmap_[type];
     if ( poltype.find(index) ==  poltype.end() ) {
       std::string msg = "Illegal polarisation index";
-      throw(casa::AipsError(msg));
+      throw(casacore::AipsError(msg));
     } else {
       return poltype[index];
     }
@@ -94,7 +94,7 @@ std::pair<int, std::string> asap::STPol::polFromString( const std::string& key )
   initPolMap();
   if ( polmap_.find(key) ==  polmap_.end() ) {
     std::string msg = "Illegal polarisation type "+key;
-    throw(casa::AipsError(msg));
+    throw(casacore::AipsError(msg));
   } else {
     return polmap_[key];
   }

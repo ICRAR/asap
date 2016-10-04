@@ -45,51 +45,51 @@ public:
     * @param interval the intergration time
     * @param time the time of the observation
     */
-  void add(const casa::Vector<casa::Float>& v,
-           const casa::Vector<casa::Bool>& m,
-           const casa::Vector<casa::Float>& tsys,
-           const casa::Double interval,
-           const casa::Double time);
+  void add(const casacore::Vector<casacore::Float>& v,
+           const casacore::Vector<casacore::Bool>& m,
+           const casacore::Vector<casacore::Float>& tsys,
+           const casacore::Double interval,
+           const casacore::Double time);
   /**
     * Also set a user mask which get combined with the individual masks
     * from the spectra
     * @param m a boolean mask of teh same length as the spectrum
     */
-  void setUserMask(const casa::Vector<casa::Bool>& m);
+  void setUserMask(const casacore::Vector<casacore::Bool>& m);
   /**
     * Get the spectrum. Applies the normalisation (averaging)
     * @return the spectrum vector
     */
-  casa::Vector<casa::Float> getSpectrum() const;
+  casacore::Vector<casacore::Float> getSpectrum() const;
   /**
     * Get the Tsys. Applies the normalisation (averaging)
     * @return the Tsys vector
     */
-  casa::Vector<casa::Float> getTsys() const;
+  casacore::Vector<casacore::Float> getTsys() const;
   /**
     * Get the spectrum's mask. Applies the normalisation (averaging)
     * @return the mask vector
     */
-  casa::Vector<casa::Bool> getMask() const;
+  casacore::Vector<casacore::Bool> getMask() const;
   /**
     * Get the total interval.
     * @return the integration time
     */
-  casa::Double getInterval() const;
+  casacore::Double getInterval() const;
   /**
     * Get the time of the observation. Retrieves the "mean" time.
     * @return the integration time
     */
-  casa::Double getTime() const;
+  casacore::Double getTime() const;
   /**
     * Reset the acummulator to the state at construction.
     */
-  void reset(const casa::uInt size=0, const casa::uInt tsysSize=0);
-  void initialize(const casa::uInt size, const casa::uInt tsysSize);
+  void reset(const casacore::uInt size=0, const casacore::uInt tsysSize=0);
+  void initialize(const casacore::uInt size, const casacore::uInt tsysSize);
   /**
     * check the initialization state 
     */ 
-  casa::Bool state() const;
+  casacore::Bool state() const;
   /**
     * replace NaN values with (normal) values at the same channels in the given spetrum.
     * (CAS-2776; 2011/04/07 by Wataru Kawasaki)
@@ -97,48 +97,48 @@ public:
   void replaceNaN();
 
 private:
-  void addSpectrum(const casa::Vector<casa::Float>& v,
-		   const casa::Vector<casa::Bool>& m,
-		   const casa::Vector<casa::Float>& tsys,
-		   const casa::Double interval,
-		   const casa::Double time);
-  void doAddSpectrum(const casa::Vector<casa::Float>& v,
-		     const casa::Vector<casa::Bool>& m,
-		     const casa::Vector<casa::Float>& tsys,
-		     const casa::Double interval,
-		     const casa::Double time,
-		     const casa::Bool inverseMask);
-  void doAddSpectrum2(const casa::Vector<casa::Float>& v,
-                      const casa::Vector<casa::Bool>& m,
-                      const casa::Vector<casa::Float>& tsys,
-                      const casa::Double interval,
-                      const casa::Double time);
-  casa::Float getTotalWeight(const casa::MaskedArray<casa::Float>& data,
-			     const casa::Vector<casa::Float>& tsys,
-			     const casa::Double interval,
-			     const casa::Double time,
-			     const casa::Bool inverseMask);
-  casa::Float addTsys(const casa::Vector<casa::Float>& v, casa::Bool inverseMask);
-  casa::Float addInterval(casa::Double inter, casa::Bool inverseMask);
-  void addTime(casa::Double t, casa::Bool inverseMask);
+  void addSpectrum(const casacore::Vector<casacore::Float>& v,
+		   const casacore::Vector<casacore::Bool>& m,
+		   const casacore::Vector<casacore::Float>& tsys,
+		   const casacore::Double interval,
+		   const casacore::Double time);
+  void doAddSpectrum(const casacore::Vector<casacore::Float>& v,
+		     const casacore::Vector<casacore::Bool>& m,
+		     const casacore::Vector<casacore::Float>& tsys,
+		     const casacore::Double interval,
+		     const casacore::Double time,
+		     const casacore::Bool inverseMask);
+  void doAddSpectrum2(const casacore::Vector<casacore::Float>& v,
+                      const casacore::Vector<casacore::Bool>& m,
+                      const casacore::Vector<casacore::Float>& tsys,
+                      const casacore::Double interval,
+                      const casacore::Double time);
+  casacore::Float getTotalWeight(const casacore::MaskedArray<casacore::Float>& data,
+			     const casacore::Vector<casacore::Float>& tsys,
+			     const casacore::Double interval,
+			     const casacore::Double time,
+			     const casacore::Bool inverseMask);
+  casacore::Float addTsys(const casacore::Vector<casacore::Float>& v, casacore::Bool inverseMask);
+  casacore::Float addInterval(casacore::Double inter, casacore::Bool inverseMask);
+  void addTime(casacore::Double t, casacore::Bool inverseMask);
 
   WeightType weightType_;
-  casa::Bool initialized_;
+  casacore::Bool initialized_;
   //these are Vectors
-  casa::MaskedArray<casa::Float> spectrum_;
-  casa::MaskedArray<casa::Float> weightSum_;
-  casa::MaskedArray<casa::uInt> n_;
+  casacore::MaskedArray<casacore::Float> spectrum_;
+  casacore::MaskedArray<casacore::Float> weightSum_;
+  casacore::MaskedArray<casacore::uInt> n_;
 
   //these three are used for normalise() (CAS-2776; 2011/04/07 by WK)
-  casa::MaskedArray<casa::Float> spectrumNoMask_;
-  casa::MaskedArray<casa::Float> weightSumNoMask_;
-  casa::MaskedArray<casa::uInt> nNoMask_;
+  casacore::MaskedArray<casacore::Float> spectrumNoMask_;
+  casacore::MaskedArray<casacore::Float> weightSumNoMask_;
+  casacore::MaskedArray<casacore::uInt> nNoMask_;
 
-  casa::Vector<casa::Bool> userMask_;
+  casacore::Vector<casacore::Bool> userMask_;
 
-  casa::Vector<casa::Float> tsysSum_, tsysSumNoMask_;
-  casa::Double timeSum_, timeSumNoMask_;
-  casa::Double intervalSum_, intervalSumNoMask_;
+  casacore::Vector<casacore::Float> tsysSum_, tsysSumNoMask_;
+  casacore::Double timeSum_, timeSumNoMask_;
+  casacore::Double intervalSum_, intervalSumNoMask_;
 };
 
 }

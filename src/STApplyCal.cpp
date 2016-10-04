@@ -41,7 +41,7 @@
 #include <atnf/PKSIO/SrcType.h>
 
 
-using namespace casa;
+using namespace casacore;
 using namespace std;
 
 namespace {
@@ -682,7 +682,7 @@ void STApplyCal::doapply(uInt beamno, uInt ifno, uInt polno,
 
 uInt STApplyCal::getIFForTsys(uInt to)
 {
-  for (map<casa::uInt, Vector<uInt> >::iterator i = spwmap_.begin(); 
+  for (map<casacore::uInt, Vector<uInt> >::iterator i = spwmap_.begin();
        i != spwmap_.end(); i++) {
     Vector<uInt> tolist = i->second;
     os_ << "from=" << i->first << ": tolist=" << tolist << LogIO::POST;

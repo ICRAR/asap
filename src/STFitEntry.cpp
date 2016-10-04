@@ -12,7 +12,6 @@
 #include "STFitEntry.h"
 #include <casa/iostream.h>
 
-using namespace casa;
 namespace asap {
 
   STFitEntry::STFitEntry()

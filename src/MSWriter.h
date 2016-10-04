@@ -61,10 +61,10 @@ protected:
 class MSWriter
 {
 public:
-  explicit MSWriter(casa::CountedPtr<Scantable> stable) ;
+  explicit MSWriter(casacore::CountedPtr<Scantable> stable) ;
   virtual ~MSWriter() ;
   
-  virtual bool write(const std::string& filename, const casa::Record& rec) ;
+  virtual bool write(const std::string& filename, const casacore::Record& rec) ;
   
 protected:
   
@@ -86,30 +86,30 @@ private:
   void fillSysCal() ;
 
   // utility
-  void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Table &tab ) ;
-  void getValidTimeRange( casa::Double &me, casa::Double &interval, casa::Vector<casa::Double> &atime, casa::Vector<casa::Double> &ainterval ) ;
-  void antennaProperty( casa::String &name, casa::String &mount, casa::String &type, casa::Double &diameter ) ;
+  void getValidTimeRange( casacore::Double &me, casacore::Double &interval, casacore::Table &tab ) ;
+  void getValidTimeRange( casacore::Double &me, casacore::Double &interval, casacore::Vector<casacore::Double> &atime, casacore::Vector<casacore::Double> &ainterval ) ;
+  void antennaProperty( casacore::String &name, casacore::String &mount, casacore::String &type, casacore::Double &diameter ) ;
 
-  casa::CountedPtr<Scantable> table_ ;
+  casacore::CountedPtr<Scantable> table_ ;
   STHeader header_ ;
-  casa::MeasurementSet *mstable_ ;
+  casacore::MeasurementSet *mstable_ ;
 
-  casa::Bool isWeather_ ;
+  casacore::Bool isWeather_ ;
 
-  casa::Bool useFloatData_ ;
-  casa::Bool useData_ ;
-  casa::Bool tcalSpec_ ;
-  casa::Bool tsysSpec_ ;
+  casacore::Bool useFloatData_ ;
+  casacore::Bool useData_ ;
+  casacore::Bool tcalSpec_ ;
+  casacore::Bool tsysSpec_ ;
 
-  casa::String ptTabName_ ;
+  casacore::String ptTabName_ ;
 
-  casa::String polType_ ;
+  casacore::String polType_ ;
 
-  casa::String filename_ ;
+  casacore::String filename_ ;
 
-  casa::LogIO os_ ;
+  casacore::LogIO os_ ;
 
-  casa::Record srcRec_ ;
+  casacore::Record srcRec_ ;
   
   MSWriter();
   MSWriter(const MSWriter&);

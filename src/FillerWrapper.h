@@ -38,9 +38,9 @@ public:
   virtual ~FillerWrapper() { close(); }
 
 
-  void open(const std::string& filename, const casa::Record& rec) {
+  void open(const std::string& filename, const casacore::Record& rec) {
     //  void open(const std::string& filename) {
-    casa::File file(filename);
+    casacore::File file(filename);
     if ( !file.exists() ) {
       throw(AipsError("File does not exist"));
     }
@@ -61,7 +61,7 @@ public:
     }
     filler_ = 0;
     attached_ = false;
-    throw casa::AipsError("Unknown Data Format");
+    throw casacore::AipsError("Unknown Data Format");
   }
   void close() {
     if (attached_) {
@@ -87,7 +87,7 @@ private:
     int ret = -1 ;
     int pks = 0 ;
     int nro = 1 ;
-    casa::File file( filename ) ;
+    casacore::File file( filename ) ;
     if ( file.isDirectory() )
       ret = pks ;
     else if ( file.isReadable() ) {
@@ -102,7 +102,7 @@ private:
       //  2) (pseudo-)FITS data that doesn't have primary HDU
       // So, one can distinguish NRO and non-NRO data by examining 
       // first keyword name.
-      if ( casa::String( buf ) == "SIMPLE" ) {
+      if ( casacore::String( buf ) == "SIMPLE" ) {
         ret = pks ;
       }
       else {
@@ -116,9 +116,9 @@ private:
   FillerWrapper(const FillerWrapper&);
   FillerWrapper& operator=(const FillerWrapper&);
 
-  casa::CountedPtr<FillerBase> filler_;
+  casacore::CountedPtr<FillerBase> filler_;
   bool attached_;
-  casa::CountedPtr<Scantable> stable_;
+  casacore::CountedPtr<Scantable> stable_;
 };
 
 };

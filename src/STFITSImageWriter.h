@@ -37,7 +37,7 @@
 
 //#include "Scantable.h"
 
-namespace casa {
+namespace casacore {
   class String;
 }
 
@@ -58,16 +58,16 @@ public:
   virtual ~STFITSImageWriter();
 
 // Write out ascii table
-  casa::Bool write(const Scantable& table, const casa::String& name);
+  casacore::Bool write(const Scantable& table, const casacore::String& name);
 
-  void setClass(casa::Bool flag)  { isClass_ = flag; }
+  void setClass(casacore::Bool flag)  { isClass_ = flag; }
 
 private:
-  casa::DirectionCoordinate getDirectionCoordinate(const casa::String& reff,
-                                                   casa::Double lon, 
-                                                   casa::Double lat);
+  casacore::DirectionCoordinate getDirectionCoordinate(const casacore::String& reff,
+                                                   casacore::Double lon, 
+                                                   casacore::Double lat);
 
-  casa::Bool isClass_;
+  casacore::Bool isClass_;
 };
 
 }// namespace

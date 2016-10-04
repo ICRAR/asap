@@ -21,11 +21,11 @@
 #include "STHistory.h"
 #include "MathUtils.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STHistory::name_ = "HISTORY";
+const casacore::String STHistory::name_ = "HISTORY";
 
 STHistory::STHistory(const Scantable& parent ) :
   STSubTable( parent, name_ )
@@ -33,7 +33,7 @@ STHistory::STHistory(const Scantable& parent ) :
   setup();
 }
 
-asap::STHistory::STHistory( casa::Table tab ) : STSubTable(tab, name_)
+asap::STHistory::STHistory( casacore::Table tab ) : STSubTable(tab, name_)
 {
   itemCol_.attach(table_,"ITEM");
 }

@@ -20,8 +20,6 @@
 #include "BisectionLocator.h"
 #include "HuntLocator.h"
 
-using namespace casa;
-
 namespace asap {
 
 template <class T, class U> Interpolator1D<T, U>::Interpolator1D()
@@ -53,7 +51,7 @@ template <class T, class U>
 void Interpolator1D<T, U>::setX(T *x, unsigned int n)
 {
   //assert(n_ == 0 || n_ == n);
-  casa::assert_<casa::AipsError>(n_ == 0 || n_ == n, "length mismatch in data.");
+  casacore::assert_<casacore::AipsError>(n_ == 0 || n_ == n, "length mismatch in data.");
   x_ = x;
   n_ = n;
   createLocator();
@@ -64,7 +62,7 @@ template <class T, class U>
 void Interpolator1D<T, U>::setY(U *y, unsigned int n)
 {
   //assert(n_ == 0 || n_ == n);
-  casa::assert_<casa::AipsError>(n_ == 0 || n_ == n, "length mismatch in data.");
+  casacore::assert_<casacore::AipsError>(n_ == 0 || n_ == n, "length mismatch in data.");
   y_ = y;
   n_ = n;
 }

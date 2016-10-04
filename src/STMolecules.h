@@ -31,7 +31,7 @@ The Molecules subtable of the Scantable
 class STMolecules : public STSubTable {
 public:
   STMolecules() {;}
-  explicit STMolecules(casa::Table tab);
+  explicit STMolecules(casacore::Table tab);
   explicit STMolecules( const Scantable& parent);
 
   virtual ~STMolecules();
@@ -39,39 +39,39 @@ public:
   STMolecules& operator=(const STMolecules& other);
 
 /***
-  casa::uInt addEntry( casa::Double restfreq, const casa::String& name="",
-                       const casa::String& formattedname="");
+  casacore::uInt addEntry( casacore::Double restfreq, const casacore::String& name="",
+                       const casacore::String& formattedname="");
 ***/
 
-  casa::uInt addEntry( casa::Vector<casa::Double> restfreq, 
-		       const casa::Vector<casa::String>& name=casa::Vector<casa::String>(0),
-                       const casa::Vector<casa::String>& formattedname=casa::Vector<casa::String>(0));
+  casacore::uInt addEntry( casacore::Vector<casacore::Double> restfreq,
+		       const casacore::Vector<casacore::String>& name=casacore::Vector<casacore::String>(0),
+                       const casacore::Vector<casacore::String>& formattedname=casacore::Vector<casacore::String>(0));
 
 /***
-  void getEntry( casa::Double& restfreq, casa::String& name,
-                 casa::String& formattedname, casa::uInt id) const;
+  void getEntry( casacore::Double& restfreq, casacore::String& name,
+                 casacore::String& formattedname, casacore::uInt id) const;
 ***/
-  void getEntry( casa::Vector<casa::Double>& restfreq, 
-		 casa::Vector<casa::String>& name,
-                 casa::Vector<casa::String>& formattedname, 
-		 casa::uInt id) const;
+  void getEntry( casacore::Vector<casacore::Double>& restfreq,
+		 casacore::Vector<casacore::String>& name,
+                 casacore::Vector<casacore::String>& formattedname,
+		 casacore::uInt id) const;
 
   std::vector<double> getRestFrequencies() const;
-  std::vector<double> getRestFrequency( casa::uInt id ) const;
-  const casa::String& name() const { return name_; }
+  std::vector<double> getRestFrequency( casacore::uInt id ) const;
+  const casacore::String& name() const { return name_; }
   int nrow() const;
 
 private:
   void setup();
-  static const casa::String name_;
-  //casa::Table table_;
-  //casa::ScalarColumn<casa::uInt> freqidCol_;
-  //casa::ScalarColumn<casa::Double> restfreqCol_;
-  casa::ArrayColumn<casa::Double> restfreqCol_;
-  //casa::ScalarColumn<casa::String> nameCol_;
-  casa::ArrayColumn<casa::String> nameCol_;
-  //casa::ScalarColumn<casa::String> formattednameCol_; // e.g. latex
-  casa::ArrayColumn<casa::String> formattednameCol_; // e.g. latex
+  static const casacore::String name_;
+  //casacore::Table table_;
+  //casacore::ScalarColumn<casacore::uInt> freqidCol_;
+  //casacore::ScalarColumn<casacore::Double> restfreqCol_;
+  casacore::ArrayColumn<casacore::Double> restfreqCol_;
+  //casacore::ScalarColumn<casacore::String> nameCol_;
+  casacore::ArrayColumn<casacore::String> nameCol_;
+  //casacore::ScalarColumn<casacore::String> formattednameCol_; // e.g. latex
+  casacore::ArrayColumn<casacore::String> formattednameCol_; // e.g. latex
 
 };
 

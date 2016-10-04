@@ -30,8 +30,8 @@ Abstract base class for all subtables in the Scantable class.
 class STSubTable  {
 public:
   STSubTable() {;}
-  STSubTable( casa::Table tab, const casa::String& name);
-  STSubTable( const Scantable& parent, const casa::String& name );
+  STSubTable( casacore::Table tab, const casacore::String& name);
+  STSubTable( const Scantable& parent, const casacore::String& name );
 
   virtual ~STSubTable();
 
@@ -45,21 +45,21 @@ public:
   virtual void setup() = 0;
   // -> virtual bool conformant(const STSubTable& other) = 0;
 
-  virtual const casa::String& name() const = 0;
+  virtual const casacore::String& name() const = 0;
 
   /**
    * Recalculate IDs to be 0-based and incremented by 1 i.e.
    * rowno == ID
    * @return the 'old' IDs
    */
-  casa::Vector<casa::uInt> repopulate();
+  casacore::Vector<casacore::uInt> repopulate();
 
-  const casa::Table& table() const { return table_; }
-  casa::Table table() { return table_; }
+  const casacore::Table& table() const { return table_; }
+  casacore::Table table() { return table_; }
 
 protected:
-  casa::Table table_;
-  casa::ScalarColumn<casa::uInt> idCol_;
+  casacore::Table table_;
+  casacore::ScalarColumn<casacore::uInt> idCol_;
 
 private:
 

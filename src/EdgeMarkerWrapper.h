@@ -36,12 +36,12 @@ public:
   void setdata( const ScantableWrapper &s,
                 const bool &insitu ) 
   { 
-    EdgeMarker::setdata( s.getCP(), (casa::Bool)insitu ) ; 
+    EdgeMarker::setdata( s.getCP(), (casacore::Bool)insitu ) ; 
   }
 
   ScantableWrapper get()
   {
-    casa::CountedPtr<Scantable> s = EdgeMarker::get() ;
+    casacore::CountedPtr<Scantable> s = EdgeMarker::get() ;
     return ScantableWrapper( s ) ;
   }
 } ;

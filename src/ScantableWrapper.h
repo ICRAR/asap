@@ -44,20 +44,20 @@ public:
                     int type=0)
   {
     GILHandler scopedRelease;
-    casa::Table::TableType tp = casa::Table::Memory;
-    if ( type == 1 ) tp = casa::Table::Plain;
+    casacore::Table::TableType tp = casacore::Table::Memory;
+    if ( type == 1 ) tp = casacore::Table::Plain;
     table_ = new Scantable(name, tp);
   }
 
   explicit ScantableWrapper(int type=0)
   {
     GILHandler scopedRelease;
-    casa::Table::TableType tp = casa::Table::Memory;
-    if ( type == 1) tp = casa::Table::Plain;
+    casacore::Table::TableType tp = casacore::Table::Memory;
+    if ( type == 1) tp = casacore::Table::Plain;
     table_= new Scantable(tp);
   }
 
-  explicit ScantableWrapper(casa::CountedPtr<Scantable> cp) : table_(cp) {;}
+  explicit ScantableWrapper(casacore::CountedPtr<Scantable> cp) : table_(cp) {;}
 
   ScantableWrapper(const ScantableWrapper& mt) :
     table_(mt.getCP()) {;}
@@ -104,7 +104,7 @@ public:
   //std::string getTime(int whichrow=0) const
   //  { return table_->getTime(whichrow); }
   std::string getTime(int whichrow=0, int prec = 0) const
-    { return table_->getTime(whichrow, true, casa::uInt(prec)); }
+    { return table_->getTime(whichrow, true, casacore::uInt(prec)); }
 
   double getIntTime(int whichrow=0) const
     { return table_->getIntTime(whichrow); }
@@ -133,16 +133,16 @@ public:
   void flag(int whichrow=-1, const std::vector<bool>& msk=std::vector<bool>(), bool unflag=false)
     { table_->flag(whichrow, msk, unflag); }
 
-  void flagRow(const std::vector<casa::uInt>& rows=std::vector<casa::uInt>(), bool unflag=false)
+  void flagRow(const std::vector<casacore::uInt>& rows=std::vector<casacore::uInt>(), bool unflag=false)
     { table_->flagRow(rows, unflag); }
 
   bool getFlagRow(int whichrow=0) const
     { return table_->getFlagRow(whichrow); }
 
-  void clip(const casa::Float uthres, const casa::Float dthres, bool clipoutside=true, bool unflag=false)
+  void clip(const casacore::Float uthres, const casacore::Float dthres, bool clipoutside=true, bool unflag=false)
     { table_->clip(uthres, dthres, clipoutside, unflag); }
 
-  std::vector<bool> getClipMask(int whichrow, const casa::Float uthres, const casa::Float dthres, bool clipoutside, bool unflag) const
+  std::vector<bool> getClipMask(int whichrow, const casacore::Float uthres, const casacore::Float dthres, bool clipoutside, bool unflag) const
     { return table_->getClipMask(whichrow, uthres, dthres, clipoutside, unflag); }
 
   std::string getSourceName(int whichrow=0) const
@@ -235,7 +235,7 @@ public:
   void setDirection(const std::string& refstr="")
     { table_->setDirectionRefString(refstr); }
 
-  casa::CountedPtr<Scantable> getCP() const {return table_;}
+  casacore::CountedPtr<Scantable> getCP() const {return table_;}
   Scantable* getPtr() {return &(*table_);}
 
   //  std::string summary() const {
@@ -342,7 +342,7 @@ public:
   { return table_->formatPiecewiseBaselineParams(ranges, params, fixed, rms, -1, masklist, whichrow, verbose, csvformat); }
 
   bool isAllChannelsFlagged(int whichrow=0) const
-  { return table_->isAllChannelsFlagged(casa::uInt(whichrow)); }
+  { return table_->isAllChannelsFlagged(casacore::uInt(whichrow)); }
 
   std::vector<float> execFFT(int whichrow, const std::vector<bool>& mask, bool getRealImag=false, bool getAmplitudeOnly=false)
   { return table_->execFFT(whichrow, mask, getRealImag, getAmplitudeOnly); }
@@ -361,7 +361,7 @@ public:
   void dropXPol() { table_->dropXPol(); }
 
 private:
-  casa::CountedPtr<Scantable> table_;
+  casacore::CountedPtr<Scantable> table_;
 };
 
 } // namespace

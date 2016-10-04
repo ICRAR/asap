@@ -29,7 +29,7 @@
 #include <measures/TableMeasures/ScalarMeasColumn.h>
 
 
-using namespace casa;
+using namespace casacore;
 using namespace std;
 
 namespace asap {

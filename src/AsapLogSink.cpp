@@ -15,7 +15,7 @@
 #include <casa/Logging/NullLogSink.h>
 #include "AsapLogSink.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 

@@ -39,7 +39,7 @@
 
 #include "STDefs.h"
 
-namespace casa {
+namespace casacore {
   template<class T> class Vector;
 }
 
@@ -62,66 +62,66 @@ class STAttr {
   STAttr &operator=(const STAttr& other);
 
   // Telescope diameter(m). Throws exception if unknown.
-  casa::Float diameter(Instrument inst) const;
+  casacore::Float diameter(Instrument inst) const;
 
   // Beam efficiency.  Frequency in Hz.  Returns 1 if unknown.
-  casa::Vector<casa::Float>
-  beamEfficiency(Instrument instr, const casa::MEpoch& dateObs,
-                 const casa::Vector<casa::Float>& freqs) const;
+  casacore::Vector<casacore::Float>
+  beamEfficiency(Instrument instr, const casacore::MEpoch& dateObs,
+                 const casacore::Vector<casacore::Float>& freqs) const;
 
   // Aperture efficiency. Frequency in Hz.  Returns 1 if unknown.
-  casa::Vector<casa::Float>
+  casacore::Vector<casacore::Float>
   apertureEfficiency(Instrument instr,
-                     const casa::MEpoch& dateObs,
-                     const casa::Vector<casa::Float>& freqs) const;
+                     const casacore::MEpoch& dateObs,
+                     const casacore::Vector<casacore::Float>& freqs) const;
 
   // Find factor to convert Jy -> K for this telescope, date of
   // observation and frequency (Hz)
-  casa::Vector<casa::Float> JyPerK(Instrument instr,
-                                   const casa::MEpoch& dateObs,
-                                   const casa::Vector<casa::Float>& freqs)
+  casacore::Vector<casacore::Float> JyPerK(Instrument instr,
+                                   const casacore::MEpoch& dateObs,
+                                   const casacore::Vector<casacore::Float>& freqs)
     const;
 
   // Gain Elevation polynomial correction coefficients (elevation in
   // degrees) Returns length 0 if not known.
-   casa::Vector<casa::Float> gainElevationPoly(Instrument instr) const;
+   casacore::Vector<casacore::Float> gainElevationPoly(Instrument instr) const;
 
   // Find feed polarization type of feeds. In future this needs to come
   // from the data themselves
   std::string feedPolType(Instrument) const;
 
   // Helper function to check instrument (antenna) name and give enum
-  static Instrument convertInstrument(const casa::String& instrument,
-                                      casa::Bool throwIt);
+  static Instrument convertInstrument(const casacore::String& instrument,
+                                      casacore::Bool throwIt);
 
   // Helper function.  Finds factor to convert K -> Jy. Provide
   // aperture efficiency and dish geometric diameter (m)
-  static casa::Float findJyPerK(casa::Float etaAp, casa::Float D);
+  static casacore::Float findJyPerK(casacore::Float etaAp, casacore::Float D);
 
 private:
 
   // Static data
-  casa::Vector<casa::Float> MopEtaBeamX_;     // Beam efficiency
-  casa::Vector<casa::Float> MopEtaBeam2003Y_;
-  casa::Vector<casa::Float> MopEtaBeam2004Y_;
+  casacore::Vector<casacore::Float> MopEtaBeamX_;     // Beam efficiency
+  casacore::Vector<casacore::Float> MopEtaBeam2003Y_;
+  casacore::Vector<casacore::Float> MopEtaBeam2004Y_;
 
-  casa::Vector<casa::Float> MopEtaApX_;       // Aperture efficiency
-  casa::Vector<casa::Float> MopEtaAp2004Y_;
+  casacore::Vector<casacore::Float> MopEtaApX_;       // Aperture efficiency
+  casacore::Vector<casacore::Float> MopEtaAp2004Y_;
 
-  casa::Vector<casa::Float> TidEtaApX_;       // Aperture efficiency
-  casa::Vector<casa::Float> TidEtaApY_;
+  casacore::Vector<casacore::Float> TidEtaApX_;       // Aperture efficiency
+  casacore::Vector<casacore::Float> TidEtaApY_;
 
-  casa::Vector<casa::Float> TidGainElPoly_;   // Gain-el correction poly coeffs
-  casa::Vector<casa::Float> ParkesGainElPoly_;// K-band Gain-el correction 
+  casacore::Vector<casacore::Float> TidGainElPoly_;   // Gain-el correction poly coeffs
+  casacore::Vector<casacore::Float> ParkesGainElPoly_;// K-band Gain-el correction
                                               //poly coeffs
 
   // Init private data
   void initData();
 
   // Linear interpolation
-  casa::Vector<casa::Float> interp(const casa::Vector<casa::Float>& xOut,
-                                   const casa::Vector<casa::Float>& xIn,
-                                   const casa::Vector<casa::Float>& yIn) const;
+  casacore::Vector<casacore::Float> interp(const casacore::Vector<casacore::Float>& xOut,
+                                   const casacore::Vector<casacore::Float>& xIn,
+                                   const casacore::Vector<casacore::Float>& yIn) const;
 
 
 };

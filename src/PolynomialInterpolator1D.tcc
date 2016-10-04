@@ -34,7 +34,7 @@ template <class T, class U>
 U PolynomialInterpolator1D<T, U>::interpolate(T x)
 {
   //casa::AlwaysAssert((this->isready()),(casa::AipsError));
-  casa::assert_<casa::AipsError>(this->isready(), "object is not ready to process.");
+  casacore::assert_<casacore::AipsError>(this->isready(), "object is not ready to process.");
   if (this->n_ == 1)
     return this->y_[0];
 
@@ -96,7 +96,7 @@ U PolynomialInterpolator1D<T, U>::dopoly(T x, unsigned int left,
       catch (...) {
         delete[] c;
         delete[] d;
-        throw casa::AipsError("x_ has duplicate elements");
+        throw casacore::AipsError("x_ has duplicate elements");
       }
       c[i] = (xa[i] - x) * cd;
       d[i] = (xa[i+m] - x) * cd;

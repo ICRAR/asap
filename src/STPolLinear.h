@@ -38,25 +38,25 @@ class STPolLinear : public STPol
 public:
   STPolLinear() {}
 
-  explicit STPolLinear(const casa::Matrix<casa::Float>& specs)
+  explicit STPolLinear(const casacore::Matrix<casacore::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolLinear();
 
   static Factory<STPol,STPolLinear> myFactory;
 
-  virtual casa::Vector<casa::Float> getCircular( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getCircular( casacore::uInt index );
 
-  virtual casa::Vector<casa::Float> getStokes( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getStokes( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinPol( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getLinPol( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinear( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getLinear( casacore::uInt index );
 
-  virtual void rotatePhase( casa::Float phase );
-  virtual void rotateLinPolPhase( casa::Float phase );
+  virtual void rotatePhase( casacore::Float phase );
+  virtual void rotateLinPolPhase( casacore::Float phase );
 
-  virtual void invertPhase( casa::Float phase );
+  virtual void invertPhase( casacore::Float phase );
 
 };
 

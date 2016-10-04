@@ -48,7 +48,7 @@
 
 #include "MathUtils.h"
 
-using namespace casa;
+using namespace casacore;
 
 float mathutil::statistics(const String& which,
                            const MaskedArray<Float>& data)
@@ -250,7 +250,7 @@ void mathutil::polyfit(Vector<Float>& out, Vector<Bool>& outmask,
   }
 }
 
-void mathutil::doZeroOrderInterpolation(casa::Vector<casa::Float>& data, 
+void mathutil::doZeroOrderInterpolation(casacore::Vector<casacore::Float>& data,
 					std::vector<bool>& mask) {
   int fstart = -1;
   int fend = -1;

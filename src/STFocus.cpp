@@ -21,11 +21,11 @@
 #include "STFocus.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STFocus::name_ = "FOCUS";
+const casacore::String STFocus::name_ = "FOCUS";
 
 STFocus::STFocus(const Scantable& parent ) :
   STSubTable( parent, name_ )
@@ -33,7 +33,7 @@ STFocus::STFocus(const Scantable& parent ) :
   setup();
 }
 
-STFocus::STFocus( casa::Table tab ) : 
+STFocus::STFocus( casacore::Table tab ) :
   STSubTable(tab, name_)
 {
   parangleCol_.attach(table_,"PARANGLE");
@@ -157,7 +157,7 @@ void STFocus::setup( )
 }
 
 
-casa::Float STFocus::getTotalAngle( casa::uInt id ) const
+casacore::Float STFocus::getTotalAngle( casacore::uInt id ) const
 {
   Float total = 0.0f;
   Table t = table_(table_.col("ID") == Int(id), 1 );
@@ -178,7 +178,7 @@ casa::Float STFocus::getTotalAngle( casa::uInt id ) const
 }
 
 
-casa::Float STFocus::getFeedHand( casa::uInt id ) const
+casacore::Float STFocus::getFeedHand( casacore::uInt id ) const
 {
   Table t = table_(table_.col("ID") == Int(id), 1 );
   if (t.nrow() == 0 ) {

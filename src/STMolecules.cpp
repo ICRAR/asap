@@ -24,11 +24,11 @@
 #include "STMolecules.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STMolecules::name_ = "MOLECULES";
+const casacore::String STMolecules::name_ = "MOLECULES";
 
 STMolecules::STMolecules(const Scantable& parent) :
   STSubTable( parent, name_ )
@@ -36,7 +36,7 @@ STMolecules::STMolecules(const Scantable& parent) :
   setup();
 }
 
-asap::STMolecules::STMolecules( casa::Table tab ) : STSubTable(tab, name_)
+asap::STMolecules::STMolecules( casacore::Table tab ) : STSubTable(tab, name_)
 {
   restfreqCol_.attach(table_,"RESTFREQUENCY");
   nameCol_.attach(table_,"NAME");

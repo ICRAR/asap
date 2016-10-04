@@ -32,38 +32,38 @@ class STCalTsysTable : public STApplyTable {
 public:
   STCalTsysTable() {;}
   STCalTsysTable(const Scantable& parent);
-  STCalTsysTable(const casa::String &name);
+  STCalTsysTable(const casacore::String &name);
 
   virtual ~STCalTsysTable();
 
   void setup();
-  const casa::String& name() const {return name_;};
+  const casacore::String& name() const {return name_;};
 
   void attachOptionalColumns();
 
-  void setdata(casa::uInt irow, casa::uInt scanno, casa::uInt cycleno, 
-               casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-               casa::uInt freqid, casa::Double time, casa::Float elevation, 
-               const casa::Vector<casa::Float> &tsys,
-	       const casa::Vector<casa::uChar> &flagtra);
-  void appenddata(casa::uInt scanno, casa::uInt cycleno, 
-                  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-                  casa::uInt freqid, casa::Double time, casa::Float elevation, 
-                  const casa::Vector<casa::Float> &tsys,
-		  const casa::Vector<casa::uChar> &flagtra);
+  void setdata(casacore::uInt irow, casacore::uInt scanno, casacore::uInt cycleno, 
+               casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+               casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+               const casacore::Vector<casacore::Float> &tsys,
+	       const casacore::Vector<casacore::uChar> &flagtra);
+  void appenddata(casacore::uInt scanno, casacore::uInt cycleno, 
+                  casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+                  casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+                  const casacore::Vector<casacore::Float> &tsys,
+		  const casacore::Vector<casacore::uChar> &flagtra);
   
-  casa::Vector<casa::Float> getElevation() const {return elCol_.getColumn();}
-  casa::Matrix<casa::Float> getTsys() const {return tsysCol_.getColumn();}
-  casa::Matrix<casa::uChar> getFlagtra() const {return flagtraCol_.getColumn();}
-  casa::uInt nchan(casa::uInt ifno);
+  casacore::Vector<casacore::Float> getElevation() const {return elCol_.getColumn();}
+  casacore::Matrix<casacore::Float> getTsys() const {return tsysCol_.getColumn();}
+  casacore::Matrix<casacore::uChar> getFlagtra() const {return flagtraCol_.getColumn();}
+  casacore::uInt nchan(casacore::uInt ifno);
 
-  casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
+  casacore::Vector<casacore::Double> getBaseFrequency(casacore::uInt whichrow);
 
 private:
-  static const casa::String name_ ;
-  casa::ArrayColumn<casa::Float> tsysCol_;
-  casa::ArrayColumn<casa::uChar> flagtraCol_;
-  casa::ScalarColumn<casa::Float> elCol_;
+  static const casacore::String name_ ;
+  casacore::ArrayColumn<casacore::Float> tsysCol_;
+  casacore::ArrayColumn<casacore::uChar> flagtraCol_;
+  casacore::ScalarColumn<casacore::Float> elCol_;
 };
 
 }

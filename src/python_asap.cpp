@@ -50,7 +50,7 @@
 namespace asap {
   namespace python {
 
-void translate_ex(const casa::AipsError& e)
+void translate_ex(const casacore::AipsError& e)
 {
   // Use the Python 'C' API to set up an exception object
   PyErr_SetString(PyExc_RuntimeError, e.what());

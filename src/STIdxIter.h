@@ -13,7 +13,7 @@
 #include "Scantable.h"
 
 using namespace std ;
-using namespace casa ;
+using namespace casacore;
 
 //namespace {
 //vector<string> split(const string &str, char delim)

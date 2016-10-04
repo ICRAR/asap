@@ -21,11 +21,11 @@
 #include "STWeather.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STWeather::name_ = "WEATHER";
+const casacore::String STWeather::name_ = "WEATHER";
 
 STWeather::STWeather(const Scantable& parent) :
   STSubTable( parent, name_ )
@@ -34,7 +34,7 @@ STWeather::STWeather(const Scantable& parent) :
 }
 
 
-asap::STWeather::STWeather( casa::Table tab ) : STSubTable(tab, name_)
+asap::STWeather::STWeather( casacore::Table tab ) : STSubTable(tab, name_)
 {
   temperatureCol_.attach(table_,"TEMPERATURE");
   pressureCol_.attach(table_,"PRESSURE");

@@ -41,7 +41,7 @@
 #include <fstream>
 
 using namespace asap;
-using namespace casa;
+using namespace casacore;
 using namespace std;
 
 namespace asap {
@@ -56,27 +56,27 @@ namespace asap {
 class RunningBox {
    // The input data to work with. Use reference symantics to avoid
    // an unnecessary copying
-   const casa::Vector<casa::Float>  &spectrum; // a buffer for the spectrum
-   const casa::Vector<casa::Bool>   &mask; // associated mask
+   const casacore::Vector<casacore::Float>  &spectrum; // a buffer for the spectrum
+   const casacore::Vector<casacore::Bool>   &mask; // associated mask
    const std::pair<int,int>         &edge; // start and stop+1 channels
                                            // to work with
 
    // statistics for running box filtering
-   casa::Float sumf;       // sum of fluxes
-   casa::Float sumf2;     // sum of squares of fluxes
-   casa::Float sumch;       // sum of channel numbers (for linear fit)
-   casa::Float sumch2;     // sum of squares of channel numbers (for linear fit)
-   casa::Float sumfch;     // sum of flux*(channel number) (for linear fit)
+   casacore::Float sumf;       // sum of fluxes
+   casacore::Float sumf2;     // sum of squares of fluxes
+   casacore::Float sumch;       // sum of channel numbers (for linear fit)
+   casacore::Float sumch2;     // sum of squares of channel numbers (for linear fit)
+   casacore::Float sumfch;     // sum of flux*(channel number) (for linear fit)
 
    int box_chan_cntr;     // actual number of channels in the box
    int max_box_nchan;     // maximum allowed number of channels in the box
                           // (calculated from boxsize and actual spectrum size)
    // cache for derivative statistics
-   mutable casa::Bool need2recalculate; // if true, values of the statistics
+   mutable casacore::Bool need2recalculate; // if true, values of the statistics
                                        // below are invalid
-   mutable casa::Float linmean;  // a value of the linear fit to the
+   mutable casacore::Float linmean;  // a value of the linear fit to the
                                  // points in the running box
-   mutable casa::Float linvariance; // the same for variance
+   mutable casacore::Float linvariance; // the same for variance
    int cur_channel;       // the number of the current channel
    int start_advance;     // number of channel from which the box can
                           // be moved (the middle of the box, if there is no
@@ -84,15 +84,15 @@ class RunningBox {
 public:
    // set up the object with the references to actual data
    // as well as the number of channels in the running box
-   RunningBox(const casa::Vector<casa::Float>  &in_spectrum,
-                 const casa::Vector<casa::Bool>   &in_mask,
+   RunningBox(const casacore::Vector<casacore::Float>  &in_spectrum,
+                 const casacore::Vector<casacore::Bool>   &in_mask,
                  const std::pair<int,int>         &in_edge,
                  int in_max_box_nchan);
 
    // access to the statistics
-   const casa::Float& getLinMean() const;
-   const casa::Float& getLinVariance() const;
-   casa::Float aboveMean() const;
+   const casacore::Float& getLinMean() const;
+   const casacore::Float& getLinVariance() const;
+   casacore::Float aboveMean() const;
    int getChannel() const;
 
    // actual number of channels in the box (max_box_nchan, if no channels
@@ -103,7 +103,7 @@ public:
    void next();
 
    // checking whether there are still elements
-   casa::Bool haveMore() const;
+   casacore::Bool haveMore() const;
 
    // go to start
    void rewind();
@@ -135,20 +135,20 @@ class LFAboveThreshold : protected LFLineListOperations {
    // temporary line edge channels and flag, which is True if the line
    // was detected in the previous channels.
    std::pair<int,int> cur_line;
-   casa::Bool is_detected_before;
+   casacore::Bool is_detected_before;
    int  min_nchan;                         // A minimum number of consequtive
                                            // channels, which should satisfy
                                            // the detection criterion, to be
                                            // a detection
-   casa::Float threshold;                  // detection threshold - the
+   casacore::Float threshold;                  // detection threshold - the
                                            // minimal signal to noise ratio
    std::list<pair<int,int> > &lines;       // list where detections are saved
                                            // (pair: start and stop+1 channel)
    RunningBox *running_box;                // running box filter
-   casa::Vector<Int> signs;                // An array to store the signs of
+   casacore::Vector<Int> signs;                // An array to store the signs of
                                            // the value - current mean
                                            // (used to search wings)
-   casa::Int last_sign;                    // a sign (+1, -1 or 0) of the
+   casacore::Int last_sign;                    // a sign (+1, -1 or 0) of the
                                            // last point of the detected line
                                            //
    bool itsUseMedian;                      // true if median statistics is used
@@ -162,27 +162,27 @@ public:
    // set up the detection criterion
    LFAboveThreshold(std::list<pair<int,int> > &in_lines,
                     int in_min_nchan = 3,
-                    casa::Float in_threshold = 5,
+                    casacore::Float in_threshold = 5,
                     bool use_median = false,
                     int noise_sample_size = -1);
    virtual ~LFAboveThreshold();
 
    // replace the detection criterion
-   void setCriterion(int in_min_nchan, casa::Float in_threshold);
+   void setCriterion(int in_min_nchan, casacore::Float in_threshold);
 
    // return the array with signs of the value-current mean
    // An element is +1 if value>mean, -1 if less, 0 if equal.
    // This array is updated each time the findLines method is called and
    // is used to search the line wings
-   const casa::Vector<Int>& getSigns() const;
+   const casacore::Vector<Int>& getSigns() const;
 
    // find spectral lines and add them into list
    // if statholder is not NULL, the accumulate function of it will be
    // called for each channel to save statistics
    //    spectrum, mask and edge - reference to the data
    //    max_box_nchan  - number of channels in the running box
-   void findLines(const casa::Vector<casa::Float> &spectrum,
-                  const casa::Vector<casa::Bool> &mask,
+   void findLines(const casacore::Vector<casacore::Float> &spectrum,
+                  const casacore::Vector<casacore::Bool> &mask,
                   const std::pair<int,int> &edge,
                   int max_box_nchan);
 
@@ -191,15 +191,15 @@ protected:
    // process a channel: update curline and is_detected before and
    // add a new line to the list, if necessary using processCurLine()
    // detect=true indicates that the current channel satisfies the criterion
-   void processChannel(Bool detect, const casa::Vector<casa::Bool> &mask);
+   void processChannel(Bool detect, const casacore::Vector<casacore::Bool> &mask);
 
    // process the interval of channels stored in curline
    // if it satisfies the criterion, add this interval as a new line
-   void processCurLine(const casa::Vector<casa::Bool> &mask);
+   void processCurLine(const casacore::Vector<casacore::Bool> &mask);
 
    // get the sign of runningBox->aboveMean(). The RunningBox pointer
    // should be defined
-   casa::Int getAboveMeanSign() const;
+   casacore::Int getAboveMeanSign() const;
 };
 
 //
@@ -456,8 +456,8 @@ void LFNoiseEstimator::buildSortedCache() const
 
 // set up the object with the references to actual data
 // and the number of channels in the running box
-RunningBox::RunningBox(const casa::Vector<casa::Float>  &in_spectrum,
-                       const casa::Vector<casa::Bool>   &in_mask,
+RunningBox::RunningBox(const casacore::Vector<casacore::Float>  &in_spectrum,
+                       const casacore::Vector<casacore::Bool>   &in_mask,
                        const std::pair<int,int>         &in_edge,
                        int in_max_box_nchan) :
         spectrum(in_spectrum), mask(in_mask), edge(in_edge),
@@ -487,21 +487,21 @@ void RunningBox::rewind() {
 }
 
 // access to the statistics
-const casa::Float& RunningBox::getLinMean() const
+const casacore::Float& RunningBox::getLinMean() const
 {
   DebugAssert(cur_channel<edge.second, AipsError);
   if (need2recalculate) updateDerivativeStatistics();
   return linmean;
 }
 
-const casa::Float& RunningBox::getLinVariance() const
+const casacore::Float& RunningBox::getLinVariance() const
 {
   DebugAssert(cur_channel<edge.second, AipsError);
   if (need2recalculate) updateDerivativeStatistics();
   return linvariance;
 }
 
-casa::Float RunningBox::aboveMean() const
+casacore::Float RunningBox::aboveMean() const
 {
   DebugAssert(cur_channel<edge.second, AipsError);
   if (need2recalculate) updateDerivativeStatistics();
@@ -560,7 +560,7 @@ void RunningBox::next()
 }
 
 // checking whether there are still elements
-casa::Bool RunningBox::haveMore() const
+casacore::Bool RunningBox::haveMore() const
 {
    return cur_channel<edge.second;
 }
@@ -610,7 +610,7 @@ void RunningBox::updateDerivativeStatistics() const
 // set up the detection criterion
 LFAboveThreshold::LFAboveThreshold(std::list<pair<int,int> > &in_lines,
                                    int in_min_nchan,
-                                   casa::Float in_threshold,
+                                   casacore::Float in_threshold,
                                    bool use_median,
                                    int noise_sample_size) :
              min_nchan(in_min_nchan), threshold(in_threshold),
@@ -623,7 +623,7 @@ LFAboveThreshold::~LFAboveThreshold()
 }
 
 // replace the detection criterion
-void LFAboveThreshold::setCriterion(int in_min_nchan, casa::Float in_threshold)
+void LFAboveThreshold::setCriterion(int in_min_nchan, casacore::Float in_threshold)
 {
   min_nchan=in_min_nchan;
   threshold=in_threshold;
@@ -631,7 +631,7 @@ void LFAboveThreshold::setCriterion(int in_min_nchan, casa::Float in_threshold)
 
 // get the sign of runningBox->aboveMean(). The RunningBox pointer
 // should be defined
-casa::Int LFAboveThreshold::getAboveMeanSign() const
+casacore::Int LFAboveThreshold::getAboveMeanSign() const
 {
   const Float buf=running_box->aboveMean();
   if (buf>0) return 1;
@@ -643,7 +643,7 @@ casa::Int LFAboveThreshold::getAboveMeanSign() const
 // process a channel: update cur_line and is_detected before and
 // add a new line to the list, if necessary
 void LFAboveThreshold::processChannel(Bool detect,
-                 const casa::Vector<casa::Bool> &mask)
+                 const casacore::Vector<casacore::Bool> &mask)
 {
   try {
        if (is_detected_before) {
@@ -674,7 +674,7 @@ void LFAboveThreshold::processChannel(Bool detect,
 
 // process the interval of channels stored in cur_line
 // if it satisfies the criterion, add this interval as a new line
-void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
+void LFAboveThreshold::processCurLine(const casacore::Vector<casacore::Bool> &mask)
 {
   try {
        if (is_detected_before) {
@@ -708,14 +708,14 @@ void LFAboveThreshold::processCurLine(const casa::Vector<casa::Bool> &mask)
 // An element is +1 if value>mean, -1 if less, 0 if equal.
 // This array is updated each time the findLines method is called and
 // is used to search the line wings
-const casa::Vector<Int>& LFAboveThreshold::getSigns() const
+const casacore::Vector<Int>& LFAboveThreshold::getSigns() const
 {
   return signs;
 }
 
 // find spectral lines and add them into list
-void LFAboveThreshold::findLines(const casa::Vector<casa::Float> &spectrum,
-                              const casa::Vector<casa::Bool> &mask,
+void LFAboveThreshold::findLines(const casacore::Vector<casacore::Float> &spectrum,
+                              const casacore::Vector<casacore::Bool> &mask,
                               const std::pair<int,int> &edge,
                               int max_box_nchan)
 {
@@ -904,12 +904,12 @@ STLineFinder::STLineFinder() : edge(0,0), err("spurious")
 //              Default is -1 (i.e. estimate using the whole spectrum)
 // in_median    true if median statistics is used as opposed to average of
 //              the lowest 80% of deviations (default)
-void STLineFinder::setOptions(const casa::Float &in_threshold,
-                              const casa::Int &in_min_nchan,
-                              const casa::Int &in_avg_limit,
-                              const casa::Float &in_box_size,
-                              const casa::Float &in_noise_box,
-                              const casa::Bool &in_median)
+void STLineFinder::setOptions(const casacore::Float &in_threshold,
+                              const casacore::Int &in_min_nchan,
+                              const casacore::Int &in_avg_limit,
+                              const casacore::Float &in_box_size,
+                              const casacore::Float &in_noise_box,
+                              const casacore::Bool &in_median)
 {
   threshold=in_threshold;
   min_nchan=in_min_nchan;
@@ -948,7 +948,7 @@ void STLineFinder::setData(const std::vector<float> &in_spectrum)
 //   can be achieved using a spectrum mask only
 int STLineFinder::findLines(const std::vector<bool> &in_mask,
 			    const std::vector<int> &in_edge,
-			    const casa::uInt &whichRow)
+			    const casacore::uInt &whichRow)
 {
   if (useScantable && scan.null())
       throw AipsError("STLineFinder::findLines - a scan should be set first,"
@@ -1095,8 +1095,8 @@ int STLineFinder::findLines(const std::vector<bool> &in_mask,
 // auxiliary function to fit and subtract a polynomial from the current
 // spectrum. It uses the Fitter class. This action is required before
 // reducing the spectral resolution if the baseline shape is bad
-void STLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
-                      const casa::Int &order)
+void STLineFinder::subtractBaseline(const casacore::Vector<casacore::Bool> &temp_mask,
+                      const casacore::Int &order)
 {
   AlwaysAssert(spectrum.nelements(),AipsError);
   // use the fact that temp_mask excludes channels rejected at the edge
@@ -1111,7 +1111,7 @@ void STLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
   sdf.setData(absc,spec,std_mask);
   sdf.setExpression("poly",order);
   if (!sdf.lfit()) return; // fit failed, use old spectrum
-  spectrum=casa::Vector<casa::Float>(sdf.getResidual());
+  spectrum=casacore::Vector<casacore::Float>(sdf.getResidual());
 }
 
 // auxiliary function to average adjacent channels and update the mask
@@ -1120,8 +1120,8 @@ void STLineFinder::subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
 // spectrum and edge fields of this class, but updates the mask
 // array specified, rather than the field of this class
 // boxsize - a number of adjacent channels to average
-void STLineFinder::averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update,
-                                   const casa::Int &boxsize)
+void STLineFinder::averageAdjacentChannels(casacore::Vector<casacore::Bool> &mask2update,
+                                   const casacore::Int &boxsize)
 {
   DebugAssert(mask2update.nelements()==spectrum.nelements(), AipsError);
   DebugAssert(boxsize!=0,AipsError);
@@ -1265,7 +1265,7 @@ std::vector<int> STLineFinder::getLineRangesInChannels() const
 // lines2update - a list of lines to work with
 //                 nothing will be done if it is empty
 // max_box_nchan - channels in the running box for baseline filtering
-void STLineFinder::keepStrongestOnly(const casa::Vector<casa::Bool> &temp_mask,
+void STLineFinder::keepStrongestOnly(const casacore::Vector<casacore::Bool> &temp_mask,
                   std::list<std::pair<int, int> > &lines2update,
                   int max_box_nchan)
 {
@@ -1370,8 +1370,8 @@ void LFLineListOperations::addNewSearchResult(const std::list<pair<int, int> > &
 // the detection threshold. If lines becomes adjacent, they are
 // merged together. Any masked channel stops the extension
 void LFLineListOperations::searchForWings(std::list<std::pair<int, int> > &newlines,
-           const casa::Vector<casa::Int> &signs,
-           const casa::Vector<casa::Bool> &mask,
+           const casacore::Vector<casacore::Int> &signs,
+           const casacore::Vector<casacore::Bool> &mask,
            const std::pair<int,int> &edge)
 {
   try {

@@ -15,7 +15,7 @@
 #include "RowAccumulator.h"
 #include "STIdxIter.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 STCalibration::STCalibration(CountedPtr<Scantable> &s, const String target_column)

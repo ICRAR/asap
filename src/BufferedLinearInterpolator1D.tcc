@@ -46,7 +46,7 @@ template <class T, class U>
 U BufferedLinearInterpolator1D<T, U>::interpolate(T x)
 {
   //assert(this->isready());
-  assert_<casa::AipsError>(this->isready(), "object is not ready to process.");
+  assert_<casacore::AipsError>(this->isready(), "object is not ready to process.");
   if (this->n_ == 1)
     return this->y_[0];
 

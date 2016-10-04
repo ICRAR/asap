@@ -68,7 +68,7 @@ public:
 
 	// Construct a compiled string
 	explicit CompiledSpectralElement(
-		const String& function, const Vector<Double>& param
+		const casacore::String& function, const casacore::Vector<casacore::Double>& param
 	);
 
 	CompiledSpectralElement(const CompiledSpectralElement& other);
@@ -96,7 +96,7 @@ public:
 	// </group>
 
 	// Save to a record.
-	virtual Bool toRecord(RecordInterface& out) const;
+	virtual casacore::Bool toRecord(RecordInterface& out) const;
 
 protected:
 
@@ -104,14 +104,14 @@ protected:
 
 	// For subclasses. Parameters and function must be set after construction.
 	explicit CompiledSpectralElement(
-		SpectralElement::Types type, const Vector<Double>& param=Vector<Double>(0)
+		SpectralElement::Types type, const casacore::Vector<casacore::Double>& param=casacore::Vector<casacore::Double>(0)
 	);
 
 	CompiledSpectralElement(
-		SpectralElement::Types type, uInt nParam
+		SpectralElement::Types type, casacore::uInt nParam
 	);
 
-	virtual void _setFunction(const String& function);
+	virtual void _setFunction(const casacore::String& function);
 
 	/*
 private:

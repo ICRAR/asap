@@ -33,7 +33,7 @@
 
 namespace asap {
   namespace python {
-    void translate_ex(const casa::AipsError& e);
+    void translate_ex(const casacore::AipsError& e);
 #ifdef ENABLE_PLOTTER2
     void python_Plotter2();
 #endif //ENABLE_PLOTTER2

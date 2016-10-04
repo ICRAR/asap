@@ -42,8 +42,8 @@ namespace asap {
     // otherwise iterate over all records.</p>
     // <p>If <src>visit()</src> throws an exception, the iteration stops and
     // <src>finish()</src> will not be called.</p>
-    virtual casa::Bool visit(casa::Bool isFirst, casa::uInt recordNo,
-			     casa::uInt nCols,
+    virtual casacore::Bool visit(casacore::Bool isFirst, casacore::uInt recordNo,
+			     casacore::uInt nCols,
 			     void const *const colValues[]) = 0;
 
     // This method is called immediately after all visits have done.
@@ -54,19 +54,19 @@ namespace asap {
   class TypeManager {
   public:
     virtual ~TypeManager() {}
-    virtual casa::BaseCompare *getComparator() const = 0;
+    virtual casacore::BaseCompare *getComparator() const = 0;
     virtual size_t sizeOf() const = 0;
     virtual void *allocArray(size_t size) const = 0;
     virtual void freeArray(void *array) const = 0;
   };
 
   // This template is applicable to the type which can be applied to
-  // <src>casa::ObjCompare&lt;T&gt;</src>.
+  // <src>casacore::ObjCompare&lt;T&gt;</src>.
   template<class T> class TypeManagerImpl: public TypeManager {
   public:
     TypeManagerImpl(){}
-    virtual casa::BaseCompare *getComparator() const {
-      static casa::ObjCompare<T> comparator;
+    virtual casacore::BaseCompare *getComparator() const {
+      static casacore::ObjCompare<T> comparator;
       return &comparator;
     }
     virtual size_t sizeOf() const {
@@ -99,11 +99,11 @@ namespace asap {
   // <p>If <src>doSort</src> is True, the order of visits is ascending order
   // for each column. <src>columnNames[0]</src> is a primary sort key and
   // <src>columnNames[1]</src> is a secondary sort key, ...</p>
-  void traverseTable(const casa::Table &table,
+  void traverseTable(const casacore::Table &table,
 		     const char *const columnNames[],
 		     const TypeManager *const typeManagers[],
 		     TableVisitor *visitor,
-		     casa::Bool doSort = casa::True);
+		     casacore::Bool doSort = casacore::True);
 
 }
 

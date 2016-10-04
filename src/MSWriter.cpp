@@ -43,7 +43,7 @@
 #include "MathUtils.h"
 #include "TableTraverse.h"
 
-using namespace casa ;
+using namespace casacore;
 using namespace std ;
 
 namespace asap {

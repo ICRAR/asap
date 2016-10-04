@@ -10,7 +10,7 @@
 #include "STIdxIter.h"
 #include "STSelector.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 namespace {

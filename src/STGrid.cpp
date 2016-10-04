@@ -39,7 +39,7 @@
 
 using namespace std ;
 using namespace concurrent ;
-using namespace casa ;
+using namespace casacore;
 using namespace asap ;
 
 namespace asap {

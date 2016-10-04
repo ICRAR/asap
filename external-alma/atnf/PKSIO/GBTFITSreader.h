@@ -49,7 +49,7 @@
 #include <fitsio.h>
 
 using namespace std;
-using namespace casa;
+using namespace casacore;
 
 // <summary>
 // class for GBT SDFITS input using CFITSIO.

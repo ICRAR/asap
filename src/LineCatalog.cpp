@@ -27,7 +27,7 @@
 #include "STAttr.h"
 #include "LineCatalog.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap
 {

@@ -48,7 +48,10 @@
 #include "STFitter.h"
 
 using namespace asap;
+using namespace casacore;
 using namespace casa;
+
+namespace asap {
 
 Fitter::Fitter()
 {
@@ -481,4 +484,6 @@ STFitEntry Fitter::getFitEntry() const
   fit.setFunctions(funcnames_);
   fit.setParmasks(getFixedParameters());
   return fit;
+}
+
 }

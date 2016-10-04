@@ -25,28 +25,28 @@ public:
   RasterEdgeDetector() ;
   virtual ~RasterEdgeDetector() ;
 
-  casa::Vector<casa::uInt> detect() ;
+  casacore::Vector<casacore::uInt> detect() ;
 
 private:
   // parse options
-  void parseOption( const casa::Record &option ) ;
+  void parseOption( const casacore::Record &option ) ;
   
   // edge detection algorithm for raster
   void detectGap() ;
   void selection() ;
-  void selectionPerRow( casa::uInt &idx, 
-                        const casa::uInt &start, 
-                        const casa::uInt &end ) ;
-  void extractRow( const casa::uInt &irow ) ;
-  casa::uInt numOff( const casa::uInt &n ) ;
-  casa::uInt optimumNumber( const casa::uInt &n ) ;
+  void selectionPerRow( casacore::uInt &idx, 
+                        const casacore::uInt &start, 
+                        const casacore::uInt &end ) ;
+  void extractRow( const casacore::uInt &irow ) ;
+  casacore::uInt numOff( const casacore::uInt &n ) ;
+  casacore::uInt optimumNumber( const casacore::uInt &n ) ;
 
   // gap list
-  casa::Vector<casa::uInt> gaplist_ ;
+  casacore::Vector<casacore::uInt> gaplist_ ;
 
   // options
-  casa::Float fraction_ ;
-  casa::Int npts_ ;
+  casacore::Float fraction_ ;
+  casacore::Int npts_ ;
 } ;
 
 }

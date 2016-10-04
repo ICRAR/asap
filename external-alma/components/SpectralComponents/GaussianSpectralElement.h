@@ -75,7 +75,7 @@ public:
 
 	//# Constants
 	// Sigma to FWHM conversion factor
-	static const Double SigmaToFWHM;
+	static const casacore::Double SigmaToFWHM;
 
 	//# Constructors
 
@@ -85,8 +85,8 @@ public:
 	//   <li> AipsError if type not GAUSSIAN
 	// </thrown>
 	GaussianSpectralElement(
-		const Double ampl, const Double center,
-		const Double sigma
+		const casacore::Double ampl, const casacore::Double center,
+		const casacore::Double sigma
 	);
 
 	// Construct the given tp with the given param
@@ -94,7 +94,7 @@ public:
 	//   <li> AipsError if incorrect number of parameters (e.g. not 3 for GAUSSIAN)
 	//   <li> AipsError if sigma == 0.0
 	// </thrown>
-	GaussianSpectralElement(const Vector<Double> &param);
+	GaussianSpectralElement(const casacore::Vector<casacore::Double> &param);
 	// Copy constructor (deep copy)
 	// <thrown>
 	//   <li> AipsError if sigma == 0.0
@@ -113,43 +113,43 @@ public:
 	// </thrown>
 //	GaussianSpectralElement& operator=(const GaussianSpectralElement &other);
 	// Evaluate the value of the element at x
-	//Double operator()(const Double x) const;
+	//casacore::Double operator()(const casacore::Double x) const;
 
-	Double getSigma() const;
-	Double getFWHM() const;
+	casacore::Double getSigma() const;
+	casacore::Double getFWHM() const;
 
-	Double getSigmaErr() const;
-	Double getFWHMErr() const;
+	casacore::Double getSigmaErr() const;
+	casacore::Double getFWHMErr() const;
 
 
-	void setSigma(Double sigma);
-	void setFWHM(Double fwhm);
+	void setSigma(casacore::Double sigma);
+	void setFWHM(casacore::Double fwhm);
 
-	void fixSigma(const Bool fix=True);
+	void fixSigma(const casacore::Bool fix=True);
 
-	Bool fixedSigma() const;
+	casacore::Bool fixedSigma() const;
 
-	Double getIntegral() const;
+	casacore::Double getIntegral() const;
 
 	// Save to a record.   For Gaussian elements,
 	// the width is defined as a FWHM in the record interface.
-	Bool toRecord(RecordInterface &out) const;
+	casacore::Bool toRecord(RecordInterface &out) const;
 
 	// Sigma to FWHM
 	// Convert from sigma to FWHM and vice versa
 	// <group>
-	static Double sigmaFromFWHM (const Double fwhm);
+	static casacore::Double sigmaFromFWHM (const casacore::Double fwhm);
 
-	static Double sigmaToFWHM (const Double sigma);
+	static casacore::Double sigmaToFWHM (const casacore::Double sigma);
 	// </group>
 
-	void set(const Vector<Double>& v);
+	void set(const casacore::Vector<casacore::Double>& v);
 
 private:
 	// need to overrride SpectralElement::_set() because _param[2] is sigma
 	// but the second param of the corresponding Gaussian1D function is the
 	// FWHM :(
-	void _set(const Vector<Double>& v);
+	void _set(const casacore::Vector<casacore::Double>& v);
 
 };
 

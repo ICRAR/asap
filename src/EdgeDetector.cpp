@@ -14,7 +14,7 @@
 #include "MathUtils.h"
 
 using namespace std ;
-using namespace casa ;
+using namespace casacore ;
 
 namespace asap {
 

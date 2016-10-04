@@ -38,7 +38,7 @@
 #include "Scantable.h"
 
 
-namespace casa {
+namespace casacore {
   template<class T> class Vector;
   class MDirection;
 }
@@ -56,12 +56,12 @@ public:
   virtual ~STAsciiWriter();
 
 // Write out ascii table
-  casa::Bool write(const Scantable& table, const casa::String& name);
+  casacore::Bool write(const Scantable& table, const casacore::String& name);
 
 private:
-  casa::String formatDirection(const casa::MDirection& md) const;
+  casacore::String formatDirection(const casacore::MDirection& md) const;
   template <class T>
-  void addLine(std::ostream& of, const casa::String& lbl,
+  void addLine(std::ostream& of, const casacore::String& lbl,
                const T& value);
 };
 

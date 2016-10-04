@@ -81,7 +81,7 @@
 
 #define debug 1
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
@@ -539,7 +539,7 @@ void Scantable::setFeedType(const std::string& feedtype)
 {
   if ( Scantable::factories_.find(feedtype) ==  Scantable::factories_.end() ) {
     std::string msg = "Illegal feed type "+ feedtype;
-    throw(casa::AipsError(msg));
+    throw(casacore::AipsError(msg));
   }
   table_.rwKeywordSet().define(String("POLTYPE"), feedtype);
 }
@@ -862,7 +862,7 @@ void Scantable::flag( int whichrow, const std::vector<bool>& msk, bool unflag ) 
 void Scantable::applyChanFlag( uInt whichrow, const std::vector<bool>& msk, uChar flagval )
 {
   if (whichrow >= table_.nrow() ) {
-    throw( casa::indexError<int>( whichrow, "asap::Scantable::applyChanFlag: Invalid row number" ) );
+    throw( casacore::indexError<int>( whichrow, "asap::Scantable::applyChanFlag: Invalid row number" ) );
   }
   Vector<uChar> flgs = flagsCol_(whichrow);
   if ( msk.size() == 0 ) {
@@ -962,12 +962,12 @@ String Scantable::generateName()
   return (File::newUniqueName("./","temp")).baseName();
 }
 
-const casa::Table& Scantable::table( ) const
+const casacore::Table& Scantable::table( ) const
 {
   return table_;
 }
 
-casa::Table& Scantable::table( )
+casacore::Table& Scantable::table( )
 {
   return table_;
 }
@@ -1880,7 +1880,7 @@ std::vector<double> Scantable::getDirectionVector(int whichrow) const
 }
 
 void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
-  throw( casa::AipsError )
+  throw( casacore::AipsError )
 {
   // assumed that all rows have same nChan
   Vector<Float> arr = specCol_( 0 ) ;
@@ -1888,10 +1888,10 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
 
   // if nmin < 0 or nmax < 0, nothing to do
   if (  nmin < 0 ) {
-    throw( casa::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
+    throw( casacore::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
     }
   if (  nmax < 0  ) {
-    throw( casa::indexError<int>( nmax, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
+    throw( casacore::indexError<int>( nmax, "asap::Scantable::reshapeSpectrum: Invalid range. Negative index is specified." ) ) ;
   }
 
   // if nmin > nmax, exchange values
@@ -1906,7 +1906,7 @@ void asap::Scantable::reshapeSpectrum( int nmin, int nmax )
 
   // if nmin exceeds nChan, nothing to do
   if ( nmin >= nChan ) {
-    throw( casa::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Specified minimum exceeds nChan." ) ) ;
+    throw( casacore::indexError<int>( nmin, "asap::Scantable::reshapeSpectrum: Invalid range. Specified minimum exceeds nChan." ) ) ;
   }
 
   // if nmax exceeds nChan, reset nmax to nChan
@@ -5154,10 +5154,10 @@ void Scantable::outputFittingResult(bool outLogger,
 				    bool csvFormat, 
 				    const std::vector<bool>& chanMask, 
 				    int whichrow, 
-				    const casa::String& coordInfo, 
+				    const casacore::String& coordInfo,
 				    bool hasSameNchan, 
 				    ofstream& ofs, 
-				    const casa::String& funcName, 
+				    const casacore::String& funcName,
 				    const std::vector<int>& edge, 
 				    const std::vector<float>& params, 
 				    const int nClipped)
@@ -5186,10 +5186,10 @@ void Scantable::outputFittingResult(bool outLogger,
 				    bool csvFormat, 
 				    const std::vector<bool>& chanMask, 
 				    int whichrow, 
-				    const casa::String& coordInfo, 
+				    const casacore::String& coordInfo,
 				    bool hasSameNchan, 
 				    ofstream& ofs, 
-				    const casa::String& funcName, 
+				    const casacore::String& funcName,
 				    const std::vector<float>& params, 
 				    const int nClipped)
 {
@@ -5502,7 +5502,7 @@ bool Scantable::hasSameNchanOverIFs()
   return (totalPositiveNChan == (nPositiveNChan * nchan(0)));
 }
 
-std::string Scantable::getMaskRangeList(const std::vector<bool>& mask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, bool verbose)
+std::string Scantable::getMaskRangeList(const std::vector<bool>& mask, int whichrow, const casacore::String& coordInfo, bool hasSameNchan, bool verbose)
 {
   if (mask.size() <= 0) {
     throw(AipsError("The mask elements should be > 0"));

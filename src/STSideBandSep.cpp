@@ -31,7 +31,7 @@
 #include <tables/Tables/TableVector.h>
 
 using namespace std ;
-using namespace casa ;
+using namespace casacore ;
 using namespace asap ;
 
 // #ifndef KS_DEBUG

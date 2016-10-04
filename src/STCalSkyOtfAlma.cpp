@@ -21,7 +21,7 @@
 #include <atnf/PKSIO/SrcType.h>
 
 using namespace std;
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
   STCalSkyOtfAlma::STCalSkyOtfAlma(CountedPtr<Scantable> &s, bool israster)

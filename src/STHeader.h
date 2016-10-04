@@ -39,7 +39,7 @@
 #include <casa/Containers/Block.h>
 #include <measures/Measures/MDirection.h>
 
-namespace casa {
+namespace casacore {
   template<class T> class Matrix;
 }
 
@@ -49,26 +49,26 @@ namespace asap {
 struct STHeader {
 
   bool conformant(const STHeader& other);
-  casa::String diff( const STHeader& other );
+  casacore::String diff( const STHeader& other );
 
 
-  casa::Int nchan;
-  casa::Int npol;
-  casa::Int nif;
-  casa::Int nbeam;
-  casa::String observer;
-  casa::String project;
-  casa::String obstype;
-  casa::String antennaname;
-  casa::Vector<casa::Double> antennaposition;
-  casa::Float equinox;
-  casa::String freqref;
-  casa::Double reffreq;
-  casa::Double bandwidth;
-  casa::Double utc;
-  casa::String fluxunit;
-  casa::String epoch;
-  casa::String poltype;
+  casacore::Int nchan;
+  casacore::Int npol;
+  casacore::Int nif;
+  casacore::Int nbeam;
+  casacore::String observer;
+  casacore::String project;
+  casacore::String obstype;
+  casacore::String antennaname;
+  casacore::Vector<casacore::Double> antennaposition;
+  casacore::Float equinox;
+  casacore::String freqref;
+  casacore::Double reffreq;
+  casacore::Double bandwidth;
+  casacore::Double utc;
+  casacore::String fluxunit;
+  casacore::String epoch;
+  casacore::String poltype;
   void print() const ;
 };
 
@@ -84,26 +84,26 @@ public:
   // like, such as FreqID) are unique.  You can add secondary entries
   // direction and another integer index which are just stored along
   // with the the primary entries
-  casa::uInt addEntry(const casa::String& source, casa::uInt ID,
-                      const casa::MDirection& secDir, casa::uInt secID);
+  casacore::uInt addEntry(const casacore::String& source, casacore::uInt ID,
+                      const casacore::MDirection& secDir, casacore::uInt secID);
 
   // Number of entries
-  casa::Int length() const { return n_;}
+  casacore::Int length() const { return n_;}
 
   // Get attributes
-  casa::String source(casa::uInt which) const {return source_[which];}
-  casa::uInt ID(casa::uInt which) const {return ID_[which];}
-  casa::uInt secID(casa::uInt which) const {return secID_[which];}
-  casa::MDirection secDir(casa::uInt which) const {return secDir_[which];}
+  casacore::String source(casacore::uInt which) const {return source_[which];}
+  casacore::uInt ID(casacore::uInt which) const {return ID_[which];}
+  casacore::uInt secID(casacore::uInt which) const {return secID_[which];}
+  casacore::MDirection secDir(casacore::uInt which) const {return secDir_[which];}
 
   // Summary
   void summary() const;
 
 private:
-  casa::uInt n_;
-  casa::Vector<casa::String> source_;
-  casa::Vector<casa::uInt> ID_, secID_;
-  casa::Block<casa::MDirection> secDir_;
+  casacore::uInt n_;
+  casacore::Vector<casacore::String> source_;
+  casacore::Vector<casacore::uInt> ID_, secID_;
+  casacore::Block<casacore::MDirection> secDir_;
 
   SDDataDesc(const SDDataDesc& other);
 

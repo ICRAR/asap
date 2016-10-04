@@ -26,7 +26,7 @@
 #include "STBaselineTable.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
@@ -230,9 +230,9 @@ void STBaselineTable::appendbasedata(int scanno, int cycleno,
   setbasedata(irow, uInt(scanno), uInt(cycleno), uInt(beamno), uInt(ifno), uInt(polno), uInt(freqid), time);
 }
 
-void STBaselineTable::setresult(casa::uInt irow, 
-				casa::Vector<casa::Float> res, 
-				casa::Float rms)
+void STBaselineTable::setresult(casacore::uInt irow,
+				casacore::Vector<casacore::Float> res,
+				casacore::Float rms)
 {
   resCol_.put(irow, res);
   rmsCol_.put(irow, rms);

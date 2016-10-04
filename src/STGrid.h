@@ -37,7 +37,7 @@
 #include <coordinates/Coordinates/DirectionCoordinate.h>
 
 using namespace std ;
-using namespace casa ;
+using namespace casacore;
 
 namespace asap {
 class STGrid

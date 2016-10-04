@@ -5,7 +5,8 @@
 #include <tables/Tables/ScaColDesc.h>
 
 //#include <casa/namesapce.h>
-using namespace casa;
+
+using namespace casacore;
 
 int main(int argc, const char* argv[]) {
   // enable input in no-prompt mode

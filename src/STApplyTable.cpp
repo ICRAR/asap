@@ -25,11 +25,11 @@
 #include "STApplyTable.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-STApplyTable::STApplyTable( const Scantable& parent, const casa::String& name )
+STApplyTable::STApplyTable( const Scantable& parent, const casacore::String& name )
 {
   TableDesc td("", "1", TableDesc::Scratch);
   td.addColumn(ScalarColumnDesc<uInt>("SCANNO"));

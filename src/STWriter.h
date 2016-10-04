@@ -61,7 +61,7 @@ public:
    * @param format an be "SDFITS", "FITS", "MS2" or "ASCII"
    * @return ststus code from PKSwriter
    */
-  casa::Int setFormat(const string& format = "SDFITS");
+  casacore::Int setFormat(const string& format = "SDFITS");
 
   /**
    * Write the data to a file (directory)
@@ -69,18 +69,18 @@ public:
    * @param filename the output file name
    * @return
    */
-  casa::Int write(const casa::CountedPtr<Scantable> table,
+  casacore::Int write(const casacore::CountedPtr<Scantable> table,
             const string& filename);
 
 private:
-  casa::Vector<casa::Float> tsysFromTable(const casa::Table& tab);
+  casacore::Vector<casacore::Float> tsysFromTable(const casacore::Table& tab);
 
-  void polConversion( casa::Matrix<casa::Float>& spec,
-                      casa::Matrix<casa::uChar>& flag,
-                      casa::Vector<casa::Complex>& xpol,
-                      const casa::Table& tab);
+  void polConversion( casacore::Matrix<casacore::Float>& spec,
+                      casacore::Matrix<casacore::uChar>& flag,
+                      casacore::Vector<casacore::Complex>& xpol,
+                      const casacore::Table& tab);
 
-  casa::String getObsTypes( casa::Int srctype ) ;
+  casacore::String getObsTypes( casacore::Int srctype ) ;
 
   std::string     format_;
   PKSwriter* writer_;

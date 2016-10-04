@@ -35,8 +35,8 @@ Abstract base class for all application tables.
 class STApplyTable  {
 public:
   STApplyTable() {;}
-  STApplyTable(const Scantable& parent, const casa::String& name);
-  STApplyTable(const casa::String &name);
+  STApplyTable(const Scantable& parent, const casacore::String& name);
+  STApplyTable(const casacore::String &name);
 
   virtual ~STApplyTable();
 
@@ -48,51 +48,51 @@ public:
   /***
    * Name of the table
    ***/
-  virtual const casa::String& name() const = 0;
+  virtual const casacore::String& name() const = 0;
 
-  const casa::Table& table() const { return table_; }
-  casa::Table table() { return table_; }
+  const casacore::Table& table() const { return table_; }
+  casacore::Table table() { return table_; }
   void attach();
   void attachBaseColumns();
   virtual void attachOptionalColumns() = 0;
 
-  casa::uInt nrow() {return table_.nrow();}
+  casacore::uInt nrow() {return table_.nrow();}
 
-  casa::Vector<casa::uInt> getScan() const {return scanCol_.getColumn();}
-  casa::Vector<casa::uInt> getCycle() const {return cycleCol_.getColumn();}
-  casa::Vector<casa::uInt> getBeam() const {return beamCol_.getColumn();}
-  casa::Vector<casa::uInt> getIF() const {return ifCol_.getColumn();}
-  casa::Vector<casa::uInt> getPol() const {return polCol_.getColumn();}
-  casa::Vector<casa::Double> getTime() const {return timeCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getScan() const {return scanCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getCycle() const {return cycleCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getBeam() const {return beamCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getIF() const {return ifCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getPol() const {return polCol_.getColumn();}
+  casacore::Vector<casacore::Double> getTime() const {return timeCol_.getColumn();}
 
   void setSelection(STSelector &sel, bool sortByTime=false);
   void unsetSelection();
-  casa::String caltype();
+  casacore::String caltype();
 
-  void save(const casa::String &name);
+  void save(const casacore::String &name);
 
-  virtual casa::uInt nchan(casa::uInt ifno) = 0;
+  virtual casacore::uInt nchan(casacore::uInt ifno) = 0;
 
   // static methods
-  static STCalEnum::CalType getCalType(const casa::String &name);
-  static STCalEnum::CalType getCalType(casa::CountedPtr<STApplyTable> tab);
+  static STCalEnum::CalType getCalType(const casacore::String &name);
+  static STCalEnum::CalType getCalType(casacore::CountedPtr<STApplyTable> tab);
   static STCalEnum::CalType getCalType(STApplyTable *tab);
 
 protected:
-  void setbasedata(casa::uInt irow, casa::uInt scanno, casa::uInt cycleno,
-                   casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-                   casa::uInt freqid, casa::Double time);
-  casa::Block<casa::Double> getFrequenciesRow(casa::uInt id);
+  void setbasedata(casacore::uInt irow, casacore::uInt scanno, casacore::uInt cycleno,
+                   casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+                   casacore::uInt freqid, casacore::Double time);
+  casacore::Block<casacore::Double> getFrequenciesRow(casacore::uInt id);
 
-  casa::Table table_, originaltable_;
-  casa::ScalarColumn<casa::uInt> scanCol_, cycleCol_, beamCol_, ifCol_, polCol_, freqidCol_;
-  casa::ScalarColumn<casa::Double> timeCol_;
-  casa::MEpoch::ScalarColumn timeMeasCol_;
+  casacore::Table table_, originaltable_;
+  casacore::ScalarColumn<casacore::uInt> scanCol_, cycleCol_, beamCol_, ifCol_, polCol_, freqidCol_;
+  casacore::ScalarColumn<casacore::Double> timeCol_;
+  casacore::MEpoch::ScalarColumn timeMeasCol_;
   STSelector sel_;
-  casa::LogIO os_;
+  casacore::LogIO os_;
 
 private:
-  static STCalEnum::CalType stringToType(const casa::String &caltype);
+  static STCalEnum::CalType stringToType(const casacore::String &caltype);
 };
 
 }

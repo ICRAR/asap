@@ -27,7 +27,7 @@
 #include "STCalTsysTable.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 

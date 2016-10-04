@@ -17,7 +17,7 @@
 
 namespace asap {
 /**
-  * This class provides the a casa::LogSink implementation for asap
+  * This class provides the a casacore::LogSink implementation for asap
   * It should be used to catch all casa logMessage and replace the globalSink.
   * It provides an overloaded postLocally which accepts strings so it can also
   * be used from python.
@@ -26,7 +26,7 @@ namespace asap {
   * @date $Date: $
   * @version
   */
-class AsapLogSink : public casa::MemoryLogSink {
+class AsapLogSink : public casacore::MemoryLogSink {
 public:
   /**
    * Default Constructor

@@ -29,7 +29,7 @@ The History subtable of the Scantable
 class STHistory : public STSubTable {
 public:
   STHistory() {;}
-  explicit STHistory(casa::Table tab);
+  explicit STHistory(casacore::Table tab);
   explicit STHistory( const Scantable& parent );
 
   virtual ~STHistory();
@@ -41,7 +41,7 @@ public:
    * @param item the histor string
    * @return an ID (irrelevant)
    */
-  casa::uInt addEntry( const casa::String& item);
+  casacore::uInt addEntry( const casacore::String& item);
 
   /**
    * Just for consistency sake, doesn't do anything
@@ -49,7 +49,7 @@ public:
    * @param  item a string
    * @param id an uInt ID
    */
-  void getEntry( casa::String& item, casa::uInt id);
+  void getEntry( casacore::String& item, casacore::uInt id);
 
   /**
    * add all rows from another STHistory table
@@ -63,7 +63,7 @@ public:
    */
   std::vector<std::string> getHistory(int nrow=-1, int start=0 ) const;
 
-  const casa::String& name() const { return name_; }
+  const casacore::String& name() const { return name_; }
 
   int nrow() const { return table_.nrow(); }
 
@@ -72,8 +72,8 @@ public:
 
 private:
   void setup();
-  static const casa::String name_;
-  casa::ScalarColumn<casa::String> itemCol_;
+  static const casacore::String name_;
+  casacore::ScalarColumn<casacore::String> itemCol_;
 };
 
 }

@@ -32,28 +32,28 @@ public:
 
   virtual ~Calibrator();
 
-  void setSource(casa::Vector<casa::Float> &v);
-  void setReference(casa::Vector<casa::Float> &v);
-  void setReference2(casa::Vector<casa::Float> &v);
-  void setScaler(casa::Vector<casa::Float> &v);
+  void setSource(casacore::Vector<casacore::Float> &v);
+  void setReference(casacore::Vector<casacore::Float> &v);
+  void setReference2(casacore::Vector<casacore::Float> &v);
+  void setScaler(casacore::Vector<casacore::Float> &v);
 
-  const casa::Vector<casa::Float> getCalibrated();
+  const casacore::Vector<casacore::Float> getCalibrated();
 
   virtual void calibrate() = 0;
 
 protected:
   void initStorage();
   void freeStorage();
-  void set(casa::Float *p, casa::Vector<casa::Float> &v);
+  void set(casacore::Float *p, casacore::Vector<casacore::Float> &v);
 
   unsigned int nchan_;
   unsigned int nchanS_;
 
-  casa::Float *source_;
-  casa::Float *ref_;
-  casa::Float *ref2_;
-  casa::Float *scaler_;
-  casa::Float *calibrated_;
+  casacore::Float *source_;
+  casacore::Float *ref_;
+  casacore::Float *ref2_;
+  casacore::Float *scaler_;
+  casacore::Float *calibrated_;
 };
 
 }

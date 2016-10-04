@@ -50,12 +50,12 @@ namespace mathutil {
  * @param relaxed a weighting scheme
  * @param ignoreOther drop every second channel (NYI)
  */
-void hanning(casa::Vector<casa::Float>& out,
-	     casa::Vector<casa::Bool>& outmask,
-             const casa::Vector<casa::Float>& in,
-	     const casa::Vector<casa::Bool>& mask,
-             casa::Bool relaxed=casa::False,
-             casa::Bool ignoreOther=casa::False);
+void hanning(casacore::Vector<casacore::Float>& out,
+	     casacore::Vector<casacore::Bool>& outmask,
+             const casacore::Vector<casacore::Float>& in,
+	     const casacore::Vector<casacore::Bool>& mask,
+             casacore::Bool relaxed=casacore::False,
+             casacore::Bool ignoreOther=casacore::False);
 
 /**
  * Apply a running median to  a masked vector.
@@ -67,53 +67,53 @@ void hanning(casa::Vector<casa::Float>& out,
  * @param mask the input mask
  * @param hwidth half-width of the smoothing window
  */
-void runningMedian(casa::Vector<casa::Float>& out,
-                   casa::Vector<casa::Bool>& outflag,
-                   const casa::Vector<casa::Float>& in,
-                   const casa::Vector<casa::Bool>& flag,
+void runningMedian(casacore::Vector<casacore::Float>& out,
+                   casacore::Vector<casacore::Bool>& outflag,
+                   const casacore::Vector<casacore::Float>& in,
+                   const casacore::Vector<casacore::Bool>& flag,
                    float hwidth);
 
-void polyfit(casa::Vector<casa::Float>& out,
-             casa::Vector<casa::Bool>& outmask,
-             const casa::Vector<casa::Float>& in,
-             const casa::Vector<casa::Bool>& mask,
+void polyfit(casacore::Vector<casacore::Float>& out,
+             casacore::Vector<casacore::Bool>& outmask,
+             const casacore::Vector<casacore::Float>& in,
+             const casacore::Vector<casacore::Bool>& mask,
              float hwidth, int order);
 
 // Generate specified statistic
-float statistics(const casa::String& which,
-                 const casa::MaskedArray<casa::Float>& data);
+float statistics(const casacore::String& which,
+                 const casacore::MaskedArray<casacore::Float>& data);
 
 // Return a position of min or max value
-casa::IPosition minMaxPos(const casa::String& which,
-                 const casa::MaskedArray<casa::Float>& data);
+casacore::IPosition minMaxPos(const casacore::String& which,
+                 const casacore::MaskedArray<casacore::Float>& data);
 
 // Replace masked value by zero
-void replaceMaskByZero(casa::Vector<casa::Float>& data,
-                       const casa::Vector<casa::Bool>& mask);
+void replaceMaskByZero(casacore::Vector<casacore::Float>& data,
+                       const casacore::Vector<casacore::Bool>& mask);
 
 /**
  * Convert casa implementations to stl
  * @param in casa string
  * @return a std vector of std strings
  */
-std::vector<std::string> tovectorstring(const casa::Vector<casa::String>& in);
+std::vector<std::string> tovectorstring(const casacore::Vector<casacore::String>& in);
 
 /**
  * convert stl implementations to casa versions
  * @param in
  * @return
  */
-casa::Vector<casa::String> toVectorString(const std::vector<std::string>& in);
+casacore::Vector<casacore::String> toVectorString(const std::vector<std::string>& in);
 
-void doZeroOrderInterpolation(casa::Vector<casa::Float>& data, 
+void doZeroOrderInterpolation(casacore::Vector<casacore::Float>& data,
 			      std::vector<bool>& mask);
 
 /**
  * RA nomalization: n*2pi rotation if necessary
  **/
-void rotateRA( const casa::Vector<casa::Double> &in,
-               casa::Vector<casa::Double> &out ) ;
-void rotateRA( casa::Vector<casa::Double> &v ) ;
+void rotateRA( const casacore::Vector<casacore::Double> &in,
+               casacore::Vector<casacore::Double> &out ) ;
+void rotateRA( casacore::Vector<casacore::Double> &v ) ;
 
 /**
  * tool to record current time stamp

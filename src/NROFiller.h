@@ -41,10 +41,10 @@ namespace asap
 class NROFiller : public FillerBase
 {
   public:
-    explicit NROFiller(casa::CountedPtr<Scantable> stable);
+    explicit NROFiller(casacore::CountedPtr<Scantable> stable);
     virtual ~NROFiller();
 
-    bool open(const std::string& filename, const casa::Record& rec) ;
+    bool open(const std::string& filename, const casacore::Record& rec) ;
     void fill() ;
     void close() ;
 
@@ -57,7 +57,7 @@ class NROFiller : public FillerBase
 
     // pointer to the reader
     //NROReader *reader_ ;
-    casa::CountedPtr<NROReader> reader_ ;
+    casacore::CountedPtr<NROReader> reader_ ;
 };
 
 

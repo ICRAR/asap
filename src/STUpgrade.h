@@ -26,7 +26,7 @@ A class to upgrade Scantable schemas
 */
 class STUpgrade {
 public:
-  explicit STUpgrade(casa::uInt version) { version_ = version ;}
+  explicit STUpgrade(casacore::uInt version) { version_ = version ;}
   virtual ~STUpgrade() {;}
 
   std::string two2three(const std::string& name);
@@ -35,7 +35,7 @@ public:
   std::string upgrade(const std::string& name);
   
 private:
-  casa::uInt version_;
+  casacore::uInt version_;
 };
 
 }

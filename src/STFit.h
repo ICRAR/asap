@@ -30,27 +30,27 @@ The Fit subtable of the Scantable
 class STFit : public STSubTable {
 public:
   STFit() {;}
-  explicit STFit(casa::Table tab);
+  explicit STFit(casacore::Table tab);
   explicit STFit( const Scantable& parent);
 
   virtual ~STFit();
 
   STFit& operator=(const STFit& other);
 
-  casa::uInt addEntry( const STFitEntry& fit, casa::Int id=-1 );
-  void getEntry( STFitEntry& fit, casa::uInt id ) const;
+  casacore::uInt addEntry( const STFitEntry& fit, casacore::Int id=-1 );
+  void getEntry( STFitEntry& fit, casacore::uInt id ) const;
 
-  const casa::String& name() const { return name_; }
+  const casacore::String& name() const { return name_; }
 
 private:
   void setup();
-  static const casa::String name_;
-  casa::ArrayColumn<casa::String> funcCol_;
-  casa::ArrayColumn<casa::Int> compCol_;
-  casa::ArrayColumn<casa::Double> parCol_;
-  //  casa::ArrayColumn<casa::Double> errCol_;
-  casa::ArrayColumn<casa::Bool> maskCol_;
-  casa::ArrayColumn<casa::String> frameCol_;
+  static const casacore::String name_;
+  casacore::ArrayColumn<casacore::String> funcCol_;
+  casacore::ArrayColumn<casacore::Int> compCol_;
+  casacore::ArrayColumn<casacore::Double> parCol_;
+  //  casacore::ArrayColumn<casacore::Double> errCol_;
+  casacore::ArrayColumn<casacore::Bool> maskCol_;
+  casacore::ArrayColumn<casacore::String> frameCol_;
 };
 
 }

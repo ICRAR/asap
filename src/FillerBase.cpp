@@ -15,11 +15,11 @@
 
 #include "FillerBase.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-FillerBase::FillerBase(casa::CountedPtr<Scantable> stable) :
+FillerBase::FillerBase(casacore::CountedPtr<Scantable> stable) :
   table_(stable)
 {
     row_ = TableRow(table_->table());
@@ -280,10 +280,10 @@ void FillerBase::setWeather2(Float temperature,
       tab.addRow( 1, True ) ;
       TableRow row( tab ) ;
       TableRecord &rec = row.record() ;
-      RecordFieldPtr<casa::uInt> rfpi ;
+      RecordFieldPtr<casacore::uInt> rfpi ;
       rfpi.attachToRecord( rec, "ID" ) ;
       *rfpi = (uInt)nrow ;
-      RecordFieldPtr<casa::Float> rfp ;
+      RecordFieldPtr<casacore::Float> rfp ;
       rfp.attachToRecord( rec, "TEMPERATURE" ) ;
       *rfp = temperature ;
       rfp.attachToRecord( rec, "PRESSURE" ) ;

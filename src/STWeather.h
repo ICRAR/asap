@@ -29,30 +29,30 @@ The Weather subtable of the Scantable
 class STWeather : public STSubTable {
 public:
   STWeather() {;}
-  explicit STWeather(casa::Table tab);
+  explicit STWeather(casacore::Table tab);
   explicit STWeather(const Scantable& parent);
 
   virtual ~STWeather();
 
   STWeather& operator=(const STWeather& other);
 
-  casa::uInt addEntry( casa::Float temperature, casa::Float pressure,
-                       casa::Float humidity,
-                       casa::Float windspeed, casa::Float windaz);
+  casacore::uInt addEntry( casacore::Float temperature, casacore::Float pressure,
+                       casacore::Float humidity,
+                       casacore::Float windspeed, casacore::Float windaz);
 
-  void getEntry( casa::Float& temperature, casa::Float& pressure,
-                       casa::Float& humidity,
-                       casa::Float& windspeed, casa::Float& windaz,
-                       casa::uInt id) const;
+  void getEntry( casacore::Float& temperature, casacore::Float& pressure,
+                       casacore::Float& humidity,
+                       casacore::Float& windspeed, casacore::Float& windaz,
+                       casacore::uInt id) const;
 
-  const casa::String& name() const { return name_; }
+  const casacore::String& name() const { return name_; }
 
 private:
   void setup();
-  static const casa::String name_;
-  //casa::Table table_;
-  //casa::ScalarColumn<casa::uInt> freqidCol_;
-  casa::ScalarColumn<casa::Float> pressureCol_, temperatureCol_,
+  static const casacore::String name_;
+  //casacore::Table table_;
+  //casacore::ScalarColumn<casacore::uInt> freqidCol_;
+  casacore::ScalarColumn<casacore::Float> pressureCol_, temperatureCol_,
                                   humidityCol_,
                                   windspeedCol_, windazCol_;
 };

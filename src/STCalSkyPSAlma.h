@@ -36,17 +36,17 @@ namespace asap {
  */
 class STCalSkyPSAlma : public STCalibration {
 public:
-  STCalSkyPSAlma(casa::CountedPtr<Scantable> &s);
+  STCalSkyPSAlma(casacore::CountedPtr<Scantable> &s);
 
   virtual ~STCalSkyPSAlma() {;}
   
 protected:
   virtual void setupSelector(const STSelector &sel);
-  virtual void appenddata(casa::uInt scanno, casa::uInt cycleno, 
-			  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-			  casa::uInt freqid, casa::Double time, casa::Float elevation, 
-			  const casa::Vector<casa::Float> &any_data,
-			  const casa::Vector<casa::uChar> &channel_flag);
+  virtual void appenddata(casacore::uInt scanno, casacore::uInt cycleno, 
+			  casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+			  casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+			  const casacore::Vector<casacore::Float> &any_data,
+			  const casacore::Vector<casacore::uChar> &channel_flag);
 };
 
 }

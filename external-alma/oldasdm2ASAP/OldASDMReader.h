@@ -30,7 +30,7 @@ public:
    * @param processing options as casa record
    * @return boolean status (true or false) 
    **/
-  bool open( const std::string &filename, const casa::Record &rec ) ;
+  bool open( const std::string &filename, const casacore::Record &rec ) ;
 
   /**
    * fill data
@@ -45,12 +45,12 @@ public:
   /**
    * get antenna id
    **/
-  casa::Int getAntennaId() { return antennaId_ ; } ;
+  casacore::Int getAntennaId() { return antennaId_ ; } ;
 
   /**
    * get antenna name
    **/
-  casa::String getAntennaName() { return antennaName_ ; } ;
+  casacore::String getAntennaName() { return antennaName_ ; } ;
 
   /**
    * fill header
@@ -73,23 +73,23 @@ public:
    * @param epoch epoch (UTC)
    * @param poltype polarization type
    **/
-  void fillHeader( casa::Int &nchan, 
-                   casa::Int &npol, 
-                   casa::Int &nif, 
-                   casa::Int &nbeam, 
-                   casa::String &observer, 
-                   casa::String &project, 
-                   casa::String &obstype, 
-                   casa::String &antennaname, 
-                   casa::Vector<casa::Double> &antennaposition, 
-                   casa::Float &equinox, 
-                   casa::String &freqref, 
-                   casa::Double &reffreq, 
-                   casa::Double &bandwidth,
-                   casa::Double &utc, 
-                   casa::String &fluxunit, 
-                   casa::String &epoch, 
-                   casa::String &poltype ) ;  
+  void fillHeader( casacore::Int &nchan, 
+                   casacore::Int &npol, 
+                   casacore::Int &nif, 
+                   casacore::Int &nbeam, 
+                   casacore::String &observer, 
+                   casacore::String &project, 
+                   casacore::String &obstype, 
+                   casacore::String &antennaname, 
+                   casacore::Vector<casacore::Double> &antennaposition, 
+                   casacore::Float &equinox, 
+                   casacore::String &freqref, 
+                   casacore::Double &reffreq, 
+                   casacore::Double &bandwidth,
+                   casacore::Double &utc, 
+                   casacore::String &fluxunit, 
+                   casacore::String &epoch, 
+                   casacore::String &poltype ) ;  
 
   /**
    * get list of valid configDescriptionId
@@ -99,21 +99,21 @@ public:
    *
    * @return list of valid configDescriptionId 
    **/
-  casa::Vector<casa::uInt> getConfigDescriptionIdList() { return configDescIdList_ ; } ;
+  casacore::Vector<casacore::uInt> getConfigDescriptionIdList() { return configDescIdList_ ; } ;
 
   /**
    * get list of fieldId
    *
-   * @return list of fieldId as casa::uInt
+   * @return list of fieldId as casacore::uInt
    **/
-  casa::Vector<casa::uInt> getFieldIdList() ;
+  casacore::Vector<casacore::uInt> getFieldIdList() ;
 
   /**
    * get number of rows in Main table
    *
    * @return number of rows in Main table
    **/
-  casa::uInt getNumMainRow() ;
+  casacore::uInt getNumMainRow() ;
 
   /**
    * binary data selection
@@ -127,7 +127,7 @@ public:
    * @param configDescId 
    * @param fieldId
    **/
-  casa::Bool setMainRow( casa::uInt configDescId, casa::uInt fieldId ) ;
+  casacore::Bool setMainRow( casacore::uInt configDescId, casacore::uInt fieldId ) ;
 
   /**
    * set Main row to SDMBinData object
@@ -135,7 +135,7 @@ public:
    * @param irow row index
    * @return boolean indicating the row is valid or not
    **/
-  casa::Bool setMainRow( casa::uInt irow ) ;
+  casacore::Bool setMainRow( casacore::uInt irow ) ;
 
   /**
    * get scan number of current row
@@ -173,8 +173,8 @@ public:
    * @param idx for vmsData_
    * @return IF number
    **/
-  casa::uInt getIFNo( unsigned int idx ) ;
-  casa::uInt getIFNo() ;
+  casacore::uInt getIFNo( unsigned int idx ) ;
+  casacore::uInt getIFNo() ;
 
   /**
    * get number of polarization for given index
@@ -379,7 +379,7 @@ public:
    *
    * @return boolean status
    **/
-  casa::Bool setData() ;
+  casacore::Bool setData() ;
 
   /**
    * get number of data in the current row
@@ -400,7 +400,7 @@ public:
    *
    * @param logger (LogSinkInterface)
    **/
-  void setLogger( casa::CountedPtr<casa::LogSinkInterface> &logsink ) ;
+  void setLogger( casacore::CountedPtr<casacore::LogSinkInterface> &logsink ) ;
 
 
 private:
@@ -489,7 +489,7 @@ private:
                 double &az, 
                 double &el,
                 double &mjd,
-                casa::Vector<casa::Quantity> &antpos ) ;
+                casacore::Vector<casacore::Quantity> &antpos ) ;
 
   /**
   * to J2000
@@ -501,9 +501,9 @@ private:
   * @return new direction
   **/
   std::vector<double> toJ2000( std::vector<double> &dir,
-                               casa::String &dirref,
+                               casacore::String &dirref,
                                double &mjd,
-                               casa::Vector<casa::Quantity> &antpos ) ;
+                               casacore::Vector<casacore::Quantity> &antpos ) ;
   /**
    * get nIF
    *
@@ -568,15 +568,15 @@ private:
    **/
   const sdmbin::VMSData *vmsData_ ;
  
-  casa::Int antennaId_ ; // antenna id
-  casa::String antennaName_ ; // antenna name
-  casa::String stationName_ ; // station name
-  casa::Vector<casa::Quantity> antennaPosition_ ; // antenna position
-  casa::Vector<casa::uInt> configDescIdList_ ; // list of valid configDescriptionId 
-  casa::Vector<casa::uInt> feedIdList_ ; // list of valid feedId 
-  casa::Vector<casa::uInt> fieldIdList_ ; // list of fieldId
-  casa::Int row_ ; // current row index
-  map<asdm::Tag,casa::uInt> ifno_ ; // list of IFNO for each SpectralWindow rows
+  casacore::Int antennaId_ ; // antenna id
+  casacore::String antennaName_ ; // antenna name
+  casacore::String stationName_ ; // station name
+  casacore::Vector<casacore::Quantity> antennaPosition_ ; // antenna position
+  casacore::Vector<casacore::uInt> configDescIdList_ ; // list of valid configDescriptionId 
+  casacore::Vector<casacore::uInt> feedIdList_ ; // list of valid feedId 
+  casacore::Vector<casacore::uInt> fieldIdList_ ; // list of fieldId
+  casacore::Int row_ ; // current row index
+  map<asdm::Tag,casacore::uInt> ifno_ ; // list of IFNO for each SpectralWindow rows
   unsigned int numData_ ; // number of valid data in vmsData_ where v_antennaId equals antennaId_
   vector<unsigned int> dataIdList_ ; // list of valid data indexes in vmsData_  
   vector<asdm::Tag> antennaPad_ ; // list of Station Tags for ANTENNA_PAD
@@ -586,12 +586,12 @@ private:
   EnumSet<CorrelationModeMod::CorrelationMode> corrMode_ ; // input correlation mode
   EnumSet<TimeSamplingMod::TimeSampling> timeSampling_ ; // time sampling
   EnumSet<SpectralResolutionTypeMod::SpectralResolutionType> resolutionType_ ; // spectral resolution type
-  casa::CountedPtr<casa::LogSinkInterface> logsink_ ; // Logger
-  casa::String className_ ;
+  casacore::CountedPtr<casacore::LogSinkInterface> logsink_ ; // Logger
+  casacore::String className_ ;
   unsigned int dataIndex_ ;
 
   // Tables/Rows for ASDM
-  casa::Vector<asdm::MainRow *> mainRow_ ; // list of pointers to all Main rows
+  casacore::Vector<asdm::MainRow *> mainRow_ ; // list of pointers to all Main rows
   //asdm::AntennaRow *antennaRow_p ; // pointer to target Antenna row
   //asdm::StationRow *stationRow_p ; // pointer to target Station row that target antenna is located
   asdm::SpectralWindowRow *specWinRow_p ; // pointer to SpectralWindow row

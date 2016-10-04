@@ -47,31 +47,31 @@ Apply any apply tables to target data
 class STApplyCal  {
 public:
   STApplyCal();
-  STApplyCal(casa::CountedPtr<Scantable> target);
+  STApplyCal(casacore::CountedPtr<Scantable> target);
 
   ~STApplyCal();
 
   // set data
-  void setTarget(casa::CountedPtr<Scantable> target);
-  void setTarget(const casa::String &name);
+  void setTarget(casacore::CountedPtr<Scantable> target);
+  void setTarget(const casacore::String &name);
 
   // push new caltable 
   void push(STCalSkyTable *table);
   void push(STCalTsysTable *table);
 
   // set interpolation method
-  //void setInterpolation(STCalEnum::InterpolationAxis axis, STCalEnum::InterpolationType itype, casa::Int order=-1);
-  void setTimeInterpolation(STCalEnum::InterpolationType itype, casa::Int order=-1);
-  void setFrequencyInterpolation(STCalEnum::InterpolationType itype, casa::Int order=-1);
+  //void setInterpolation(STCalEnum::InterpolationAxis axis, STCalEnum::InterpolationType itype, casacore::Int order=-1);
+  void setTimeInterpolation(STCalEnum::InterpolationType itype, casacore::Int order=-1);
+  void setFrequencyInterpolation(STCalEnum::InterpolationType itype, casacore::Int order=-1);
 
   // set IF (spw) mapping for Tsys transfer
-  void setTsysTransfer(casa::uInt from, casa::Vector<casa::uInt> to);
+  void setTsysTransfer(casacore::uInt from, casacore::Vector<casacore::uInt> to);
 
   // apply tables
-  void apply(casa::Bool insitu=false, casa::Bool filltsys=true);
+  void apply(casacore::Bool insitu=false, casacore::Bool filltsys=true);
 
   // split target data and store it to disk
-  void save(const casa::String &name);
+  void save(const casacore::String &name);
 
   // reset all settings except target scantable
   void reset();
@@ -87,36 +87,36 @@ private:
   void initInterpolator();
 
   // single loop element in apply()
-  void doapply(casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-               casa::Vector<casa::uInt> &rows,
-               casa::Vector<casa::uInt> &skylist,
-               casa::Bool filltsys=true);
+  void doapply(casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+               casacore::Vector<casacore::uInt> &rows,
+               casacore::Vector<casacore::uInt> &skylist,
+               casacore::Bool filltsys=true);
 
   // get frequency information from FREQUENCIES subtable
-  casa::Vector<casa::Double> getBaseFrequency(casa::uInt whichrow);
+  casacore::Vector<casacore::Double> getBaseFrequency(casacore::uInt whichrow);
 
   // search spwmap_ to get IFNO for Tsys
-  casa::uInt getIFForTsys(casa::uInt to);
+  casacore::uInt getIFForTsys(casacore::uInt to);
 
   // target data
-  casa::CountedPtr<Scantable> target_;
+  casacore::CountedPtr<Scantable> target_;
 
   // working data
-  casa::CountedPtr<Scantable> work_;
+  casacore::CountedPtr<Scantable> work_;
 
   // calibrator
-  casa::CountedPtr<Calibrator> calibrator_;
+  casacore::CountedPtr<Calibrator> calibrator_;
 
   // interpolation method
   STCalEnum::InterpolationType iTime_;
   STCalEnum::InterpolationType iFreq_;
-  casa::Int order_;
-  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorT_;
-  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorF_;
-  casa::CountedPtr<Interpolator1D<casa::Double, casa::Float> > interpolatorS_;
+  casacore::Int order_;
+  casacore::CountedPtr<Interpolator1D<casacore::Double, casacore::Float> > interpolatorT_;
+  casacore::CountedPtr<Interpolator1D<casacore::Double, casacore::Float> > interpolatorF_;
+  casacore::CountedPtr<Interpolator1D<casacore::Double, casacore::Float> > interpolatorS_;
 
   // IF (spw) mapping for Tsys transfer
-  map<casa::uInt, casa::Vector<casa::uInt> > spwmap_;
+  map<casacore::uInt, casacore::Vector<casacore::uInt> > spwmap_;
 
   // list of apply tables
   std::vector<STCalSkyTable*> skytable_;
@@ -124,13 +124,13 @@ private:
 
   // calibration type
   STCalEnum::CalType caltype_;
-  casa::Bool doTsys_;
+  casacore::Bool doTsys_;
 
   // selector
   STSelector sel_;
 
   // logger
-  casa::LogIO os_;
+  casacore::LogIO os_;
 };
 
 }

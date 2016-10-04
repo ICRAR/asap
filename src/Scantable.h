@@ -56,7 +56,7 @@ struct STLineFinder;
 class STBaselineTable;
 
 /**
-  * This class contains and wraps a casa::Table, which is used to store
+  * This class contains and wraps a casacore::Table, which is used to store
   * all the information. This can be either a MemoryTable or a
   * disk based Table.
   * It provides access functions to the underlying table
@@ -82,14 +82,14 @@ public:
   /**
    * Default constructor
    */
-  explicit Scantable(casa::Table::TableType ttype = casa::Table::Memory);
+  explicit Scantable(casacore::Table::TableType ttype = casacore::Table::Memory);
 
   /**
    * Create a Scantable object from an existing table on disk
    * @param[in] name the name of the existing Scantable
    */
   explicit Scantable(const std::string& name, 
-		     casa::Table::TableType ttype = casa::Table::Memory);
+		     casacore::Table::TableType ttype = casacore::Table::Memory);
 
   /// @fixme this is only sensible for MemoryTables....
   Scantable(const Scantable& other, bool clear=true);
@@ -100,17 +100,17 @@ public:
   virtual ~Scantable();
 
   /**
-   * get a const reference to the underlying casa::Table
-   * @return const \ref casa::Table reference
+   * get a const reference to the underlying casacore::Table
+   * @return const \ref casacore::Table reference
    */
-  const casa::Table& table() const;
+  const casacore::Table& table() const;
 
   /**
-   * get a reference to the underlying casa::Table with the Selection
+   * get a reference to the underlying casacore::Table with the Selection
    * object applied if set
-   * @return casa::Table reference
+   * @return casacore::Table reference
    */
-  casa::Table& table();
+  casacore::Table& table();
 
 
   /**
@@ -168,23 +168,23 @@ public:
    */
   int nscan() const;
 
-  casa::MEpoch::Types getTimeReference() const;
+  casacore::MEpoch::Types getTimeReference() const;
 
 
-  casa::MEpoch getEpoch(int whichrow) const;
+  casacore::MEpoch getEpoch(int whichrow) const;
 
   /**
    * Get global antenna position
-   * @return casa::MPosition
+   * @return casacore::MPosition
    */
-  casa::MPosition getAntennaPosition() const;
+  casacore::MPosition getAntennaPosition() const;
 
   /**
-   * the @ref casa::MDirection for a specific row
+   * the @ref casacore::MDirection for a specific row
    * @param[in] whichrow the row number
-   * return casa::MDirection
+   * return casacore::MDirection
    */
-  casa::MDirection getDirection( int whichrow ) const;
+  casacore::MDirection getDirection( int whichrow ) const;
 
   /**
    * get the direction type as a string, e.g. "J2000"
@@ -248,7 +248,7 @@ public:
    * Flag the data in a row-based manner. (CAS-1433 Wataru Kawasaki)
    * param[in] rows    list of row numbers to be flagged
    */
-  void flagRow( const std::vector<casa::uInt>& rows = std::vector<casa::uInt>(), bool unflag=false);
+  void flagRow( const std::vector<casacore::uInt>& rows = std::vector<casacore::uInt>(), bool unflag=false);
 
   /**
    * Get flagRow info at the specified row. If true, the whole data
@@ -261,15 +261,15 @@ public:
    * Flag the data outside a specified range (in a channel-based manner).
    * (CAS-1807 Wataru Kawasaki)
    */
-  void clip(const casa::Float uthres, const casa::Float dthres, bool clipoutside, bool unflag);
+  void clip(const casacore::Float uthres, const casacore::Float dthres, bool clipoutside, bool unflag);
 
   /**
    * Return a list of booleans with the size of nchan for a specified row, to get info
    * about which channel is clipped.
    */
-  std::vector<bool> getClipMask(int whichrow, const casa::Float uthres, const casa::Float dthres, bool clipoutside, bool unflag);
-  void srchChannelsToClip(casa::uInt whichrow, const casa::Float uthres, const casa::Float dthres, bool clipoutside, bool unflag,
-			  casa::Vector<casa::uChar> flgs);
+  std::vector<bool> getClipMask(int whichrow, const casacore::Float uthres, const casacore::Float dthres, bool clipoutside, bool unflag);
+  void srchChannelsToClip(casacore::uInt whichrow, const casacore::Float uthres, const casacore::Float dthres, bool clipoutside, bool unflag,
+			  casacore::Vector<casacore::uChar> flgs);
 
   /**
    * Return a list of row numbers with respect to the original table.
@@ -346,7 +346,7 @@ public:
     { return integrCol_(whichrow); }
 
   float getTsys(int whichrow) const
-    { return casa::Vector<casa::Float>(tsysCol_(whichrow))(0); }
+    { return casacore::Vector<casacore::Float>(tsysCol_(whichrow))(0); }
   std::vector<float> getTsysSpectrum(int whichrow) const ;
   
   void setTsys(const std::vector<float>& newvals, int whichrow);
@@ -399,7 +399,7 @@ public:
 
   //std::string getTime(int whichrow=-1, bool showdate=true) const;
   std::string getTime(int whichrow=-1, bool showdate=true, 
-		      casa::uInt prec=0) const;
+		      casacore::uInt prec=0) const;
   double getIntTime(int whichrow) const { return integrCol_(whichrow); }
 
   // returns unit, conversion frame, doppler, base-frame
@@ -444,7 +444,7 @@ public:
 
   void shift(int npix);
 
-  casa::SpectralCoordinate getSpectralCoordinate(int whichrow) const;
+  casacore::SpectralCoordinate getSpectralCoordinate(int whichrow) const;
 
   void convertDirection(const std::string& newframe);
 
@@ -474,7 +474,7 @@ public:
    * Get the antenna name
    * @return antenna name string
    */
-  casa::String getAntennaName() const;
+  casacore::String getAntennaName() const;
 
   /**
    * For GBT MS data only. check a scan list
@@ -506,7 +506,7 @@ public:
    *
    * 30/07/2008 Takeshi Nakazato
    **/
-  void reshapeSpectrum( int nmin, int nmax ) throw( casa::AipsError );
+  void reshapeSpectrum( int nmin, int nmax ) throw( casacore::AipsError );
   void reshapeSpectrum( int nmin, int nmax, int irow ) ;
 
   /**
@@ -521,7 +521,7 @@ public:
   void regridChannel( int nchan, double dnu, double fmin, int irow ) ;
   void regridSpecChannel( double dnu, int nchan=-1 ) ;
 
-  bool isAllChannelsFlagged(casa::uInt whichrow);
+  bool isAllChannelsFlagged(casacore::uInt whichrow);
 
   std::vector<std::string> applyBaselineTable(const std::string& bltable, 
 					      const bool returnfitresult, 
@@ -665,7 +665,7 @@ public:
 					 int chanAvgLimit);
   static std::vector<bool> getMaskFromMaskList(const int nchan,
 					  const std::vector<int>& masklist);
-  static casa::Vector<casa::uInt> getMaskListFromMask(
+  static casacore::Vector<casacore::uInt> getMaskListFromMask(
 					   const std::vector<bool>& mask);
   static std::vector<int> splitToIntList(const std::string& str, 
 					 const char delim);
@@ -676,32 +676,32 @@ public:
 
 private:
 
-  casa::Matrix<casa::Float> getPolMatrix( casa::uInt whichrow ) const;
+  casacore::Matrix<casacore::Float> getPolMatrix( casacore::uInt whichrow ) const;
 
   /**
    * Turns a time value into a formatted string
    * @param x
    * @return
    */
-  std::string formatSec(casa::Double x) const;
+  std::string formatSec(casacore::Double x) const;
 
-  std::string formatTime(const casa::MEpoch& me, bool showdate)const;
-  std::string formatTime(const casa::MEpoch& me, bool showdate, 
-			 casa::uInt prec)const;
+  std::string formatTime(const casacore::MEpoch& me, bool showdate)const;
+  std::string formatTime(const casacore::MEpoch& me, bool showdate,
+			 casacore::uInt prec)const;
 
   /**
-   *  Turns a casa::MDirection into a nicely formatted string
-   * @param md an casa::MDirection
+   *  Turns a casacore::MDirection into a nicely formatted string
+   * @param md an casacore::MDirection
    * @param prec output precision of direction
    * @return
    */
-  std::string formatDirection(const casa::MDirection& md, casa::Int prec=7) const;
+  std::string formatDirection(const casacore::MDirection& md, casacore::Int prec=7) const;
 
   /**
    * Create a unique file name for the paged (temporary) table
    * @return just the name
    */
-  static casa::String generateName();
+  static casacore::String generateName();
 
   /**
    * attach to cached columns
@@ -709,7 +709,7 @@ private:
   void attach();
 
   /**
-   * Set up the main casa::Table
+   * Set up the main casacore::Table
    */
   void setupMainTable();
 
@@ -723,7 +723,7 @@ private:
    */
   int rowToScanIndex(int therow);
 
-  std::vector<uint> getNumbers(const casa::ScalarColumn<casa::uInt>& col) const;
+  std::vector<uint> getNumbers(const casacore::ScalarColumn<casacore::uInt>& col) const;
 
   /**
    * Returns a number of elements with "true" in a bool vector. 
@@ -732,15 +732,15 @@ private:
    */
   std::size_t nValidMask(const std::vector<bool>& mask);
 
-  static const casa::uInt version_ = 4;
+  static const casacore::uInt version_ = 4;
 
   STSelector selector_;
 
-  casa::Table::TableType type_;
+  casacore::Table::TableType type_;
 
   // the actual data
-  casa::Table table_;
-  casa::Table originalTable_;
+  casacore::Table table_;
+  casacore::Table originalTable_;
 
   STTcal tcalTable_;
   STFrequencies freqTable_;
@@ -751,29 +751,29 @@ private:
   STFit fitTable_;
 
   // Cached Columns to avoid reconstructing them for each row get/put
-  casa::ScalarColumn<casa::Double> integrCol_;
-  casa::MDirection::ScalarColumn dirCol_;
-  casa::MEpoch::ScalarColumn timeCol_;
-  casa::ScalarColumn<casa::Float> azCol_;
-  casa::ScalarColumn<casa::Float> elCol_;
-  casa::ScalarColumn<casa::String> srcnCol_, fldnCol_;
-  casa::ScalarColumn<casa::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_, flagrowCol_;
-  casa::ScalarColumn<casa::Int> rbeamCol_, srctCol_;
-  casa::ArrayColumn<casa::Float> specCol_, tsysCol_;
-  casa::ArrayColumn<casa::uChar> flagsCol_;
+  casacore::ScalarColumn<casacore::Double> integrCol_;
+  casacore::MDirection::ScalarColumn dirCol_;
+  casacore::MEpoch::ScalarColumn timeCol_;
+  casacore::ScalarColumn<casacore::Float> azCol_;
+  casacore::ScalarColumn<casacore::Float> elCol_;
+  casacore::ScalarColumn<casacore::String> srcnCol_, fldnCol_;
+  casacore::ScalarColumn<casacore::uInt> scanCol_, beamCol_, ifCol_, polCol_, cycleCol_, flagrowCol_;
+  casacore::ScalarColumn<casacore::Int> rbeamCol_, srctCol_;
+  casacore::ArrayColumn<casacore::Float> specCol_, tsysCol_;
+  casacore::ArrayColumn<casacore::uChar> flagsCol_;
 
   // id in frequencies table
-  casa::ScalarColumn<casa::uInt> mfreqidCol_;
+  casacore::ScalarColumn<casacore::uInt> mfreqidCol_;
   // id in tcal table
-  casa::ScalarColumn<casa::uInt> mtcalidCol_;
+  casacore::ScalarColumn<casacore::uInt> mtcalidCol_;
 
-  casa::ArrayColumn<casa::String> histitemCol_;
-  casa::ScalarColumn<casa::Int> mfitidCol_;
-  casa::ScalarColumn<casa::uInt> mweatheridCol_;
+  casacore::ArrayColumn<casacore::String> histitemCol_;
+  casacore::ScalarColumn<casacore::Int> mfitidCol_;
+  casacore::ScalarColumn<casacore::uInt> mweatheridCol_;
 
-  casa::ScalarColumn<casa::uInt> mfocusidCol_;
+  casacore::ScalarColumn<casacore::uInt> mfocusidCol_;
 
-  casa::ScalarColumn<casa::uInt> mmolidCol_;
+  casacore::ScalarColumn<casacore::uInt> mmolidCol_;
 
   static std::map<std::string, STPol::STPolFactory *> factories_;
   void initFactories();
@@ -788,12 +788,12 @@ private:
    *
    * 25/10/2009 Wataru Kawasaki
    */
-  template<class T, class T2> void attachAuxColumnDef(casa::ScalarColumn<T>&,
-						       const casa::String&,
+  template<class T, class T2> void attachAuxColumnDef(casacore::ScalarColumn<T>&,
+						       const casacore::String&,
 						       const T2&);
-  template<class T, class T2> void attachAuxColumnDef(casa::ArrayColumn<T>&,
-						      const casa::String&,
-						      const casa::Array<T2>&);
+  template<class T, class T2> void attachAuxColumnDef(casacore::ArrayColumn<T>&,
+						      const casacore::String&,
+						      const casacore::Array<T2>&);
 
   double getNormalPolynomial(int n, double x);
   double getChebyshevPolynomial(int n, double x);
@@ -949,12 +949,12 @@ private:
 			    const bool outLogger, 
 			    bool& outTextFile, 
 			    bool& csvFormat, 
-			    casa::String& coordInfo, 
+			    casacore::String& coordInfo,
 			    bool& hasSameNchan, 
 			    const std::string& progressInfo, 
 			    bool& showProgress, 
 			    int& minNRow, 
-			    casa::Vector<casa::Double>& timeSecCol);
+			    casacore::Vector<casacore::Double>& timeSecCol);
   void finaliseBaselining(const bool outBaselineTable, 
 			  STBaselineTable* pbt, 
 			  const string& bltable, 
@@ -967,7 +967,7 @@ private:
   bool hasSameNchanOverIFs();
   std::string getMaskRangeList(const std::vector<bool>& mask, 
 				int whichrow, 
-				const casa::String& coordInfo, 
+				const casacore::String& coordInfo,
 				bool hasSameNchan,
 				bool verbose=false);
   std::vector<int> getMaskEdgeIndices(const std::vector<bool>& mask);
@@ -975,19 +975,19 @@ private:
   std::string formatBaselineParamsFooter(float rms, int nClipped, bool verbose, bool csvformat) const;
   std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask);
   std::vector<bool> getCompositeChanMask(int whichrow, const std::vector<bool>& inMask, const std::vector<int>& edge, std::vector<int>& currEdge, STLineFinder& lineFinder);
-  void outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped);
-  void outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casa::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casa::String& funcName, const std::vector<float>& params, const int nClipped);
+  void outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casacore::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casacore::String& funcName, const std::vector<int>& edge, const std::vector<float>& params, const int nClipped);
+  void outputFittingResult(bool outLogger, bool outTextFile, bool csvFormat, const std::vector<bool>& chanMask, int whichrow, const casacore::String& coordInfo, bool hasSameNchan, std::ofstream& ofs, const casacore::String& funcName, const std::vector<float>& params, const int nClipped);
   void parseProgressInfo(const std::string& progressInfo, bool& showProgress, int& minNRow);
   void showProgressOnTerminal(const int nProcessed, const int nTotal, const bool showProgress=true, const int nTotalThreshold=1000);
 
-  void applyChanFlag( casa::uInt whichrow, const std::vector<bool>& msk, casa::uChar flagval);
+  void applyChanFlag( casacore::uInt whichrow, const std::vector<bool>& msk, casacore::uChar flagval);
 
   double doCalculateModelSelectionCriteria(const std::string& valname, 
 					   const std::vector<float>& spec, 
 					   const std::vector<bool>& mask, 
 					   const std::string& blfunc, 
 					   int order);
-  double doGetRms(const std::vector<bool>& mask, const casa::Vector<casa::Float>& spec);
+  double doGetRms(const std::vector<bool>& mask, const casacore::Vector<casacore::Float>& spec);
   std::string packFittingResults(const int irow, const std::vector<float>& params, const float rms);
   void parseBlInfo(const std::string& blInfo, int& whichrow, STBaselineFunc::FuncName& ftype, std::vector<int>& fpar, std::vector<bool>& mask, float& thresClip, int& nIterClip, bool& useLineFinder, float& thresLF, std::vector<int>& edgeLF, int& avgLF);
   std::vector<float> doApplyBaselineTable(std::vector<float>& spec, std::vector<bool>& mask, const STBaselineFunc::FuncName ftype, std::vector<int>& fpar, std::vector<float>& params, float&rms, int irow);

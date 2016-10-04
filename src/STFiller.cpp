@@ -46,7 +46,7 @@
 #include "STFiller.h"
 #include "STHeader.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
@@ -83,7 +83,7 @@ STFiller::~STFiller()
   close();
 }
 
-void STFiller::open( const std::string& filename, const std::string& antenna, int whichIF, int whichBeam, casa::Bool getPt )
+void STFiller::open( const std::string& filename, const std::string& antenna, int whichIF, int whichBeam, casacore::Bool getPt )
 {
   if (table_.null())  {
     table_ = new Scantable();
@@ -163,7 +163,7 @@ void STFiller::open( const std::string& filename, const std::string& antenna, in
     header_ = 0;
     throw(AipsError("Failed to get header."));
   }
-  LogIO os( casa::LogOrigin( "STFiller") );
+  LogIO os( casacore::LogOrigin( "STFiller") );
   
   if ((header_->obstype).matches("*SW*")) {
     // need robust way here - probably read ahead of next timestamp

@@ -26,14 +26,13 @@ namespace asap {
 /**
 Convert betweeen the possible polarisations (linear, circular, stokes, stokes2)
 
-@author Malte Marquarding
-@date $Date:$
+@author Malte Marquarding @date $Date:$
 
 */
 class STPol {
 public:
 
-  typedef  void (STPol::*polOperation)( casa::Float phase );
+  typedef  void (STPol::*polOperation)( casacore::Float phase );
   STPol(): totalangle_(0.0),feedhand_(1.0) {}
   virtual ~STPol() {}
 
@@ -43,7 +42,7 @@ public:
                              const std::string& type )
     { return factories[type]->create(); }
 
-  casa::Vector<casa::Float> getSpectrum( casa::uInt index, const std::string& mode )
+  casacore::Vector<casacore::Float> getSpectrum( casacore::uInt index, const std::string& mode )
     {
       if (mode == "linear")
         return getLinear(index);
@@ -54,39 +53,39 @@ public:
       else if ( mode == "circular" )
         return getCircular(index);
       else
-        throw(casa::AipsError("Polarisation type unknown"));
+        throw(casacore::AipsError("Polarisation type unknown"));
     }
 
-  virtual casa::Vector<casa::Float> getCircular( casa::uInt index ) = 0;
+  virtual casacore::Vector<casacore::Float> getCircular( casacore::uInt index ) = 0;
 
-  virtual casa::Vector<casa::Float> getStokes( casa::uInt index ) = 0;
+  virtual casacore::Vector<casacore::Float> getStokes( casacore::uInt index ) = 0;
 
-  virtual casa::Vector<casa::Float> getLinPol( casa::uInt index ) = 0;
+  virtual casacore::Vector<casacore::Float> getLinPol( casacore::uInt index ) = 0;
 
-  virtual casa::Vector<casa::Float> getLinear( casa::uInt index ) = 0;
+  virtual casacore::Vector<casacore::Float> getLinear( casacore::uInt index ) = 0;
 
-  virtual void rotatePhase( casa::Float ) {}
-  virtual void rotateLinPolPhase( casa::Float) {}
+  virtual void rotatePhase( casacore::Float ) {}
+  virtual void rotateLinPolPhase( casacore::Float) {}
 
-  virtual void invertPhase( casa::Float ) {}
+  virtual void invertPhase( casacore::Float ) {}
 
-  casa::uInt nspec() const { return basespectra_.ncolumn(); }
+  casacore::uInt nspec() const { return basespectra_.ncolumn(); }
 
-  const casa::Vector<casa::Float> getSpectrum(casa::uInt index) const
+  const casacore::Vector<casacore::Float> getSpectrum(casacore::uInt index) const
     { return basespectra_.column(index); }
 
-  casa::Matrix<casa::Float>& getSpectra()
+  casacore::Matrix<casacore::Float>& getSpectra()
     { return basespectra_; }
 
-  void setSpectra(const casa::Matrix<casa::Float>& spec)
+  void setSpectra(const casacore::Matrix<casacore::Float>& spec)
     { basespectra_.resize(); basespectra_ = spec; }
 
 
-  void setPhaseCorrections(casa::Float totalang=0.0, casa::Float feedhand=1.0)
+  void setPhaseCorrections(casacore::Float totalang=0.0, casacore::Float feedhand=1.0)
     { totalangle_=totalang;feedhand_=feedhand;}
 
-  casa::Float getTotalPhase() const { return totalangle_; }
-  casa::Float getFeedHand() const { return feedhand_; }
+  casacore::Float getTotalPhase() const { return totalangle_; }
+  casacore::Float getFeedHand() const { return feedhand_; }
 
   static std::pair<int, std::string> polFromString(const std::string& key);
   static std::string getPolLabel(int index, const std::string& type = "linear");
@@ -97,9 +96,9 @@ private:
   static std::map<std::string, std::pair<int, std::string> > polmap_;
   static std::map<std::string, std::map<int, std::string> > labelmap_;
 
-  casa::Float totalangle_,feedhand_;
+  casacore::Float totalangle_,feedhand_;
   std::string mode_;
-  casa::Matrix<casa::Float> basespectra_;
+  casacore::Matrix<casacore::Float> basespectra_;
 
 };
 

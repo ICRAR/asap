@@ -42,7 +42,7 @@
 #include <fitsio.h>
 
 using namespace std;
-using namespace casa;
+using namespace casacore;
 
 // <summary>
 // ATNF CFITSIO interface class for SDFITS output.

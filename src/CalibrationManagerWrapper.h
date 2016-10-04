@@ -77,7 +77,7 @@ public:
   {
     calibrationManagerImpl_.setTsysSpw(spwlist);
   }
-  void setTsysSpwWithRange(const casa::Record &spwlist, bool average=false)
+  void setTsysSpwWithRange(const casacore::Record &spwlist, bool average=false)
   {
     calibrationManagerImpl_.setTsysSpwWithRange(spwlist, average);
   }
@@ -86,7 +86,7 @@ public:
   {
     calibrationManagerImpl_.setTsysTransfer(from, to);
   }
-  void setCalibrationOptions(const casa::Record &options)
+  void setCalibrationOptions(const casacore::Record &options)
   {
     calibrationManagerImpl_.setCalibrationOptions(options);
   }

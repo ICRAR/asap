@@ -44,7 +44,7 @@
 
 #include "STAttr.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 STAttr::STAttr()
@@ -122,7 +122,7 @@ Float STAttr::diameter(Instrument inst)  const
 Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
 				      const Vector<Float>& freqs) const
 {
-   casa::LogIO os( casa::LogOrigin( "STAttr", "beamEfficiency()" ) );
+   casacore::LogIO os( casacore::LogOrigin( "STAttr", "beamEfficiency()" ) );
    // Look at date where appropriate
    MVTime t(dateObs.getValue());
    uInt year = t.year();
@@ -133,13 +133,13 @@ Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
         {
 	  if (year<2003) {
 	    os << "There is no beam efficiency data from before 2003"
-	       <<" - using 2003 data" << casa::LogIO::POST;
+	       <<" - using 2003 data" << casacore::LogIO::POST;
 	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_);
 	  } else if (year==2003) {
-	    os << "Using beam efficiency data from 2003" << casa::LogIO::POST;
+	    os << "Using beam efficiency data from 2003" << casacore::LogIO::POST;
 	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2003Y_);
 	  } else {
-	    os << "Using beam efficiency data from 2004" << casa::LogIO::POST;
+	    os << "Using beam efficiency data from 2004" << casacore::LogIO::POST;
 	    facs = interp(freqs/1.0e9f, MopEtaBeamX_, MopEtaBeam2004Y_);
 	  }
         }
@@ -147,7 +147,7 @@ Vector<Float> STAttr::beamEfficiency(Instrument inst, const MEpoch& dateObs,
    default:
      {
        os << "No beam efficiency data for this instrument - assuming unity"
-	  << casa::LogIO::POST;
+	  << casacore::LogIO::POST;
      }
    }
    return facs;
@@ -157,7 +157,7 @@ Vector<Float> STAttr::apertureEfficiency(Instrument inst,
 					 const MEpoch& dateObs,
 					 const Vector<Float>& freqs) const
 {
-   casa::LogIO os( casa::LogOrigin( "STAttr", "apertureEfficiency()" ) );
+   casacore::LogIO os( casacore::LogOrigin( "STAttr", "apertureEfficiency()" ) );
   // Look at date where appropriate
   MVTime t(dateObs.getValue());
   uInt year = t.year();
@@ -168,10 +168,10 @@ Vector<Float> STAttr::apertureEfficiency(Instrument inst,
     {
       if (year<2004) {
 	os << "There is no aperture efficiency data from before 2004"
-	   << " - using 2004 data" << casa::LogIO::POST;
+	   << " - using 2004 data" << casacore::LogIO::POST;
 	facs = interp(freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
       } else {
-	os << "Using aperture efficiency data from 2004" << casa::LogIO::POST;
+	os << "Using aperture efficiency data from 2004" << casacore::LogIO::POST;
 	facs = interp(freqs/1.0e9f, MopEtaApX_, MopEtaAp2004Y_);
       }
     }
@@ -184,7 +184,7 @@ Vector<Float> STAttr::apertureEfficiency(Instrument inst,
   default:
     {
       os << "No aperture efficiency data for this instrument"
-	 <<  " - assuming unity" << casa::LogIO::POST;
+	 <<  " - assuming unity" << casacore::LogIO::POST;
     }
   }
   return facs;

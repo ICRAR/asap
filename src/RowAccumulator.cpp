@@ -17,7 +17,7 @@
 #include <casa/Arrays/ArrayLogical.h>
 #include "RowAccumulator.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 namespace {

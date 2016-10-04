@@ -27,24 +27,24 @@ class STPolStokes : public STPol
 public:
   STPolStokes() {}
 
-  explicit STPolStokes(const casa::Matrix<casa::Float>& specs)
+  explicit STPolStokes(const casacore::Matrix<casacore::Float>& specs)
     { setSpectra(specs); }
 
   ~STPolStokes();
 
   static Factory<STPol,STPolStokes> myFactory;
 
-  virtual casa::Vector<casa::Float> getCircular( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getCircular( casacore::uInt index );
 
-  virtual casa::Vector<casa::Float> getStokes( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getStokes( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinPol( casa::uInt index);
+  virtual casacore::Vector<casacore::Float> getLinPol( casacore::uInt index);
 
-  virtual casa::Vector<casa::Float> getLinear( casa::uInt index );
+  virtual casacore::Vector<casacore::Float> getLinear( casacore::uInt index );
 
-  //virtual void rotatePhase( casa::Float phase );
-  //virtual void rotateLinPolPhase( casa::Float phase );
-  //virtual void invertPhase( casa::Float phase );
+  //virtual void rotatePhase( casacore::Float phase );
+  //virtual void rotateLinPolPhase( casacore::Float phase );
+  //virtual void invertPhase( casacore::Float phase );
 
 };
 

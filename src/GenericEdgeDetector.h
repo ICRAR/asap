@@ -25,11 +25,11 @@ public:
   GenericEdgeDetector() ;
   virtual ~GenericEdgeDetector() ;
 
-  casa::Vector<casa::uInt> detect() ;
+  casacore::Vector<casacore::uInt> detect() ;
 
 private:
   // parse options
-  void parseOption( const casa::Record &option ) ;
+  void parseOption( const casacore::Record &option ) ;
 
   // steps for edge detection algorithm
   void topixel() ;
@@ -42,34 +42,34 @@ private:
 
   // internal methods
   void setup() ;
-  casa::uInt _labeling() ;
-  casa::uInt __labeling( casa::Vector<casa::uInt> &a ) ;
-  casa::uInt _trimming() ;
-  casa::uInt _trimming1DX() ;
-  casa::uInt _trimming1DY() ;
-  casa::uInt _trimming1D( casa::Vector<casa::uInt> &a ) ;
-  void _search( casa::uInt &start, 
-                casa::uInt &end, 
-                const casa::Vector<casa::uInt> &a ) ;
+  casacore::uInt _labeling() ;
+  casacore::uInt __labeling( casacore::Vector<casacore::uInt> &a ) ;
+  casacore::uInt _trimming() ;
+  casacore::uInt _trimming1DX() ;
+  casacore::uInt _trimming1DY() ;
+  casacore::uInt _trimming1D( casacore::Vector<casacore::uInt> &a ) ;
+  void _search( casacore::uInt &start, 
+                casacore::uInt &end, 
+                const casacore::Vector<casacore::uInt> &a ) ;
 
   // pixel info
-  casa::Double cenx_ ;
-  casa::Double ceny_ ;
-  casa::Double pcenx_ ;
-  casa::Double pceny_ ;
-  casa::uInt nx_ ;
-  casa::uInt ny_ ;
-  casa::Double dx_ ;
-  casa::Double dy_ ;
+  casacore::Double cenx_ ;
+  casacore::Double ceny_ ;
+  casacore::Double pcenx_ ;
+  casacore::Double pceny_ ;
+  casacore::uInt nx_ ;
+  casacore::uInt ny_ ;
+  casacore::Double dx_ ;
+  casacore::Double dy_ ;
   
   // storage for detection
-  casa::Matrix<casa::Double> pdir_ ;
-  casa::Matrix<casa::uInt> apix_ ;
+  casacore::Matrix<casacore::Double> pdir_ ;
+  casacore::Matrix<casacore::uInt> apix_ ;
 
   // options
-  casa::Float width_ ;
-  casa::Float fraction_ ;
-  casa::Bool elongated_ ;
+  casacore::Float width_ ;
+  casacore::Float fraction_ ;
+  casacore::Bool elongated_ ;
 } ;
 
 }

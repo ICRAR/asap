@@ -38,21 +38,21 @@ namespace asap {
  */
 class STCalTsys : public STCalibration {
 public:
-  STCalTsys(casa::CountedPtr<Scantable> &s, vector<int> &iflist);
-  STCalTsys(casa::CountedPtr<Scantable> &s, casa::Record &iflist, bool average=false);
+  STCalTsys(casacore::CountedPtr<Scantable> &s, vector<int> &iflist);
+  STCalTsys(casacore::CountedPtr<Scantable> &s, casacore::Record &iflist, bool average=false);
 
   ~STCalTsys() {;}
   
 private:
   void setupSelector(const STSelector &sel);
-  virtual void appenddata(casa::uInt scanno, casa::uInt cycleno, 
-			  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-			  casa::uInt freqid, casa::Double time, casa::Float elevation, 
-			  const casa::Vector<casa::Float> &any_data,
-			  const casa::Vector<casa::uChar> &channel_flag);
+  virtual void appenddata(casacore::uInt scanno, casacore::uInt cycleno, 
+			  casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+			  casacore::uInt freqid, casacore::Double time, casacore::Float elevation, 
+			  const casacore::Vector<casacore::Float> &any_data,
+			  const casacore::Vector<casacore::uChar> &channel_flag);
 
   vector<int> iflist_;
-  casa::Record tsysspw_;
+  casacore::Record tsysspw_;
   bool do_average_;
 };
 

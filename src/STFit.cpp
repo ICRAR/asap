@@ -24,12 +24,11 @@
 #include "STFitEntry.h"
 #include "STFit.h"
 
-
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STFit::name_ = "FIT";
+const String STFit::name_ = "FIT";
 
 STFit::STFit(const Scantable& parent) :
   STSubTable( parent, name_ )
@@ -50,7 +49,7 @@ STFit& asap::STFit::operator =( const STFit & other )
   return *this;
 }
 
-asap::STFit::STFit( casa::Table tab ) : STSubTable(tab, name_)
+asap::STFit::STFit( casacore::Table tab ) : STSubTable(tab, name_)
 {
     funcCol_.attach(table_,"FUNCTIONS");
     compCol_.attach(table_,"COMPONENTS");

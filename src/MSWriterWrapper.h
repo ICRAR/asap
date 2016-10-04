@@ -37,17 +37,17 @@ public:
 
   virtual ~MSWriterWrapper() {}
 
-  void write(const std::string& filename, const casa::Record& rec) 
+  void write(const std::string& filename, const casacore::Record& rec) 
   {
     GILHandler scopedRelease;
 
-    casa::File file( filename ) ;
+    casacore::File file( filename ) ;
     writer_ = new MSWriter( stable_ ) ;
     if ( writer_->write( filename, rec ) ) {
       return ;
     }
     else {
-      throw casa::AipsError( "Failed to write data" ) ;
+      throw casacore::AipsError( "Failed to write data" ) ;
     }
   }
 
@@ -57,8 +57,8 @@ private:
   MSWriterWrapper(const MSWriterWrapper&) ;
   MSWriterWrapper& operator=(const MSWriterWrapper&) ;
 
-  casa::CountedPtr<MSWriter> writer_ ;
-  casa::CountedPtr<Scantable> stable_ ;
+  casacore::CountedPtr<MSWriter> writer_ ;
+  casacore::CountedPtr<Scantable> stable_ ;
 };
 
 

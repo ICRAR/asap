@@ -62,8 +62,9 @@
 
 #include "CalibrationHelper.h"
 
-using namespace casa;
-using namespace asap;
+using namespace casacore;
+
+namespace asap {
 
 // 2012/02/17 TN
 // Since STGrid is implemented, average doesn't consider direction 
@@ -1307,10 +1308,10 @@ CountedPtr< Scantable > STMath::dototalpower( const CountedPtr< Scantable >& cal
 CountedPtr< Scantable > STMath::dosigref( const CountedPtr < Scantable >& sig,
                                           const CountedPtr < Scantable >& ref,
                                           int smoothref,
-                                          casa::Float tsysv,
-                                          casa::Float tau )
+                                          casacore::Float tsysv,
+                                          casacore::Float tau )
 {
-  LogIO os( casa::LogOrigin( "STMath", "dosigref()"));
+  LogIO os( casacore::LogOrigin( "STMath", "dosigref()"));
 if ( ! ref->conformant(*sig) ) {
     throw(AipsError("'sig' and 'ref' scantables are not conformant."));
   }
@@ -1409,16 +1410,16 @@ if ( ! ref->conformant(*sig) ) {
   return out;
 }
 
-CountedPtr< Scantable > STMath::donod(const casa::CountedPtr<Scantable>& s,
+CountedPtr< Scantable > STMath::donod(const casacore::CountedPtr<Scantable>& s,
                                      const std::vector<int>& scans,
                                      int smoothref,
-                                     casa::Float tsysv,
-                                     casa::Float tau,
-                                     casa::Float tcal )
+                                     casacore::Float tsysv,
+                                     casacore::Float tau,
+                                     casacore::Float tcal )
 
 {
   setInsitu(false);
-  LogIO os( casa::LogOrigin( "STMath", "donod()"));
+  LogIO os( casacore::LogOrigin( "STMath", "donod()"));
   STSelector sel;
   std::vector<int> scan1, scan2, beams, types;
   std::vector< vector<int> > scanpair;
@@ -1588,9 +1589,9 @@ CountedPtr< Scantable > STMath::donod(const casa::CountedPtr<Scantable>& s,
 CountedPtr< Scantable > STMath::dofs( const CountedPtr< Scantable >& s,
                                       const std::vector<int>& scans,
                                       int smoothref,
-                                      casa::Float tsysv,
-                                      casa::Float tau,
-                                      casa::Float tcal )
+                                      casacore::Float tsysv,
+                                      casacore::Float tau,
+                                      casacore::Float tcal )
 {
 
 
@@ -2927,7 +2928,7 @@ CountedPtr< Scantable >
                                 const std::string & refTime,
                                 const std::string & method)
 {
-  LogIO os( casa::LogOrigin("STMath", "frequencyAlign()", WHERE));
+  LogIO os( casacore::LogOrigin("STMath", "frequencyAlign()", WHERE));
   // clone as this is not working insitu
   bool insitu = insitu_;
   setInsitu(false);
@@ -3157,7 +3158,7 @@ CountedPtr< Scantable >
 }
 
 std::vector<float>
-  asap::STMath::fft( const casa::CountedPtr< Scantable > & in, 
+  asap::STMath::fft( const casacore::CountedPtr< Scantable > & in,
 		     const std::vector<int>& whichrow, 
 		     bool getRealImag )
 {
@@ -3249,7 +3250,7 @@ STMath::new_average( const std::vector<CountedPtr<Scantable> >& in,
 		     const std::vector<bool>& mask,
 		     const std::string& weight,
 		     const std::string& avmode )
-  throw ( casa::AipsError )
+  throw ( casacore::AipsError )
 {
   LogIO os( LogOrigin( "STMath", "new_average()", WHERE ) ) ;
   if ( avmode == "SCAN" && in.size() != 1 )
@@ -4357,4 +4358,6 @@ CountedPtr<Scantable> STMath::averageWithinSession( CountedPtr<Scantable> &s,
   }
 
   return a ;
+}
+
 }

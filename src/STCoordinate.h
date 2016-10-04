@@ -27,7 +27,7 @@ class STCoordinate {
 
     STCoordinate(const STCoordinate& other) : spec_(other.spec_) {};
 
-    STCoordinate(const casa::SpectralCoordinate& spec) :
+    STCoordinate(const casacore::SpectralCoordinate& spec) :
       spec_(spec) {};
 
     virtual ~STCoordinate() {};
@@ -45,25 +45,25 @@ class STCoordinate {
     }
 
     double toFrequency(double pix) {
-      casa::Double world;
+      casacore::Double world;
       spec_.toWorld(world, pix);
       return world;
     }
 
     double toVelocity(double pix) {
-      casa::Double vel;
+      casacore::Double vel;
       spec_.pixelToVelocity(vel, pix);
       return vel;
     }
 
     double toPixel(double world) {
-      casa::Double pix;
+      casacore::Double pix;
       spec_.toPixel(pix, world);
       return pix;
     }
 
   private:
-    casa::SpectralCoordinate spec_;
+    casacore::SpectralCoordinate spec_;
 };
 
 }

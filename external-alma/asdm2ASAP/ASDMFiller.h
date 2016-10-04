@@ -12,11 +12,11 @@ class ASDMFiller : public asap::FillerBase
 {
 public:
   // constructor and destructor
-  ASDMFiller( casa::CountedPtr<asap::Scantable> stable ) ;
+  ASDMFiller( casacore::CountedPtr<asap::Scantable> stable ) ;
   ~ASDMFiller() ;
 
   // open data
-  bool open( const std::string &filename, const casa::Record &rec ) ;
+  bool open( const std::string &filename, const casacore::Record &rec ) ;
 
   // fill data
   void fill() ;
@@ -25,83 +25,83 @@ public:
   void close() ;
   
   // get reader object
-  casa::CountedPtr<ASDMReader> getReader() { return reader_ ; } ;
+  casacore::CountedPtr<ASDMReader> getReader() { return reader_ ; } ;
 
   // set logger
-  void setLogger( casa::CountedPtr<casa::LogSinkInterface> &logsink ) ;
+  void setLogger( casacore::CountedPtr<casacore::LogSinkInterface> &logsink ) ;
 
 private:
   // fill header
   void fillHeader() ;
 
   // get IF key
-  casa::String getIFKey( casa::uInt ifno ) ;
+  casacore::String getIFKey( casacore::uInt ifno ) ;
 
   // get FREQUENCIES attributes from ifrec_
-  void getFrequencyRec( casa::String key,
+  void getFrequencyRec( casacore::String key,
                         double &refpix, 
                         double &refval, 
                         double &incr ) ;
 
   // set FREQUENCIES attributes to ifrec_
-  void setFrequencyRec( casa::String key,
+  void setFrequencyRec( casacore::String key,
                         double refpix, 
                         double refval, 
                         double incr ) ;
                      
   // reshape float array spectra to Matrix<Float>
-  casa::Matrix<casa::Float> toMatrix( float *sp, 
+  casacore::Matrix<casacore::Float> toMatrix( float *sp, 
                                       unsigned int npol,
                                       unsigned int nchan ) ;
 
   // reshape 2d vector Tsys to Matrix<Float>
-  casa::Matrix<casa::Float> toMatrix( std::vector< std::vector<float> > &tsys,
+  casacore::Matrix<casacore::Float> toMatrix( std::vector< std::vector<float> > &tsys,
                                       unsigned int npol,
                                       unsigned int nchan ) ;
 
   // reshape vector<float> to Vector<Float> with appropriate length
-  casa::Vector<casa::Float> toVector( std::vector<float> &tau,
+  casacore::Vector<casacore::Float> toVector( std::vector<float> &tau,
                                       unsigned int npol ) ;
 
   // create TCAL time string from MJD
-  casa::String toTcalTime( casa::Double mjd ) ;
+  casacore::String toTcalTime( casacore::Double mjd ) ;
 
   // AZEL to J2000
-  void toJ2000( casa::Vector<casa::Double> &dir,
+  void toJ2000( casacore::Vector<casacore::Double> &dir,
                 double az, 
                 double el,
-                casa::Double mjd,
-                casa::Vector<casa::Double> antpos ) ;
+                casacore::Double mjd,
+                casacore::Vector<casacore::Double> antpos ) ;
 
   // to J2000
-  casa::Vector<casa::Double> toJ2000( casa::Vector<casa::Double> dir,
-                                      casa::String dirref,
-                                      casa::Double mjd,
-                                      casa::Vector<casa::Double> antpos ) ;
+  casacore::Vector<casacore::Double> toJ2000( casacore::Vector<casacore::Double> dir,
+                                      casacore::String dirref,
+                                      casacore::Double mjd,
+                                      casacore::Vector<casacore::Double> antpos ) ;
 
   // get frequency frame enum value from string
-  casa::MFrequency::Types toFrameType( std::string &s ) ;
+  casacore::MFrequency::Types toFrameType( std::string &s ) ;
 
   // to LSRK 
   // utc must be UTC time in "d" (day)
   // antpos must be ITRF value in "m"
-  casa::Double toLSRK( casa::Double freq,
-                       casa::String freqref,
-                       casa::Double utc,
-                       casa::Vector<casa::Double> antpos,
-                       casa::Vector<casa::Double> dir,
-                       casa::String dirref ) ;
+  casacore::Double toLSRK( casacore::Double freq,
+                       casacore::String freqref,
+                       casacore::Double utc,
+                       casacore::Vector<casacore::Double> antpos,
+                       casacore::Vector<casacore::Double> dir,
+                       casacore::String dirref ) ;
 
-  casa::CountedPtr<ASDMReader> reader_ ;
-  casa::Int antennaId_ ;
-  casa::String antennaName_ ;
+  casacore::CountedPtr<ASDMReader> reader_ ;
+  casacore::Int antennaId_ ;
+  casacore::String antennaName_ ;
 
-  casa::Record ifrec_ ;
+  casacore::Record ifrec_ ;
 
-  casa::CountedPtr<casa::LogSinkInterface> logsink_ ;
+  casacore::CountedPtr<casacore::LogSinkInterface> logsink_ ;
 
-  casa::String className_ ;
-  casa::Bool freqToLsr_ ;
+  casacore::String className_ ;
+  casacore::Bool freqToLsr_ ;
 
 } ;
 #endif // ASAP_ASDM_FILLER_H

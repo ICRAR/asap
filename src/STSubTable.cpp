@@ -19,11 +19,11 @@
 #include "STSubTable.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-STSubTable::STSubTable( const Scantable& parent, const casa::String& name )
+STSubTable::STSubTable( const Scantable& parent, const casacore::String& name )
 {
   TableDesc td("", "1", TableDesc::Scratch);
   td.addColumn(ScalarColumnDesc<uInt>("ID"));

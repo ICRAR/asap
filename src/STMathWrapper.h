@@ -41,7 +41,7 @@ public:
              const std::string& weight,
              const std::string& avmode )
   {
-    std::vector<casa::CountedPtr<Scantable> > sts;
+    std::vector<casacore::CountedPtr<Scantable> > sts;
     for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::average(sts, mask, weight, avmode));
   }
@@ -104,24 +104,24 @@ public:
                                                preserve ) ); }
 
   ScantableWrapper dototalpower( const ScantableWrapper& calon,
-                             const ScantableWrapper& caloff, casa::Float tcal= 0 )
+                             const ScantableWrapper& caloff, casacore::Float tcal= 0 )
   { return ScantableWrapper( STMath::dototalpower( calon.getCP(), caloff.getCP(), tcal ) ); }
 
   ScantableWrapper dosigref( const ScantableWrapper& sig,
                              const ScantableWrapper& ref,
-                             int smoothref = 0, casa::Float tsysv=0.0, casa::Float tau=0.0)
+                             int smoothref = 0, casacore::Float tsysv=0.0, casacore::Float tau=0.0)
   { return ScantableWrapper( STMath::dosigref( sig.getCP(), ref.getCP(), smoothref, tsysv, tau ) ); }
 
   ScantableWrapper donod( const ScantableWrapper& s,
                           const std::vector<int>& scans,
                           int smoothref = 0,
-                          casa::Float tsysv=0.0, casa::Float tau=0.0, casa::Float tcal=0.0 )
+                          casacore::Float tsysv=0.0, casacore::Float tau=0.0, casacore::Float tcal=0.0 )
   { return ScantableWrapper( STMath::donod( s.getCP(), scans, smoothref, tsysv, tau, tcal ) ); }
 
   ScantableWrapper dofs( const ScantableWrapper& s,
                          const std::vector<int>& scans,
                          int smoothref = 0,
-                         casa::Float tsysv=0.0, casa::Float tau=0.0, casa::Float tcal=0.0 )
+                         casacore::Float tsysv=0.0, casacore::Float tau=0.0, casacore::Float tcal=0.0 )
   { return ScantableWrapper( STMath::dofs( s.getCP(), scans, smoothref, tsysv, tau, tcal ) ); }
 
   ScantableWrapper
@@ -179,7 +179,7 @@ public:
     merge(const std::vector<ScantableWrapper >& in,
 	  const std::string &freqTol)
   {
-    std::vector<casa::CountedPtr<Scantable> > sts;
+    std::vector<casacore::CountedPtr<Scantable> > sts;
     for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::merge(sts, freqTol)); }
 
@@ -228,7 +228,7 @@ public:
 		 const std::string& weight,
 		 const std::string& avmode )
   {
-    std::vector<casa::CountedPtr<Scantable> > sts;
+    std::vector<casacore::CountedPtr<Scantable> > sts;
     for (unsigned int i=0; i<in.size(); ++i) sts.push_back(in[i].getCP());
     return ScantableWrapper(STMath::new_average(sts, compel, mask, weight, avmode));
   }
@@ -238,17 +238,17 @@ public:
                           const std::string calmode,
                           const std::string antname )
   {
-    casa::CountedPtr<Scantable> tab = in.getCP() ;
-    casa::String mode( calmode ) ;
-    casa::String name( antname ) ;
+    casacore::CountedPtr<Scantable> tab = in.getCP() ;
+    casacore::String mode( calmode ) ;
+    casacore::String name( antname ) ;
     return ScantableWrapper( STMath::cwcal( tab, mode, name ) ) ;
   }
   // almacal
   ScantableWrapper almacal( const ScantableWrapper &in,
                           const std::string calmode )
   {
-    casa::CountedPtr<Scantable> tab = in.getCP() ;
-    casa::String mode( calmode ) ;
+    casacore::CountedPtr<Scantable> tab = in.getCP() ;
+    casacore::String mode( calmode ) ;
     return ScantableWrapper( STMath::almacal( tab, mode ) ) ;
   }
 };

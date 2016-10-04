@@ -55,9 +55,9 @@ OldASDMReader::~OldASDMReader()
   logsink_ = 0 ;
 }
 
-bool OldASDMReader::open( const string &filename, const casa::Record &rec )
+bool OldASDMReader::open( const string &filename, const casacore::Record &rec )
 {
-  casa::String funcName = "open" ;
+  casacore::String funcName = "open" ;
 
   // return value
   bool status = true ;
@@ -70,11 +70,11 @@ bool OldASDMReader::open( const string &filename, const casa::Record &rec )
 
   // parsing ASDM options
   if ( rec.isDefined( "asdm" ) ) {
-    casa::Record asdmrec = rec.asRecord( "asdm" ) ;
+    casacore::Record asdmrec = rec.asRecord( "asdm" ) ;
 
     // antenna
     if ( asdmrec.isDefined( "antenna" ) ) {
-      if ( asdmrec.type( asdmrec.fieldNumber( "antenna" ) ) == casa::TpInt ) {
+      if ( asdmrec.type( asdmrec.fieldNumber( "antenna" ) ) == casacore::TpInt ) {
         antennaId_ = asdmrec.asInt( "antenna" ) ;
       }
       else {
@@ -181,15 +181,15 @@ bool OldASDMReader::open( const string &filename, const casa::Record &rec )
   if ( antennaId_ == -1 ) {
     vector<AntennaRow *> rows = atab.get() ;
     int idx = -1 ;
-    for ( casa::uInt irow = 0 ; irow < rows.size() ; irow++ ) {
-      if ( casa::String(rows[irow]->getName()) == antennaName_ ) {
+    for ( casacore::uInt irow = 0 ; irow < rows.size() ; irow++ ) {
+      if ( casacore::String(rows[irow]->getName()) == antennaName_ ) {
         idx = rows[irow]->getAntennaId().getTagValue() ;
         break ;
       }
     }
     if ( idx == -1 ) {
       close() ;
-      throw (casa::AipsError( antennaName_ + " not found." )) ;
+      throw (casacore::AipsError( antennaName_ + " not found." )) ;
     }
     else {
       antennaId_ = idx ;
@@ -202,33 +202,33 @@ bool OldASDMReader::open( const string &filename, const casa::Record &rec )
     antennaRow = atab.getRowByKey( antennaTag_ ) ;
     if ( antennaRow == 0 ) {
       close() ;
-      throw (casa::AipsError( "AntennaId " + casa::String::toString(antennaId_) + " is invalid." ) ) ;
+      throw (casacore::AipsError( "AntennaId " + casacore::String::toString(antennaId_) + " is invalid." ) ) ;
     }
   }
   
 
   // set antenna name
   if ( antennaName_.size() == 0 ) {
-    antennaName_ = casa::String( antennaRow->getName() ) ;
+    antennaName_ = casacore::String( antennaRow->getName() ) ;
   }
 
   // get Station row
   StationRow *stationRow = antennaRow->getStationUsingStationId() ;
 
   // station name
-  stationName_ = casa::String( stationRow->getName() ) ;
+  stationName_ = casacore::String( stationRow->getName() ) ;
 
   // antenna position
   antennaPosition_.resize( 3 ) ;
   vector<Length> antpos = stationRow->getPosition() ;
-  for ( casa::uInt i = 0 ; i < 3 ; i++ ) 
-    antennaPosition_[i] = Quantity( casa::Double( antpos[i].get() ), Unit( "m" ) ) ;
+  for ( casacore::uInt i = 0 ; i < 3 ; i++ ) 
+    antennaPosition_[i] = Quantity( casacore::Double( antpos[i].get() ), Unit( "m" ) ) ;
 
   // create SDMBinData object
   sdmBin_ = new SDMBinData( asdm_, filename ) ; 
 
   // get Main rows
-  //mainRow_ = casa::Vector<MainRow *>(asdm_->getMain().get()) ;
+  //mainRow_ = casacore::Vector<MainRow *>(asdm_->getMain().get()) ;
 
   // set up IFNO
   setupIFNO() ;
@@ -261,31 +261,31 @@ void OldASDMReader::close()
   return ;
 }
 
-void OldASDMReader::fillHeader( casa::Int &nchan, 
-                             casa::Int &npol, 
-                             casa::Int &nif, 
-                             casa::Int &nbeam, 
-                             casa::String &observer, 
-                             casa::String &project, 
-                             casa::String &obstype, 
-                             casa::String &antennaname, 
-                             casa::Vector<casa::Double> &antennaposition, 
-                             casa::Float &equinox, 
-                             casa::String &freqref, 
-                             casa::Double &reffreq, 
-                             casa::Double &bandwidth,
-                             casa::Double &utc, 
-                             casa::String &fluxunit, 
-                             casa::String &epoch, 
-                             casa::String &poltype ) 
+void OldASDMReader::fillHeader( casacore::Int &nchan, 
+                             casacore::Int &npol, 
+                             casacore::Int &nif, 
+                             casacore::Int &nbeam, 
+                             casacore::String &observer, 
+                             casacore::String &project, 
+                             casacore::String &obstype, 
+                             casacore::String &antennaname, 
+                             casacore::Vector<casacore::Double> &antennaposition, 
+                             casacore::Float &equinox, 
+                             casacore::String &freqref, 
+                             casacore::Double &reffreq, 
+                             casacore::Double &bandwidth,
+                             casacore::Double &utc, 
+                             casacore::String &fluxunit, 
+                             casacore::String &epoch, 
+                             casacore::String &poltype ) 
 {
-  casa::String funcName = "fillHeader" ;
+  casacore::String funcName = "fillHeader" ;
 
   ExecBlockTable &ebtab = asdm_->getExecBlock() ;
   // at the moment take first row of ExecBlock table
   ExecBlockRow *ebrow = ebtab.get()[0] ;
-  casa::String telescopeName( ebrow->getTelescopeName() ) ;
-  //casa::String stationName( stationRow_p->getName() ) ;
+  casacore::String telescopeName( ebrow->getTelescopeName() ) ;
+  //casacore::String stationName( stationRow_p->getName() ) ;
 
   // antennaname
   // <telescopeName>//<antennaName>@stationName
@@ -294,7 +294,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
 
   // antennaposition
   antennaposition.resize( 3 ) ;
-  for ( casa::uInt i = 0 ; i < 3 ; i++ ) 
+  for ( casacore::uInt i = 0 ; i < 3 ; i++ ) 
     antennaposition[i] = antennaPosition_[i].getValue( Unit("m") ) ;
 
   // observer
@@ -306,7 +306,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
 
   // utc
   // start time of the project
-  utc = casa::Double( ebrow->getStartTime().getMJD() ) ;
+  utc = casacore::Double( ebrow->getStartTime().getMJD() ) ;
   
 
   SpectralWindowTable &spwtab = asdm_->getSpectralWindow() ;
@@ -325,7 +325,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
     if ( refidx == -1 && nchans[irow] != 1 && nchans[irow] != 4 )
       refidx = irow ;
   }
-  nchan = casa::Int( *max_element( nchans.begin(), nchans.end() ) ) ;
+  nchan = casacore::Int( *max_element( nchans.begin(), nchans.end() ) ) ;
 
   //logsink_->postLocally( LogMessage("refidx = "+String::toString(refidx),LogOrigin(className_,funcName,WHERE)) ) ;
 
@@ -336,10 +336,10 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
       bws.push_back( spwrows[irow]->getTotBandwidth().get() ) ;
     }
   }
-  bandwidth = casa::Double( *max_element( bws.begin(), bws.end() ) ) ;
+  bandwidth = casacore::Double( *max_element( bws.begin(), bws.end() ) ) ;
 
   // reffreq
-  reffreq = casa::Double( spwrows[refidx]->getRefFreq().get() ) ;
+  reffreq = casacore::Double( spwrows[refidx]->getRefFreq().get() ) ;
 
   // freqref
   if ( spwrows[refidx]->isMeasFreqRefExists() ) {
@@ -381,7 +381,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
     refidx = 0 ;
 
   // npol
-  npol = casa::Int( *max_element( npols.begin(), npols.end() ) ) ;
+  npol = casacore::Int( *max_element( npols.begin(), npols.end() ) ) ;
 
   // poltype
   vector<StokesParameter> corrType = prows[refidx]->getCorrType() ;
@@ -420,7 +420,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
   }
 
   // nbeam
-  nbeam = casa::Int( *max_element( nbeams.begin(), nbeams.end() ) ) ;
+  nbeam = casacore::Int( *max_element( nbeams.begin(), nbeams.end() ) ) ;
 
   // fluxunit
   // tentatively set 'K'? or empty?
@@ -440,7 +440,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
   vector<string> obsmode = sbrow->getObservingMode() ;
   obstype = "" ;
   for ( unsigned int imode = 0 ; imode < obsmode.size() ; imode++ ) {
-    obstype += casa::String(obsmode[imode]) ;
+    obstype += casacore::String(obsmode[imode]) ;
     if ( imode != obsmode.size()-1 )
       obstype += "#" ;
   }
@@ -448,7 +448,7 @@ void OldASDMReader::fillHeader( casa::Int &nchan,
 
 void OldASDMReader::selectConfigDescription() 
 {
-  casa::String funcName = "selectConfigDescription" ;
+  casacore::String funcName = "selectConfigDescription" ;
 
   vector<ConfigDescriptionRow *> cdrows = asdm_->getConfigDescription().get() ;
   vector<Tag> cdidTags ;
@@ -461,7 +461,7 @@ void OldASDMReader::selectConfigDescription()
 
   configDescIdList_.resize( cdidTags.size() ) ;
   for ( unsigned int i = 0 ; i < cdidTags.size() ; i++ ) {
-    configDescIdList_[i] = casa::uInt( cdidTags[i].getTagValue() ) ;
+    configDescIdList_[i] = casacore::uInt( cdidTags[i].getTagValue() ) ;
   }
 }
 
@@ -471,8 +471,8 @@ void OldASDMReader::selectFeed()
   vector<FeedRow *> frows = asdm_->getFeed().get() ;
   Tag atag( antennaId_, TagType::Antenna ) ;
   for ( unsigned int irow = 0 ; irow < frows.size() ; irow++ ) {
-    casa::uInt feedId = (casa::uInt)(frows[irow]->getFeedId() ) ;
-    if ( casa::anyEQ( feedIdList_, feedId ) ) 
+    casacore::uInt feedId = (casacore::uInt)(frows[irow]->getFeedId() ) ;
+    if ( casacore::anyEQ( feedIdList_, feedId ) ) 
       continue ;
     if ( frows[irow]->getAntennaId() == atag ) {
       unsigned int oldsize = feedIdList_.size() ;
@@ -482,9 +482,9 @@ void OldASDMReader::selectFeed()
   }
 }
 
-casa::Vector<casa::uInt> OldASDMReader::getFieldIdList() 
+casacore::Vector<casacore::uInt> OldASDMReader::getFieldIdList() 
 {
-  casa::String funcName = "getFieldIdList" ;
+  casacore::String funcName = "getFieldIdList" ;
 
   vector<FieldRow *> frows = asdm_->getField().get() ;
   fieldIdList_.resize( frows.size() ) ;
@@ -496,9 +496,9 @@ casa::Vector<casa::uInt> OldASDMReader::getFieldIdList()
   return fieldIdList_ ;
 }
 
-casa::uInt OldASDMReader::getNumMainRow() 
+casacore::uInt OldASDMReader::getNumMainRow() 
 {
-  casa::uInt nrow = casa::uInt( mainRow_.size() ) ;
+  casacore::uInt nrow = casacore::uInt( mainRow_.size() ) ;
 
   return nrow ;
 }
@@ -529,9 +529,9 @@ void OldASDMReader::select()
   selectFeed() ;
 }
 
-casa::Bool OldASDMReader::setMainRow( casa::uInt irow ) 
+casacore::Bool OldASDMReader::setMainRow( casacore::uInt irow ) 
 {
-  casa::Bool status = true ;
+  casacore::Bool status = true ;
   row_ = irow ;
   execBlockTag_ = mainRow_[row_]->getExecBlockId() ;
 
@@ -539,18 +539,18 @@ casa::Bool OldASDMReader::setMainRow( casa::uInt irow )
   if ( (int)count(configDescIdList_.begin(),configDescIdList_.end(),cdid) == 0 ) 
     status = false ;
   else {
-    status = (casa::Bool)(sdmBin_->acceptMainRow( mainRow_[row_] )) ;
+    status = (casacore::Bool)(sdmBin_->acceptMainRow( mainRow_[row_] )) ;
   }
   return status ;
 }
 
-casa::Bool OldASDMReader::setMainRow( casa::uInt configDescId, casa::uInt fieldId ) 
+casacore::Bool OldASDMReader::setMainRow( casacore::uInt configDescId, casacore::uInt fieldId ) 
 {
   clearMainRow() ;
 
   Tag configDescTag( (unsigned int)configDescId, TagType::ConfigDescription ) ;
   Tag fieldTag( (unsigned int)fieldId, TagType::Field ) ;
-  mainRow_ = casa::Vector<MainRow *>( *(asdm_->getMain().getByContext( configDescTag, fieldTag ) ) ) ;
+  mainRow_ = casacore::Vector<MainRow *>( *(asdm_->getMain().getByContext( configDescTag, fieldTag ) ) ) ;
   
   return true ;
 }
@@ -562,15 +562,15 @@ void OldASDMReader::clearMainRow()
 
 void OldASDMReader::setupIFNO() 
 {
-  casa::String funcName = "setupIFNO" ;
+  casacore::String funcName = "setupIFNO" ;
 
   vector<SpectralWindowRow *> spwrows = asdm_->getSpectralWindow().get() ;
   unsigned int nrow = spwrows.size() ;
   ifno_.clear() ;
-  casa::uInt idx = 0 ;
-  casa::uInt wvridx = 0 ;
+  casacore::uInt idx = 0 ;
+  casacore::uInt wvridx = 0 ;
   for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
-    casa::uInt index ;
+    casacore::uInt index ;
     if ( isWVR( spwrows[irow] ) ) {
       //logsink_->postLocally( LogMessage(spwrows[irow]->getSpectralWindowId().toString()+" is WVR",LogOrigin(className_,funcName,WHERE)) ) ;
       index = wvridx ;
@@ -578,7 +578,7 @@ void OldASDMReader::setupIFNO()
     else {
       index = ++idx ;
     }
-    ifno_.insert( pair<Tag,casa::uInt>(spwrows[irow]->getSpectralWindowId(),index) ) ;
+    ifno_.insert( pair<Tag,casacore::uInt>(spwrows[irow]->getSpectralWindowId(),index) ) ;
     //logsink_->postLocally( LogMessage(spwrows[irow]->getSpectralWindowId().toString()+": IFNO="+String::toString(index),LogOrigin(className_,funcName,WHERE)) ) ;
   }
 }
@@ -593,9 +593,9 @@ bool OldASDMReader::isWVR( SpectralWindowRow *row )
     return false ;
 } 
 
-casa::Bool OldASDMReader::setData()
+casacore::Bool OldASDMReader::setData()
 {
-  casa::String funcName = "setData" ;
+  casacore::String funcName = "setData" ;
 
   //logsink_->postLocally( LogMessage("try to retrieve binary data",LogOrigin(className_,funcName,WHERE)) ) ;
   
@@ -670,15 +670,15 @@ void OldASDMReader::prepareData( unsigned int idx )
   }
 }
 
-casa::uInt OldASDMReader::getIFNo( unsigned int idx )
+casacore::uInt OldASDMReader::getIFNo( unsigned int idx )
 {
   prepareData( idx ) ;
   return getIFNo() ;
 }
 
-casa::uInt OldASDMReader::getIFNo()
+casacore::uInt OldASDMReader::getIFNo()
 {
-  map<Tag,casa::uInt>::iterator iter = ifno_.find( specWinTag_ ) ;
+  map<Tag,casacore::uInt>::iterator iter = ifno_.find( specWinTag_ ) ;
   if ( iter != ifno_.end() )
     return iter->second ;
   else {
@@ -712,7 +712,7 @@ void OldASDMReader::getFrequency( double &refpix,
                                double &incr,
                                string &freqref ) 
 {
-  casa::String funcName = "getFrequency" ;
+  casacore::String funcName = "getFrequency" ;
 
   int nchan = specWinRow_p->getNumChan() ;
   freqref = "TOPO" ;
@@ -729,7 +729,7 @@ void OldASDMReader::getFrequency( double &refpix,
       refval = specWinRow_p->getChanFreqArray()[0].get() ;
     }
     else {
-      throw (casa::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
+      throw (casacore::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
     }      
   }
   else if ( nchan % 2 ) {
@@ -744,7 +744,7 @@ void OldASDMReader::getFrequency( double &refpix,
       incr = specWinRow_p->getChanWidthArray()[0].get() ;
     }
     else {
-      throw (casa::AipsError( "Either chanWidthArray or chanWidth must exist." )) ;
+      throw (casacore::AipsError( "Either chanWidthArray or chanWidth must exist." )) ;
     }      
     if ( specWinRow_p->isChanFreqStepExists() ) {
       if ( specWinRow_p->getChanFreqStep().get() < 0.0 ) 
@@ -756,7 +756,7 @@ void OldASDMReader::getFrequency( double &refpix,
         incr *= -1.0 ;
     }
     else {
-      throw (casa::AipsError( "Either chanFreqArray or chanFreqStep must exist." )) ;
+      throw (casacore::AipsError( "Either chanFreqArray or chanFreqStep must exist." )) ;
     }          
     if ( specWinRow_p->isChanFreqStartExists() ) {
       refval = specWinRow_p->getChanFreqStart().get() + refpix * incr ;
@@ -765,7 +765,7 @@ void OldASDMReader::getFrequency( double &refpix,
       refval = specWinRow_p->getChanFreqArray()[ic].get() ;
     }
     else {
-      throw (casa::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
+      throw (casacore::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
     }      
   }
   else {
@@ -780,7 +780,7 @@ void OldASDMReader::getFrequency( double &refpix,
       incr = specWinRow_p->getChanWidthArray()[0].get() ;
     }
     else {
-      throw (casa::AipsError( "Either chanWidthArray or chanWidth must exist." )) ;
+      throw (casacore::AipsError( "Either chanWidthArray or chanWidth must exist." )) ;
     }
     if ( specWinRow_p->isChanFreqStepExists() ) {
       if ( specWinRow_p->getChanFreqStep().get() < 0.0 ) 
@@ -792,7 +792,7 @@ void OldASDMReader::getFrequency( double &refpix,
         incr *= -1.0 ;
     }
     else {
-      throw (casa::AipsError( "Either chanFreqArray or chanFreqStep must exist." )) ;
+      throw (casacore::AipsError( "Either chanFreqArray or chanFreqStep must exist." )) ;
     }          
     if ( specWinRow_p->isChanFreqStartExists() ) {
       refval = specWinRow_p->getChanFreqStart().get() + refpix * incr ;
@@ -802,7 +802,7 @@ void OldASDMReader::getFrequency( double &refpix,
       refval = 0.5 * ( freqs[ic-1].get() + freqs[ic].get() ) ;      
     }
     else {
-      throw (casa::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
+      throw (casacore::AipsError( "Either chanFreqArray or chanFreqStart must exist." )) ;
     }      
   }
 }
@@ -1236,7 +1236,7 @@ vector<float> OldASDMReader::getOpacity()
     double eps = 1.0e10 ;
     for ( unsigned int irow = 0 ; irow < nrow ; irow++ ) {
       CalAtmosphereRow *atmrow = atmrows[irow] ;
-      if ( casa::String(atmrow->getAntennaName()) != antennaName_ 
+      if ( casacore::String(atmrow->getAntennaName()) != antennaName_ 
            //|| atmrow->getReceiverBand() != rb 
            //|| atmrow->getBasebandName() != bbname 
            || atmrow->getCalDataUsingCalDataId()->getCalType() != CAL_ATMOSPHERE ) 
@@ -1278,7 +1278,7 @@ void OldASDMReader::getWeatherInfo( float &temperature,
                                  float &windspeed,
                                  float &windaz ) 
 {
-  casa::String funcName = "getWeatherInfo" ;
+  casacore::String funcName = "getWeatherInfo" ;
 
   temperature = 0.0 ;
   pressure = 0.0 ;
@@ -1667,8 +1667,8 @@ void OldASDMReader::toJ2000( vector<double> &dir,
                           double &az, 
                           double &el,
                           double &mjd,
-                          casa::Vector<casa::Quantity> &antpos ) 
-//                          casa::Vector<casa::Double> antpos ) 
+                          casacore::Vector<casacore::Quantity> &antpos ) 
+//                          casacore::Vector<casacore::Double> antpos ) 
 {
   String funcName = "toJ2000" ;
 
@@ -1680,29 +1680,29 @@ void OldASDMReader::toJ2000( vector<double> &dir,
 }
 
 vector<double> OldASDMReader::toJ2000( vector<double> &dir,
-                                    casa::String &dirref,
+                                    casacore::String &dirref,
                                     double &mjd,
-                                    casa::Vector<casa::Quantity> &antpos ) 
-//                                    casa::Vector<casa::Double> antpos ) 
+                                    casacore::Vector<casacore::Quantity> &antpos ) 
+//                                    casacore::Vector<casacore::Double> antpos ) 
 {
-  casa::String funcName = "toJ2000" ;
+  casacore::String funcName = "toJ2000" ;
 
   vector<double> newd( dir ) ;
   if ( dirref != "J2000" ) {
-    casa::MEpoch me( casa::Quantity( (casa::Double)mjd, "d" ), casa::MEpoch::UTC ) ;
-    casa::MPosition mp( casa::MVPosition( antpos ),
-                        casa::MPosition::ITRF ) ;
+    casacore::MEpoch me( casacore::Quantity( (casacore::Double)mjd, "d" ), casacore::MEpoch::UTC ) ;
+    casacore::MPosition mp( casacore::MVPosition( antpos ),
+                        casacore::MPosition::ITRF ) ;
     //ostringstream oss ;
     //mp.print( oss ) ;
     //logsink_->postLocally( LogMessage(oss.str(),LogOrigin(className_,funcName,WHERE)) ) ;
     
-    casa::MeasFrame mf( me, mp ) ;
-    casa::MDirection::Types dirtype ;
-    casa::Bool b = casa::MDirection::getType( dirtype, dirref ) ;
+    casacore::MeasFrame mf( me, mp ) ;
+    casacore::MDirection::Types dirtype ;
+    casacore::Bool b = casacore::MDirection::getType( dirtype, dirref ) ;
     if ( b ) {
-      casa::MDirection::Convert toj2000( dirtype,
-                                         casa::MDirection::Ref( casa::MDirection::J2000, mf ) ) ;
-      casa::Vector<casa::Double> cdir = toj2000( dir ).getAngle( "rad" ).getValue() ; 
+      casacore::MDirection::Convert toj2000( dirtype,
+                                         casacore::MDirection::Ref( casacore::MDirection::J2000, mf ) ) ;
+      casacore::Vector<casacore::Double> cdir = toj2000( dir ).getAngle( "rad" ).getValue() ; 
       //logsink_->postLocally( LogMessage("cdir = "+String::toString(cdir),LogOrigin(className_,funcName,WHERE)) ) ;
       newd[0] = (double)(cdir[0]) ;
       newd[1] = (double)(cdir[1]) ;
@@ -1718,7 +1718,7 @@ void OldASDMReader::setLogger( CountedPtr<LogSinkInterface> &logsink )
 
 string OldASDMReader::getFrame()
 {
-  casa::String funcName = "getFrame" ;
+  casacore::String funcName = "getFrame" ;
  
   // default is TOPO
   string frame = "TOPO" ;
@@ -1747,7 +1747,7 @@ string OldASDMReader::getFrame()
 
 int OldASDMReader::getNumIFs()
 {
-  casa::String funcName = "getNumIFs" ;
+  casacore::String funcName = "getNumIFs" ;
 
   int nif = 0 ;
   vector<SpectralWindowRow *> rows = asdm_->getSpectralWindow().get() ;

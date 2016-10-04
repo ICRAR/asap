@@ -61,8 +61,8 @@ public:
   std::string getTaQL() const { return taql_; }
   std::vector<std::string> getSortOrder() const;
 
-  casa::Table apply(const casa::Table& tab);
-  casa::Table operator()(const casa::Table& tab) { return apply(tab); };
+  casacore::Table apply(const casacore::Table& tab);
+  casacore::Table operator()(const casacore::Table& tab) { return apply(tab); };
 
   void reset() { intselections_.clear();stringselections_.clear(); taql_ = "";};
 
@@ -79,7 +79,7 @@ protected:
 
 private:
 
-  casa::Table sort(const casa::Table& tab);
+  casacore::Table sort(const casacore::Table& tab);
 
   typedef std::map<std::string, std::vector<int> > intidmap;
   typedef std::map<std::string, std::vector<std::string> > stringidmap;
@@ -87,7 +87,7 @@ private:
   mutable intidmap intselections_;
   mutable stringidmap stringselections_;
   std::vector<std::string> poltypes_;
-  casa::Block<casa::String> order_;
+  casacore::Block<casacore::String> order_;
   std::string taql_;
   std::vector<int> rowselection_;
 };

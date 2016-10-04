@@ -47,7 +47,7 @@
 #include <fitsio.h>
 
 using namespace std;
-using namespace casa;
+using namespace casacore;
 
 // <summary>
 // ATNF class for SDFITS input using CFITSIO.

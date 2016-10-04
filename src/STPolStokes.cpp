@@ -16,7 +16,7 @@
 #include <casa/BasicSL/Constants.h>
 #include "STPolStokes.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 

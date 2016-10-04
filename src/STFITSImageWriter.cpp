@@ -66,7 +66,7 @@
 #include "Scantable.h"
 #include "STFITSImageWriter.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 
@@ -273,7 +273,7 @@ Bool STFITSImageWriter::write(const Scantable& stable,
     }
     fits_close_file(fptr, &status);
     
-    LogIO os( casa::LogOrigin("STFITSImageWriter"));
+    LogIO os( casacore::LogOrigin("STFITSImageWriter"));
     os << "Wrote " << fileName << LogIO::POST;
     ++iter;
   }

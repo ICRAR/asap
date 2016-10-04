@@ -33,39 +33,39 @@ class STBaselineTable : public STApplyTable {
 public:
   STBaselineTable() {;}
   STBaselineTable(const Scantable& parent);
-  STBaselineTable(const casa::String &name);
+  STBaselineTable(const casacore::String &name);
 
   virtual ~STBaselineTable();
 
   void setup();
-  const casa::String& name() const {return name_;};
+  const casacore::String& name() const {return name_;};
 
   void attachOptionalColumns();
   void save(const std::string &filename);
-  void setdata(casa::uInt irow, casa::uInt scanno, casa::uInt cycleno, 
-               casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-               casa::uInt freqid, casa::Double time, 
-	       casa::Bool apply,
+  void setdata(casacore::uInt irow, casacore::uInt scanno, casacore::uInt cycleno, 
+               casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+               casacore::uInt freqid, casacore::Double time, 
+	       casacore::Bool apply,
                STBaselineFunc::FuncName ftype, 
-	       casa::Vector<casa::Int> fpar, 
-	       casa::Vector<casa::Float> ffpar, 
-               casa::Vector<casa::uInt> mask,
-               casa::Vector<casa::Float> res,
-               casa::Float rms, 
-               casa::uInt nchan, 
-	       casa::Float cthres,
-               casa::uInt citer, 
-	       casa::Float lfthres, 
-	       casa::uInt lfavg, 
-	       casa::Vector<casa::uInt> lfedge);
+	       casacore::Vector<casacore::Int> fpar, 
+	       casacore::Vector<casacore::Float> ffpar, 
+               casacore::Vector<casacore::uInt> mask,
+               casacore::Vector<casacore::Float> res,
+               casacore::Float rms, 
+               casacore::uInt nchan, 
+	       casacore::Float cthres,
+               casacore::uInt citer, 
+	       casacore::Float lfthres, 
+	       casacore::uInt lfavg, 
+	       casacore::Vector<casacore::uInt> lfedge);
   void appenddata(int scanno, int cycleno, 
 		  int beamno, int ifno, int polno, 
-		  int freqid, casa::Double time, 
+		  int freqid, casacore::Double time, 
 		  bool apply, 
 		  STBaselineFunc::FuncName ftype, 
 		  vector<int> fpar, 
 		  vector<float> ffpar, 
-		  casa::Vector<casa::uInt> mask,
+		  casacore::Vector<casacore::uInt> mask,
 		  vector<float> res,
 		  float rms,
 		  int nchan, 
@@ -76,12 +76,12 @@ public:
 		  vector<int> lfedge);
   void appenddata(int scanno, int cycleno, 
 		  int beamno, int ifno, int polno, 
-		  int freqid, casa::Double time, 
+		  int freqid, casacore::Double time, 
 		  bool apply, 
 		  STBaselineFunc::FuncName ftype, 
 		  int fpar, 
 		  vector<float> ffpar, 
-		  casa::Vector<casa::uInt> mask,
+		  casacore::Vector<casacore::uInt> mask,
 		  vector<float> res,
 		  float rms,
 		  int nchan, 
@@ -90,65 +90,65 @@ public:
 		  float lfthres, 
 		  int lfavg, 
 		  vector<int> lfedge);
-  void appenddata(casa::uInt scanno, casa::uInt cycleno, 
-                  casa::uInt beamno, casa::uInt ifno, casa::uInt polno, 
-                  casa::uInt freqid, casa::Double time, 
-		  casa::Bool apply,
+  void appenddata(casacore::uInt scanno, casacore::uInt cycleno, 
+                  casacore::uInt beamno, casacore::uInt ifno, casacore::uInt polno, 
+                  casacore::uInt freqid, casacore::Double time, 
+		  casacore::Bool apply,
 		  STBaselineFunc::FuncName ftype, 
-		  casa::Vector<casa::Int> fpar, 
-		  casa::Vector<casa::Float> ffpar, 
-		  casa::Vector<casa::uInt> mask,
-		  casa::Vector<casa::Float> res,
-		  casa::Float rms, 
-		  casa::uInt nchan, 
-		  casa::Float cthres,
-		  casa::uInt citer, 
-		  casa::Float lfthres, 
-		  casa::uInt lfavg, 
-		  casa::Vector<casa::uInt> lfedge);
+		  casacore::Vector<casacore::Int> fpar, 
+		  casacore::Vector<casacore::Float> ffpar, 
+		  casacore::Vector<casacore::uInt> mask,
+		  casacore::Vector<casacore::Float> res,
+		  casacore::Float rms, 
+		  casacore::uInt nchan, 
+		  casacore::Float cthres,
+		  casacore::uInt citer, 
+		  casacore::Float lfthres, 
+		  casacore::uInt lfavg, 
+		  casacore::Vector<casacore::uInt> lfedge);
   void appendbasedata(int scanno, int cycleno, 
 		      int beamno, int ifno, int polno, 
-		      int freqid, casa::Double time);
-  void setresult(casa::uInt irow, 
-		 casa::Vector<casa::Float> res, 
-		 casa::Float rms);
-  casa::uInt nchan(casa::uInt ifno);
-  casa::Vector<casa::Bool> getApply() {return applyCol_.getColumn();}
+		      int freqid, casacore::Double time);
+  void setresult(casacore::uInt irow, 
+		 casacore::Vector<casacore::Float> res, 
+		 casacore::Float rms);
+  casacore::uInt nchan(casacore::uInt ifno);
+  casacore::Vector<casacore::Bool> getApply() {return applyCol_.getColumn();}
   bool getApply(int irow);
-  casa::Vector<casa::uInt> getFunction() {return ftypeCol_.getColumn();}
-  casa::Vector<STBaselineFunc::FuncName> getFunctionNames();
+  casacore::Vector<casacore::uInt> getFunction() {return ftypeCol_.getColumn();}
+  casacore::Vector<STBaselineFunc::FuncName> getFunctionNames();
   STBaselineFunc::FuncName getFunctionName(int irow);
-  casa::Matrix<casa::Int> getFuncParam() {return fparCol_.getColumn();}
+  casacore::Matrix<casacore::Int> getFuncParam() {return fparCol_.getColumn();}
   std::vector<int> getFuncParam(int irow);
-  casa::Matrix<casa::Float> getFuncFParam() {return ffparCol_.getColumn();}
-  casa::Matrix<casa::uInt> getMaskList() {return maskCol_.getColumn();}
+  casacore::Matrix<casacore::Float> getFuncFParam() {return ffparCol_.getColumn();}
+  casacore::Matrix<casacore::uInt> getMaskList() {return maskCol_.getColumn();}
   std::vector<bool> getMask(int irow);
-  casa::Matrix<casa::Float> getResult() {return resCol_.getColumn();}
-  casa::Vector<casa::Float> getRms() {return rmsCol_.getColumn();}
-  casa::Vector<casa::uInt> getNChan() {return nchanCol_.getColumn();}
-  casa::uInt getNChan(int irow);
-  casa::Vector<casa::Float> getClipThreshold() {return cthresCol_.getColumn();}
-  casa::Vector<casa::uInt> getClipIteration() {return citerCol_.getColumn();}
-  casa::Vector<casa::Float> getLineFinderThreshold() {return lfthresCol_.getColumn();}
-  casa::Vector<casa::uInt> getLineFinderChanAvg() {return lfavgCol_.getColumn();}
-  casa::Matrix<casa::uInt> getLineFinderEdge() {return lfedgeCol_.getColumn();}
+  casacore::Matrix<casacore::Float> getResult() {return resCol_.getColumn();}
+  casacore::Vector<casacore::Float> getRms() {return rmsCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getNChan() {return nchanCol_.getColumn();}
+  casacore::uInt getNChan(int irow);
+  casacore::Vector<casacore::Float> getClipThreshold() {return cthresCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getClipIteration() {return citerCol_.getColumn();}
+  casacore::Vector<casacore::Float> getLineFinderThreshold() {return lfthresCol_.getColumn();}
+  casacore::Vector<casacore::uInt> getLineFinderChanAvg() {return lfavgCol_.getColumn();}
+  casacore::Matrix<casacore::uInt> getLineFinderEdge() {return lfedgeCol_.getColumn();}
   void setApply(int irow, bool apply);
 
 private:
-  static const casa::String name_ ;
-  casa::ScalarColumn<casa::Bool> applyCol_;
-  casa::ScalarColumn<casa::uInt> ftypeCol_;
-  casa::ArrayColumn<casa::Int> fparCol_;
-  casa::ArrayColumn<casa::Float> ffparCol_;
-  casa::ArrayColumn<casa::uInt> maskCol_;
-  casa::ArrayColumn<casa::Float> resCol_;
-  casa::ScalarColumn<casa::Float> rmsCol_;
-  casa::ScalarColumn<casa::uInt> nchanCol_;
-  casa::ScalarColumn<casa::Float> cthresCol_;
-  casa::ScalarColumn<casa::uInt> citerCol_;
-  casa::ScalarColumn<casa::Float> lfthresCol_;
-  casa::ScalarColumn<casa::uInt> lfavgCol_;
-  casa::ArrayColumn<casa::uInt> lfedgeCol_;
+  static const casacore::String name_ ;
+  casacore::ScalarColumn<casacore::Bool> applyCol_;
+  casacore::ScalarColumn<casacore::uInt> ftypeCol_;
+  casacore::ArrayColumn<casacore::Int> fparCol_;
+  casacore::ArrayColumn<casacore::Float> ffparCol_;
+  casacore::ArrayColumn<casacore::uInt> maskCol_;
+  casacore::ArrayColumn<casacore::Float> resCol_;
+  casacore::ScalarColumn<casacore::Float> rmsCol_;
+  casacore::ScalarColumn<casacore::uInt> nchanCol_;
+  casacore::ScalarColumn<casacore::Float> cthresCol_;
+  casacore::ScalarColumn<casacore::uInt> citerCol_;
+  casacore::ScalarColumn<casacore::Float> lfthresCol_;
+  casacore::ScalarColumn<casacore::uInt> lfavgCol_;
+  casacore::ArrayColumn<casacore::uInt> lfedgeCol_;
 };
 
 }

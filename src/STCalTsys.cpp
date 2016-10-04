@@ -22,7 +22,7 @@
 #include <atnf/PKSIO/SrcType.h>
 
 using namespace std;
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 STCalTsys::STCalTsys(CountedPtr<Scantable> &s, vector<int> &iflist)

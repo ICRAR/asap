@@ -24,7 +24,7 @@
 #include <atnf/PKSIO/SrcType.h>
 #include <casa/Logging/LogIO.h>
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap
 {

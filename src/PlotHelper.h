@@ -77,18 +77,18 @@ public:
 
 private:
   /** Generate temporal coordinate from the DIRECTION column of a scantable**/
-  casa::DirectionCoordinate getSTCoord(const int nx, const int ny,
-				       const casa::Projection::Type ptype);
+  casacore::DirectionCoordinate getSTCoord(const int nx, const int ny,
+				       const casacore::Projection::Type ptype);
 
   /** Generation of direction coordinate **/
-  void setupCoord(const casa::MDirection::Types mdt,
-		  const casa::Projection::Type pjt,
-		  const casa::Double centx, const casa::Double centy,
-		  const casa::Double incx, const casa::Double incy,
-		  const casa::Double refx, const casa::Double refy);
+  void setupCoord(const casacore::MDirection::Types mdt,
+		  const casacore::Projection::Type pjt,
+		  const casacore::Double centx, const casacore::Double centy,
+		  const casacore::Double incx, const casacore::Double incy,
+		  const casacore::Double refx, const casacore::Double refy);
 
-  casa::DirectionCoordinate *dircoord_p;
-  casa::CountedPtr<Scantable> data_p;
+  casacore::DirectionCoordinate *dircoord_p;
+  casacore::CountedPtr<Scantable> data_p;
 
 };
 

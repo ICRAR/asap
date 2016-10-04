@@ -69,8 +69,8 @@ struct LFLineListOperations {
    // the detection threshold. If lines becomes adjacent, they are
    // merged together. Any masked channel stops the extension
    static void searchForWings(std::list<std::pair<int, int> > &newlines,
-                       const casa::Vector<casa::Int> &signs,
-		       const casa::Vector<casa::Bool> &mask,
+                       const casacore::Vector<casacore::Int> &signs,
+		       const casacore::Vector<casacore::Bool> &mask,
 		       const std::pair<int,int> &edge);
 protected:
 
@@ -152,14 +152,14 @@ struct STLineFinder : protected LFLineListOperations {
    //              Default is -1 (i.e. estimate using the whole spectrum)
    // in_median    true if median statistics is used as opposed to average of
    //              the lowest 80% of deviations (default)
-   void setOptions(const casa::Float &in_threshold=sqrt(3.),
-                   const casa::Int &in_min_nchan=3,
-		   const casa::Int &in_avg_limit=8,
-                   const casa::Float &in_box_size=0.2,
-                   const casa::Float &in_noise_box=-1.,
-                   const casa::Bool &in_median = casa::False);
+   void setOptions(const casacore::Float &in_threshold=sqrt(3.),
+                   const casacore::Int &in_min_nchan=3,
+		   const casacore::Int &in_avg_limit=8,
+                   const casacore::Float &in_box_size=0.2,
+                   const casacore::Float &in_noise_box=-1.,
+                   const casacore::Bool &in_median = casacore::False);
 
-   void setDetailedOptions( const casa::Int &order=9 ) ;
+   void setDetailedOptions( const casacore::Int &order=9 ) ;
 
    // set the scan to work with (in_scan parameter)
    void setScan(const ScantableWrapper &in_scan);
@@ -179,7 +179,7 @@ struct STLineFinder : protected LFLineListOperations {
    // Number of lines found is returned
    int findLines(const std::vector<bool> &in_mask,
 		 const std::vector<int> &in_edge = std::vector<int>(),
-		 const casa::uInt &whichRow = 0);
+		 const casacore::uInt &whichRow = 0);
 
    // get the mask to mask out all lines that have been found (default)
    // if invert=true, only channels belong to lines will be unmasked
@@ -201,14 +201,14 @@ protected:
    // spectrum and edge fields of this class, but updates the mask
    // array specified, rather than the field of this class
    // boxsize - a number of adjacent channels to average
-   void averageAdjacentChannels(casa::Vector<casa::Bool> &mask2update,
-                               const casa::Int &boxsize);
+   void averageAdjacentChannels(casacore::Vector<casacore::Bool> &mask2update,
+                               const casacore::Int &boxsize);
 
    // auxiliary function to fit and subtract a polynomial from the current
    // spectrum. It uses the Fitter class. This action is required before
    // reducing the spectral resolution if the baseline shape is bad
-   void subtractBaseline(const casa::Vector<casa::Bool> &temp_mask,
-                         const casa::Int &order);
+   void subtractBaseline(const casacore::Vector<casacore::Bool> &temp_mask,
+                         const casacore::Int &order);
 
    // an auxiliary function to remove all lines from the list, except the
    // strongest one (by absolute value). If the lines removed are real,
@@ -223,49 +223,49 @@ protected:
    // lines2update - a list of lines to work with
    //                 nothing will be done if it is empty
    // max_box_nchan - channels in the running box for baseline filtering
-   void keepStrongestOnly(const casa::Vector<casa::Bool> &temp_mask,
+   void keepStrongestOnly(const casacore::Vector<casacore::Bool> &temp_mask,
 			  std::list<std::pair<int, int> > &lines2update,
 			  int max_box_nchan);
 private:
-   casa::CountedPtr<Scantable> scan; // the scan to work with
-   casa::Vector<casa::Bool> mask;          // associated mask
+   casacore::CountedPtr<Scantable> scan; // the scan to work with
+   casacore::Vector<casacore::Bool> mask;          // associated mask
    std::pair<int,int> edge;                // start and stop+1 channels
                                            // to work with
-   casa::Float threshold;                  // detection threshold - the
+   casacore::Float threshold;                  // detection threshold - the
                                            // minimal signal to noise ratio
-   casa::Double box_size;	           // size of the box for running
+   casacore::Double box_size;	           // size of the box for running
                                            // mean calculations, specified as
 					   // a fraction of the whole spectrum
    int  min_nchan;                         // A minimum number of consequtive
                                            // channels, which should satisfy
 					   // the detection criterion, to be
 					   // a detection
-   casa::Int   avg_limit;                  // perform the averaging of no
+   casacore::Int   avg_limit;                  // perform the averaging of no
                                            // more than in_avg_limit
 					   // adjacent channels to search
 					   // for broad lines. see setOptions
-   casa::uInt last_row_used;                // the Row number specified
+   casacore::uInt last_row_used;                // the Row number specified
                                            // during the last findLines call
    std::list<std::pair<int, int> > lines;  // container of start and stop+1
                                            // channels of the spectral lines
    // a buffer for the spectrum
-   mutable casa::Vector<casa::Float>  spectrum;
+   mutable casacore::Vector<casacore::Float>  spectrum;
 
    // the box size for off-line noise estimation (if working with
    // local noise. Negative value means use global noise estimate
    // Default is -1 (i.e. estimate using the whole spectrum)
-   casa::Float itsNoiseBox;
+   casacore::Float itsNoiseBox;
 
    // true if median statistics is used as opposed to average of
    // the lowest 80% of deviations (default)
-   casa::Bool itsUseMedian;
+   casacore::Bool itsUseMedian;
 
    // true if spectra and mask data should be provided from 
    // scantable (default = true)
    bool useScantable;
 
    // shared object for nominal throw
-   casa::AipsError err ;
+   casacore::AipsError err ;
 };
 
 //

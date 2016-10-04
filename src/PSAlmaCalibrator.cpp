@@ -16,7 +16,7 @@
 
 #include "PSAlmaCalibrator.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 

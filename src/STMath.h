@@ -36,8 +36,8 @@ namespace asap {
 class STMath {
 public:
 	// typedef for long method name
-  typedef casa::InterpolateArray1D<casa::Double,
-                                   casa::Float>::InterpolationMethod imethod;
+  typedef casacore::InterpolateArray1D<casacore::Double,
+                                   casacore::Float>::InterpolationMethod imethod;
 
   // typedef for std::map
   typedef std::map<std::string, imethod> imap;
@@ -68,11 +68,11 @@ public:
     * @param mask an optional mask to apply on specific weights
     * @param weight weighting scheme
     * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
-    * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+    * @return a casacore::CountedPtr<Scantable> which either holds a new Scantable
     * or returns the imput pointer.
     */
-  casa::CountedPtr<Scantable>
-    average( const std::vector<casa::CountedPtr<Scantable> >& in,
+  casacore::CountedPtr<Scantable>
+    average( const std::vector<casacore::CountedPtr<Scantable> >& in,
              const std::vector<bool>& mask = std::vector<bool>(),
              const std::string& weight = "NONE",
              const std::string& avmode = "SCAN");
@@ -82,11 +82,11 @@ public:
     * @param in the Scantable to average
     * @param mode the averaging mode. Currently only "MEDIAN"
     * @param avmode the mode ov averaging. Per "SCAN" or "ALL".
-    * @return a casa::CountedPtr<Scantable> which either holds a new Scantable
+    * @return a casacore::CountedPtr<Scantable> which either holds a new Scantable
     * or returns the imput pointer.
     */
-  casa::CountedPtr<Scantable>
-    averageChannel( const casa::CountedPtr<Scantable> & in,
+  casacore::CountedPtr<Scantable>
+    averageChannel( const casacore::CountedPtr<Scantable> & in,
                     const std::string& mode = "MEDIAN",
                     const std::string& avmode = "SCAN");
 
@@ -98,8 +98,8 @@ public:
     * @param weight weighting scheme
     * @return
     */
-  casa::CountedPtr< Scantable >
-    averagePolarisations( const casa::CountedPtr< Scantable > & in,
+  casacore::CountedPtr< Scantable >
+    averagePolarisations( const casacore::CountedPtr< Scantable > & in,
                           const std::vector<bool>& mask,
                           const std::string& weight );
 
@@ -110,19 +110,19 @@ public:
     * @param weight weighting scheme
     * @return
     */
-  casa::CountedPtr< Scantable >
-    averageBeams( const casa::CountedPtr< Scantable > & in,
+  casacore::CountedPtr< Scantable >
+    averageBeams( const casacore::CountedPtr< Scantable > & in,
                    const std::vector<bool>& mask,
                    const std::string& weight );
 
-  casa::CountedPtr<Scantable>
-    unaryOperate( const casa::CountedPtr<Scantable>& in, float val,
+  casacore::CountedPtr<Scantable>
+    unaryOperate( const casacore::CountedPtr<Scantable>& in, float val,
                   const std::string& mode, bool tsys=false,
                   bool skip_flaggedrow=false );
 
   // array operation
-  casa::CountedPtr<Scantable>
-    arrayOperate( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    arrayOperate( const casacore::CountedPtr<Scantable>& in,
                   const std::vector<float> val,
                   const std::string& mode,
                   const std::string& opmode="channel",  
@@ -130,36 +130,36 @@ public:
                   bool skip_flaggedrow=false );
 
   // channel operation
-  casa::CountedPtr<Scantable>
-    arrayOperateChannel( const casa::CountedPtr<Scantable>& in, 
+  casacore::CountedPtr<Scantable>
+    arrayOperateChannel( const casacore::CountedPtr<Scantable>& in,
                          const std::vector<float> val,
                          const std::string& mode, bool tsys=false,
                          bool skip_flaggedrow=false );
 
   // row operation
-  casa::CountedPtr<Scantable>
-    arrayOperateRow( const casa::CountedPtr<Scantable>& in, 
+  casacore::CountedPtr<Scantable>
+    arrayOperateRow( const casacore::CountedPtr<Scantable>& in,
                      const std::vector<float> val,
                      const std::string& mode, bool tsys=false,
                      bool skip_flaggedrow=false );
 
   // 2d array operation
-  casa::CountedPtr<Scantable>
-    array2dOperate( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    array2dOperate( const casacore::CountedPtr<Scantable>& in,
                   const std::vector< std::vector<float> > val,
                   const std::string& mode, bool tsys=false );
 
-  casa::CountedPtr<Scantable>
-    binaryOperate( const casa::CountedPtr<Scantable>& left,
-		   const casa::CountedPtr<Scantable>& right,
+  casacore::CountedPtr<Scantable>
+    binaryOperate( const casacore::CountedPtr<Scantable>& left,
+		   const casacore::CountedPtr<Scantable>& right,
 		   const std::string& mode);
 
-  casa::CountedPtr<Scantable> autoQuotient(const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable> autoQuotient(const casacore::CountedPtr<Scantable>& in,
                                            const std::string& mode = "NEAREST",
                                            bool preserve = true);
 
-  casa::CountedPtr<Scantable> quotient( const casa::CountedPtr<Scantable>& on,
-                                        const casa::CountedPtr<Scantable>& off,
+  casacore::CountedPtr<Scantable> quotient( const casacore::CountedPtr<Scantable>& on,
+                                        const casacore::CountedPtr<Scantable>& off,
                                         bool preserve = true );
 
   /**
@@ -167,13 +167,13 @@ public:
     * @param calon uncalibrated Scantable with CAL noise signal 
     * @param caloff uncalibrated Scantable with no CAL signal
     * @param tcal optional scalar Tcal, CAL temperature (K)
-    * @return casa::CountedPtr<Scantable> which holds a calibrated Scantable 
+    * @return casacore::CountedPtr<Scantable> which holds a calibrated Scantable
     * (spectrum - average of the two CAL on and off spectra;
     * tsys - mean Tsys = <caloff>*Tcal/<calon-caloff> + Tcal/2)
     */  	    
-  casa::CountedPtr<Scantable> dototalpower( const casa::CountedPtr<Scantable>& calon,
-                                            const casa::CountedPtr<Scantable>& caloff,
-                                            casa::Float tcal=1.0 );
+  casacore::CountedPtr<Scantable> dototalpower( const casacore::CountedPtr<Scantable>& calon,
+                                            const casacore::CountedPtr<Scantable>& caloff,
+                                            casacore::Float tcal=1.0 );
 
   /**
     * Combine signal and reference scans (translated from GBTIDL)
@@ -184,14 +184,14 @@ public:
     * @param tsysv optional scalar Tsys value at the zenith, required to 
     * set tau, as well 
     * @param tau optional scalar Tau value
-    * @return casa::CountedPtr<Scantable> which holds combined scans
+    * @return casacore::CountedPtr<Scantable> which holds combined scans
     * (spectrum = (sig-ref)/ref * Tsys )
     */
-  casa::CountedPtr<Scantable> dosigref( const casa::CountedPtr<Scantable>& sig,
-                                        const casa::CountedPtr<Scantable>& ref,
+  casacore::CountedPtr<Scantable> dosigref( const casacore::CountedPtr<Scantable>& sig,
+                                        const casacore::CountedPtr<Scantable>& ref,
                                         int smoothref=1,
-                                        casa::Float tsysv=0.0,
-                                        casa::Float tau=0.0 );
+                                        casacore::Float tsysv=0.0,
+                                        casacore::Float tau=0.0 );
 
   /**
     * Calibrate GBT Nod scan pairs (translated from GBTIDL)
@@ -202,14 +202,14 @@ public:
     * set tau, as well
     * @param tau optional scalar Tau value 
     * @param tcal optional scalar Tcal, CAL temperature (K)
-    * @return casa::CountedPtr<Scantable> which holds calibrated scans
+    * @return casacore::CountedPtr<Scantable> which holds calibrated scans
     */
-  casa::CountedPtr<Scantable> donod( const casa::CountedPtr<Scantable>& s,
+  casacore::CountedPtr<Scantable> donod( const casacore::CountedPtr<Scantable>& s,
                                      const std::vector<int>& scans,
                                      int smoothref=1,
-                                     casa::Float tsysv=0.0,
-                                     casa::Float tau=0.0,
-                                     casa::Float tcal=0.0 );
+                                     casacore::Float tsysv=0.0,
+                                     casacore::Float tau=0.0,
+                                     casacore::Float tcal=0.0 );
 
   /**
     * Calibrate frequency switched scans (translated from GBTIDL)
@@ -220,14 +220,14 @@ public:
     * set tau, as well
     * @param tau optional scalar Tau value
     * @param tcal optional scalar Tcal, CAL temperature (K)
-    * @return casa::CountedPtr<Scantable> which holds calibrated scans
+    * @return casacore::CountedPtr<Scantable> which holds calibrated scans
     */
-  casa::CountedPtr<Scantable> dofs( const casa::CountedPtr<Scantable>& s,
+  casacore::CountedPtr<Scantable> dofs( const casacore::CountedPtr<Scantable>& s,
                                     const std::vector<int>& scans,
                                     int smoothref=1,
-                                    casa::Float tsysv=0.0,
-                                    casa::Float tau=0.0,
-                                    casa::Float tcal=0.0 );
+                                    casacore::Float tsysv=0.0,
+                                    casacore::Float tau=0.0,
+                                    casacore::Float tcal=0.0 );
 
   /**
    * Calibrate data with Chopper-Wheel like calibration method 
@@ -240,9 +240,9 @@ public:
    * @param a string that indicates calibration mode 
    * @param a string that indicates antenna name
    **/
-  casa::CountedPtr<Scantable> cwcal( const casa::CountedPtr<Scantable>& s,
-                                       const casa::String calmode, 
-                                       const casa::String antname );
+  casacore::CountedPtr<Scantable> cwcal( const casacore::CountedPtr<Scantable>& s,
+                                       const casacore::String calmode,
+                                       const casacore::String antname );
 
   /**
    * Calibrate frequency switched scans with Chopper-Wheel like 
@@ -253,8 +253,8 @@ public:
    * @param a Scantable which contains ON and OFF scans
    * @param a string that indicates antenna name
    **/
-  casa::CountedPtr<Scantable> cwcalfs( const casa::CountedPtr<Scantable>& s,
-                                       const casa::String antname );
+  casacore::CountedPtr<Scantable> cwcalfs( const casacore::CountedPtr<Scantable>& s,
+                                       const casacore::String antname );
 
 
   /**
@@ -263,83 +263,83 @@ public:
    * @param ref
    * @param choffset
    **/
-  casa::CountedPtr<Scantable> dofold( const casa::CountedPtr<Scantable> &sig,
-                                      const casa::CountedPtr<Scantable> &ref,
-                                      casa::Double choffset,
-                                      casa::Double choffset2 = 0.0 );
+  casacore::CountedPtr<Scantable> dofold( const casacore::CountedPtr<Scantable> &sig,
+                                      const casacore::CountedPtr<Scantable> &ref,
+                                      casacore::Double choffset,
+                                      casacore::Double choffset2 = 0.0 );
 
   /**
    * ALMA calibration
    **/
-  casa::CountedPtr<Scantable> almacal( const casa::CountedPtr<Scantable>& s, 
-                                       const casa::String calmode ) ;
-  casa::CountedPtr<Scantable> almacalfs( const casa::CountedPtr<Scantable>& s ) ;
+  casacore::CountedPtr<Scantable> almacal( const casacore::CountedPtr<Scantable>& s,
+                                       const casacore::String calmode ) ;
+  casacore::CountedPtr<Scantable> almacalfs( const casacore::CountedPtr<Scantable>& s ) ;
 
-  casa::CountedPtr<Scantable>
-    freqSwitch( const casa::CountedPtr<Scantable>& in );
+  casacore::CountedPtr<Scantable>
+    freqSwitch( const casacore::CountedPtr<Scantable>& in );
 
-  std::vector<float> statistic(const casa::CountedPtr<Scantable>& in,
+  std::vector<float> statistic(const casacore::CountedPtr<Scantable>& in,
                                const std::vector<bool>& mask,
                                const std::string& which);
 
-  std::vector<float> statisticRow(const casa::CountedPtr<Scantable>& in,
+  std::vector<float> statisticRow(const casacore::CountedPtr<Scantable>& in,
                                const std::vector<bool>& mask,
 			       const std::string& which,
 			       int row);
 
-  std::vector< int > minMaxChan(const casa::CountedPtr<Scantable>& in,
+  std::vector< int > minMaxChan(const casacore::CountedPtr<Scantable>& in,
                                 const std::vector<bool>& mask,
                                 const std::string& which);
 
-  casa::CountedPtr<Scantable> bin( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable> bin( const casacore::CountedPtr<Scantable>& in,
                                    int width=5);
-  casa::CountedPtr<Scantable>
-    resample(const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    resample(const casacore::CountedPtr<Scantable>& in,
              const std::string& method, float width);
 
-  casa::CountedPtr<Scantable>
-    smooth(const casa::CountedPtr<Scantable>& in, const std::string& kernel,
+  casacore::CountedPtr<Scantable>
+    smooth(const casacore::CountedPtr<Scantable>& in, const std::string& kernel,
                       float width, int order=2);
 
-  casa::CountedPtr<Scantable>
-    gainElevation(const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    gainElevation(const casacore::CountedPtr<Scantable>& in,
                   const std::vector<float>& coeff,
                   const std::string& fileName,
                   const std::string& method);
-  casa::CountedPtr<Scantable>
-    convertFlux(const casa::CountedPtr<Scantable>& in, float d,
+  casacore::CountedPtr<Scantable>
+    convertFlux(const casacore::CountedPtr<Scantable>& in, float d,
                 float etaap, float jyperk);
 
-  casa::CountedPtr<Scantable> opacity(const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable> opacity(const casacore::CountedPtr<Scantable>& in,
                                       const std::vector<float>& tau);
 
-  casa::CountedPtr<Scantable>
-    merge(const std::vector<casa::CountedPtr<Scantable> >& in,
+  casacore::CountedPtr<Scantable>
+    merge(const std::vector<casacore::CountedPtr<Scantable> >& in,
 	  const std::string &freqTol = "");
 
-  casa::CountedPtr<Scantable>
-    invertPhase( const casa::CountedPtr<Scantable>& in);
+  casacore::CountedPtr<Scantable>
+    invertPhase( const casacore::CountedPtr<Scantable>& in);
 
-  casa::CountedPtr<Scantable>
-    rotateXYPhase( const casa::CountedPtr<Scantable>& in, float phase);
+  casacore::CountedPtr<Scantable>
+    rotateXYPhase( const casacore::CountedPtr<Scantable>& in, float phase);
 
-  casa::CountedPtr<Scantable>
-    rotateLinPolPhase( const casa::CountedPtr<Scantable>& in, float phase);
+  casacore::CountedPtr<Scantable>
+    rotateLinPolPhase( const casacore::CountedPtr<Scantable>& in, float phase);
 
-  casa::CountedPtr<Scantable>
-    swapPolarisations(const casa::CountedPtr<Scantable>& in);
+  casacore::CountedPtr<Scantable>
+    swapPolarisations(const casacore::CountedPtr<Scantable>& in);
 
-  casa::CountedPtr<Scantable>
-    frequencyAlign( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    frequencyAlign( const casacore::CountedPtr<Scantable>& in,
                     const std::string& refTime = "",
                     const std::string& method = "cubic" );
 
-  casa::CountedPtr<Scantable>
-    convertPolarisation( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    convertPolarisation( const casacore::CountedPtr<Scantable>& in,
                          const std::string& newtype);
 
-  casa::CountedPtr<Scantable>
-    mxExtract( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>
+    mxExtract( const casacore::CountedPtr<Scantable>& in,
                const std::string& srctype = "on");
 
   /**
@@ -347,90 +347,90 @@ public:
    * @param frequency the frequency to remove
    * @param width the number of lags to flag left to the side of the frequency
    */
-  casa::CountedPtr<Scantable>
-    lagFlag( const casa::CountedPtr<Scantable>& in, double start,
+  casacore::CountedPtr<Scantable>
+    lagFlag( const casacore::CountedPtr<Scantable>& in, double start,
              double end, const std::string& mode="frequency");
 
   std::vector<float>
-    fft( const casa::CountedPtr<Scantable>& in,
+    fft( const casacore::CountedPtr<Scantable>& in,
 	 const std::vector<int>& whichrow, 
 	 bool getRealImag=false );
 
   // test for average spectra with different channel/resolution
-  casa::CountedPtr<Scantable>
-    new_average( const std::vector<casa::CountedPtr<Scantable> >& in,
+  casacore::CountedPtr<Scantable>
+    new_average( const std::vector<casacore::CountedPtr<Scantable> >& in,
 		 const bool& compel, 
 		 const std::vector<bool>& mask = std::vector<bool>(),
 		 const std::string& weight = "NONE",
 		 const std::string& avmode = "SCAN" )
-    throw (casa::AipsError) ;
+    throw (casacore::AipsError) ;
 
 private:
-  casa::CountedPtr<Scantable>  applyToPol( const casa::CountedPtr<Scantable>& in,
+  casacore::CountedPtr<Scantable>  applyToPol( const casacore::CountedPtr<Scantable>& in,
                                            STPol::polOperation fptr,
-                                           casa::Float phase);
+                                           casacore::Float phase);
 
   static imethod stringToIMethod(const std::string& in);
   static WeightType stringToWeight(const std::string& in);
 
-  void scaleByVector(casa::Table& in,
-                     const casa::Vector<casa::Float>& factor,
+  void scaleByVector(casacore::Table& in,
+                     const casacore::Vector<casacore::Float>& factor,
                      bool dotsys);
 
-  void scaleFromAsciiTable(casa::Table& in, const std::string& filename,
+  void scaleFromAsciiTable(casacore::Table& in, const std::string& filename,
                            const std::string& method,
-                           const casa::Vector<casa::Float>& xout,
+                           const casacore::Vector<casacore::Float>& xout,
                            bool dotsys);
 
-  void scaleFromTable(casa::Table& in, const casa::Table& table,
+  void scaleFromTable(casacore::Table& in, const casacore::Table& table,
                       const std::string& method,
-                      const casa::Vector<casa::Float>& xout, bool dotsys);
+                      const casacore::Vector<casacore::Float>& xout, bool dotsys);
 
-  void convertBrightnessUnits(casa::CountedPtr<Scantable>& in,
+  void convertBrightnessUnits(casacore::CountedPtr<Scantable>& in,
                               bool tokelvin, float cfac);
 
-  casa::CountedPtr< Scantable >
-    smoothOther( const casa::CountedPtr< Scantable >& in,
+  casacore::CountedPtr< Scantable >
+    smoothOther( const casacore::CountedPtr< Scantable >& in,
                  const std::string& kernel,
                  float width, int order=2 );
 
-  casa::CountedPtr< Scantable >
-    getScantable(const casa::CountedPtr< Scantable >& in, bool droprows);
+  casacore::CountedPtr< Scantable >
+    getScantable(const casacore::CountedPtr< Scantable >& in, bool droprows);
 
-  casa::MaskedArray<casa::Float>
-    maskedArray( const casa::Vector<casa::Float>& s,
-                 const casa::Vector<casa::uChar>& f );
-  casa::MaskedArray<casa::Double>
-    maskedArray( const casa::Vector<casa::Double>& s,
-                 const casa::Vector<casa::uChar>& f );
-  casa::Vector<casa::uChar>
-    flagsFromMA(const casa::MaskedArray<casa::Float>& ma);
+  casacore::MaskedArray<casacore::Float>
+    maskedArray( const casacore::Vector<casacore::Float>& s,
+                 const casacore::Vector<casacore::uChar>& f );
+  casacore::MaskedArray<casacore::Double>
+    maskedArray( const casacore::Vector<casacore::Double>& s,
+                 const casacore::Vector<casacore::uChar>& f );
+  casacore::Vector<casacore::uChar>
+    flagsFromMA(const casacore::MaskedArray<casacore::Float>& ma);
 
   // Frequency switching
-  void calibrateFS( casa::CountedPtr<Scantable> &sig,
-                    casa::CountedPtr<Scantable> &ref,
-                    const casa::CountedPtr<Scantable> &rsig,
-                    const casa::CountedPtr<Scantable> &rref,
-                    const casa::CountedPtr<Scantable> &sky,
-                    const casa::CountedPtr<Scantable> &hot,
-                    const casa::CountedPtr<Scantable> &cold,
-                    const casa::Vector<casa::uInt> &rows ) ;
-  void calibrateAPEXFS( casa::CountedPtr<Scantable> &sig,
-                        casa::CountedPtr<Scantable> &ref,
-                        const vector< casa::CountedPtr<Scantable> > &on,
-                        const vector< casa::CountedPtr<Scantable> > &sky,
-                        const vector< casa::CountedPtr<Scantable> > &hot,
-                        const vector< casa::CountedPtr<Scantable> > &cold,
-                        const casa::Vector<casa::uInt> &rows ) ;
-  void copyRows( casa::Table &out, 
-                 const casa::Table &in, 
-                 casa::uInt startout, 
-                 casa::uInt startin, 
-                 casa::uInt nrow, 
-                 casa::Bool copySpectra=true,
-                 casa::Bool copyFlagtra=true, 
-                 casa::Bool copyTsys=true ) ; 
-  casa::CountedPtr<Scantable> averageWithinSession( casa::CountedPtr<Scantable> &s,
+  void calibrateFS( casacore::CountedPtr<Scantable> &sig,
+                    casacore::CountedPtr<Scantable> &ref,
+                    const casacore::CountedPtr<Scantable> &rsig,
+                    const casacore::CountedPtr<Scantable> &rref,
+                    const casacore::CountedPtr<Scantable> &sky,
+                    const casacore::CountedPtr<Scantable> &hot,
+                    const casacore::CountedPtr<Scantable> &cold,
+                    const casacore::Vector<casacore::uInt> &rows ) ;
+  void calibrateAPEXFS( casacore::CountedPtr<Scantable> &sig,
+                        casacore::CountedPtr<Scantable> &ref,
+                        const vector< casacore::CountedPtr<Scantable> > &on,
+                        const vector< casacore::CountedPtr<Scantable> > &sky,
+                        const vector< casacore::CountedPtr<Scantable> > &hot,
+                        const vector< casacore::CountedPtr<Scantable> > &cold,
+                        const casacore::Vector<casacore::uInt> &rows ) ;
+  void copyRows( casacore::Table &out,
+                 const casacore::Table &in,
+                 casacore::uInt startout,
+                 casacore::uInt startin,
+                 casacore::uInt nrow,
+                 casacore::Bool copySpectra=true,
+                 casacore::Bool copyFlagtra=true,
+                 casacore::Bool copyTsys=true ) ;
+  casacore::CountedPtr<Scantable> averageWithinSession( casacore::CountedPtr<Scantable> &s,
                                                     vector<bool> &mask,
                                                     string weight ) ;
 

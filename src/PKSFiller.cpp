@@ -43,7 +43,7 @@
 #include "PKSFiller.h"
 #include "STHeader.h"
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 

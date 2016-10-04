@@ -51,7 +51,7 @@ public:
    * Constructor taking an existing Scantable to fill
    * @param stbl
    */
-  explicit STFiller(casa::CountedPtr< Scantable > stbl);
+  explicit STFiller(casacore::CountedPtr< Scantable > stbl);
 
 
   /**
@@ -75,7 +75,7 @@ public:
    * @param whichBeam read a specific beam only (default -1 means all beams)
    * @exception AipsError Creation of PKSreader failed
    */
-  void open( const std::string& filename, const std::string& antenna, int whichIF=-1, int whichBeam=-1, casa::Bool getPt=casa::False );
+  void open( const std::string& filename, const std::string& antenna, int whichIF=-1, int whichBeam=-1, casacore::Bool getPt=casacore::False );
 
   /**
    * detach from file and clean up pointers
@@ -91,7 +91,7 @@ public:
    */
   int read( );
 
-  casa::CountedPtr<Scantable> getTable() const { return table_;}
+  casacore::CountedPtr<Scantable> getTable() const { return table_;}
 
   /**
    * For NRO data
@@ -108,7 +108,7 @@ public:
    **/
   void openNRO( int whichIF=-1, int whichBeam=-1 ) ;
   int readNRO() ;
-  casa::Bool fileCheck() ;
+  casacore::Bool fileCheck() ;
 
   void setReferenceExpr(const std::string& rx) { refRx_ = rx; }
 
@@ -116,14 +116,14 @@ private:
 
   PKSreader* reader_;
   STHeader* header_;
-  casa::String filename_;
-  casa::CountedPtr< Scantable > table_;
-  casa::Int nIF_, nBeam_, /* nPol_, nChan_,*/ nInDataRow;
-  casa::uInt ifOffset_, beamOffset_;
-  casa::Vector<casa::Bool> haveXPol_;
-  casa::String refRx_;
+  casacore::String filename_;
+  casacore::CountedPtr< Scantable > table_;
+  casacore::Int nIF_, nBeam_, /* nPol_, nChan_,*/ nInDataRow;
+  casacore::uInt ifOffset_, beamOffset_;
+  casacore::Vector<casacore::Bool> haveXPol_;
+  casacore::String refRx_;
   NROReader *nreader_ ;
-  casa::Bool isNRO_ ;
+  casacore::Bool isNRO_ ;
 };
 
 } // namespace

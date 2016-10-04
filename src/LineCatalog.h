@@ -106,16 +106,16 @@ private:
    * @param lmin the lower limit
    * @param lmax the upper limit
    * @param colname the columd to apply the limits to
-   * @return a new casa::Table
+   * @return a new casacore::Table
    */
-  casa::Table setLimits(double lmin, double lmax, const std::string& colname);
+  casacore::Table setLimits(double lmin, double lmax, const std::string& colname);
 
   double getDouble(const std::string& colname, uint row) const;
 
   // the table with seelection
-  casa::Table table_;
+  casacore::Table table_;
   // the pristine table
-  casa::Table baseTable_;
+  casacore::Table baseTable_;
 };
 
 } // namespace

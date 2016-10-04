@@ -23,11 +23,11 @@
 #include "STTcal.h"
 
 
-using namespace casa;
+using namespace casacore;
 
 namespace asap {
 
-const casa::String STTcal::name_ = "TCAL";
+const casacore::String STTcal::name_ = "TCAL";
 
 STTcal::STTcal(const Scantable& parent) :
   STSubTable( parent, name_ )
@@ -45,7 +45,7 @@ STTcal& asap::STTcal::operator =( const STTcal & other )
   return *this;
 }
 
-asap::STTcal::STTcal( casa::Table tab ) : STSubTable(tab, name_)
+asap::STTcal::STTcal( casacore::Table tab ) : STSubTable(tab, name_)
 {
   timeCol_.attach(table_,"TIME");
   tcalCol_.attach(table_,"TCAL");

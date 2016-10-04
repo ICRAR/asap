@@ -43,7 +43,7 @@
 #include "STDefs.h"
 #include "STHeader.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 

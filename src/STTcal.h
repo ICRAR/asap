@@ -30,26 +30,26 @@ The Tcal subtable of the Scantable
 class STTcal : public STSubTable {
 public:
   STTcal() {;}
-  explicit STTcal(casa::Table tab);
+  explicit STTcal(casacore::Table tab);
   explicit STTcal( const Scantable& parent);
 
   virtual ~STTcal();
 
   STTcal& operator=(const STTcal& other);
 
-  casa::uInt addEntry( const casa::String& time,
-                       const casa::Vector<casa::Float>& tcal);
-  void getEntry( casa::String& time, casa::Vector<casa::Float>& tcal,
-                 casa::uInt id );
+  casacore::uInt addEntry( const casacore::String& time,
+                       const casacore::Vector<casacore::Float>& tcal);
+  void getEntry( casacore::String& time, casacore::Vector<casacore::Float>& tcal,
+                 casacore::uInt id );
 
-  const casa::String& name() const { return name_; }
+  const casacore::String& name() const { return name_; }
 
 private:
   void setup();
-  static const casa::String name_;
-  //casa::Table table_;
-  casa::ArrayColumn<casa::Float> tcalCol_;
-  casa::ScalarColumn<casa::String> timeCol_;
+  static const casacore::String name_;
+  //casacore::Table table_;
+  casacore::ArrayColumn<casacore::Float> tcalCol_;
+  casacore::ScalarColumn<casacore::String> timeCol_;
 };
 
 }

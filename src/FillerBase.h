@@ -40,10 +40,10 @@ namespace asap
 class FillerBase
 {
   public:
-    explicit FillerBase(casa::CountedPtr<Scantable> stable);
+    explicit FillerBase(casacore::CountedPtr<Scantable> stable);
     virtual ~FillerBase() {;}
 
-    virtual bool open(const std::string& filename, const casa::Record& rec) = 0;
+    virtual bool open(const std::string& filename, const casacore::Record& rec) = 0;
     //    virtual bool open(const std::string& filename) = 0;
     virtual void fill() = 0;
     virtual void close() = 0;
@@ -55,61 +55,61 @@ class FillerBase
 
     void commitRow();
     void setHeader(const STHeader& header);
-    void setSpectrum(const casa::Vector<casa::Float>& spectrum,
-                             const casa::Vector<casa::uChar>& flags,
-                             const casa::Vector<casa::Float>& tsys);
-    void setFlagrow(casa::uInt flag);
-    void setOpacity(casa::Float opacity=0.0f);
-    void setIndex(casa::uInt scanno, casa::uInt cycleno,
-                          casa::uInt ifno, casa::uInt polno,
-                          casa::uInt beamno=0);
-    void setFrequency(casa::Double refpix, casa::Double refval,
-                              casa::Double incr);
-    void setMolecule(const casa::Vector<casa::Double>& restfreq);
-    void setDirection(const casa::Vector<casa::Double>& dir,
-                              casa::Float az=0.0f, casa::Float el=0.0f);
+    void setSpectrum(const casacore::Vector<casacore::Float>& spectrum,
+                             const casacore::Vector<casacore::uChar>& flags,
+                             const casacore::Vector<casacore::Float>& tsys);
+    void setFlagrow(casacore::uInt flag);
+    void setOpacity(casacore::Float opacity=0.0f);
+    void setIndex(casacore::uInt scanno, casacore::uInt cycleno,
+                          casacore::uInt ifno, casacore::uInt polno,
+                          casacore::uInt beamno=0);
+    void setFrequency(casacore::Double refpix, casacore::Double refval,
+                              casacore::Double incr);
+    void setMolecule(const casacore::Vector<casacore::Double>& restfreq);
+    void setDirection(const casacore::Vector<casacore::Double>& dir,
+                              casacore::Float az=0.0f, casacore::Float el=0.0f);
 
-    void setFocus(casa::Float pa=0.0f, casa::Float faxis=0.0f,
-                          casa::Float ftan=0.0f, casa::Float frot=0.0f);
-    void setTime(casa::Double mjd, casa::Double integration);
-    void setWeather(casa::Float temperature=0.0f,
-                            casa::Float pressure=0.0f,
-                            casa::Float humidity=0.0f,
-                            casa::Float windspeed=0.0f,
-                            casa::Float windaz=0.0f);
-    void setWeather2(casa::Float temperature=0.0f,
-                            casa::Float pressure=0.0f,
-                            casa::Float humidity=0.0f,
-                            casa::Float windspeed=0.0f,
-                            casa::Float windaz=0.0f);
-    void setTcal(const casa::String& caltime="",
-                         const casa::Vector<casa::Float>& tcal=casa::Vector<casa::Float>());
-    void setTcal2(const casa::String& caltime="",
-                         const casa::Vector<casa::Float>& tcal=casa::Vector<casa::Float>());
-    void setScanRate(const casa::Vector<casa::Double>& srate=casa::Vector<casa::Double>());
-    void setReferenceBeam(casa::Int beamno=-1);
-    void setSource(const std::string& name, casa::Int type,
+    void setFocus(casacore::Float pa=0.0f, casacore::Float faxis=0.0f,
+                          casacore::Float ftan=0.0f, casacore::Float frot=0.0f);
+    void setTime(casacore::Double mjd, casacore::Double integration);
+    void setWeather(casacore::Float temperature=0.0f,
+                            casacore::Float pressure=0.0f,
+                            casacore::Float humidity=0.0f,
+                            casacore::Float windspeed=0.0f,
+                            casacore::Float windaz=0.0f);
+    void setWeather2(casacore::Float temperature=0.0f,
+                            casacore::Float pressure=0.0f,
+                            casacore::Float humidity=0.0f,
+                            casacore::Float windspeed=0.0f,
+                            casacore::Float windaz=0.0f);
+    void setTcal(const casacore::String& caltime="",
+                         const casacore::Vector<casacore::Float>& tcal=casacore::Vector<casacore::Float>());
+    void setTcal2(const casacore::String& caltime="",
+                         const casacore::Vector<casacore::Float>& tcal=casacore::Vector<casacore::Float>());
+    void setScanRate(const casacore::Vector<casacore::Double>& srate=casacore::Vector<casacore::Double>());
+    void setReferenceBeam(casacore::Int beamno=-1);
+    void setSource(const std::string& name, casacore::Int type,
                            const std::string& fieldname="",
-                           const casa::Vector<casa::Double>& dir=casa::Vector<casa::Double>(),
-                           const casa::Vector<casa::Double>& propermot=casa::Vector<casa::Double>(),
-                           casa::Double velocity=0.0);
+                           const casacore::Vector<casacore::Double>& dir=casacore::Vector<casacore::Double>(),
+                           const casacore::Vector<casacore::Double>& propermot=casacore::Vector<casacore::Double>(),
+                           casacore::Double velocity=0.0);
 
-    casa::CountedPtr< Scantable > table_;
+    casacore::CountedPtr< Scantable > table_;
 
   private:
 
     FillerBase();
     FillerBase(const FillerBase&);
     FillerBase& operator=(const FillerBase&);
-    casa::String referenceRx_;
-    casa::TableRow row_;
+    casacore::String referenceRx_;
+    casacore::TableRow row_;
  
-    std::vector< casa::Vector<casa::Double> > mEntry_ ;
-    std::vector<casa::uInt> mIdx_ ;
-    std::vector< casa::Vector<casa::Double> > fEntry_ ;
-    std::vector<casa::uInt> fIdx_ ;
-    std::vector< casa::Vector<casa::Float> > wEntry_ ;
-    std::vector<casa::uInt> wIdx_ ;
+    std::vector< casacore::Vector<casacore::Double> > mEntry_ ;
+    std::vector<casacore::uInt> mIdx_ ;
+    std::vector< casacore::Vector<casacore::Double> > fEntry_ ;
+    std::vector<casacore::uInt> fIdx_ ;
+    std::vector< casacore::Vector<casacore::Float> > wEntry_ ;
+    std::vector<casacore::uInt> wIdx_ ;
 };
 
 

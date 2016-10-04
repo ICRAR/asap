@@ -79,24 +79,24 @@ public:
 
 private:
   void clear();
-  void applyConstraints(casa::GenericL2Fit<casa::Float>& fitter);
-  casa::Vector<casa::Float> x_;
-  casa::Vector<casa::Float> y_;
-  casa::Vector<casa::Bool> m_;
-  casa::PtrBlock<casa::Function<casa::Float>* > funcs_;
+  void applyConstraints(casacore::GenericL2Fit<casacore::Float>& fitter);
+  casacore::Vector<casacore::Float> x_;
+  casacore::Vector<casacore::Float> y_;
+  casacore::Vector<casacore::Bool> m_;
+  casacore::PtrBlock<casacore::Function<casacore::Float>* > funcs_;
   std::vector<std::string> funcnames_;
   std::vector<int> funccomponents_;
   
   //Bool estimateSet_;
-  casa::Float chisquared_;
-  casa::Vector<casa::Float> parameters_;
-  casa::Vector<casa::Bool> fixedpar_;
+  casacore::Float chisquared_;
+  casacore::Vector<casacore::Float> parameters_;
+  casacore::Vector<casacore::Bool> fixedpar_;
   std::vector<std::vector<float> > constraints_;
 
-  casa::Vector<casa::Float> error_;
-  casa::Vector<casa::Float> thefit_;
-  casa::Vector<casa::Float> residual_;
-  casa::Vector<casa::Float> estimate_;
+  casacore::Vector<casacore::Float> error_;
+  casacore::Vector<casacore::Float> thefit_;
+  casacore::Vector<casacore::Float> residual_;
+  casacore::Vector<casacore::Float> estimate_;
 };
 
 } // namespace

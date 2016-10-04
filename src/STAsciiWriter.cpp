@@ -60,7 +60,7 @@
 #include "Scantable.h"
 #include "STAsciiWriter.h"
 
-using namespace casa;
+using namespace casacore;
 using namespace asap;
 
 
