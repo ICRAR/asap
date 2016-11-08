@@ -347,7 +347,7 @@ else()
 
          casa_find(
             PYTHON${_v}
-	    #PREFIX_HINTS ${PYTHON_ROOT_DIR}
+	    PREFIX_HINTS ${PYTHON_ROOT_DIR}
             LIBS python${_v}
             NO_REQUIRE
          )
@@ -404,6 +404,7 @@ else()
          numpy/npy_interrupt.h   # for numpy
       INCLUDES_SUFFIXES python${PYTHONV}
       PREFIX_HINTS
+         ${PYTHON_ROOT_DIR}
          ${NUMPY_ROOT_DIR}
          ${python_prefix}/lib/python${PYTHONV}/site-packages/numpy/core
          ${python_prefix}/Library/Frameworks/Python.framework/Versions/${PYTHONV}
@@ -652,7 +653,7 @@ message( STATUS "RPFITS_LIBRARIES = " ${RPFITS_LIBRARIES} )
 set( _wcslib libwcs.${SO} )
 set( _wcs_version 4.3 )
 find_library( WCSLIB ${_wcslib} 
-              PATHS ${WCSLIB_PATHS} 
+              PATHS ${WCSLIB_ROOT_DIR} ${WCSLIB_PATHS} 
               PATH_SUFFIXES lib64 lib )
 if( WCSLIB MATCHES "NOTFOUND$" )
    message( STATUS "${_wcslib} could not be found." )
@@ -660,8 +661,9 @@ if( WCSLIB MATCHES "NOTFOUND$" )
    unset( WCSLIB CACHE )
    set( _wcslib libwcs.${_wcs_version}.${SO} )
    message( STATUS "Try to find ${_wcslib}..." )
+   message( STATUS "looking in ${WCSLIB_PATHS}..." )
    find_library( WCSLIB ${_wcslib}
-                 PATHS ${WCSLIB_PATHS}
+                 PATHS ${WCSLIB_ROOT_DIR} ${WCSLIB_PATHS}
                  PATH_SUFFIXES lib64 lib )
    if( WCSLIB MATCHES "NOTFOUND$" )
       message( FATAL_ERROR "${_wcslib} could not be found. Please check!" )
@@ -669,7 +671,7 @@ if( WCSLIB MATCHES "NOTFOUND$" )
 endif()
 message( STATUS "WCSLIB = " ${WCSLIB} )
 find_path( WCSLIB_INCLUDE_DIR wcslib/wcs.h
-           PATHS ${WCSLIB_PATHS}
+           PATHS ${WCSLIB_ROOT_DIR} ${WCSLIB_PATHS}
            PATH_SUFFIXES include )
 if( WCSLIB_INCLUDE_DIR MATCHES "NOTFOUND$" )
    message( FATAL_ERROR "wcs.h could not be found. Please check!" )
@@ -698,6 +700,12 @@ set( EXEC_INSTALL_DIR bin )
 set( LIB_INSTALL_DIR lib )
 set( PYTHON_INSTALL_DIR python/${PYTHONV}/asap )
 set( SHARED_INSTALL_DIR share/asap )
+if( NOT STANDALONE )
+   if( EXISTS ${CMAKE_INSTALL_PREFIX}/python${PYTHONV} )
+      message( STATUS "adjusting PYTHON_INSTALL_DIR to python${PYTHONV}/asap" )
+      set( PYTHON_INSTALL_DIR python${PYTHONV}/asap )
+   endif()
+endif()
 
 #
 # execute getsvnrev.sh to create/update svninfo.txt
