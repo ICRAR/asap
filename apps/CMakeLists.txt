@@ -11,7 +11,8 @@ add_executable( ${ASAP2TO3} ${EXEC_SRC} )
 # dependencies
 target_link_libraries( ${ASAP2TO3} 
                        ${CASACORE_LIBRARIES} 
-		       ${PYTHON_LIBRARIES}
+                       ${ASAPLIB}
+                       ${PYTHON_LIBRARIES}
                        ${DL_LIBRARIES} 
                        ${BLAS_LIBRARIES}
                        ${LAPACK_LIBRARIES} )
