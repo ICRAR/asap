@@ -51,8 +51,11 @@ else( )
     message( STATUS "User disabled shared library versioning" )
 endif( )
 
-# casarest should be sitting next to casacore
-include_directories( ${CASACORE2_PATH}/include/casarest )
+# casarest sits by default next to casacore
+if( NOT CASAREST_INCLUDE_PATH )
+   set(CASASERT_INCLUDE_PATH ${CASACORE2_PATH}/include/casarest)
+endif()
+include_directories( ${CASAREST_INCLUDE_PATH} )
 
 #
 # subdirectories
