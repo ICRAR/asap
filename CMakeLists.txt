@@ -5,8 +5,6 @@
 # minimum requirement for cmake version
 cmake_minimum_required( VERSION 2.8 )
 
-add_definitions ("-DUseCasacoreNamespace")
-
 # options
 option (CXX11 "Compile as C++11 if possible" YES)
 
@@ -15,6 +13,9 @@ option( USE_LIBCASACORE
         OFF )
 option( STANDALONE 
         "set ON to build standalone mode"
+        OFF )
+option( CASACORE2
+        "set ON to build against casacore 2.0 / casarest"
         OFF )
 option( PKSMS
         "set ON to diable to build PKSMS2reader/writer"
@@ -192,6 +193,12 @@ set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
   -DAIPS_AUTO_STL
   -D_GNU_SOURCE )
 
+if( NOT CASACORE2 )
+  set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
+    -DUseCasacoreNamespace
+    )
+endif()
+
 if( CMAKE_SYSTEM_NAME STREQUAL Linux )
   set( CASACORE_DEFINITIONS ${CASACORE_DEFINITIONS}
     -D_FILE_OFFSET_BITS=64
@@ -211,6 +218,11 @@ set( CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake" )
 message( STATUS "CMAKE_MODULE_PATH = " ${CMAKE_MODULE_PATH} )
 if( STANDALONE )
    include( standalone )
+	set( USE_LIBCASACORE ON )
+endif()
+if( CASACORE2 )
+   include( casacore2 )
+	set( USE_LIBCASACORE OFF )
 else()
    include( withcasa )
 endif()
@@ -261,7 +273,11 @@ if( NOT USE_LIBCASACORE )
          list( APPEND _casacore_libs ${_casacore_lib} )
       endif()
    endforeach()
-   set ( _libname libcomponents.${SO} )
+   if( CASACORE2 )
+      set ( _libname libcasa_components.${SO} )
+   else()
+      set ( _libname libcomponents.${SO} )
+   endif()
    unset( _casacore_lib CACHE )
    find_library( _casacore_lib ${_libname}
              PATHS ${CASACORE_PATHS}
@@ -303,7 +319,7 @@ unset( USE_LIBCASACORE CACHE )
 #
 # Python
 #
-if( STANDALONE )
+if( STANDALONE OR CASACORE2 )
    include( FindPythonLibs )
    if( NOT PYTHONLIBS_FOUND )
       message( FATAL_ERROR "Python could not be found. Please check!" )
@@ -494,7 +510,7 @@ message( STATUS "BOOST_LIBRARIES = " ${Boost_LIBRARIES} )
 #
 # cfitsio
 #
-if( STANDALONE )
+if( STANDALONE OR CASACORE2 )
    find_path( CFITSIO_INCLUDE_DIRS fitsio.h
               PATH_SUFFIXES cfitsio )
    if( CFITSIO_INCLUDE_DIRS MATCHES "NOTFOUND$" )
@@ -608,12 +624,19 @@ if( NOT STANDALONE )
         set( CMAKE_SHARED_LINKER_FLAGS "-Wl,-undefined -Wl,error" )
      endif()
   endif()
-  casa_find( PGPLOT
-    VERSION 5.3.1
-    PREFIX_HINTS ${PGPLOT_ROOT_DIR}
-    INCLUDES cpgplot.h
-    LIBS pgplot${pgplot_ext} cpgplot${pgplot_ext}
-    DEPENDS ${_deps} )
+
+  if( CASACORE2 )
+     find_package( PGPLOT 5.3.1
+       HINTS ${PGPLOT_ROOT_DIR}
+		 COMPONENTS ${_deps} )
+  else()
+     casa_find( PGPLOT
+       VERSION 5.3.1
+       PREFIX_HINTS ${PGPLOT_ROOT_DIR}
+       INCLUDES cpgplot.h
+       LIBS pgplot${pgplot_ext} cpgplot${pgplot_ext}
+       DEPENDS ${_deps} )
+  endif()
 
   add_definitions( -DENABLE_PLOTTER2 )
 endif()
@@ -621,7 +644,7 @@ endif()
 #
 # RPFITS
 #
-if ( STANDALONE )
+if ( STANDALONE OR CASACORE2 )
    find_path( RPFITS_INCLUDE_DIRS RPFITS.h
               PATHS /usr/local /usr
               PATH_SUFFIXES include )
@@ -711,19 +734,13 @@ endif()
 # execute getsvnrev.sh to create/update svninfo.txt
 # run chmod to make sure the script has executable 
 #
-execute_process( COMMAND svn info
-                   RESULT_VARIABLE SVNINFOSTATUS
-                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
-message("SVNINFOSTATUS: ${SVNINFOSTATUS}")
-
-if(${SVNINFOSTATUS} STREQUAL "0")
+if( EXISTS ${CMAKE_SOURCE_DIR}/.svn )
     message("Running svn scripts.")
     exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getsvnrev.sh )
     exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh )
     exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getsvnrev.sh ARGS ${ASAP_SOURCE_DIR})
 else ()
-    message("Couldn't get svn info. Running git scripts.")
+    message(".svn not found. Running git scripts.")
     exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/getgitrev.sh )
     exec_program( chmod ARGS a+x ${ASAP_SOURCE_DIR}/cmake/exec_getgitrev.sh )
     exec_program( ${ASAP_SOURCE_DIR}/cmake/exec_getgitrev.sh ARGS ${ASAP_SOURCE_DIR})

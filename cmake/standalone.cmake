@@ -7,7 +7,6 @@
 # casacore
 #
 # always use libcasacore.so
-set( USE_LIBCASACORE ON )
 set( CASACORE_PATHS "/usr/local;/usr" )
 
 
