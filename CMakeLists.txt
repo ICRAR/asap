@@ -626,9 +626,7 @@ if( NOT STANDALONE )
   endif()
 
   if( CASACORE2 )
-     find_package( PGPLOT 5.3.1
-       HINTS ${PGPLOT_ROOT_DIR}
-		 COMPONENTS ${_deps} )
+     find_package( PGPLOT )
   else()
      casa_find( PGPLOT
        VERSION 5.3.1
