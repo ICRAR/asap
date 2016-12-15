@@ -72,5 +72,6 @@ macro( asap_add_subdirectory )
    add_subdirectory( src )
    add_subdirectory( python )
    add_subdirectory( share )
+   add_subdirectory( bin )
 endmacro( asap_add_subdirectory )
 
